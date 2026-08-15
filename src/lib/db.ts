@@ -82,3 +82,22 @@ export function csvExport(rows: Row[], filename: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Field readers — tables are dynamic, so values are read by key. */
+export function s(row: Row | undefined | null, key: string): string {
+  const v = row?.[key];
+  return v == null ? "" : String(v);
+}
+export function n(row: Row | undefined | null, key: string): number {
+  const v = Number(row?.[key]);
+  return Number.isFinite(v) ? v : 0;
+}
+export function b(row: Row | undefined | null, key: string): boolean {
+  return Boolean(row?.[key]);
+}
+/** Reads a nested embedded relation (e.g. patients(full_name)). */
+export function rel(row: Row | undefined | null, key: string): Row | null {
+  const v = row?.[key];
+  if (Array.isArray(v)) return (v[0] as Row) ?? null;
+  return (v as Row) ?? null;
+}
