@@ -3,8 +3,6 @@ import { toast } from "sonner";
 
 import { dbError, supabase } from "./supabase";
 
-type Builder = { then: unknown };
-
 /** Runs a PostgREST builder and throws a readable error. */
 export async function run<T>(builder: PromiseLike<{ data: T | null; error: unknown }>): Promise<T> {
   const { data, error } = await builder;
@@ -24,7 +22,7 @@ export function useRows<T = Row[]>(
     queryKey: key,
     queryFn: async () => (await run<T>(build() as never)) as T,
     enabled: options?.enabled ?? true,
-    refetchInterval: options?.refetchInterval,
+    refetchInterval: options?.refetchInterval ?? false,
     retry: 0,
   });
 }
@@ -57,19 +55,20 @@ export function useSettings() {
   const query = useRows(["system_settings"], () =>
     supabase.from("system_settings").select("setting_key, setting_value"),
   );
-  const map: Record<string, string> = {};
+  const settings: Record<string, string> = {};
   for (const r of (query.data ?? []) as Row[]) {
-    map[String(r.setting_key)] = String(r.setting_value ?? "");
+    settings[String(r["setting_key"])] = String(r["setting_value"] ?? "");
   }
-  return { ...query, settings: map, currency: map.currency || "SDG" };
+  return { ...query, settings, currency: settings["currency"] || "SDG" };
 }
 
 export function csvExport(rows: Row[], filename: string) {
-  if (!rows.length) {
+  const first = rows[0];
+  if (!first) {
     toast.error("No records to export");
     return;
   }
-  const headers = Object.keys(rows[0]);
+  const headers = Object.keys(first);
   const escape = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const csv = [
     headers.join(","),
@@ -83,5 +82,3 @@ export function csvExport(rows: Row[], filename: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-export type { Builder };
