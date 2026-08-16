@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
+import { Route as AuthenticatedClinicRouteImport } from './routes/_authenticated/clinic'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
@@ -45,6 +46,11 @@ const AuthenticatedAppointmentsRoute =
     path: '/appointments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedClinicRoute = AuthenticatedClinicRouteImport.update({
+  id: '/clinic',
+  path: '/clinic',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
+  '/clinic': typeof AuthenticatedClinicRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/queue': typeof AuthenticatedQueueRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
+  '/clinic': typeof AuthenticatedClinicRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/queue': typeof AuthenticatedQueueRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
+  '/_authenticated/clinic': typeof AuthenticatedClinicRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/setup'
     | '/appointments'
+    | '/clinic'
     | '/dashboard'
     | '/patients'
     | '/queue'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/setup'
     | '/appointments'
+    | '/clinic'
     | '/dashboard'
     | '/patients'
     | '/queue'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/setup'
     | '/_authenticated/appointments'
+    | '/_authenticated/clinic'
     | '/_authenticated/dashboard'
     | '/_authenticated/patients'
     | '/_authenticated/queue'
@@ -186,6 +198,13 @@ declare module '@tanstack/react-router' {
       path: '/appointments'
       fullPath: '/appointments'
       preLoaderRoute: typeof AuthenticatedAppointmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clinic': {
+      id: '/_authenticated/clinic'
+      path: '/clinic'
+      fullPath: '/clinic'
+      preLoaderRoute: typeof AuthenticatedClinicRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -241,6 +260,7 @@ const AuthenticatedPatientsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
+  AuthenticatedClinicRoute: typeof AuthenticatedClinicRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
@@ -249,6 +269,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
+  AuthenticatedClinicRoute: AuthenticatedClinicRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
