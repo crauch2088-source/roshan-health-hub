@@ -13,8 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
+import { Route as AuthenticatedClinicRouteImport } from './routes/_authenticated/clinic'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
+import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
+import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
+import { Route as AuthenticatedPatientsPatientIdRouteImport } from './routes/_authenticated/patients.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,6 +40,17 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppointmentsRoute =
+  AuthenticatedAppointmentsRouteImport.update({
+    id: '/appointments',
+    path: '/appointments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClinicRoute = AuthenticatedClinicRouteImport.update({
+  id: '/clinic',
+  path: '/clinic',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -45,20 +61,46 @@ const AuthenticatedPatientsRoute = AuthenticatedPatientsRouteImport.update({
   path: '/patients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedQueueRoute = AuthenticatedQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVisitsRoute = AuthenticatedVisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPatientsPatientIdRoute =
+  AuthenticatedPatientsPatientIdRouteImport.update({
+    id: '/$patientId',
+    path: '/$patientId',
+    getParentRoute: () => AuthenticatedPatientsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
+  '/appointments': typeof AuthenticatedAppointmentsRoute
+  '/clinic': typeof AuthenticatedClinicRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/patients': typeof AuthenticatedPatientsRoute
+  '/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/queue': typeof AuthenticatedQueueRoute
+  '/visits': typeof AuthenticatedVisitsRoute
+  '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
+  '/appointments': typeof AuthenticatedAppointmentsRoute
+  '/clinic': typeof AuthenticatedClinicRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/patients': typeof AuthenticatedPatientsRoute
+  '/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/queue': typeof AuthenticatedQueueRoute
+  '/visits': typeof AuthenticatedVisitsRoute
+  '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -66,22 +108,52 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
+  '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
+  '/_authenticated/clinic': typeof AuthenticatedClinicRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/patients': typeof AuthenticatedPatientsRoute
+  '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/_authenticated/queue': typeof AuthenticatedQueueRoute
+  '/_authenticated/visits': typeof AuthenticatedVisitsRoute
+  '/_authenticated/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/setup' | '/dashboard' | '/patients'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/setup'
+    | '/appointments'
+    | '/clinic'
+    | '/dashboard'
+    | '/patients'
+    | '/queue'
+    | '/visits'
+    | '/patients/$patientId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/setup' | '/dashboard' | '/patients'
+  to:
+    | '/'
+    | '/auth'
+    | '/setup'
+    | '/appointments'
+    | '/clinic'
+    | '/dashboard'
+    | '/patients'
+    | '/queue'
+    | '/visits'
+    | '/patients/$patientId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/setup'
+    | '/_authenticated/appointments'
+    | '/_authenticated/clinic'
     | '/_authenticated/dashboard'
     | '/_authenticated/patients'
+    | '/_authenticated/queue'
+    | '/_authenticated/visits'
+    | '/_authenticated/patients/$patientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -121,6 +193,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/appointments': {
+      id: '/_authenticated/appointments'
+      path: '/appointments'
+      fullPath: '/appointments'
+      preLoaderRoute: typeof AuthenticatedAppointmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clinic': {
+      id: '/_authenticated/clinic'
+      path: '/clinic'
+      fullPath: '/clinic'
+      preLoaderRoute: typeof AuthenticatedClinicRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -135,17 +221,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPatientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/queue': {
+      id: '/_authenticated/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof AuthenticatedQueueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/visits': {
+      id: '/_authenticated/visits'
+      path: '/visits'
+      fullPath: '/visits'
+      preLoaderRoute: typeof AuthenticatedVisitsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/patients/$patientId': {
+      id: '/_authenticated/patients/$patientId'
+      path: '/$patientId'
+      fullPath: '/patients/$patientId'
+      preLoaderRoute: typeof AuthenticatedPatientsPatientIdRouteImport
+      parentRoute: typeof AuthenticatedPatientsRoute
+    }
   }
 }
 
+interface AuthenticatedPatientsRouteChildren {
+  AuthenticatedPatientsPatientIdRoute: typeof AuthenticatedPatientsPatientIdRoute
+}
+
+const AuthenticatedPatientsRouteChildren: AuthenticatedPatientsRouteChildren = {
+  AuthenticatedPatientsPatientIdRoute: AuthenticatedPatientsPatientIdRoute,
+}
+
+const AuthenticatedPatientsRouteWithChildren =
+  AuthenticatedPatientsRoute._addFileChildren(
+    AuthenticatedPatientsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
+  AuthenticatedClinicRoute: typeof AuthenticatedClinicRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRoute
+  AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
+  AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
+  AuthenticatedVisitsRoute: typeof AuthenticatedVisitsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
+  AuthenticatedClinicRoute: AuthenticatedClinicRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedPatientsRoute: AuthenticatedPatientsRoute,
+  AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
+  AuthenticatedQueueRoute: AuthenticatedQueueRoute,
+  AuthenticatedVisitsRoute: AuthenticatedVisitsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
