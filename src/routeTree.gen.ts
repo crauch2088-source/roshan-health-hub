@@ -21,6 +21,7 @@ import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
 import { Route as AuthenticatedClinicVisitIdRouteImport } from './routes/_authenticated/clinic.$visitId'
+import { Route as AuthenticatedLabOrderIdRouteImport } from './routes/_authenticated/lab.$orderId'
 import { Route as AuthenticatedPatientsPatientIdRouteImport } from './routes/_authenticated/patients.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -84,6 +85,11 @@ const AuthenticatedClinicVisitIdRoute =
     path: '/$visitId',
     getParentRoute: () => AuthenticatedClinicRoute,
   } as any)
+const AuthenticatedLabOrderIdRoute = AuthenticatedLabOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => AuthenticatedLabRoute,
+} as any)
 const AuthenticatedPatientsPatientIdRoute =
   AuthenticatedPatientsPatientIdRouteImport.update({
     id: '/$patientId',
@@ -98,11 +104,12 @@ export interface FileRoutesByFullPath {
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/clinic': typeof AuthenticatedClinicRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/lab': typeof AuthenticatedLabRoute
+  '/lab': typeof AuthenticatedLabRouteWithChildren
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/queue': typeof AuthenticatedQueueRoute
   '/visits': typeof AuthenticatedVisitsRoute
   '/clinic/$visitId': typeof AuthenticatedClinicVisitIdRoute
+  '/lab/$orderId': typeof AuthenticatedLabOrderIdRoute
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRoutesByTo {
@@ -112,11 +119,12 @@ export interface FileRoutesByTo {
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/clinic': typeof AuthenticatedClinicRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/lab': typeof AuthenticatedLabRoute
+  '/lab': typeof AuthenticatedLabRouteWithChildren
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/queue': typeof AuthenticatedQueueRoute
   '/visits': typeof AuthenticatedVisitsRoute
   '/clinic/$visitId': typeof AuthenticatedClinicVisitIdRoute
+  '/lab/$orderId': typeof AuthenticatedLabOrderIdRoute
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRoutesById {
@@ -128,11 +136,12 @@ export interface FileRoutesById {
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
   '/_authenticated/clinic': typeof AuthenticatedClinicRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/lab': typeof AuthenticatedLabRoute
+  '/_authenticated/lab': typeof AuthenticatedLabRouteWithChildren
   '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
   '/_authenticated/clinic/$visitId': typeof AuthenticatedClinicVisitIdRoute
+  '/_authenticated/lab/$orderId': typeof AuthenticatedLabOrderIdRoute
   '/_authenticated/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/queue'
     | '/visits'
     | '/clinic/$visitId'
+    | '/lab/$orderId'
     | '/patients/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/queue'
     | '/visits'
     | '/clinic/$visitId'
+    | '/lab/$orderId'
     | '/patients/$patientId'
   id:
     | '__root__'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/queue'
     | '/_authenticated/visits'
     | '/_authenticated/clinic/$visitId'
+    | '/_authenticated/lab/$orderId'
     | '/_authenticated/patients/$patientId'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClinicVisitIdRouteImport
       parentRoute: typeof AuthenticatedClinicRoute
     }
+    '/_authenticated/lab/$orderId': {
+      id: '/_authenticated/lab/$orderId'
+      path: '/$orderId'
+      fullPath: '/lab/$orderId'
+      preLoaderRoute: typeof AuthenticatedLabOrderIdRouteImport
+      parentRoute: typeof AuthenticatedLabRoute
+    }
     '/_authenticated/patients/$patientId': {
       id: '/_authenticated/patients/$patientId'
       path: '/$patientId'
@@ -295,6 +314,17 @@ const AuthenticatedClinicRouteChildren: AuthenticatedClinicRouteChildren = {
 const AuthenticatedClinicRouteWithChildren =
   AuthenticatedClinicRoute._addFileChildren(AuthenticatedClinicRouteChildren)
 
+interface AuthenticatedLabRouteChildren {
+  AuthenticatedLabOrderIdRoute: typeof AuthenticatedLabOrderIdRoute
+}
+
+const AuthenticatedLabRouteChildren: AuthenticatedLabRouteChildren = {
+  AuthenticatedLabOrderIdRoute: AuthenticatedLabOrderIdRoute,
+}
+
+const AuthenticatedLabRouteWithChildren =
+  AuthenticatedLabRoute._addFileChildren(AuthenticatedLabRouteChildren)
+
 interface AuthenticatedPatientsRouteChildren {
   AuthenticatedPatientsPatientIdRoute: typeof AuthenticatedPatientsPatientIdRoute
 }
@@ -312,7 +342,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
   AuthenticatedClinicRoute: typeof AuthenticatedClinicRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedLabRoute: typeof AuthenticatedLabRoute
+  AuthenticatedLabRoute: typeof AuthenticatedLabRouteWithChildren
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
   AuthenticatedVisitsRoute: typeof AuthenticatedVisitsRoute
@@ -322,7 +352,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
   AuthenticatedClinicRoute: AuthenticatedClinicRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedLabRoute: AuthenticatedLabRoute,
+  AuthenticatedLabRoute: AuthenticatedLabRouteWithChildren,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
   AuthenticatedVisitsRoute: AuthenticatedVisitsRoute,
