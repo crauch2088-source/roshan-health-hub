@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { rel, s, useRows, useSave, type Row } from "@/lib/db";
+import { s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -21,30 +21,26 @@ export const Route = createFileRoute("/_authenticated/queue")({
   head: () => ({
     meta: [
       { title: "Live queue — ROSHAN Medical Center" },
-      { name: "description", content: "Live waiting queue with call-next and in-progress tracking." },
-      { property: "og:title", content: "Live queue — ROSHAN Medical Center" },
-      { property: "og:description", content: "Live waiting queue with call-next and in-progress tracking." },
+      { name: "description", content: "Live waiting queue." },
     ],
   }),
   component: QueuePage,
 });
 
 function QueuePage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { can } = useAuth();
   const date = todayISO();
 
-  // استعلام مباشر ومبسط لجلب جميع تذاكر الطابور الخاصة بتاريخ اليوم دون فلاتر معقدة
+  // جلب جميع التذاكر بدون شروط تاريخ للتأكد من ظهورها فوراً
   const queue = useRows(
-    ["queue", date],
+    ["queue-all"],
     () =>
       supabase
         .from("queue_tickets")
-        .select(
-          "id, queue_number, status, created_at, called_at, visit_id, visit_date, patients(full_name, mrn), departments(name, name_ar)",
-        )
-        .eq("visit_date", date)
-        .order("created_at", { ascending: true }),
+        .select("id, queue_number, status, created_at, visit_id, visit_date")
+        .order("created_at", { ascending: false })
+        .limit(50),
     { refetchInterval: 5000 },
   );
 
@@ -59,7 +55,7 @@ function QueuePage() {
       if (visitId) await supabase.from("visits").update({ status: visitStatus }).eq("id", visitId);
       return null;
     },
-    { invalidate: [["queue", date], ["visits", date]], successMessage: t("saved") },
+    { invalidate: [["queue-all"], ["visits", date]], successMessage: t("saved") },
   );
 
   const rows = (queue.data ?? []) as Row[];
@@ -78,8 +74,6 @@ function QueuePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("queue_number")}</TableHead>
-                  <TableHead>{t("patient")}</TableHead>
-                  <TableHead>{t("department")}</TableHead>
                   <TableHead>{t("time")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead className="no-print" />
@@ -90,17 +84,6 @@ function QueuePage() {
                   <TableRow key={s(q, "id")}>
                     <TableCell dir="ltr" className="font-mono text-base font-semibold">
                       {s(q, "queue_number")}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {s(rel(q, "patients"), "full_name")}
-                      <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
-                        {s(rel(q, "patients"), "mrn")}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {lang === "ar"
-                        ? s(rel(q, "departments"), "name_ar") || s(rel(q, "departments"), "name")
-                        : s(rel(q, "departments"), "name")}
                     </TableCell>
                     <TableCell dir="ltr">{formatDateTime(s(q, "created_at"))}</TableCell>
                     <TableCell>
