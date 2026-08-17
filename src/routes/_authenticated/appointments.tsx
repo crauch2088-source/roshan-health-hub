@@ -127,16 +127,15 @@ function AppointmentsPage() {
         <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
         <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
         
-        {/* تم إزالة شرط الصلاحيات لضمان ظهور زر الإضافة دائماً */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
-              <Plus className="size-4" /> {t("add")}
+              <Plus className="size-4" /> موعد جديد
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t("appointments")}</DialogTitle>
+              <DialogTitle>موعد جديد</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
               <Field label={`${t("patient")} *`}>
