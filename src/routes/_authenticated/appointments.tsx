@@ -65,7 +65,7 @@ function AppointmentsPage() {
     supabase
       .from("appointments")
       .select(
-        "id, appointment_date, appointment_time, status, notes, patients(full_name, mrn), users(full_name), departments(name, name_ar)",
+        "id, appointment_date, appointment_time, status, notes, patients!appointments_patient_id_fkey(full_name, mrn), users(full_name), departments(name, name_ar)",
       )
       .eq("appointment_date", date)
       .is("deleted_at", null)
