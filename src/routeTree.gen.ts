@@ -19,6 +19,7 @@ import { Route as AuthenticatedClinicRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLabRouteImport } from './routes/_authenticated/lab'
+import { Route as AuthenticatedLabCatalogRouteImport } from './routes/_authenticated/lab-catalog'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
@@ -78,6 +79,11 @@ const AuthenticatedLabRoute = AuthenticatedLabRouteImport.update({
   path: '/lab',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLabCatalogRoute = AuthenticatedLabCatalogRouteImport.update({
+  id: '/lab-catalog',
+  path: '/lab-catalog',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPatientsRoute = AuthenticatedPatientsRouteImport.update({
   id: '/patients',
   path: '/patients',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/lab': typeof AuthenticatedLabRouteWithChildren
+  '/lab-catalog': typeof AuthenticatedLabCatalogRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/pharmacy': typeof AuthenticatedPharmacyRoute
   '/queue': typeof AuthenticatedQueueRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/lab': typeof AuthenticatedLabRouteWithChildren
+  '/lab-catalog': typeof AuthenticatedLabCatalogRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/pharmacy': typeof AuthenticatedPharmacyRoute
   '/queue': typeof AuthenticatedQueueRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/lab': typeof AuthenticatedLabRouteWithChildren
+  '/_authenticated/lab-catalog': typeof AuthenticatedLabCatalogRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inventory'
     | '/lab'
+    | '/lab-catalog'
     | '/patients'
     | '/pharmacy'
     | '/queue'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inventory'
     | '/lab'
+    | '/lab-catalog'
     | '/patients'
     | '/pharmacy'
     | '/queue'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/inventory'
     | '/_authenticated/lab'
+    | '/_authenticated/lab-catalog'
     | '/_authenticated/patients'
     | '/_authenticated/pharmacy'
     | '/_authenticated/queue'
@@ -319,6 +331,13 @@ declare module '@tanstack/react-router' {
       path: '/lab'
       fullPath: '/lab'
       preLoaderRoute: typeof AuthenticatedLabRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lab-catalog': {
+      id: '/_authenticated/lab-catalog'
+      path: '/lab-catalog'
+      fullPath: '/lab-catalog'
+      preLoaderRoute: typeof AuthenticatedLabCatalogRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/patients': {
@@ -433,6 +452,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLabRoute: typeof AuthenticatedLabRouteWithChildren
+  AuthenticatedLabCatalogRoute: typeof AuthenticatedLabCatalogRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
   AuthenticatedPharmacyRoute: typeof AuthenticatedPharmacyRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
@@ -446,6 +466,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLabRoute: AuthenticatedLabRouteWithChildren,
+  AuthenticatedLabCatalogRoute: AuthenticatedLabCatalogRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
   AuthenticatedPharmacyRoute: AuthenticatedPharmacyRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
