@@ -27,6 +27,7 @@ import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
 import { Route as AuthenticatedBillingInvoiceIdRouteImport } from './routes/_authenticated/billing.$invoiceId'
 import { Route as AuthenticatedClinicVisitIdRouteImport } from './routes/_authenticated/clinic.$visitId'
@@ -123,6 +124,11 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedVisitsRoute = AuthenticatedVisitsRouteImport.update({
   id: '/visits',
   path: '/visits',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/pharmacy': typeof AuthenticatedPharmacyRoute
   '/queue': typeof AuthenticatedQueueRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/visits': typeof AuthenticatedVisitsRoute
   '/billing/$invoiceId': typeof AuthenticatedBillingInvoiceIdRoute
   '/clinic/$visitId': typeof AuthenticatedClinicVisitIdRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/pharmacy': typeof AuthenticatedPharmacyRoute
   '/queue': typeof AuthenticatedQueueRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/visits': typeof AuthenticatedVisitsRoute
   '/billing/$invoiceId': typeof AuthenticatedBillingInvoiceIdRoute
   '/clinic/$visitId': typeof AuthenticatedClinicVisitIdRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
   '/_authenticated/billing/$invoiceId': typeof AuthenticatedBillingInvoiceIdRoute
   '/_authenticated/clinic/$visitId': typeof AuthenticatedClinicVisitIdRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/pharmacy'
     | '/queue'
     | '/reports'
+    | '/users'
     | '/visits'
     | '/billing/$invoiceId'
     | '/clinic/$visitId'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/pharmacy'
     | '/queue'
     | '/reports'
+    | '/users'
     | '/visits'
     | '/billing/$invoiceId'
     | '/clinic/$visitId'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pharmacy'
     | '/_authenticated/queue'
     | '/_authenticated/reports'
+    | '/_authenticated/users'
     | '/_authenticated/visits'
     | '/_authenticated/billing/$invoiceId'
     | '/_authenticated/clinic/$visitId'
@@ -437,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/visits': {
       id: '/_authenticated/visits'
       path: '/visits'
@@ -536,6 +555,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPharmacyRoute: typeof AuthenticatedPharmacyRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVisitsRoute: typeof AuthenticatedVisitsRoute
 }
 
@@ -554,6 +574,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPharmacyRoute: AuthenticatedPharmacyRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVisitsRoute: AuthenticatedVisitsRoute,
 }
 
