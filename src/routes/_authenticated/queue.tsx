@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { Empty, ErrorBox, Loading, PageHeader, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { s, useRows, useSave, type Row } from "@/lib/db";
+import { s, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -32,39 +33,62 @@ function QueuePage() {
   const { can } = useAuth();
   const date = todayISO();
 
-  // جلب جميع التذاكر بدون شروط تاريخ للتأكد من ظهورها فوراً
-  const queue = useRows(
-    ["queue-all"],
-    () =>
-      supabase
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
+
+  // جلب البيانات مباشرة عبر جافاسكريبت متجاوزين أي كاش قديم
+  const fetchQueue = async () => {
+    try {
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
         .from("queue_tickets")
         .select("id, queue_number, status, created_at, visit_id, visit_date")
         .order("created_at", { ascending: false })
-        .limit(50),
-    { refetchInterval: 5000 },
-  );
+        .limit(50);
 
-  const setStatus = useSave<{ id: string; visitId: string; status: string }>(
-    async ({ id, visitId, status }) => {
+      if (fetchError) throw fetchError;
+      setRows(data || []);
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQueue();
+    // تحديث تلقائي كل 5 ثوانٍ
+    const interval = setInterval(fetchQueue, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updateStatus = async (id: string, visitId: string, status: string) => {
+    try {
       const patch: Row = { status };
       if (status === "called") patch["called_at"] = new Date().toISOString();
-      const { error } = await supabase.from("queue_tickets").update(patch).eq("id", id);
-      if (error) throw new Error(error.message);
-      const visitStatus =
-        status === "called" ? "in_consultation" : status === "done" ? "completed" : "waiting";
-      if (visitId) await supabase.from("visits").update({ status: visitStatus }).eq("id", visitId);
-      return null;
-    },
-    { invalidate: [["queue-all"], ["visits", date]], successMessage: t("saved") },
-  );
+      
+      const { error: updateError } = await supabase.from("queue_tickets").update(patch).eq("id", id);
+      if (updateError) throw updateError;
 
-  const rows = (queue.data ?? []) as Row[];
-  if (queue.isLoading) return <Loading />;
+      const visitStatus = status === "called" ? "in_consultation" : status === "done" ? "completed" : "waiting";
+      if (visitId) {
+        await supabase.from("visits").update({ status: visitStatus }).eq("id", visitId);
+      }
+
+      // إعادة الجلب فوراً لتحديث الواجهة
+      fetchQueue();
+    } catch (err: any) {
+      alert(`خطأ أثناء التحديث: ${err.message}`);
+    }
+  };
+
+  if (loading && rows.length === 0) return <Loading />;
 
   return (
     <div>
       <PageHeader title={t("queue")} subtitle={formatDate(date)} />
-      <ErrorBox error={queue.error} />
+      <ErrorBox error={error} />
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
@@ -95,28 +119,14 @@ function QueuePage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={setStatus.isPending}
-                            onClick={() =>
-                              setStatus.mutate({
-                                id: s(q, "id"),
-                                visitId: s(q, "visit_id"),
-                                status: "called",
-                              })
-                            }
+                            onClick={() => updateStatus(s(q, "id"), s(q, "visit_id"), "called")}
                           >
                             {t("call_next")}
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
-                            disabled={setStatus.isPending}
-                            onClick={() =>
-                              setStatus.mutate({
-                                id: s(q, "id"),
-                                visitId: s(q, "visit_id"),
-                                status: "done",
-                              })
-                            }
+                            onClick={() => updateStatus(s(q, "id"), s(q, "visit_id"), "done")}
                           >
                             {t("done")}
                           </Button>
