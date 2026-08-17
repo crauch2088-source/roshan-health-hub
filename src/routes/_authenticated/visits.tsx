@@ -95,13 +95,12 @@ function VisitsPage() {
       .is("deleted_at", null),
   );
 
+  // تم تبسيط الدالة تماماً، قاعدة البيانات ستقوم بإضافة تذكرة الطابور تلقائياً عبر الـ Trigger
   const create = useSave(
     async () => {
       const numericQueue = Math.floor(Math.random() * 900) + 100;
-      const qString = `Q${numericQueue}`;
-
-      // 1. إنشاء الزيارة
-      const { data: visit, error } = await supabase
+      
+      const { error } = await supabase
         .from("visits")
         .insert({
           patient_id: form.patient_id,
@@ -113,30 +112,13 @@ function VisitsPage() {
           consultation_fee: Number(form.consultation_fee) || 0,
           notes: form.notes || null,
           visit_number: numericQueue,
-        })
-        .select("id")
-        .single();
+        });
+        
       if (error) throw new Error(error.message);
-
-      // 2. إدخال الطابور بأقل قدر من الأعمدة لتجنب أي قيود
-      const { error: queueError } = await supabase.from("queue_tickets").insert({
-        visit_id: visit.id,
-        patient_id: form.patient_id,
-        visit_date: date,
-        queue_number: qString,
-        status: "waiting",
-      });
-
-      if (queueError) {
-        console.error("Queue Insert Error:", queueError);
-        alert(`خطأ في إنشاء التذكرة: ${queueError.message}`);
-        throw new Error(queueError.message);
-      }
-
       return null;
     },
     {
-      invalidate: [["visits", date], ["queue", date], ["queue-all"]],
+      invalidate: [["visits", date]],
       successMessage: t("saved"),
       onDone: () => {
         setOpen(false);
@@ -161,7 +143,7 @@ function VisitsPage() {
       return null;
     },
     {
-      invalidate: [["visits", date], ["queue", date]],
+      invalidate: [["visits", date]],
       successMessage: t("deleted"),
     },
   );
