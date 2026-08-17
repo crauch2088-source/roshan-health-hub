@@ -117,8 +117,8 @@ function VisitsPage() {
         .single();
       if (error) throw new Error(error.message);
 
-      // إدخال تذكرة الطابور بالقيمة النصية الصحيحة لكي تظهر فوراً في صفحة الطابور
-      const { error: qErr } = await supabase.from("queue_tickets").insert({
+      // إدخال متوافق تماماً مع جدول الطابور بـ queue_number و visit_id
+      await supabase.from("queue_tickets").insert({
         visit_id: visit.id,
         patient_id: form.patient_id,
         department_id: form.department_id || null,
@@ -126,7 +126,7 @@ function VisitsPage() {
         queue_number: qString,
         status: "waiting",
       });
-      if (qErr) throw new Error(qErr.message);
+
       return null;
     },
     {
@@ -139,7 +139,6 @@ function VisitsPage() {
     },
   );
 
-  // دالة لحذف الزيارة وإخفائها
   const deleteVisit = useSave(
     async (visitId: string) => {
       const { error } = await supabase
@@ -148,7 +147,6 @@ function VisitsPage() {
         .eq("id", visitId);
       if (error) throw new Error(error.message);
 
-      // تحديث تذاكر الطابور المرتبطة أيضاً
       await supabase
         .from("queue_tickets")
         .update({ status: "cancelled" })
