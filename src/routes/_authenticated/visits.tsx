@@ -97,6 +97,7 @@ function VisitsPage() {
 
   const create = useSave(
     async () => {
+      // توليد رقم زيارة رقمي صحيح تماماً لتجنب خطأ الـ Integer
       const numericQueue = Math.floor(Math.random() * 900) + 100;
       
       const { data: visit, error } = await supabase
