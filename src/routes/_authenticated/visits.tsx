@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatusBadge } from "@/components/kit";
@@ -97,7 +97,6 @@ function VisitsPage() {
 
   const create = useSave(
     async () => {
-      // توليد رقم زيارة رقمي صحيح تماماً لتجنب خطأ الـ Integer
       const numericQueue = Math.floor(Math.random() * 900) + 100;
       
       const { data: visit, error } = await supabase
@@ -117,12 +116,13 @@ function VisitsPage() {
         .single();
       if (error) throw new Error(error.message);
 
+      // إدخال تذكرة الطابور لضمان ظهورها في صفحة الطابور
       const { error: qErr } = await supabase.from("queue_tickets").insert({
         visit_id: visit.id,
         patient_id: form.patient_id,
         department_id: form.department_id || null,
         visit_date: date,
-        queue_number: `Q${numericQueue}`,
+        queue_number: numericQueue,
         status: "waiting",
       });
       if (qErr) throw new Error(qErr.message);
@@ -282,7 +282,7 @@ function VisitsPage() {
                   <TableHead>{t("doctor")}</TableHead>
                   <TableHead>{t("consultation_fee")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
-                  <TableHead className="no-print" />
+                  <TableHead className="text-end">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -307,24 +307,20 @@ function VisitsPage() {
                     <TableCell>
                       <StatusBadge status={s(v, "status")} />
                     </TableCell>
-                    <TableCell className="no-print text-end">
-                      {can("emr.read") ? (
-                        <Button asChild variant="ghost" size="sm">
-                          <Link to="/clinic/$visitId" params={{ visitId: s(v, "id") }}>
-                            {t("clinic")}
-                          </Link>
-                        </Button>
-                      ) : null}
-                      {can("patients.read") ? (
-                        <Button asChild variant="ghost" size="sm">
-                          <Link
-                            to="/patients/$patientId"
-                            params={{ patientId: s(rel(v, "patients"), "id") }}
-                          >
-                            {t("patient")}
-                          </Link>
-                        </Button>
-                      ) : null}
+                    <TableCell className="text-end space-x-1 space-x-reverse">
+                      <Button asChild variant="ghost" size="sm">
+                        <Link to="/clinic/$visitId" params={{ visitId: s(v, "id") }}>
+                          {t("clinic")}
+                        </Link>
+                      </Button>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link
+                          to="/patients/$patientId"
+                          params={{ patientId: s(rel(v, "patients"), "id") }}
+                        >
+                          {t("patient")}
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
