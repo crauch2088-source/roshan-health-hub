@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatusBadge } from "@/components/kit";
@@ -98,6 +98,7 @@ function VisitsPage() {
   const create = useSave(
     async () => {
       const numericQueue = Math.floor(Math.random() * 900) + 100;
+      const qString = `Q${numericQueue}`;
       
       const { data: visit, error } = await supabase
         .from("visits")
@@ -116,13 +117,13 @@ function VisitsPage() {
         .single();
       if (error) throw new Error(error.message);
 
-      // إدخال تذكرة الطابور لضمان ظهورها في صفحة الطابور
+      // إدخال تذكرة الطابور بالقيمة النصية الصحيحة لكي تظهر فوراً في صفحة الطابور
       const { error: qErr } = await supabase.from("queue_tickets").insert({
         visit_id: visit.id,
         patient_id: form.patient_id,
         department_id: form.department_id || null,
         visit_date: date,
-        queue_number: numericQueue,
+        queue_number: qString,
         status: "waiting",
       });
       if (qErr) throw new Error(qErr.message);
@@ -135,6 +136,29 @@ function VisitsPage() {
         setOpen(false);
         setForm({ ...form, patient_id: "", notes: "" });
       },
+    },
+  );
+
+  // دالة لحذف الزيارة وإخفائها
+  const deleteVisit = useSave(
+    async (visitId: string) => {
+      const { error } = await supabase
+        .from("visits")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", visitId);
+      if (error) throw new Error(error.message);
+
+      // تحديث تذاكر الطابور المرتبطة أيضاً
+      await supabase
+        .from("queue_tickets")
+        .update({ status: "cancelled" })
+        .eq("visit_id", visitId);
+
+      return null;
+    },
+    {
+      invalidate: [["visits", date], ["queue"]],
+      successMessage: t("deleted"),
     },
   );
 
@@ -269,15 +293,15 @@ function VisitsPage() {
       <ErrorBox error={visits.error} />
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {rows.length === 0 ? (
             <Empty />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("queue_number")}</TableHead>
                   <TableHead>{t("patient")}</TableHead>
+                  <TableHead>{t("queue_number")}</TableHead>
                   <TableHead>{t("department")}</TableHead>
                   <TableHead>{t("doctor")}</TableHead>
                   <TableHead>{t("consultation_fee")}</TableHead>
@@ -288,38 +312,42 @@ function VisitsPage() {
               <TableBody>
                 {rows.map((v) => (
                   <TableRow key={s(v, "id")}>
-                    <TableCell dir="ltr" className="font-mono text-xs">
-                      {s(v, "visit_number") || "—"}
-                    </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium whitespace-nowrap">
                       {s(rel(v, "patients"), "full_name")}
                       <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
                         {s(rel(v, "patients"), "mrn")}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell dir="ltr" className="font-mono text-xs">
+                      Q{s(v, "visit_number") || "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {lang === "ar"
                         ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
                         : s(rel(v, "departments"), "name")}
                     </TableCell>
-                    <TableCell>{s(rel(v, "users"), "full_name") || "—"}</TableCell>
-                    <TableCell>{money(n(v, "consultation_fee"), currency)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{s(rel(v, "users"), "full_name") || "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{money(n(v, "consultation_fee"), currency)}</TableCell>
                     <TableCell>
                       <StatusBadge status={s(v, "status")} />
                     </TableCell>
-                    <TableCell className="text-end space-x-1 space-x-reverse">
+                    <TableCell className="text-end space-x-1 space-x-reverse whitespace-nowrap">
                       <Button asChild variant="ghost" size="sm">
                         <Link to="/clinic/$visitId" params={{ visitId: s(v, "id") }}>
                           {t("clinic")}
                         </Link>
                       </Button>
-                      <Button asChild variant="ghost" size="sm">
-                        <Link
-                          to="/patients/$patientId"
-                          params={{ patientId: s(rel(v, "patients"), "id") }}
-                        >
-                          {t("patient")}
-                        </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (confirm(t("are_you_sure"))) {
+                            deleteVisit.mutate(s(v, "id"));
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -329,7 +357,6 @@ function VisitsPage() {
           )}
         </CardContent>
       </Card>
-      {user ? null : null}
     </div>
   );
 }
