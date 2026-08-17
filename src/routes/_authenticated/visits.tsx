@@ -67,7 +67,7 @@ function VisitsPage() {
     supabase
       .from("visits")
       .select(
-        "id, visit_number, visit_date, status, visit_type, consultation_fee, patients(id, full_name, mrn), departments(name, name_ar), users(full_name)",
+        "id, visit_number, visit_date, status, visit_type, consultation_fee, patients!visits_patient_id_fkey(id, full_name, mrn), departments!visits_department_id_fkey(name, name_ar), users!visits_doctor_id_fkey(full_name)",
       )
       .eq("visit_date", date)
       .is("deleted_at", null)
