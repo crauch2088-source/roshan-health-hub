@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/visits")({
 
 function VisitsPage() {
   const { t, lang } = useLang();
-  const { can, user } = useAuth();
+  const { user } = useAuth();
   const { currency } = useSettings();
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
@@ -154,116 +154,114 @@ function VisitsPage() {
           className="w-40"
         />
         <ExportButtons rows={rows} filename={`roshan-visits-${date}`} />
-        {can("visits.create") ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="size-4" /> {t("new_visit")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{t("new_visit")}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <Field label={`${t("patient")} *`}>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="size-4" /> {t("new_visit")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("new_visit")}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <Field label={`${t("patient")} *`}>
+                <Select
+                  value={form.patient_id}
+                  onValueChange={(v) => setForm({ ...form, patient_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("search")} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {((patients.data ?? []) as Row[]).map((p) => (
+                      <SelectItem key={s(p, "id")} value={s(p, "id")}>
+                        {s(p, "full_name")} — {s(p, "mrn")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("department")}>
+                <Select
+                  value={form.department_id}
+                  onValueChange={(v) => setForm({ ...form, department_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("none")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {((departments.data ?? []) as Row[]).map((d) => (
+                      <SelectItem key={s(d, "id")} value={s(d, "id")}>
+                        {lang === "ar" ? s(d, "name_ar") || s(d, "name") : s(d, "name")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("doctor")}>
+                <Select
+                  value={form.doctor_id}
+                  onValueChange={(v) => setForm({ ...form, doctor_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("none")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {doctorRows.map((d) => (
+                      <SelectItem key={s(d, "id")} value={s(d, "id")}>
+                        {s(d, "full_name")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={t("visit_type")}>
                   <Select
-                    value={form.patient_id}
-                    onValueChange={(v) => setForm({ ...form, patient_id: v })}
+                    value={form.visit_type}
+                    onValueChange={(v) => setForm({ ...form, visit_type: v })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("search")} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {((patients.data ?? []) as Row[]).map((p) => (
-                        <SelectItem key={s(p, "id")} value={s(p, "id")}>
-                          {s(p, "full_name")} — {s(p, "mrn")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={t("department")}>
-                  <Select
-                    value={form.department_id}
-                    onValueChange={(v) => setForm({ ...form, department_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("none")} />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {((departments.data ?? []) as Row[]).map((d) => (
-                        <SelectItem key={s(d, "id")} value={s(d, "id")}>
-                          {lang === "ar" ? s(d, "name_ar") || s(d, "name") : s(d, "name")}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="walk_in">{t("walk_in")}</SelectItem>
+                      <SelectItem value="scheduled">{t("scheduled")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label={t("doctor")}>
-                  <Select
-                    value={form.doctor_id}
-                    onValueChange={(v) => setForm({ ...form, doctor_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("none")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {doctorRows.map((d) => (
-                        <SelectItem key={s(d, "id")} value={s(d, "id")}>
-                          {s(d, "full_name")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label={t("visit_type")}>
-                    <Select
-                      value={form.visit_type}
-                      onValueChange={(v) => setForm({ ...form, visit_type: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="walk_in">{t("walk_in")}</SelectItem>
-                        <SelectItem value="scheduled">{t("scheduled")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label={t("consultation_fee")}>
-                    <Input
-                      type="number"
-                      dir="ltr"
-                      min={0}
-                      value={form.consultation_fee}
-                      onChange={(e) => setForm({ ...form, consultation_fee: e.target.value })}
-                    />
-                  </Field>
-                </div>
-                <Field label={t("notes")}>
-                  <Textarea
-                    rows={2}
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                <Field label={t("consultation_fee")}>
+                  <Input
+                    type="number"
+                    dir="ltr"
+                    min={0}
+                    value={form.consultation_fee}
+                    onChange={(e) => setForm({ ...form, consultation_fee: e.target.value })}
                   />
                 </Field>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  {t("cancel")}
-                </Button>
-                <Button
-                  disabled={!form.patient_id || create.isPending}
-                  onClick={() => create.mutate(undefined as never)}
-                >
-                  {create.isPending ? t("saving") : t("save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : null}
+              <Field label={t("notes")}>
+                <Textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </Field>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                {t("cancel")}
+              </Button>
+              <Button
+                disabled={!form.patient_id || create.isPending}
+                onClick={() => create.mutate(undefined as never)}
+              >
+                {create.isPending ? t("saving") : t("save")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageHeader>
 
       <ErrorBox error={visits.error} />
