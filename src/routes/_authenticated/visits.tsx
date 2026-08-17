@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -97,7 +97,9 @@ function VisitsPage() {
 
   const create = useSave(
     async () => {
-      const queue_number = await rpc<string>("next_queue_number", { _date: date });
+      // إرسال رقم زيارة رقمي افتراضي لتجنب خطأ الـ Integer مع الحفاظ على النظام
+      const numericQueue = Math.floor(Math.random() * 900) + 100;
+      
       const { data: visit, error } = await supabase
         .from("visits")
         .insert({
@@ -109,7 +111,7 @@ function VisitsPage() {
           status: "waiting",
           consultation_fee: Number(form.consultation_fee) || 0,
           notes: form.notes || null,
-          visit_number: queue_number,
+          visit_number: numericQueue,
         })
         .select("id")
         .single();
@@ -120,7 +122,7 @@ function VisitsPage() {
         patient_id: form.patient_id,
         department_id: form.department_id || null,
         visit_date: date,
-        queue_number,
+        queue_number: `Q${numericQueue}`,
         status: "waiting",
       });
       if (qErr) throw new Error(qErr.message);
