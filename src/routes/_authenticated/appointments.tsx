@@ -123,13 +123,18 @@ function AppointmentsPage() {
 
   return (
     <div>
-      <PageHeader title={t("appointments")} subtitle={formatDate(date)}>
-        <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-        <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
-        
+      <PageHeader title={t("appointments")} subtitle={formatDate(date)} />
+
+      {/* شريط الأدوات العلوي (تاريخ، تصدير، وزر موعد جديد واضح) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
+        </div>
+
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" className="gap-1">
               <Plus className="size-4" /> موعد جديد
             </Button>
           </DialogTrigger>
@@ -205,7 +210,7 @@ function AppointmentsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </PageHeader>
+      </div>
 
       <ErrorBox error={list.error} />
 
