@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/visits")({
 
 function VisitsPage() {
   const { t, lang } = useLang();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { currency } = useSettings();
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
@@ -97,7 +97,6 @@ function VisitsPage() {
 
   const create = useSave(
     async () => {
-      // إرسال رقم زيارة رقمي افتراضي لتجنب خطأ الـ Integer مع الحفاظ على النظام
       const numericQueue = Math.floor(Math.random() * 900) + 100;
       
       const { data: visit, error } = await supabase
