@@ -34,7 +34,7 @@ function QueuePage() {
   const { can } = useAuth();
   const date = todayISO();
 
-  // جلب التذاكر بنفس طريقة جدول الزيارات تماماً لضمان التطابق التام
+  // استعلام مباشر ومبسط لجلب جميع تذاكر الطابور الخاصة بتاريخ اليوم دون فلاتر معقدة
   const queue = useRows(
     ["queue", date],
     () =>
@@ -44,8 +44,8 @@ function QueuePage() {
           "id, queue_number, status, created_at, called_at, visit_id, visit_date, patients(full_name, mrn), departments(name, name_ar)",
         )
         .eq("visit_date", date)
-        .order("queue_number", { ascending: true }),
-    { refetchInterval: 15000 },
+        .order("created_at", { ascending: true }),
+    { refetchInterval: 5000 },
   );
 
   const setStatus = useSave<{ id: string; visitId: string; status: string }>(
