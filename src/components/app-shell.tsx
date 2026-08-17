@@ -100,6 +100,20 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav className="space-y-4 p-3">
+      {/* Hard-coded debug link to verify rendering */}
+      <div className="px-2 pb-1">
+        <Link
+          to="/dashboard"
+          className={cn(
+            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+            "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          )}
+        >
+          <LayoutDashboard className="size-4" />
+          <span className="truncate">Dashboard (debug)</span>
+        </Link>
+      </div>
+
       {NAV.map((section) => {
         const items = section.items.filter((i) => can(i.perm));
         if (!items.length) return null;
