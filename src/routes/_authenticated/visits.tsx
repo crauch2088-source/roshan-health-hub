@@ -99,7 +99,7 @@ function VisitsPage() {
     async () => {
       const numericQueue = Math.floor(Math.random() * 900) + 100;
       const qString = `Q${numericQueue}`;
-      
+
       const { data: visit, error } = await supabase
         .from("visits")
         .insert({
@@ -117,8 +117,8 @@ function VisitsPage() {
         .single();
       if (error) throw new Error(error.message);
 
-      // إدخال متوافق تماماً مع جدول الطابور بـ queue_number و visit_id
-      await supabase.from("queue_tickets").insert({
+      // إدخال مع فحص شامل للأخطاء لكشف السبب الحقيقي إذا فشل الطابور
+      const queueInsert = await supabase.from("queue_tickets").insert({
         visit_id: visit.id,
         patient_id: form.patient_id,
         department_id: form.department_id || null,
@@ -126,6 +126,12 @@ function VisitsPage() {
         queue_number: qString,
         status: "waiting",
       });
+
+      if (queueInsert.error) {
+        console.error("Queue Insert Error:", queueInsert.error);
+        alert(`خطأ في إنشاء التذكرة: ${queueInsert.error.message}`);
+        throw new Error(queueInsert.error.message);
+      }
 
       return null;
     },
