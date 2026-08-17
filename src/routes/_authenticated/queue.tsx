@@ -34,7 +34,7 @@ function QueuePage() {
   const { can } = useAuth();
   const date = todayISO();
 
-  // الحل هنا: استخدام نطاق التاريخ لتجاوز مشكلة فروقات التوقيت أو تخزين الوقت مع التاريخ في قاعدة البيانات
+  // جلب التذاكر بنفس طريقة جدول الزيارات تماماً لضمان التطابق التام
   const queue = useRows(
     ["queue", date],
     () =>
@@ -43,8 +43,7 @@ function QueuePage() {
         .select(
           "id, queue_number, status, created_at, called_at, visit_id, visit_date, patients(full_name, mrn), departments(name, name_ar)",
         )
-        .gte("visit_date", `${date}T00:00:00`)
-        .lte("visit_date", `${date}T23:59:59`)
+        .eq("visit_date", date)
         .order("queue_number", { ascending: true }),
     { refetchInterval: 15000 },
   );
