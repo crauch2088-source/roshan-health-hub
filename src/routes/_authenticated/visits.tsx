@@ -100,6 +100,7 @@ function VisitsPage() {
       const numericQueue = Math.floor(Math.random() * 900) + 100;
       const qString = `Q${numericQueue}`;
 
+      // 1. إنشاء الزيارة
       const { data: visit, error } = await supabase
         .from("visits")
         .insert({
@@ -117,26 +118,25 @@ function VisitsPage() {
         .single();
       if (error) throw new Error(error.message);
 
-      // إدخال مع فحص شامل للأخطاء لكشف السبب الحقيقي إذا فشل الطابور
-      const queueInsert = await supabase.from("queue_tickets").insert({
+      // 2. إدخال الطابور بأقل قدر من الأعمدة لتجنب أي قيود
+      const { error: queueError } = await supabase.from("queue_tickets").insert({
         visit_id: visit.id,
         patient_id: form.patient_id,
-        department_id: form.department_id || null,
         visit_date: date,
         queue_number: qString,
         status: "waiting",
       });
 
-      if (queueInsert.error) {
-        console.error("Queue Insert Error:", queueInsert.error);
-        alert(`خطأ في إنشاء التذكرة: ${queueInsert.error.message}`);
-        throw new Error(queueInsert.error.message);
+      if (queueError) {
+        console.error("Queue Insert Error:", queueError);
+        alert(`خطأ في إنشاء التذكرة: ${queueError.message}`);
+        throw new Error(queueError.message);
       }
 
       return null;
     },
     {
-      invalidate: [["visits", date], ["queue"]],
+      invalidate: [["visits", date], ["queue", date], ["queue-all"]],
       successMessage: t("saved"),
       onDone: () => {
         setOpen(false);
@@ -161,7 +161,7 @@ function VisitsPage() {
       return null;
     },
     {
-      invalidate: [["visits", date], ["queue"]],
+      invalidate: [["visits", date], ["queue", date]],
       successMessage: t("deleted"),
     },
   );
