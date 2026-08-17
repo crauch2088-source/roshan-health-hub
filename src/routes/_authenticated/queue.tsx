@@ -43,7 +43,6 @@ function QueuePage() {
           "id, queue_number, status, created_at, called_at, visit_id, patients(full_name, mrn), departments(name, name_ar)",
         )
         .eq("visit_date", date)
-        .is("deleted_at", null)
         .order("queue_number", { ascending: true }),
     { refetchInterval: 15000 },
   );
