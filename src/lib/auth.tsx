@@ -130,7 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadProfile(data.session?.user?.id);
   }, [loadProfile]);
 
-  const isSuperAdmin = user?.role_code === "super_admin";
+  // Treat both super_admin and admin roles as privileged (short-circuit permissions)
+  const isSuperAdmin = user?.role_code === "super_admin" || user?.role_code === "admin";
 
   const value = useMemo<AuthCtx>(
     () => ({
