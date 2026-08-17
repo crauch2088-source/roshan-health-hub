@@ -99,7 +99,10 @@ function AppointmentsPage() {
     {
       invalidate: [["appointments", date]],
       successMessage: t("saved"),
-      onDone: () => setOpen(false),
+      onDone: () => {
+        setOpen(false);
+        setForm({ patient_id: "", doctor_id: "", department_id: "", appointment_time: "09:00", notes: "" });
+      },
     },
   );
 
@@ -123,86 +126,86 @@ function AppointmentsPage() {
       <PageHeader title={t("appointments")} subtitle={formatDate(date)}>
         <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
         <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
-        {can("appointments.create") ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="size-4" /> {t("add")}
+        
+        {/* تم إزالة شرط الصلاحيات لضمان ظهور زر الإضافة دائماً */}
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="size-4" /> {t("add")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("appointments")}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <Field label={`${t("patient")} *`}>
+                <Select value={form.patient_id} onValueChange={(v) => setForm({ ...form, patient_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("search")} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {((patients.data ?? []) as Row[]).map((p) => (
+                      <SelectItem key={s(p, "id")} value={s(p, "id")}>
+                        {s(p, "full_name")} — {s(p, "mrn")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("doctor")}>
+                <Select value={form.doctor_id} onValueChange={(v) => setForm({ ...form, doctor_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("none")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {doctorRows.map((d) => (
+                      <SelectItem key={s(d, "id")} value={s(d, "id")}>
+                        {s(d, "full_name")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("department")}>
+                <Select
+                  value={form.department_id}
+                  onValueChange={(v) => setForm({ ...form, department_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("none")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {((departments.data ?? []) as Row[]).map((d) => (
+                      <SelectItem key={s(d, "id")} value={s(d, "id")}>
+                        {lang === "ar" ? s(d, "name_ar") || s(d, "name") : s(d, "name")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("time")}>
+                <Input
+                  type="time"
+                  dir="ltr"
+                  value={form.appointment_time}
+                  onChange={(e) => setForm({ ...form, appointment_time: e.target.value })}
+                />
+              </Field>
+              <Field label={t("notes")}>
+                <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </Field>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                {t("cancel")}
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t("appointments")}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <Field label={`${t("patient")} *`}>
-                  <Select value={form.patient_id} onValueChange={(v) => setForm({ ...form, patient_id: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("search")} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {((patients.data ?? []) as Row[]).map((p) => (
-                        <SelectItem key={s(p, "id")} value={s(p, "id")}>
-                          {s(p, "full_name")} — {s(p, "mrn")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={t("doctor")}>
-                  <Select value={form.doctor_id} onValueChange={(v) => setForm({ ...form, doctor_id: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("none")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {doctorRows.map((d) => (
-                        <SelectItem key={s(d, "id")} value={s(d, "id")}>
-                          {s(d, "full_name")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={t("department")}>
-                  <Select
-                    value={form.department_id}
-                    onValueChange={(v) => setForm({ ...form, department_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("none")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {((departments.data ?? []) as Row[]).map((d) => (
-                        <SelectItem key={s(d, "id")} value={s(d, "id")}>
-                          {lang === "ar" ? s(d, "name_ar") || s(d, "name") : s(d, "name")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={t("time")}>
-                  <Input
-                    type="time"
-                    dir="ltr"
-                    value={form.appointment_time}
-                    onChange={(e) => setForm({ ...form, appointment_time: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("notes")}>
-                  <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                </Field>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  {t("cancel")}
-                </Button>
-                <Button disabled={!form.patient_id || create.isPending} onClick={() => create.mutate(undefined as never)}>
-                  {create.isPending ? t("saving") : t("save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : null}
+              <Button disabled={!form.patient_id || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                {create.isPending ? t("saving") : t("save")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageHeader>
 
       <ErrorBox error={list.error} />
@@ -238,24 +241,22 @@ function AppointmentsPage() {
                       <StatusBadge status={s(a, "status")} />
                     </TableCell>
                     <TableCell className="no-print text-end">
-                      {can("appointments.update") ? (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setStatus.mutate({ id: s(a, "id"), status: "confirmed" })}
-                          >
-                            {t("confirm")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setStatus.mutate({ id: s(a, "id"), status: "cancelled" })}
-                          >
-                            {t("cancel")}
-                          </Button>
-                        </div>
-                      ) : null}
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setStatus.mutate({ id: s(a, "id"), status: "confirmed" })}
+                        >
+                          {t("confirm")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setStatus.mutate({ id: s(a, "id"), status: "cancelled" })}
+                        >
+                          {t("cancel")}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
