@@ -14,6 +14,17 @@ export type AppUser = {
   active: boolean | null;
 };
 
+type Role = { code: string; name: string };
+type UserDbResponse = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  role_id: string | null;
+  active: boolean | null;
+  roles: Role | Role[] | null;
+};
+
 type AuthCtx = {
   loading: boolean;
   session: Session | null;
@@ -61,17 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       return;
     }
-    const roleRel = (data as unknown as { roles?: { code?: string; name?: string } }).roles;
+
+    const userData = data as unknown as UserDbResponse;
+    const roleRel = Array.isArray(userData.roles) ? userData.roles[0] : userData.roles;
+    
     const appUser: AppUser = {
-      id: data.id as string,
-      full_name: (data.full_name as string) ?? null,
-      email: (data.email as string) ?? null,
-      phone: (data.phone as string) ?? null,
-      role_id: (data.role_id as string) ?? null,
+      id: userData.id,
+      full_name: userData.full_name ?? null,
+      email: userData.email ?? null,
+      phone: userData.phone ?? null,
+      role_id: userData.role_id ?? null,
       role_code: roleRel?.code ?? null,
       role_name: roleRel?.name ?? null,
-      active: (data.active as boolean) ?? true,
+      active: userData.active ?? true,
     };
+    
     setUser(appUser);
     setError(null);
 
