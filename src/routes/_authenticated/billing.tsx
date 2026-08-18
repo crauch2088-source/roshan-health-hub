@@ -146,12 +146,12 @@ function BillingPage() {
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
-                <Plus className="size-4" /> {t("new_invoice")}
+                <Plus className="size-4" /> {t("new_invoice") || "فاتورة جديدة"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{t("new_invoice")}</DialogTitle>
+                <DialogTitle>{t("new_invoice") || "فاتورة جديدة"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -274,7 +274,7 @@ function BillingPage() {
         ) : null}
       </PageHeader>
 
-      <ErrorBox error={invoices.error} />
+      <ErrorBox error={invoices.error ?? patients.error ?? partners.error} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <StatCard label={t("invoices")} value={String(rows.length)} />
