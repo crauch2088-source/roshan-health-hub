@@ -123,7 +123,7 @@ function ClinicPage() {
                           size="sm"
                           onClick={() => {
                             navigate({
-                              to: "/_authenticated/clinic/$visitId",
+                              to: "/clinic/$visitId",
                               params: { visitId: s(visit, "id") },
                             });
                           }}
