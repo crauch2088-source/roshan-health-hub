@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import {
@@ -9,9 +9,9 @@ import {
   PageHeader,
   StatusBadge,
 } from "@/components/kit";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -20,12 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import { rel, s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/clinic")({
   head: () => ({
@@ -47,76 +45,20 @@ export const Route = createFileRoute("/_authenticated/clinic")({
       },
     ],
   }),
-
   component: ClinicPage,
 });
 
 function ClinicPage() {
   const { lang } = useLang();
-  const { user } = useAuth();
 
-  const [date, setDate] = useState(todayISO());
-  const [filterMyPatients, setFilterMyPatients] = useState(false);
+  const [date, setDate] = useState<string>(todayISO());
+  const [filterMyPatients, setFilterMyPatients] =
+    useState<boolean>(false);
 
-  /*
-   * IMPORTANT
-   *
-   * We deliberately use the authenticated Supabase user's UUID
-   * through auth_user_id -> users.id relationship.
-   *
-   * The visits.doctor_id column may contain the application users.id,
-   * not auth.uid().
-   */
-  const currentAuthUserId = user?.auth_user_id
-    ? String(user.auth_user_id)
-    : "";
-
-  /*
-   * First get the application user record associated with
-   * the currently authenticated Supabase user.
-   *
-   * This makes "My Patients" reliable and avoids confusing
-   * auth.users.id with public.users.id.
-   */
-  const currentUserQ = useRows<Row[]>(
-    ["current-app-user", currentAuthUserId],
+  const visits = useRows(
+    ["clinic-visits", date, filterMyPatients],
     () =>
       supabase
-        .from("users")
-        .select("id, auth_user_id, full_name, role_id, active")
-        .eq("auth_user_id", currentAuthUserId)
-        .eq("active", true)
-        .limit(1),
-    {
-      enabled: Boolean(currentAuthUserId),
-    },
-  );
-
-  const currentAppUser =
-    ((currentUserQ.data ?? []) as Row[])[0];
-
-  const currentAppUserId = s(
-    currentAppUser,
-    "id",
-  );
-
-  /*
-   * Fetch today's visits.
-   *
-   * IMPORTANT:
-   * We use visit_date rather than created_at for the clinic
-   * day filter. A visit created shortly before/after midnight
-   * should belong to its actual visit date.
-   */
-  const visits = useRows(
-    [
-      "clinic-visits",
-      date,
-      filterMyPatients,
-      currentAppUserId,
-    ],
-    () => {
-      let query = supabase
         .from("visits")
         .select(
           `
@@ -140,81 +82,47 @@ function ClinicPage() {
               name_ar
             ),
             users(
-              id,
               full_name
             )
           `,
         )
-        .eq("visit_date", date)
+        .gte("created_at", `${date}T00:00:00`)
+        .lte("created_at", `${date}T23:59:59`)
         .is("deleted_at", null)
         .order("created_at", {
           ascending: true,
-        });
-
-      /*
-       * Only apply the doctor filter when:
-       *
-       * 1. "My Patients" is enabled
-       * 2. We actually know the application users.id
-       */
-      if (filterMyPatients && currentAppUserId) {
-        query = query.eq(
-          "doctor_id",
-          currentAppUserId,
-        );
-      }
-
-      return query;
-    },
+        }),
   );
 
   const rows = (visits.data ?? []) as Row[];
 
-  if (
-    visits.isLoading ||
-    (filterMyPatients &&
-      currentUserQ.isLoading)
-  ) {
+  if (visits.isLoading) {
     return <Loading />;
   }
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title={
-          lang === "ar"
-            ? "العيادة"
-            : "Clinic"
-        }
+        title={lang === "ar" ? "العيادة" : "Clinic"}
         subtitle={formatDate(date)}
       >
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            variant={
-              filterMyPatients
-                ? "default"
-                : "outline"
-            }
+            variant={filterMyPatients ? "default" : "outline"}
             size="sm"
             type="button"
             onClick={() =>
-              setFilterMyPatients(
-                (value) => !value,
-              )
+              setFilterMyPatients((current) => !current)
             }
           >
-            {lang === "ar"
-              ? "مرضاي فقط"
-              : "My Patients"}
+            {lang === "ar" ? "مرضاي فقط" : "My Patients"}
           </Button>
 
           <Input
             type="date"
             dir="ltr"
             value={date}
-            onChange={(e) =>
-              setDate(e.target.value)
-            }
+            onChange={(e) => setDate(e.target.value)}
             className="w-40"
           />
 
@@ -225,12 +133,7 @@ function ClinicPage() {
         </div>
       </PageHeader>
 
-      <ErrorBox
-        error={
-          visits.error ??
-          currentUserQ.error
-        }
-      />
+      <ErrorBox error={visits.error} />
 
       <Card>
         <CardContent className="overflow-x-auto p-0">
@@ -241,9 +144,7 @@ function ClinicPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    {lang === "ar"
-                      ? "المريض"
-                      : "Patient"}
+                    {lang === "ar" ? "المريض" : "Patient"}
                   </TableHead>
 
                   <TableHead>
@@ -259,9 +160,7 @@ function ClinicPage() {
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar"
-                      ? "الحالة"
-                      : "Status"}
+                    {lang === "ar" ? "الحالة" : "Status"}
                   </TableHead>
 
                   <TableHead className="text-end">
@@ -274,37 +173,17 @@ function ClinicPage() {
 
               <TableBody>
                 {rows.map((visit) => {
-                  /*
-                   * Explicitly convert the visit id to a string.
-                   *
-                   * This is the critical value used by the
-                   * /clinic/$visitId route.
-                   */
-                  const visitId = s(
-                    visit,
-                    "id",
-                  ).trim();
-
-                  const patient = rel(
-                    visit,
-                    "patients",
-                  );
-
+                  const patient = rel(visit, "patients");
                   const department = rel(
                     visit,
                     "departments",
                   );
 
-                  const patientId = s(
-                    patient,
-                    "id",
-                  );
+                  const patientId = s(patient, "id");
+                  const visitId = s(visit, "id");
 
                   const dob =
-                    s(
-                      patient,
-                      "date_of_birth",
-                    ) ||
+                    s(patient, "date_of_birth") ||
                     s(patient, "dob");
 
                   const ageVal = calcAge(dob);
@@ -314,16 +193,28 @@ function ClinicPage() {
                       ? `${ageVal} yrs`
                       : "—";
 
-                  const gender =
-                    s(patient, "gender");
-
                   /*
-                   * We do NOT use Button asChild here.
+                   * IMPORTANT
+                   * =========
                    *
-                   * The Link itself is the clickable element.
-                   * This removes Radix Slot from the navigation
-                   * path and eliminates a possible event/DOM issue.
+                   * We deliberately use a normal HTML <a>
+                   * instead of:
+                   *
+                   * <Button asChild>
+                   *   <Link ... />
+                   * </Button>
+                   *
+                   * This completely avoids Radix Slot /
+                   * pointer-events / nested component issues.
+                   *
+                   * The target route is:
+                   * /clinic/{visitId}
                    */
+
+                  const clinicUrl = visitId
+                    ? `/clinic/${encodeURIComponent(visitId)}`
+                    : "";
+
                   return (
                     <TableRow
                       key={
@@ -334,36 +225,34 @@ function ClinicPage() {
                         )}`
                       }
                     >
+                      {/* PATIENT */}
                       <TableCell className="whitespace-nowrap font-medium">
-                        {s(
-                          patient,
-                          "full_name",
-                        ) || "—"}
+                        {s(patient, "full_name") ||
+                          "—"}
 
-                        {s(
-                          patient,
-                          "mrn",
-                        ) ? (
+                        {s(patient, "mrn") ? (
                           <span
                             className="ms-2 text-xs text-muted-foreground"
                             dir="ltr"
                           >
-                            {s(
-                              patient,
-                              "mrn",
-                            )}
+                            {s(patient, "mrn")}
                           </span>
                         ) : null}
                       </TableCell>
 
+                      {/* AGE / GENDER */}
                       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                         {ageStr}
 
-                        {gender
-                          ? ` (${gender})`
+                        {s(patient, "gender")
+                          ? ` (${s(
+                              patient,
+                              "gender",
+                            )})`
                           : ""}
                       </TableCell>
 
+                      {/* DEPARTMENT */}
                       <TableCell className="whitespace-nowrap">
                         {lang === "ar"
                           ? s(
@@ -381,6 +270,7 @@ function ClinicPage() {
                             ) || "—"}
                       </TableCell>
 
+                      {/* STATUS */}
                       <TableCell>
                         <StatusBadge
                           status={s(
@@ -390,27 +280,53 @@ function ClinicPage() {
                         />
                       </TableCell>
 
+                      {/* ACTION */}
                       <TableCell className="whitespace-nowrap text-end">
                         {visitId ? (
-                          <Link
-                            to="/clinic/$visitId"
-                            params={{
-                              visitId,
-                            }}
-                            className="inline-flex h-8 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          <a
+                            href={clinicUrl}
+                            className="
+                              inline-flex
+                              h-8
+                              items-center
+                              justify-center
+                              gap-2
+                              whitespace-nowrap
+                              rounded-md
+                              bg-primary
+                              px-3
+                              text-xs
+                              font-medium
+                              text-primary-foreground
+                              shadow
+                              transition-colors
+                              hover:bg-primary/90
+                              focus-visible:outline-none
+                              focus-visible:ring-1
+                              focus-visible:ring-ring
+                              cursor-pointer
+                            "
                             title={
                               lang === "ar"
-                                ? "فتح الاستشارة"
-                                : "Open consultation"
+                                ? `فتح زيارة ${s(
+                                    visit,
+                                    "visit_number",
+                                  )}`
+                                : `Open visit ${s(
+                                    visit,
+                                    "visit_number",
+                                  )}`
                             }
                           >
                             {lang === "ar"
                               ? "فتح"
                               : "Open"}
-                          </Link>
+                          </a>
                         ) : (
-                          <span
-                            className="inline-flex h-8 items-center justify-center rounded-md border border-input px-3 text-xs text-muted-foreground opacity-50"
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled
                             title={
                               lang === "ar"
                                 ? "معرّف الزيارة غير موجود"
@@ -420,7 +336,7 @@ function ClinicPage() {
                             {lang === "ar"
                               ? "فتح"
                               : "Open"}
-                          </span>
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
