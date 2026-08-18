@@ -95,11 +95,10 @@ function VisitsPage() {
       .is("deleted_at", null),
   );
 
-  // تم تبسيط الدالة تماماً، قاعدة البيانات ستقوم بإضافة تذكرة الطابور تلقائياً عبر الـ Trigger
   const create = useSave(
     async () => {
       const numericQueue = Math.floor(Math.random() * 900) + 100;
-      
+
       const { error } = await supabase
         .from("visits")
         .insert({
@@ -113,7 +112,7 @@ function VisitsPage() {
           notes: form.notes || null,
           visit_number: numericQueue,
         });
-        
+
       if (error) throw new Error(error.message);
       return null;
     },
