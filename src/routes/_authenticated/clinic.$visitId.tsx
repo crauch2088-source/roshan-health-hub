@@ -265,7 +265,7 @@ function Consultation() {
         </Button>
       </PageHeader>
 
-      <ErrorBox error={visitQ.error} />
+      <ErrorBox error={visitQ.error ?? vitalsQ.error ?? emrQ.error ?? testsQ.error ?? medsQ.error} />
 
       <Tabs defaultValue="emr">
         <TabsList className="mb-4 flex-wrap">
