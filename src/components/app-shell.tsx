@@ -39,56 +39,56 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "dashboard",
     items: [
-      { to: "/dashboard", key: "dashboard", icon: <LayoutDashboard className="size-4" />, perm: "dashboard.read" },
+      { to: "/_authenticated/dashboard", key: "dashboard", icon: <LayoutDashboard className="size-4" />, perm: "dashboard.read" },
     ],
   },
   {
     group: "patients",
     items: [
-      { to: "/patients", key: "patients", icon: <UserRound className="size-4" />, perm: "patients.read" },
-      { to: "/visits", key: "visits", icon: <ClipboardList className="size-4" />, perm: "visits.read" },
-      { to: "/queue", key: "queue", icon: <ListOrdered className="size-4" />, perm: "queue.read" },
-      { to: "/appointments", key: "appointments", icon: <CalendarDays className="size-4" />, perm: "appointments.read" },
+      { to: "/_authenticated/patients", key: "patients", icon: <UserRound className="size-4" />, perm: "patients.read" },
+      { to: "/_authenticated/visits", key: "visits", icon: <ClipboardList className="size-4" />, perm: "visits.read" },
+      { to: "/_authenticated/queue", key: "queue", icon: <ListOrdered className="size-4" />, perm: "queue.read" },
+      { to: "/_authenticated/appointments", key: "appointments", icon: <CalendarDays className="size-4" />, perm: "appointments.read" },
     ],
   },
   {
     group: "clinic",
     items: [
-      { to: "/clinic", key: "clinic", icon: <Stethoscope className="size-4" />, perm: "emr.read" },
-      { to: "/followups", key: "followups", icon: <Activity className="size-4" />, perm: "followups.read" },
-      { to: "/certificates", key: "certificates", icon: <FileText className="size-4" />, perm: "certificates.read" },
+      { to: "/_authenticated/clinic", key: "clinic", icon: <Stethoscope className="size-4" />, perm: "emr.read" },
+      { to: "/_authenticated/followups", key: "followups", icon: <Activity className="size-4" />, perm: "followups.read" },
+      { to: "/_authenticated/certificates", key: "certificates", icon: <FileText className="size-4" />, perm: "certificates.read" },
     ],
   },
   {
     group: "laboratory",
     items: [
-      { to: "/lab", key: "laboratory", icon: <FlaskConical className="size-4" />, perm: "lab.read" },
-      { to: "/lab-catalog", key: "lab_catalog", icon: <ScrollText className="size-4" />, perm: "lab_admin.read" },
+      { to: "/_authenticated/lab", key: "laboratory", icon: <FlaskConical className="size-4" />, perm: "lab.read" },
+      { to: "/_authenticated/lab-catalog", key: "lab_catalog", icon: <ScrollText className="size-4" />, perm: "lab_admin.read" },
     ],
   },
   {
     group: "pharmacy",
     items: [
-      { to: "/pharmacy", key: "pharmacy", icon: <Pill className="size-4" />, perm: "pharmacy.read" },
-      { to: "/inventory", key: "inventory", icon: <Warehouse className="size-4" />, perm: "pharmacy.read" },
+      { to: "/_authenticated/pharmacy", key: "pharmacy", icon: <Pill className="size-4" />, perm: "pharmacy.read" },
+      { to: "/_authenticated/inventory", key: "inventory", icon: <Warehouse className="size-4" />, perm: "pharmacy.read" },
     ],
   },
   {
     group: "billing",
     items: [
-      { to: "/billing", key: "billing", icon: <Receipt className="size-4" />, perm: "billing.read" },
-      { to: "/accounting", key: "accounting", icon: <Banknote className="size-4" />, perm: "accounting.read" },
-      { to: "/expenses", key: "expenses", icon: <Wallet className="size-4" />, perm: "accounting.read" },
-      { to: "/partners", key: "partners", icon: <Handshake className="size-4" />, perm: "partners.read" },
-      { to: "/reports", key: "reports", icon: <BarChart3 className="size-4" />, perm: "reports.read" },
+      { to: "/_authenticated/billing", key: "billing", icon: <Receipt className="size-4" />, perm: "billing.read" },
+      { to: "/_authenticated/accounting", key: "accounting", icon: <Banknote className="size-4" />, perm: "accounting.read" },
+      { to: "/_authenticated/expenses", key: "expenses", icon: <Wallet className="size-4" />, perm: "accounting.read" },
+      { to: "/_authenticated/partners", key: "partners", icon: <Handshake className="size-4" />, perm: "partners.read" },
+      { to: "/_authenticated/reports", key: "reports", icon: <BarChart3 className="size-4" />, perm: "reports.read" },
     ],
   },
   {
     group: "settings",
     items: [
-      { to: "/users", key: "users", icon: <Users className="size-4" />, perm: "users.read" },
-      { to: "/settings", key: "settings", icon: <SettingsIcon className="size-4" />, perm: "settings.read" },
-      { to: "/audit", key: "audit_log", icon: <ScrollText className="size-4" />, perm: "audit.read" },
+      { to: "/_authenticated/users", key: "users", icon: <Users className="size-4" />, perm: "users.read" },
+      { to: "/_authenticated/settings", key: "settings", icon: <SettingsIcon className="size-4" />, perm: "settings.read" },
+      { to: "/_authenticated/audit", key: "audit_log", icon: <ScrollText className="size-4" />, perm: "audit.read" },
     ],
   },
 ];
@@ -100,7 +100,6 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="space-y-4 p-3">
       {NAV.map((section) => {
-        // تم تجاوز فلترة الأالصلاحيات مؤقتاً لعرض كافة الروابط وضمان ظهور القائمة بالكامل
         const items = section.items;
 
         if (!items.length) return null;
