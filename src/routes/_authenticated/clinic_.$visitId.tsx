@@ -672,9 +672,3 @@ subtitle={${t("mrn")}: ${s(patient, "mrn")} · ${t("age")}: ${calcAge(s(patient,
 
 );
 }
-
-جربت الاختبار و النتيجه
-
-العنوان https://roshan-health-hub.vercel.app/clinic/test
-
-النتيجه هي نفس الصفحه
