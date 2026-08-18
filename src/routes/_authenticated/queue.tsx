@@ -36,7 +36,7 @@ import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/visits")({
+export const Route = createFileRoute("/_authenticated/queue")({
   head: () => ({
     meta: [
       { title: "Visits — ROSHAN Medical Center" },

@@ -54,7 +54,12 @@ function ExpensesPage() {
   const { currency } = useSettings();
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    category: string;
+    amount: string;
+    description: string;
+    expense_date: string;
+  }>({
     category: EXPENSE_CATEGORIES[0] ?? "other",
     amount: "0",
     description: "",

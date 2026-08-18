@@ -120,7 +120,7 @@ function ClinicPage() {
                       <TableCell className="text-end whitespace-nowrap">
                         <Button asChild size="sm">
                           <Link
-                            to="/_authenticated/clinic/$visitId"
+                            to="/clinic/$visitId"
                             params={{ visitId: s(visit, "id") }}
                           >
                             {lang === "ar" ? "فتح" : "Open"}
