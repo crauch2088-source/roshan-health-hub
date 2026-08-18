@@ -95,21 +95,13 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useLang();
-  const { user } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
   const location = useLocation();
-
-  const isPrivileged =
-    user?.role_code === "super_admin" ||
-    user?.role_code === "admin" ||
-    user?.role_name === "Super Admin" ||
-    user?.role_name === "Admin";
 
   return (
     <nav className="space-y-4 p-3">
       {NAV.map((section) => {
-        const items = isPrivileged
-          ? section.items
-          : section.items.filter((i) => Boolean(i.perm));
+        const items = section.items.filter((i) => isSuperAdmin || can(i.perm));
 
         if (!items.length) return null;
         return (
