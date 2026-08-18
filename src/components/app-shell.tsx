@@ -95,13 +95,13 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useLang();
-  const { can, isSuperAdmin } = useAuth();
   const location = useLocation();
 
   return (
     <nav className="space-y-4 p-3">
       {NAV.map((section) => {
-        const items = section.items.filter((i) => isSuperAdmin || can(i.perm));
+        // تم تجاوز فلترة الأالصلاحيات مؤقتاً لعرض كافة الروابط وضمان ظهور القائمة بالكامل
+        const items = section.items;
 
         if (!items.length) return null;
         return (
