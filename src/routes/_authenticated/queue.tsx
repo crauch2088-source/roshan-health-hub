@@ -67,7 +67,7 @@ function QueuePage() {
     try {
       const patch: Row = { status };
       if (status === "called") patch["called_at"] = new Date().toISOString();
-      
+
       const { error: updateError } = await supabase.from("queue_tickets").update(patch).eq("id", id);
       if (updateError) throw updateError;
 
