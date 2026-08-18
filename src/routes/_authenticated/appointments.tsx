@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatusBadge } from "@/components/kit";
@@ -30,7 +30,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/lib/auth";
 import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
@@ -40,9 +39,9 @@ export const Route = createFileRoute("/_authenticated/appointments")({
   head: () => ({
     meta: [
       { title: "Appointments — ROSHAN Medical Center" },
-      { name: "description", content: "Book and manage patient appointments per doctor and department." },
+      { name: "description", content: "Manage patient appointments and scheduling." },
       { property: "og:title", content: "Appointments — ROSHAN Medical Center" },
-      { property: "og:description", content: "Book and manage patient appointments per doctor and department." },
+      { property: "og:description", content: "Manage patient appointments and scheduling." },
     ],
   }),
   component: AppointmentsPage,
@@ -50,7 +49,6 @@ export const Route = createFileRoute("/_authenticated/appointments")({
 
 function AppointmentsPage() {
   const { t, lang } = useLang();
-  const { can } = useAuth();
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -61,25 +59,36 @@ function AppointmentsPage() {
     notes: "",
   });
 
-  const list = useRows(["appointments", date], () =>
+  const appointments = useRows(["appointments", date], () =>
     supabase
       .from("appointments")
       .select(
-        "id, appointment_date, appointment_time, status, notes, patients!appointments_patient_id_fkey(full_name, mrn), users(full_name), departments(name, name_ar)",
+        "id, appointment_date, status, notes, patients(id, full_name, mrn), users(full_name), departments(name, name_ar)",
       )
       .eq("appointment_date", date)
       .is("deleted_at", null)
-      .order("appointment_time", { ascending: true }),
+      .order("appointment_date", { ascending: true }),
   );
 
   const patients = useRows(["patients-lite"], () =>
-    supabase.from("patients").select("id, full_name, mrn").is("deleted_at", null).limit(500),
+    supabase
+      .from("patients")
+      .select("id, full_name, mrn")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(500),
   );
+
   const departments = useRows(["departments"], () =>
     supabase.from("departments").select("id, name, name_ar").is("deleted_at", null),
   );
+
   const doctors = useRows(["doctors"], () =>
-    supabase.from("users").select("id, full_name, roles(code)").eq("active", true).is("deleted_at", null),
+    supabase
+      .from("users")
+      .select("id, full_name, roles(code)")
+      .eq("active", true)
+      .is("deleted_at", null),
   );
 
   const create = useSave(
@@ -88,11 +97,11 @@ function AppointmentsPage() {
         patient_id: form.patient_id,
         doctor_id: form.doctor_id || null,
         department_id: form.department_id || null,
-        appointment_date: date,
-        appointment_time: form.appointment_time,
+        appointment_date: `${date}T${form.appointment_time}:00`,
         status: "scheduled",
         notes: form.notes || null,
       });
+
       if (error) throw new Error(error.message);
       return null;
     },
@@ -106,45 +115,58 @@ function AppointmentsPage() {
     },
   );
 
-  const setStatus = useSave<{ id: string; status: string }>(
-    async ({ id, status }) => {
-      const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
+  const deleteAppointment = useSave(
+    async (id: string) => {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw new Error(error.message);
       return null;
     },
-    { invalidate: [["appointments", date]], successMessage: t("saved") },
+    {
+      invalidate: [["appointments", date]],
+      successMessage: t("deleted"),
+    },
   );
 
-  const rows = (list.data ?? []) as Row[];
-  const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) =>
-    ["gp", "dentist", "specialist"].includes(s(rel(d, "roles"), "code")),
-  );
-  
-  if (list.isLoading) return <Loading />;
+  const rows = (appointments.data ?? []) as Row[];
+
+  // توسيع فلترة الأطباء لضمان ظهور كافة الكوادر الطبية
+  const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) => {
+    const roleCode = s(rel(d, "roles"), "code").toLowerCase();
+    return !roleCode || ["gp", "dentist", "specialist", "doctor", "physician"].includes(roleCode);
+  });
+
+  if (appointments.isLoading) return <Loading />;
 
   return (
     <div>
-      <PageHeader title={t("appointments")} subtitle={formatDate(date)} />
-
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
-          <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-          <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
-        </div>
-
+      <PageHeader title={t("appointments")} subtitle={formatDate(date)}>
+        <Input
+          type="date"
+          dir="ltr"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-40"
+        />
+        <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1">
-              <Plus className="size-4" /> {t("new_appointment") || "موعد جديد"}
+            <Button size="sm">
+              <Plus className="size-4" /> {t("new_appointment")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t("new_appointment") || "موعد جديد"}</DialogTitle>
+              <DialogTitle>{t("new_appointment")}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
               <Field label={`${t("patient")} *`}>
-                <Select value={form.patient_id} onValueChange={(v) => setForm({ ...form, patient_id: v })}>
+                <Select
+                  value={form.patient_id}
+                  onValueChange={(v) => setForm({ ...form, patient_id: v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t("search")} />
                   </SelectTrigger>
@@ -157,8 +179,12 @@ function AppointmentsPage() {
                   </SelectContent>
                 </Select>
               </Field>
+
               <Field label={t("doctor")}>
-                <Select value={form.doctor_id} onValueChange={(v) => setForm({ ...form, doctor_id: v })}>
+                <Select
+                  value={form.doctor_id}
+                  onValueChange={(v) => setForm({ ...form, doctor_id: v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t("none")} />
                   </SelectTrigger>
@@ -171,6 +197,7 @@ function AppointmentsPage() {
                   </SelectContent>
                 </Select>
               </Field>
+
               <Field label={t("department")}>
                 <Select
                   value={form.department_id}
@@ -188,6 +215,7 @@ function AppointmentsPage() {
                   </SelectContent>
                 </Select>
               </Field>
+
               <Field label={t("time")}>
                 <Input
                   type="time"
@@ -196,74 +224,92 @@ function AppointmentsPage() {
                   onChange={(e) => setForm({ ...form, appointment_time: e.target.value })}
                 />
               </Field>
+
               <Field label={t("notes")}>
-                <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <Textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </Field>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button disabled={!form.patient_id || create.isPending} onClick={() => create.mutate(undefined as never)}>
+              <Button
+                disabled={!form.patient_id || create.isPending}
+                onClick={() => create.mutate(undefined as never)}
+              >
                 {create.isPending ? t("saving") : t("save")}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </PageHeader>
 
-      <ErrorBox error={list.error ?? patients.error ?? departments.error ?? doctors.error} />
+      <ErrorBox error={appointments.error} />
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {rows.length === 0 ? (
             <Empty />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("time")}</TableHead>
                   <TableHead>{t("patient")}</TableHead>
                   <TableHead>{t("doctor")}</TableHead>
                   <TableHead>{t("department")}</TableHead>
+                  <TableHead>{t("time")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
-                  <TableHead className="no-print" />
+                  <TableHead className="text-end">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((a) => (
-                  <TableRow key={s(a, "id")}>
-                    <TableCell dir="ltr">{s(a, "appointment_time").slice(0, 5)}</TableCell>
-                    <TableCell className="font-medium">{s(rel(a, "patients"), "full_name")}</TableCell>
-                    <TableCell>{s(rel(a, "users"), "full_name") || "—"}</TableCell>
-                    <TableCell>
-                      {lang === "ar"
-                        ? s(rel(a, "departments"), "name_ar") || s(rel(a, "departments"), "name")
-                        : s(rel(a, "departments"), "name")}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={s(a, "status")} />
-                    </TableCell>
-                    <TableCell className="no-print text-end">
-                      <div className="flex justify-end gap-1">
+                {rows.map((item) => {
+                  const patient = rel(item, "patients");
+                  const doctor = rel(item, "users");
+                  const department = rel(item, "departments");
+                  const dateVal = s(item, "appointment_date");
+
+                  return (
+                    <TableRow key={s(item, "id")}>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {s(patient, "full_name") || "—"}
+                        <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
+                          {s(patient, "mrn")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{s(doctor, "full_name") || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {lang === "ar"
+                          ? s(department, "name_ar") || s(department, "name") || "—"
+                          : s(department, "name") || "—"}
+                      </TableCell>
+                      <TableCell dir="ltr" className="whitespace-nowrap font-mono text-xs">
+                        {dateVal ? new Date(dateVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(item, "status")} />
+                      </TableCell>
+                      <TableCell className="text-end whitespace-nowrap">
                         <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setStatus.mutate({ id: s(a, "id"), status: "confirmed" })}
-                        >
-                          {t("confirm")}
-                        </Button>
-                        <Button
-                          size="sm"
                           variant="ghost"
-                          onClick={() => setStatus.mutate({ id: s(a, "id"), status: "cancelled" })}
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm(t("are_you_sure"))) {
+                              deleteAppointment.mutate(s(item, "id"));
+                            }
+                          }}
                         >
-                          {t("cancel")}
+                          <Trash2 className="size-4" />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
