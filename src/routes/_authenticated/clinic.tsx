@@ -2,6 +2,7 @@ import {
   createFileRoute,
   Link,
 } from "@tanstack/react-router";
+import { useState } from "react";
 
 import {
   Empty,
@@ -68,13 +69,12 @@ export const Route = createFileRoute(
 function ClinicPage() {
   const { lang } = useLang();
 
-  const [date, setDate] =
-    useStateCompat(todayISO());
+  const [date, setDate] = useState(
+    todayISO(),
+  );
 
-  const [
-    filterMyPatients,
-    setFilterMyPatients,
-  ] = useBooleanCompat(false);
+  const [filterMyPatients, setFilterMyPatients] =
+    useState(false);
 
   const visits = useRows(
     [
@@ -86,26 +86,7 @@ function ClinicPage() {
       supabase
         .from("visits")
         .select(
-          `
-            id,
-            visit_number,
-            status,
-            created_at,
-            patients(
-              id,
-              full_name,
-              mrn,
-              dob,
-              gender
-            ),
-            departments(
-              name,
-              name_ar
-            ),
-            users(
-              full_name
-            )
-          `,
+          "id, visit_number, status, created_at, patients(id, full_name, mrn, dob, gender), departments(name, name_ar), users(full_name)",
         )
         .gte(
           "created_at",
@@ -116,17 +97,13 @@ function ClinicPage() {
           `${date}T23:59:59`,
         )
         .is("deleted_at", null)
-        .order(
-          "created_at",
-          {
-            ascending: true,
-          },
-        ),
+        .order("created_at", {
+          ascending: true,
+        }),
   );
 
   const rows =
-    (visits.data ??
-      []) as Row[];
+    (visits.data ?? []) as Row[];
 
   if (visits.isLoading) {
     return <Loading />;
@@ -144,13 +121,13 @@ function ClinicPage() {
       >
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            type="button"
             variant={
               filterMyPatients
                 ? "default"
                 : "outline"
             }
             size="sm"
+            type="button"
             onClick={() =>
               setFilterMyPatients(
                 !filterMyPatients,
@@ -167,9 +144,7 @@ function ClinicPage() {
             dir="ltr"
             value={date}
             onChange={(e) =>
-              setDate(
-                e.target.value,
-              )
+              setDate(e.target.value)
             }
             className="w-40"
           />
@@ -181,9 +156,7 @@ function ClinicPage() {
         </div>
       </PageHeader>
 
-      <ErrorBox
-        error={visits.error}
-      />
+      <ErrorBox error={visits.error} />
 
       <Card>
         <CardContent className="p-0 overflow-x-auto">
@@ -226,152 +199,133 @@ function ClinicPage() {
               </TableHeader>
 
               <TableBody>
-                {rows.map(
-                  (visit) => {
-                    const patient =
-                      rel(
-                        visit,
-                        "patients",
-                      );
+                {rows.map((visit) => {
+                  const patient = rel(
+                    visit,
+                    "patients",
+                  );
 
-                    const department =
-                      rel(
-                        visit,
-                        "departments",
-                      );
+                  const department = rel(
+                    visit,
+                    "departments",
+                  );
 
-                    const patientId =
-                      s(
-                        patient,
-                        "id",
-                      );
+                  const patientId = s(
+                    patient,
+                    "id",
+                  );
 
-                    const visitId =
-                      s(
-                        visit,
-                        "id",
-                      );
+                  const visitId = s(
+                    visit,
+                    "id",
+                  );
 
-                    const dob =
-                      s(
-                        patient,
-                        "dob",
-                      );
+                  const dob = s(
+                    patient,
+                    "dob",
+                  );
 
-                    const ageVal =
-                      calcAge(
-                        dob,
-                      );
+                  const ageVal =
+                    calcAge(dob);
 
-                    const ageStr =
-                      ageVal !==
-                      null
-                        ? `${ageVal} yrs`
-                        : "—";
+                  const ageStr =
+                    ageVal !== null
+                      ? `${ageVal} yrs`
+                      : "—";
 
-                    return (
-                      <TableRow
-                        key={
-                          visitId
-                        }
-                      >
-                        <TableCell className="font-medium whitespace-nowrap">
+                  return (
+                    <TableRow
+                      key={visitId}
+                    >
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {s(
+                          patient,
+                          "full_name",
+                        ) || "—"}
+
+                        <span
+                          className="ms-2 text-xs text-muted-foreground"
+                          dir="ltr"
+                        >
                           {s(
                             patient,
-                            "full_name",
-                          ) ||
-                            "—"}
+                            "mrn",
+                          )}
+                        </span>
+                      </TableCell>
 
-                          <span
-                            className="ms-2 text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {s(
+                      <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
+                        {ageStr}{" "}
+                        {s(
+                          patient,
+                          "gender",
+                        )
+                          ? `(${s(
                               patient,
-                              "mrn",
-                            )}
-                          </span>
-                        </TableCell>
+                              "gender",
+                            )})`
+                          : ""}
+                      </TableCell>
 
-                        <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
-                          {
-                            ageStr
-                          }{" "}
-                          {s(
-                            patient,
-                            "gender",
-                          )
-                            ? `(${s(
-                                patient,
-                                "gender",
-                              )})`
-                            : ""}
-                        </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {lang === "ar"
+                          ? s(
+                              department,
+                              "name_ar",
+                            ) ||
+                            s(
+                              department,
+                              "name",
+                            ) ||
+                            "—"
+                          : s(
+                              department,
+                              "name",
+                            ) || "—"}
+                      </TableCell>
 
-                        <TableCell className="whitespace-nowrap">
-                          {lang === "ar"
-                            ? s(
-                                department,
-                                "name_ar",
-                              ) ||
-                              s(
-                                department,
-                                "name",
-                              ) ||
-                              "—"
-                            : s(
-                                department,
-                                "name",
-                              ) ||
-                              "—"}
-                        </TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          status={s(
+                            visit,
+                            "status",
+                          )}
+                        />
+                      </TableCell>
 
-                        <TableCell>
-                          <StatusBadge
-                            status={s(
-                              visit,
-                              "status",
-                            )}
-                          />
-                        </TableCell>
-
-                        <TableCell className="text-end whitespace-nowrap">
-                          {visitId ? (
-                            <Button
-                              asChild
-                              type="button"
-                              size="sm"
+                      <TableCell className="text-end whitespace-nowrap">
+                        {visitId ? (
+                          <Button
+                            asChild
+                            type="button"
+                            size="sm"
+                          >
+                            <Link
+                              to="/clinic/$visitId"
+                              params={{
+                                visitId,
+                              }}
                             >
-                              <Link
-                                to="/clinic/$visitId"
-                                params={{
-                                  visitId:
-                                    visitId,
-                                }}
-                              >
-                                {lang ===
-                                "ar"
-                                  ? "فتح"
-                                  : "Open"}
-                              </Link>
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled
-                            >
-                              {lang ===
-                              "ar"
+                              {lang === "ar"
                                 ? "فتح"
                                 : "Open"}
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  },
-                )}
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled
+                          >
+                            {lang === "ar"
+                              ? "فتح"
+                              : "Open"}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -379,26 +333,4 @@ function ClinicPage() {
       </Card>
     </div>
   );
-}
-
-/*
- * Small local state helpers.
- *
- * These avoid adding another dependency.
- */
-import { useState } from "react";
-
-function useStateCompat<T>(
-  initial: T,
-): [T, (value: T) => void] {
-  return useState(initial);
-}
-
-function useBooleanCompat(
-  initial: boolean,
-): [
-  boolean,
-  (value: boolean) => void,
-] {
-  return useState(initial);
 }
