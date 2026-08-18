@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatusBadge } from "@/components/kit";
@@ -32,7 +32,6 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 
 function ClinicPage() {
   const { lang } = useLang();
-  const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
   const [filterMyPatients, setFilterMyPatients] = useState(false);
 
@@ -119,16 +118,13 @@ function ClinicPage() {
                         <StatusBadge status={s(visit, "status")} />
                       </TableCell>
                       <TableCell className="text-end whitespace-nowrap">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            navigate({
-                              to: "/_authenticated/clinic/$visitId",
-                              params: { visitId: s(visit, "id") },
-                            });
-                          }}
-                        >
-                          {lang === "ar" ? "فتح" : "Open"}
+                        <Button asChild size="sm">
+                          <Link
+                            to="/_authenticated/clinic/$visitId"
+                            params={{ visitId: s(visit, "id") }}
+                          >
+                            {lang === "ar" ? "فتح" : "Open"}
+                          </Link>
                         </Button>
                       </TableCell>
                     </TableRow>
