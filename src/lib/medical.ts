@@ -1,93 +1,144 @@
-/** Clinical + formatting calculations shared across the app. */
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
-export function calcAge(dob?: string | null): number | null {
-  if (!dob) return null;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return null;
-  const now = new Date();
-  
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) {
-    age--;
-  }
-  return age >= 0 ? age : null;
-}
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatusBadge } from "@/components/kit";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { rel, s, useRows, type Row } from "@/lib/db";
+import { useLang } from "@/lib/i18n";
+import { calcAge, formatDate, todayISO } from "@/lib/medical";
+import { supabase } from "@/lib/supabase";
 
-export function calcBmi(weightKg?: number | null, heightCm?: number | null): number | null {
-  if (!weightKg || !heightCm || heightCm <= 0) return null;
-  const m = heightCm / 100;
-  return Math.round((weightKg / (m * m)) * 10) / 10;
-}
+export const Route = createFileRoute("/_authenticated/clinic")({
+  head: () => ({
+    meta: [
+      { title: "Clinic — ROSHAN Medical Center" },
+      { name: "description", content: "Doctor consultation and patient management." },
+      { property: "og:title", content: "Clinic — ROSHAN Medical Center" },
+      { property: "og:description", content: "Doctor consultation and patient management." },
+    ],
+  }),
+  component: ClinicPage,
+});
 
-/** Naegele's rule: LMP + 280 days. */
-export function calcEdd(lmp?: string | null): string | null {
-  if (!lmp) return null;
-  const d = new Date(lmp);
-  if (Number.isNaN(d.getTime())) return null;
-  d.setDate(d.getDate() + 280);
-  return d.toISOString().split('T')[0];
-}
+function ClinicPage() {
+  const { lang } = useLang();
+  const navigate = useNavigate();
+  const [date, setDate] = useState(todayISO());
+  const [filterMyPatients, setFilterMyPatients] = useState(false);
 
-export function calcGestationalDays(lmp?: string | null): number | null {
-  if (!lmp) return null;
-  const d = new Date(lmp);
-  if (Number.isNaN(d.getTime())) return null;
-  const diffTime = Math.abs(Date.now() - d.getTime());
-  const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return days >= 0 ? days : null;
-}
+  const visits = useRows(["clinic-visits", date, filterMyPatients], () =>
+    supabase
+      .from("visits")
+      .select(
+        "id, visit_number, status, created_at, patients(id, full_name, mrn, dob, gender), departments(name, name_ar), users(full_name)",
+      )
+      .gte("created_at", `${date}T00:00:00`)
+      .lte("created_at", `${date}T23:59:59`)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true }),
+  );
 
-export function formatGestationalAge(days?: number | null, lang: "ar" | "en" = "ar"): string {
-  if (days == null) return "—";
-  const w = Math.floor(days / 7);
-  const d = days % 7;
-  return lang === "ar" ? `${w} أسبوع و${d} يوم` : `${w}w ${d}d`;
-}
+  const rows = (visits.data ?? []) as Row[];
 
-export function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
-}
+  if (visits.isLoading) return <Loading />;
 
-export function money(value?: number | null, currency = "SDG"): string {
-  const n = Number(value ?? 0);
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
-}
+  return (
+    <div>
+      <PageHeader title={lang === "ar" ? "العيادة" : "Clinic"} subtitle={formatDate(date)}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant={filterMyPatients ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterMyPatients(!filterMyPatients)}
+          >
+            {lang === "ar" ? "مرضاي فقط" : "My Patients"}
+          </Button>
+          <Input
+            type="date"
+            dir="ltr"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-40"
+          />
+          <ExportButtons rows={rows} filename={`roshan-clinic-${date}`} />
+        </div>
+      </PageHeader>
 
-export function formatDate(value?: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toISOString().split('T')[0];
-}
+      <ErrorBox error={visits.error} />
 
-export function formatDateTime(value?: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value);
-  return `${d.toISOString().split('T')[0]} ${d.toTimeString().slice(0, 5)}`;
-}
+      <Card>
+        <CardContent className="p-0 overflow-x-auto">
+          {rows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
+                  <TableHead>{lang === "ar" ? "العمر / الجنس" : "Age / Gender"}</TableHead>
+                  <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
+                  <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
+                  <TableHead className="text-end">{lang === "ar" ? "الإجراء" : "Action"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((visit) => {
+                  const patient = rel(visit, "patients");
+                  const department = rel(visit, "departments");
+                  const dob = s(patient, "dob");
+                  const ageVal = calcAge(dob);
+                  const ageStr = ageVal !== null ? `${ageVal} yrs` : "—";
 
-export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
-export const MARITAL = ["single", "married", "divorced", "widowed"] as const;
-export const EXPENSE_CATEGORIES = [
-  "salaries", "rent", "electricity", "water", "internet", "maintenance", "other"
-] as const;
-
-export type ResultFlag = "low" | "high" | "normal";
-
-/** Flags a numeric lab result against a reference range. */
-export function flagResult(
-  value: string | null | undefined,
-  min?: number | null,
-  max?: number | null,
-): ResultFlag | null {
-  if (value == null || value === "") return null;
-  const n = Number(value);
-  if (Number.isNaN(n)) return null;
-  
-  if (min != null && n < min) return "low";
-  if (max != null && n > max) return "high";
-  if (min != null || max != null) return "normal";
-  return null;
+                  return (
+                    <TableRow key={s(visit, "id")}>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {s(patient, "full_name") || "—"}
+                        <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
+                          {s(patient, "mrn")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
+                        {ageStr} {s(patient, "gender") ? `(${s(patient, "gender")})` : ""}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {lang === "ar"
+                          ? s(department, "name_ar") || s(department, "name") || "—"
+                          : s(department, "name") || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(visit, "status")} />
+                      </TableCell>
+                      <TableCell className="text-end whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            navigate({
+                              to: "/_authenticated/clinic/$visitId",
+                              params: { visitId: s(visit, "id") },
+                            });
+                          }}
+                        >
+                          {lang === "ar" ? "فتح" : "Open"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
