@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+
 import {
   Empty,
   ErrorBox,
@@ -138,10 +140,9 @@ function ClinicPage() {
                   const patient = rel(visit, "patients");
                   const department = rel(visit, "departments");
 
-                  const patientId = s(patient, "id");
                   const visitId = s(visit, "id");
-
                   const dob = s(patient, "dob");
+
                   const ageVal = calcAge(dob);
 
                   const ageStr =
@@ -181,11 +182,7 @@ function ClinicPage() {
 
                       <TableCell className="text-end whitespace-nowrap">
                         {visitId ? (
-                          <Button
-                            asChild
-                            type="button"
-                            size="sm"
-                          >
+                          <Button asChild type="button" size="sm">
                             <Link
                               to="/clinic/$visitId"
                               params={{ visitId }}
@@ -194,11 +191,7 @@ function ClinicPage() {
                             </Link>
                           </Button>
                         ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled
-                          >
+                          <Button type="button" size="sm" disabled>
                             {lang === "ar" ? "فتح" : "Open"}
                           </Button>
                         )}
