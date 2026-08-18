@@ -42,7 +42,7 @@ export function ErrorBox({ error }: { error: unknown }) {
   if (!error) return null;
   const message = error instanceof Error ? error.message : String(error);
   return (
-    <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+    <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/15 p-3 text-sm text-destructive">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
       <span className="break-words">{message}</span>
     </div>
