@@ -39,13 +39,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import {
-  rel,
-  s,
-  useRows,
-  useSave,
-  type Row,
-} from "@/lib/db";
+import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -75,7 +69,7 @@ export const Route = createFileRoute("/_authenticated/appointments")({
 
 function AppointmentsPage() {
   const { lang } = useLang();
-  const { user, can } = useAuth();
+  const { user } = useAuth();
 
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
@@ -89,103 +83,63 @@ function AppointmentsPage() {
     notes: "",
   });
 
-  const appointments = useRows(
-    ["appointments", date],
-    () =>
-      supabase
-        .from("appointments")
-        .select(
-          `
-            id,
-            appointment_date,
-            appointment_time,
-            status,
-            notes,
-            patients(id, full_name, mrn),
-            users(full_name),
-            departments(name, name_ar)
-          `,
-        )
-        .gte(
-          "appointment_date",
-          `${date}T00:00:00`,
-        )
-        .lte(
-          "appointment_date",
-          `${date}T23:59:59`,
-        )
-        .is("deleted_at", null)
-        .order("appointment_date", {
-          ascending: true,
-        }),
+  const appointments = useRows(["appointments", date], () =>
+    supabase
+      .from("appointments")
+      .select(
+        "id, appointment_date, appointment_time, status, notes, patients(id, full_name, mrn), users(full_name), departments(name, name_ar)",
+      )
+      .gte("appointment_date", `${date}T00:00:00`)
+      .lte("appointment_date", `${date}T23:59:59`)
+      .is("deleted_at", null)
+      .order("appointment_date", { ascending: true }),
   );
 
-  const patients = useRows(
-    ["patients-lite"],
-    () =>
-      supabase
-        .from("patients")
-        .select(
-          "id, full_name, mrn",
-        )
-        .is("deleted_at", null)
-        .order("created_at", {
-          ascending: false,
-        })
-        .limit(500),
+  const patients = useRows(["patients-lite"], () =>
+    supabase
+      .from("patients")
+      .select("id, full_name, mrn")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(500),
   );
 
-  const departments = useRows(
-    ["departments"],
-    () =>
-      supabase
-        .from("departments")
-        .select(
-          "id, name, name_ar",
-        )
-        .is("deleted_at", null),
+  const departments = useRows(["departments"], () =>
+    supabase
+      .from("departments")
+      .select("id, name, name_ar")
+      .is("deleted_at", null),
   );
 
-  const doctors = useRows(
-    ["doctors"],
-    () =>
-      supabase
-        .from("users")
-        .select(
-          "id, full_name, roles(code)",
-        )
-        .eq("active", true)
-        .is("deleted_at", null),
+  const doctors = useRows(["doctors"], () =>
+    supabase
+      .from("users")
+      .select("id, full_name, roles(code)")
+      .eq("active", true)
+      .is("deleted_at", null),
   );
 
+  /*
+   * CREATE APPOINTMENT
+   *
+   * Supabase now supplies created_by automatically using:
+   *
+   *   public.current_app_user_id()
+   *
+   * Therefore we deliberately DO NOT send auth.uid() here.
+   *
+   * auth.uid() = Supabase Auth user ID
+   * users.id   = Roshan application user ID
+   *
+   * These are different UUIDs in this project.
+   */
   const create = useSave(
     async () => {
-      /*
-       * Always obtain the authenticated Supabase user.
-       * RLS requires:
-       *
-       * created_by = auth.uid()
-       */
-      const {
-        data: authData,
-        error: authError,
-      } =
-        await supabase.auth.getUser();
-
-      if (authError) {
-        throw new Error(
-          authError.message,
-        );
-      }
-
-      const authUser =
-        authData.user;
-
-      if (!authUser?.id) {
+      if (!user?.id) {
         throw new Error(
           lang === "ar"
-            ? "انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."
-            : "Your login session has expired. Please sign in again.",
+            ? "لم يتم العثور على مستخدم النظام الحالي. يرجى تسجيل الدخول مرة أخرى."
+            : "The current application user could not be identified. Please sign in again.",
         );
       }
 
@@ -197,71 +151,51 @@ function AppointmentsPage() {
         );
       }
 
-      /*
-       * IMPORTANT:
-       * appointment_date is stored as a timestamp.
-       */
+      if (!form.appointment_date) {
+        throw new Error(
+          lang === "ar"
+            ? "يرجى اختيار تاريخ الموعد."
+            : "Please select an appointment date.",
+        );
+      }
+
+      if (!form.appointment_time) {
+        throw new Error(
+          lang === "ar"
+            ? "يرجى اختيار وقت الموعد."
+            : "Please select an appointment time.",
+        );
+      }
+
       const appointmentDateTime =
         `${form.appointment_date}T${form.appointment_time}:00`;
 
-      const payload = {
-        patient_id:
-          form.patient_id,
-
-        doctor_id:
-          form.doctor_id || null,
-
-        department_id:
-          form.department_id || null,
-
-        appointment_date:
-          appointmentDateTime,
-
-        appointment_time:
-          form.appointment_time,
-
-        status: "scheduled",
-
-        notes:
-          form.notes.trim() || null,
-
-        /*
-         * This must be the Supabase Auth UUID.
-         *
-         * NOT users.id
-         * NOT role_id
-         */
-        created_by:
-          authUser.id,
-      };
-
-      console.log(
-        "Creating appointment:",
-        payload,
-      );
-
-      const { error } =
-        await supabase
-          .from("appointments")
-          .insert(payload);
+      /*
+       * created_by is intentionally omitted.
+       *
+       * Database default:
+       * current_app_user_id()
+       */
+      const { error } = await supabase
+        .from("appointments")
+        .insert({
+          patient_id: form.patient_id,
+          doctor_id: form.doctor_id || null,
+          department_id: form.department_id || null,
+          appointment_date: appointmentDateTime,
+          appointment_time: form.appointment_time,
+          status: "scheduled",
+          notes: form.notes || null,
+        });
 
       if (error) {
-        console.error(
-          "Appointment insert failed:",
-          error,
-        );
-
-        throw new Error(
-          error.message,
-        );
+        throw new Error(error.message);
       }
 
       return null;
     },
     {
-      invalidate: [
-        ["appointments", date],
-      ],
+      invalidate: [["appointments", date]],
 
       successMessage:
         lang === "ar"
@@ -275,107 +209,75 @@ function AppointmentsPage() {
           patient_id: "",
           doctor_id: "",
           department_id: "",
-          appointment_date:
-            todayISO(),
-          appointment_time:
-            "09:00",
+          appointment_date: todayISO(),
+          appointment_time: "09:00",
           notes: "",
         });
       },
     },
   );
 
-  const deleteAppointment =
-    useSave(
-      async (id: string) => {
-        const {
-          data: authData,
-        } =
-          await supabase.auth.getUser();
-
-        const authUser =
-          authData.user;
-
-        if (!authUser?.id) {
-          throw new Error(
-            lang === "ar"
-              ? "انتهت جلسة تسجيل الدخول."
-              : "Your login session has expired.",
-          );
-        }
-
-        const { error } =
-          await supabase
-            .from("appointments")
-            .update({
-              deleted_at:
-                new Date().toISOString(),
-              deleted_by:
-                authUser.id,
-              updated_by:
-                authUser.id,
-            })
-            .eq(
-              "id",
-              id,
-            );
-
-        if (error) {
-          throw new Error(
-            error.message,
-          );
-        }
-
-        return null;
-      },
-      {
-        invalidate: [
-          ["appointments", date],
-        ],
-        successMessage:
+  /*
+   * SOFT DELETE
+   *
+   * deleted_by should also use the Roshan application
+   * user ID rather than the Supabase Auth ID.
+   */
+  const deleteAppointment = useSave(
+    async (id: string) => {
+      if (!user?.id) {
+        throw new Error(
           lang === "ar"
-            ? "تم حذف الموعد"
-            : "Appointment deleted",
-      },
-    );
-
-  const rows =
-    (appointments.data ??
-      []) as Row[];
-
-  const doctorRows =
-    (
-      (doctors.data ??
-        []) as Row[]
-    ).filter(
-      (doctor) => {
-        const roleCode =
-          s(
-            rel(
-              doctor,
-              "roles",
-            ),
-            "code",
-          ).toLowerCase();
-
-        return (
-          !roleCode ||
-          [
-            "gp",
-            "dentist",
-            "specialist",
-            "doctor",
-            "physician",
-          ].includes(roleCode)
+            ? "لم يتم العثور على المستخدم الحالي."
+            : "The current application user could not be identified.",
         );
-      },
-    );
+      }
 
-  const canCreate =
-    can("appointments.create");
+      const { error } = await supabase
+        .from("appointments")
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by: user.id,
+          updated_by: user.id,
+        })
+        .eq("id", id);
 
-  const canDelete =
-    can("appointments.delete");
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return null;
+    },
+    {
+      invalidate: [["appointments", date]],
+      successMessage:
+        lang === "ar"
+          ? "تم حذف الموعد"
+          : "Appointment deleted",
+    },
+  );
+
+  const rows = (appointments.data ?? []) as Row[];
+
+  const doctorRows = ((doctors.data ?? []) as Row[]).filter(
+    (doctor) => {
+      const roleCode = s(
+        rel(doctor, "roles"),
+        "code",
+      ).toLowerCase();
+
+      return (
+        !roleCode ||
+        [
+          "gp",
+          "dentist",
+          "specialist",
+          "doctor",
+          "physician",
+        ].includes(roleCode)
+      );
+    },
+  );
 
   if (appointments.isLoading) {
     return <Loading />;
@@ -396,9 +298,7 @@ function AppointmentsPage() {
           dir="ltr"
           value={date}
           onChange={(e) =>
-            setDate(
-              e.target.value,
-            )
+            setDate(e.target.value)
           }
           className="w-40"
         />
@@ -408,339 +308,305 @@ function AppointmentsPage() {
           filename={`roshan-appointments-${date}`}
         />
 
-        {canCreate ? (
-          <Dialog
-            open={open}
-            onOpenChange={setOpen}
-          >
-            <DialogTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-              >
-                <Plus className="size-4" />
+        <Dialog
+          open={open}
+          onOpenChange={setOpen}
+        >
+          <DialogTrigger asChild>
+            <Button
+              size="sm"
+              type="button"
+            >
+              <Plus className="size-4" />
+              {lang === "ar"
+                ? "ميعاد جديد"
+                : "New Appointment"}
+            </Button>
+          </DialogTrigger>
+
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
                 {lang === "ar"
-                  ? "ميعاد جديد"
+                  ? "حجز ميعاد جديد"
                   : "New Appointment"}
-              </Button>
-            </DialogTrigger>
+              </DialogTitle>
+            </DialogHeader>
 
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {lang === "ar"
-                    ? "حجز ميعاد جديد"
-                    : "New Appointment"}
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="grid gap-4">
-                <Field
-                  label={
-                    lang === "ar"
-                      ? "المريض *"
-                      : "Patient *"
+            <div className="grid gap-4">
+              <Field
+                label={
+                  lang === "ar"
+                    ? "المريض *"
+                    : "Patient *"
+                }
+              >
+                <Select
+                  value={form.patient_id}
+                  onValueChange={(value) =>
+                    setForm({
+                      ...form,
+                      patient_id: value,
+                    })
                   }
                 >
-                  <Select
-                    value={
-                      form.patient_id
-                    }
-                    onValueChange={(
-                      value,
-                    ) =>
-                      setForm({
-                        ...form,
-                        patient_id:
-                          value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          lang === "ar"
-                            ? "اختر المريض..."
-                            : "Select patient..."
-                        }
-                      />
-                    </SelectTrigger>
-
-                    <SelectContent className="max-h-72">
-                      {(
-                        (patients.data ??
-                          []) as Row[]
-                      ).map(
-                        (
-                          patient,
-                        ) => (
-                          <SelectItem
-                            key={s(
-                              patient,
-                              "id",
-                            )}
-                            value={s(
-                              patient,
-                              "id",
-                            )}
-                          >
-                            {s(
-                              patient,
-                              "full_name",
-                            )}{" "}
-                            —{" "}
-                            {s(
-                              patient,
-                              "mrn",
-                            )}
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field
-                  label={
-                    lang === "ar"
-                      ? "الطبيب"
-                      : "Doctor"
-                  }
-                >
-                  <Select
-                    value={
-                      form.doctor_id
-                    }
-                    onValueChange={(
-                      value,
-                    ) =>
-                      setForm({
-                        ...form,
-                        doctor_id:
-                          value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          lang === "ar"
-                            ? "بدون"
-                            : "None"
-                        }
-                      />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      {doctorRows.map(
-                        (
-                          doctor,
-                        ) => (
-                          <SelectItem
-                            key={s(
-                              doctor,
-                              "id",
-                            )}
-                            value={s(
-                              doctor,
-                              "id",
-                            )}
-                          >
-                            {s(
-                              doctor,
-                              "full_name",
-                            )}
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field
-                  label={
-                    lang === "ar"
-                      ? "القسم"
-                      : "Department"
-                  }
-                >
-                  <Select
-                    value={
-                      form.department_id
-                    }
-                    onValueChange={(
-                      value,
-                    ) =>
-                      setForm({
-                        ...form,
-                        department_id:
-                          value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          lang === "ar"
-                            ? "بدون"
-                            : "None"
-                        }
-                      />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      {(
-                        (departments.data ??
-                          []) as Row[]
-                      ).map(
-                        (
-                          department,
-                        ) => (
-                          <SelectItem
-                            key={s(
-                              department,
-                              "id",
-                            )}
-                            value={s(
-                              department,
-                              "id",
-                            )}
-                          >
-                            {lang === "ar"
-                              ? s(
-                                  department,
-                                  "name_ar",
-                                ) ||
-                                s(
-                                  department,
-                                  "name",
-                                )
-                              : s(
-                                  department,
-                                  "name",
-                                )}
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Field
-                    label={
-                      lang === "ar"
-                        ? "تاريخ الموعد"
-                        : "Appointment Date"
-                    }
-                  >
-                    <Input
-                      type="date"
-                      dir="ltr"
-                      value={
-                        form.appointment_date
-                      }
-                      onChange={(
-                        e,
-                      ) =>
-                        setForm({
-                          ...form,
-                          appointment_date:
-                            e.target
-                              .value,
-                        })
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        lang === "ar"
+                          ? "اختر المريض..."
+                          : "Select patient..."
                       }
                     />
-                  </Field>
+                  </SelectTrigger>
 
-                  <Field
-                    label={
-                      lang === "ar"
-                        ? "الوقت"
-                        : "Time"
-                    }
-                  >
-                    <Input
-                      type="time"
-                      dir="ltr"
-                      value={
-                        form.appointment_time
-                      }
-                      onChange={(
-                        e,
-                      ) =>
-                        setForm({
-                          ...form,
-                          appointment_time:
-                            e.target
-                              .value,
-                        })
+                  <SelectContent className="max-h-72">
+                    {((patients.data ??
+                      []) as Row[]).map(
+                      (patient) => (
+                        <SelectItem
+                          key={s(
+                            patient,
+                            "id",
+                          )}
+                          value={s(
+                            patient,
+                            "id",
+                          )}
+                        >
+                          {s(
+                            patient,
+                            "full_name",
+                          )}{" "}
+                          —{" "}
+                          {s(
+                            patient,
+                            "mrn",
+                          )}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field
+                label={
+                  lang === "ar"
+                    ? "الطبيب"
+                    : "Doctor"
+                }
+              >
+                <Select
+                  value={form.doctor_id}
+                  onValueChange={(value) =>
+                    setForm({
+                      ...form,
+                      doctor_id: value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        lang === "ar"
+                          ? "بدون"
+                          : "None"
                       }
                     />
-                  </Field>
-                </div>
+                  </SelectTrigger>
 
+                  <SelectContent>
+                    {doctorRows.map(
+                      (doctor) => (
+                        <SelectItem
+                          key={s(
+                            doctor,
+                            "id",
+                          )}
+                          value={s(
+                            doctor,
+                            "id",
+                          )}
+                        >
+                          {s(
+                            doctor,
+                            "full_name",
+                          )}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field
+                label={
+                  lang === "ar"
+                    ? "القسم"
+                    : "Department"
+                }
+              >
+                <Select
+                  value={
+                    form.department_id
+                  }
+                  onValueChange={(value) =>
+                    setForm({
+                      ...form,
+                      department_id:
+                        value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        lang === "ar"
+                          ? "بدون"
+                          : "None"
+                      }
+                    />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {((departments.data ??
+                      []) as Row[]).map(
+                      (department) => (
+                        <SelectItem
+                          key={s(
+                            department,
+                            "id",
+                          )}
+                          value={s(
+                            department,
+                            "id",
+                          )}
+                        >
+                          {lang === "ar"
+                            ? s(
+                                department,
+                                "name_ar",
+                              ) ||
+                              s(
+                                department,
+                                "name",
+                              )
+                            : s(
+                                department,
+                                "name",
+                              )}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-2">
                 <Field
                   label={
                     lang === "ar"
-                      ? "ملاحظات"
-                      : "Notes"
+                      ? "تاريخ الموعد"
+                      : "Appointment Date"
                   }
                 >
-                  <Textarea
-                    rows={2}
+                  <Input
+                    type="date"
+                    dir="ltr"
                     value={
-                      form.notes
+                      form.appointment_date
                     }
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        notes:
-                          e.target
-                            .value,
+                        appointment_date:
+                          e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label={
+                    lang === "ar"
+                      ? "الوقت"
+                      : "Time"
+                  }
+                >
+                  <Input
+                    type="time"
+                    dir="ltr"
+                    value={
+                      form.appointment_time
+                    }
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        appointment_time:
+                          e.target.value,
                       })
                     }
                   />
                 </Field>
               </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setOpen(false)
+              <Field
+                label={
+                  lang === "ar"
+                    ? "ملاحظات"
+                    : "Notes"
+                }
+              >
+                <Textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      notes: e.target.value,
+                    })
                   }
-                >
-                  {lang === "ar"
-                    ? "إلغاء"
-                    : "Cancel"}
-                </Button>
+                />
+              </Field>
+            </div>
 
-                <Button
-                  type="button"
-                  disabled={
-                    !form.patient_id ||
-                    create.isPending
-                  }
-                  onClick={() =>
-                    create.mutate(
-                      undefined as never,
-                    )
-                  }
-                >
-                  {create.isPending
-                    ? lang === "ar"
-                      ? "جاري الحفظ..."
-                      : "Saving..."
-                    : lang === "ar"
-                      ? "حفظ"
-                      : "Save"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : null}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setOpen(false)
+                }
+              >
+                {lang === "ar"
+                  ? "إلغاء"
+                  : "Cancel"}
+              </Button>
+
+              <Button
+                type="button"
+                disabled={
+                  !form.patient_id ||
+                  create.isPending
+                }
+                onClick={() =>
+                  create.mutate(
+                    undefined as never,
+                  )
+                }
+              >
+                {create.isPending
+                  ? lang === "ar"
+                    ? "جاري الحفظ..."
+                    : "Saving..."
+                  : lang === "ar"
+                    ? "حفظ"
+                    : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageHeader>
 
       <ErrorBox
@@ -805,179 +671,156 @@ function AppointmentsPage() {
               </TableHeader>
 
               <TableBody>
-                {rows.map(
-                  (item) => {
-                    const patient =
-                      rel(
-                        item,
-                        "patients",
-                      );
+                {rows.map((item) => {
+                  const patient = rel(
+                    item,
+                    "patients",
+                  );
 
-                    const doctor =
-                      rel(
-                        item,
-                        "users",
-                      );
+                  const doctor = rel(
+                    item,
+                    "users",
+                  );
 
-                    const department =
-                      rel(
-                        item,
-                        "departments",
-                      );
+                  const department =
+                    rel(
+                      item,
+                      "departments",
+                    );
 
-                    const dateVal =
-                      s(
-                        item,
-                        "appointment_date",
-                      ) || "";
+                  const dateVal =
+                    s(
+                      item,
+                      "appointment_date",
+                    ) || "";
 
-                    const [
-                      datePart,
-                      timePart,
-                    ] =
-                      dateVal.includes(
-                        "T",
-                      )
-                        ? dateVal.split(
-                            "T",
-                          )
-                        : [
-                            dateVal,
-                            "",
-                          ];
+                  const [datePart, timePart] =
+                    dateVal.includes("T")
+                      ? dateVal.split("T")
+                      : [dateVal, ""];
 
-                    const storedTime =
-                      s(
-                        item,
-                        "appointment_time",
-                      );
+                  const storedAppointmentTime =
+                    s(
+                      item,
+                      "appointment_time",
+                    );
 
-                    const formattedTime =
-                      storedTime
-                        ? storedTime.substring(
+                  const formattedTime =
+                    storedAppointmentTime
+                      ? storedAppointmentTime.substring(
+                          0,
+                          5,
+                        )
+                      : timePart
+                        ? timePart.substring(
                             0,
                             5,
                           )
-                        : timePart
-                          ? timePart.substring(
-                              0,
-                              5,
-                            )
-                          : "—";
+                        : "—";
 
-                    return (
-                      <TableRow
-                        key={s(
-                          item,
-                          "id",
-                        )}
-                      >
-                        <TableCell className="font-medium whitespace-nowrap">
+                  return (
+                    <TableRow
+                      key={s(
+                        item,
+                        "id",
+                      )}
+                    >
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {s(
+                          patient,
+                          "full_name",
+                        ) || "—"}
+
+                        <span
+                          className="ms-2 text-xs text-muted-foreground"
+                          dir="ltr"
+                        >
                           {s(
                             patient,
-                            "full_name",
-                          ) ||
-                            "—"}
+                            "mrn",
+                          )}
+                        </span>
+                      </TableCell>
 
-                          <span
-                            className="ms-2 text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {s(
-                              patient,
-                              "mrn",
-                            )}
-                          </span>
-                        </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {s(
+                          doctor,
+                          "full_name",
+                        ) || "—"}
+                      </TableCell>
 
-                        <TableCell className="whitespace-nowrap">
-                          {s(
-                            doctor,
-                            "full_name",
-                          ) ||
-                            "—"}
-                        </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {lang === "ar"
+                          ? s(
+                              department,
+                              "name_ar",
+                            ) ||
+                            s(
+                              department,
+                              "name",
+                            ) ||
+                            "—"
+                          : s(
+                              department,
+                              "name",
+                            ) || "—"}
+                      </TableCell>
 
-                        <TableCell className="whitespace-nowrap">
-                          {lang === "ar"
-                            ? s(
-                                department,
-                                "name_ar",
-                              ) ||
-                              s(
-                                department,
-                                "name",
-                              ) ||
-                              "—"
-                            : s(
-                                department,
-                                "name",
-                              ) ||
-                              "—"}
-                        </TableCell>
+                      <TableCell
+                        dir="ltr"
+                        className="whitespace-nowrap font-mono text-xs"
+                      >
+                        {datePart || "—"}
+                      </TableCell>
 
-                        <TableCell
-                          dir="ltr"
-                          className="whitespace-nowrap font-mono text-xs"
-                        >
-                          {datePart ||
-                            "—"}
-                        </TableCell>
+                      <TableCell
+                        dir="ltr"
+                        className="whitespace-nowrap font-mono text-xs font-bold text-primary"
+                      >
+                        {formattedTime}
+                      </TableCell>
 
-                        <TableCell
-                          dir="ltr"
-                          className="whitespace-nowrap font-mono text-xs font-bold text-primary"
-                        >
-                          {
-                            formattedTime
+                      <TableCell>
+                        <StatusBadge
+                          status={s(
+                            item,
+                            "status",
+                          )}
+                        />
+                      </TableCell>
+
+                      <TableCell className="text-end whitespace-nowrap">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          disabled={
+                            deleteAppointment.isPending
                           }
-                        </TableCell>
-
-                        <TableCell>
-                          <StatusBadge
-                            status={s(
-                              item,
-                              "status",
-                            )}
-                          />
-                        </TableCell>
-
-                        <TableCell className="text-end whitespace-nowrap">
-                          {canDelete ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              disabled={
-                                deleteAppointment.isPending
-                              }
-                              onClick={() => {
-                                if (
-                                  confirm(
-                                    lang ===
-                                      "ar"
-                                      ? "هل أنت متأكد من حذف هذا الموعد؟"
-                                      : "Are you sure you want to delete this appointment?",
-                                  )
-                                ) {
-                                  deleteAppointment.mutate(
-                                    s(
-                                      item,
-                                      "id",
-                                    ),
-                                  );
-                                }
-                              }}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  },
-                )}
+                          onClick={() => {
+                            if (
+                              confirm(
+                                lang === "ar"
+                                  ? "هل أنت متأكد من حذف هذا الموعد؟"
+                                  : "Are you sure you want to delete this appointment?",
+                              )
+                            ) {
+                              deleteAppointment.mutate(
+                                s(
+                                  item,
+                                  "id",
+                                ),
+                              );
+                            }
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
