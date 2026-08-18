@@ -55,17 +55,20 @@ function AppointmentsPage() {
     patient_id: "",
     doctor_id: "",
     department_id: "",
+    appointment_date: todayISO(),
     appointment_time: "09:00",
     notes: "",
   });
 
+  // تحديث الاستعلام ليشمل مدى اليوم كاملاً لضمان ظهور المواعيد المضافة بدقة
   const appointments = useRows(["appointments", date], () =>
     supabase
       .from("appointments")
       .select(
         "id, appointment_date, status, notes, patients(id, full_name, mrn), users(full_name), departments(name, name_ar)",
       )
-      .eq("appointment_date", date)
+      .gte("appointment_date", `${date}T00:00:00`)
+      .lte("appointment_date", `${date}T23:59:59`)
       .is("deleted_at", null)
       .order("appointment_date", { ascending: true }),
   );
@@ -97,7 +100,7 @@ function AppointmentsPage() {
         patient_id: form.patient_id,
         doctor_id: form.doctor_id || null,
         department_id: form.department_id || null,
-        appointment_date: `${date}T${form.appointment_time}:00`,
+        appointment_date: `${form.appointment_date}T${form.appointment_time}:00`,
         status: "scheduled",
         notes: form.notes || null,
       });
@@ -110,7 +113,7 @@ function AppointmentsPage() {
       successMessage: lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully",
       onDone: () => {
         setOpen(false);
-        setForm({ patient_id: "", doctor_id: "", department_id: "", appointment_time: "09:00", notes: "" });
+        setForm({ patient_id: "", doctor_id: "", department_id: "", appointment_date: todayISO(), appointment_time: "09:00", notes: "" });
       },
     },
   );
@@ -215,14 +218,25 @@ function AppointmentsPage() {
                 </Select>
               </Field>
 
-              <Field label={lang === "ar" ? "الوقت" : "Time"}>
-                <Input
-                  type="time"
-                  dir="ltr"
-                  value={form.appointment_time}
-                  onChange={(e) => setForm({ ...form, appointment_time: e.target.value })}
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label={lang === "ar" ? "تاريخ الموعد" : "Appointment Date"}>
+                  <Input
+                    type="date"
+                    dir="ltr"
+                    value={form.appointment_date}
+                    onChange={(e) => setForm({ ...form, appointment_date: e.target.value })}
+                  />
+                </Field>
+
+                <Field label={lang === "ar" ? "الوقت" : "Time"}>
+                  <Input
+                    type="time"
+                    dir="ltr"
+                    value={form.appointment_time}
+                    onChange={(e) => setForm({ ...form, appointment_time: e.target.value })}
+                  />
+                </Field>
+              </div>
 
               <Field label={lang === "ar" ? "ملاحظات" : "Notes"}>
                 <Textarea
