@@ -1,9 +1,26 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
-import { Empty, ErrorBox, Loading, PageHeader, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -12,126 +29,314 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { s, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { formatDate, formatDateTime, todayISO } from "@/lib/medical";
+import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/queue")({
+export const Route = createFileRoute("/_authenticated/visits")({
   head: () => ({
     meta: [
-      { title: "Live queue — ROSHAN Medical Center" },
-      { name: "description", content: "Live waiting queue." },
+      { title: "Visits — ROSHAN Medical Center" },
+      { name: "description", content: "Register walk-in and scheduled visits and route patients to clinics." },
+      { property: "og:title", content: "Visits — ROSHAN Medical Center" },
+      { property: "og:description", content: "Register walk-in and scheduled visits and route patients to clinics." },
     ],
   }),
-  component: QueuePage,
+  component: VisitsPage,
 });
 
-function QueuePage() {
-  const { t } = useLang();
-  const { can } = useAuth();
-  const date = todayISO();
+function VisitsPage() {
+  const { t, lang } = useLang();
+  const { user, can } = useAuth();
+  const { currency } = useSettings();
+  const [date, setDate] = useState(todayISO());
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    patient_id: "",
+    department_id: "",
+    doctor_id: "",
+    visit_type: "walk_in",
+    consultation_fee: "0",
+    notes: "",
+  });
 
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const visits = useRows(["visits", date], () =>
+    supabase
+      .from("visits")
+      .select(
+        "id, visit_number, visit_date, status, visit_type, consultation_fee, patients!visits_patient_id_fkey(id, full_name, mrn), departments!visits_department_id_fkey(name, name_ar), users!visits_doctor_id_fkey(full_name)",
+      )
+      .eq("visit_date", date)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
+  );
 
-  // جلب البيانات مباشرة عبر جافاسكريبت متجاوزين أي كاش قديم
-  const fetchQueue = async () => {
-    try {
-      setLoading(true);
-      const { data, error: fetchError } = await supabase
+  const patients = useRows(["patients-lite"], () =>
+    supabase
+      .from("patients")
+      .select("id, full_name, mrn")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(500),
+  );
+
+  const departments = useRows(["departments"], () =>
+    supabase.from("departments").select("id, name, name_ar").is("deleted_at", null),
+  );
+
+  const doctors = useRows(["doctors"], () =>
+    supabase
+      .from("users")
+      .select("id, full_name, roles(code)")
+      .eq("active", true)
+      .is("deleted_at", null),
+  );
+
+  const create = useSave(
+    async () => {
+      const numericQueue = Math.floor(Math.random() * 900) + 100;
+
+      const { error } = await supabase
+        .from("visits")
+        .insert({
+          patient_id: form.patient_id,
+          department_id: form.department_id || null,
+          doctor_id: form.doctor_id || null,
+          visit_date: date,
+          visit_type: form.visit_type,
+          status: "waiting",
+          consultation_fee: Number(form.consultation_fee) || 0,
+          notes: form.notes || null,
+          visit_number: numericQueue,
+        });
+
+      if (error) throw new Error(error.message);
+      return null;
+    },
+    {
+      invalidate: [["visits", date]],
+      successMessage: t("saved"),
+      onDone: () => {
+        setOpen(false);
+        setForm({ ...form, patient_id: "", notes: "" });
+      },
+    },
+  );
+
+  const deleteVisit = useSave(
+    async (visitId: string) => {
+      const { error } = await supabase
+        .from("visits")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", visitId);
+      if (error) throw new Error(error.message);
+
+      await supabase
         .from("queue_tickets")
-        .select("id, queue_number, status, created_at, visit_id, visit_date")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .update({ status: "cancelled" })
+        .eq("visit_id", visitId);
 
-      if (fetchError) throw fetchError;
-      setRows(data || []);
-    } catch (err: any) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return null;
+    },
+    {
+      invalidate: [["visits", date]],
+      successMessage: t("deleted"),
+    },
+  );
 
-  useEffect(() => {
-    fetchQueue();
-    // تحديث تلقائي كل 5 ثوانٍ
-    const interval = setInterval(fetchQueue, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const rows = (visits.data ?? []) as Row[];
+  
+  // تم توسيع الفلترة لضمان ظهور الأطباء حتى لو اختلف كود الدور في قاعدة البيانات
+  const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) => {
+    const roleCode = s(rel(d, "roles"), "code").toLowerCase();
+    return !roleCode || ["gp", "dentist", "specialist", "doctor", "physician"].includes(roleCode);
+  });
 
-  const updateStatus = async (id: string, visitId: string, status: string) => {
-    try {
-      const patch: Row = { status };
-      if (status === "called") patch["called_at"] = new Date().toISOString();
-
-      const { error: updateError } = await supabase.from("queue_tickets").update(patch).eq("id", id);
-      if (updateError) throw updateError;
-
-      const visitStatus = status === "called" ? "in_consultation" : status === "done" ? "completed" : "waiting";
-      if (visitId) {
-        await supabase.from("visits").update({ status: visitStatus }).eq("id", visitId);
-      }
-
-      // إعادة الجلب فوراً لتحديث الواجهة
-      fetchQueue();
-    } catch (err: any) {
-      alert(`خطأ أثناء التحديث: ${err.message}`);
-    }
-  };
-
-  if (loading && rows.length === 0) return <Loading />;
+  if (visits.isLoading) return <Loading />;
 
   return (
     <div>
-      <PageHeader title={t("queue")} subtitle={formatDate(date)} />
-      <ErrorBox error={error} />
+      <PageHeader title={t("visits")} subtitle={formatDate(date)}>
+        <Input
+          type="date"
+          dir="ltr"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-40"
+        />
+        <ExportButtons rows={rows} filename={`roshan-visits-${date}`} />
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="size-4" /> {t("new_visit")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("new_visit")}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <Field label={`${t("patient")} *`}>
+                <Select
+                  value={form.patient_id}
+                  onValueChange={(v) => setForm({ ...form, patient_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("search")} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {((patients.data ?? []) as Row[]).map((p) => (
+                      <SelectItem key={s(p, "id")} value={s(p, "id")}>
+                        {s(p, "full_name")} — {s(p, "mrn")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("department")}>
+                <Select
+                  value={form.department_id}
+                  onValueChange={(v) => setForm({ ...form, department_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("none")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {((departments.data ?? []) as Row[]).map((d) => (
+                      <SelectItem key={s(d, "id")} value={s(d, "id")}>
+                        {lang === "ar" ? s(d, "name_ar") || s(d, "name") : s(d, "name")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={t("doctor")}>
+                <Select
+                  value={form.doctor_id}
+                  onValueChange={(v) => setForm({ ...form, doctor_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("none")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {doctorRows.map((d) => (
+                      <SelectItem key={s(d, "id")} value={s(d, "id")}>
+                        {s(d, "full_name")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={t("visit_type")}>
+                  <Select
+                    value={form.visit_type}
+                    onValueChange={(v) => setForm({ ...form, visit_type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="walk_in">{t("walk_in")}</SelectItem>
+                      <SelectItem value="scheduled">{t("scheduled")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={t("consultation_fee")}>
+                  <Input
+                    type="number"
+                    dir="ltr"
+                    min={0}
+                    value={form.consultation_fee}
+                    onChange={(e) => setForm({ ...form, consultation_fee: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <Field label={t("notes")}>
+                <Textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </Field>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                {t("cancel")}
+              </Button>
+              <Button
+                disabled={!form.patient_id || create.isPending}
+                onClick={() => create.mutate(undefined as never)}
+              >
+                {create.isPending ? t("saving") : t("save")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </PageHeader>
+
+      <ErrorBox error={visits.error} />
+
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {rows.length === 0 ? (
             <Empty />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>{t("patient")}</TableHead>
                   <TableHead>{t("queue_number")}</TableHead>
-                  <TableHead>{t("time")}</TableHead>
+                  <TableHead>{t("department")}</TableHead>
+                  <TableHead>{t("doctor")}</TableHead>
+                  <TableHead>{t("consultation_fee")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
-                  <TableHead className="no-print" />
+                  <TableHead className="text-end">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((q) => (
-                  <TableRow key={s(q, "id")}>
-                    <TableCell dir="ltr" className="font-mono text-base font-semibold">
-                      {s(q, "queue_number")}
+                {rows.map((v) => (
+                  <TableRow key={s(v, "id")}>
+                    <TableCell className="font-medium whitespace-nowrap">
+                      {s(rel(v, "patients"), "full_name")}
+                      <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
+                        {s(rel(v, "patients"), "mrn")}
+                      </span>
                     </TableCell>
-                    <TableCell dir="ltr">{formatDateTime(s(q, "created_at"))}</TableCell>
+                    <TableCell dir="ltr" className="font-mono text-xs">
+                      Q{s(v, "visit_number") || "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {lang === "ar"
+                        ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
+                        : s(rel(v, "departments"), "name")}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{s(rel(v, "users"), "full_name") || "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{money(n(v, "consultation_fee"), currency)}</TableCell>
                     <TableCell>
-                      <StatusBadge status={s(q, "status")} />
+                      <StatusBadge status={s(v, "status")} />
                     </TableCell>
-                    <TableCell className="no-print text-end">
-                      {can("queue.update") ? (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateStatus(s(q, "id"), s(q, "visit_id"), "called")}
-                          >
-                            {t("call_next")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => updateStatus(s(q, "id"), s(q, "visit_id"), "done")}
-                          >
-                            {t("done")}
-                          </Button>
-                        </div>
-                      ) : null}
+                    <TableCell className="text-end space-x-1 space-x-reverse whitespace-nowrap">
+                      <Button asChild variant="ghost" size="sm">
+                        <Link to="/clinic/$visitId" params={{ visitId: s(v, "id") }}>
+                          {t("clinic")}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (confirm(t("are_you_sure"))) {
+                            deleteVisit.mutate(s(v, "id"));
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
