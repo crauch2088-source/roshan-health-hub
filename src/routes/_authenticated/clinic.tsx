@@ -1,6 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Empty,
   ErrorBox,
@@ -49,10 +47,6 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 function ClinicPage() {
   const { lang } = useLang();
 
-  const navigate = useNavigate({
-    from: "/_authenticated/clinic",
-  });
-
   const [date, setDate] = useState(todayISO());
   const [filterMyPatients, setFilterMyPatients] = useState(false);
 
@@ -84,27 +78,19 @@ function ClinicPage() {
       >
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant={
-              filterMyPatients ? "default" : "outline"
-            }
+            variant={filterMyPatients ? "default" : "outline"}
             size="sm"
             type="button"
-            onClick={() =>
-              setFilterMyPatients(!filterMyPatients)
-            }
+            onClick={() => setFilterMyPatients(!filterMyPatients)}
           >
-            {lang === "ar"
-              ? "مرضاي فقط"
-              : "My Patients"}
+            {lang === "ar" ? "مرضاي فقط" : "My Patients"}
           </Button>
 
           <Input
             type="date"
             dir="ltr"
             value={date}
-            onChange={(e) =>
-              setDate(e.target.value)
-            }
+            onChange={(e) => setDate(e.target.value)}
             className="w-40"
           />
 
@@ -126,78 +112,45 @@ function ClinicPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    {lang === "ar"
-                      ? "المريض"
-                      : "Patient"}
+                    {lang === "ar" ? "المريض" : "Patient"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar"
-                      ? "العمر / الجنس"
-                      : "Age / Gender"}
+                    {lang === "ar" ? "العمر / الجنس" : "Age / Gender"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar"
-                      ? "القسم"
-                      : "Department"}
+                    {lang === "ar" ? "القسم" : "Department"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar"
-                      ? "الحالة"
-                      : "Status"}
+                    {lang === "ar" ? "الحالة" : "Status"}
                   </TableHead>
 
                   <TableHead className="text-end">
-                    {lang === "ar"
-                      ? "الإجراء"
-                      : "Action"}
+                    {lang === "ar" ? "الإجراء" : "Action"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {rows.map((visit) => {
-                  const patient = rel(
-                    visit,
-                    "patients",
-                  );
+                  const patient = rel(visit, "patients");
+                  const department = rel(visit, "departments");
 
-                  const department = rel(
-                    visit,
-                    "departments",
-                  );
+                  const patientId = s(patient, "id");
+                  const visitId = s(visit, "id");
 
-                  const patientId = s(
-                    patient,
-                    "id",
-                  );
-
-                  const visitId = s(
-                    visit,
-                    "id",
-                  );
-
-                  const dob = s(
-                    patient,
-                    "dob",
-                  );
-
+                  const dob = s(patient, "dob");
                   const ageVal = calcAge(dob);
 
                   const ageStr =
-                    ageVal !== null
-                      ? `${ageVal} yrs`
-                      : "—";
+                    ageVal !== null ? `${ageVal} yrs` : "—";
 
                   return (
                     <TableRow key={visitId}>
                       <TableCell className="font-medium whitespace-nowrap">
-                        {s(
-                          patient,
-                          "full_name",
-                        ) || "—"}
+                        {s(patient, "full_name") || "—"}
 
                         <span
                           className="ms-2 text-xs text-muted-foreground"
@@ -210,65 +163,45 @@ function ClinicPage() {
                       <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
                         {ageStr}{" "}
                         {s(patient, "gender")
-                          ? `(${s(
-                              patient,
-                              "gender",
-                            )})`
+                          ? `(${s(patient, "gender")})`
                           : ""}
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
                         {lang === "ar"
-                          ? s(
-                              department,
-                              "name_ar",
-                            ) ||
-                            s(
-                              department,
-                              "name",
-                            ) ||
+                          ? s(department, "name_ar") ||
+                            s(department, "name") ||
                             "—"
-                          : s(
-                              department,
-                              "name",
-                            ) || "—"}
+                          : s(department, "name") || "—"}
                       </TableCell>
 
                       <TableCell>
-                        <StatusBadge
-                          status={s(
-                            visit,
-                            "status",
-                          )}
-                        />
+                        <StatusBadge status={s(visit, "status")} />
                       </TableCell>
 
                       <TableCell className="text-end whitespace-nowrap">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={!visitId}
-                          onClick={() => {
-                            if (!visitId) {
-                              console.error(
-                                "Clinic: missing visit ID",
-                                visit,
-                              );
-                              return;
-                            }
-
-                            navigate({
-                              to: "/clinic/$visitId",
-                              params: {
-                                visitId,
-                              },
-                            });
-                          }}
-                        >
-                          {lang === "ar"
-                            ? "فتح"
-                            : "Open"}
-                        </Button>
+                        {visitId ? (
+                          <Button
+                            asChild
+                            type="button"
+                            size="sm"
+                          >
+                            <Link
+                              to="/clinic/$visitId"
+                              params={{ visitId }}
+                            >
+                              {lang === "ar" ? "فتح" : "Open"}
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled
+                          >
+                            {lang === "ar" ? "فتح" : "Open"}
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
