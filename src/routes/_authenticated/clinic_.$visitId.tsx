@@ -49,14 +49,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useAuth } from "@/lib/auth";
-import {
-  n,
-  rel,
-  s,
-  useRows,
-  useSave,
-  type Row,
-} from "@/lib/db";
+import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import {
   calcAge,
@@ -80,7 +73,7 @@ export const Route = createFileRoute(
       {
         name: "description",
         content:
-          "Fast clinical consultation workspace for ROSHAN Medical Center.",
+          "Clinical consultation workspace for ROSHAN Medical Center.",
       },
     ],
   }),
@@ -118,24 +111,69 @@ const QUICK_COMPLAINTS: QuickOption[] = [
 ];
 
 const QUICK_HPI: QuickOption[] = [
-  { en: "No significant past history.", ar: "لا يوجد تاريخ مرضي مهم." },
-  { en: "Symptoms started recently.", ar: "بدأت الأعراض حديثًا." },
-  { en: "No known drug allergies.", ar: "لا توجد حساسية دوائية معروفة." },
-  { en: "No history of similar attacks.", ar: "لا يوجد تاريخ لنوبات مشابهة." },
-  { en: "Symptoms are worsening.", ar: "الأعراض في تزايد." },
-  { en: "Symptoms are improving.", ar: "الأعراض في تحسن." },
-  { en: "No associated red-flag symptoms reported.", ar: "لا توجد أعراض إنذارية مصاحبة حسب الإفادة." },
+  {
+    en: "No significant past history.",
+    ar: "لا يوجد تاريخ مرضي مهم.",
+  },
+  {
+    en: "Symptoms started recently.",
+    ar: "بدأت الأعراض حديثًا.",
+  },
+  {
+    en: "No known drug allergies.",
+    ar: "لا توجد حساسية دوائية معروفة.",
+  },
+  {
+    en: "No history of similar attacks.",
+    ar: "لا يوجد تاريخ لنوبات مشابهة.",
+  },
+  {
+    en: "Symptoms are worsening.",
+    ar: "الأعراض في تزايد.",
+  },
+  {
+    en: "Symptoms are improving.",
+    ar: "الأعراض في تحسن.",
+  },
+  {
+    en: "No associated red-flag symptoms reported.",
+    ar: "لا توجد أعراض إنذارية مصاحبة حسب الإفادة.",
+  },
 ];
 
 const QUICK_EXAM: QuickOption[] = [
-  { en: "General condition: stable.", ar: "الحالة العامة: مستقرة." },
-  { en: "Patient is conscious and oriented.", ar: "المريض واعٍ ومدرك." },
-  { en: "No respiratory distress.", ar: "لا توجد علامات ضيق تنفسي." },
-  { en: "Chest: clear bilaterally.", ar: "الصدر: أصوات تنفسية طبيعية ثنائيًا." },
-  { en: "Heart: normal S1/S2.", ar: "القلب: S1/S2 طبيعيان." },
-  { en: "Abdomen: soft and non-tender.", ar: "البطن: لين وغير مؤلم." },
-  { en: "No focal neurological deficit.", ar: "لا يوجد عجز عصبي بؤري." },
-  { en: "No peripheral edema.", ar: "لا توجد وذمة طرفية." },
+  {
+    en: "General condition: stable.",
+    ar: "الحالة العامة: مستقرة.",
+  },
+  {
+    en: "Patient is conscious and oriented.",
+    ar: "المريض واعٍ ومدرك.",
+  },
+  {
+    en: "No respiratory distress.",
+    ar: "لا توجد علامات ضيق تنفسي.",
+  },
+  {
+    en: "Chest: clear bilaterally.",
+    ar: "الصدر: أصوات تنفسية طبيعية ثنائيًا.",
+  },
+  {
+    en: "Heart: normal S1/S2.",
+    ar: "القلب: S1/S2 طبيعيان.",
+  },
+  {
+    en: "Abdomen: soft and non-tender.",
+    ar: "البطن: لين وغير مؤلم.",
+  },
+  {
+    en: "No focal neurological deficit.",
+    ar: "لا يوجد عجز عصبي بؤري.",
+  },
+  {
+    en: "No peripheral edema.",
+    ar: "لا توجد وذمة طرفية.",
+  },
 ];
 
 const QUICK_ASSESSMENT: QuickOption[] = [
@@ -223,8 +261,22 @@ function Consultation() {
 
   const { t, lang } = useLang();
   const { can, user } = useAuth();
-
   const isArabic = lang === "ar";
+
+  const [vitals, setVitals] = useState<Row>({});
+  const [clinicalNote, setClinicalNote] = useState<Row>({});
+  const [labSel, setLabSel] = useState<string[]>([]);
+  const [labSearch, setLabSearch] = useState("");
+  const [labCategory, setLabCategory] = useState("all");
+
+  const [rx, setRx] = useState<RxItem[]>([]);
+  const [rxExternal, setRxExternal] = useState(false);
+
+  // IMPORTANT: search state is now independent for every prescription row.
+  const [medicineSearch, setMedicineSearch] =
+    useState<Record<number, string>>({});
+
+  const [showMoreVitals, setShowMoreVitals] = useState(false);
 
   const visitQ = useRows(["visit", visitId], () =>
     supabase
@@ -240,19 +292,6 @@ function Consultation() {
   const patient = rel(visit, "patients");
   const patientId = s(patient, "id");
   const isFemale = s(patient, "gender") === "female";
-
-  const [vitals, setVitals] = useState<Row>({});
-  const [clinicalNote, setClinicalNote] = useState<Row>({});
-  const [labSel, setLabSel] = useState<string[]>([]);
-  const [labSearch, setLabSearch] = useState("");
-  const [labCategory, setLabCategory] = useState("all");
-
-  const [rx, setRx] = useState<RxItem[]>([]);
-  const [rxExternal, setRxExternal] = useState(false);
-  const [medicineSearch, setMedicineSearch] = useState("");
-
-  const [showMoreVitals, setShowMoreVitals] =
-    useState(false);
 
   const vitalsQ = useRows(["vitals", visitId], () =>
     supabase
@@ -277,9 +316,7 @@ function Consultation() {
   const testsQ = useRows(["lab-tests"], () =>
     supabase
       .from("lab_tests")
-      .select(
-        "id, name, name_ar, price, category, active",
-      )
+      .select("id, name, name_ar, price, category, active")
       .eq("active", true)
       .is("deleted_at", null)
       .order("name"),
@@ -296,19 +333,15 @@ function Consultation() {
       .order("name"),
   );
 
-  const ordersQ = useRows(
-    ["visit-labs", visitId],
-    () =>
-      supabase
-        .from("lab_orders")
-        .select(
-          "id, status, created_at, lab_order_items(id, status, price, lab_tests(name, name_ar))",
-        )
-        .eq("visit_id", visitId)
-        .is("deleted_at", null)
-        .order("created_at", {
-          ascending: false,
-        }),
+  const ordersQ = useRows(["visit-labs", visitId], () =>
+    supabase
+      .from("lab_orders")
+      .select(
+        "id, status, created_at, lab_order_items(id, status, price, lab_tests(name, name_ar))",
+      )
+      .eq("visit_id", visitId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
   );
 
   const rxQ = useRows(["visit-rx", visitId], () =>
@@ -319,9 +352,7 @@ function Consultation() {
       )
       .eq("visit_id", visitId)
       .is("deleted_at", null)
-      .order("created_at", {
-        ascending: false,
-      }),
+      .order("created_at", { ascending: false }),
   );
 
   const historyQ = useRows(
@@ -334,9 +365,7 @@ function Consultation() {
         )
         .eq("visits.patient_id", patientId)
         .is("deleted_at", null)
-        .order("created_at", {
-          ascending: false,
-        })
+        .order("created_at", { ascending: false })
         .limit(20),
     {
       enabled: Boolean(patientId),
@@ -344,19 +373,18 @@ function Consultation() {
   );
 
   useEffect(() => {
-    const v = ((vitalsQ.data ?? []) as Row[])[0];
+    const row = ((vitalsQ.data ?? []) as Row[])[0];
 
-    if (v) {
-      setVitals(v);
+    if (row) {
+      setVitals(row);
     }
   }, [vitalsQ.data]);
 
   useEffect(() => {
-    const note =
-      ((clinicalNoteQ.data ?? []) as Row[])[0];
+    const row = ((clinicalNoteQ.data ?? []) as Row[])[0];
 
-    if (note) {
-      setClinicalNote(note);
+    if (row) {
+      setClinicalNote(row);
     }
   }, [clinicalNoteQ.data]);
 
@@ -369,10 +397,7 @@ function Consultation() {
     s(clinicalNote, "lmp"),
   );
 
-  const appendText = (
-    field: string,
-    value: string,
-  ) => {
+  const appendText = (field: string, value: string) => {
     const current = s(clinicalNote, field);
 
     const next = current.trim()
@@ -385,50 +410,39 @@ function Consultation() {
     });
   };
 
-  const setChiefComplaint = (
-    option: QuickOption,
-  ) => {
-    const value = isArabic ? option.ar : option.en;
-
+  const setChiefComplaint = (option: QuickOption) => {
     setClinicalNote({
       ...clinicalNote,
-      chief_complaint: value,
+      chief_complaint: isArabic ? option.ar : option.en,
     });
   };
 
   const filteredTests = useMemo(() => {
     const tests = (testsQ.data ?? []) as Row[];
+    const query = labSearch.trim().toLowerCase();
 
     return tests.filter((test) => {
       const name = s(test, "name").toLowerCase();
       const nameAr = s(test, "name_ar").toLowerCase();
-      const category =
-        s(test, "category").toLowerCase();
+      const category = s(test, "category").toLowerCase();
 
       const matchesSearch =
-        !labSearch.trim() ||
-        name.includes(labSearch.toLowerCase()) ||
-        nameAr.includes(labSearch.toLowerCase());
+        !query ||
+        name.includes(query) ||
+        nameAr.includes(query);
 
       const matchesCategory =
         labCategory === "all" ||
         category === labCategory.toLowerCase();
 
-      return (
-        matchesSearch && matchesCategory
-      );
+      return matchesSearch && matchesCategory;
     });
-  }, [
-    testsQ.data,
-    labSearch,
-    labCategory,
-  ]);
+  }, [testsQ.data, labSearch, labCategory]);
 
   const labCategories = useMemo(() => {
     const values = new Set<string>();
 
-    for (const test of (testsQ.data ??
-      []) as Row[]) {
+    for (const test of (testsQ.data ?? []) as Row[]) {
       const category = s(test, "category");
 
       if (category) {
@@ -439,29 +453,10 @@ function Consultation() {
     return Array.from(values);
   }, [testsQ.data]);
 
-  const filteredMedicines = useMemo(() => {
-    const medicines = (medsQ.data ??
-      []) as Row[];
-
-    if (!medicineSearch.trim()) {
-      return medicines;
-    }
-
-    const q = medicineSearch.toLowerCase();
-
-    return medicines.filter((medicine) =>
-      [
-        s(medicine, "name"),
-        s(medicine, "generic_name"),
-        s(medicine, "brand_name"),
-        s(medicine, "strength"),
-        s(medicine, "dosage_form"),
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [medsQ.data, medicineSearch]);
+  const allMedicines = useMemo(
+    () => ((medsQ.data ?? []) as Row[]),
+    [medsQ.data],
+  );
 
   const toggleLab = (id: string) => {
     setLabSel((current) =>
@@ -501,7 +496,31 @@ function Consultation() {
     setRx((current) =>
       current.filter((_, i) => i !== index),
     );
+
+    setMedicineSearch((current) => {
+      const next: Record<number, string> = {};
+
+      Object.entries(current).forEach(
+        ([key, value]) => {
+          const oldIndex = Number(key);
+
+          if (oldIndex < index) {
+            next[oldIndex] = value;
+          } else if (oldIndex > index) {
+            next[oldIndex - 1] = value;
+          }
+        },
+      );
+
+      return next;
+    });
   };
+
+  /*
+   * ============================================================
+   * VITALS
+   * ============================================================
+   */
 
   const saveVitals = useSave(
     async () => {
@@ -516,78 +535,97 @@ function Consultation() {
         Number(s(vitals, "height")),
       );
 
+      /*
+       * BP is a UI value only.
+       * Database receives numeric systolic/diastolic values.
+       */
       const bpValue =
-        s(vitals, "blood_pressure");
+        s(vitals, "blood_pressure").trim();
 
       let systolicBp: number | null = null;
       let diastolicBp: number | null = null;
 
       if (bpValue.includes("/")) {
-        const [sys, dia] =
-          bpValue.split("/");
+        const [sys, dia] = bpValue.split("/");
 
         systolicBp =
-          Number(sys.trim()) || null;
+          Number(sys?.trim()) || null;
 
         diastolicBp =
-          Number(dia.trim()) || null;
+          Number(dia?.trim()) || null;
+      } else {
+        systolicBp =
+          Number(s(vitals, "systolic_bp")) ||
+          Number(s(vitals, "bp_systolic")) ||
+          null;
+
+        diastolicBp =
+          Number(s(vitals, "diastolic_bp")) ||
+          Number(s(vitals, "bp_diastolic")) ||
+          null;
       }
 
       const payload = {
         visit_id: visitId,
         patient_id: patientId,
+
         temperature:
-          Number(s(vitals, "temperature")) ||
-          null,
+          Number(s(vitals, "temperature")) || null,
+
         pulse:
           Number(s(vitals, "pulse")) || null,
+
         respiratory_rate:
-          Number(
-            s(
-              vitals,
-              "respiratory_rate",
-            ),
-          ) || null,
+          Number(s(vitals, "respiratory_rate")) || null,
+
         systolic_bp: systolicBp,
         diastolic_bp: diastolicBp,
+
         bp_systolic: systolicBp,
         bp_diastolic: diastolicBp,
+
         weight,
         height,
+
         bmi: calculatedBmi ?? null,
+
         spo2:
           Number(s(vitals, "spo2")) || null,
-        lmp: s(vitals, "lmp") || null,
-        edd: s(vitals, "edd") || null,
+
+        lmp:
+          s(vitals, "lmp") || null,
+
+        edd:
+          s(vitals, "edd") || null,
+
         gestational_age_days:
           Number(
-            s(
-              vitals,
-              "gestational_age_days",
-            ),
+            s(vitals, "gestational_age_days"),
           ) || null,
+
         recorded_by: user?.id ?? null,
       };
 
       const existing =
         ((vitalsQ.data ?? []) as Row[])[0];
 
-      const query = existing
-        ? supabase
-            .from("vitals")
-            .update(payload)
-            .eq(
-              "id",
-              s(existing, "id"),
-            )
-        : supabase
-            .from("vitals")
-            .insert(payload);
+      if (existing) {
+        const { error } = await supabase
+          .from("vitals")
+          .update(payload)
+          .eq("id", s(existing, "id"));
 
-      const { error } = await query;
+        if (error) {
+          throw new Error(error.message);
+        }
+      } else {
+        const { error } = await supabase
+          .from("vitals")
+          .insert(payload);
 
-      if (error) {
-        throw new Error(error.message);
+        if (error) {
+          throw new Error(error.message);
+        }
       }
 
       return null;
@@ -598,12 +636,19 @@ function Consultation() {
     },
   );
 
+  /*
+   * ============================================================
+   * CLINICAL NOTE
+   * ============================================================
+   *
+   * IMPORTANT:
+   * Saving a note does NOT complete the visit anymore.
+   * Completion must be a separate workflow.
+   */
+
   const saveClinicalNote = useSave(
     async () => {
-      const lmp = s(
-        clinicalNote,
-        "lmp",
-      );
+      const lmp = s(clinicalNote, "lmp");
 
       const gestationalDays =
         calcGestationalDays(lmp);
@@ -612,35 +657,30 @@ function Consultation() {
 
       const payload = {
         visit_id: visitId,
+
         doctor_id:
           user?.id ?? null,
+
         created_by:
           user?.id ?? null,
+
         updated_by:
           user?.id ?? null,
 
         chief_complaint:
-          s(
-            clinicalNote,
-            "chief_complaint",
-          ) || null,
+          s(clinicalNote, "chief_complaint") ||
+          null,
 
         history_present_illness:
           s(
             clinicalNote,
             "history_present_illness",
           ) ||
-          s(
-            clinicalNote,
-            "hpi",
-          ) ||
+          s(clinicalNote, "hpi") ||
           null,
 
         hpi:
-          s(
-            clinicalNote,
-            "hpi",
-          ) ||
+          s(clinicalNote, "hpi") ||
           s(
             clinicalNote,
             "history_present_illness",
@@ -648,22 +688,16 @@ function Consultation() {
           null,
 
         examination:
-          s(
-            clinicalNote,
-            "examination",
-          ) || null,
+          s(clinicalNote, "examination") ||
+          null,
 
         assessment:
-          s(
-            clinicalNote,
-            "assessment",
-          ) || null,
+          s(clinicalNote, "assessment") ||
+          null,
 
         plan:
-          s(
-            clinicalNote,
-            "plan",
-          ) || null,
+          s(clinicalNote, "plan") ||
+          null,
 
         allergy_history:
           s(
@@ -688,43 +722,25 @@ function Consultation() {
       };
 
       const existing =
-        ((clinicalNoteQ.data ??
-          []) as Row[])[0];
+        ((clinicalNoteQ.data ?? []) as Row[])[0];
 
-      const query = existing
-        ? supabase
-            .from("clinical_notes")
-            .update(payload)
-            .eq(
-              "id",
-              s(existing, "id"),
-            )
-        : supabase
-            .from("clinical_notes")
-            .insert(payload);
+      if (existing) {
+        const { error } = await supabase
+          .from("clinical_notes")
+          .update(payload)
+          .eq("id", s(existing, "id"));
 
-      const { error } = await query;
+        if (error) {
+          throw new Error(error.message);
+        }
+      } else {
+        const { error } = await supabase
+          .from("clinical_notes")
+          .insert(payload);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const { error: visitError } =
-        await supabase
-          .from("visits")
-          .update({
-            status: "completed",
-            completed_at:
-              new Date().toISOString(),
-            updated_by:
-              user?.id ?? null,
-          })
-          .eq("id", visitId);
-
-      if (visitError) {
-        throw new Error(
-          visitError.message,
-        );
+        if (error) {
+          throw new Error(error.message);
+        }
       }
 
       return null;
@@ -733,27 +749,42 @@ function Consultation() {
       invalidate: [
         ["clinical-note", visitId],
         ["visit", visitId],
-        [
-          "clinical-history",
-          patientId,
-        ],
+        ["clinical-history", patientId],
       ],
       successMessage: t("saved"),
     },
   );
 
+  /*
+   * ============================================================
+   * LAB ORDERS
+   * ============================================================
+   */
+
   const orderLabs = useSave(
     async () => {
+      const selectedLabIds = Array.from(
+        new Set(
+          labSel.filter(Boolean),
+        ),
+      );
+
+      if (selectedLabIds.length === 0) {
+        throw new Error(
+          isArabic
+            ? "اختر فحصًا واحدًا على الأقل."
+            : "Select at least one laboratory test.",
+        );
+      }
+
       const { data: order, error } =
         await supabase
           .from("lab_orders")
           .insert({
             visit_id: visitId,
             patient_id: patientId,
-            ordered_by:
-              user?.id ?? null,
-            created_by:
-              user?.id ?? null,
+            ordered_by: user?.id ?? null,
+            created_by: user?.id ?? null,
             status: "ordered",
             priority: "normal",
           })
@@ -770,15 +801,13 @@ function Consultation() {
         );
       }
 
-      const items = labSel.map(
+      const items = selectedLabIds.map(
         (testId) => {
           const test = (
-            (testsQ.data ??
-              []) as Row[]
+            (testsQ.data ?? []) as Row[]
           ).find(
             (row) =>
-              s(row, "id") ===
-              testId,
+              s(row, "id") === testId,
           );
 
           return {
@@ -786,24 +815,26 @@ function Consultation() {
             test_id: testId,
             price: n(test, "price"),
             status: "pending",
-            created_by:
-              user?.id ?? null,
+            created_by: user?.id ?? null,
           };
         },
       );
 
-      if (items.length > 0) {
-        const {
-          error: itemError,
-        } = await supabase
+      if (items.length === 0) {
+        throw new Error(
+          isArabic
+            ? "لم يتم اختيار فحوصات صالحة."
+            : "No valid laboratory tests selected.",
+        );
+      }
+
+      const { error: itemError } =
+        await supabase
           .from("lab_order_items")
           .insert(items);
 
-        if (itemError) {
-          throw new Error(
-            itemError.message,
-          );
-        }
+      if (itemError) {
+        throw new Error(itemError.message);
       }
 
       return null;
@@ -814,32 +845,56 @@ function Consultation() {
         ["lab-orders"],
       ],
       successMessage: t("saved"),
-      onDone: () =>
-        setLabSel([]),
+      onDone: () => setLabSel([]),
     },
   );
 
+  /*
+   * ============================================================
+   * PRESCRIPTIONS
+   * ============================================================
+   */
+
   const saveRx = useSave(
     async () => {
+      const validItems = rx.filter(
+        (item) => Boolean(item.medicine_id),
+      );
+
+      if (validItems.length === 0) {
+        throw new Error(
+          isArabic
+            ? "يجب اختيار دواء واحد على الأقل."
+            : "Select at least one medicine.",
+        );
+      }
+
       const { data: pres, error } =
         await supabase
           .from("prescriptions")
           .insert({
             visit_id: visitId,
             patient_id: patientId,
+
             prescribed_by:
               user?.id ?? null,
+
             doctor_id:
               user?.id ?? null,
+
             prescription_type:
               rxExternal
                 ? "external"
                 : "internal",
+
             is_external:
               rxExternal,
-            status: rxExternal
-              ? "external"
-              : "pending",
+
+            status:
+              rxExternal
+                ? "external"
+                : "pending",
+
             created_by:
               user?.id ?? null,
           })
@@ -847,9 +902,7 @@ function Consultation() {
           .single();
 
       if (error) {
-        throw new Error(
-          error.message,
-        );
+        throw new Error(error.message);
       }
 
       if (!pres) {
@@ -858,74 +911,54 @@ function Consultation() {
         );
       }
 
-      const items = rx
-        .filter(
-          (item) =>
-            item.medicine_id,
-        )
-        .map((item) => {
-          const medicine = (
-            (medsQ.data ??
-              []) as Row[]
-          ).find(
-            (m) =>
-              s(m, "id") ===
-              item.medicine_id,
-          );
+      const items = validItems.map(
+        (item) => {
+          const medicine =
+            allMedicines.find(
+              (m) =>
+                s(m, "id") ===
+                item.medicine_id,
+            );
 
           return {
-            prescription_id:
-              pres.id,
+            prescription_id: pres.id,
 
             medicine_id:
               item.medicine_id,
 
             medication_name:
               s(medicine, "name") ||
-              s(
-                medicine,
-                "generic_name",
-              ) ||
+              s(medicine, "generic_name") ||
               null,
 
             dose:
-              item.dosage ||
-              null,
+              item.dosage || null,
 
             dosage:
-              item.dosage ||
-              null,
+              item.dosage || null,
 
             frequency:
-              item.frequency ||
-              null,
+              item.frequency || null,
 
             duration:
-              item.duration ||
-              null,
+              item.duration || null,
 
             quantity:
-              Number(
-                item.quantity,
-              ) || 1,
+              Number(item.quantity) || 1,
 
             created_by:
               user?.id ?? null,
           };
-        });
+        },
+      );
 
-      if (items.length > 0) {
-        const {
-          error: itemError,
-        } = await supabase
+      const { error: itemError } =
+        await supabase
           .from("prescription_items")
           .insert(items);
 
-        if (itemError) {
-          throw new Error(
-            itemError.message,
-          );
-        }
+      if (itemError) {
+        throw new Error(itemError.message);
       }
 
       return null;
@@ -939,8 +972,63 @@ function Consultation() {
       onDone: () => {
         setRx([]);
         setRxExternal(false);
-        setMedicineSearch("");
+        setMedicineSearch({});
       },
+    },
+  );
+
+  /*
+   * ============================================================
+   * COMPLETE VISIT
+   * ============================================================
+   *
+   * Separate from "Save".
+   */
+
+  const completeVisit = useSave(
+    async () => {
+      const complaint =
+        s(
+          clinicalNote,
+          "chief_complaint",
+        ).trim();
+
+      const assessment =
+        s(
+          clinicalNote,
+          "assessment",
+        ).trim();
+
+      if (!complaint && !assessment) {
+        throw new Error(
+          isArabic
+            ? "أدخل الشكوى أو التشخيص قبل إنهاء الزيارة."
+            : "Enter the complaint or assessment before completing the visit.",
+        );
+      }
+
+      const { error } = await supabase
+        .from("visits")
+        .update({
+          status: "completed",
+          completed_at:
+            new Date().toISOString(),
+          updated_by:
+            user?.id ?? null,
+        })
+        .eq("id", visitId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return null;
+    },
+    {
+      invalidate: [["visit", visitId]],
+      successMessage: isArabic
+        ? "تم إنهاء الزيارة."
+        : "Visit completed.",
     },
   );
 
@@ -949,45 +1037,31 @@ function Consultation() {
   }
 
   if (!visit) {
-    return (
-      <Empty label={t("no_data")} />
-    );
+    return <Empty label={t("no_data")} />;
   }
 
   return (
     <div className="space-y-4 pb-10">
-      {/* ================= PATIENT HEADER ================= */}
+      {/* ======================================================
+          PATIENT HEADER
+      ======================================================= */}
 
       <PageHeader
-        title={s(
-          patient,
-          "full_name",
-        )}
+        title={s(patient, "full_name")}
         subtitle={`${t("mrn")}: ${s(
           patient,
           "mrn",
         )} · ${t("age")}: ${
           calcAge(
-            s(
-              patient,
-              "date_of_birth",
-            ),
+            s(patient, "date_of_birth"),
           ) ?? "—"
         } · ${t(
           s(patient, "gender"),
         )} · ${formatDate(
-          s(
-            visit,
-            "visit_date",
-          ),
+          s(visit, "visit_date"),
         )}`}
       >
-        <StatusBadge
-          status={s(
-            visit,
-            "status",
-          )}
-        />
+        <StatusBadge status={s(visit, "status")} />
 
         <Button
           asChild
@@ -1014,7 +1088,9 @@ function Consultation() {
         }
       />
 
-      {/* ================= QUICK PATIENT STRIP ================= */}
+      {/* ======================================================
+          PATIENT STRIP
+      ======================================================= */}
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-2 p-3 text-sm">
@@ -1023,16 +1099,10 @@ function Consultation() {
             {s(patient, "mrn")}
           </div>
 
-          {s(
-            patient,
-            "blood_group",
-          ) ? (
+          {s(patient, "blood_group") ? (
             <div className="rounded-md bg-muted px-3 py-1.5">
               <strong>BG:</strong>{" "}
-              {s(
-                patient,
-                "blood_group",
-              )}
+              {s(patient, "blood_group")}
             </div>
           ) : null}
 
@@ -1040,10 +1110,7 @@ function Consultation() {
             <strong>
               {t("visit_number")}:
             </strong>{" "}
-            {s(
-              visit,
-              "visit_number",
-            )}
+            {s(visit, "visit_number")}
           </div>
 
           <div className="ml-auto flex items-center gap-2 text-muted-foreground">
@@ -1055,7 +1122,9 @@ function Consultation() {
         </CardContent>
       </Card>
 
-      {/* ================= WORKSPACE ================= */}
+      {/* ======================================================
+          WORKSPACE
+      ======================================================= */}
 
       <Tabs defaultValue="emr">
         <TabsList className="sticky top-0 z-10 mb-4 flex h-auto w-full flex-wrap justify-start gap-1 bg-background/95 p-1 backdrop-blur">
@@ -1069,6 +1138,7 @@ function Consultation() {
 
           <TabsTrigger value="labs">
             {t("laboratory")}
+
             {labSel.length > 0 ? (
               <span className="ml-1 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
                 {labSel.length}
@@ -1078,6 +1148,7 @@ function Consultation() {
 
           <TabsTrigger value="rx">
             {t("prescription")}
+
             {rx.length > 0 ? (
               <span className="ml-1 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
                 {rx.length}
@@ -1090,21 +1161,17 @@ function Consultation() {
           </TabsTrigger>
         </TabsList>
 
-        {/* =====================================================
+        {/* ====================================================
             CLINICAL NOTE
-        ====================================================== */}
+        ===================================================== */}
 
         <TabsContent value="emr">
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
             <Card>
               <CardContent className="space-y-5 p-4">
-                {/* CHIEF COMPLAINT */}
-
                 <div>
                   <SectionTitle>
-                    {t(
-                      "chief_complaint",
-                    )}
+                    {t("chief_complaint")}
                   </SectionTitle>
 
                   <div className="mb-2 flex flex-wrap gap-2">
@@ -1159,14 +1226,11 @@ function Consultation() {
                       setClinicalNote({
                         ...clinicalNote,
                         chief_complaint:
-                          e.target
-                            .value,
+                          e.target.value,
                       })
                     }
                   />
                 </div>
-
-                {/* HPI */}
 
                 <div>
                   <SectionTitle>
@@ -1222,22 +1286,16 @@ function Consultation() {
                       setClinicalNote({
                         ...clinicalNote,
                         history_present_illness:
-                          e.target
-                            .value,
-                        hpi: e.target
-                          .value,
+                          e.target.value,
+                        hpi: e.target.value,
                       })
                     }
                   />
                 </div>
 
-                {/* EXAMINATION */}
-
                 <div>
                   <SectionTitle>
-                    {t(
-                      "examination",
-                    )}
+                    {t("examination")}
                   </SectionTitle>
 
                   <div className="mb-2 flex flex-wrap gap-2">
@@ -1283,14 +1341,11 @@ function Consultation() {
                       setClinicalNote({
                         ...clinicalNote,
                         examination:
-                          e.target
-                            .value,
+                          e.target.value,
                       })
                     }
                   />
                 </div>
-
-                {/* ASSESSMENT + PLAN */}
 
                 <div className="grid gap-5 lg:grid-cols-2">
                   <div>
@@ -1341,8 +1396,7 @@ function Consultation() {
                         setClinicalNote({
                           ...clinicalNote,
                           assessment:
-                            e.target
-                              .value,
+                            e.target.value,
                         })
                       }
                     />
@@ -1350,9 +1404,7 @@ function Consultation() {
 
                   <div>
                     <SectionTitle>
-                      {t(
-                        "treatment_plan",
-                      )}
+                      {t("treatment_plan")}
                     </SectionTitle>
 
                     <div className="mb-2 flex flex-wrap gap-2">
@@ -1397,22 +1449,15 @@ function Consultation() {
                       onChange={(e) =>
                         setClinicalNote({
                           ...clinicalNote,
-                          plan: e.target
-                            .value,
+                          plan: e.target.value,
                         })
                       }
                     />
                   </div>
                 </div>
 
-                {/* BACKGROUND */}
-
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Field
-                    label={t(
-                      "allergies",
-                    )}
-                  >
+                  <Field label={t("allergies")}>
                     <Input
                       placeholder={
                         isArabic
@@ -1427,17 +1472,14 @@ function Consultation() {
                         setClinicalNote({
                           ...clinicalNote,
                           allergy_history:
-                            e.target
-                              .value,
+                            e.target.value,
                         })
                       }
                     />
                   </Field>
 
                   <Field
-                    label={t(
-                      "chronic_conditions",
-                    )}
+                    label={t("chronic_conditions")}
                   >
                     <Input
                       placeholder={
@@ -1453,59 +1495,39 @@ function Consultation() {
                         setClinicalNote({
                           ...clinicalNote,
                           past_medical_history:
-                            e.target
-                              .value,
+                            e.target.value,
                         })
                       }
                     />
                   </Field>
                 </div>
 
-                {/* OBSTETRICS */}
-
                 {isFemale ? (
                   <Card className="border-dashed">
                     <CardContent className="space-y-4 p-4">
                       <SectionTitle>
-                        {t(
-                          "obstetrics",
-                        )}
+                        {t("obstetrics")}
                       </SectionTitle>
 
                       <div className="grid gap-4 sm:grid-cols-3">
-                        <Field
-                          label={t(
-                            "lmp",
-                          )}
-                        >
+                        <Field label={t("lmp")}>
                           <Input
                             type="date"
                             dir="ltr"
                             value={s(
                               clinicalNote,
                               "lmp",
-                            ).slice(
-                              0,
-                              10,
-                            )}
+                            ).slice(0, 10)}
                             onChange={(e) =>
-                              setClinicalNote(
-                                {
-                                  ...clinicalNote,
-                                  lmp: e
-                                    .target
-                                    .value,
-                                },
-                              )
+                              setClinicalNote({
+                                ...clinicalNote,
+                                lmp: e.target.value,
+                              })
                             }
                           />
                         </Field>
 
-                        <Field
-                          label={t(
-                            "edd",
-                          )}
-                        >
+                        <Field label={t("edd")}>
                           <Input
                             dir="ltr"
                             readOnly
@@ -1515,8 +1537,7 @@ function Consultation() {
                                   clinicalNote,
                                   "lmp",
                                 ),
-                              ) ??
-                              ""
+                              ) ?? ""
                             }
                           />
                         </Field>
@@ -1540,11 +1561,13 @@ function Consultation() {
                 ) : null}
 
                 {can("emr.create") ? (
-                  <div className="sticky bottom-3 z-10 flex justify-end">
+                  <div className="sticky bottom-3 z-10 flex flex-wrap justify-end gap-2">
                     <Button
                       size="lg"
+                      variant="outline"
                       disabled={
-                        saveClinicalNote.isPending
+                        saveClinicalNote.isPending ||
+                        completeVisit.isPending
                       }
                       onClick={() =>
                         saveClinicalNote.mutate(
@@ -1557,12 +1580,36 @@ function Consultation() {
                         ? t("saving")
                         : t("save")}
                     </Button>
+
+                    <Button
+                      size="lg"
+                      disabled={
+                        saveClinicalNote.isPending ||
+                        completeVisit.isPending
+                      }
+                      onClick={async () => {
+                        await saveClinicalNote.mutateAsync(
+                          undefined as never,
+                        );
+
+                        completeVisit.mutate(
+                          undefined as never,
+                        );
+                      }}
+                    >
+                      <Check className="size-4" />
+                      {completeVisit.isPending
+                        ? isArabic
+                          ? "جاري الإنهاء..."
+                          : "Completing..."
+                        : isArabic
+                          ? "حفظ وإنهاء الزيارة"
+                          : "Save & Complete"}
+                    </Button>
                   </div>
                 ) : null}
               </CardContent>
             </Card>
-
-            {/* QUICK SUMMARY */}
 
             <Card className="h-fit xl:sticky xl:top-20">
               <CardContent className="space-y-4 p-4">
@@ -1575,10 +1622,9 @@ function Consultation() {
                 <div className="space-y-2 text-sm">
                   <div className="rounded-md border p-3">
                     <div className="text-xs text-muted-foreground">
-                      {t(
-                        "chief_complaint",
-                      )}
+                      {t("chief_complaint")}
                     </div>
+
                     <div className="mt-1 font-medium">
                       {s(
                         clinicalNote,
@@ -1591,6 +1637,7 @@ function Consultation() {
                     <div className="text-xs text-muted-foreground">
                       {t("diagnosis")}
                     </div>
+
                     <div className="mt-1 font-medium">
                       {s(
                         clinicalNote,
@@ -1603,6 +1650,7 @@ function Consultation() {
                     <div className="text-xs text-muted-foreground">
                       {t("bmi")}
                     </div>
+
                     <div className="mt-1 font-medium">
                       {bmi ?? "—"}
                     </div>
@@ -1612,27 +1660,23 @@ function Consultation() {
                 <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
                   <Clock3 className="mb-1 size-4" />
                   {isArabic
-                    ? "استخدم الاختصارات لإدخال المعلومات المتكررة بسرعة."
-                    : "Use quick actions for repetitive clinical documentation."}
+                    ? "يمكن حفظ الملاحظات دون إنهاء الزيارة."
+                    : "Notes can be saved without completing the visit."}
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* =====================================================
+        {/* ====================================================
             VITALS
-        ====================================================== */}
+        ===================================================== */}
 
         <TabsContent value="vitals">
           <Card>
             <CardContent className="space-y-5 p-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Field
-                  label={t(
-                    "temperature",
-                  )}
-                >
+                <Field label={t("temperature")}>
                   <Input
                     type="number"
                     dir="ltr"
@@ -1647,8 +1691,7 @@ function Consultation() {
                       setVitals({
                         ...vitals,
                         temperature:
-                          e.target
-                            .value,
+                          e.target.value,
                       })
                     }
                   />
@@ -1660,26 +1703,17 @@ function Consultation() {
                     dir="ltr"
                     inputMode="numeric"
                     placeholder="80"
-                    value={s(
-                      vitals,
-                      "pulse",
-                    )}
+                    value={s(vitals, "pulse")}
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
-                        pulse:
-                          e.target
-                            .value,
+                        pulse: e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field
-                  label={t(
-                    "blood_pressure",
-                  )}
-                >
+                <Field label={t("blood_pressure")}>
                   <Input
                     dir="ltr"
                     inputMode="numeric"
@@ -1687,71 +1721,66 @@ function Consultation() {
                     value={
                       s(
                         vitals,
+                        "blood_pressure",
+                      ) ||
+                      (s(
+                        vitals,
                         "systolic_bp",
                       ) ||
-                      s(
-                        vitals,
-                        "bp_systolic",
-                      )
+                        s(
+                          vitals,
+                          "bp_systolic",
+                        ) ||
+                        s(
+                          vitals,
+                          "diastolic_bp",
+                        ) ||
+                        s(
+                          vitals,
+                          "bp_diastolic",
+                        )
                         ? `${s(
                             vitals,
                             "systolic_bp",
-                          ) ||
-                          s(
+                          ) || s(
                             vitals,
                             "bp_systolic",
                           )}/${s(
                             vitals,
                             "diastolic_bp",
-                          ) ||
-                          s(
+                          ) || s(
                             vitals,
                             "bp_diastolic",
                           )}`
-                        : s(
-                            vitals,
-                            "blood_pressure",
-                          )
+                        : "")
                     }
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
                         blood_pressure:
-                          e.target
-                            .value,
+                          e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field
-                  label={t("spo2")}
-                >
+                <Field label={t("spo2")}>
                   <Input
                     type="number"
                     dir="ltr"
                     inputMode="numeric"
                     placeholder="98"
-                    value={s(
-                      vitals,
-                      "spo2",
-                    )}
+                    value={s(vitals, "spo2")}
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
-                        spo2:
-                          e.target
-                            .value,
+                        spo2: e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field
-                  label={t(
-                    "weight",
-                  )}
-                >
+                <Field label={t("weight")}>
                   <Input
                     type="number"
                     dir="ltr"
@@ -1765,19 +1794,13 @@ function Consultation() {
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
-                        weight:
-                          e.target
-                            .value,
+                        weight: e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field
-                  label={t(
-                    "height",
-                  )}
-                >
+                <Field label={t("height")}>
                   <Input
                     type="number"
                     dir="ltr"
@@ -1791,9 +1814,7 @@ function Consultation() {
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
-                        height:
-                          e.target
-                            .value,
+                        height: e.target.value,
                       })
                     }
                   />
@@ -1803,9 +1824,7 @@ function Consultation() {
                   <Input
                     readOnly
                     dir="ltr"
-                    value={
-                      bmi ?? ""
-                    }
+                    value={bmi ?? ""}
                   />
                 </Field>
 
@@ -1827,8 +1846,7 @@ function Consultation() {
                       setVitals({
                         ...vitals,
                         respiratory_rate:
-                          e.target
-                            .value,
+                          e.target.value,
                       })
                     }
                   />
@@ -1841,8 +1859,7 @@ function Consultation() {
                 size="sm"
                 onClick={() =>
                   setShowMoreVitals(
-                    (value) =>
-                      !value,
+                    (value) => !value,
                   )
                 }
               >
@@ -1884,16 +1901,13 @@ function Consultation() {
                         setVitals({
                           ...vitals,
                           blood_sugar:
-                            e.target
-                              .value,
+                            e.target.value,
                         })
                       }
                     />
                   </Field>
 
-                  <Field
-                    label={t("notes")}
-                  >
+                  <Field label={t("notes")}>
                     <Textarea
                       rows={2}
                       value={s(
@@ -1904,8 +1918,7 @@ function Consultation() {
                         setVitals({
                           ...vitals,
                           notes:
-                            e.target
-                              .value,
+                            e.target.value,
                         })
                       }
                     />
@@ -1937,9 +1950,9 @@ function Consultation() {
           </Card>
         </TabsContent>
 
-        {/* =====================================================
+        {/* ====================================================
             LABORATORY
-        ====================================================== */}
+        ===================================================== */}
 
         <TabsContent value="labs">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -1947,9 +1960,7 @@ function Consultation() {
               <CardContent className="space-y-4 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <SectionTitle>
-                    {t(
-                      "order_tests",
-                    )}
+                    {t("order_tests")}
                   </SectionTitle>
 
                   {labSel.length > 0 ? (
@@ -1979,13 +1990,10 @@ function Consultation() {
                         ? "ابحث عن الفحص..."
                         : "Search laboratory test..."
                     }
-                    value={
-                      labSearch
-                    }
+                    value={labSearch}
                     onChange={(e) =>
                       setLabSearch(
-                        e.target
-                          .value,
+                        e.target.value,
                       )
                     }
                   />
@@ -1996,15 +2004,12 @@ function Consultation() {
                     type="button"
                     size="sm"
                     variant={
-                      labCategory ===
-                      "all"
+                      labCategory === "all"
                         ? "default"
                         : "outline"
                     }
                     onClick={() =>
-                      setLabCategory(
-                        "all",
-                      )
+                      setLabCategory("all")
                     }
                   >
                     {isArabic
@@ -2050,16 +2055,9 @@ function Consultation() {
                 <div className="max-h-[430px] space-y-1 overflow-y-auto rounded-md border p-2">
                   {filteredTests.map(
                     (test) => {
-                      const id =
-                        s(
-                          test,
-                          "id",
-                        );
-
+                      const id = s(test, "id");
                       const selected =
-                        labSel.includes(
-                          id,
-                        );
+                        labSel.includes(id);
 
                       const name =
                         isArabic
@@ -2076,48 +2074,51 @@ function Consultation() {
                               "name",
                             );
 
+                      /*
+                       * IMPORTANT:
+                       * Checkbox is no longer nested inside
+                       * an interactive button.
+                       */
                       return (
-                        <button
-                          type="button"
+                        <div
                           key={id}
-                          className={`flex w-full items-center gap-3 rounded-md p-3 text-left transition ${
+                          className={`flex w-full items-center gap-3 rounded-md p-3 transition ${
                             selected
                               ? "bg-primary/10"
                               : "hover:bg-muted"
                           }`}
-                          onClick={() =>
-                            toggleLab(
-                              id,
-                            )
-                          }
                         >
                           <Checkbox
-                            checked={
-                              selected
-                            }
+                            checked={selected}
                             onCheckedChange={() =>
-                              toggleLab(
-                                id,
-                              )
+                              toggleLab(id)
                             }
                           />
 
-                          <span className="flex-1 text-sm">
-                            {name}
-                          </span>
-
-                          {n(
-                            test,
-                            "price",
-                          ) > 0 ? (
-                            <span className="text-xs text-muted-foreground">
-                              {n(
-                                test,
-                                "price",
-                              )}
+                          <button
+                            type="button"
+                            className="flex flex-1 items-center gap-3 text-left"
+                            onClick={() =>
+                              toggleLab(id)
+                            }
+                          >
+                            <span className="flex-1 text-sm">
+                              {name}
                             </span>
-                          ) : null}
-                        </button>
+
+                            {n(
+                              test,
+                              "price",
+                            ) > 0 ? (
+                              <span className="text-xs text-muted-foreground">
+                                {n(
+                                  test,
+                                  "price",
+                                )}
+                              </span>
+                            ) : null}
+                          </button>
+                        </div>
                       );
                     },
                   )}
@@ -2139,8 +2140,7 @@ function Consultation() {
                     <Button
                       size="lg"
                       disabled={
-                        labSel.length ===
-                          0 ||
+                        labSel.length === 0 ||
                         orderLabs.isPending
                       }
                       onClick={() =>
@@ -2168,14 +2168,11 @@ function Consultation() {
             <Card className="h-fit">
               <CardContent className="p-4">
                 <SectionTitle>
-                  {t(
-                    "laboratory",
-                  )}
+                  {t("laboratory")}
                 </SectionTitle>
 
                 {(
-                  (ordersQ.data ??
-                    []) as Row[]
+                  (ordersQ.data ?? []) as Row[]
                 ).length === 0 ? (
                   <Empty />
                 ) : (
@@ -2183,83 +2180,77 @@ function Consultation() {
                     {(
                       (ordersQ.data ??
                         []) as Row[]
-                    ).map(
-                      (order) => (
-                        <li
-                          key={s(
-                            order,
-                            "id",
-                          )}
-                          className="rounded-md border p-3"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-medium">
-                              {(
-                                (order[
-                                  "lab_order_items"
-                                ] as Row[]) ??
-                                []
-                              )
-                                .map(
-                                  (
-                                    item,
-                                  ) => {
-                                    const test =
-                                      rel(
-                                        item,
-                                        "lab_tests",
-                                      );
+                    ).map((order) => (
+                      <li
+                        key={s(
+                          order,
+                          "id",
+                        )}
+                        className="rounded-md border p-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium">
+                            {(
+                              (order[
+                                "lab_order_items"
+                              ] as Row[]) ??
+                              []
+                            )
+                              .map(
+                                (item) => {
+                                  const test =
+                                    rel(
+                                      item,
+                                      "lab_tests",
+                                    );
 
-                                    return isArabic
-                                      ? s(
-                                          test,
-                                          "name_ar",
-                                        ) ||
-                                          s(
-                                            test,
-                                            "name",
-                                          )
-                                      : s(
+                                  return isArabic
+                                    ? s(
+                                        test,
+                                        "name_ar",
+                                      ) ||
+                                        s(
                                           test,
                                           "name",
-                                        );
-                                  },
-                                )
-                                .join(
-                                  ", ",
-                                )}
-                            </span>
+                                        )
+                                    : s(
+                                        test,
+                                        "name",
+                                      );
+                                },
+                              )
+                              .join(", ")}
+                          </span>
 
-                            <StatusBadge
-                              status={s(
-                                order,
-                                "status",
-                              )}
-                            />
-                          </div>
+                          <StatusBadge
+                            status={s(
+                              order,
+                              "status",
+                            )}
+                          />
+                        </div>
 
-                          <Button
-                            asChild
-                            variant="ghost"
-                            size="sm"
-                            className="mt-2"
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                        >
+                          <Link
+                            to="/lab/$orderId"
+                            params={{
+                              orderId:
+                                s(
+                                  order,
+                                  "id",
+                                ),
+                            }}
                           >
-                            <Link
-                              to="/lab/$orderId"
-                              params={{
-                                orderId:
-                                  s(
-                                    order,
-                                    "id",
-                                  ),
-                              }}
-                            >
-                              {t("open")}
-                            </Link>
-                          </Button>
-                        </li>
-                      ),
-                    )}
+                            {t("open")}
+                          </Link>
+                        </Button>
+                      </li>
+                    ))}
                   </ul>
                 )}
               </CardContent>
@@ -2267,9 +2258,9 @@ function Consultation() {
           </div>
         </TabsContent>
 
-        {/* =====================================================
+        {/* ====================================================
             PRESCRIPTION
-        ====================================================== */}
+        ===================================================== */}
 
         <TabsContent value="rx">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -2277,9 +2268,7 @@ function Consultation() {
               <CardContent className="space-y-4 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <SectionTitle>
-                    {t(
-                      "prescription",
-                    )}
+                    {t("prescription")}
                   </SectionTitle>
 
                   <Button
@@ -2323,343 +2312,411 @@ function Consultation() {
                     (
                       item,
                       index,
-                    ) => (
-                      <Card
-                        key={index}
-                        className="border"
-                      >
-                        <CardContent className="space-y-3 p-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">
-                              {isArabic
-                                ? `دواء ${
-                                    index +
-                                    1
-                                  }`
-                                : `Medicine ${
-                                    index +
-                                    1
-                                  }`}
-                            </span>
+                    ) => {
+                      const currentSearch =
+                        medicineSearch[
+                          index
+                        ] ?? "";
 
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                removeRx(
-                                  index,
-                                )
-                              }
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
+                      const filteredMedicines =
+                        allMedicines.filter(
+                          (medicine) => {
+                            const query =
+                              currentSearch
+                                .trim()
+                                .toLowerCase();
 
-                          <div className="relative">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            if (!query) {
+                              return true;
+                            }
 
-                            <Input
-                              className="pl-9"
-                              placeholder={
-                                isArabic
-                                  ? "ابحث عن الدواء..."
-                                  : "Search medicine..."
-                              }
-                              value={
-                                item.medicine_id
-                                  ? s(
-                                      (
-                                        (medsQ.data ??
-                                          []) as Row[]
-                                      ).find(
-                                        (
-                                          m,
-                                        ) =>
-                                          s(
-                                            m,
-                                            "id",
-                                          ) ===
-                                          item.medicine_id,
-                                      ),
-                                      "name",
+                            return [
+                              s(
+                                medicine,
+                                "name",
+                              ),
+                              s(
+                                medicine,
+                                "generic_name",
+                              ),
+                              s(
+                                medicine,
+                                "brand_name",
+                              ),
+                              s(
+                                medicine,
+                                "strength",
+                              ),
+                              s(
+                                medicine,
+                                "dosage_form",
+                              ),
+                            ]
+                              .join(" ")
+                              .toLowerCase()
+                              .includes(
+                                query,
+                              );
+                          },
+                        );
+
+                      const selectedMedicine =
+                        allMedicines.find(
+                          (medicine) =>
+                            s(
+                              medicine,
+                              "id",
+                            ) ===
+                            item.medicine_id,
+                        );
+
+                      return (
+                        <Card
+                          key={`${index}-${item.medicine_id}`}
+                          className="border"
+                        >
+                          <CardContent className="space-y-3 p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                {isArabic
+                                  ? `دواء ${
+                                      index +
+                                      1
+                                    }`
+                                  : `Medicine ${
+                                      index +
+                                      1
+                                    }`}
+                              </span>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  removeRx(
+                                    index,
+                                  )
+                                }
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+
+                            <div className="relative">
+                              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+
+                              <Input
+                                className="pl-9"
+                                placeholder={
+                                  isArabic
+                                    ? "ابحث عن الدواء..."
+                                    : "Search medicine..."
+                                }
+                                value={
+                                  selectedMedicine
+                                    ? s(
+                                        selectedMedicine,
+                                        "name",
+                                      )
+                                    : currentSearch
+                                }
+                                onChange={(
+                                  e,
+                                ) => {
+                                  const value =
+                                    e.target
+                                      .value;
+
+                                  setMedicineSearch(
+                                    (
+                                      current,
+                                    ) => ({
+                                      ...current,
+                                      [index]:
+                                        value,
+                                    }),
+                                  );
+
+                                  if (
+                                    item.medicine_id
+                                  ) {
+                                    updateRx(
+                                      index,
+                                      {
+                                        medicine_id:
+                                          "",
+                                      },
+                                    );
+                                  }
+                                }}
+                              />
+
+                              {!selectedMedicine ||
+                              currentSearch ? (
+                                <div className="mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow">
+                                  {filteredMedicines
+                                    .slice(
+                                      0,
+                                      40,
                                     )
-                                  : medicineSearch
-                              }
-                              onChange={(
-                                e,
-                              ) => {
-                                setMedicineSearch(
-                                  e
-                                    .target
-                                    .value,
-                                );
+                                    .map(
+                                      (
+                                        medicine,
+                                      ) => (
+                                        <button
+                                          type="button"
+                                          key={s(
+                                            medicine,
+                                            "id",
+                                          )}
+                                          className="flex w-full flex-col px-3 py-2 text-left hover:bg-muted"
+                                          onClick={() => {
+                                            updateRx(
+                                              index,
+                                              {
+                                                medicine_id:
+                                                  s(
+                                                    medicine,
+                                                    "id",
+                                                  ),
+                                              },
+                                            );
 
-                                if (
-                                  item.medicine_id
-                                ) {
+                                            setMedicineSearch(
+                                              (
+                                                current,
+                                              ) => ({
+                                                ...current,
+                                                [index]:
+                                                  "",
+                                              }),
+                                            );
+                                          }}
+                                        >
+                                          <span className="text-sm font-medium">
+                                            {s(
+                                              medicine,
+                                              "name",
+                                            )}
+                                          </span>
+
+                                          <span className="text-xs text-muted-foreground">
+                                            {[
+                                              s(
+                                                medicine,
+                                                "generic_name",
+                                              ),
+                                              s(
+                                                medicine,
+                                                "strength",
+                                              ),
+                                              s(
+                                                medicine,
+                                                "dosage_form",
+                                              ),
+                                            ]
+                                              .filter(
+                                                Boolean,
+                                              )
+                                              .join(
+                                                " · ",
+                                              )}
+                                          </span>
+                                        </button>
+                                      ),
+                                    )}
+
+                                  {filteredMedicines.length ===
+                                  0 ? (
+                                    <div className="p-3 text-center text-xs text-muted-foreground">
+                                      {isArabic
+                                        ? "لا توجد أدوية مطابقة"
+                                        : "No matching medicines"}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              <Select
+                                value={
+                                  item.dosage
+                                }
+                                onValueChange={(
+                                  value,
+                                ) =>
                                   updateRx(
                                     index,
                                     {
-                                      medicine_id:
-                                        "",
+                                      dosage:
+                                        value,
                                     },
-                                  );
-                                }
-                              }}
-                            />
-
-                            {medicineSearch ||
-                            !item.medicine_id ? (
-                              <div className="mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow">
-                                {filteredMedicines
-                                  .slice(
-                                    0,
-                                    40,
                                   )
-                                  .map(
-                                    (
-                                      medicine,
-                                    ) => (
-                                      <button
-                                        type="button"
-                                        key={s(
-                                          medicine,
-                                          "id",
-                                        )}
-                                        className="flex w-full flex-col px-3 py-2 text-left hover:bg-muted"
-                                        onClick={() => {
-                                          updateRx(
-                                            index,
-                                            {
-                                              medicine_id:
-                                                s(
-                                                  medicine,
-                                                  "id",
-                                                ),
-                                            },
-                                          );
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={
+                                      isArabic
+                                        ? "الجرعة"
+                                        : "Dose"
+                                    }
+                                  />
+                                </SelectTrigger>
 
-                                          setMedicineSearch(
-                                            "",
-                                          );
-                                        }}
+                                <SelectContent>
+                                  {DOSES.map(
+                                    (dose) => (
+                                      <SelectItem
+                                        key={
+                                          dose
+                                        }
+                                        value={
+                                          dose
+                                        }
                                       >
-                                        <span className="text-sm font-medium">
-                                          {s(
-                                            medicine,
-                                            "name",
-                                          )}
-                                        </span>
-
-                                        <span className="text-xs text-muted-foreground">
-                                          {[
-                                            s(
-                                              medicine,
-                                              "generic_name",
-                                            ),
-                                            s(
-                                              medicine,
-                                              "strength",
-                                            ),
-                                            s(
-                                              medicine,
-                                              "dosage_form",
-                                            ),
-                                          ]
-                                            .filter(
-                                              Boolean,
-                                            )
-                                            .join(
-                                              " · ",
-                                            )}
-                                        </span>
-                                      </button>
+                                        {
+                                          dose
+                                        }
+                                      </SelectItem>
                                     ),
                                   )}
-                              </div>
-                            ) : null}
-                          </div>
+                                </SelectContent>
+                              </Select>
 
-                          <div className="grid gap-2 sm:grid-cols-3">
-                            <Select
-                              value={
-                                item.dosage
-                              }
-                              onValueChange={(
-                                value,
-                              ) =>
-                                updateRx(
-                                  index,
-                                  {
-                                    dosage:
-                                      value,
-                                  },
-                                )
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue
-                                  placeholder={
-                                    isArabic
-                                      ? "الجرعة"
-                                      : "Dose"
-                                  }
-                                />
-                              </SelectTrigger>
+                              <Select
+                                value={
+                                  item.frequency
+                                }
+                                onValueChange={(
+                                  value,
+                                ) =>
+                                  updateRx(
+                                    index,
+                                    {
+                                      frequency:
+                                        value,
+                                    },
+                                  )
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={
+                                      isArabic
+                                        ? "التكرار"
+                                        : "Frequency"
+                                    }
+                                  />
+                                </SelectTrigger>
 
-                              <SelectContent>
-                                {DOSES.map(
-                                  (
-                                    dose,
-                                  ) => (
-                                    <SelectItem
-                                      key={
-                                        dose
-                                      }
-                                      value={
-                                        dose
-                                      }
-                                    >
-                                      {
-                                        dose
-                                      }
-                                    </SelectItem>
-                                  ),
-                                )}
-                              </SelectContent>
-                            </Select>
+                                <SelectContent>
+                                  {FREQUENCIES.map(
+                                    (
+                                      frequency,
+                                    ) => (
+                                      <SelectItem
+                                        key={
+                                          frequency
+                                        }
+                                        value={
+                                          frequency
+                                        }
+                                      >
+                                        {
+                                          frequency
+                                        }
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
 
-                            <Select
-                              value={
-                                item.frequency
-                              }
-                              onValueChange={(
-                                value,
-                              ) =>
-                                updateRx(
-                                  index,
-                                  {
-                                    frequency:
-                                      value,
-                                  },
-                                )
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue
-                                  placeholder={
-                                    isArabic
-                                      ? "التكرار"
-                                      : "Frequency"
-                                  }
-                                />
-                              </SelectTrigger>
+                              <Select
+                                value={
+                                  item.duration
+                                }
+                                onValueChange={(
+                                  value,
+                                ) =>
+                                  updateRx(
+                                    index,
+                                    {
+                                      duration:
+                                        value,
+                                    },
+                                  )
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={
+                                      isArabic
+                                        ? "المدة"
+                                        : "Duration"
+                                    }
+                                  />
+                                </SelectTrigger>
 
-                              <SelectContent>
-                                {FREQUENCIES.map(
-                                  (
-                                    frequency,
-                                  ) => (
-                                    <SelectItem
-                                      key={
-                                        frequency
-                                      }
-                                      value={
-                                        frequency
-                                      }
-                                    >
-                                      {
-                                        frequency
-                                      }
-                                    </SelectItem>
-                                  ),
-                                )}
-                              </SelectContent>
-                            </Select>
+                                <SelectContent>
+                                  {DURATIONS.map(
+                                    (
+                                      duration,
+                                    ) => (
+                                      <SelectItem
+                                        key={
+                                          duration
+                                        }
+                                        value={
+                                          duration
+                                        }
+                                      >
+                                        {
+                                          duration
+                                        }
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                            <Select
-                              value={
-                                item.duration
-                              }
-                              onValueChange={(
-                                value,
-                              ) =>
-                                updateRx(
-                                  index,
-                                  {
-                                    duration:
-                                      value,
-                                  },
-                                )
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue
-                                  placeholder={
-                                    isArabic
-                                      ? "المدة"
-                                      : "Duration"
-                                  }
-                                />
-                              </SelectTrigger>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                {isArabic
+                                  ? "الكمية"
+                                  : "Quantity"}
+                              </span>
 
-                              <SelectContent>
-                                {DURATIONS.map(
-                                  (
-                                    duration,
-                                  ) => (
-                                    <SelectItem
-                                      key={
-                                        duration
-                                      }
-                                      value={
-                                        duration
-                                      }
-                                    >
-                                      {
-                                        duration
-                                      }
-                                    </SelectItem>
-                                  ),
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
-                              {isArabic
-                                ? "الكمية"
-                                : "Quantity"}
-                            </span>
-
-                            <Input
-                              className="w-24"
-                              type="number"
-                              min={1}
-                              dir="ltr"
-                              value={
-                                item.quantity
-                              }
-                              onChange={(
-                                e,
-                              ) =>
-                                updateRx(
-                                  index,
-                                  {
-                                    quantity:
-                                      e
-                                        .target
-                                        .value,
-                                  },
-                                )
-                              }
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ),
+                              <Input
+                                className="w-24"
+                                type="number"
+                                min={1}
+                                dir="ltr"
+                                value={
+                                  item.quantity
+                                }
+                                onChange={(
+                                  e,
+                                ) =>
+                                  updateRx(
+                                    index,
+                                    {
+                                      quantity:
+                                        e
+                                          .target
+                                          .value,
+                                    },
+                                  )
+                                }
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    },
                   )}
                 </div>
 
@@ -2693,9 +2750,7 @@ function Consultation() {
                         size="lg"
                         disabled={
                           rx.every(
-                            (
-                              item,
-                            ) =>
+                            (item) =>
                               !item.medicine_id,
                           ) ||
                           saveRx.isPending
@@ -2707,21 +2762,18 @@ function Consultation() {
                         }
                       >
                         <Check className="size-4" />
+
                         {saveRx.isPending
                           ? t(
                               "saving",
                             )
-                          : t(
-                              "save",
-                            )}
+                          : t("save")}
                       </Button>
                     ) : null}
                   </div>
                 ) : null}
               </CardContent>
             </Card>
-
-            {/* PRESCRIPTION HISTORY */}
 
             <Card className="h-fit">
               <CardContent className="p-4">
@@ -2730,8 +2782,7 @@ function Consultation() {
                 </SectionTitle>
 
                 {(
-                  (rxQ.data ??
-                    []) as Row[]
+                  (rxQ.data ?? []) as Row[]
                 ).length === 0 ? (
                   <Empty />
                 ) : (
@@ -2829,16 +2880,15 @@ function Consultation() {
           </div>
         </TabsContent>
 
-        {/* =====================================================
+        {/* ====================================================
             HISTORY
-        ====================================================== */}
+        ===================================================== */}
 
         <TabsContent value="history">
           <Card>
             <CardContent className="p-0">
               {(
-                (historyQ.data ??
-                  []) as Row[]
+                (historyQ.data ?? []) as Row[]
               ).length === 0 ? (
                 <Empty />
               ) : (
@@ -2850,15 +2900,11 @@ function Consultation() {
                       </TableHead>
 
                       <TableHead>
-                        {t(
-                          "chief_complaint",
-                        )}
+                        {t("chief_complaint")}
                       </TableHead>
 
                       <TableHead>
-                        {t(
-                          "diagnosis",
-                        )}
+                        {t("diagnosis")}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
