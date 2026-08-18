@@ -72,7 +72,7 @@ function InvoicePage() {
   const pay = useSave(
     async () => {
       const value = Number(amount);
-      if (!value || value <= 0) throw new Error(t("invalid_amount"));
+      if (!value || value <= 0) throw new Error(t("invalid_amount") || "مبلغ غير صالح");
       const { error } = await supabase.from("payments").insert({
         invoice_id: invoiceId,
         patient_id: s(rel(invoice, "patients"), "id"),
@@ -122,7 +122,7 @@ function InvoicePage() {
         </Button>
       </PageHeader>
 
-      <ErrorBox error={invoiceQ.error} />
+      <ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
