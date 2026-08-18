@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { dbError, supabase } from "./supabase";
@@ -67,9 +68,6 @@ export function useSettings() {
 
   return { ...query, settings, currency: settings["currency"] || "SDG" };
 }
-
-// إضافة useMemo لاستيرادها من react في ملفاتك لاحقاً إذا احتجت
-import { useMemo } from "react";
 
 export function csvExport(rows: Row[], filename: string) {
   const first = rows[0];
