@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import {
   Empty,
@@ -9,11 +9,9 @@ import {
   PageHeader,
   StatusBadge,
 } from "@/components/kit";
-
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-
 import {
   Table,
   TableBody,
@@ -27,6 +25,7 @@ import { rel, s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/clinic")({
   head: () => ({
@@ -54,15 +53,69 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 
 function ClinicPage() {
   const { lang } = useLang();
+  const { user } = useAuth();
 
-  const [date, setDate] = useState<string>(todayISO());
-  const [filterMyPatients, setFilterMyPatients] =
-    useState<boolean>(false);
+  const [date, setDate] = useState(todayISO());
+  const [filterMyPatients, setFilterMyPatients] = useState(false);
 
+  /*
+   * IMPORTANT
+   *
+   * We deliberately use the authenticated Supabase user's UUID
+   * through auth_user_id -> users.id relationship.
+   *
+   * The visits.doctor_id column may contain the application users.id,
+   * not auth.uid().
+   */
+  const currentAuthUserId = user?.auth_user_id
+    ? String(user.auth_user_id)
+    : "";
+
+  /*
+   * First get the application user record associated with
+   * the currently authenticated Supabase user.
+   *
+   * This makes "My Patients" reliable and avoids confusing
+   * auth.users.id with public.users.id.
+   */
+  const currentUserQ = useRows<Row[]>(
+    ["current-app-user", currentAuthUserId],
+    () =>
+      supabase
+        .from("users")
+        .select("id, auth_user_id, full_name, role_id, active")
+        .eq("auth_user_id", currentAuthUserId)
+        .eq("active", true)
+        .limit(1),
+    {
+      enabled: Boolean(currentAuthUserId),
+    },
+  );
+
+  const currentAppUser =
+    ((currentUserQ.data ?? []) as Row[])[0];
+
+  const currentAppUserId = s(
+    currentAppUser,
+    "id",
+  );
+
+  /*
+   * Fetch today's visits.
+   *
+   * IMPORTANT:
+   * We use visit_date rather than created_at for the clinic
+   * day filter. A visit created shortly before/after midnight
+   * should belong to its actual visit date.
+   */
   const visits = useRows(
-    ["clinic-visits", date, filterMyPatients],
-
-    async () => {
+    [
+      "clinic-visits",
+      date,
+      filterMyPatients,
+      currentAppUserId,
+    ],
+    () => {
       let query = supabase
         .from("visits")
         .select(
@@ -74,7 +127,6 @@ function ClinicPage() {
             visit_date,
             patient_id,
             doctor_id,
-
             patients(
               id,
               full_name,
@@ -83,48 +135,33 @@ function ClinicPage() {
               dob,
               gender
             ),
-
             departments(
               name,
               name_ar
             ),
-
             users(
+              id,
               full_name
             )
           `,
         )
+        .eq("visit_date", date)
         .is("deleted_at", null)
         .order("created_at", {
           ascending: true,
         });
 
       /*
-       * Use visit_date when available.
+       * Only apply the doctor filter when:
        *
-       * This is safer for the clinic because a visit created
-       * around midnight should belong to its actual visit date,
-       * not necessarily the created_at date.
+       * 1. "My Patients" is enabled
+       * 2. We actually know the application users.id
        */
-      query = query
-        .gte("visit_date", date)
-        .lte("visit_date", date);
-
-      /*
-       * "My Patients" filter.
-       *
-       * We intentionally do not apply it unless we have a
-       * valid authenticated user, because doctor_id may be
-       * NULL for newly created visits.
-       */
-      if (filterMyPatients) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user?.id) {
-          query = query.eq("doctor_id", user.id);
-        }
+      if (filterMyPatients && currentAppUserId) {
+        query = query.eq(
+          "doctor_id",
+          currentAppUserId,
+        );
       }
 
       return query;
@@ -133,35 +170,51 @@ function ClinicPage() {
 
   const rows = (visits.data ?? []) as Row[];
 
-  if (visits.isLoading) {
+  if (
+    visits.isLoading ||
+    (filterMyPatients &&
+      currentUserQ.isLoading)
+  ) {
     return <Loading />;
   }
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title={lang === "ar" ? "العيادة" : "Clinic"}
+        title={
+          lang === "ar"
+            ? "العيادة"
+            : "Clinic"
+        }
         subtitle={formatDate(date)}
       >
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
-            variant={filterMyPatients ? "default" : "outline"}
+            variant={
+              filterMyPatients
+                ? "default"
+                : "outline"
+            }
             size="sm"
             type="button"
             onClick={() =>
-              setFilterMyPatients((current) => !current)
+              setFilterMyPatients(
+                (value) => !value,
+              )
             }
           >
-            {lang === "ar" ? "مرضاي فقط" : "My Patients"}
+            {lang === "ar"
+              ? "مرضاي فقط"
+              : "My Patients"}
           </Button>
 
           <Input
             type="date"
             dir="ltr"
             value={date}
-            onChange={(event) => {
-              setDate(event.target.value);
-            }}
+            onChange={(e) =>
+              setDate(e.target.value)
+            }
             className="w-40"
           />
 
@@ -172,10 +225,15 @@ function ClinicPage() {
         </div>
       </PageHeader>
 
-      <ErrorBox error={visits.error} />
+      <ErrorBox
+        error={
+          visits.error ??
+          currentUserQ.error
+        }
+      />
 
       <Card>
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="overflow-x-auto p-0">
           {rows.length === 0 ? (
             <Empty />
           ) : (
@@ -183,7 +241,9 @@ function ClinicPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    {lang === "ar" ? "المريض" : "Patient"}
+                    {lang === "ar"
+                      ? "المريض"
+                      : "Patient"}
                   </TableHead>
 
                   <TableHead>
@@ -193,50 +253,77 @@ function ClinicPage() {
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar" ? "القسم" : "Department"}
+                    {lang === "ar"
+                      ? "القسم"
+                      : "Department"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar" ? "الحالة" : "Status"}
+                    {lang === "ar"
+                      ? "الحالة"
+                      : "Status"}
                   </TableHead>
 
                   <TableHead className="text-end">
-                    {lang === "ar" ? "الإجراء" : "Action"}
+                    {lang === "ar"
+                      ? "الإجراء"
+                      : "Action"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {rows.map((visit) => {
-                  const patient = rel(visit, "patients");
-                  const department = rel(visit, "departments");
+                  /*
+                   * Explicitly convert the visit id to a string.
+                   *
+                   * This is the critical value used by the
+                   * /clinic/$visitId route.
+                   */
+                  const visitId = s(
+                    visit,
+                    "id",
+                  ).trim();
 
-                  const patientId = s(patient, "id");
-                  const visitId = s(visit, "id");
+                  const patient = rel(
+                    visit,
+                    "patients",
+                  );
+
+                  const department = rel(
+                    visit,
+                    "departments",
+                  );
+
+                  const patientId = s(
+                    patient,
+                    "id",
+                  );
 
                   const dob =
-                    s(patient, "date_of_birth") ||
+                    s(
+                      patient,
+                      "date_of_birth",
+                    ) ||
                     s(patient, "dob");
 
                   const ageVal = calcAge(dob);
 
                   const ageStr =
-                    ageVal !== null ? `${ageVal} yrs` : "—";
+                    ageVal !== null
+                      ? `${ageVal} yrs`
+                      : "—";
+
+                  const gender =
+                    s(patient, "gender");
 
                   /*
-                   * ==================================================
-                   * IMPORTANT
-                   * ==================================================
+                   * We do NOT use Button asChild here.
                    *
-                   * Do NOT use Button asChild here.
-                   *
-                   * The actual navigation element is a native
-                   * TanStack Router <Link>.
-                   *
-                   * This guarantees that clicking "Open" invokes
-                   * the router directly.
+                   * The Link itself is the clickable element.
+                   * This removes Radix Slot from the navigation
+                   * path and eliminates a possible event/DOM issue.
                    */
-
                   return (
                     <TableRow
                       key={
@@ -247,97 +334,93 @@ function ClinicPage() {
                         )}`
                       }
                     >
-                      {/* PATIENT */}
-                      <TableCell className="font-medium whitespace-nowrap">
-                        {s(patient, "full_name") || "—"}
+                      <TableCell className="whitespace-nowrap font-medium">
+                        {s(
+                          patient,
+                          "full_name",
+                        ) || "—"}
 
-                        {s(patient, "mrn") ? (
+                        {s(
+                          patient,
+                          "mrn",
+                        ) ? (
                           <span
                             className="ms-2 text-xs text-muted-foreground"
                             dir="ltr"
                           >
-                            {s(patient, "mrn")}
+                            {s(
+                              patient,
+                              "mrn",
+                            )}
                           </span>
                         ) : null}
                       </TableCell>
 
-                      {/* AGE / GENDER */}
-                      <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                         {ageStr}
 
-                        {s(patient, "gender")
-                          ? ` (${s(patient, "gender")})`
+                        {gender
+                          ? ` (${gender})`
                           : ""}
                       </TableCell>
 
-                      {/* DEPARTMENT */}
                       <TableCell className="whitespace-nowrap">
                         {lang === "ar"
-                          ? s(department, "name_ar") ||
-                            s(department, "name") ||
+                          ? s(
+                              department,
+                              "name_ar",
+                            ) ||
+                            s(
+                              department,
+                              "name",
+                            ) ||
                             "—"
-                          : s(department, "name") || "—"}
+                          : s(
+                              department,
+                              "name",
+                            ) || "—"}
                       </TableCell>
 
-                      {/* STATUS */}
                       <TableCell>
                         <StatusBadge
-                          status={s(visit, "status")}
+                          status={s(
+                            visit,
+                            "status",
+                          )}
                         />
                       </TableCell>
 
-                      {/* ACTION */}
-                      <TableCell className="text-end whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap text-end">
                         {visitId ? (
-                          /*
-                           * REAL ROUTER LINK
-                           *
-                           * We deliberately don't wrap this in
-                           * <Button asChild>.
-                           */
                           <Link
                             to="/clinic/$visitId"
                             params={{
-                              visitId: visitId,
+                              visitId,
                             }}
-                            preload="intent"
-                            className="
-                              inline-flex
-                              h-9
-                              items-center
-                              justify-center
-                              rounded-md
-                              bg-primary
-                              px-3
-                              text-sm
-                              font-medium
-                              text-primary-foreground
-                              shadow
-                              transition-colors
-                              hover:bg-primary/90
-                              focus-visible:outline-none
-                              focus-visible:ring-2
-                              focus-visible:ring-ring
-                              focus-visible:ring-offset-2
-                              disabled:pointer-events-none
-                              disabled:opacity-50
-                            "
+                            className="inline-flex h-8 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            title={
+                              lang === "ar"
+                                ? "فتح الاستشارة"
+                                : "Open consultation"
+                            }
                           >
-                            {lang === "ar" ? "فتح" : "Open"}
+                            {lang === "ar"
+                              ? "فتح"
+                              : "Open"}
                           </Link>
                         ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled
+                          <span
+                            className="inline-flex h-8 items-center justify-center rounded-md border border-input px-3 text-xs text-muted-foreground opacity-50"
                             title={
                               lang === "ar"
                                 ? "معرّف الزيارة غير موجود"
                                 : "Visit ID is missing"
                             }
                           >
-                            {lang === "ar" ? "فتح" : "Open"}
-                          </Button>
+                            {lang === "ar"
+                              ? "فتح"
+                              : "Open"}
+                          </span>
                         )}
                       </TableCell>
                     </TableRow>
