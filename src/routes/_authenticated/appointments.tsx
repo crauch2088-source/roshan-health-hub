@@ -119,13 +119,13 @@ function AppointmentsPage() {
   const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) =>
     ["gp", "dentist", "specialist"].includes(s(rel(d, "roles"), "code")),
   );
+  
   if (list.isLoading) return <Loading />;
 
   return (
     <div>
       <PageHeader title={t("appointments")} subtitle={formatDate(date)} />
 
-      {/* شريط الأدوات العلوي (تاريخ، تصدير، وزر موعد جديد واضح) */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
@@ -135,12 +135,12 @@ function AppointmentsPage() {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-1">
-              <Plus className="size-4" /> موعد جديد
+              <Plus className="size-4" /> {t("new_appointment") || "موعد جديد"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>موعد جديد</DialogTitle>
+              <DialogTitle>{t("new_appointment") || "موعد جديد"}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
               <Field label={`${t("patient")} *`}>
@@ -212,7 +212,7 @@ function AppointmentsPage() {
         </Dialog>
       </div>
 
-      <ErrorBox error={list.error} />
+      <ErrorBox error={list.error ?? patients.error ?? departments.error ?? doctors.error} />
 
       <Card>
         <CardContent className="p-0">
