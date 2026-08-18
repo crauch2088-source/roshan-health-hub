@@ -1,9 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-} from "@tanstack/react-router";
-import { useState } from "react";
-
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Empty,
   ErrorBox,
@@ -23,28 +18,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  rel,
-  s,
-  useRows,
-  type Row,
-} from "@/lib/db";
+import { rel, s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import {
-  calcAge,
-  formatDate,
-  todayISO,
-} from "@/lib/medical";
+import { calcAge, formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute(
-  "/_authenticated/clinic",
-)({
+export const Route = createFileRoute("/_authenticated/clinic")({
   head: () => ({
     meta: [
       {
-        title:
-          "Clinic — ROSHAN Medical Center",
+        title: "Clinic — ROSHAN Medical Center",
       },
       {
         name: "description",
@@ -69,24 +52,40 @@ export const Route = createFileRoute(
 function ClinicPage() {
   const { lang } = useLang();
 
-  const [date, setDate] = useState(
-    todayISO(),
-  );
-
+  const [date, setDate] = useStateSafe(todayISO());
   const [filterMyPatients, setFilterMyPatients] =
-    useState(false);
+    useStateSafe(false);
 
   const visits = useRows(
-    [
-      "clinic-visits",
-      date,
-      filterMyPatients,
-    ],
+    ["clinic-visits", date, filterMyPatients],
     () =>
       supabase
         .from("visits")
         .select(
-          "id, visit_number, status, created_at, patients(id, full_name, mrn, dob, gender), departments(name, name_ar), users(full_name)",
+          `
+            id,
+            visit_number,
+            status,
+            created_at,
+            visit_date,
+            patient_id,
+            doctor_id,
+            patients(
+              id,
+              full_name,
+              mrn,
+              date_of_birth,
+              dob,
+              gender
+            ),
+            departments(
+              name,
+              name_ar
+            ),
+            users(
+              full_name
+            )
+          `,
         )
         .gte(
           "created_at",
@@ -102,15 +101,14 @@ function ClinicPage() {
         }),
   );
 
-  const rows =
-    (visits.data ?? []) as Row[];
+  const rows = (visits.data ?? []) as Row[];
 
   if (visits.isLoading) {
     return <Loading />;
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title={
           lang === "ar"
@@ -220,22 +218,40 @@ function ClinicPage() {
                     "id",
                   );
 
-                  const dob = s(
-                    patient,
-                    "dob",
-                  );
+                  const dob =
+                    s(patient, "date_of_birth") ||
+                    s(patient, "dob");
 
-                  const ageVal =
-                    calcAge(dob);
+                  const ageVal = calcAge(dob);
 
                   const ageStr =
                     ageVal !== null
                       ? `${ageVal} yrs`
                       : "—";
 
+                  /*
+                   * IMPORTANT:
+                   *
+                   * Navigation is now done with a real
+                   * TanStack Router <Link>.
+                   *
+                   * This avoids relying on onClick/useNavigate
+                   * for opening the consultation.
+                   */
+                  const consultationPath =
+                    visitId
+                      ? "/clinic/$visitId"
+                      : null;
+
                   return (
                     <TableRow
-                      key={visitId}
+                      key={
+                        visitId ||
+                        `${patientId}-${s(
+                          visit,
+                          "created_at",
+                        )}`
+                      }
                     >
                       <TableCell className="font-medium whitespace-nowrap">
                         {s(
@@ -294,14 +310,16 @@ function ClinicPage() {
                       </TableCell>
 
                       <TableCell className="text-end whitespace-nowrap">
-                        {visitId ? (
+                        {consultationPath ? (
                           <Button
                             asChild
                             type="button"
                             size="sm"
                           >
                             <Link
-                              to="/clinic/$visitId"
+                              to={
+                                "/clinic/$visitId"
+                              }
                               params={{
                                 visitId,
                               }}
@@ -316,6 +334,11 @@ function ClinicPage() {
                             type="button"
                             size="sm"
                             disabled
+                            title={
+                              lang === "ar"
+                                ? "معرّف الزيارة غير موجود"
+                                : "Visit ID is missing"
+                            }
                           >
                             {lang === "ar"
                               ? "فتح"
@@ -333,4 +356,20 @@ function ClinicPage() {
       </Card>
     </div>
   );
+}
+
+/*
+ * Small local helpers to keep the component
+ * independent from React import style.
+ *
+ * We intentionally keep these typed simply because
+ * the project already uses its own state patterns.
+ */
+
+import { useState } from "react";
+
+function useStateSafe<T>(
+  initialValue: T,
+) {
+  return useState<T>(initialValue);
 }
