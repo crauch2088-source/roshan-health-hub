@@ -161,16 +161,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
+  const direction = lang === "ar" ? "rtl" : "ltr";
+
   async function handleSignOut() {
     await signOut();
     void navigate({ to: "/auth", replace: true });
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background" dir={direction}>
       <aside className="no-print sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar lg:flex">
         <Brand />
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1" dir={direction}>
           <NavLinks />
         </ScrollArea>
         <div className="border-t border-sidebar-border p-3">
@@ -192,10 +194,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side={lang === "ar" ? "right" : "left"} className="w-72 bg-sidebar p-0">
+            <SheetContent 
+              side={lang === "ar" ? "right" : "left"} 
+              className="w-72 bg-sidebar p-0"
+              dir={direction}
+            >
               <SheetTitle className="sr-only">{t("app_name")}</SheetTitle>
               <Brand />
-              <ScrollArea className="h-[calc(100vh-8rem)]">
+              <ScrollArea className="h-[calc(100vh-8rem)]" dir={direction}>
                 <NavLinks onNavigate={() => setOpen(false)} />
               </ScrollArea>
             </SheetContent>
