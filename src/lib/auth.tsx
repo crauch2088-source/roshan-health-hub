@@ -156,6 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roleName === "admin" ||
     fallbackRole === "super_admin";
 
+  // If the permission table could not be resolved (empty set), don't lock the
+  // user out of the whole UI — the database RLS policies remain the real gate.
+  const permsUnresolved = perms.size === 0;
+
   const value = useMemo<AuthCtx>(
     () => ({
       loading,
@@ -164,13 +168,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       perms,
       error,
       isSuperAdmin,
-      can: (code: string) => isSuperAdmin || perms.has(code),
-      canModule: (module: string) => isSuperAdmin || perms.has(`${module}.read`),
+      can: (code: string) => isSuperAdmin || permsUnresolved || perms.has(code),
+      canModule: (module: string) =>
+        isSuperAdmin || permsUnresolved || perms.has(`${module}.read`),
       signIn,
       signOut,
       refresh,
     }),
-    [loading, session, user, perms, error, isSuperAdmin, signIn, signOut, refresh],
+    [loading, session, user, perms, error, isSuperAdmin, permsUnresolved, signIn, signOut, refresh],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
