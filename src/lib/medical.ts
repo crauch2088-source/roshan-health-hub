@@ -27,7 +27,7 @@ export function calcEdd(lmp?: string | null): string | null {
   const d = new Date(lmp);
   if (Number.isNaN(d.getTime())) return null;
   d.setDate(d.getDate() + 280);
-  return d.toISOString().split('T')[0];
+  return d.toISOString().slice(0, 10);
 }
 
 export function calcGestationalDays(lmp?: string | null): number | null {
@@ -47,7 +47,7 @@ export function formatGestationalAge(days?: number | null, lang: "ar" | "en" = "
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function money(value?: number | null, currency = "SDG"): string {
@@ -58,14 +58,14 @@ export function money(value?: number | null, currency = "SDG"): string {
 export function formatDate(value?: string | null): string {
   if (!value) return "—";
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toISOString().split('T')[0];
+  return Number.isNaN(d.getTime()) ? String(value) : d.toISOString().slice(0, 10);
 }
 
 export function formatDateTime(value?: string | null): string {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return `${d.toISOString().split('T')[0]} ${d.toTimeString().slice(0, 5)}`;
+  return `${d.toISOString().slice(0, 10)} ${d.toTimeString().slice(0, 5)}`;
 }
 
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
