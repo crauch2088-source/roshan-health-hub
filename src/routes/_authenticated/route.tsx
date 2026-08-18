@@ -7,29 +7,28 @@ import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-    beforeLoad: async () => {
-        const { data, error } = await supabase.auth.getUser();
-            if (error || !data.user) throw redirect({ to: "/auth" });
-                return { authUser: data.user };
-                  },
-                    component: ProtectedLayout,
-                    });
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+    return { authUser: data.user };
+  },
+  component: ProtectedLayout,
+});
 
-                    function ProtectedLayout() {
-                      const { loading } = useAuth();
+function ProtectedLayout() {
+  const { loading } = useAuth();
 
-                        if (loading) {
-                            return (
-                                  <div className="flex min-h-screen items-center justify-center">
-                                          <Loading />
-                                                </div>
-                                                    );
-                                                      }
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
-                                                        return (
-                                                            <AppShell>
-                                                                  <Outlet />
-                                                                      </AppShell>
-                                                                        );
-                                                                        }
-                                                                        
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
