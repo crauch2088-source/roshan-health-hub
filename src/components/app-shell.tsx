@@ -111,7 +111,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             <div className="space-y-0.5">
               {items.map((item) => {
                 const active =
-                  location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+                  location.pathname === item.to || 
+                  (item.to !== "/" && location.pathname.startsWith(`${item.to}/`));
                 return (
                   <Link
                     key={item.to}
@@ -155,7 +156,7 @@ function Brand() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { t, toggle, lang } = useLang();
+  const { toggle, lang } = useLang();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -180,7 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </p>
           <p className="truncate text-xs text-sidebar-foreground/60">{user?.role_name ?? ""}</p>
           <Button variant="secondary" size="sm" className="mt-2 w-full" onClick={handleSignOut}>
-            <LogOut className="size-4" /> {t("sign_out")}
+            <LogOut className="size-4" /> تسجيل الخروج
           </Button>
         </div>
       </aside>
@@ -198,7 +199,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="w-72 bg-sidebar p-0"
               dir={direction}
             >
-              <SheetTitle className="sr-only">{t("app_name")}</SheetTitle>
+              <SheetTitle className="sr-only">القائمة</SheetTitle>
               <Brand />
               <ScrollArea className="h-[calc(100vh-8rem)]" dir={direction}>
                 <NavLinks onNavigate={() => setOpen(false)} />
