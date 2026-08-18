@@ -170,7 +170,7 @@ function CertificatesPage() {
         ) : null}
       </PageHeader>
 
-      <ErrorBox error={list.error} />
+      <ErrorBox error={list.error ?? patients.error} />
 
       <Card>
         <CardContent className="p-0">
