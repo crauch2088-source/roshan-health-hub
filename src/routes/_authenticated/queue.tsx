@@ -578,4 +578,252 @@ function VisitsPage() {
                       })
                     }
                   />
-                </
+                </Field>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setOpen(false)
+                  }
+                >
+                  {t("cancel")}
+                </Button>
+
+                <Button
+                  disabled={
+                    !form.patient_id ||
+                    create.isPending ||
+                    !can("visits.create")
+                  }
+                  onClick={() =>
+                    create.mutate(
+                      undefined as never,
+                    )
+                  }
+                >
+                  {create.isPending
+                    ? t("saving")
+                    : t("save")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </PageHeader>
+
+      <ErrorBox error={visits.error} />
+
+      <Card>
+        <CardContent className="p-0 overflow-x-auto">
+          {rows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    {t("patient")}
+                  </TableHead>
+
+                  <TableHead>
+                    {t(
+                      "queue_number",
+                    )}
+                  </TableHead>
+
+                  <TableHead>
+                    {t("department")}
+                  </TableHead>
+
+                  <TableHead>
+                    {t("doctor")}
+                  </TableHead>
+
+                  <TableHead>
+                    {t(
+                      "consultation_fee",
+                    )}
+                  </TableHead>
+
+                  <TableHead>
+                    {t("status")}
+                  </TableHead>
+
+                  <TableHead className="text-end">
+                    {t("actions")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {rows.map((v) => {
+                  const queueNumber =
+                    n(
+                      v,
+                      "queue_number",
+                    );
+
+                  return (
+                    <TableRow
+                      key={s(
+                        v,
+                        "id",
+                      )}
+                    >
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {s(
+                          rel(
+                            v,
+                            "patients",
+                          ),
+                          "full_name",
+                        )}
+
+                        <span
+                          className="ms-2 text-xs text-muted-foreground"
+                          dir="ltr"
+                        >
+                          {s(
+                            rel(
+                              v,
+                              "patients",
+                            ),
+                            "mrn",
+                          )}
+                        </span>
+                      </TableCell>
+
+                      <TableCell
+                        dir="ltr"
+                        className="font-mono text-xs font-semibold"
+                      >
+                        {queueNumber
+                          ? `Q${String(
+                              queueNumber,
+                            ).padStart(
+                              3,
+                              "0",
+                            )}`
+                          : "—"}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        {lang === "ar"
+                          ? s(
+                              rel(
+                                v,
+                                "departments",
+                              ),
+                              "name_ar",
+                            ) ||
+                            s(
+                              rel(
+                                v,
+                                "departments",
+                              ),
+                              "name",
+                            )
+                          : s(
+                              rel(
+                                v,
+                                "departments",
+                              ),
+                              "name",
+                            )}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        {s(
+                          rel(
+                            v,
+                            "users",
+                          ),
+                          "full_name",
+                        ) || "—"}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        {money(
+                          n(
+                            v,
+                            "consultation_fee",
+                          ),
+                          currency,
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <StatusBadge
+                          status={s(
+                            v,
+                            "status",
+                          )}
+                        />
+                      </TableCell>
+
+                      <TableCell className="text-end space-x-1 space-x-reverse whitespace-nowrap">
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Link
+                            to="/clinic/$visitId"
+                            params={{
+                              visitId:
+                                s(
+                                  v,
+                                  "id",
+                                ),
+                            }}
+                          >
+                            {t(
+                              "clinic",
+                            )}
+                          </Link>
+                        </Button>
+
+                        {can(
+                          "visits.delete",
+                        ) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={
+                              deleteVisit.isPending
+                            }
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  t(
+                                    "are_you_sure",
+                                  ),
+                                )
+                              ) {
+                                deleteVisit.mutate(
+                                  s(
+                                    v,
+                                    "id",
+                                  ),
+                                );
+                              }
+                            }}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
