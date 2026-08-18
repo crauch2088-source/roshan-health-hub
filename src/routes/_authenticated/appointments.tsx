@@ -60,7 +60,6 @@ function AppointmentsPage() {
     notes: "",
   });
 
-  // تحديث الاستعلام ليشمل مدى اليوم كاملاً لضمان ظهور المواعيد المضافة بدقة
   const appointments = useRows(["appointments", date], () =>
     supabase
       .from("appointments")
@@ -274,6 +273,7 @@ function AppointmentsPage() {
                   <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
                   <TableHead>{lang === "ar" ? "الطبيب" : "Doctor"}</TableHead>
                   <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
+                  <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
                   <TableHead>{lang === "ar" ? "الوقت" : "Time"}</TableHead>
                   <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
                   <TableHead className="text-end">{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
@@ -284,7 +284,11 @@ function AppointmentsPage() {
                   const patient = rel(item, "patients");
                   const doctor = rel(item, "users");
                   const department = rel(item, "departments");
-                  const dateVal = s(item, "appointment_date");
+                  const dateVal = s(item, "appointment_date") || "";
+
+                  // استخراج التاريخ والوقت النصي المباشر بدقة دون تغييرات التوقيت المحلي
+                  const [datePart, timePart] = dateVal.includes("T") ? dateVal.split("T") : [dateVal, ""];
+                  const formattedTime = timePart ? timePart.substring(0, 5) : "—";
 
                   return (
                     <TableRow key={s(item, "id")}>
@@ -301,7 +305,10 @@ function AppointmentsPage() {
                           : s(department, "name") || "—"}
                       </TableCell>
                       <TableCell dir="ltr" className="whitespace-nowrap font-mono text-xs">
-                        {dateVal ? new Date(dateVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                        {datePart || "—"}
+                      </TableCell>
+                      <TableCell dir="ltr" className="whitespace-nowrap font-mono text-xs font-bold text-primary">
+                        {formattedTime}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={s(item, "status")} />
