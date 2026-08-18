@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const userData = data as unknown as UserDbResponse;
+
       const roleRel = Array.isArray(userData.roles)
         ? userData.roles[0]
         : userData.roles;
@@ -115,10 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         active: userData.active ?? false,
       };
 
-      /*
-       * Never allow an inactive application user to operate the system,
-       * even if the Supabase Auth session itself is still valid.
-       */
       if (!appUser.active) {
         setUser(appUser);
         setPerms(new Set());
@@ -130,8 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(appUser);
 
       /*
-       * Super Admin is the ONLY role with implicit full permissions.
+       * ONLY super_admin receives implicit full access.
+       *
        * Admin is NOT Super Admin.
+       * Every other role must obtain permissions from role_permissions.
        */
       if (appUser.role_code === "super_admin") {
         setPerms(new Set(["*"]));
@@ -213,8 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession);
 
       /*
-       * Do not perform database queries inside Supabase's auth event
-       * callback. Schedule the profile load instead.
+       * Avoid database queries directly inside the Supabase auth event
+       * callback. Schedule profile loading instead.
        */
       if (
         event === "SIGNED_IN" ||
@@ -277,16 +276,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /*
    * SECURITY:
-   * Only the exact super_admin role gets implicit full access.
+   * Permission checks fail closed.
    *
-   * Admin permissions must come from role_permissions.
+   * Before permissions are loaded:
+   *   can(...) === false
+   *
+   * If permission loading fails:
+   *   can(...) === false
+   *
+   * Only super_admin bypasses individual permissions.
    */
   const isSuperAdmin = user?.role_code === "super_admin";
 
   const can = useCallback(
     (code: string) => {
       if (!user || !user.active) return false;
+
       if (!permissionsReady) return false;
+
       if (isSuperAdmin) return true;
 
       return perms.has(code);
