@@ -76,9 +76,12 @@ function AccountingPage() {
   const receivable = invRows.reduce((sum, r) => sum + (n(r, "net_amount") - n(r, "paid_amount")), 0);
 
   const byMethod: Record<string, number> = {};
-  for (const p of payRows) byMethod[s(p, "payment_method") || "cash"] = (byMethod[s(p, "payment_method") || "cash"] ?? 0) + n(p, "amount");
+  for (const p of payRows) {
+    const method = s(p, "payment_method") || "cash";
+    byMethod[method] = (byMethod[method] ?? 0) + n(p, "amount");
+  }
 
-  if (payments.isLoading) return <Loading />;
+  if (payments.isLoading && expenses.isLoading) return <Loading />;
 
   return (
     <div>
@@ -88,13 +91,13 @@ function AccountingPage() {
         <ExportButtons rows={payRows} filename={`roshan-revenue-${from}-${to}`} />
       </PageHeader>
 
-      <ErrorBox error={payments.error ?? expenses.error} />
+      <ErrorBox error={payments.error ?? expenses.error ?? invoices.error} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("revenue")} value={money(revenue, currency)} />
-        <StatCard label={t("expenses")} value={money(spend, currency)} />
-        <StatCard label={t("net_profit")} value={money(revenue - spend, currency)} />
-        <StatCard label={t("receivables")} value={money(receivable, currency)} />
+        <StatCard label={t("revenue")} value={money(revenue, currency)} tone="success" />
+        <StatCard label={t("expenses")} value={money(spend, currency)} tone="destructive" />
+        <StatCard label={t("net_profit")} value={money(revenue - spend, currency)} tone="primary" />
+        <StatCard label={t("receivables")} value={money(receivable, currency)} tone="warning" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
