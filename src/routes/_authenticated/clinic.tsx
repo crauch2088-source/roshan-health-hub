@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { rel, s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { calculateAge, formatDate, todayISO } from "@/lib/medical";
+import { calcAge, formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/clinic")({
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 });
 
 function ClinicPage() {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
   const [filterMyPatients, setFilterMyPatients] = useState(false);
@@ -96,7 +96,8 @@ function ClinicPage() {
                   const patient = rel(visit, "patients");
                   const department = rel(visit, "departments");
                   const dob = s(patient, "dob");
-                  const ageStr = dob ? calculateAge(dob) : "—";
+                  const ageVal = calcAge(dob);
+                  const ageStr = ageVal !== null ? `${ageVal} yrs` : "—";
 
                   return (
                     <TableRow key={s(visit, "id")}>
