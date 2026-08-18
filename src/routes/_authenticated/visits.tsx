@@ -148,9 +148,12 @@ function VisitsPage() {
   );
 
   const rows = (visits.data ?? []) as Row[];
-  const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) =>
-    ["gp", "dentist", "specialist"].includes(s(rel(d, "roles"), "code")),
-  );
+  
+  // تم توسيع الفلترة لضمان ظهور الأطباء حتى لو اختلف كود الدور في قاعدة البيانات
+  const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) => {
+    const roleCode = s(rel(d, "roles"), "code").toLowerCase();
+    return !roleCode || ["gp", "dentist", "specialist", "doctor", "physician"].includes(roleCode);
+  });
 
   if (visits.isLoading) return <Loading />;
 
