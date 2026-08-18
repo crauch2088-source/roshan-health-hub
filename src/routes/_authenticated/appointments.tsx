@@ -107,7 +107,7 @@ function AppointmentsPage() {
     },
     {
       invalidate: [["appointments", date]],
-      successMessage: t("saved"),
+      successMessage: lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully",
       onDone: () => {
         setOpen(false);
         setForm({ patient_id: "", doctor_id: "", department_id: "", appointment_time: "09:00", notes: "" });
@@ -126,13 +126,12 @@ function AppointmentsPage() {
     },
     {
       invalidate: [["appointments", date]],
-      successMessage: t("deleted"),
+      successMessage: lang === "ar" ? "تم الحذف" : "Deleted",
     },
   );
 
   const rows = (appointments.data ?? []) as Row[];
 
-  // توسيع فلترة الأطباء لضمان ظهور كافة الكوادر الطبية
   const doctorRows = ((doctors.data ?? []) as Row[]).filter((d) => {
     const roleCode = s(rel(d, "roles"), "code").toLowerCase();
     return !roleCode || ["gp", "dentist", "specialist", "doctor", "physician"].includes(roleCode);
@@ -142,7 +141,7 @@ function AppointmentsPage() {
 
   return (
     <div>
-      <PageHeader title={t("appointments")} subtitle={formatDate(date)}>
+      <PageHeader title={lang === "ar" ? "المواعيد" : "Appointments"} subtitle={formatDate(date)}>
         <Input
           type="date"
           dir="ltr"
@@ -154,21 +153,21 @@ function AppointmentsPage() {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
-              <Plus className="size-4" /> {t("new_appointment")}
+              <Plus className="size-4" /> {lang === "ar" ? "ميعاد جديد" : "New Appointment"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t("new_appointment")}</DialogTitle>
+              <DialogTitle>{lang === "ar" ? "حجز ميعاد جديد" : "New Appointment"}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
-              <Field label={`${t("patient")} *`}>
+              <Field label={lang === "ar" ? "المريض *" : "Patient *"}>
                 <Select
                   value={form.patient_id}
                   onValueChange={(v) => setForm({ ...form, patient_id: v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("search")} />
+                    <SelectValue placeholder={lang === "ar" ? "بحث عن مريض..." : "Search patient..."} />
                   </SelectTrigger>
                   <SelectContent className="max-h-72">
                     {((patients.data ?? []) as Row[]).map((p) => (
@@ -180,13 +179,13 @@ function AppointmentsPage() {
                 </Select>
               </Field>
 
-              <Field label={t("doctor")}>
+              <Field label={lang === "ar" ? "الطبيب" : "Doctor"}>
                 <Select
                   value={form.doctor_id}
                   onValueChange={(v) => setForm({ ...form, doctor_id: v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("none")} />
+                    <SelectValue placeholder={lang === "ar" ? "بدون" : "None"} />
                   </SelectTrigger>
                   <SelectContent>
                     {doctorRows.map((d) => (
@@ -198,13 +197,13 @@ function AppointmentsPage() {
                 </Select>
               </Field>
 
-              <Field label={t("department")}>
+              <Field label={lang === "ar" ? "القسم" : "Department"}>
                 <Select
                   value={form.department_id}
                   onValueChange={(v) => setForm({ ...form, department_id: v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("none")} />
+                    <SelectValue placeholder={lang === "ar" ? "بدون" : "None"} />
                   </SelectTrigger>
                   <SelectContent>
                     {((departments.data ?? []) as Row[]).map((d) => (
@@ -216,7 +215,7 @@ function AppointmentsPage() {
                 </Select>
               </Field>
 
-              <Field label={t("time")}>
+              <Field label={lang === "ar" ? "الوقت" : "Time"}>
                 <Input
                   type="time"
                   dir="ltr"
@@ -225,7 +224,7 @@ function AppointmentsPage() {
                 />
               </Field>
 
-              <Field label={t("notes")}>
+              <Field label={lang === "ar" ? "ملاحظات" : "Notes"}>
                 <Textarea
                   rows={2}
                   value={form.notes}
@@ -235,13 +234,13 @@ function AppointmentsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>
-                {t("cancel")}
+                {lang === "ar" ? "إلغاء" : "Cancel"}
               </Button>
               <Button
                 disabled={!form.patient_id || create.isPending}
                 onClick={() => create.mutate(undefined as never)}
               >
-                {create.isPending ? t("saving") : t("save")}
+                {create.isPending ? (lang === "ar" ? "جاري الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ" : "Save")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -258,12 +257,12 @@ function AppointmentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("patient")}</TableHead>
-                  <TableHead>{t("doctor")}</TableHead>
-                  <TableHead>{t("department")}</TableHead>
-                  <TableHead>{t("time")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead className="text-end">{t("actions")}</TableHead>
+                  <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
+                  <TableHead>{lang === "ar" ? "الطبيب" : "Doctor"}</TableHead>
+                  <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
+                  <TableHead>{lang === "ar" ? "الوقت" : "Time"}</TableHead>
+                  <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
+                  <TableHead className="text-end">{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -299,7 +298,7 @@ function AppointmentsPage() {
                           size="sm"
                           className="text-destructive hover:text-destructive"
                           onClick={() => {
-                            if (confirm(t("are_you_sure"))) {
+                            if (confirm(lang === "ar" ? "هل أنت متأكد؟" : "Are you sure?")) {
                               deleteAppointment.mutate(s(item, "id"));
                             }
                           }}
