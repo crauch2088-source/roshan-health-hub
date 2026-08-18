@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import {
+  createFileRoute,
+  Link,
+} from "@tanstack/react-router";
 
 import {
   Empty,
@@ -20,26 +22,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { rel, s, useRows, type Row } from "@/lib/db";
+import {
+  rel,
+  s,
+  useRows,
+  type Row,
+} from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { calcAge, formatDate, todayISO } from "@/lib/medical";
+import {
+  calcAge,
+  formatDate,
+  todayISO,
+} from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/clinic")({
+export const Route = createFileRoute(
+  "/_authenticated/clinic",
+)({
   head: () => ({
     meta: [
-      { title: "Clinic — ROSHAN Medical Center" },
+      {
+        title:
+          "Clinic — ROSHAN Medical Center",
+      },
       {
         name: "description",
-        content: "Doctor consultation and patient management.",
+        content:
+          "Doctor consultation and patient management.",
       },
       {
         property: "og:title",
-        content: "Clinic — ROSHAN Medical Center",
+        content:
+          "Clinic — ROSHAN Medical Center",
       },
       {
         property: "og:description",
-        content: "Doctor consultation and patient management.",
+        content:
+          "Doctor consultation and patient management.",
       },
     ],
   }),
@@ -49,24 +68,65 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 function ClinicPage() {
   const { lang } = useLang();
 
-  const [date, setDate] = useState(todayISO());
-  const [filterMyPatients, setFilterMyPatients] = useState(false);
+  const [date, setDate] =
+    useStateCompat(todayISO());
+
+  const [
+    filterMyPatients,
+    setFilterMyPatients,
+  ] = useBooleanCompat(false);
 
   const visits = useRows(
-    ["clinic-visits", date, filterMyPatients],
+    [
+      "clinic-visits",
+      date,
+      filterMyPatients,
+    ],
     () =>
       supabase
         .from("visits")
         .select(
-          "id, visit_number, status, created_at, patients(id, full_name, mrn, dob, gender), departments(name, name_ar), users(full_name)",
+          `
+            id,
+            visit_number,
+            status,
+            created_at,
+            patients(
+              id,
+              full_name,
+              mrn,
+              dob,
+              gender
+            ),
+            departments(
+              name,
+              name_ar
+            ),
+            users(
+              full_name
+            )
+          `,
         )
-        .gte("created_at", `${date}T00:00:00`)
-        .lte("created_at", `${date}T23:59:59`)
+        .gte(
+          "created_at",
+          `${date}T00:00:00`,
+        )
+        .lte(
+          "created_at",
+          `${date}T23:59:59`,
+        )
         .is("deleted_at", null)
-        .order("created_at", { ascending: true }),
+        .order(
+          "created_at",
+          {
+            ascending: true,
+          },
+        ),
   );
 
-  const rows = (visits.data ?? []) as Row[];
+  const rows =
+    (visits.data ??
+      []) as Row[];
 
   if (visits.isLoading) {
     return <Loading />;
@@ -75,24 +135,42 @@ function ClinicPage() {
   return (
     <div>
       <PageHeader
-        title={lang === "ar" ? "العيادة" : "Clinic"}
+        title={
+          lang === "ar"
+            ? "العيادة"
+            : "Clinic"
+        }
         subtitle={formatDate(date)}
       >
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant={filterMyPatients ? "default" : "outline"}
-            size="sm"
             type="button"
-            onClick={() => setFilterMyPatients(!filterMyPatients)}
+            variant={
+              filterMyPatients
+                ? "default"
+                : "outline"
+            }
+            size="sm"
+            onClick={() =>
+              setFilterMyPatients(
+                !filterMyPatients,
+              )
+            }
           >
-            {lang === "ar" ? "مرضاي فقط" : "My Patients"}
+            {lang === "ar"
+              ? "مرضاي فقط"
+              : "My Patients"}
           </Button>
 
           <Input
             type="date"
             dir="ltr"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) =>
+              setDate(
+                e.target.value,
+              )
+            }
             className="w-40"
           />
 
@@ -103,7 +181,9 @@ function ClinicPage() {
         </div>
       </PageHeader>
 
-      <ErrorBox error={visits.error} />
+      <ErrorBox
+        error={visits.error}
+      />
 
       <Card>
         <CardContent className="p-0 overflow-x-auto">
@@ -114,91 +194,184 @@ function ClinicPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    {lang === "ar" ? "المريض" : "Patient"}
+                    {lang === "ar"
+                      ? "المريض"
+                      : "Patient"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar" ? "العمر / الجنس" : "Age / Gender"}
+                    {lang === "ar"
+                      ? "العمر / الجنس"
+                      : "Age / Gender"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar" ? "القسم" : "Department"}
+                    {lang === "ar"
+                      ? "القسم"
+                      : "Department"}
                   </TableHead>
 
                   <TableHead>
-                    {lang === "ar" ? "الحالة" : "Status"}
+                    {lang === "ar"
+                      ? "الحالة"
+                      : "Status"}
                   </TableHead>
 
                   <TableHead className="text-end">
-                    {lang === "ar" ? "الإجراء" : "Action"}
+                    {lang === "ar"
+                      ? "الإجراء"
+                      : "Action"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
-                {rows.map((visit) => {
-                  const patient = rel(visit, "patients");
-                  const department = rel(visit, "departments");
+                {rows.map(
+                  (visit) => {
+                    const patient =
+                      rel(
+                        visit,
+                        "patients",
+                      );
 
-                  const visitId = s(visit, "id");
-                  const dob = s(patient, "dob");
+                    const department =
+                      rel(
+                        visit,
+                        "departments",
+                      );
 
-                  const ageVal = calcAge(dob);
+                    const patientId =
+                      s(
+                        patient,
+                        "id",
+                      );
 
-                  const ageStr =
-                    ageVal !== null ? `${ageVal} yrs` : "—";
+                    const visitId =
+                      s(
+                        visit,
+                        "id",
+                      );
 
-                  return (
-                    <TableRow key={visitId}>
-                      <TableCell className="font-medium whitespace-nowrap">
-                        {s(patient, "full_name") || "—"}
+                    const dob =
+                      s(
+                        patient,
+                        "dob",
+                      );
 
-                        <span
-                          className="ms-2 text-xs text-muted-foreground"
-                          dir="ltr"
-                        >
-                          {s(patient, "mrn")}
-                        </span>
-                      </TableCell>
+                    const ageVal =
+                      calcAge(
+                        dob,
+                      );
 
-                      <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
-                        {ageStr}{" "}
-                        {s(patient, "gender")
-                          ? `(${s(patient, "gender")})`
-                          : ""}
-                      </TableCell>
+                    const ageStr =
+                      ageVal !==
+                      null
+                        ? `${ageVal} yrs`
+                        : "—";
 
-                      <TableCell className="whitespace-nowrap">
-                        {lang === "ar"
-                          ? s(department, "name_ar") ||
-                            s(department, "name") ||
-                            "—"
-                          : s(department, "name") || "—"}
-                      </TableCell>
+                    return (
+                      <TableRow
+                        key={
+                          visitId
+                        }
+                      >
+                        <TableCell className="font-medium whitespace-nowrap">
+                          {s(
+                            patient,
+                            "full_name",
+                          ) ||
+                            "—"}
 
-                      <TableCell>
-                        <StatusBadge status={s(visit, "status")} />
-                      </TableCell>
+                          <span
+                            className="ms-2 text-xs text-muted-foreground"
+                            dir="ltr"
+                          >
+                            {s(
+                              patient,
+                              "mrn",
+                            )}
+                          </span>
+                        </TableCell>
 
-                      <TableCell className="text-end whitespace-nowrap">
-                        {visitId ? (
-                          <Button asChild type="button" size="sm">
-                            <Link
-                              to="/clinic/$visitId"
-                              params={{ visitId }}
+                        <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
+                          {
+                            ageStr
+                          }{" "}
+                          {s(
+                            patient,
+                            "gender",
+                          )
+                            ? `(${s(
+                                patient,
+                                "gender",
+                              )})`
+                            : ""}
+                        </TableCell>
+
+                        <TableCell className="whitespace-nowrap">
+                          {lang === "ar"
+                            ? s(
+                                department,
+                                "name_ar",
+                              ) ||
+                              s(
+                                department,
+                                "name",
+                              ) ||
+                              "—"
+                            : s(
+                                department,
+                                "name",
+                              ) ||
+                              "—"}
+                        </TableCell>
+
+                        <TableCell>
+                          <StatusBadge
+                            status={s(
+                              visit,
+                              "status",
+                            )}
+                          />
+                        </TableCell>
+
+                        <TableCell className="text-end whitespace-nowrap">
+                          {visitId ? (
+                            <Button
+                              asChild
+                              type="button"
+                              size="sm"
                             >
-                              {lang === "ar" ? "فتح" : "Open"}
-                            </Link>
-                          </Button>
-                        ) : (
-                          <Button type="button" size="sm" disabled>
-                            {lang === "ar" ? "فتح" : "Open"}
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                              <Link
+                                to="/clinic/$visitId"
+                                params={{
+                                  visitId:
+                                    visitId,
+                                }}
+                              >
+                                {lang ===
+                                "ar"
+                                  ? "فتح"
+                                  : "Open"}
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled
+                            >
+                              {lang ===
+                              "ar"
+                                ? "فتح"
+                                : "Open"}
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  },
+                )}
               </TableBody>
             </Table>
           )}
@@ -206,4 +379,26 @@ function ClinicPage() {
       </Card>
     </div>
   );
+}
+
+/*
+ * Small local state helpers.
+ *
+ * These avoid adding another dependency.
+ */
+import { useState } from "react";
+
+function useStateCompat<T>(
+  initial: T,
+): [T, (value: T) => void] {
+  return useState(initial);
+}
+
+function useBooleanCompat(
+  initial: boolean,
+): [
+  boolean,
+  (value: boolean) => void,
+] {
+  return useState(initial);
 }
