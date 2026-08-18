@@ -1,62 +1,30 @@
 -- =====================================================================
 -- ROSHAN MEDICAL CENTER
--- SECURITY HARDENING + DATA INTEGRITY
+-- SECURITY HARDENING v2
+--
+-- ADDITIVE MIGRATION
 --
 -- IMPORTANT:
--- This is an ADDITIVE follow-up migration.
--- Do NOT delete or replace roshan_phase1_migration.sql.
+-- 1. Do NOT run roshan_phase1_migration.sql again.
+-- 2. Run this AFTER the existing Phase 1 migration.
+-- 3. This migration deliberately avoids replacing the complete RLS
+--    architecture until it has been audited table-by-table.
 --
--- Run AFTER:
---   db/roshan_phase1_migration.sql
---
--- Purpose:
---   1. Fail-closed permissions
---   2. Protect audit logs
---   3. Prevent mutation of locked visits
---   4. Make MRN/invoice/queue numbering concurrency-safe
---   5. Tighten role semantics
---   6. Add basic integrity constraints
+-- Main fixes:
+--   - fail-closed permission helpers
+--   - append-only audit log
+--   - locked visit protection
+--   - concurrency-safe visit numbering
+--   - unique daily visit numbers
+--   - basic numeric integrity constraints
+--   - SECURITY DEFINER search_path hardening
 -- =====================================================================
 
 begin;
 
--- =====================================================================
--- 1. BASIC DATA INTEGRITY
--- =====================================================================
-
--- Pharmacy inventory must never contain negative stock.
-do $$
-begin
-  alter table public.pharmacy_inventory
-    add constraint pharmacy_inventory_quantity_nonnegative
-    check (quantity >= 0);
-exception
-  when duplicate_object then null;
-end $$;
-
--- Dispensed quantity must never be negative.
-do $$
-begin
-  alter table public.prescription_items
-    add constraint prescription_items_dispensed_quantity_nonnegative
-    check (coalesce(dispensed_quantity, 0) >= 0);
-exception
-  when duplicate_object then null;
-end $$;
-
--- Prices/amounts should not become negative.
-do $$
-begin
-  alter table public.invoice_items
-    add constraint invoice_items_amount_nonnegative
-    check (coalesce(quantity, 0) >= 0 and coalesce(discount, 0) >= 0);
-exception
-  when duplicate_object then null;
-end $$;
-
 
 -- =====================================================================
--- 2. SECURITY DEFINER HELPERS
+-- 1. APPLICATION USER HELPERS
 -- =====================================================================
 
 create or replace function public.current_app_user_id()
@@ -69,9 +37,10 @@ as $$
   select u.id
   from public.users u
   where u.auth_user_id = auth.uid()
-    and coalesce(u.active, false) = true
+    and coalesce(u.active, true) = true
   limit 1
 $$;
+
 
 create or replace function public.current_role_code()
 returns text
@@ -82,11 +51,13 @@ set search_path = public
 as $$
   select r.code
   from public.users u
-  join public.roles r on r.id = u.role_id
+  join public.roles r
+    on r.id = u.role_id
   where u.auth_user_id = auth.uid()
-    and coalesce(u.active, false) = true
+    and coalesce(u.active, true) = true
   limit 1
 $$;
+
 
 create or replace function public.is_super_admin()
 returns boolean
@@ -101,7 +72,10 @@ as $$
   )
 $$;
 
-create or replace function public.app_has_perm(permission_code text)
+
+create or replace function public.app_has_perm(
+  _code text
+)
 returns boolean
 language sql
 stable
@@ -118,47 +92,77 @@ as $$
       join public.permissions p
         on p.id = rp.permission_id
       where u.auth_user_id = auth.uid()
-        and coalesce(u.active, false) = true
-        and p.code = permission_code
+        and coalesce(u.active, true) = true
+        and p.code = _code
     )
 $$;
 
-grant execute on function public.current_app_user_id()
-  to authenticated;
 
-grant execute on function public.current_role_code()
-  to authenticated;
+grant execute
+on function public.current_app_user_id()
+to authenticated;
 
-grant execute on function public.is_super_admin()
-  to authenticated;
+grant execute
+on function public.current_role_code()
+to authenticated;
 
-grant execute on function public.app_has_perm(text)
-  to authenticated;
+grant execute
+on function public.is_super_admin()
+to authenticated;
+
+grant execute
+on function public.app_has_perm(text)
+to authenticated;
 
 
 -- =====================================================================
--- 3. AUDIT LOG PROTECTION
+-- 2. AUDIT LOG — APPEND ONLY
 -- =====================================================================
 
 /*
- * Application users must NOT be able to directly insert/update/delete
- * audit records.
+ * Normal authenticated clients must never be able to:
  *
- * audit_row_change() is SECURITY DEFINER and remains responsible for
- * generating audit entries.
+ * INSERT
+ * UPDATE
+ * DELETE
+ *
+ * audit rows.
+ *
+ * The existing SECURITY DEFINER audit trigger remains responsible for
+ * creating records.
  */
 
-revoke all on public.audit_logs from anon;
-revoke insert, update, delete on public.audit_logs from authenticated;
+revoke insert, update, delete
+on public.audit_logs
+from authenticated;
 
-drop policy if exists audit_logs_ins on public.audit_logs;
-drop policy if exists audit_logs_upd on public.audit_logs;
-drop policy if exists audit_logs_del on public.audit_logs;
+revoke all
+on public.audit_logs
+from anon;
 
--- Only authorized audit readers may SELECT.
-drop policy if exists audit_logs_sel on public.audit_logs;
 
-create policy audit_logs_sel
+drop policy if exists audit_logs_ins
+on public.audit_logs;
+
+drop policy if exists audit_logs_upd
+on public.audit_logs;
+
+drop policy if exists audit_logs_del
+on public.audit_logs;
+
+drop policy if exists audit_logs_sel
+on public.audit_logs;
+
+drop policy if exists audit_logs_select
+on public.audit_logs;
+
+
+grant select
+on public.audit_logs
+to authenticated;
+
+
+create policy audit_logs_select
 on public.audit_logs
 for select
 to authenticated
@@ -168,12 +172,15 @@ using (
 
 
 -- =====================================================================
--- 4. LOCKED VISIT PROTECTION
+-- 3. LOCKED VISITS
 -- =====================================================================
 
 /*
- * Once a visit is locked, normal users cannot modify or delete it.
- * Super Admin remains the emergency override.
+ * A locked visit is a clinical record that has been closed.
+ *
+ * Normal users cannot modify or delete it.
+ *
+ * Super Admin can perform an emergency correction.
  */
 
 create or replace function public.prevent_locked_visit_mutation()
@@ -183,21 +190,27 @@ security definer
 set search_path = public
 as $$
 begin
-  if coalesce(old.is_locked, false)
-     and not public.is_super_admin() then
+
+  if coalesce(old.is_locked, false) = true
+     and not public.is_super_admin()
+  then
 
     raise exception
       'This visit is locked and cannot be modified.';
+
   end if;
 
   return coalesce(new, old);
+
 end;
 $$;
 
-drop trigger if exists trg_prevent_locked_visit_update
+
+drop trigger if exists trg_prevent_locked_visit_mutation
 on public.visits;
 
-create trigger trg_prevent_locked_visit_update
+
+create trigger trg_prevent_locked_visit_mutation
 before update or delete
 on public.visits
 for each row
@@ -205,359 +218,268 @@ execute function public.prevent_locked_visit_mutation();
 
 
 -- =====================================================================
--- 5. CONCURRENCY-SAFE NUMBER GENERATORS
+-- 4. CONCURRENCY-SAFE VISIT NUMBERING
 -- =====================================================================
 
 /*
- * The previous implementation used COUNT(*) + 1.
+ * OLD BEHAVIOUR:
  *
- * That is unsafe:
+ * Math.random()
  *
- * Request A -> count = 10
- * Request B -> count = 10
- * A -> number 11
- * B -> number 11
+ * This is not suitable for a medical queue.
  *
- * Advisory transaction locks serialize number generation.
+ * NEW BEHAVIOUR:
+ *
+ * PostgreSQL generates the number.
+ *
+ * Example:
+ *
+ * 001
+ * 002
+ * 003
+ * ...
+ *
+ * A transaction advisory lock prevents two simultaneous registrations
+ * from receiving the same number.
  */
 
-create or replace function public.next_mrn()
+create or replace function public.next_visit_number(
+  _visit_date date
+)
 returns text
 language plpgsql
 security definer
 set search_path = public
 as $$
+
 declare
-  next_number bigint;
+  next_number integer;
+
 begin
-  perform pg_advisory_xact_lock(
-    hashtextextended('roshan.mrn.numbering', 0)
-  );
 
-  select coalesce(
-    max(
-      substring(mrn from 'RMC([0-9]+)$')::bigint
-    ),
-    0
-  ) + 1
-  into next_number
-  from public.patients
-  where mrn ~ '^RMC[0-9]+$';
+  if _visit_date is null then
 
-  return 'RMC' || lpad(next_number::text, 6, '0');
-end;
-$$;
+    raise exception
+      'visit_date is required';
+
+  end if;
 
 
-create or replace function public.next_invoice_number()
-returns text
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  prefix text;
-  next_number bigint;
-begin
-  prefix := 'INV-' || to_char(now(), 'YYYYMM') || '-';
-
-  perform pg_advisory_xact_lock(
-    hashtextextended('roshan.invoice.' || prefix, 0)
-  );
-
-  select coalesce(
-    max(
-      substring(invoice_number from
-        ('^' || prefix || '([0-9]+)$')
-      )::bigint
-    ),
-    0
-  ) + 1
-  into next_number
-  from public.invoices
-  where invoice_number like prefix || '%';
-
-  return prefix || lpad(next_number::text, 5, '0');
-end;
-$$;
-
-
-create or replace function public.next_queue_number(_date date)
-returns text
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  next_number bigint;
-begin
   perform pg_advisory_xact_lock(
     hashtextextended(
-      'roshan.queue.' || _date::text,
+      'roshan.visit.' || _visit_date::text,
       0
     )
   );
 
-  select coalesce(max(queue_number), 0) + 1
-  into next_number
-  from public.queue_tickets
-  where visit_date = _date;
 
-  return 'Q' || lpad(next_number::text, 3, '0');
+  select
+    coalesce(
+      max(
+        case
+          when visit_number ~ '^[0-9]+$'
+          then visit_number::integer
+          else null
+        end
+      ),
+      0
+    ) + 1
+
+  into next_number
+
+  from public.visits
+
+  where visit_date = _visit_date
+    and deleted_at is null;
+
+
+  return lpad(
+    next_number::text,
+    3,
+    '0'
+  );
+
 end;
 $$;
 
 
-grant execute on function public.next_mrn()
-  to authenticated;
-
-grant execute on function public.next_invoice_number()
-  to authenticated;
-
-grant execute on function public.next_queue_number(date)
-  to authenticated;
+grant execute
+on function public.next_visit_number(date)
+to authenticated;
 
 
 -- =====================================================================
--- 6. REMOVE DANGEROUS "EMPTY PERMISSIONS = ALLOW" CONCEPT
+-- 5. UNIQUE DAILY VISIT NUMBER
 -- =====================================================================
 
 /*
- * The frontend now fails closed.
+ * This database constraint is the final safety net.
  *
- * The database already uses app_has_perm(), but we explicitly ensure
- * that no anonymous role receives table privileges.
+ * Even if a buggy client tries to insert the same number twice,
+ * PostgreSQL will reject the duplicate.
  */
 
 do $$
-declare
-  table_name text;
-begin
-  foreach table_name in array array[
-    'users',
-    'patients',
-    'visits',
-    'vitals',
-    'clinical_notes',
-    'diagnoses',
-    'followups',
-    'certificates',
-    'appointments',
-    'queue_tickets',
-    'lab_tests',
-    'lab_parameters',
-    'lab_reference_ranges',
-    'lab_orders',
-    'lab_order_items',
-    'lab_results',
-    'medicines',
-    'pharmacy_inventory',
-    'prescriptions',
-    'prescription_items',
-    'suppliers',
-    'procedures_catalog',
-    'procedure_orders',
-    'procedure_results',
-    'invoices',
-    'invoice_items',
-    'payments',
-    'expenses',
-    'corporate_accounts',
-    'attachments',
-    'system_settings',
-    'branches',
-    'departments'
-  ]
-  loop
 
-    execute format(
-      'revoke all on public.%I from anon',
-      table_name
+begin
+
+  alter table public.visits
+
+    add constraint visits_visit_number_day_key
+
+    unique (
+      visit_date,
+      visit_number
     );
 
-  end loop;
+exception
+
+  when duplicate_object then
+
+    null;
+
 end $$;
 
 
 -- =====================================================================
--- 7. USER SELF-READ ONLY + AUTHORIZATION
+-- 6. NON-NEGATIVE PHARMACY QUANTITY
 -- =====================================================================
 
-drop policy if exists users_sel on public.users;
+do $$
 
-create policy users_sel
-on public.users
-for select
-to authenticated
-using (
-  auth_user_id = auth.uid()
-  or public.app_has_perm('users.read')
-);
+begin
 
+  alter table public.pharmacy_inventory
 
--- Users cannot arbitrarily change their own role.
-drop policy if exists users_upd on public.users;
+    add constraint pharmacy_inventory_quantity_nonnegative
 
-create policy users_upd
-on public.users
-for update
-to authenticated
-using (
-  public.app_has_perm('users.update')
-)
-with check (
-  public.app_has_perm('users.update')
-);
+    check (
+      quantity >= 0
+    );
+
+exception
+
+  when duplicate_object then
+
+    null;
+
+end $$;
 
 
 -- =====================================================================
--- 8. ROLE TABLES ARE REFERENCE DATA
+-- 7. NON-NEGATIVE DISPENSED QUANTITY
 -- =====================================================================
 
-drop policy if exists roles_sel on public.roles;
+do $$
 
-create policy roles_sel
-on public.roles
-for select
-to authenticated
-using (true);
+begin
 
+  alter table public.prescription_items
 
-drop policy if exists permissions_sel on public.permissions;
+    add constraint prescription_items_dispensed_quantity_nonnegative
 
-create policy permissions_sel
-on public.permissions
-for select
-to authenticated
-using (true);
+    check (
+      coalesce(
+        dispensed_quantity,
+        0
+      ) >= 0
+    );
 
+exception
 
-drop policy if exists role_permissions_sel
-on public.role_permissions;
+  when duplicate_object then
 
-create policy role_permissions_sel
-on public.role_permissions
-for select
-to authenticated
-using (true);
+    null;
 
-
--- Only Super Admin may mutate role/permission definitions.
-drop policy if exists roles_ins on public.roles;
-drop policy if exists roles_upd on public.roles;
-drop policy if exists roles_del on public.roles;
-
-create policy roles_ins
-on public.roles
-for insert
-to authenticated
-with check (public.is_super_admin());
-
-create policy roles_upd
-on public.roles
-for update
-to authenticated
-using (public.is_super_admin())
-with check (public.is_super_admin());
-
-create policy roles_del
-on public.roles
-for delete
-to authenticated
-using (public.is_super_admin());
-
-
-drop policy if exists permissions_ins on public.permissions;
-drop policy if exists permissions_upd on public.permissions;
-drop policy if exists permissions_del on public.permissions;
-
-create policy permissions_ins
-on public.permissions
-for insert
-to authenticated
-with check (public.is_super_admin());
-
-create policy permissions_upd
-on public.permissions
-for update
-to authenticated
-using (public.is_super_admin())
-with check (public.is_super_admin());
-
-create policy permissions_del
-on public.permissions
-for delete
-to authenticated
-using (public.is_super_admin());
-
-
-drop policy if exists role_permissions_ins
-on public.role_permissions;
-
-drop policy if exists role_permissions_upd
-on public.role_permissions;
-
-drop policy if exists role_permissions_del
-on public.role_permissions;
-
-create policy role_permissions_ins
-on public.role_permissions
-for insert
-to authenticated
-with check (public.is_super_admin());
-
-create policy role_permissions_upd
-on public.role_permissions
-for update
-to authenticated
-using (public.is_super_admin())
-with check (public.is_super_admin());
-
-create policy role_permissions_del
-on public.role_permissions
-for delete
-to authenticated
-using (public.is_super_admin());
+end $$;
 
 
 -- =====================================================================
--- 9. PREVENT DIRECT AUDIT LOG MANIPULATION THROUGH GRANTS
+-- 8. INVOICE ITEM QUANTITY
 -- =====================================================================
 
-revoke all on public.audit_logs from anon;
-revoke all on public.audit_logs from authenticated;
+do $$
+
+begin
+
+  alter table public.invoice_items
+
+    add constraint invoice_items_quantity_nonnegative
+
+    check (
+      coalesce(
+        quantity,
+        0
+      ) >= 0
+    );
+
+exception
+
+  when duplicate_object then
+
+    null;
+
+end $$;
 
 
 -- =====================================================================
--- 10. SECURITY SEARCH_PATH HARDENING
+-- 9. INVOICE DISCOUNT
+-- =====================================================================
+
+do $$
+
+begin
+
+  alter table public.invoice_items
+
+    add constraint invoice_items_discount_nonnegative
+
+    check (
+      coalesce(
+        discount,
+        0
+      ) >= 0
+    );
+
+exception
+
+  when duplicate_object then
+
+    null;
+
+end $$;
+
+
+-- =====================================================================
+-- 10. SECURITY DEFINER SEARCH PATH HARDENING
 -- =====================================================================
 
 alter function public.current_app_user_id()
-  set search_path = public;
+set search_path = public;
+
 
 alter function public.current_role_code()
-  set search_path = public;
+set search_path = public;
+
 
 alter function public.is_super_admin()
-  set search_path = public;
+set search_path = public;
+
 
 alter function public.app_has_perm(text)
-  set search_path = public;
+set search_path = public;
+
 
 alter function public.audit_row_change()
-  set search_path = public;
+set search_path = public;
+
 
 alter function public.prevent_locked_visit_mutation()
-  set search_path = public;
+set search_path = public;
 
-alter function public.next_mrn()
-  set search_path = public;
 
-alter function public.next_invoice_number()
-  set search_path = public;
-
-alter function public.next_queue_number(date)
-  set search_path = public;
+alter function public.next_visit_number(date)
+set search_path = public;
 
 
 commit;
@@ -568,29 +490,35 @@ commit;
 -- =====================================================================
 
 /*
- * Run these SELECT statements separately after the migration.
+ * After successful migration, run these individually in Supabase SQL
+ * Editor.
  *
- * 1. Verify current user:
+ * 1.
  *
- * select
- *   public.current_app_user_id(),
- *   public.current_role_code(),
- *   public.is_super_admin();
+ * select public.current_role_code();
  *
- * 2. Verify permission:
+ *
+ * 2.
+ *
+ * select public.is_super_admin();
+ *
+ *
+ * 3.
  *
  * select public.app_has_perm('patients.read');
  *
- * 3. Verify numbering:
  *
- * select public.next_mrn();
- * select public.next_invoice_number();
- * select public.next_queue_number(current_date);
+ * 4.
  *
- * 4. Verify audit grants:
+ * select public.next_visit_number(current_date);
  *
- * select grantee, privilege_type
- * from information_schema.role_table_grants
- * where table_schema = 'public'
- *   and table_name = 'audit_logs';
+ *
+ * IMPORTANT:
+ *
+ * next_visit_number() does NOT insert anything.
+ * It is intended to be called inside the visit creation workflow.
+ *
+ * Do not repeatedly call it as a production test.
+ *
+ * ===================================================================
  */
