@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, next) => {
+      if (!mounted) return;
       if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
         setSession(next);
         return;
@@ -130,7 +131,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadProfile(data.session?.user?.id);
   }, [loadProfile]);
 
-  // Treat super/admin as privileged. Short-circuit based on role_code, role_name, or fallback user.role
   const roleCode = user?.role_code?.toLowerCase?.();
   const roleName = user?.role_name?.toLowerCase?.();
   const fallbackRole = (user as unknown as { role?: string })?.role?.toLowerCase?.();
