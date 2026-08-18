@@ -104,80 +104,126 @@ function Consultation() {
 
   const visit = ((visitQ.data ?? []) as Row[])[0];
   const patient = rel(visit, "patients");
+  const patientId = s(patient, "id");
   const isFemale = s(patient, "gender") === "female";
 
   const [vitals, setVitals] = useState<Row>({});
-  const [emr, setEmr] = useState<Row>({});
+  const [clinicalNote, setClinicalNote] = useState<Row>({});
   const [labSel, setLabSel] = useState<string[]>([]);
   const [rx, setRx] = useState<RxItem[]>([]);
   const [rxExternal, setRxExternal] = useState(false);
 
+  /*
+   * VITALS
+   */
   const vitalsQ = useRows(["vitals", visitId], () =>
     supabase
       .from("vitals")
-      .select("")
+      .select("*")
       .eq("visit_id", visitId)
+      .is("deleted_at", null)
       .limit(1),
   );
 
-  const emrQ = useRows(["emr", visitId], () =>
+  /*
+   * CLINICAL NOTES
+   *
+   * The actual database table is clinical_notes,
+   * not medical_records.
+   */
+  const clinicalNoteQ = useRows(["clinical-note", visitId], () =>
     supabase
-      .from("medical_records")
-      .select("")
+      .from("clinical_notes")
+      .select("*")
       .eq("visit_id", visitId)
+      .is("deleted_at", null)
       .limit(1),
   );
 
+  /*
+   * LAB TESTS
+   */
   const testsQ = useRows(["lab-tests"], () =>
     supabase
       .from("lab_tests")
-      .select("id, name, name_ar, price, category")
+      .select("id, name, name_ar, price, category, active")
       .eq("active", true)
       .is("deleted_at", null),
   );
 
+  /*
+   * MEDICINES
+   *
+   * Only use columns that actually exist in medicines.
+   */
   const medsQ = useRows(["medicines"], () =>
     supabase
       .from("medicines")
-      .select("id, name, unit, selling_price, stock_quantity")
+      .select(
+        "id, name, generic_name, brand_name, strength, dosage_form, unit",
+      )
+      .eq("active", true)
       .is("deleted_at", null),
   );
 
+  /*
+   * LAB ORDERS
+   *
+   * Actual relationship:
+   * lab_order_items.order_id -> lab_orders.id
+   * lab_order_items.test_id  -> lab_tests.id
+   */
   const ordersQ = useRows(["visit-labs", visitId], () =>
     supabase
       .from("lab_orders")
       .select(
-        "id, status, created_at, lab_order_items(id, lab_tests(name, name_ar))",
+        "id, status, created_at, lab_order_items(id, status, price, lab_tests(name, name_ar))",
       )
       .eq("visit_id", visitId)
-      .is("deleted_at", null),
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
   );
 
+  /*
+   * PRESCRIPTIONS
+   */
   const rxQ = useRows(["visit-rx", visitId], () =>
     supabase
       .from("prescriptions")
       .select(
-        "id, status, is_external, created_at, prescription_items(id, dosage, frequency, duration, medicines(name))",
+        "id, status, is_external, created_at, prescription_items(id, dosage, dose, frequency, duration, quantity, medicines(name, generic_name, brand_name))",
       )
       .eq("visit_id", visitId)
-      .is("deleted_at", null),
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
   );
 
+  /*
+   * CLINICAL HISTORY
+   *
+   * clinical_notes does not have patient_id.
+   * The patient is reached through visits.
+   */
   const historyQ = useRows(
-    ["emr-history", s(patient, "id")],
+    ["clinical-history", patientId],
     () =>
       supabase
-        .from("medical_records")
-        .select("id, created_at, chief_complaint, diagnosis, visit_id")
-        .eq("patient_id", s(patient, "id"))
+        .from("clinical_notes")
+        .select(
+          "id, created_at, chief_complaint, assessment, visit_id, visits!inner(patient_id)",
+        )
+        .eq("visits.patient_id", patientId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(20),
     {
-      enabled: Boolean(s(patient, "id")),
+      enabled: Boolean(patientId),
     },
   );
 
+  /*
+   * LOAD VITALS
+   */
   useEffect(() => {
     const v = ((vitalsQ.data ?? []) as Row[])[0];
 
@@ -186,50 +232,73 @@ function Consultation() {
     }
   }, [vitalsQ.data]);
 
+  /*
+   * LOAD CLINICAL NOTE
+   */
   useEffect(() => {
-    const e = ((emrQ.data ?? []) as Row[])[0];
+    const note = ((clinicalNoteQ.data ?? []) as Row[])[0];
 
-    if (e) {
-      setEmr(e);
+    if (note) {
+      setClinicalNote(note);
     }
-  }, [emrQ.data]);
+  }, [clinicalNoteQ.data]);
 
+  /*
+   * SAVE VITALS
+   */
   const saveVitals = useSave(
     async () => {
+      const weight = Number(s(vitals, "weight")) || null;
+      const height = Number(s(vitals, "height")) || null;
+
+      const bmi = calcBmi(
+        Number(s(vitals, "weight")),
+        Number(s(vitals, "height")),
+      );
+
+      const bpValue = s(vitals, "blood_pressure");
+
+      let systolicBp: number | null = null;
+      let diastolicBp: number | null = null;
+
+      if (bpValue.includes("/")) {
+        const [sys, dia] = bpValue.split("/");
+
+        systolicBp = Number(sys) || null;
+        diastolicBp = Number(dia) || null;
+      }
+
       const payload = {
         visit_id: visitId,
-        patient_id: s(patient, "id"),
+        patient_id: patientId,
         temperature:
           Number(s(vitals, "temperature")) || null,
-        pulse:
-          Number(s(vitals, "pulse")) || null,
+        pulse: Number(s(vitals, "pulse")) || null,
         respiratory_rate:
           Number(s(vitals, "respiratory_rate")) || null,
-        blood_pressure:
-          s(vitals, "blood_pressure") || null,
-        weight:
-          Number(s(vitals, "weight")) || null,
-        height:
-          Number(s(vitals, "height")) || null,
-        spo2:
-          Number(s(vitals, "spo2")) || null,
-        blood_sugar:
-          Number(s(vitals, "blood_sugar")) || null,
-        notes:
-          s(vitals, "notes") || null,
+        systolic_bp: systolicBp,
+        diastolic_bp: diastolicBp,
+        bp_systolic: systolicBp,
+        bp_diastolic: diastolicBp,
+        weight,
+        height,
+        bmi: bmi ?? null,
+        spo2: Number(s(vitals, "spo2")) || null,
+        lmp: s(vitals, "lmp") || null,
+        edd: s(vitals, "edd") || null,
+        gestational_age_days:
+          Number(s(vitals, "gestational_age_days")) || null,
+        recorded_by: user?.id ?? null,
       };
 
-      const existing =
-        ((vitalsQ.data ?? []) as Row[])[0];
+      const existing = ((vitalsQ.data ?? []) as Row[])[0];
 
       const q = existing
         ? supabase
             .from("vitals")
             .update(payload)
             .eq("id", s(existing, "id"))
-        : supabase
-            .from("vitals")
-            .insert(payload);
+        : supabase.from("vitals").insert(payload);
 
       const { error } = await q;
 
@@ -245,46 +314,71 @@ function Consultation() {
     },
   );
 
-  const saveEmr = useSave(
+  /*
+   * SAVE CLINICAL NOTE
+   */
+  const saveClinicalNote = useSave(
     async () => {
+      const lmp = s(clinicalNote, "lmp");
+
+      const gestationalDays = calcGestationalDays(lmp);
+
+      const edd = calcEdd(lmp);
+
       const payload = {
         visit_id: visitId,
-        patient_id: s(patient, "id"),
         doctor_id: user?.id ?? null,
+        created_by: user?.id ?? null,
+        updated_by: user?.id ?? null,
+
         chief_complaint:
-          s(emr, "chief_complaint") || null,
-        history:
-          s(emr, "history") || null,
+          s(clinicalNote, "chief_complaint") || null,
+
+        history_present_illness:
+          s(clinicalNote, "history_present_illness") ||
+          s(clinicalNote, "hpi") ||
+          null,
+
+        hpi:
+          s(clinicalNote, "hpi") ||
+          s(clinicalNote, "history_present_illness") ||
+          null,
+
         examination:
-          s(emr, "examination") || null,
-        diagnosis:
-          s(emr, "diagnosis") || null,
-        treatment_plan:
-          s(emr, "treatment_plan") || null,
-        allergies:
-          s(emr, "allergies") || null,
-        chronic_conditions:
-          s(emr, "chronic_conditions") || null,
-        lmp:
-          s(emr, "lmp") || null,
-        gravida:
-          Number(s(emr, "gravida")) || null,
-        para:
-          Number(s(emr, "para")) || null,
-        follow_up_date:
-          s(emr, "follow_up_date") || null,
+          s(clinicalNote, "examination") || null,
+
+        assessment:
+          s(clinicalNote, "assessment") ||
+          null,
+
+        plan:
+          s(clinicalNote, "plan") ||
+          null,
+
+        allergy_history:
+          s(clinicalNote, "allergy_history") ||
+          null,
+
+        past_medical_history:
+          s(clinicalNote, "past_medical_history") ||
+          null,
+
+        lmp: lmp || null,
+        edd: edd || null,
+        gestational_age_days:
+          gestationalDays ?? null,
       };
 
       const existing =
-        ((emrQ.data ?? []) as Row[])[0];
+        ((clinicalNoteQ.data ?? []) as Row[])[0];
 
       const q = existing
         ? supabase
-            .from("medical_records")
+            .from("clinical_notes")
             .update(payload)
             .eq("id", s(existing, "id"))
         : supabase
-            .from("medical_records")
+            .from("clinical_notes")
             .insert(payload);
 
       const { error } = await q;
@@ -293,32 +387,45 @@ function Consultation() {
         throw new Error(error.message);
       }
 
-      await supabase
+      const { error: visitError } = await supabase
         .from("visits")
-        .update({ status: "completed" })
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
         .eq("id", visitId);
+
+      if (visitError) {
+        throw new Error(visitError.message);
+      }
 
       return null;
     },
     {
       invalidate: [
-        ["emr", visitId],
+        ["clinical-note", visitId],
         ["visit", visitId],
-        ["emr-history", s(patient, "id")],
+        ["clinical-history", patientId],
       ],
       successMessage: t("saved"),
     },
   );
 
+  /*
+   * ORDER LAB TESTS
+   */
   const orderLabs = useSave(
     async () => {
       const { data: order, error } = await supabase
         .from("lab_orders")
         .insert({
           visit_id: visitId,
-          patient_id: s(patient, "id"),
-          doctor_id: user?.id ?? null,
+          patient_id: patientId,
+          ordered_by: user?.id ?? null,
+          created_by: user?.id ?? null,
           status: "ordered",
+          priority: "normal",
         })
         .select("id")
         .single();
@@ -328,7 +435,9 @@ function Consultation() {
       }
 
       if (!order) {
-        throw new Error("Failed to create laboratory order.");
+        throw new Error(
+          "Failed to create laboratory order.",
+        );
       }
 
       const items = labSel.map((testId) => {
@@ -337,20 +446,21 @@ function Consultation() {
         ).find((x) => s(x, "id") === testId);
 
         return {
-          lab_order_id: order.id,
-          lab_test_id: testId,
+          order_id: order.id,
+          test_id: testId,
           price: n(test, "price"),
           status: "pending",
+          created_by: user?.id ?? null,
         };
       });
 
       if (items.length > 0) {
-        const { error: iErr } = await supabase
+        const { error: itemError } = await supabase
           .from("lab_order_items")
           .insert(items);
 
-        if (iErr) {
-          throw new Error(iErr.message);
+        if (itemError) {
+          throw new Error(itemError.message);
         }
       }
 
@@ -366,16 +476,26 @@ function Consultation() {
     },
   );
 
+  /*
+   * SAVE PRESCRIPTION
+   */
   const saveRx = useSave(
     async () => {
       const { data: pres, error } = await supabase
         .from("prescriptions")
         .insert({
           visit_id: visitId,
-          patient_id: s(patient, "id"),
+          patient_id: patientId,
+          prescribed_by: user?.id ?? null,
           doctor_id: user?.id ?? null,
+          prescription_type: rxExternal
+            ? "external"
+            : "internal",
           is_external: rxExternal,
-          status: rxExternal ? "external" : "pending",
+          status: rxExternal
+            ? "external"
+            : "pending",
+          created_by: user?.id ?? null,
         })
         .select("id")
         .single();
@@ -385,7 +505,9 @@ function Consultation() {
       }
 
       if (!pres) {
-        throw new Error("Failed to create prescription.");
+        throw new Error(
+          "Failed to create prescription.",
+        );
       }
 
       const items = rx
@@ -393,20 +515,31 @@ function Consultation() {
         .map((r) => ({
           prescription_id: pres.id,
           medicine_id: r.medicine_id,
+          medication_name:
+            (
+              (
+                (medsQ.data ?? []) as Row[]
+              ).find(
+                (m) =>
+                  s(m, "id") === r.medicine_id,
+              )
+            )?.name ?? null,
+          dose: r.dosage || null,
           dosage: r.dosage || null,
           frequency: r.frequency || null,
           duration: r.duration || null,
           quantity:
             Number(r.quantity) || 1,
+          created_by: user?.id ?? null,
         }));
 
       if (items.length > 0) {
-        const { error: iErr } = await supabase
+        const { error: itemError } = await supabase
           .from("prescription_items")
           .insert(items);
 
-        if (iErr) {
-          throw new Error(iErr.message);
+        if (itemError) {
+          throw new Error(itemError.message);
         }
       }
 
@@ -418,10 +551,16 @@ function Consultation() {
         ["pharmacy-queue"],
       ],
       successMessage: t("saved"),
-      onDone: () => setRx([]),
+      onDone: () => {
+        setRx([]);
+        setRxExternal(false);
+      },
     },
   );
 
+  /*
+   * LOADING / EMPTY
+   */
   if (visitQ.isLoading) {
     return <Loading />;
   }
@@ -430,24 +569,33 @@ function Consultation() {
     return <Empty label={t("no_data")} />;
   }
 
+  /*
+   * CALCULATIONS
+   */
   const bmi = calcBmi(
     Number(s(vitals, "weight")),
     Number(s(vitals, "height")),
   );
 
   const gestDays = calcGestationalDays(
-    s(emr, "lmp"),
+    s(clinicalNote, "lmp"),
   );
 
+  /*
+   * RENDER
+   */
   return (
     <div>
       <PageHeader
         title={s(patient, "full_name")}
-        subtitle={`${t("mrn")}: ${s(patient, "mrn")} · ${t(
-          "age",
-        )}: ${
+        subtitle={`${t("mrn")}: ${s(
+          patient,
+          "mrn",
+        )} · ${t("age")}: ${
           calcAge(s(patient, "date_of_birth")) ?? "—"
-        } · ${t(s(patient, "gender"))} · ${formatDate(
+        } · ${t(
+          s(patient, "gender"),
+        )} · ${formatDate(
           s(visit, "visit_date"),
         )}`}
       >
@@ -469,9 +617,12 @@ function Consultation() {
         error={
           visitQ.error ??
           vitalsQ.error ??
-          emrQ.error ??
+          clinicalNoteQ.error ??
           testsQ.error ??
-          medsQ.error
+          medsQ.error ??
+          ordersQ.error ??
+          rxQ.error ??
+          historyQ.error
         }
       />
 
@@ -498,19 +649,23 @@ function Consultation() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ==================== CLINICAL NOTES ==================== */}
+
         <TabsContent value="emr">
           <Card>
             <CardContent className="grid gap-4 p-4">
-              <Field label={t("chief_complaint")}>
+              <Field
+                label={t("chief_complaint")}
+              >
                 <Textarea
                   rows={2}
                   value={s(
-                    emr,
+                    clinicalNote,
                     "chief_complaint",
                   )}
                   onChange={(e) =>
-                    setEmr({
-                      ...emr,
+                    setClinicalNote({
+                      ...clinicalNote,
                       chief_complaint:
                         e.target.value,
                     })
@@ -521,23 +676,39 @@ function Consultation() {
               <Field label={t("history")}>
                 <Textarea
                   rows={3}
-                  value={s(emr, "history")}
+                  value={
+                    s(
+                      clinicalNote,
+                      "history_present_illness",
+                    ) ||
+                    s(
+                      clinicalNote,
+                      "hpi",
+                    )
+                  }
                   onChange={(e) =>
-                    setEmr({
-                      ...emr,
-                      history: e.target.value,
+                    setClinicalNote({
+                      ...clinicalNote,
+                      history_present_illness:
+                        e.target.value,
+                      hpi: e.target.value,
                     })
                   }
                 />
               </Field>
 
-              <Field label={t("examination")}>
+              <Field
+                label={t("examination")}
+              >
                 <Textarea
                   rows={3}
-                  value={s(emr, "examination")}
+                  value={s(
+                    clinicalNote,
+                    "examination",
+                  )}
                   onChange={(e) =>
-                    setEmr({
-                      ...emr,
+                    setClinicalNote({
+                      ...clinicalNote,
                       examination:
                         e.target.value,
                     })
@@ -546,14 +717,19 @@ function Consultation() {
               </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={t("diagnosis")}>
+                <Field
+                  label={t("diagnosis")}
+                >
                   <Textarea
                     rows={2}
-                    value={s(emr, "diagnosis")}
+                    value={s(
+                      clinicalNote,
+                      "assessment",
+                    )}
                     onChange={(e) =>
-                      setEmr({
-                        ...emr,
-                        diagnosis:
+                      setClinicalNote({
+                        ...clinicalNote,
+                        assessment:
                           e.target.value,
                       })
                     }
@@ -566,26 +742,30 @@ function Consultation() {
                   <Textarea
                     rows={2}
                     value={s(
-                      emr,
-                      "treatment_plan",
+                      clinicalNote,
+                      "plan",
                     )}
                     onChange={(e) =>
-                      setEmr({
-                        ...emr,
-                        treatment_plan:
-                          e.target.value,
+                      setClinicalNote({
+                        ...clinicalNote,
+                        plan: e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field label={t("allergies")}>
+                <Field
+                  label={t("allergies")}
+                >
                   <Input
-                    value={s(emr, "allergies")}
+                    value={s(
+                      clinicalNote,
+                      "allergy_history",
+                    )}
                     onChange={(e) =>
-                      setEmr({
-                        ...emr,
-                        allergies:
+                      setClinicalNote({
+                        ...clinicalNote,
+                        allergy_history:
                           e.target.value,
                       })
                     }
@@ -593,17 +773,19 @@ function Consultation() {
                 </Field>
 
                 <Field
-                  label={t("chronic_conditions")}
+                  label={t(
+                    "chronic_conditions",
+                  )}
                 >
                   <Input
                     value={s(
-                      emr,
-                      "chronic_conditions",
+                      clinicalNote,
+                      "past_medical_history",
                     )}
                     onChange={(e) =>
-                      setEmr({
-                        ...emr,
-                        chronic_conditions:
+                      setClinicalNote({
+                        ...clinicalNote,
+                        past_medical_history:
                           e.target.value,
                       })
                     }
@@ -617,31 +799,38 @@ function Consultation() {
                     {t("obstetrics")}
                   </SectionTitle>
 
-                  <div className="grid gap-4 sm:grid-cols-4">
-                    <Field label={t("lmp")}>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <Field
+                      label={t("lmp")}
+                    >
                       <Input
                         type="date"
                         dir="ltr"
                         value={s(
-                          emr,
+                          clinicalNote,
                           "lmp",
                         ).slice(0, 10)}
                         onChange={(e) =>
-                          setEmr({
-                            ...emr,
+                          setClinicalNote({
+                            ...clinicalNote,
                             lmp: e.target.value,
                           })
                         }
                       />
                     </Field>
 
-                    <Field label={t("edd")}>
+                    <Field
+                      label={t("edd")}
+                    >
                       <Input
                         dir="ltr"
                         readOnly
                         value={
                           calcEdd(
-                            s(emr, "lmp"),
+                            s(
+                              clinicalNote,
+                              "lmp",
+                            ),
                           ) ?? ""
                         }
                       />
@@ -660,80 +849,23 @@ function Consultation() {
                         )}
                       />
                     </Field>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Field label={t("gravida")}>
-                        <Input
-                          type="number"
-                          dir="ltr"
-                          value={s(
-                            emr,
-                            "gravida",
-                          )}
-                          onChange={(e) =>
-                            setEmr({
-                              ...emr,
-                              gravida:
-                                e.target.value,
-                            })
-                          }
-                        />
-                      </Field>
-
-                      <Field label={t("para")}>
-                        <Input
-                          type="number"
-                          dir="ltr"
-                          value={s(
-                            emr,
-                            "para",
-                          )}
-                          onChange={(e) =>
-                            setEmr({
-                              ...emr,
-                              para:
-                                e.target.value,
-                            })
-                          }
-                        />
-                      </Field>
-                    </div>
                   </div>
                 </div>
               ) : null}
 
-              <Field
-                label={t("follow_up_date")}
-                className="max-w-xs"
-              >
-                <Input
-                  type="date"
-                  dir="ltr"
-                  value={s(
-                    emr,
-                    "follow_up_date",
-                  ).slice(0, 10)}
-                  onChange={(e) =>
-                    setEmr({
-                      ...emr,
-                      follow_up_date:
-                        e.target.value,
-                    })
-                  }
-                />
-              </Field>
-
               {can("emr.create") ? (
                 <div>
                   <Button
-                    disabled={saveEmr.isPending}
+                    disabled={
+                      saveClinicalNote.isPending
+                    }
                     onClick={() =>
-                      saveEmr.mutate(
+                      saveClinicalNote.mutate(
                         undefined as never,
                       )
                     }
                   >
-                    {saveEmr.isPending
+                    {saveClinicalNote.isPending
                       ? t("saving")
                       : t("save")}
                   </Button>
@@ -742,6 +874,8 @@ function Consultation() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ==================== VITALS ==================== */}
 
         <TabsContent value="vitals">
           <Card>
@@ -776,7 +910,8 @@ function Consultation() {
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
-                        pulse: e.target.value,
+                        pulse:
+                          e.target.value,
                       })
                     }
                   />
@@ -788,10 +923,30 @@ function Consultation() {
                   <Input
                     dir="ltr"
                     placeholder="120/80"
-                    value={s(
-                      vitals,
-                      "blood_pressure",
-                    )}
+                    value={
+                      s(
+                        vitals,
+                        "systolic_bp",
+                      ) ||
+                      s(
+                        vitals,
+                        "bp_systolic",
+                      )
+                        ? `${s(
+                            vitals,
+                            "systolic_bp",
+                          ) || s(
+                            vitals,
+                            "bp_systolic",
+                          )}/${s(
+                            vitals,
+                            "diastolic_bp",
+                          ) || s(
+                            vitals,
+                            "bp_diastolic",
+                          )}`
+                        : ""
+                    }
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
@@ -832,33 +987,16 @@ function Consultation() {
                     onChange={(e) =>
                       setVitals({
                         ...vitals,
-                        spo2: e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-
-                <Field
-                  label={t("blood_sugar")}
-                >
-                  <Input
-                    type="number"
-                    dir="ltr"
-                    value={s(
-                      vitals,
-                      "blood_sugar",
-                    )}
-                    onChange={(e) =>
-                      setVitals({
-                        ...vitals,
-                        blood_sugar:
+                        spo2:
                           e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field label={t("weight")}>
+                <Field
+                  label={t("weight")}
+                >
                   <Input
                     type="number"
                     dir="ltr"
@@ -877,10 +1015,13 @@ function Consultation() {
                   />
                 </Field>
 
-                <Field label={t("height")}>
+                <Field
+                  label={t("height")}
+                >
                   <Input
                     type="number"
                     dir="ltr"
+                    step="0.1"
                     value={s(
                       vitals,
                       "height",
@@ -904,19 +1045,6 @@ function Consultation() {
                 </Field>
               </div>
 
-              <Field label={t("notes")}>
-                <Textarea
-                  rows={2}
-                  value={s(vitals, "notes")}
-                  onChange={(e) =>
-                    setVitals({
-                      ...vitals,
-                      notes: e.target.value,
-                    })
-                  }
-                />
-              </Field>
-
               {can("vitals.create") ? (
                 <div>
                   <Button
@@ -939,6 +1067,8 @@ function Consultation() {
           </Card>
         </TabsContent>
 
+        {/* ==================== LABORATORY ==================== */}
+
         <TabsContent value="labs">
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -951,7 +1081,10 @@ function Consultation() {
                   {(
                     (testsQ.data ?? []) as Row[]
                   ).map((test) => {
-                    const id = s(test, "id");
+                    const id = s(
+                      test,
+                      "id",
+                    );
 
                     return (
                       <label
@@ -962,9 +1095,11 @@ function Consultation() {
                           checked={labSel.includes(
                             id,
                           )}
-                          onCheckedChange={(v) =>
+                          onCheckedChange={(
+                            value,
+                          ) =>
                             setLabSel(
-                              v
+                              value
                                 ? [
                                     ...labSel,
                                     id,
@@ -1033,49 +1168,50 @@ function Consultation() {
                     {(
                       (ordersQ.data ??
                         []) as Row[]
-                    ).map((o) => (
+                    ).map((order) => (
                       <li
-                        key={s(o, "id")}
+                        key={s(
+                          order,
+                          "id",
+                        )}
                         className="flex items-center justify-between gap-2 rounded-md border p-2"
                       >
                         <span>
                           {(
-                            (o[
+                            (order[
                               "lab_order_items"
                             ] as Row[]) ??
                             []
                           )
-                            .map((i) =>
-                              lang === "ar"
+                            .map((item) => {
+                              const test =
+                                rel(
+                                  item,
+                                  "lab_tests",
+                                );
+
+                              return lang ===
+                                "ar"
                                 ? s(
-                                    rel(
-                                      i,
-                                      "lab_tests",
-                                    ),
+                                    test,
                                     "name_ar",
                                   ) ||
-                                  s(
-                                    rel(
-                                      i,
-                                      "lab_tests",
-                                    ),
-                                    "name",
-                                  )
+                                    s(
+                                      test,
+                                      "name",
+                                    )
                                 : s(
-                                    rel(
-                                      i,
-                                      "lab_tests",
-                                    ),
+                                    test,
                                     "name",
-                                  ),
-                            )
+                                  );
+                            })
                             .join(", ")}
                         </span>
 
                         <div className="flex items-center gap-2">
                           <StatusBadge
                             status={s(
-                              o,
+                              order,
                               "status",
                             )}
                           />
@@ -1088,10 +1224,11 @@ function Consultation() {
                             <Link
                               to="/lab/$orderId"
                               params={{
-                                orderId: s(
-                                  o,
-                                  "id",
-                                ),
+                                orderId:
+                                  s(
+                                    order,
+                                    "id",
+                                  ),
                               }}
                             >
                               {t("open")}
@@ -1107,6 +1244,8 @@ function Consultation() {
           </div>
         </TabsContent>
 
+        {/* ==================== PRESCRIPTION ==================== */}
+
         <TabsContent value="rx">
           <Card>
             <CardContent className="p-4">
@@ -1115,9 +1254,9 @@ function Consultation() {
               </SectionTitle>
 
               <div className="space-y-3">
-                {rx.map((item, idx) => (
+                {rx.map((item, index) => (
                   <div
-                    key={idx}
+                    key={index}
                     className="grid gap-2 rounded-md border p-3 sm:grid-cols-6"
                   >
                     <div className="sm:col-span-2">
@@ -1125,17 +1264,20 @@ function Consultation() {
                         value={
                           item.medicine_id
                         }
-                        onValueChange={(v) =>
+                        onValueChange={(value) =>
                           setRx(
                             rx.map(
-                              (r, i) =>
-                                i === idx
+                              (
+                                current,
+                                i,
+                              ) =>
+                                i === index
                                   ? {
-                                      ...r,
+                                      ...current,
                                       medicine_id:
-                                        v,
+                                        value,
                                     }
-                                  : r,
+                                  : current,
                             ),
                           )
                         }
@@ -1152,18 +1294,29 @@ function Consultation() {
                           {(
                             (medsQ.data ??
                               []) as Row[]
-                          ).map((m) => (
+                          ).map((medicine) => (
                             <SelectItem
                               key={s(
-                                m,
+                                medicine,
                                 "id",
                               )}
                               value={s(
-                                m,
+                                medicine,
                                 "id",
                               )}
                             >
-                              {s(m, "name")}
+                              {s(
+                                medicine,
+                                "name",
+                              ) ||
+                                s(
+                                  medicine,
+                                  "generic_name",
+                                ) ||
+                                s(
+                                  medicine,
+                                  "brand_name",
+                                )}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1178,15 +1331,18 @@ function Consultation() {
                       onChange={(e) =>
                         setRx(
                           rx.map(
-                            (r, i) =>
-                              i === idx
+                            (
+                              current,
+                              i,
+                            ) =>
+                              i === index
                                 ? {
-                                    ...r,
+                                    ...current,
                                     dosage:
                                       e.target
                                         .value,
                                   }
-                                : r,
+                                : current,
                           ),
                         )
                       }
@@ -1200,15 +1356,18 @@ function Consultation() {
                       onChange={(e) =>
                         setRx(
                           rx.map(
-                            (r, i) =>
-                              i === idx
+                            (
+                              current,
+                              i,
+                            ) =>
+                              i === index
                                 ? {
-                                    ...r,
+                                    ...current,
                                     frequency:
                                       e.target
                                         .value,
                                   }
-                                : r,
+                                : current,
                           ),
                         )
                       }
@@ -1222,15 +1381,18 @@ function Consultation() {
                       onChange={(e) =>
                         setRx(
                           rx.map(
-                            (r, i) =>
-                              i === idx
+                            (
+                              current,
+                              i,
+                            ) =>
+                              i === index
                                 ? {
-                                    ...r,
+                                    ...current,
                                     duration:
                                       e.target
                                         .value,
                                   }
-                                : r,
+                                : current,
                           ),
                         )
                       }
@@ -1244,32 +1406,38 @@ function Consultation() {
                         placeholder={t(
                           "quantity",
                         )}
-                        value={item.quantity}
+                        value={
+                          item.quantity
+                        }
                         onChange={(e) =>
                           setRx(
                             rx.map(
-                              (r, i) =>
-                                i === idx
+                              (
+                                current,
+                                i,
+                              ) =>
+                                i === index
                                   ? {
-                                      ...r,
+                                      ...current,
                                       quantity:
                                         e.target
                                           .value,
                                     }
-                                  : r,
+                                  : current,
                             ),
                           )
                         }
                       />
 
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() =>
                           setRx(
                             rx.filter(
                               (_, i) =>
-                                i !== idx,
+                                i !== index,
                             ),
                           )
                         }
@@ -1283,6 +1451,7 @@ function Consultation() {
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={() =>
@@ -1305,9 +1474,9 @@ function Consultation() {
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={rxExternal}
-                    onCheckedChange={(v) =>
+                    onCheckedChange={(value) =>
                       setRxExternal(
-                        Boolean(v),
+                        Boolean(value),
                       )
                     }
                   />
@@ -1352,37 +1521,42 @@ function Consultation() {
                     {(
                       (rxQ.data ??
                         []) as Row[]
-                    ).map((p) => (
+                    ).map((prescription) => (
                       <li
-                        key={s(p, "id")}
+                        key={s(
+                          prescription,
+                          "id",
+                        )}
                         className="flex items-center justify-between rounded-md border p-2"
                       >
                         <span>
                           {(
-                            (p[
+                            (prescription[
                               "prescription_items"
                             ] as Row[]) ??
                             []
                           )
-                            .map(
-                              (i) =>
-                                `${s(
-                                  rel(
-                                    i,
-                                    "medicines",
-                                  ),
-                                  "name",
-                                )} ${s(
-                                  i,
-                                  "dosage",
-                                )}`,
-                            )
+                            .map((item) => {
+                              const medicine =
+                                rel(
+                                  item,
+                                  "medicines",
+                                );
+
+                              return `${s(
+                                medicine,
+                                "name",
+                              )} ${s(
+                                item,
+                                "dosage",
+                              )}`;
+                            })
                             .join(" · ")}
                         </span>
 
                         <StatusBadge
                           status={s(
-                            p,
+                            prescription,
                             "status",
                           )}
                         />
@@ -1394,6 +1568,8 @@ function Consultation() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ==================== HISTORY ==================== */}
 
         <TabsContent value="history">
           <Card>
@@ -1427,14 +1603,17 @@ function Consultation() {
                     {(
                       (historyQ.data ??
                         []) as Row[]
-                    ).map((h) => (
+                    ).map((history) => (
                       <TableRow
-                        key={s(h, "id")}
+                        key={s(
+                          history,
+                          "id",
+                        )}
                       >
                         <TableCell dir="ltr">
                           {formatDateTime(
                             s(
-                              h,
+                              history,
                               "created_at",
                             ),
                           )}
@@ -1442,15 +1621,15 @@ function Consultation() {
 
                         <TableCell>
                           {s(
-                            h,
+                            history,
                             "chief_complaint",
                           ) || "—"}
                         </TableCell>
 
                         <TableCell>
                           {s(
-                            h,
-                            "diagnosis",
+                            history,
+                            "assessment",
                           ) || "—"}
                         </TableCell>
                       </TableRow>
