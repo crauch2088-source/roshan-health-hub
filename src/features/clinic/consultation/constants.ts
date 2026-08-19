@@ -5,6 +5,7 @@
  * recommendations or default patient data — nothing here is written to the
  * database unless the doctor actively selects it.
  */
+
 import type { QuickOption } from "./types";
 
 export const QUICK_COMPLAINTS: QuickOption[] = [
@@ -22,6 +23,16 @@ export const QUICK_COMPLAINTS: QuickOption[] = [
   { en: "URTI symptoms", ar: "أعراض عدوى الجهاز التنفسي العلوي" },
   { en: "Dysuria", ar: "عسر التبول" },
   { en: "Pregnancy follow-up", ar: "متابعة الحمل" },
+
+  { en: "Hypertension follow-up", ar: "متابعة ضغط الدم" },
+  { en: "Diabetes follow-up", ar: "متابعة السكري" },
+  { en: "Joint pain", ar: "ألم المفاصل" },
+  { en: "Skin rash", ar: "طفح جلدي" },
+  { en: "Ear pain", ar: "ألم الأذن" },
+  { en: "Eye complaint", ar: "شكوى بالعين" },
+  { en: "Palpitations", ar: "خفقان" },
+  { en: "Edema", ar: "تورم" },
+  { en: "Weight loss", ar: "نقصان الوزن" },
 ];
 
 export const QUICK_HPI: QuickOption[] = [
@@ -57,6 +68,13 @@ export const QUICK_ASSESSMENT: QuickOption[] = [
   { en: "Dyspepsia", ar: "عسر هضم" },
   { en: "UTI", ar: "التهاب المسالك البولية" },
   { en: "Low back pain", ar: "ألم أسفل الظهر" },
+
+  { en: "Hypertension", ar: "ارتفاع ضغط الدم" },
+  { en: "Diabetes mellitus", ar: "داء السكري" },
+  { en: "Malaria", ar: "الملاريا" },
+  { en: "Allergic rhinitis", ar: "التهاب الأنف التحسسي" },
+  { en: "Gastritis", ar: "التهاب المعدة" },
+  { en: "Peptic ulcer disease", ar: "القرحة الهضمية" },
 ];
 
 export const QUICK_PLAN: QuickOption[] = [
@@ -76,11 +94,6 @@ export const QUICK_PLAN: QuickOption[] = [
   { en: "Follow up as needed.", ar: "المراجعة عند الحاجة." },
 ];
 
-/* ------------------------------------------------------------------ */
-/* Chronic conditions                                                  */
-/* ------------------------------------------------------------------ */
-
-/** `en` is the canonical stored token — do not rename existing entries. */
 export const CHRONIC_CONDITIONS: QuickOption[] = [
   { en: "Hypertension", ar: "ارتفاع ضغط الدم" },
   { en: "Diabetes mellitus", ar: "داء السكري" },
@@ -94,11 +107,17 @@ export const CHRONIC_CONDITIONS: QuickOption[] = [
   { en: "Dyslipidemia", ar: "اضطراب الدهون" },
   { en: "Chronic liver disease", ar: "مرض الكبد المزمن" },
   { en: "Sickle cell disease", ar: "فقر الدم المنجلي" },
+
+  { en: "Hepatitis B", ar: "التهاب الكبد B" },
+  { en: "Hepatitis C", ar: "التهاب الكبد C" },
+  { en: "HIV", ar: "فيروس نقص المناعة" },
+  { en: "Tuberculosis", ar: "السل" },
+  { en: "Rheumatoid arthritis", ar: "الروماتويد" },
+  { en: "Systemic lupus erythematosus", ar: "الذئبة الحمراء" },
 ];
 
 export const OTHER_PREFIX = "Other:";
 
-/** Parses a stored free-text/legacy value into selected codes + free text. */
 export function parseChronic(value: string): { selected: string[]; other: string } {
   const parts = value
     .split(/[,،;/\n]+/)
@@ -116,7 +135,8 @@ export function parseChronic(value: string): { selected: string[]; other: string
 
     const match = CHRONIC_CONDITIONS.find(
       (condition) =>
-        condition.en.toLowerCase() === part.toLowerCase() || condition.ar === part,
+        condition.en.toLowerCase() === part.toLowerCase() ||
+        condition.ar === part,
     );
 
     if (match) {
@@ -129,17 +149,16 @@ export function parseChronic(value: string): { selected: string[]; other: string
   return { selected, other: rest.filter(Boolean).join(", ") };
 }
 
-/** Serialises the selector back into a readable, legacy-safe text value. */
 export function serializeChronic(selected: string[], other: string): string {
   const parts = [...selected];
   const trimmed = other.trim();
-  if (trimmed) parts.push(`${OTHER_PREFIX} ${trimmed}`);
+
+  if (trimmed) {
+    parts.push(`${OTHER_PREFIX} ${trimmed}`);
+  }
+
   return parts.join(", ");
 }
-
-/* ------------------------------------------------------------------ */
-/* Prescription pick-lists                                             */
-/* ------------------------------------------------------------------ */
 
 export const CUSTOM_VALUE = "__custom__";
 
@@ -219,14 +238,13 @@ export const ROUTES: QuickOption[] = [
   { en: "Vaginal", ar: "مهبلي" },
 ];
 
-/** Suggested (not enforced) route for a dosage form. */
 export const FORM_DEFAULT_ROUTE: Record<string, string> = {
   Tablet: "Oral",
   Capsule: "Oral",
   Syrup: "Oral",
   Suspension: "Oral",
   Solution: "Oral",
-  Drops: "Ophthalmic",
+  Drops: "",
   Cream: "Topical",
   Ointment: "Topical",
   Gel: "Topical",
@@ -237,27 +255,26 @@ export const FORM_DEFAULT_ROUTE: Record<string, string> = {
   Nebules: "Inhaled",
 };
 
-/** Normalises a `medicines.dosage_form` / `unit` value onto our list. */
 export function matchDosageForm(value: string): string {
   const query = value.trim().toLowerCase();
+
   if (!query) return "";
+
   const hit = DOSAGE_FORMS.find(
-    (form) => form.en.toLowerCase() === query || form.ar === value.trim(),
+    (form) =>
+      form.en.toLowerCase() === query ||
+      form.ar === value.trim(),
   );
+
   if (hit) return hit.en;
-  const partial = DOSAGE_FORMS.find((form) => query.includes(form.en.toLowerCase()));
+
+  const partial = DOSAGE_FORMS.find((form) =>
+    query.includes(form.en.toLowerCase()),
+  );
+
   return partial?.en ?? "";
 }
 
-/* ------------------------------------------------------------------ */
-/* Laboratory: routine panel matching                                  */
-/* ------------------------------------------------------------------ */
-
-/**
- * Codes / names treated as the Sudanese outpatient "Routine" panel.
- * Matching is done on `lab_tests.code` OR `lab_tests.name`, so the existing
- * catalogue categories are never rewritten.
- */
 export const ROUTINE_LAB_MATCHERS = [
   "cbc",
   "complete blood count",
@@ -288,10 +305,24 @@ export const ROUTINE_LAB_MATCHERS = [
   "urea",
   "alt",
   "ast",
+
+  "esr",
+  "crp",
+  "h pylori",
+  "widal",
+  "hbsag",
+  "hcv",
+  "hiv",
+  "electrolytes",
+  "sodium",
+  "potassium",
 ];
 
 export function isRoutineTest(code: string, name: string): boolean {
   const c = code.trim().toLowerCase();
   const n = name.trim().toLowerCase();
-  return ROUTINE_LAB_MATCHERS.some((matcher) => c === matcher || n === matcher);
+
+  return ROUTINE_LAB_MATCHERS.some(
+    (matcher) => c === matcher || n === matcher,
+  );
 }
