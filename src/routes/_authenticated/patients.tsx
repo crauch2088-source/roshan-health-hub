@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Phone, Plus, Search, ExternalLink } from "lucide-react";
+import { Phone, Plus, Search } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -51,10 +51,13 @@ import { supabase } from "@/lib/supabase";
 export const Route = createFileRoute("/_authenticated/patients")({
   head: () => ({
     meta: [
-      { title: "Patients — ROSHAN Medical Center" },
+      {
+        title: "Patients — ROSHAN Medical Center",
+      },
       {
         name: "description",
-        content: "Search, register and open patient charts.",
+        content:
+          "Search, register and open patient charts.",
       },
       {
         property: "og:title",
@@ -62,7 +65,8 @@ export const Route = createFileRoute("/_authenticated/patients")({
       },
       {
         property: "og:description",
-        content: "Search, register and open patient charts.",
+        content:
+          "Search, register and open patient charts.",
       },
     ],
   }),
@@ -72,16 +76,10 @@ export const Route = createFileRoute("/_authenticated/patients")({
 const PAGE_SIZE = 20;
 
 /**
- * Keep the search value safe for PostgREST `.or()` syntax.
- *
- * We intentionally remove characters that can alter the filter expression
- * while preserving normal patient names, MRNs, phone numbers and IDs.
+ * Keeps free-text search safe to embed in a PostgREST `.or()` filter string.
  */
 function sanitizeSearch(term: string): string {
-  return term
-    .replace(/[,()%]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return term.replace(/[,()%]/g, "").trim();
 }
 
 function emptyForm() {
@@ -119,18 +117,8 @@ function PatientsPage() {
       const term = sanitizeSearch(search);
 
       if (term) {
-        /*
-         * Search across the clinically useful patient identifiers.
-         *
-         * Keep the expression simple and PostgREST-safe.
-         */
         q = q.or(
-          [
-            `full_name.ilike.%${term}%`,
-            `phone.ilike.%${term}%`,
-            `mrn.ilike.%${term}%`,
-            `national_id.ilike.%${term}%`,
-          ].join(","),
+          `full_name.ilike.%${term}%,phone.ilike.%${term}%,mrn.ilike.%${term}%,national_id.ilike.%${term}%`,
         );
       }
 
@@ -150,17 +138,21 @@ function PatientsPage() {
         throw new Error(t("full_name"));
       }
 
-      // MRNs are generated server-side.
+      // MRNs are generated server-side through RPC.
       const mrn = await rpc<string>("next_mrn");
 
-      const { error } = await supabase.from("patients").insert({
-        mrn,
-        full_name: form.full_name.trim(),
-        phone: form.phone || null,
-        gender: form.gender || null,
-        date_of_birth: form.date_of_birth || null,
-        national_id: form.national_id || null,
-      });
+      const { error } = await supabase
+        .from("patients")
+        .insert({
+          mrn,
+          full_name: form.full_name.trim(),
+          phone: form.phone || null,
+          gender: form.gender || null,
+          date_of_birth:
+            form.date_of_birth || null,
+          national_id:
+            form.national_id || null,
+        });
 
       if (error) {
         throw new Error(error.message);
@@ -215,7 +207,8 @@ function PatientsPage() {
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        full_name: e.target.value,
+                        full_name:
+                          e.target.value,
                       })
                     }
                   />
@@ -228,7 +221,8 @@ function PatientsPage() {
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        phone: e.target.value,
+                        phone:
+                          e.target.value,
                       })
                     }
                   />
@@ -264,7 +258,9 @@ function PatientsPage() {
                   <Input
                     type="date"
                     dir="ltr"
-                    value={form.date_of_birth}
+                    value={
+                      form.date_of_birth
+                    }
                     onChange={(e) =>
                       setForm({
                         ...form,
@@ -275,7 +271,9 @@ function PatientsPage() {
                   />
                 </Field>
 
-                <Field label={t("national_id")}>
+                <Field
+                  label={t("national_id")}
+                >
                   <Input
                     dir="ltr"
                     value={form.national_id}
@@ -321,10 +319,6 @@ function PatientsPage() {
         ) : null}
       </PageHeader>
 
-      {/* =====================================================
-          SEARCH
-      ====================================================== */}
-
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
@@ -336,7 +330,6 @@ function PatientsPage() {
             setPage(1);
           }}
           className="ps-9"
-          autoComplete="off"
         />
       </div>
 
@@ -372,157 +365,54 @@ function PatientsPage() {
                     <TableHead>
                       {t("date")}
                     </TableHead>
-
-                    <TableHead className="w-[90px] text-end">
-                      {t("open")}
-                    </TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {rows.map((p) => {
-                    const patientId = s(
-                      p,
-                      "id",
-                    );
-
-                    const patientName = s(
-                      p,
-                      "full_name",
-                    );
-
-                    const patientMrn = s(
-                      p,
-                      "mrn",
-                    );
-
-                    /*
-                     * Do not render an invalid patient link.
-                     * A patient record without an ID should never be
-                     * sent to the patient chart route.
-                     */
-                    const hasPatientId =
-                      Boolean(patientId);
-
-                    return (
-                      <TableRow
-                        key={
-                          patientId ||
-                          patientMrn ||
-                          patientName
-                        }
-                        className={
-                          hasPatientId
-                            ? "group"
-                            : undefined
-                        }
+                  {rows.map((p) => (
+                    <TableRow
+                      key={s(p, "id")}
+                    >
+                      <TableCell
+                        dir="ltr"
+                        className="font-mono text-xs"
                       >
-                        <TableCell
-                          dir="ltr"
-                          className="font-mono text-xs"
+                        {s(p, "mrn") || "—"}
+                      </TableCell>
+
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/patients/$patientId"
+                          params={{
+                            patientId:
+                              s(
+                                p,
+                                "id",
+                              ),
+                          }}
+                          className="relative z-10 inline-block cursor-pointer text-primary hover:underline"
                         >
-                          {patientMrn || "—"}
-                        </TableCell>
-
-                        <TableCell className="font-medium">
-                          {hasPatientId ? (
-                            <Link
-                              to="/patients/$patientId"
-                              params={{
-                                patientId,
-                              }}
-                              className="block hover:underline"
-                            >
-                              {patientName || "—"}
-                            </Link>
-                          ) : (
-                            patientName || "—"
+                          {s(
+                            p,
+                            "full_name",
                           )}
-                        </TableCell>
+                        </Link>
+                      </TableCell>
 
-                        <TableCell dir="ltr">
-                          {s(p, "phone") ? (
-                            <span className="flex items-center gap-1">
-                              <Phone className="size-3" />
-                              {s(p, "phone")}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {calcAge(
-                            s(
+                      <TableCell dir="ltr">
+                        {s(p, "phone") ? (
+                          <span className="flex items-center gap-1">
+                            <Phone className="size-3" />
+                            {s(
                               p,
-                              "date_of_birth",
-                            ),
-                          ) ?? "—"}
-                        </TableCell>
+                              "phone",
+                            )}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
 
-                        <TableCell dir="ltr">
-                          {formatDate(
-                            s(
-                              p,
-                              "created_at",
-                            ),
-                          )}
-                        </TableCell>
-
-                        <TableCell className="text-end">
-                          {hasPatientId ? (
-                            <Button
-                              asChild
-                              variant="outline"
-                              size="sm"
-                              className="gap-1"
-                            >
-                              <Link
-                                to="/patients/$patientId"
-                                params={{
-                                  patientId,
-                                }}
-                              >
-                                <ExternalLink className="size-3.5" />
-
-                                <span className="hidden sm:inline">
-                                  {t("open")}
-                                </span>
-                              </Link>
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-
-          <Pager
-            page={list.page}
-            pageCount={list.pageCount}
-            count={list.count}
-            pageSize={PAGE_SIZE}
-            hasPrev={list.hasPrev}
-            hasNext={list.hasNext}
-            isFetching={list.isFetching}
-            onPrev={() =>
-              setPage((p) =>
-                Math.max(1, p - 1),
-              )
-            }
-            onNext={() =>
-              setPage((p) => p + 1)
-            }
-          />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+                      <TableCell>
+                        {calcAge(
+                         
