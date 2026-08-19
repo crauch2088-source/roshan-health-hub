@@ -138,7 +138,6 @@ function PatientsPage() {
         throw new Error(t("full_name"));
       }
 
-      // MRNs are generated server-side through RPC.
       const mrn = await rpc<string>("next_mrn");
 
       const { error } = await supabase
@@ -231,10 +230,10 @@ function PatientsPage() {
                 <Field label={t("gender")}>
                   <Select
                     value={form.gender}
-                    onValueChange={(v) =>
+                    onValueChange={(value) =>
                       setForm({
                         ...form,
-                        gender: v,
+                        gender: value,
                       })
                     }
                   >
@@ -290,6 +289,7 @@ function PatientsPage() {
 
               <DialogFooter>
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() =>
                     setOpen(false)
@@ -299,6 +299,7 @@ function PatientsPage() {
                 </Button>
 
                 <Button
+                  type="button"
                   disabled={
                     !form.full_name.trim() ||
                     create.isPending
@@ -369,50 +370,104 @@ function PatientsPage() {
                 </TableHeader>
 
                 <TableBody>
-                  {rows.map((p) => (
-                    <TableRow
-                      key={s(p, "id")}
-                    >
-                      <TableCell
-                        dir="ltr"
-                        className="font-mono text-xs"
-                      >
-                        {s(p, "mrn") || "—"}
-                      </TableCell>
+                  {rows.map((patient) => {
+                    const patientId = s(
+                      patient,
+                      "id",
+                    );
 
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/patients/$patientId"
-                          params={{
-                            patientId:
-                              s(
-                                p,
-                                "id",
-                              ),
-                          }}
-                          className="relative z-10 inline-block cursor-pointer text-primary hover:underline"
+                    return (
+                      <TableRow
+                        key={patientId}
+                      >
+                        <TableCell
+                          dir="ltr"
+                          className="font-mono text-xs"
                         >
                           {s(
-                            p,
-                            "full_name",
-                          )}
-                        </Link>
-                      </TableCell>
+                            patient,
+                            "mrn",
+                          ) || "—"}
+                        </TableCell>
 
-                      <TableCell dir="ltr">
-                        {s(p, "phone") ? (
-                          <span className="flex items-center gap-1">
-                            <Phone className="size-3" />
+                        <TableCell className="font-medium">
+                          <Link
+                            to="/patients/$patientId"
+                            params={{
+                              patientId,
+                            }}
+                            className="inline-flex cursor-pointer items-center text-primary hover:underline"
+                          >
                             {s(
-                              p,
-                              "phone",
+                              patient,
+                              "full_name",
                             )}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
+                          </Link>
+                        </TableCell>
 
-                      <TableCell>
-                        {calcAge(
-                         
+                        <TableCell dir="ltr">
+                          {s(
+                            patient,
+                            "phone",
+                          ) ? (
+                            <span className="flex items-center gap-1">
+                              <Phone className="size-3" />
+                              {s(
+                                patient,
+                                "phone",
+                              )}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+
+                        <TableCell>
+                          {calcAge(
+                            s(
+                              patient,
+                              "date_of_birth",
+                            ),
+                          ) ?? "—"}
+                        </TableCell>
+
+                        <TableCell dir="ltr">
+                          {formatDate(
+                            s(
+                              patient,
+                              "created_at",
+                            ),
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          <Pager
+            page={list.page}
+            pageCount={list.pageCount}
+            count={list.count}
+            pageSize={PAGE_SIZE}
+            hasPrev={list.hasPrev}
+            hasNext={list.hasNext}
+            isFetching={list.isFetching}
+            onPrev={() =>
+              setPage((current) =>
+                Math.max(1, current - 1),
+              )
+            }
+            onNext={() =>
+              setPage((current) =>
+                current + 1,
+              )
+            }
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
