@@ -5,6 +5,7 @@ export type Lang = "ar" | "en";
 const dict: Record<string, { ar: string; en: string }> = {
   app_name: { ar: "مركز روشان الطبي", en: "Roshan Medical Center" },
   app_short: { ar: "روشان", en: "Roshan" },
+
   // auth
   sign_in: { ar: "تسجيل الدخول", en: "Sign in" },
   sign_out: { ar: "تسجيل الخروج", en: "Sign out" },
@@ -18,7 +19,11 @@ const dict: Record<string, { ar: string; en: string }> = {
   first_run_setup: { ar: "التهيئة الأولى للنظام", en: "First-time setup" },
   create_super_admin: { ar: "إنشاء حساب المدير العام", en: "Create Super Admin" },
   setup_done: { ar: "تمت التهيئة", en: "Setup complete" },
-  signup_disabled: { ar: "التسجيل العام مغلق. المدير العام فقط يمكنه إنشاء المستخدمين.", en: "Public signup is closed. Only the Super Admin creates users." },
+  signup_disabled: {
+    ar: "التسجيل العام مغلق. المدير العام فقط يمكنه إنشاء المستخدمين.",
+    en: "Public signup is closed. Only the Super Admin creates users.",
+  },
+
   // nav
   dashboard: { ar: "الرئيسية", en: "Dashboard" },
   patients: { ar: "المرضى", en: "Patients" },
@@ -41,6 +46,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   system_status: { ar: "حالة النظام", en: "System status" },
   followups: { ar: "المتابعات", en: "Follow-ups" },
   certificates: { ar: "الشهادات", en: "Certificates" },
+
   // common
   save: { ar: "حفظ", en: "Save" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
@@ -70,6 +76,11 @@ const dict: Record<string, { ar: string; en: string }> = {
   required: { ar: "مطلوب", en: "Required" },
   saved: { ar: "تم الحفظ", en: "Saved" },
   back: { ar: "رجوع", en: "Back" },
+  previous: { ar: "السابق", en: "Previous" },
+  next: { ar: "التالي", en: "Next" },
+  page: { ar: "صفحة", en: "Page" },
+  of: { ar: "من", en: "of" },
+
   // patient
   mrn: { ar: "الرقم الطبي", en: "MRN" },
   full_name: { ar: "الاسم الكامل", en: "Full name" },
@@ -83,9 +94,11 @@ const dict: Record<string, { ar: string; en: string }> = {
   occupation: { ar: "المهنة", en: "Occupation" },
   marital_status: { ar: "الحالة الاجتماعية", en: "Marital status" },
   blood_group: { ar: "فصيلة الدم", en: "Blood group" },
+  national_id: { ar: "الرقم الوطني", en: "National ID" },
   new_patient: { ar: "مريض جديد", en: "New patient" },
   register_patient: { ar: "تسجيل مريض", en: "Register patient" },
   patient: { ar: "المريض", en: "Patient" },
+
   // visit
   new_visit: { ar: "زيارة جديدة", en: "New visit" },
   visit_type: { ar: "نوع الزيارة", en: "Visit type" },
@@ -103,6 +116,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   no_show: { ar: "لم يحضر", en: "No show" },
   queue_number: { ar: "رقم الطابور", en: "Queue no." },
   call_next: { ar: "نداء التالي", en: "Call next" },
+
   // emr
   vitals: { ar: "العلامات الحيوية", en: "Vitals" },
   clinical_notes: { ar: "الملاحظات السريرية", en: "Clinical notes" },
@@ -144,6 +158,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   internal_pharmacy: { ar: "صيدلية روشان", en: "Roshan pharmacy" },
   complete_visit: { ar: "إنهاء الزيارة", en: "Complete visit" },
   visit_locked: { ar: "الزيارة مكتملة — للقراءة فقط", en: "Visit completed — read only" },
+
   // lab
   sample: { ar: "العينة", en: "Sample" },
   collect_sample: { ar: "سحب العينة", en: "Collect sample" },
@@ -156,7 +171,11 @@ const dict: Record<string, { ar: string; en: string }> = {
   unit: { ar: "الوحدة", en: "Unit" },
   test: { ar: "التحليل", en: "Test" },
   sample_type: { ar: "نوع العينة", en: "Sample type" },
-  optional_note: { ar: "كل المؤشرات اختيارية — يمكن ترك أي حقل فارغاً", en: "All parameters are optional — any field may be left blank" },
+  optional_note: {
+    ar: "كل المؤشرات اختيارية — يمكن ترك أي حقل فارغاً",
+    en: "All parameters are optional — any field may be left blank",
+  },
+
   // pharmacy
   medicines: { ar: "الأدوية", en: "Medicines" },
   generic_name: { ar: "الاسم العلمي", en: "Generic name" },
@@ -166,12 +185,17 @@ const dict: Record<string, { ar: string; en: string }> = {
   batch_number: { ar: "رقم التشغيلة", en: "Batch no." },
   expiry_date: { ar: "تاريخ الانتهاء", en: "Expiry date" },
   purchase_price: { ar: "سعر الشراء", en: "Purchase price" },
+  cost_price: { ar: "سعر التكلفة", en: "Cost price" },
   selling_price: { ar: "سعر البيع", en: "Selling price" },
   in_stock: { ar: "المتوفر", en: "In stock" },
+  stock: { ar: "المخزون", en: "Stock" },
   low_stock: { ar: "مخزون منخفض", en: "Low stock" },
   expiring: { ar: "قارب الانتهاء", en: "Expiring" },
   dispense: { ar: "صرف", en: "Dispense" },
   dispensed: { ar: "تم الصرف", en: "Dispensed" },
+  reorder_level: { ar: "حد إعادة الطلب", en: "Reorder level" },
+  receive_stock: { ar: "استلام مخزون", en: "Receive stock" },
+
   // billing
   invoice: { ar: "فاتورة", en: "Invoice" },
   invoices: { ar: "الفواتير", en: "Invoices" },
@@ -194,6 +218,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   revenue: { ar: "الإيرادات", en: "Revenue" },
   profit: { ar: "الأرباح", en: "Profit" },
   net_profit: { ar: "صافي الربح", en: "Net profit" },
+
   // dashboard
   patients_today: { ar: "مرضى اليوم", en: "Patients today" },
   visits_today: { ar: "زيارات اليوم", en: "Visits today" },
@@ -210,12 +235,57 @@ const dict: Record<string, { ar: string; en: string }> = {
   lab_activity: { ar: "نشاط المختبر", en: "Laboratory activity" },
   pharmacy_activity: { ar: "نشاط الصيدلية", en: "Pharmacy activity" },
   upcoming_followups: { ar: "متابعات قادمة", en: "Upcoming follow-ups" },
+
+  // settings
+  system_configuration: {
+    ar: "إعدادات النظام",
+    en: "System configuration",
+  },
+  center_info: {
+    ar: "معلومات المركز",
+    en: "Center information",
+  },
+  center_name: {
+    ar: "اسم المركز",
+    en: "Center name",
+  },
+  center_name_ar: {
+    ar: "اسم المركز بالعربية",
+    en: "Center name (Arabic)",
+  },
+  currency: {
+    ar: "العملة",
+    en: "Currency",
+  },
+  tax_percent: {
+    ar: "نسبة الضريبة %",
+    en: "Tax %",
+  },
+  invoice_footer: {
+    ar: "تذييل الفاتورة",
+    en: "Invoice footer",
+  },
+  receipt_footer: {
+    ar: "تذييل الإيصال",
+    en: "Receipt footer",
+  },
+  language: {
+    ar: "اللغة",
+    en: "Language",
+  },
+
   // misc
   role: { ar: "الدور", en: "Role" },
   active: { ar: "نشط", en: "Active" },
   inactive: { ar: "غير نشط", en: "Inactive" },
-  no_permission: { ar: "لا تمتلك صلاحية الوصول لهذه الصفحة", en: "You do not have permission to view this page" },
-  migration_needed: { ar: "النظام يحتاج تنفيذ ملف الترقية db/roshan_phase1_migration.sql على قاعدة البيانات", en: "The database migration db/roshan_phase1_migration.sql has not been applied yet" },
+  no_permission: {
+    ar: "لا تمتلك صلاحية الوصول لهذه الصفحة",
+    en: "You do not have permission to view this page",
+  },
+  migration_needed: {
+    ar: "النظام يحتاج تنفيذ ملف الترقية db/roshan_phase1_migration.sql على قاعدة البيانات",
+    en: "The database migration db/roshan_phase1_migration.sql has not been applied yet",
+  },
   certificate_type: { ar: "نوع الشهادة", en: "Certificate type" },
   medical_certificate: { ar: "شهادة طبية", en: "Medical certificate" },
   sick_leave: { ar: "إجازة مرضية", en: "Sick leave" },
@@ -234,11 +304,6 @@ const dict: Record<string, { ar: string; en: string }> = {
   contact_person: { ar: "الشخص المسؤول", en: "Contact person" },
   discount_percent: { ar: "نسبة الخصم %", en: "Discount %" },
   agreement_notes: { ar: "ملاحظات الاتفاقية", en: "Agreement notes" },
-  currency: { ar: "العملة", en: "Currency" },
-  center_name: { ar: "اسم المركز", en: "Center name" },
-  invoice_footer: { ar: "تذييل الفاتورة", en: "Invoice footer" },
-  receipt_footer: { ar: "تذييل الإيصال", en: "Receipt footer" },
-  language: { ar: "اللغة", en: "Language" },
   from_date: { ar: "من تاريخ", en: "From" },
   to_date: { ar: "إلى تاريخ", en: "To" },
   db_status: { ar: "حالة قاعدة البيانات", en: "Database status" },
@@ -246,7 +311,13 @@ const dict: Record<string, { ar: string; en: string }> = {
   records: { ar: "سجلات", en: "records" },
 };
 
-type Ctx = { lang: Lang; dir: "rtl" | "ltr"; t: (k: string) => string; toggle: () => void };
+type Ctx = {
+  lang: Lang;
+  dir: "rtl" | "ltr";
+  t: (k: string) => string;
+  toggle: () => void;
+};
+
 const LangCtx = createContext<Ctx | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -254,7 +325,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem("roshan-lang");
-    if (stored === "en" || stored === "ar") setLang(stored);
+
+    if (stored === "en" || stored === "ar") {
+      setLang(stored);
+    }
   }, []);
 
   useEffect(() => {
@@ -270,10 +344,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const t = useCallback((k: string) => dict[k]?.[lang] ?? k, [lang]);
+  const t = useCallback(
+    (k: string) => dict[k]?.[lang] ?? k,
+    [lang],
+  );
 
   return (
-    <LangCtx.Provider value={{ lang, dir: lang === "ar" ? "rtl" : "ltr", t, toggle }}>
+    <LangCtx.Provider
+      value={{
+        lang,
+        dir: lang === "ar" ? "rtl" : "ltr",
+        t,
+        toggle,
+      }}
+    >
       {children}
     </LangCtx.Provider>
   );
@@ -281,6 +365,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export function useLang(): Ctx {
   const ctx = useContext(LangCtx);
-  if (!ctx) throw new Error("useLang must be used inside LanguageProvider");
+
+  if (!ctx) {
+    throw new Error("useLang must be used inside LanguageProvider");
+  }
+
   return ctx;
 }
