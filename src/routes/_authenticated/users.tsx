@@ -35,6 +35,8 @@ import { b, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
+import { createStaffUser } from "./users.server";
+
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({
     meta: [
@@ -64,21 +66,26 @@ function UsersPage() {
 
   const create = useSave(
     async () => {
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: { data: { full_name: form.full_name } },
+      // Creating a staff account runs on the server (service_role key) so
+      // that it never replaces the current admin's own browser session —
+      // `supabase.auth.signUp` on the client does exactly that, which was
+      // the previous (broken) behavior here.
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) {
+        throw new Error("Your session has expired. Please sign in again.");
+      }
+
+      await createStaffUser({
+        data: {
+          accessToken,
+          full_name: form.full_name,
+          email: form.email,
+          password: form.password,
+          phone: form.phone,
+          role_id: form.role_id,
+        },
       });
-      if (error) throw new Error(error.message);
-      const { error: uErr } = await supabase.from("users").insert({
-        full_name: form.full_name,
-        email: form.email,
-        phone: form.phone || null,
-        role_id: form.role_id || null,
-        auth_user_id: data.user?.id ?? null,
-        active: true,
-      });
-      if (uErr) throw new Error(uErr.message);
       return null;
     },
     {
@@ -124,10 +131,11 @@ function UsersPage() {
                 <Field label={`${t("email")} *`}>
                   <Input type="email" dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 </Field>
-                <Field label={`${t("password")} *`}>
+                <Field label={`${t("password")} * (min. 8 characters)`}>
                   <Input
                     type="password"
                     dir="ltr"
+                    minLength={8}
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                   />
@@ -155,7 +163,13 @@ function UsersPage() {
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!form.full_name || !form.email || !form.password || !form.role_id || create.isPending}
+                  disabled={
+                    !form.full_name ||
+                    !form.email ||
+                    form.password.length < 8 ||
+                    !form.role_id ||
+                    create.isPending
+                  }
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}
