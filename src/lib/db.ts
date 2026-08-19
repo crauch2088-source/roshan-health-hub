@@ -27,6 +27,62 @@ export function useRows<T = Row[]>(
   });
 }
 
+/**
+ * Read helper for large/growing tables: pages results at the database
+ * level using PostgREST's `.range()` + an exact count, instead of
+ * fetching an entire table and slicing/searching it in React.
+ *
+ * `build` receives a zero-based `{ from, to }` row range — apply it with
+ * `.range(from, to)` — and must request an exact count, e.g.
+ * `.select("col1, col2", { count: "exact" })`.
+ *
+ * This is additive: `useRows` above is unchanged, so no existing caller
+ * is affected by this hook's introduction.
+ */
+export function usePagedRows<T = Row[]>(
+  key: QueryKey,
+  build: (range: { from: number; to: number }) => PromiseLike<{
+    data: unknown;
+    error: unknown;
+    count: number | null;
+  }>,
+  page: number,
+  pageSize: number,
+  options?: { enabled?: boolean },
+) {
+  const safePage = Math.max(1, page);
+  const from = (safePage - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const query = useQuery({
+    queryKey: [...key, "page", safePage, pageSize],
+    queryFn: async () => {
+      const { data, error, count } = await build({ from, to });
+      if (error) throw new Error(dbError(error));
+      return { rows: (data ?? []) as T, count: count ?? null };
+    },
+    enabled: options?.enabled ?? true,
+    retry: false,
+    placeholderData: (prev) => prev,
+  });
+
+  const count = query.data?.count ?? null;
+  const rows = (query.data?.rows ?? []) as T;
+  const rowCount = Array.isArray(rows) ? (rows as unknown[]).length : 0;
+  const pageCount = count != null ? Math.max(1, Math.ceil(count / pageSize)) : null;
+
+  return {
+    ...query,
+    rows,
+    count,
+    page: safePage,
+    pageSize,
+    pageCount,
+    hasPrev: safePage > 1,
+    hasNext: pageCount != null ? safePage < pageCount : rowCount === pageSize,
+  };
+}
+
 /** Write helper with toast + cache invalidation. */
 export function useSave<TVars>(
   fn: (vars: TVars) => Promise<unknown>,
