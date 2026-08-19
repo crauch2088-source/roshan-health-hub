@@ -61,6 +61,67 @@ import {
   formatGestationalAge,
 } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
+import {
+  CHRONIC_CONDITIONS,
+  DOSAGE_FORMS,
+  FORM_DEFAULT_ROUTE,
+  ROUTES,
+  parseChronic,
+  serializeChronic,
+} from "@/features/clinic/consultation/constants";
+import type { RxItem } from "@/features/clinic/consultation/types";
+
+/**
+ * Vitals are colour-coded against simple adult reference ranges so the
+ * doctor's eye is drawn to anything abnormal. This is a visual aid only —
+ * it never blocks saving and is not a clinical protocol.
+ */
+const vitalSeverity = (
+  type: "spo2" | "sbp" | "temp" | "pulse" | "rr",
+  raw: unknown,
+): "normal" | "warning" | "critical" => {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || !raw) return "normal";
+
+  if (type === "spo2") {
+    if (value < 90) return "critical";
+    if (value < 94) return "warning";
+  }
+
+  if (type === "sbp") {
+    if (value < 90 || value > 180) return "critical";
+    if (value < 100 || value > 160) return "warning";
+  }
+
+  if (type === "temp") {
+    if (value > 39.5) return "critical";
+    if (value > 38.5) return "warning";
+  }
+
+  if (type === "pulse") {
+    if (value > 130 || value < 40) return "critical";
+    if (value > 100 || value < 50) return "warning";
+  }
+
+  if (type === "rr") {
+    if (value > 30) return "critical";
+    if (value > 24) return "warning";
+  }
+
+  return "normal";
+};
+
+const vitalClass = (
+  severity: ReturnType<typeof vitalSeverity>,
+) => {
+  if (severity === "critical") {
+    return "border-destructive bg-destructive/10 text-destructive ring-1 ring-destructive/30";
+  }
+  if (severity === "warning") {
+    return "border-amber-500 bg-amber-50 text-amber-700 ring-1 ring-amber-300";
+  }
+  return "";
+};
 
 export const Route = createFileRoute(
   "/_authenticated/clinic_/$visitId",
@@ -79,14 +140,6 @@ export const Route = createFileRoute(
   }),
   component: Consultation,
 });
-
-type RxItem = {
-  medicine_id: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  quantity: string;
-};
 
 type QuickOption = {
   en: string;
@@ -265,6 +318,8 @@ function Consultation() {
 
   const [vitals, setVitals] = useState<Row>({});
   const [clinicalNote, setClinicalNote] = useState<Row>({});
+  const [selectedChronic, setSelectedChronic] = useState<string[]>([]);
+  const [chronicOther, setChronicOther] = useState("");
   const [labSel, setLabSel] = useState<string[]>([]);
   const [labSearch, setLabSearch] = useState("");
   const [labCategory, setLabCategory] = useState("all");
@@ -348,7 +403,7 @@ function Consultation() {
     supabase
       .from("prescriptions")
       .select(
-        "id, status, is_external, created_at, prescription_items(id, dosage, dose, frequency, duration, quantity, medicines(name, generic_name, brand_name))",
+        "id, status, is_external, created_at, prescription_items(id, dosage, dose, dosage_form, route, instructions, frequency, duration, quantity, medicines(name, generic_name, brand_name))",
       )
       .eq("visit_id", visitId)
       .is("deleted_at", null)
@@ -385,6 +440,11 @@ function Consultation() {
 
     if (row) {
       setClinicalNote(row);
+      const parsed = parseChronic(
+        s(row, "past_medical_history"),
+      );
+      setSelectedChronic(parsed.selected);
+      setChronicOther(parsed.other);
     }
   }, [clinicalNoteQ.data]);
 
@@ -392,6 +452,12 @@ function Consultation() {
     Number(s(vitals, "weight")),
     Number(s(vitals, "height")),
   );
+
+  const currentSbp =
+    s(vitals, "systolic_bp") ||
+    s(vitals, "bp_systolic") ||
+    s(vitals, "blood_pressure").split("/")[0]?.trim() ||
+    "";
 
   const gestDays = calcGestationalDays(
     s(clinicalNote, "lmp"),
@@ -472,9 +538,12 @@ function Consultation() {
       {
         medicine_id: "",
         dosage: "",
+        dosage_form: "",
+        route: "",
         frequency: "",
         duration: "",
         quantity: "1",
+        instructions: "",
       },
     ]);
   };
@@ -706,10 +775,15 @@ function Consultation() {
           ) || null,
 
         past_medical_history:
+          serializeChronic(
+            selectedChronic,
+            chronicOther,
+          ) ||
           s(
             clinicalNote,
             "past_medical_history",
-          ) || null,
+          ) ||
+          null,
 
         lmp:
           lmp || null,
@@ -936,6 +1010,15 @@ function Consultation() {
 
             dosage:
               item.dosage || null,
+
+            dosage_form:
+              item.dosage_form || null,
+
+            route:
+              item.route || null,
+
+            instructions:
+              item.instructions || null,
 
             frequency:
               item.frequency || null,
@@ -1481,24 +1564,68 @@ function Consultation() {
                   <Field
                     label={t("chronic_conditions")}
                   >
-                    <Input
-                      placeholder={
-                        isArabic
-                          ? "الأمراض المزمنة"
-                          : "Chronic conditions"
-                      }
-                      value={s(
-                        clinicalNote,
-                        "past_medical_history",
-                      )}
-                      onChange={(e) =>
-                        setClinicalNote({
-                          ...clinicalNote,
-                          past_medical_history:
+                    <div className="space-y-2 rounded-lg border p-3">
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {CHRONIC_CONDITIONS.map(
+                          (condition) => {
+                            const checked =
+                              selectedChronic.includes(
+                                condition.en,
+                              );
+                            return (
+                              <label
+                                key={condition.en}
+                                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(
+                                    value,
+                                  ) => {
+                                    setSelectedChronic(
+                                      (current) =>
+                                        Boolean(value)
+                                          ? current.includes(
+                                              condition.en,
+                                            )
+                                            ? current
+                                            : [
+                                                ...current,
+                                                condition.en,
+                                              ]
+                                          : current.filter(
+                                              (x) =>
+                                                x !==
+                                                condition.en,
+                                            ),
+                                    );
+                                  }}
+                                />
+                                <span className="text-sm">
+                                  {isArabic
+                                    ? condition.ar
+                                    : condition.en}
+                                </span>
+                              </label>
+                            );
+                          },
+                        )}
+                      </div>
+
+                      <Input
+                        value={chronicOther}
+                        placeholder={
+                          isArabic
+                            ? "أخرى (اذكرها)..."
+                            : "Other (specify)..."
+                        }
+                        onChange={(e) =>
+                          setChronicOther(
                             e.target.value,
-                        })
-                      }
-                    />
+                          )
+                        }
+                      />
+                    </div>
                   </Field>
                 </div>
 
@@ -1675,9 +1802,37 @@ function Consultation() {
         <TabsContent value="vitals">
           <Card>
             <CardContent className="space-y-5 p-4">
+              {[
+                vitalSeverity("spo2", s(vitals, "spo2")),
+                vitalSeverity("sbp", currentSbp),
+                vitalSeverity("temp", s(vitals, "temperature")),
+                vitalSeverity("pulse", s(vitals, "pulse")),
+                vitalSeverity(
+                  "rr",
+                  s(vitals, "respiratory_rate"),
+                ),
+              ].some((severity) => severity !== "normal") ? (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                  <strong>
+                    {isArabic
+                      ? "تنبيه العلامات الحيوية: "
+                      : "Vital-sign alert: "}
+                  </strong>
+                  {isArabic
+                    ? "توجد قيمة خارج النطاق الطبيعي — يرجى المراجعة السريرية."
+                    : "One or more vital signs are outside the normal range — please review clinically."}
+                </div>
+              ) : null}
+
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Field label={t("temperature")}>
                   <Input
+                    className={vitalClass(
+                      vitalSeverity(
+                        "temp",
+                        s(vitals, "temperature"),
+                      ),
+                    )}
                     type="number"
                     dir="ltr"
                     step="0.1"
@@ -1699,6 +1854,12 @@ function Consultation() {
 
                 <Field label={t("pulse")}>
                   <Input
+                    className={vitalClass(
+                      vitalSeverity(
+                        "pulse",
+                        s(vitals, "pulse"),
+                      ),
+                    )}
                     type="number"
                     dir="ltr"
                     inputMode="numeric"
@@ -1715,6 +1876,9 @@ function Consultation() {
 
                 <Field label={t("blood_pressure")}>
                   <Input
+                    className={vitalClass(
+                      vitalSeverity("sbp", currentSbp),
+                    )}
                     dir="ltr"
                     inputMode="numeric"
                     placeholder="120/80"
@@ -1766,6 +1930,12 @@ function Consultation() {
 
                 <Field label={t("spo2")}>
                   <Input
+                    className={vitalClass(
+                      vitalSeverity(
+                        "spo2",
+                        s(vitals, "spo2"),
+                      ),
+                    )}
                     type="number"
                     dir="ltr"
                     inputMode="numeric"
@@ -1834,6 +2004,12 @@ function Consultation() {
                   )}
                 >
                   <Input
+                    className={vitalClass(
+                      vitalSeverity(
+                        "rr",
+                        s(vitals, "respiratory_rate"),
+                      ),
+                    )}
                     type="number"
                     dir="ltr"
                     inputMode="numeric"
@@ -2539,7 +2715,7 @@ function Consultation() {
                               ) : null}
                             </div>
 
-                            <div className="grid gap-2 sm:grid-cols-3">
+                            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                               <Select
                                 value={
                                   item.dosage
@@ -2580,6 +2756,104 @@ function Consultation() {
                                         {
                                           dose
                                         }
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
+
+                              <Select
+                                value={
+                                  item.dosage_form
+                                }
+                                onValueChange={(
+                                  value,
+                                ) =>
+                                  updateRx(
+                                    index,
+                                    {
+                                      dosage_form:
+                                        value,
+                                      route:
+                                        item.route ||
+                                        FORM_DEFAULT_ROUTE[
+                                          value
+                                        ] ||
+                                        "",
+                                    },
+                                  )
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={
+                                      isArabic
+                                        ? "الشكل الدوائي"
+                                        : "Dosage form"
+                                    }
+                                  />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                  {DOSAGE_FORMS.map(
+                                    (form) => (
+                                      <SelectItem
+                                        key={
+                                          form.en
+                                        }
+                                        value={
+                                          form.en
+                                        }
+                                      >
+                                        {isArabic
+                                          ? form.ar
+                                          : form.en}
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
+
+                              <Select
+                                value={
+                                  item.route
+                                }
+                                onValueChange={(
+                                  value,
+                                ) =>
+                                  updateRx(
+                                    index,
+                                    {
+                                      route:
+                                        value,
+                                    },
+                                  )
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={
+                                      isArabic
+                                        ? "طريقة الإعطاء"
+                                        : "Route"
+                                    }
+                                  />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                  {ROUTES.map(
+                                    (route) => (
+                                      <SelectItem
+                                        key={
+                                          route.en
+                                        }
+                                        value={
+                                          route.en
+                                        }
+                                      >
+                                        {isArabic
+                                          ? route.ar
+                                          : route.en}
                                       </SelectItem>
                                     ),
                                   )}
@@ -2713,6 +2987,24 @@ function Consultation() {
                                 }
                               />
                             </div>
+
+                            <Input
+                              value={
+                                item.instructions
+                              }
+                              placeholder={
+                                isArabic
+                                  ? "تعليمات إضافية (مثال: بعد الأكل)"
+                                  : "Additional instructions (e.g. after food)"
+                              }
+                              onChange={(e) =>
+                                updateRx(index, {
+                                  instructions:
+                                    e.target
+                                      .value,
+                                })
+                              }
+                            />
                           </CardContent>
                         </Card>
                       );
@@ -2882,79 +3174,4 @@ function Consultation() {
 
         {/* ====================================================
             HISTORY
-        ===================================================== */}
-
-        <TabsContent value="history">
-          <Card>
-            <CardContent className="p-0">
-              {(
-                (historyQ.data ?? []) as Row[]
-              ).length === 0 ? (
-                <Empty />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>
-                        {t("date")}
-                      </TableHead>
-
-                      <TableHead>
-                        {t("chief_complaint")}
-                      </TableHead>
-
-                      <TableHead>
-                        {t("diagnosis")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-
-                  <TableBody>
-                    {(
-                      (historyQ.data ??
-                        []) as Row[]
-                    ).map(
-                      (
-                        history,
-                      ) => (
-                        <TableRow
-                          key={s(
-                            history,
-                            "id",
-                          )}
-                        >
-                          <TableCell dir="ltr">
-                            {formatDateTime(
-                              s(
-                                history,
-                                "created_at",
-                              ),
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {s(
-                              history,
-                              "chief_complaint",
-                            ) || "—"}
-                          </TableCell>
-
-                          <TableCell>
-                            {s(
-                              history,
-                              "assessment",
-                            ) || "—"}
-                          </TableCell>
-                        </TableRow>
-                      ),
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
+        ===========
