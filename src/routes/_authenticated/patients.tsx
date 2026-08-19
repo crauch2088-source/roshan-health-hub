@@ -138,6 +138,7 @@ function PatientsPage() {
         throw new Error(t("full_name"));
       }
 
+      // MRNs are generated server-side through RPC.
       const mrn = await rpc<string>("next_mrn");
 
       const { error } = await supabase
@@ -366,6 +367,10 @@ function PatientsPage() {
                     <TableHead>
                       {t("date")}
                     </TableHead>
+
+                    <TableHead className="text-end">
+                      {t("open")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -439,6 +444,24 @@ function PatientsPage() {
                             ),
                           )}
                         </TableCell>
+
+                        <TableCell className="text-end">
+                          <Button
+                            asChild
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Link
+                              to="/patients/$patientId"
+                              params={{
+                                patientId,
+                              }}
+                            >
+                              {t("open")}
+                            </Link>
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -457,7 +480,10 @@ function PatientsPage() {
             isFetching={list.isFetching}
             onPrev={() =>
               setPage((current) =>
-                Math.max(1, current - 1),
+                Math.max(
+                  1,
+                  current - 1,
+                ),
               )
             }
             onNext={() =>
