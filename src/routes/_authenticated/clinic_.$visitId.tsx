@@ -3172,6 +3172,66 @@ function Consultation() {
           </div>
         </TabsContent>
 
-        {/* ====================================================
+                {/* ====================================================
             HISTORY
-        ===========
+        ===================================================== */}
+
+        <TabsContent value="history">
+          <Card>
+            <CardContent className="space-y-4 p-4">
+              <SectionTitle>
+                {t("history")}
+              </SectionTitle>
+
+              {((historyQ.data ?? []) as Row[]).length === 0 ? (
+                <Empty label={t("no_data")} />
+              ) : (
+                <div className="space-y-3">
+                  {((historyQ.data ?? []) as Row[]).map((note) => (
+                    <div
+                      key={s(note, "id")}
+                      className="space-y-2 rounded-md border p-4"
+                    >
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          {formatDateTime(s(note, "created_at"))}
+                        </span>
+
+                        <Button asChild variant="ghost" size="sm">
+                          <Link
+                            to="/clinic_/$visitId"
+                            params={{
+                              visitId: s(note, "visit_id"),
+                            }}
+                          >
+                            {t("open")}
+                          </Link>
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-2 text-sm sm:grid-cols-2">
+                        <div>
+                          <strong className="text-muted-foreground">
+                            {t("chief_complaint")}:
+                          </strong>{" "}
+                          {s(note, "chief_complaint") || "—"}
+                        </div>
+
+                        <div>
+                          <strong className="text-muted-foreground">
+                            {t("diagnosis")}:
+                          </strong>{" "}
+                          {s(note, "assessment") || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
