@@ -26,7 +26,8 @@ const DialogOverlay = React.forwardRef<
       "data-[state=closed]:animate-out",
       "data-[state=closed]:fade-out-0",
       "data-[state=open]:fade-in-0",
-      "pointer-events-auto",
+      "data-[state=open]:pointer-events-auto",
+      "data-[state=closed]:pointer-events-none",
       className,
     )}
     {...props}
@@ -142,7 +143,10 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn(
+      "text-sm text-muted-foreground",
+      className,
+    )}
     {...props}
   />
 ));
