@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, Pager, StatCard } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, s, usePagedRows, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -40,10 +40,18 @@ export const Route = createFileRoute("/_authenticated/inventory")({
   component: InventoryPage,
 });
 
+const PAGE_SIZE = 25;
+
+/** Keeps free-text search safe to embed in a PostgREST `.ilike()` filter. */
+function sanitizeSearch(term: string): string {
+  return term.replace(/[,()%]/g, "").trim();
+}
+
 function InventoryPage() {
   const { t } = useLang();
   const { can, user } = useAuth();
   const { currency } = useSettings();
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -58,13 +66,42 @@ function InventoryPage() {
   });
   const [receive, setReceive] = useState<{ id: string; qty: string } | null>(null);
 
-  const meds = useRows(["inventory"], () =>
-    supabase
-      .from("medicines")
-      .select("*")
-      .is("deleted_at", null)
-      .order("name", { ascending: true }),
+  // Paginated table data: only the current page's columns/rows travel over
+  // the network, and PostgREST's exact count gives us the true total.
+  const list = usePagedRows<Row[]>(
+    ["inventory", search],
+    ({ from, to }) => {
+      let q = supabase
+        .from("medicines")
+        .select(
+          "id, name, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date",
+          { count: "exact" },
+        )
+        .is("deleted_at", null);
+
+      const term = sanitizeSearch(search);
+      if (term) q = q.ilike("name", `%${term}%`);
+
+      return q.order("name", { ascending: true }).range(from, to);
+    },
+    page,
+    PAGE_SIZE,
   );
+
+  // Low-stock count and stock value are totals across the WHOLE catalogue,
+  // not just the visible page, so they can't come from the paged query.
+  // PostgREST can't compare stock_quantity <= reorder_level as a filter
+  // (it only compares a column to a literal), so this fetches just the
+  // three numeric columns needed for that math — much lighter than the old
+  // `select("*")` over every medicine, though still O(catalogue size). If
+  // the medicine catalogue grows very large, move this to a small SQL
+  // view/RPC in a later phase.
+  const stats = useRows<Row[]>(["inventory-stats"], () =>
+    supabase.from("medicines").select("stock_quantity, reorder_level, cost_price").is("deleted_at", null),
+  );
+  const statRows = (stats.data ?? []) as Row[];
+  const lowStock = statRows.filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level")).length;
+  const stockValue = statRows.reduce((sum, m) => sum + n(m, "stock_quantity") * n(m, "cost_price"), 0);
 
   const create = useSave(
     async () => {
@@ -81,13 +118,17 @@ function InventoryPage() {
       if (error) throw new Error(error.message);
       return null;
     },
-    { invalidate: [["inventory"], ["medicines"]], successMessage: t("saved"), onDone: () => setOpen(false) },
+    {
+      invalidate: [["inventory"], ["inventory-stats"], ["medicines"]],
+      successMessage: t("saved"),
+      onDone: () => setOpen(false),
+    },
   );
 
   const addStock = useSave(
     async () => {
       if (!receive) return null;
-      const row = ((meds.data ?? []) as Row[]).find((m) => s(m, "id") === receive.id);
+      const row = list.rows.find((m) => s(m, "id") === receive.id);
       const qty = Number(receive.qty) || 0;
       const { error } = await supabase
         .from("medicines")
@@ -102,16 +143,10 @@ function InventoryPage() {
       });
       return null;
     },
-    { invalidate: [["inventory"]], successMessage: t("saved"), onDone: () => setReceive(null) },
+    { invalidate: [["inventory"], ["inventory-stats"]], successMessage: t("saved"), onDone: () => setReceive(null) },
   );
 
-  const rows = ((meds.data ?? []) as Row[]).filter((m) =>
-    s(m, "name").toLowerCase().includes(search.toLowerCase()),
-  );
-  const lowStock = rows.filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level")).length;
-  const stockValue = rows.reduce((sum, m) => sum + n(m, "stock_quantity") * n(m, "cost_price"), 0);
-
-  if (meds.isLoading) return <Loading />;
+  const rows = list.rows;
 
   return (
     <div>
@@ -119,7 +154,10 @@ function InventoryPage() {
         <Input
           placeholder={t("search")}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           className="w-48"
         />
         <ExportButtons rows={rows} filename="roshan-inventory" />
@@ -202,17 +240,19 @@ function InventoryPage() {
         ) : null}
       </PageHeader>
 
-      <ErrorBox error={meds.error} />
+      <ErrorBox error={list.error} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label={t("medicines")} value={String(rows.length)} />
+        <StatCard label={t("medicines")} value={String(list.count ?? rows.length)} />
         <StatCard label={t("low_stock")} value={String(lowStock)} />
         <StatCard label={t("stock_value")} value={money(stockValue, currency)} />
       </div>
 
       <Card>
         <CardContent className="p-0">
-          {rows.length === 0 ? (
+          {list.isLoading ? (
+            <Loading />
+          ) : rows.length === 0 ? (
             <Empty />
           ) : (
             <Table>
@@ -251,6 +291,17 @@ function InventoryPage() {
               </TableBody>
             </Table>
           )}
+          <Pager
+            page={list.page}
+            pageCount={list.pageCount}
+            count={list.count}
+            pageSize={PAGE_SIZE}
+            hasPrev={list.hasPrev}
+            hasNext={list.hasNext}
+            isFetching={list.isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => p + 1)}
+          />
         </CardContent>
       </Card>
 
