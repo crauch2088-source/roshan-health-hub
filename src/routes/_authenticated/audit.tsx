@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, Pager } from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { rel, s, useRows, type Row } from "@/lib/db";
+import { rel, s, usePagedRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDateTime } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -29,30 +29,56 @@ export const Route = createFileRoute("/_authenticated/audit")({
   component: AuditPage,
 });
 
+const PAGE_SIZE = 50;
+
+/** Keeps free-text search safe to embed in a PostgREST `.or()` filter string. */
+function sanitizeSearch(term: string): string {
+  return term.replace(/[,()%]/g, "").trim();
+}
+
 function AuditPage() {
   const { t } = useLang();
+  const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
 
-  const list = useRows(["audit"], () =>
-    supabase
-      .from("audit_logs")
-      .select("*, users(full_name)")
-      .order("created_at", { ascending: false })
-      .limit(300),
+  const list = usePagedRows<Row[]>(
+    ["audit", q],
+    ({ from, to }) => {
+      let query = supabase
+        .from("audit_logs")
+        .select("id, action, table_name, created_at, users(full_name)", { count: "exact" });
+
+      // Searches the audit log's own columns (action, table_name) at the
+      // database level. Matching by the related user's name would require
+      // an inner join filter that PostgREST can't combine cleanly with
+      // this OR search, so that stays a visual column only, not a filter.
+      const term = sanitizeSearch(q);
+      if (term) {
+        query = query.or(`action.ilike.%${term}%,table_name.ilike.%${term}%`);
+      }
+
+      return query.order("created_at", { ascending: false }).range(from, to);
+    },
+    page,
+    PAGE_SIZE,
   );
 
-  const rows = ((list.data ?? []) as Row[]).filter((r) => {
-    if (!q) return true;
-    const hay = `${s(r, "action")} ${s(r, "table_name")} ${s(rel(r, "users"), "full_name")}`.toLowerCase();
-    return hay.includes(q.toLowerCase());
-  });
+  const rows = list.rows;
 
-  if (list.isLoading) return <Loading />;
-
+  // Export/print always reflects only the current page — this matches
+  // what pagination means everywhere else in the app (billing, patients).
   return (
     <div>
       <PageHeader title={t("audit_log")} subtitle={t("recent_activity")}>
-        <Input placeholder={t("search")} value={q} onChange={(e) => setQ(e.target.value)} className="w-56" />
+        <Input
+          placeholder={t("search")}
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+          }}
+          className="w-56"
+        />
         <ExportButtons rows={rows} filename="roshan-audit" />
       </PageHeader>
 
@@ -60,7 +86,9 @@ function AuditPage() {
 
       <Card>
         <CardContent className="p-0">
-          {rows.length === 0 ? (
+          {list.isLoading ? (
+            <Loading />
+          ) : rows.length === 0 ? (
             <Empty />
           ) : (
             <Table>
@@ -84,6 +112,17 @@ function AuditPage() {
               </TableBody>
             </Table>
           )}
+          <Pager
+            page={list.page}
+            pageCount={list.pageCount}
+            count={list.count}
+            pageSize={PAGE_SIZE}
+            hasPrev={list.hasPrev}
+            hasNext={list.hasNext}
+            isFetching={list.isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => p + 1)}
+          />
         </CardContent>
       </Card>
     </div>
