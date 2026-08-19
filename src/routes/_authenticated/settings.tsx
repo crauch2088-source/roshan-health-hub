@@ -23,6 +23,9 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
+// Every key this page manages is intentionally public/UI configuration
+// (center identity, currency, invoice text) — never a secret. See the
+// Phase 1 migration for the `is_public` column this relies on.
 const KEYS = [
   "center_name",
   "center_name_ar",
@@ -38,24 +41,30 @@ function SettingsPage() {
   const { can } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});
 
-  const list = useRows(["settings"], () => supabase.from("settings").select("*"));
+  const list = useRows(["system_settings"], () =>
+    supabase.from("system_settings").select("setting_key, setting_value"),
+  );
 
   useEffect(() => {
     const rows = (list.data ?? []) as Row[];
     if (!rows.length) return;
     const next: Record<string, string> = {};
-    for (const r of rows) next[s(r, "key")] = s(r, "value");
+    for (const r of rows) next[s(r, "setting_key")] = s(r, "setting_value");
     setForm((prev) => (Object.keys(prev).length ? prev : next));
   }, [list.data]);
 
   const save = useSave(
     async () => {
-      const payload = KEYS.map((k) => ({ key: k, value: form[k] ?? "" }));
-      const { error } = await supabase.from("settings").upsert(payload, { onConflict: "key" });
+      const payload = KEYS.map((k) => ({
+        setting_key: k,
+        setting_value: form[k] ?? "",
+        is_public: true,
+      }));
+      const { error } = await supabase.from("system_settings").upsert(payload, { onConflict: "setting_key" });
       if (error) throw new Error(error.message);
       return null;
     },
-    { invalidate: [["settings"]], successMessage: t("saved") },
+    { invalidate: [["system_settings"]], successMessage: t("saved") },
   );
 
   if (list.isLoading) return <Loading />;
@@ -93,7 +102,7 @@ function SettingsPage() {
             <Textarea rows={2} value={form["invoice_footer"] ?? ""} onChange={set("invoice_footer")} />
           </Field>
           <div>
-            <Button disabled={!can("settings.manage") || save.isPending} onClick={() => save.mutate(undefined as never)}>
+            <Button disabled={!can("settings.update") || save.isPending} onClick={() => save.mutate(undefined as never)}>
               {save.isPending ? t("saving") : t("save")}
             </Button>
           </div>
