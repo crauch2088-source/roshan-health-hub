@@ -6,7 +6,9 @@ export type QuickOption = {
 };
 
 export type RxItem = {
-  medicine_id: string;
+  medicine_id?: string;
+  medicine_name?: string;
+
   dosage: string;
   dosage_form: string;
   route: string;
@@ -18,7 +20,9 @@ export type RxItem = {
 
 export function emptyRxItem(): RxItem {
   return {
-    medicine_id: "",
+    medicine_id: undefined,
+    medicine_name: "",
+
     dosage: "",
     dosage_form: "",
     route: "",
