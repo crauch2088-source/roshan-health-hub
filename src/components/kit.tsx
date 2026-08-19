@@ -163,6 +163,48 @@ export function PrintButton() {
   );
 }
 
+/** Prev/next pagination bar for tables driven by usePagedRows(). */
+export function Pager({
+  page,
+  pageCount,
+  count,
+  pageSize,
+  hasPrev,
+  hasNext,
+  onPrev,
+  onNext,
+  isFetching,
+}: {
+  page: number;
+  pageCount: number | null;
+  count: number | null;
+  pageSize: number;
+  hasPrev: boolean;
+  hasNext: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  isFetching?: boolean;
+}) {
+  const { t } = useLang();
+  return (
+    <div className="no-print flex flex-wrap items-center justify-between gap-3 border-t p-3 text-sm text-muted-foreground">
+      <span>
+        {count != null
+          ? `${t("page")} ${page} ${t("of")} ${pageCount ?? 1} · ${count} ${t("records")}`
+          : `${t("page")} ${page}`}
+      </span>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" disabled={!hasPrev || isFetching} onClick={onPrev}>
+          {t("previous")}
+        </Button>
+        <Button variant="outline" size="sm" disabled={!hasNext || isFetching} onClick={onNext}>
+          {t("next")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function SectionTitle({ children }: { children: ReactNode }) {
   return <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary">{children}</h2>;
 }
