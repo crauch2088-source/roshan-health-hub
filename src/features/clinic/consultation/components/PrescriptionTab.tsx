@@ -1,158 +1,19 @@
-import { useState } from 'react';
-import { DOSES, FREQUENCIES, DURATIONS } from '../options';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/lib/auth";
+import { s, useRows, useSave, type Row } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 
-interface PrescriptionTabProps {
-  visitId: string;
+type Med={medicine_id:string;name:string;dose:string;frequency:string;duration:string;quantity:string;instructions:string};
+export function PrescriptionTab({visitId}:{visitId:string}){
+ const {user}=useAuth();const visitQ=useRows<Row[]>(["clinic-visit",visitId],()=>supabase.from("visits").select("id,patient_id,doctor_id,patients(id,full_name)").eq("id",visitId).limit(1));const patient=s(rel((visitQ.data??[])[0],"patients"),"id");
+ const medsQ=useRows<Row[]>(["medicines-search"],()=>supabase.from("medicines").select("id,name,generic_name,brand_name,strength,dosage_form,selling_price,stock_quantity").eq("active",true).is("deleted_at",null).order("name").limit(500));
+ const [form,setForm]=useState<Med>({medicine_id:"",name:"",dose:"",frequency:"OD",duration:"5 days",quantity:"1",instructions:""});const [items,setItems]=useState<Med[]>([]);const [external,setExternal]=useState(false);
+ const add=()=>{if(!form.name.trim()&&!form.medicine_id)return;setItems([...items,{...form}]);setForm({...form,medicine_id:"",name:"",quantity:"1",instructions:""})};
+ const save=useSave(async()=>{if(!patient)throw new Error("Patient not found");if(!items.length)throw new Error("Add at least one medicine");const {data:rx,error}=await supabase.from("prescriptions").insert({patient_id:patient,visit_id:visitId,prescribed_by:user?.id??null,doctor_id:user?.id??null,prescription_type:external?"external":"internal",is_external:external,status:"pending",created_by:user?.id??null}).select("id").single();if(error)throw new Error(error.message);const rows=items.map(i=>({prescription_id:rx.id,medicine_id:i.medicine_id||null,medication_name:i.name,dose:i.dose||null,frequency:i.frequency||null,duration:i.duration||null,quantity:Number(i.quantity)||1,instructions:i.instructions||null,unit_price:i.medicine_id?Number(((medsQ.data??[]) as Row[]).find(m=>s(m,"id")===i.medicine_id)?.selling_price)||0:0,created_by:user?.id??null}));const {error:e}=await supabase.from("prescription_items").insert(rows);if(e)throw new Error(e.message);return null;},{invalidate:[["patient-rx",patient],["prescriptions",visitId]],successMessage:"تم حفظ الوصفة"});
+ return <Card><CardContent className="space-y-4 p-4"><div className="flex items-center justify-between"><h3 className="font-semibold">Prescription / الروشتة</h3><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={external} onChange={e=>setExternal(e.target.checked)}/>صرف خارجي / External</label></div><div className="grid gap-3 lg:grid-cols-2"><Select value={form.medicine_id} onValueChange={v=>{const m=((medsQ.data??[]) as Row[]).find(x=>s(x,"id")===v);setForm({...form,medicine_id:v,name:m?s(m,"name")||s(m,"generic_name"):""})}}><SelectTrigger><SelectValue placeholder="اختر دواء من المخزون / Select medicine"/></SelectTrigger><SelectContent className="max-h-72">{((medsQ.data??[]) as Row[]).map(m=><SelectItem key={s(m,"id")} value={s(m,"id")}>{s(m,"name")||s(m,"generic_name")} {s(m,"strength")&&`· ${s(m,"strength")}`}</SelectItem>)}</SelectContent></Select><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="اسم الدواء / Medication name"/></div><div className="grid gap-3 sm:grid-cols-4"><Input value={form.dose} onChange={e=>setForm({...form,dose:e.target.value})} placeholder="Dose"/><Input value={form.frequency} onChange={e=>setForm({...form,frequency:e.target.value})} placeholder="Frequency"/><Input value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} placeholder="Duration"/><Input dir="ltr" type="number" min="1" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})} placeholder="Qty"/></div><Input value={form.instructions} onChange={e=>setForm({...form,instructions:e.target.value})} placeholder="Instructions"/><Button variant="outline" onClick={add}>+ إضافة دواء</Button>{items.length>0&&<div className="overflow-x-auto rounded border"><table className="w-full text-sm"><thead><tr className="border-b"><th className="p-2 text-start">Drug</th><th className="p-2 text-start">Dose</th><th className="p-2 text-start">Frequency</th><th className="p-2 text-start">Duration</th><th/></tr></thead><tbody>{items.map((i,n)=><tr key={n} className="border-b"><td className="p-2">{i.name}</td><td className="p-2">{i.dose||"—"}</td><td className="p-2">{i.frequency||"—"}</td><td className="p-2">{i.duration||"—"}</td><td className="p-2"><Button variant="ghost" size="sm" onClick={()=>setItems(items.filter((_,x)=>x!==n))}>حذف</Button></td></tr>)}</tbody></table></div>}<div className="flex justify-end"><Button disabled={save.isPending||!items.length} onClick={()=>save.mutate(undefined as never)}>{save.isPending?"Saving...":"حفظ الوصفة"}</Button></div></CardContent></Card>;
 }
-
-interface MedicationItem {
-  id: string;
-  name: string;
-  dose: string;
-  frequency: string;
-  duration: string;
-}
-
-export function PrescriptionTab({ visitId }: PrescriptionTabProps) {
-  const [medName, setMedName] = useState('');
-  const [dose, setDose] = useState(DOSES[0]);
-  const [frequency, setFrequency] = useState(FREQUENCIES[0]);
-  const [duration, setDuration] = useState(DURATIONS[0]);
-  const [medications, setMedications] = useState<MedicationItem[]>([]);
-
-  const handleAddMedication = () => {
-    if (!medName.trim()) return;
-    const newItem: MedicationItem = {
-      id: Date.now().toString(),
-      name: medName,
-      dose,
-      frequency,
-      duration,
-    };
-    setMedications([...medications, newItem]);
-    setMedName('');
-  };
-
-  const handleRemove = (id: string) => {
-    setMedications(medications.filter((m) => m.id !== id));
-  };
-
-  const handleSave = () => {
-    alert(`تم حفظ الروشتة والأدوية بنجاح للزيارة: ${visitId}`);
-  };
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900">الروشتة والوصفات الطبية</h2>
-
-      {/* نموذج إضافة دواء */}
-      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">اسم الدواء</label>
-          <input
-            type="text"
-            value={medName}
-            onChange={(e) => setMedName(e.target.value)}
-            className="w-full rounded-md border border-gray-300 p-2.5 text-sm bg-white"
-            placeholder="مثال: Paracetamol"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">الجرعة</label>
-            <select
-              value={dose}
-              onChange={(e) => setDose(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm bg-white"
-            >
-              {DOSES.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">التكرار</label>
-            <select
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm bg-white"
-            >
-              {FREQUENCIES.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">المدة</label>
-            <select
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm bg-white"
-            >
-              {DURATIONS.map((dur) => (
-                <option key={dur} value={dur}>{dur}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={handleAddMedication}
-            className="px-3 py-1.5 bg-gray-800 text-white rounded text-xs font-medium hover:bg-gray-700 transition"
-          >
-            + إضافة دواء للقائمة
-          </button>
-        </div>
-      </div>
-
-      {/* قائمة الأدوية المضافة */}
-      {medications.length > 0 && (
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-right text-sm">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="p-3">الدواء</th>
-                <th className="p-3">الجرعة</th>
-                <th className="p-3">التكرار والمدة</th>
-                <th className="p-3">إجراء</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {medications.map((m) => (
-                <tr key={m.id}>
-                  <td className="p-3 font-medium text-gray-900">{m.name}</td>
-                  <td className="p-3 text-gray-600">{m.dose}</td>
-                  <td className="p-3 text-gray-600">{m.frequency} - {m.duration}</td>
-                  <td className="p-3">
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(m.id)}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                    >
-                      حذف
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleSave}
-          className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition"
-        >
-          حفظ وإصدار الروشتة
-        </button>
-      </div>
-    </div>
-  );
-}
+function rel(row:Row|undefined,key:string):Row{const x=row?.[key];return (Array.isArray(x)?x[0]:x)||{}}
