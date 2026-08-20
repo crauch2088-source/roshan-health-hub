@@ -69,7 +69,7 @@ function PatientsPage() {
   );
 
   const doctorRows = useMemo(
-    () => ((doctors.data ?? []) as Row[]).filter((d) => ["gp","dentist","specialist","doctor","physician"].includes(s(rel(d, "roles"), "code").toLowerCase())),
+    () => (Array.isArray(doctors.data) ? (doctors.data as Row[]) : []).filter((d) => ["gp","dentist","specialist","doctor","physician"].includes(s(rel(d, "roles"), "code").toLowerCase())),
     [doctors.data],
   );
 
@@ -135,7 +135,8 @@ function PatientsPage() {
     },
   );
 
-  const rows = (list.data ?? []) as Row[];
+  const rows = Array.isArray(list.rows) ? (list.rows as Row[]) : [];
+  const deptList = Array.isArray(departments.data) ? (departments.data as Row[]) : [];
 
   return (
     <div className="space-y-4">
@@ -229,7 +230,7 @@ function PatientsPage() {
           <DialogHeader><DialogTitle>{lang === "ar" ? "إضافة المريض إلى العيادة" : "Add patient to clinic"}</DialogTitle></DialogHeader>
           {clinicPatient && <div className="rounded-lg border bg-muted/30 p-3"><div className="font-semibold">{s(clinicPatient, "full_name")}</div><div className="text-xs text-muted-foreground" dir="ltr">{s(clinicPatient, "mrn") || s(clinicPatient, "patient_number")}</div></div>}
           <div className="grid gap-4">
-            <Field label={t("department")}><Select value={clinic.department_id} onValueChange={(v) => setClinic({ ...clinic, department_id: v })}><SelectTrigger><SelectValue placeholder={t("none")} /></SelectTrigger><SelectContent>{(departments.data ?? []).map((d) => <SelectItem key={s(d,"id")} value={s(d,"id")}>{lang === "ar" ? s(d,"name_ar") || s(d,"name") : s(d,"name")}</SelectItem>)}</SelectContent></Select></Field>
+            <Field label={t("department")}><Select value={clinic.department_id} onValueChange={(v) => setClinic({ ...clinic, department_id: v })}><SelectTrigger><SelectValue placeholder={t("none")} /></SelectTrigger><SelectContent>{deptList.map((d) => <SelectItem key={s(d,"id")} value={s(d,"id")}>{lang === "ar" ? s(d,"name_ar") || s(d,"name") : s(d,"name")}</SelectItem>)}</SelectContent></Select></Field>
             <Field label={t("doctor")}><Select value={clinic.doctor_id} onValueChange={(v) => setClinic({ ...clinic, doctor_id: v })}><SelectTrigger><SelectValue placeholder={t("none")} /></SelectTrigger><SelectContent>{doctorRows.map((d) => <SelectItem key={s(d,"id")} value={s(d,"id")}>{s(d,"full_name")}</SelectItem>)}</SelectContent></Select></Field>
             <Field label={t("consultation_fee")}><Input dir="ltr" type="number" min="0" value={clinic.fee} onChange={(e) => setClinic({ ...clinic, fee: e.target.value })} /></Field>
             <Field label={t("notes")}><Textarea value={clinic.notes} onChange={(e) => setClinic({ ...clinic, notes: e.target.value })} /></Field>
