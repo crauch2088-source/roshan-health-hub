@@ -1,4 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+} from "@tanstack/react-router";
 import { Phone, Plus, Search } from "lucide-react";
 import { useState } from "react";
 
@@ -493,7 +497,9 @@ function PatientsPage() {
             }
           />
         </CardContent>
-      </Card>
+            </Card>
+
+      <Outlet />
     </div>
   );
 }
