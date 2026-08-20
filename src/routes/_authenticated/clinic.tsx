@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import {
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { rel, s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { calcAge, formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
@@ -50,13 +51,18 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 
 function ClinicPage() {
   const { lang } = useLang();
+  const { user } = useAuth();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
 
   const [date, setDate] = useState<string>(todayISO());
   const [filterMyPatients, setFilterMyPatients] =
     useState<boolean>(false);
 
+  const nextDate = (() => { const d = new Date(`${date}T00:00:00+02:00`); d.setDate(d.getDate()+1); return d.toISOString(); })();
+
   const visits = useRows(
-    ["clinic-visits", date, filterMyPatients],
+    ["clinic-visits", date, filterMyPatients, user?.id ?? ""],
     () =>
       supabase
         .from("visits")
@@ -86,15 +92,21 @@ function ClinicPage() {
             )
           `,
         )
-        .gte("created_at", `${date}T00:00:00`)
-        .lte("created_at", `${date}T23:59:59`)
+        .gte("visit_date", new Date(`${date}T00:00:00+02:00`).toISOString())
+        .lt("visit_date", nextDate)
         .is("deleted_at", null)
-        .order("created_at", {
-          ascending: true,
-        }),
+        .order("visit_date", { ascending: true }),
   );
 
-  const rows = (visits.data ?? []) as Row[];
+  const rows = ((visits.data ?? []) as Row[]).filter((visit) => {
+    if (filterMyPatients && user?.id && s(visit, "doctor_id") !== user.id) return false;
+    if (status !== "all" && s(visit, "status") !== status) return false;
+    const term = search.trim().toLowerCase();
+    if (!term) return true;
+    const patient = rel(visit, "patients");
+    const dept = rel(visit, "departments");
+    return `${s(patient, "full_name")} ${s(patient, "mrn")} ${s(patient, "patient_number")} ${s(dept, "name")} ${s(dept, "name_ar")}`.toLowerCase().includes(term);
+  });
 
   if (visits.isLoading) {
     return <Loading />;
@@ -107,6 +119,8 @@ function ClinicPage() {
         subtitle={formatDate(date)}
       >
         <div className="flex flex-wrap items-center gap-2">
+          <Input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder={lang==="ar"?"ابحث عن المريض":"Search patient"} className="w-52"/>
+          <select className="rounded-md border bg-background px-3 py-2 text-sm" value={status} onChange={(e)=>setStatus(e.target.value)}><option value="all">{lang==="ar"?"كل الحالات":"All statuses"}</option><option value="waiting">Waiting</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select>
           <Button
             variant={filterMyPatients ? "default" : "outline"}
             size="sm"
