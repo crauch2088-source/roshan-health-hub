@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -73,6 +73,7 @@ function AppointmentsPage() {
 
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
+  const [patientSearch, setPatientSearch] = useState("");
 
   const [form, setForm] = useState({
     patient_id: "",
@@ -89,20 +90,18 @@ function AppointmentsPage() {
       .select(
         "id, appointment_date, appointment_time, status, notes, patients(id, full_name, mrn), users(full_name), departments(name, name_ar)",
       )
-      .gte("appointment_date", `${date}T00:00:00`)
-      .lte("appointment_date", `${date}T23:59:59`)
+      .gte("appointment_date", new Date(`${date}T00:00:00+02:00`).toISOString())
+      .lt("appointment_date", new Date(new Date(`${date}T00:00:00+02:00`).getTime() + 86400000).toISOString())
       .is("deleted_at", null)
       .order("appointment_date", { ascending: true }),
   );
 
-  const patients = useRows(["patients-lite"], () =>
-    supabase
-      .from("patients")
-      .select("id, full_name, mrn")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(500),
-  );
+  const patients = useRows(["patients-lite", patientSearch], () => {
+    let q = supabase.from("patients").select("id, full_name, mrn, patient_number, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
+    const term = patientSearch.replace(/[,()%]/g, "").trim();
+    if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,patient_number.ilike.%${term}%,phone.ilike.%${term}%`);
+    return q;
+  });
 
   const departments = useRows(["departments"], () =>
     supabase
@@ -204,6 +203,7 @@ function AppointmentsPage() {
 
       onDone: () => {
         setOpen(false);
+        setPatientSearch("");
 
         setForm({
           patient_id: "",
@@ -341,6 +341,7 @@ function AppointmentsPage() {
                     : "Patient *"
                 }
               >
+                <div className="mb-2 relative"><Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input className="ps-9" value={patientSearch} onChange={(e)=>setPatientSearch(e.target.value)} placeholder={lang==="ar"?"ابحث بالاسم أو الرقم أو الهاتف":"Search name, MRN or phone"}/></div>
                 <Select
                   value={form.patient_id}
                   onValueChange={(value) =>
