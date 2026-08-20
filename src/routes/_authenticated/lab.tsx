@@ -1,4 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+} from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatusBadge } from "@/components/kit";
@@ -134,7 +138,9 @@ function LabPage() {
             </Table>
           )}
         </CardContent>
-      </Card>
+         </Card>
+
+      <Outlet />
     </div>
   );
 }
