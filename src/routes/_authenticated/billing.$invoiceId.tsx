@@ -46,6 +46,7 @@ function InvoicePage() {
   const { currency, settings } = useSettings();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("cash");
+  const [reference, setReference] = useState("");
 
   const invoiceQ = useRows(["invoice", invoiceId], () =>
     supabase
@@ -73,11 +74,15 @@ function InvoicePage() {
     async () => {
       const value = Number(amount);
       if (!value || value <= 0) throw new Error(t("invalid_amount") || "مبلغ غير صالح");
+      if (value > Math.max(0, n(invoice, "net_amount") - n(invoice, "paid_amount"))) throw new Error("Payment exceeds outstanding balance");
       const { error } = await supabase.from("payments").insert({
         invoice_id: invoiceId,
         patient_id: s(rel(invoice, "patients"), "id"),
         amount: value,
         payment_method: method,
+        method,
+        reference_no: reference.trim() || null,
+        reference: reference.trim() || null,
         payment_date: new Date().toISOString().slice(0, 10),
         received_by: user?.id ?? null,
       });
@@ -96,7 +101,7 @@ function InvoicePage() {
     {
       invalidate: [["invoice", invoiceId], ["payments", invoiceId], ["invoices"]],
       successMessage: t("saved"),
-      onDone: () => setAmount(""),
+      onDone: () => { setAmount(""); setReference(""); },
     },
   );
 
@@ -151,7 +156,7 @@ function InvoicePage() {
                 <TableBody>
                   {items.map((it) => (
                     <TableRow key={s(it, "id")}>
-                      <TableCell>{s(it, "description")}</TableCell>
+                      <TableCell>{s(it, "item_name") || s(it, "description") || s(it, "item_type") || "—"}</TableCell>
                       <TableCell dir="ltr">{n(it, "quantity")}</TableCell>
                       <TableCell>{money(n(it, "unit_price"), currency)}</TableCell>
                       <TableCell>{money(n(it, "total_price"), currency)}</TableCell>
@@ -202,12 +207,14 @@ function InvoicePage() {
                     <SelectContent>
                       <SelectItem value="cash">{t("cash")}</SelectItem>
                       <SelectItem value="bank">{t("bank")}</SelectItem>
+                      <SelectItem value="bankak">Bankak / بنكك</SelectItem>
                       <SelectItem value="mobile">{t("mobile_money")}</SelectItem>
                       <SelectItem value="insurance">{t("insurance")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
-                <Button disabled={pay.isPending} onClick={() => pay.mutate(undefined as never)}>
+                {(method === "bankak" || method === "mobile" || method === "bank") && <Field label={t("reference") || "Transaction reference"}><Input dir="ltr" value={reference} onChange={(e)=>setReference(e.target.value)} placeholder="Reference / transaction number"/></Field>}
+                <Button disabled={pay.isPending || balance <= 0} onClick={() => pay.mutate(undefined as never)}>
                   {pay.isPending ? t("saving") : t("save")}
                 </Button>
               </CardContent>
