@@ -4,7 +4,15 @@ import { useState } from "react";
 import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -36,20 +44,53 @@ function FollowupsPage() {
   const { can } = useAuth();
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
+  const [open, setOpen] = useState(false);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [form, setForm] = useState({ patient_id: "", patient_name: "", followup_date: todayISO(), reason: "" });
 
   const list = useRows(["followups", from, to], () =>
     supabase
-      .from("follow_ups")
-      .select("*, patients(id, full_name, phone, patient_number), users(full_name)")
-      .gte("follow_up_date", from)
-      .lte("follow_up_date", to)
+      .from("followups")
+      .select("*, patients(id, full_name, phone, mrn), users(full_name)")
+      .gte("followup_date", from)
+      .lte("followup_date", to)
       .is("deleted_at", null)
-      .order("follow_up_date", { ascending: true }),
+      .order("followup_date", { ascending: true }),
+  );
+
+  const patients = useRows(["followup-patients", patientSearch], () => {
+    const term = patientSearch.replace(/[,()%]/g, "").trim();
+    let query = supabase.from("patients").select("id, full_name, mrn, phone").is("deleted_at", null);
+    if (term) query = query.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,phone.ilike.%${term}%`);
+    return query.order("full_name", { ascending: true }).limit(20);
+  }, { enabled: open });
+
+  const create = useSave(
+    async () => {
+      if (!form.patient_id) throw new Error(t("patient"));
+      const { error } = await supabase.from("followups").insert({
+        patient_id: form.patient_id,
+        followup_date: form.followup_date,
+        reason: form.reason.trim() || null,
+        status: "pending",
+      });
+      if (error) throw new Error(error.message);
+      return null;
+    },
+    {
+      invalidate: [["followups", from, to]],
+      successMessage: t("saved"),
+      onDone: () => {
+        setOpen(false);
+        setForm({ patient_id: "", patient_name: "", followup_date: todayISO(), reason: "" });
+        setPatientSearch("");
+      },
+    },
   );
 
   const mark = useSave<{ id: string; status: string }>(
     async ({ id, status }) => {
-      const { error } = await supabase.from("follow_ups").update({ status }).eq("id", id);
+      const { error } = await supabase.from("followups").update({ status }).eq("id", id);
       if (error) throw new Error(error.message);
       return null;
     },
@@ -65,6 +106,11 @@ function FollowupsPage() {
         <Input type="date" dir="ltr" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
         <Input type="date" dir="ltr" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
         <ExportButtons rows={rows} filename={`roshan-followups-${from}`} />
+        {can("followups.create") ? (
+          <Button size="sm" onClick={() => setOpen(true)}>
+            {t("add")} {t("followups")}
+          </Button>
+        ) : null}
       </PageHeader>
 
       <ErrorBox error={list.error} />
@@ -92,7 +138,7 @@ function FollowupsPage() {
                   const status = s(f, "status") || "pending";
                   return (
                     <TableRow key={s(f, "id")}>
-                      <TableCell dir="ltr">{formatDate(s(f, "follow_up_date"))}</TableCell>
+                      <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
                       <TableCell className="font-medium">
                         {s(p, "id") ? (
                           <Link to="/patients/$patientId" params={{ patientId: s(p, "id") }} className="hover:underline">
@@ -104,7 +150,7 @@ function FollowupsPage() {
                       </TableCell>
                       <TableCell dir="ltr">{s(p, "phone") || "—"}</TableCell>
                       <TableCell>{s(rel(f, "users"), "full_name") || "—"}</TableCell>
-                      <TableCell className="max-w-[16rem] truncate">{s(f, "notes") || "—"}</TableCell>
+                      <TableCell className="max-w-[16rem] truncate">{s(f, "reason") || s(f, "notes") || "—"}</TableCell>
                       <TableCell>
                         <StatusBadge status={status} />
                       </TableCell>
@@ -123,6 +169,66 @@ function FollowupsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={open} onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) {
+          setForm({ patient_id: "", patient_name: "", followup_date: todayISO(), reason: "" });
+          setPatientSearch("");
+        }
+      }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("add")} {t("followups")}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">{t("patient")}</label>
+              <Input
+                placeholder={t("search")}
+                value={form.patient_name || patientSearch}
+                onChange={(e) => {
+                  setForm({ ...form, patient_id: "", patient_name: "" });
+                  setPatientSearch(e.target.value);
+                }}
+              />
+              {form.patient_id ? (
+                <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">{form.patient_name}</div>
+              ) : (
+                <div className="max-h-40 overflow-y-auto rounded-md border">
+                  {((patients.data ?? []) as Row[]).map((patient) => (
+                    <button
+                      type="button"
+                      key={s(patient, "id")}
+                      className="block w-full border-b px-3 py-2 text-start text-sm last:border-0 hover:bg-muted"
+                      onClick={() => {
+                        setForm({ ...form, patient_id: s(patient, "id"), patient_name: s(patient, "full_name") });
+                        setPatientSearch("");
+                      }}
+                    >
+                      {s(patient, "full_name")} {s(patient, "mrn") ? `(${s(patient, "mrn")})` : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">{t("due_date")}</label>
+              <Input type="date" dir="ltr" value={form.followup_date} onChange={(e) => setForm({ ...form, followup_date: e.target.value })} />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">{t("reason")}</label>
+              <Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("cancel")}</Button>
+            <Button disabled={!form.patient_id || !form.followup_date || create.isPending} onClick={() => create.mutate(undefined as never)}>
+              {create.isPending ? t("saving") : t("save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
