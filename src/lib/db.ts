@@ -23,7 +23,7 @@ export function useRows<T = Row[]>(
     queryFn: async () => (await run<T>(build() as never)),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? false,
-    retry: false, // تم تعديلها لـ false بدلاً من 0 لضمان عدم إعادة المحاولة تلقائياً في حال فشل الصلاحيات
+    retry: false,
   });
 }
 
@@ -31,13 +31,6 @@ export function useRows<T = Row[]>(
  * Read helper for large/growing tables: pages results at the database
  * level using PostgREST's `.range()` + an exact count, instead of
  * fetching an entire table and slicing/searching it in React.
- *
- * `build` receives a zero-based `{ from, to }` row range — apply it with
- * `.range(from, to)` — and must request an exact count, e.g.
- * `.select("col1, col2", { count: "exact" })`.
- *
- * This is additive: `useRows` above is unchanged, so no existing caller
- * is affected by this hook's introduction.
  */
 export function usePagedRows<T = Row[]>(
   key: QueryKey,
@@ -113,10 +106,11 @@ export function useSettings() {
   const query = useRows<Row[]>(["system_settings"], () =>
     supabase.from("system_settings").select("setting_key, setting_value"),
   );
-  
+
   const settings = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const r of (query.data ?? [])) {
+    const dataList = Array.isArray(query.data) ? (query.data as Row[]) : [];
+    for (const r of dataList) {
       map[String(r["setting_key"])] = String(r["setting_value"] ?? "");
     }
     return map;
