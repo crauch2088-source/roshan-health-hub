@@ -1,470 +1,201 @@
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-} from "@tanstack/react-router";
-import { Phone, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Plus, Search, Stethoscope } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import {
-  Empty,
-  ErrorBox,
-  Field,
-  Loading,
-  PageHeader,
-  Pager,
-} from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, Pager } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import {
-  rpc,
-  s,
-  usePagedRows,
-  useSave,
-  type Row,
-} from "@/lib/db";
+import { s, rel, usePagedRows, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { calcAge, formatDate } from "@/lib/medical";
+import { calcAge, formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/patients")({
-  head: () => ({
-    meta: [
-      {
-        title: "Patients — ROSHAN Medical Center",
-      },
-      {
-        name: "description",
-        content:
-          "Search, register and open patient charts.",
-      },
-      {
-        property: "og:title",
-        content: "Patients — ROSHAN Medical Center",
-      },
-      {
-        property: "og:description",
-        content:
-          "Search, register and open patient charts.",
-      },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Patients — ROSHAN Medical Center" }] }),
   component: PatientsPage,
 });
 
 const PAGE_SIZE = 20;
 
-/**
- * Keeps free-text search safe to embed in a PostgREST `.or()` filter string.
- */
-function sanitizeSearch(term: string): string {
+function clean(term: string) {
   return term.replace(/[,()%]/g, "").trim();
 }
 
-function emptyForm() {
-  return {
-    full_name: "",
-    phone: "",
-    gender: "male",
-    date_of_birth: "",
-    national_id: "",
-  };
+function emptyPatient() {
+  return { full_name: "", phone: "", gender: "male", date_of_birth: "", national_id: "", notes: "" };
 }
 
 function PatientsPage() {
-  const { t } = useLang();
-  const { can } = useAuth();
+  const { t, lang } = useLang();
+  const { can, user } = useAuth();
+  const navigate = useNavigate();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm());
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [clinicOpen, setClinicOpen] = useState(false);
+  const [form, setForm] = useState(emptyPatient());
+  const [clinicPatient, setClinicPatient] = useState<Row | null>(null);
+  const [clinic, setClinic] = useState({ department_id: "", doctor_id: "", fee: "0", notes: "" });
 
   const list = usePagedRows<Row[]>(
     ["patients", search],
     ({ from, to }) => {
       let q = supabase
         .from("patients")
-        .select(
-          "id, mrn, full_name, phone, gender, date_of_birth, national_id, created_at",
-          {
-            count: "exact",
-          },
-        )
+        .select("id, mrn, patient_number, full_name, phone, gender, date_of_birth, national_id, created_at", { count: "exact" })
         .is("deleted_at", null);
-
-      const term = sanitizeSearch(search);
-
+      const term = clean(search);
       if (term) {
-        q = q.or(
-          `full_name.ilike.%${term}%,phone.ilike.%${term}%,mrn.ilike.%${term}%,national_id.ilike.%${term}%`,
-        );
+        q = q.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%,mrn.ilike.%${term}%,patient_number.ilike.%${term}%,national_id.ilike.%${term}%`);
       }
-
-      return q
-        .order("created_at", {
-          ascending: false,
-        })
-        .range(from, to);
+      return q.order("created_at", { ascending: false }).range(from, to);
     },
     page,
     PAGE_SIZE,
   );
 
-  const create = useSave(
+  const departments = useRows<Row[]>(["departments"], () =>
+    supabase.from("departments").select("id,name,name_ar").is("deleted_at", null).eq("is_active", true).order("name"),
+  );
+  const doctors = useRows<Row[]>(["doctors"], () =>
+    supabase.from("users").select("id,full_name,roles(code)").eq("active", true).is("deleted_at", null),
+  );
+
+  const doctorRows = useMemo(
+    () => ((doctors.data ?? []) as Row[]).filter((d) => ["gp","dentist","specialist","doctor","physician"].includes(s(rel(d, "roles"), "code").toLowerCase())),
+    [doctors.data],
+  );
+
+  const createPatient = useSave(
     async () => {
-      if (!form.full_name.trim()) {
-        throw new Error(t("full_name"));
-      }
-
-      // MRNs are generated server-side through RPC.
-      const mrn = await rpc<string>("next_mrn");
-
-      const { error } = await supabase
+      if (!form.full_name.trim()) throw new Error(t("full_name"));
+      const { data, error } = await supabase
         .from("patients")
         .insert({
-          mrn,
           full_name: form.full_name.trim(),
-          phone: form.phone || null,
-          gender: form.gender || null,
-          date_of_birth:
-            form.date_of_birth || null,
-          national_id:
-            form.national_id || null,
-        });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return null;
+          phone: form.phone.trim() || null,
+          gender: form.gender,
+          date_of_birth: form.date_of_birth || null,
+          national_id: form.national_id.trim() || null,
+          notes: form.notes.trim() || null,
+          registered_by: user?.id ?? null,
+        })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      return data.id as string;
     },
     {
-      invalidate: [["patients"]],
+      invalidate: [["patients"], ["patients-lite"]],
       successMessage: t("saved"),
       onDone: () => {
-        setOpen(false);
-        setForm(emptyForm());
+        setRegisterOpen(false);
+        setForm(emptyPatient());
       },
     },
   );
 
-  const rows = list.rows;
+  const startVisit = useSave(
+    async () => {
+      if (!clinicPatient) throw new Error(t("patient"));
+      const { data, error } = await supabase
+        .from("visits")
+        .insert({
+          patient_id: s(clinicPatient, "id"),
+          department_id: clinic.department_id || null,
+          doctor_id: clinic.doctor_id || null,
+          visit_date: `${todayISO()}T00:00:00`,
+          visit_type: "walk_in",
+          status: "waiting",
+          consultation_fee: Number(clinic.fee) || 0,
+          notes: clinic.notes.trim() || null,
+          created_by: user?.id ?? null,
+        })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      return data.id as string;
+    },
+    {
+      invalidate: [["visits", todayISO()], ["queue", todayISO()], ["patients"]],
+      successMessage: lang === "ar" ? "تمت إضافة المريض إلى العيادة والطابور" : "Patient added to clinic queue",
+      onDone: (id) => {
+        setClinicOpen(false);
+        setClinicPatient(null);
+        setClinic({ department_id: "", doctor_id: "", fee: "0", notes: "" });
+        if (typeof id === "string") void navigate({ to: "/clinic/$visitId", params: { visitId: id } });
+      },
+    },
+  );
+
+  const rows = (list.data ?? []) as Row[];
 
   return (
-    <div>
-      <PageHeader
-        title={t("patients")}
-        subtitle={t("register_patient")}
-      >
-        {can("patients.create") ? (
-          <Dialog
-            open={open}
-            onOpenChange={setOpen}
-          >
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="size-4" />
-                {t("add")}
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {t("register_patient")}
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label={`${t("full_name")} *`}
-                  className="sm:col-span-2"
-                >
-                  <Input
-                    value={form.full_name}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        full_name:
-                          e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-
-                <Field label={t("phone")}>
-                  <Input
-                    dir="ltr"
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        phone:
-                          e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-
-                <Field label={t("gender")}>
-                  <Select
-                    value={form.gender}
-                    onValueChange={(value) =>
-                      setForm({
-                        ...form,
-                        gender: value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      <SelectItem value="male">
-                        {t("male")}
-                      </SelectItem>
-
-                      <SelectItem value="female">
-                        {t("female")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field label={t("dob")}>
-                  <Input
-                    type="date"
-                    dir="ltr"
-                    value={
-                      form.date_of_birth
-                    }
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        date_of_birth:
-                          e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-
-                <Field
-                  label={t("national_id")}
-                >
-                  <Input
-                    dir="ltr"
-                    value={form.national_id}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        national_id:
-                          e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setOpen(false)
-                  }
-                >
-                  {t("cancel")}
-                </Button>
-
-                <Button
-                  type="button"
-                  disabled={
-                    !form.full_name.trim() ||
-                    create.isPending
-                  }
-                  onClick={() =>
-                    create.mutate(
-                      undefined as never,
-                    )
-                  }
-                >
-                  {create.isPending
-                    ? t("saving")
-                    : t("save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : null}
+    <div className="space-y-4">
+      <PageHeader title={t("patients")} subtitle={lang === "ar" ? "البحث والتسجيل والوصول إلى الملف الطبي" : "Search, register and manage patient records"}>
+        <div className="flex flex-wrap gap-2">
+          <div className="relative min-w-[240px]">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="ps-9"
+              value={search}
+              placeholder={lang === "ar" ? "الاسم، الهاتف، الرقم الطبي أو الرقم الوطني" : "Name, phone, MRN or national ID"}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            />
+          </div>
+          {can("patients.create") && (
+            <Button size="sm" onClick={() => setRegisterOpen(true)}>
+              <Plus className="size-4" /> {t("new_patient")}
+            </Button>
+          )}
+        </div>
       </PageHeader>
 
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-
-        <Input
-          placeholder={t("search")}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="ps-9"
-        />
-      </div>
-
-      <ErrorBox error={list.error} />
+      <ErrorBox error={list.error ?? departments.error ?? doctors.error} />
 
       <Card>
         <CardContent className="p-0">
-          {list.isLoading ? (
-            <Loading />
-          ) : rows.length === 0 ? (
-            <Empty />
-          ) : (
+          {list.isLoading ? <div className="p-6"><Loading /></div> : rows.length === 0 ? <Empty /> : (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      {t("mrn")}
-                    </TableHead>
-
-                    <TableHead>
-                      {t("full_name")}
-                    </TableHead>
-
-                    <TableHead>
-                      {t("phone")}
-                    </TableHead>
-
-                    <TableHead>
-                      {t("age")}
-                    </TableHead>
-
-                    <TableHead>
-                      {t("date")}
-                    </TableHead>
-
-                    <TableHead className="text-end">
-                      {t("open")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-
+                <TableHeader><TableRow>
+                  <TableHead>{t("mrn")}</TableHead>
+                  <TableHead>{t("patient")}</TableHead>
+                  <TableHead>{t("phone")}</TableHead>
+                  <TableHead>{t("gender")}</TableHead>
+                  <TableHead>{t("age")}</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead className="text-end">{t("actions")}</TableHead>
+                </TableRow></TableHeader>
                 <TableBody>
                   {rows.map((patient) => {
-                    const patientId = s(
-                      patient,
-                      "id",
-                    );
-
+                    const id = s(patient, "id");
                     return (
-                      <TableRow
-                        key={patientId}
-                      >
-                        <TableCell
-                          dir="ltr"
-                          className="font-mono text-xs"
-                        >
-                          {s(
-                            patient,
-                            "mrn",
-                          ) || "—"}
-                        </TableCell>
-
-                        <TableCell className="font-medium">
-                          <Link
-                            to="/patients/$patientId"
-                            params={{
-                              patientId,
-                            }}
-                            className="inline-flex cursor-pointer items-center text-primary hover:underline"
-                          >
-                            {s(
-                              patient,
-                              "full_name",
-                            )}
-                          </Link>
-                        </TableCell>
-
-                        <TableCell dir="ltr">
-                          {s(
-                            patient,
-                            "phone",
-                          ) ? (
-                            <span className="flex items-center gap-1">
-                              <Phone className="size-3" />
-                              {s(
-                                patient,
-                                "phone",
-                              )}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {calcAge(
-                            s(
-                              patient,
-                              "date_of_birth",
-                            ),
-                          ) ?? "—"}
-                        </TableCell>
-
-                        <TableCell dir="ltr">
-                          {formatDate(
-                            s(
-                              patient,
-                              "created_at",
-                            ),
-                          )}
-                        </TableCell>
-
+                      <TableRow key={id}>
+                        <TableCell dir="ltr" className="font-mono text-xs">{s(patient, "mrn") || s(patient, "patient_number") || "—"}</TableCell>
+                        <TableCell className="font-medium">{s(patient, "full_name")}</TableCell>
+                        <TableCell dir="ltr">{s(patient, "phone") || "—"}</TableCell>
+                        <TableCell>{t(s(patient, "gender"))}</TableCell>
+                        <TableCell>{calcAge(s(patient, "date_of_birth")) ?? "—"}</TableCell>
+                        <TableCell dir="ltr">{formatDate(s(patient, "created_at"))}</TableCell>
                         <TableCell className="text-end">
-                          <Button
-                            asChild
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                          >
-                            <Link
-                              to="/patients/$patientId"
-                              params={{
-                                patientId,
-                              }}
-                            >
-                              {t("open")}
-                            </Link>
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button asChild size="sm" className="bg-green-600 text-white hover:bg-green-700">
+                              <Link to="/patients/$patientId" params={{ patientId: id }}>{t("open")}</Link>
+                            </Button>
+                            {can("visits.create") && (
+                              <Button size="sm" variant="outline" onClick={() => { setClinicPatient(patient); setClinicOpen(true); }}>
+                                <Stethoscope className="size-4" /> {lang === "ar" ? "إلى العيادة" : "Clinic"}
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -473,33 +204,39 @@ function PatientsPage() {
               </Table>
             </div>
           )}
-
-          <Pager
-            page={list.page}
-            pageCount={list.pageCount}
-            count={list.count}
-            pageSize={PAGE_SIZE}
-            hasPrev={list.hasPrev}
-            hasNext={list.hasNext}
-            isFetching={list.isFetching}
-            onPrev={() =>
-              setPage((current) =>
-                Math.max(
-                  1,
-                  current - 1,
-                ),
-              )
-            }
-            onNext={() =>
-              setPage((current) =>
-                current + 1,
-              )
-            }
-          />
+          <Pager page={list.page} pageCount={list.pageCount} count={list.count} pageSize={PAGE_SIZE} hasPrev={list.hasPrev} hasNext={list.hasNext} isFetching={list.isFetching}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))} onNext={() => setPage((p) => p + 1)} />
         </CardContent>
-            </Card>
+      </Card>
 
-      <Outlet />
+      <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{t("new_patient")}</DialogTitle></DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={`${t("full_name")} *`}><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></Field>
+            <Field label={t("phone")}><Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+            <Field label={t("gender")}><Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="male">{t("male")}</SelectItem><SelectItem value="female">{t("female")}</SelectItem></SelectContent></Select></Field>
+            <Field label={t("date_of_birth")}><Input type="date" dir="ltr" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></Field>
+            <Field label={t("national_id")}><Input dir="ltr" value={form.national_id} onChange={(e) => setForm({ ...form, national_id: e.target.value })} /></Field>
+            <Field label={t("notes")}><Textarea className="sm:col-span-2" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setRegisterOpen(false)}>{t("cancel")}</Button><Button disabled={createPatient.isPending || !form.full_name.trim()} onClick={() => createPatient.mutate(undefined as never)}>{createPatient.isPending ? t("saving") : t("save")}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={clinicOpen} onOpenChange={setClinicOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{lang === "ar" ? "إضافة المريض إلى العيادة" : "Add patient to clinic"}</DialogTitle></DialogHeader>
+          {clinicPatient && <div className="rounded-lg border bg-muted/30 p-3"><div className="font-semibold">{s(clinicPatient, "full_name")}</div><div className="text-xs text-muted-foreground" dir="ltr">{s(clinicPatient, "mrn") || s(clinicPatient, "patient_number")}</div></div>}
+          <div className="grid gap-4">
+            <Field label={t("department")}><Select value={clinic.department_id} onValueChange={(v) => setClinic({ ...clinic, department_id: v })}><SelectTrigger><SelectValue placeholder={t("none")} /></SelectTrigger><SelectContent>{(departments.data ?? []).map((d) => <SelectItem key={s(d,"id")} value={s(d,"id")}>{lang === "ar" ? s(d,"name_ar") || s(d,"name") : s(d,"name")}</SelectItem>)}</SelectContent></Select></Field>
+            <Field label={t("doctor")}><Select value={clinic.doctor_id} onValueChange={(v) => setClinic({ ...clinic, doctor_id: v })}><SelectTrigger><SelectValue placeholder={t("none")} /></SelectTrigger><SelectContent>{doctorRows.map((d) => <SelectItem key={s(d,"id")} value={s(d,"id")}>{s(d,"full_name")}</SelectItem>)}</SelectContent></Select></Field>
+            <Field label={t("consultation_fee")}><Input dir="ltr" type="number" min="0" value={clinic.fee} onChange={(e) => setClinic({ ...clinic, fee: e.target.value })} /></Field>
+            <Field label={t("notes")}><Textarea value={clinic.notes} onChange={(e) => setClinic({ ...clinic, notes: e.target.value })} /></Field>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setClinicOpen(false)}>{t("cancel")}</Button><Button disabled={startVisit.isPending || !clinicPatient} onClick={() => startVisit.mutate(undefined as never)}><Stethoscope className="size-4" />{startVisit.isPending ? t("saving") : (lang === "ar" ? "إضافة للعيادة" : "Start visit")}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
