@@ -1,209 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Printer } from "lucide-react";
-import { useState } from "react";
-
+import { Plus, Printer, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Empty, ErrorBox, Field, Loading, PageHeader } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
+import { s, useRows, useSave, type Row, rel } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
-  head: () => ({
-    meta: [
-      { title: "Medical Certificates — ROSHAN Medical Center" },
-      { name: "description", content: "Issue and print sick-leave and medical fitness certificates." },
-      { property: "og:title", content: "Medical Certificates — ROSHAN Medical Center" },
-      { property: "og:description", content: "Issue and print sick-leave and medical fitness certificates." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Medical Certificates — ROSHAN Medical Center" }] }),
   component: CertificatesPage,
 });
 
-function CertificatesPage() {
-  const { t } = useLang();
-  const { can, user } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const [form, setForm] = useState({
-    patient_id: "",
-    type: "sick_leave",
-    days: "1",
-    start_date: todayISO(),
-    notes: "",
-  });
+function addDays(date:string,days:number){const d=new Date(`${date}T00:00:00`);d.setDate(d.getDate()+Math.max(days-1,0));return d.toISOString().slice(0,10)}
 
-  const list = useRows(["certificates"], () =>
-    supabase
-      .from("medical_certificates")
-      .select("*, patients(full_name, patient_number), users(full_name)")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(200),
-  );
-
-  const patients = useRows(["cert-patients", q], () =>
-    q.length >= 2
-      ? supabase.from("patients").select("id, full_name, patient_number").ilike("full_name", `%${q}%`).limit(20)
-      : supabase.from("patients").select("id, full_name, patient_number").order("created_at", { ascending: false }).limit(20),
-  );
-
-  const create = useSave(
-    async () => {
-      const { error } = await supabase.from("medical_certificates").insert({
-        patient_id: form.patient_id,
-        type: form.type,
-        days: Number(form.days) || 1,
-        start_date: form.start_date,
-        notes: form.notes || null,
-        issued_by: user?.id ?? null,
-        created_by: user?.id ?? null,
-      });
-      if (error) throw new Error(error.message);
-      return null;
-    },
-    { invalidate: [["certificates"]], successMessage: t("saved"), onDone: () => setOpen(false) },
-  );
-
-  const rows = (list.data ?? []) as Row[];
-  if (list.isLoading) return <Loading />;
-
-  return (
-    <div>
-      <PageHeader title={t("certificates")} subtitle={t("issued_documents")}>
-        <Button size="sm" variant="outline" onClick={() => window.print()}>
-          <Printer className="size-4" /> {t("print")}
-        </Button>
-        {can("certificates.create") ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="size-4" /> {t("add")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t("certificates")}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <Field label={t("search")}>
-                  <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("patient")} />
-                </Field>
-                <Field label={`${t("patient")} *`}>
-                  <Select value={form.patient_id} onValueChange={(v) => setForm({ ...form, patient_id: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("patient")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {((patients.data ?? []) as Row[]).map((p) => (
-                        <SelectItem key={s(p, "id")} value={s(p, "id")}>
-                          {s(p, "full_name")} — {s(p, "patient_number")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={t("type")}>
-                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sick_leave">{t("sick_leave")}</SelectItem>
-                      <SelectItem value="fitness">{t("fitness")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={t("days")}>
-                  <Input type="number" dir="ltr" min={1} value={form.days} onChange={(e) => setForm({ ...form, days: e.target.value })} />
-                </Field>
-                <Field label={t("start_date")}>
-                  <Input
-                    type="date"
-                    dir="ltr"
-                    value={form.start_date}
-                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("notes")}>
-                  <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                </Field>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  {t("cancel")}
-                </Button>
-                <Button disabled={!form.patient_id || create.isPending} onClick={() => create.mutate(undefined as never)}>
-                  {create.isPending ? t("saving") : t("save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-      </PageHeader>
-
-      <ErrorBox error={list.error ?? patients.error} />
-
-      <Card>
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <Empty />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead>{t("patient")}</TableHead>
-                  <TableHead>{t("type")}</TableHead>
-                  <TableHead>{t("days")}</TableHead>
-                  <TableHead>{t("doctor")}</TableHead>
-                  <TableHead>{t("notes")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((c) => (
-                  <TableRow key={s(c, "id")}>
-                    <TableCell dir="ltr">{formatDate(s(c, "start_date") || s(c, "created_at"))}</TableCell>
-                    <TableCell className="font-medium">{s(rel(c, "patients"), "full_name")}</TableCell>
-                    <TableCell>{t(s(c, "type"))}</TableCell>
-                    <TableCell dir="ltr">{n(c, "days")}</TableCell>
-                    <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
-                    <TableCell className="max-w-[16rem] truncate">{s(c, "notes") || "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+function CertificatesPage(){
+ const {lang}=useLang();const {can,user}=useAuth();const [open,setOpen]=useState(false);const [q,setQ]=useState("");const [form,setForm]=useState({patient_id:"",type:"sick_leave",days:"1",start_date:todayISO(),diagnosis:"",notes:""});
+ const list=useRows<Row[]>(["certificates"],()=>supabase.from("medical_certificates").select("*,patients(full_name,patient_number,mrn,phone),users!medical_certificates_doctor_id_fkey(full_name)").is("deleted_at",null).order("created_at",{ascending:false}).limit(200));
+ const patients=useRows<Row[]>(["cert-patients",q],()=>{const clean=q.replace(/[,()%]/g,"").trim();let query=supabase.from("patients").select("id,full_name,patient_number,mrn,phone").is("deleted_at",null).order("created_at",{ascending:false}).limit(30);if(clean.length>=2)query=query.or(`full_name.ilike.%${clean}%,patient_number.ilike.%${clean}%,mrn.ilike.%${clean}%,phone.ilike.%${clean}%`);return query});
+ const endDate=useMemo(()=>addDays(form.start_date,Number(form.days)||1),[form.start_date,form.days]);
+ const create=useSave(async()=>{if(!form.patient_id)throw new Error(lang==="ar"?"اختر المريض":"Select patient");const purpose=form.type==="sick_leave"?(lang==="ar"?"إجازة مرضية":"Sick leave"):(lang==="ar"?"لياقة طبية":"Medical fitness");const diagnosis=[purpose,form.diagnosis.trim()].filter(Boolean).join(" — ");const {error}=await supabase.from("medical_certificates").insert({patient_id:form.patient_id,doctor_id:user?.id??null,diagnosis,start_date:form.start_date,end_date:endDate});if(error)throw new Error(error.message);return null},{invalidate:[["certificates"]],successMessage:lang==="ar"?"تم إصدار الشهادة":"Certificate issued",onDone:()=>{setOpen(false);setQ("");setForm({patient_id:"",type:"sick_leave",days:"1",start_date:todayISO(),diagnosis:"",notes:""})}});
+ if(list.isLoading)return <Loading/>;const rows=(list.data??[]) as Row[];
+ return <div className="space-y-4">
+  <PageHeader title={lang==="ar"?"الشهادات الطبية":"Medical certificates"} subtitle={lang==="ar"?"إصدار وطباعة الشهادات":"Issue and print medical certificates"}>{can("certificates.create")&&<Button size="sm" onClick={()=>setOpen(true)}><Plus className="size-4"/> {lang==="ar"?"شهادة جديدة":"New certificate"}</Button>}</PageHeader>
+  <ErrorBox error={list.error??patients.error}/>
+  <Card><CardContent className="p-0">{rows.length===0?<Empty/>:<div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>{lang==="ar"?"التاريخ":"Date"}</TableHead><TableHead>{lang==="ar"?"المريض":"Patient"}</TableHead><TableHead>{lang==="ar"?"الفترة":"Period"}</TableHead><TableHead>{lang==="ar"?"الغرض / التشخيص":"Purpose / diagnosis"}</TableHead><TableHead>{lang==="ar"?"الطبيب":"Doctor"}</TableHead><TableHead/></TableRow></TableHeader><TableBody>{rows.map(c=>{const p=rel(c,"patients");return <TableRow key={s(c,"id")}><TableCell dir="ltr">{formatDate(s(c,"created_at"))}</TableCell><TableCell><div className="font-medium">{s(p,"full_name")}</div><div className="text-xs text-muted-foreground" dir="ltr">{s(p,"mrn")||s(p,"patient_number")||s(p,"phone")}</div></TableCell><TableCell dir="ltr">{formatDate(s(c,"start_date"))} → {formatDate(s(c,"end_date"))}</TableCell><TableCell className="max-w-[24rem]">{s(c,"diagnosis")||"—"}</TableCell><TableCell>{s(rel(c,"users"),"full_name")||"—"}</TableCell><TableCell className="text-end"><Button size="sm" variant="ghost" onClick={()=>window.print()}><Printer className="size-4"/></Button></TableCell></TableRow>})}</TableBody></Table></div>}</CardContent></Card>
+  <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{lang==="ar"?"إصدار شهادة طبية":"Issue medical certificate"}</DialogTitle></DialogHeader><div className="grid gap-4">
+   <Field label={lang==="ar"?"البحث عن المريض":"Search patient"}><div className="relative"><Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input className="ps-9" value={q} onChange={e=>setQ(e.target.value)} placeholder={lang==="ar"?"الاسم أو الرقم أو الهاتف":"Name, MRN or phone"}/></div></Field>
+   <Field label={`${lang==="ar"?"المريض":"Patient"} *`}><Select value={form.patient_id} onValueChange={v=>setForm({...form,patient_id:v})}><SelectTrigger><SelectValue placeholder={lang==="ar"?"اختر المريض":"Select patient"}/></SelectTrigger><SelectContent className="max-h-72">{((patients.data??[]) as Row[]).map(p=><SelectItem key={s(p,"id")} value={s(p,"id")}>{s(p,"full_name")} — {s(p,"mrn")||s(p,"patient_number")||s(p,"phone")}</SelectItem>)}</SelectContent></Select></Field>
+   <div className="grid gap-4 sm:grid-cols-2"><Field label={lang==="ar"?"النوع":"Type"}><Select value={form.type} onValueChange={v=>setForm({...form,type:v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="sick_leave">{lang==="ar"?"إجازة مرضية":"Sick leave"}</SelectItem><SelectItem value="fitness">{lang==="ar"?"لياقة طبية":"Medical fitness"}</SelectItem></SelectContent></Select></Field><Field label={lang==="ar"?"عدد الأيام":"Days"}><Input dir="ltr" type="number" min="1" value={form.days} onChange={e=>setForm({...form,days:e.target.value})}/></Field><Field label={lang==="ar"?"بداية":"Start date"}><Input type="date" dir="ltr" value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></Field><Field label={lang==="ar"?"النهاية":"End date"}><Input type="date" dir="ltr" value={endDate} readOnly/></Field></div>
+   <Field label={lang==="ar"?"التشخيص / الملاحظات الطبية":"Diagnosis / medical notes"}><Textarea value={form.diagnosis} onChange={e=>setForm({...form,diagnosis:e.target.value})}/></Field>
+  </div><DialogFooter><Button variant="outline" onClick={()=>setOpen(false)}>{lang==="ar"?"إلغاء":"Cancel"}</Button><Button disabled={create.isPending||!form.patient_id} onClick={()=>create.mutate(undefined as never)}>{create.isPending?"Saving...":lang==="ar"?"إصدار":"Issue"}</Button></DialogFooter></DialogContent></Dialog>
+ </div>;
 }
