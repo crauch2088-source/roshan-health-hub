@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -96,12 +96,13 @@ const emptyForm: VisitForm = {
 
 function VisitsPage() {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const { currency } = useSettings();
 
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<VisitForm>(emptyForm);
+  const [patientSearch, setPatientSearch] = useState("");
 
   const canCreate = can("visits.create");
   const canDelete = can("visits.delete");
@@ -149,14 +150,13 @@ function VisitsPage() {
   );
 
   const patients = useRows<Row[]>(
-    ["patients-lite"],
-    () =>
-      supabase
-        .from("patients")
-        .select("id, full_name, mrn")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(500),
+    ["patients-lite", patientSearch],
+    () => {
+      let q = supabase.from("patients").select("id, full_name, mrn, patient_number, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
+      const term = patientSearch.replace(/[,()%]/g, "").trim();
+      if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,patient_number.ilike.%${term}%,phone.ilike.%${term}%`);
+      return q;
+    },
   );
 
   const departments = useRows<Row[]>(
@@ -192,7 +192,7 @@ function VisitsPage() {
        *
        * PostgreSQL generates both automatically.
        */
-      const { error } = await supabase.from("visits").insert({
+      const { data: createdVisit, error } = await supabase.from("visits").insert({
         patient_id: form.patient_id,
         department_id: form.department_id || null,
         doctor_id: form.doctor_id || null,
@@ -201,7 +201,7 @@ function VisitsPage() {
          * Keep the requested clinic date explicit.
          * queue_date is derived by the database trigger.
          */
-        visit_date: `${date}T00:00:00`,
+        visit_date: new Date(`${date}T00:00:00+02:00`).toISOString(),
 
         visit_type: form.visit_type,
         status: "waiting",
@@ -212,16 +212,49 @@ function VisitsPage() {
       if (error) {
         throw new Error(error.message);
       }
+
+      // A consultation fee is a billable service. Create the invoice immediately;
+      // reception then records the actual payment, which is what Accounting counts as revenue.
+      const fee = Number(form.consultation_fee) || 0;
+      if (fee > 0) {
+        const invoiceNumber = await rpc<string>("next_invoice_number");
+        const { data: invoice, error: invoiceError } = await supabase.from("invoices").insert({
+          invoice_number: invoiceNumber,
+          patient_id: form.patient_id,
+          visit_id: createdVisit?.id ?? null,
+          invoice_date: date,
+          total_amount: fee,
+          subtotal: fee,
+          discount_amount: 0,
+          net_amount: fee,
+          paid_amount: 0,
+          status: "unpaid",
+          payment_status: "unpaid",
+          created_by: user?.id ?? null,
+        }).select("id").single();
+        if (invoiceError) throw new Error(invoiceError.message);
+        const { error: itemError } = await supabase.from("invoice_items").insert({
+          invoice_id: invoice.id,
+          item_type: "consultation",
+          item_name: "Consultation",
+          quantity: 1,
+          unit_price: fee,
+          total_price: fee,
+        });
+        if (itemError) throw new Error(itemError.message);
+      }
     },
     {
       invalidate: [
         ["visits", date],
         ["queue", date],
+        ["invoices", date],
       ],
       successMessage: t("saved"),
       onDone: () => {
         setOpen(false);
         setForm(emptyForm);
+        setPatientSearch("");
       },
     },
   );
@@ -338,6 +371,10 @@ function VisitsPage() {
 
               <div className="grid gap-4">
                 <Field label={`${t("patient")} *`}>
+                  <div className="mb-2 relative">
+                    <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input className="ps-9" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder={lang === "ar" ? "ابحث بالاسم أو الرقم أو الهاتف" : "Search name, MRN or phone"} />
+                  </div>
                   <Select
                     value={form.patient_id}
                     onValueChange={(value) =>
@@ -359,8 +396,7 @@ function VisitsPage() {
                           key={s(patient, "id")}
                           value={s(patient, "id")}
                         >
-                          {s(patient, "full_name")} —{" "}
-                          {s(patient, "mrn")}
+                          {s(patient, "full_name")} — {s(patient, "mrn") || s(patient, "patient_number") || s(patient, "phone")}
                         </SelectItem>
                       ))}
                     </SelectContent>
