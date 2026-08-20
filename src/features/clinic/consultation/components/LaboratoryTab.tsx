@@ -1,81 +1,20 @@
-import { useState } from 'react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
+import { s, useRows, useSave, type Row, n } from "@/lib/db";
+import { useLang } from "@/lib/i18n";
+import { rpc } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 
-interface LaboratoryTabProps {
-  visitId: string;
+export function LaboratoryTab({visitId}:{visitId:string}){
+ const {user}=useAuth();const {lang}=useLang();const [search,setSearch]=useState("");const [selected,setSelected]=useState<Row[]>([]);const [priority,setPriority]=useState("normal");const [notes,setNotes]=useState("");
+ const visitQ=useRows<Row[]>(["clinic-visit",visitId],()=>supabase.from("visits").select("id,patient_id,patients(id,full_name)").eq("id",visitId).limit(1));const visit=(visitQ.data??[])[0] as Row|undefined;const patient=rel(visit,"patients");
+ const testsQ=useRows<Row[]>(["clinic-lab-tests",search],()=>{let q=supabase.from("lab_tests").select("id,name,name_ar,code,price,category").eq("active",true).is("deleted_at",null).order("name").limit(100);const term=search.replace(/[,()%]/g,"").trim();if(term)q=q.or(`name.ilike.%${term}%,name_ar.ilike.%${term}%,code.ilike.%${term}%`);return q});
+ const create=useSave(async()=>{if(!s(patient,"id"))throw new Error("Patient not found");if(!selected.length)throw new Error(lang==="ar"?"اختر فحصاً واحداً على الأقل":"Select at least one test");const {data:order,error}=await supabase.from("lab_orders").insert({patient_id:s(patient,"id"),visit_id:visitId,ordered_by:user?.id??null,status:"ordered",priority,notes:notes||null,created_by:user?.id??null}).select("id").single();if(error)throw new Error(error.message);const items=selected.map(t=>({order_id:order.id,test_id:s(t,"id"),price:n(t,"price"),created_by:user?.id??null}));const {error:itemError}=await supabase.from("lab_order_items").insert(items);if(itemError)throw new Error(itemError.message);
+ const total=selected.reduce((a,t)=>a+n(t,"price"),0);if(total>0){const invoiceNumber=await rpc<string>("next_invoice_number");const {data:inv,error:invError}=await supabase.from("invoices").insert({invoice_number:invoiceNumber,patient_id:s(patient,"id"),visit_id:visitId,invoice_date:new Date().toISOString().slice(0,10),total_amount:total,subtotal:total,discount_amount:0,net_amount:total,paid_amount:0,status:"unpaid",payment_status:"unpaid",created_by:user?.id??null}).select("id").single();if(invError)throw new Error(invError.message);const rows=selected.map(t=>({invoice_id:inv.id,item_type:"laboratory",item_name:s(t,"name"),quantity:1,unit_price:n(t,"price"),total_price:n(t,"price"),item_id:s(t,"id"),created_by:user?.id??null}));const {error:e}=await supabase.from("invoice_items").insert(rows);if(e)throw new Error(e.message)}setSelected([]);setNotes("");return order.id;},{invalidate:[["lab-orders"],["lab-orders",visitId],["patient-labs",s(patient,"id")],["invoices"]],successMessage:lang==="ar"?"تم إرسال طلب المختبر وإنشاء الفاتورة":"Lab order created and invoice generated"});
+ return <Card><CardContent className="space-y-4 p-4"><div className="font-semibold">Laboratory / المختبر</div><div className="relative"><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder={lang==="ar"?"ابحث عن الفحص":"Search laboratory test"}/></div><div className="grid gap-2 sm:grid-cols-2">{((testsQ.data??[]) as Row[]).map(test=>{const chosen=selected.some(x=>s(x,"id")===s(test,"id"));return <button type="button" key={s(test,"id")} onClick={()=>setSelected(chosen?selected.filter(x=>s(x,"id")!==s(test,"id")):[...selected,test])} className={`rounded-lg border p-3 text-start ${chosen?"border-primary bg-primary/5":"hover:bg-muted/50"}`}><div className="font-medium">{lang==="ar"?s(test,"name_ar")||s(test,"name"):s(test,"name")}</div><div className="text-xs text-muted-foreground">{s(test,"code")} · {n(test,"price")}</div></button>})}</div>{selected.length>0&&<div className="rounded border p-3"><div className="mb-2 font-medium">Selected tests</div>{selected.map(t=><div key={s(t,"id")} className="flex justify-between text-sm"><span>{s(t,"name")}</span><span>{n(t,"price")}</span></div>)}</div>}<div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">Priority<select className="mt-1 w-full rounded-md border p-2" value={priority} onChange={e=>setPriority(e.target.value)}><option value="normal">Normal</option><option value="urgent">Urgent</option></select></label><label className="text-sm">Notes<Textarea className="mt-1" value={notes} onChange={e=>setNotes(e.target.value)}/></label></div><div className="flex justify-end"><Button disabled={create.isPending||!selected.length} onClick={()=>create.mutate(undefined as never)}>{create.isPending?"Saving...":"طلب الفحوصات وإنشاء الفاتورة"}</Button></div></CardContent></Card>;
 }
-
-export function LaboratoryTab({ visitId }: LaboratoryTabProps) {
-  const [selectedTests, setSelectedTests] = useState<string[]>([]);
-  const [notes, setNotes] = useState('');
-
-  const availableTests = [
-    'صورة دم كاملة (CBC)',
-    'سكر الدم العشوائي (Random Blood Sugar)',
-    'وظائف الكلى (Creatinine / Urea)',
-    'وظائف الكبد (ALT / AST)',
-    'تحليل البول الشامل (Urine Analysis)',
-  ];
-
-  const toggleTest = (test: string) => {
-    setSelectedTests((prev) =>
-      prev.includes(test) ? prev.filter((t) => t !== test) : [...prev, test]
-    );
-  };
-
-  const handleSave = () => {
-    alert(`تم طلب التحاليل بنجاح للزيارة: ${visitId}`);
-  };
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900">التحاليل والفحوصات المخبرية</h2>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">اختر التحاليل المطلوبة:</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {availableTests.map((test) => {
-            const isChecked = selectedTests.includes(test);
-            return (
-              <div
-                key={test}
-                onClick={() => toggleTest(test)}
-                className={`p-3 rounded-lg border cursor-pointer transition flex items-center justify-between ${
-                  isChecked ? 'border-primary bg-primary/5 text-primary font-medium' : 'border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <span>{test}</span>
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => {}}
-                  className="rounded text-primary focus:ring-primary"
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">ملاحظات إضافية للمختبر</label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
-          className="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-primary focus:outline-none"
-          placeholder="أي تعليمات خاصة بالعينات..."
-        />
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleSave}
-          className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition"
-        >
-          حفظ وإرسال طلب التحاليل
-        </button>
-      </div>
-    </div>
-  );
-}
+function rel(row:Row|undefined,key:string):Row{const x=row?.[key];return (Array.isArray(x)?x[0]:x)||{}}
