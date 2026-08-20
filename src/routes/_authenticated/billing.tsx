@@ -107,7 +107,7 @@ function BillingPage() {
         .filter((l) => l.description)
         .map((l) => ({
           invoice_id: inv.id,
-          description: l.description,
+          item_name: l.description,
           item_type: l.item_type,
           quantity: Number(l.quantity) || 1,
           unit_price: Number(l.unit_price) || 0,
