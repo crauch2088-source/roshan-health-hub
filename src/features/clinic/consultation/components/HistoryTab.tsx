@@ -1,34 +1,15 @@
-interface HistoryTabProps {
-  visitId: string;
+import { Link } from "@tanstack/react-router";
+import { Empty, Loading, StatusBadge } from "@/components/kit";
+import { Card, CardContent } from "@/components/ui/card";
+import { rel, s, useRows, type Row } from "@/lib/db";
+import { useLang } from "@/lib/i18n";
+import { formatDate } from "@/lib/medical";
+import { supabase } from "@/lib/supabase";
+
+export function HistoryTab({visitId}:{visitId:string}){
+ const {lang}=useLang();const visitQ=useRows<Row[]>(["history-visit",visitId],()=>supabase.from("visits").select("patient_id").eq("id",visitId).limit(1));const patientId=s((visitQ.data??[])[0],"patient_id");
+ const visits=useRows<Row[]>(["history-visits",patientId],()=>supabase.from("visits").select("id,visit_number,visit_date,status,departments(name,name_ar),users!visits_doctor_id_fkey(full_name),diagnoses(diagnosis_name,is_primary)").eq("patient_id",patientId).is("deleted_at",null).neq("id",visitId).order("visit_date",{ascending:false}).limit(30));
+  if(visits.isLoading)return <Loading/>;const rows=(visits.data??[]) as Row[];
+ return <div className="space-y-3">{rows.length===0?<Empty label={lang==="ar"?"لا توجد زيارات سابقة":"No previous visits"}/>:rows.map(v=>{const dept=rel(v,"departments");const ds=(v["diagnoses"] as Row[])??[];return <Card key={s(v,"id")}><CardContent className="p-4"><div className="flex flex-wrap items-center gap-3"><span className="font-mono text-xs">{s(v,"visit_number")||s(v,"id").slice(0,8)}</span><span dir="ltr">{formatDate(s(v,"visit_date"))}</span><StatusBadge status={s(v,"status")}/><span>{lang==="ar"?s(dept,"name_ar")||s(dept,"name"):s(dept,"name")}</span><span className="text-muted-foreground">{s(rel(v,"users"),"full_name")}</span><Link className="ms-auto text-primary underline" to="/clinic/$visitId" params={{visitId:s(v,"id")}}>Open</Link></div><div className="mt-3 flex flex-wrap gap-2">{ds.map(d=><span key={s(d,"id")} className="rounded-full bg-muted px-2 py-1 text-xs">{s(d,"diagnosis_name")}</span>)}</div></CardContent></Card>})}</div>;
 }
-
-export function HistoryTab({ visitId }: HistoryTabProps) {
-  // بيانات تجريبية للسجل الطبي السابق للزيارة
-  const pastVisits = [
-    { id: 'v-101', date: '2026-06-15', diagnosis: 'التهاب حاد في الحلق', doctor: 'د. محمد' },
-    { id: 'v-100', date: '2026-05-01', diagnosis: 'متابعة ضغط الدم', doctor: 'د. محمد' },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900">السجل الطبي والزيارات السابقة</h2>
-      <p className="text-sm text-gray-600">عرض السجل الطبي المرتبط بهذه الزيارة (معرف الزيارة الحالي: {visitId})</p>
-
-      <div className="space-y-3">
-        {pastVisits.map((visit) => (
-          <div key={visit.id} className="p-4 rounded-lg border border-gray-200 bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            <div>
-              <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                {visit.date}
-              </span>
-              <h3 className="text-sm font-medium text-gray-900 mt-1">التشخيص: {visit.diagnosis}</h3>
-            </div>
-            <div className="text-xs text-gray-500">
-              الطبيب المعالج: {visit.doctor}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+function rel(row:Row|undefined,key:string):Row{const x=row?.[key];return (Array.isArray(x)?x[0]:x)||{}}
