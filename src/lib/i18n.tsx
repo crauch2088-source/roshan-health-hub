@@ -52,6 +52,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
   cancel: { ar: "إلغاء", en: "Cancel" },
   add: { ar: "إضافة", en: "Add" },
+  open: { ar: "فتح", en: "Open" },
   edit: { ar: "تعديل", en: "Edit" },
   delete: { ar: "حذف", en: "Delete" },
   search: { ar: "بحث", en: "Search" },
