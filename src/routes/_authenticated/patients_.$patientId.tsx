@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import { useLang } from "@/lib/i18n";
 import { BLOOD_GROUPS, MARITAL, calcAge, formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/patients/$patientId")({
+export const Route = createFileRoute("/_authenticated/patients_/$patientId")({
   head: () => ({
     meta: [
       { title: "Patient chart — ROSHAN Medical Center" },
@@ -38,11 +38,41 @@ export const Route = createFileRoute("/_authenticated/patients/$patientId")({
       { property: "og:description", content: "Patient demographics, visit history, laboratory results and invoices." },
     ],
   }),
-  component: PatientChart,
+  component: PatientChartWithBoundary,
 });
 
+type ChartErrorBoundaryProps = { children: ReactNode };
+type ChartErrorBoundaryState = { error: Error | null };
+
+class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBoundaryState> {
+  override state: ChartErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error): ChartErrorBoundaryState {
+    return { error };
+  }
+
+  override render() {
+    if (!this.state.error) return this.props.children;
+
+    return (
+      <div className="space-y-4">
+        <ErrorBox error={this.state.error} />
+        <Empty label="تعذر تحميل ملف المريض / Unable to load patient chart" />
+      </div>
+    );
+  }
+}
+
+function PatientChartWithBoundary() {
+  return (
+    <ChartErrorBoundary>
+      <PatientChart />
+    </ChartErrorBoundary>
+  );
+}
+
 function PatientChart() {
-  const { patientId } = useParams({ from: "/_authenticated/patients/$patientId" });
+  const { patientId } = useParams({ from: "/_authenticated/patients_/$patientId" });
   const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();
