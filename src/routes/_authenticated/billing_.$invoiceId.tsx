@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, FlaskConical } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 
 import {
   Empty,
   ErrorBox,
+  Field,
   Loading,
   PageHeader,
   PrintButton,
@@ -15,6 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,483 +31,213 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
+import {
+  n,
+  rel,
+  s,
+  useRows,
+  useSave,
+  useSettings,
+  type Row,
+} from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { calcAge } from "@/lib/medical";
+import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
+export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
   head: () => ({
-    meta: [{ title: "Lab order — ROSHAN Medical Center" }],
+    meta: [
+      { title: "Invoice — ROSHAN Medical Center" },
+      {
+        name: "description",
+        content:
+          "Printable invoice with line items, payments and outstanding balance.",
+      },
+      {
+        property: "og:title",
+        content: "Invoice — ROSHAN Medical Center",
+      },
+      {
+        property: "og:description",
+        content:
+          "Printable invoice with line items, payments and outstanding balance.",
+      },
+    ],
   }),
-  component: LabOrderPage,
+  component: InvoicePage,
 });
 
-function LabOrderPage() {
-  const { orderId } = useParams({
-    from: "/_authenticated/lab_/$orderId",
+function InvoicePage() {
+  const { invoiceId } = useParams({
+    from: "/_authenticated/billing_/$invoiceId",
   });
 
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { can, user } = useAuth();
+  const { currency, settings } = useSettings();
 
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [comments, setComments] = useState<Record<string, string>>({});
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("cash");
+  const [reference, setReference] = useState("");
 
-  /*
-   * Load the laboratory order.
-   */
-  const orderQ = useRows<Row[]>(
-    ["lab-order", orderId],
-    () =>
-      supabase
-        .from("lab_orders")
-        .select(
-          "id,status,created_at,ordered_at,patient_id,patients(id,full_name,mrn,gender,date_of_birth),users!lab_orders_ordered_by_fkey(full_name)",
-        )
-        .eq("id", orderId)
-        .limit(1),
-  );
-
-  /*
-   * Load tests belonging to this order.
-   */
-  const itemsQ = useRows<Row[]>(
-    ["lab-items", orderId],
-    () =>
-      supabase
-        .from("lab_order_items")
-        .select(
-          "id,status,test_id,price,lab_tests(id,name,name_ar)",
-        )
-        .eq("order_id", orderId)
-        .is("deleted_at", null)
-        .order("created_at"),
-  );
-
-  const order = (orderQ.data ?? [])[0] as Row | undefined;
-  const patient = rel(order, "patients");
-  const items = (itemsQ.data ?? []) as Row[];
-
-  /*
-   * Get all test IDs used by this order.
-   */
-  const testIds = items
-    .map((item) => s(item, "test_id"))
-    .filter(Boolean);
-
-  /*
-   * Load parameters for all tests in the order.
-   */
-  const parametersQ = useRows<Row[]>(
-    ["lab-parameters", ...testIds],
-    () =>
-      testIds.length
-        ? supabase
-            .from("lab_parameters")
-            .select(
-              "id,test_id,name,code,unit,data_type,display_order,reference_text",
-            )
-            .in("test_id", testIds)
-            .eq("active", true)
-            .is("deleted_at", null)
-            .order("display_order")
-        : supabase
-            .from("lab_parameters")
-            .select(
-              "id,test_id,name,code,unit,data_type,display_order,reference_text",
-            )
-            .eq(
-              "test_id",
-              "00000000-0000-0000-0000-000000000000",
-            ),
-  );
-
-  /*
-   * Load reference ranges.
-   */
-  const rangeQ = useRows<Row[]>(
-    [
-      "lab-ranges",
-      s(patient, "gender"),
-      s(patient, "date_of_birth"),
-    ],
-    () =>
-      supabase
-        .from("lab_reference_ranges")
-        .select(
-          "id,parameter_id,gender,min_age,max_age,lower_limit,upper_limit,text_reference,min_value,max_value,age_min,age_max,text_value,unit",
-        )
-        .is("deleted_at", null),
-  );
-
-  /*
-   * IMPORTANT:
-   * Results are linked to lab_order_items, NOT directly to lab_orders.
-   */
-  const actualResultsQ = useRows<Row[]>(
-    [
-      "lab-order-results",
-      orderId,
-      ...items.map((item) => s(item, "id")),
-    ],
-    () => {
-      const itemIds = items
-        .map((item) => s(item, "id"))
-        .filter(Boolean);
-
-      if (!itemIds.length) {
-        return supabase
-          .from("lab_results")
-          .select("*")
-          .eq(
-            "order_item_id",
-            "00000000-0000-0000-0000-000000000000",
-          );
-      }
-
-      return supabase
-        .from("lab_results")
-        .select("*")
-        .in("order_item_id", itemIds);
-    },
-  );
-
-  /*
-   * Populate the editable fields from saved results.
-   */
-  useEffect(() => {
-    const nextValues: Record<string, string> = {};
-    const nextComments: Record<string, string> = {};
-
-    for (const result of (actualResultsQ.data ?? []) as Row[]) {
-      const key = `${s(result, "order_item_id")}:${s(
-        result,
-        "parameter_id",
-      )}`;
-
-      nextValues[key] = s(result, "result_value");
-      nextComments[key] = s(result, "comment");
-    }
-
-    setValues(nextValues);
-    setComments(nextComments);
-  }, [actualResultsQ.data]);
-
-  const age = calcAge(s(patient, "date_of_birth")) ?? undefined;
-  const parameters = (parametersQ.data ?? []) as Row[];
-  const ranges = (rangeQ.data ?? []) as Row[];
-
-  /*
-   * Find the most appropriate reference range for a parameter.
-   */
-  function rangeFor(parameterId: string) {
-    return (
-      ranges.find((range) => {
-        if (s(range, "parameter_id") !== parameterId) {
-          return false;
-        }
-
-        const gender = s(range, "gender");
-
-        if (gender && gender !== s(patient, "gender")) {
-          return false;
-        }
-
-        const minAge =
-          n(range, "min_age") || n(range, "age_min");
-
-        const maxAge =
-          n(range, "max_age") || n(range, "age_max");
-
-        if (
-          age !== undefined &&
-          minAge !== 0 &&
-          minAge &&
-          age < minAge
-        ) {
-          return false;
-        }
-
-        if (
-          age !== undefined &&
-          maxAge !== 0 &&
-          maxAge &&
-          age > maxAge
-        ) {
-          return false;
-        }
-
-        return true;
-      }) ??
-      ranges.find(
-        (range) =>
-          s(range, "parameter_id") === parameterId,
+  const invoiceQ = useRows(["invoice", invoiceId], () =>
+    supabase
+      .from("invoices")
+      .select(
+        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, patients(id, full_name, mrn, phone), partners(name)",
       )
-    );
-  }
-
-  /*
-   * Save laboratory results.
-   */
-  const save = useSave(
-    async () => {
-      for (const item of items) {
-        const itemId = s(item, "id");
-
-        const params = parameters.filter(
-          (parameter) =>
-            s(parameter, "test_id") ===
-            s(item, "test_id"),
-        );
-
-        for (const parameter of params) {
-          const parameterId = s(parameter, "id");
-
-          const key = `${itemId}:${parameterId}`;
-          const value = (values[key] ?? "").trim();
-
-          /*
-           * Empty parameters are intentionally allowed.
-           */
-          if (!value) {
-            continue;
-          }
-
-          const numeric = Number(value);
-          const range = rangeFor(parameterId);
-
-          const low = range
-            ? n(range, "lower_limit") ||
-              n(range, "min_value")
-            : 0;
-
-          const high = range
-            ? n(range, "upper_limit") ||
-              n(range, "max_value")
-            : 0;
-
-          const abnormal =
-            Number.isFinite(numeric) &&
-            ((low !== 0 && numeric < low) ||
-              (high !== 0 && numeric > high));
-
-          const flag = abnormal
-            ? low !== 0 && numeric < low
-              ? "low"
-              : "high"
-            : null;
-
-          const payload = {
-            order_item_id: itemId,
-            parameter_id: parameterId,
-            result_value: value,
-            numeric_value: Number.isFinite(numeric)
-              ? numeric
-              : null,
-            flag,
-            is_abnormal: abnormal,
-            comment: comments[key] || null,
-            entered_by: user?.id ?? null,
-          };
-
-          const existing = (
-            (actualResultsQ.data ?? []) as Row[]
-          ).find(
-            (result) =>
-              s(result, "order_item_id") === itemId &&
-              s(result, "parameter_id") === parameterId,
-          );
-
-          const result = existing
-            ? await supabase
-                .from("lab_results")
-                .update(payload)
-                .eq("id", s(existing, "id"))
-            : await supabase
-                .from("lab_results")
-                .insert(payload);
-
-          if (result.error) {
-            throw new Error(result.error.message);
-          }
-        }
-
-        /*
-         * Mark this individual laboratory item as completed.
-         */
-        const { error: itemError } = await supabase
-          .from("lab_order_items")
-          .update({
-            status: "completed",
-            completed_at: new Date().toISOString(),
-            updated_by: user?.id ?? null,
-          })
-          .eq("id", itemId);
-
-        if (itemError) {
-          throw new Error(itemError.message);
-        }
-      }
-
-      /*
-       * Mark the entire order as completed.
-       */
-      const { error: orderError } = await supabase
-        .from("lab_orders")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", orderId);
-
-      if (orderError) {
-        throw new Error(orderError.message);
-      }
-
-      return null;
-    },
-    {
-      invalidate: [
-        ["lab-order", orderId],
-        ["lab-items", orderId],
-        ["lab-order-results", orderId],
-        ["lab-orders"],
-      ],
-      successMessage: t("saved"),
-    },
+      .eq("id", invoiceId)
+      .limit(1),
   );
 
-  /*
-   * Verify laboratory results.
-   */
-  const verify = useSave(
-    async () => {
-      const itemIds = items
-        .map((item) => s(item, "id"))
-        .filter(Boolean);
+  const invoice = ((invoiceQ.data ?? []) as Row[])[0];
 
-      if (!itemIds.length) {
+  const itemsQ = useRows(["invoice-items", invoiceId], () =>
+    supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", invoiceId),
+  );
+
+  const paymentsQ = useRows(["payments", invoiceId], () =>
+    supabase
+      .from("payments")
+      .select(
+        "id, amount, payment_method, payment_date, created_at",
+      )
+      .eq("invoice_id", invoiceId)
+      .order("created_at", { ascending: false }),
+  );
+
+  const pay = useSave(
+    async () => {
+      if (!invoice) {
+        throw new Error("Invoice not found");
+      }
+
+      const value = Number(amount);
+
+      if (!value || value <= 0) {
         throw new Error(
-          lang === "ar"
-            ? "لا توجد فحوصات للتحقق منها"
-            : "There are no laboratory items to verify.",
+          t("invalid_amount") || "مبلغ غير صالح",
         );
       }
+
+      const outstanding = Math.max(
+        0,
+        n(invoice, "net_amount") -
+          n(invoice, "paid_amount"),
+      );
+
+      if (value > outstanding) {
+        throw new Error(
+          "Payment exceeds outstanding balance",
+        );
+      }
+
+      const patientId = s(
+        rel(invoice, "patients"),
+        "id",
+      );
 
       const { error } = await supabase
-        .from("lab_results")
-        .update({
-          verified_by: user?.id ?? null,
-          verified_at: new Date().toISOString(),
-        })
-        .in("order_item_id", itemIds);
+        .from("payments")
+        .insert({
+          invoice_id: invoiceId,
+          patient_id: patientId || null,
+          amount: value,
+          payment_method: method,
+          method,
+          reference_no:
+            reference.trim() || null,
+          reference:
+            reference.trim() || null,
+          payment_date: new Date()
+            .toISOString()
+            .slice(0, 10),
+          received_by: user?.id ?? null,
+        });
 
       if (error) {
         throw new Error(error.message);
       }
 
-      const { error: orderError } = await supabase
-        .from("lab_orders")
-        .update({
-          status: "verified",
-        })
-        .eq("id", orderId);
+      const paid =
+        n(invoice, "paid_amount") + value;
 
-      if (orderError) {
-        throw new Error(orderError.message);
+      const net = n(invoice, "net_amount");
+
+      const status =
+        paid >= net
+          ? "paid"
+          : paid > 0
+            ? "partial"
+            : "unpaid";
+
+      const { error: updateError } =
+        await supabase
+          .from("invoices")
+          .update({
+            paid_amount: paid,
+            status,
+          })
+          .eq("id", invoiceId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
       return null;
     },
     {
       invalidate: [
-        ["lab-order", orderId],
-        ["lab-order-results", orderId],
-        ["lab-orders"],
+        ["invoice", invoiceId],
+        ["payments", invoiceId],
+        ["invoices"],
       ],
       successMessage: t("saved"),
+      onDone: () => {
+        setAmount("");
+        setReference("");
+      },
     },
   );
 
-  /*
-   * Loading state.
-   */
-  if (orderQ.isLoading || itemsQ.isLoading) {
+  if (invoiceQ.isLoading) {
     return <Loading />;
   }
 
-  /*
-   * Explicit query error.
-   */
-  if (orderQ.error || itemsQ.error) {
-    return (
-      <div className="space-y-4">
-        <PageHeader
-          title={
-            lang === "ar"
-              ? "طلب المختبر"
-              : "Laboratory order"
-          }
-        >
-          <Button asChild variant="outline" size="sm">
-            <Link to="/lab">
-              <ArrowLeft className="size-4" />
-              {t("back")}
-            </Link>
-          </Button>
-        </PageHeader>
-
-        <ErrorBox
-          error={orderQ.error ?? itemsQ.error}
-        />
-      </div>
-    );
+  if (!invoice) {
+    return <Empty label={t("no_data")} />;
   }
 
-  /*
-   * No order found.
-   */
-  if (!order) {
-    return (
-      <div className="space-y-4">
-        <PageHeader
-          title={
-            lang === "ar"
-              ? "طلب المختبر"
-              : "Laboratory order"
-          }
-        >
-          <Button asChild variant="outline" size="sm">
-            <Link to="/lab">
-              <ArrowLeft className="size-4" />
-              {t("back")}
-            </Link>
-          </Button>
-        </PageHeader>
+  const patient = rel(invoice, "patients");
+  const items = (itemsQ.data ?? []) as Row[];
 
-        <Empty label={t("no_data")} />
-      </div>
-    );
-  }
+  const balance =
+    n(invoice, "net_amount") -
+    n(invoice, "paid_amount");
 
   return (
-    <div className="space-y-4">
+    <div>
       <PageHeader
-        title={
-          lang === "ar"
-            ? "طلب المختبر"
-            : "Laboratory order"
-        }
-        subtitle={`${s(patient, "full_name")} · ${t(
+        title={`${t("invoice")} ${s(
+          invoice,
+          "invoice_number",
+        )}`}
+        subtitle={`${s(
+          patient,
+          "full_name",
+        )} · ${t("mrn")}: ${s(
+          patient,
           "mrn",
-        )}: ${
-          s(patient, "mrn") ||
-          s(patient, "patient_number")
-        } · ${t("age")}: ${age ?? "—"}`}
+        )} · ${formatDate(
+          s(invoice, "invoice_date"),
+        )}`}
       >
-        <StatusBadge status={s(order, "status")} />
+        <StatusBadge
+          status={s(invoice, "status")}
+        />
 
         <PrintButton />
 
@@ -508,7 +246,7 @@ function LabOrderPage() {
           variant="outline"
           size="sm"
         >
-          <Link to="/lab">
+          <Link to="/billing">
             <ArrowLeft className="size-4" />
             {t("back")}
           </Link>
@@ -517,267 +255,307 @@ function LabOrderPage() {
 
       <ErrorBox
         error={
-          actualResultsQ.error ??
-          parametersQ.error ??
-          rangeQ.error
+          invoiceQ.error ??
+          itemsQ.error ??
+          paymentsQ.error
         }
       />
 
-      <Card>
-        <CardContent className="p-4">
-          <SectionTitle
-            title={
-              lang === "ar"
-                ? "النتائج"
-                : "Results"
-            }
-          />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardContent className="p-4">
+            <div className="mb-4 border-b pb-3">
+              <p className="text-lg font-semibold text-primary">
+                {settings["clinic_name"] ||
+                  t("app_name")}
+              </p>
 
-          <div className="mt-4 space-y-6">
-            {items.map((item) => {
-              const test = rel(item, "lab_tests");
+              <p className="text-xs text-muted-foreground">
+                {settings["clinic_address"] || ""}{" "}
+                {settings["clinic_phone"] || ""}
+              </p>
+            </div>
 
-              const params = parameters.filter(
-                (parameter) =>
-                  s(parameter, "test_id") ===
-                  s(item, "test_id"),
-              );
+            <SectionTitle>
+              {t("items")}
+            </SectionTitle>
 
-              return (
-                <div
-                  key={s(item, "id")}
-                  className="rounded-lg border p-3"
-                >
-                  <div className="mb-3 flex items-center gap-2 font-semibold">
-                    <FlaskConical className="size-4" />
+            {items.length === 0 ? (
+              <Empty />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      {t("description")}
+                    </TableHead>
 
-                    {lang === "ar"
-                      ? s(test, "name_ar") ||
-                        s(test, "name")
-                      : s(test, "name")}
+                    <TableHead>
+                      {t("quantity")}
+                    </TableHead>
 
-                    <span className="ms-auto text-xs text-muted-foreground">
-                      {s(item, "status")}
-                    </span>
-                  </div>
+                    <TableHead>
+                      {t("unit_price")}
+                    </TableHead>
 
-                  {params.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">
-                      {lang === "ar"
-                        ? "لا توجد معاملات لهذا الفحص"
-                        : "No parameters configured for this test."}
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>
-                            {lang === "ar"
-                              ? "المعامل"
-                              : "Parameter"}
-                          </TableHead>
+                    <TableHead>
+                      {t("total")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                          <TableHead>
-                            {t("result")}
-                          </TableHead>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow
+                      key={s(item, "id")}
+                    >
+                      <TableCell>
+                        {s(item, "item_name") ||
+                          s(item, "description") ||
+                          s(item, "item_type") ||
+                          "—"}
+                      </TableCell>
 
-                          <TableHead>
-                            {t("unit")}
-                          </TableHead>
+                      <TableCell dir="ltr">
+                        {n(item, "quantity")}
+                      </TableCell>
 
-                          <TableHead>
-                            {lang === "ar"
-                              ? "المرجع"
-                              : "Reference"}
-                          </TableHead>
+                      <TableCell>
+                        {money(
+                          n(item, "unit_price"),
+                          currency,
+                        )}
+                      </TableCell>
 
-                          <TableHead>
-                            {t("notes")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
+                      <TableCell>
+                        {money(
+                          n(item, "total_price"),
+                          currency,
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
 
-                      <TableBody>
-                        {params.map((parameter) => {
-                          const key = `${s(
-                            item,
-                            "id",
-                          )}:${s(parameter, "id")}`;
+            <div className="mt-4 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("subtotal")}
+                </span>
 
-                          const value =
-                            values[key] ?? "";
-
-                          const range = rangeFor(
-                            s(parameter, "id"),
-                          );
-
-                          const low = range
-                            ? n(
-                                range,
-                                "lower_limit",
-                              ) ||
-                              n(
-                                range,
-                                "min_value",
-                              )
-                            : 0;
-
-                          const high = range
-                            ? n(
-                                range,
-                                "upper_limit",
-                              ) ||
-                              n(
-                                range,
-                                "max_value",
-                              )
-                            : 0;
-
-                          const num = Number(value);
-
-                          const abnormal =
-                            value.trim() !== "" &&
-                            Number.isFinite(num) &&
-                            ((low !== 0 &&
-                              num < low) ||
-                              (high !== 0 &&
-                                num > high));
-
-                          return (
-                            <TableRow key={key}>
-                              <TableCell className="font-medium">
-                                {s(
-                                  parameter,
-                                  "name",
-                                )}{" "}
-                                {s(
-                                  parameter,
-                                  "code",
-                                ) && (
-                                  <span className="text-xs text-muted-foreground">
-                                    (
-                                    {s(
-                                      parameter,
-                                      "code",
-                                    )}
-                                    )
-                                  </span>
-                                )}
-                              </TableCell>
-
-                              <TableCell className="w-40">
-                                <Input
-                                  dir="ltr"
-                                  disabled={
-                                    !can(
-                                      "lab.update",
-                                    )
-                                  }
-                                  value={value}
-                                  onChange={(event) =>
-                                    setValues({
-                                      ...values,
-                                      [key]:
-                                        event.target
-                                          .value,
-                                    })
-                                  }
-                                />
-
-                                {abnormal && (
-                                  <div className="mt-1 text-xs font-medium text-destructive">
-                                    {lang === "ar"
-                                      ? "خارج المدى"
-                                      : "Out of range"}
-                                  </div>
-                                )}
-                              </TableCell>
-
-                              <TableCell dir="ltr">
-                                {s(
-                                  parameter,
-                                  "unit",
-                                ) ||
-                                  s(range, "unit") ||
-                                  "—"}
-                              </TableCell>
-
-                              <TableCell dir="ltr">
-                                {range
-                                  ? s(
-                                      range,
-                                      "text_reference",
-                                    ) ||
-                                    `${low || "—"} – ${
-                                      high || "—"
-                                    }`
-                                  : s(
-                                      parameter,
-                                      "reference_text",
-                                    ) || "—"}
-                              </TableCell>
-
-                              <TableCell>
-                                <Input
-                                  value={
-                                    comments[key] ??
-                                    ""
-                                  }
-                                  disabled={
-                                    !can(
-                                      "lab.update",
-                                    )
-                                  }
-                                  onChange={(event) =>
-                                    setComments({
-                                      ...comments,
-                                      [key]:
-                                        event.target
-                                          .value,
-                                    })
-                                  }
-                                />
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                <span>
+                  {money(
+                    n(invoice, "total_amount"),
+                    currency,
                   )}
-                </div>
-              );
-            })}
-          </div>
+                </span>
+              </div>
 
-          <div className="no-print mt-5 flex flex-wrap gap-2">
-            {can("lab.update") && (
-              <Button
-                disabled={save.isPending}
-                onClick={() =>
-                  save.mutate(undefined as never)
-                }
-              >
-                {save.isPending
-                  ? t("saving")
-                  : t("save_results")}
-              </Button>
-            )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("discount")}
+                </span>
 
-            {can("lab.verify") && (
-              <Button
-                variant="secondary"
-                disabled={verify.isPending}
-                onClick={() =>
-                  verify.mutate(undefined as never)
-                }
-              >
-                <CheckCircle2 className="size-4" />
-                {t("verify")}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                <span>
+                  {money(
+                    n(invoice, "discount_amount"),
+                    currency,
+                  )}
+                </span>
+              </div>
+
+              <div className="flex justify-between font-semibold">
+                <span>{t("net")}</span>
+
+                <span>
+                  {money(
+                    n(invoice, "net_amount"),
+                    currency,
+                  )}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("paid")}
+                </span>
+
+                <span>
+                  {money(
+                    n(invoice, "paid_amount"),
+                    currency,
+                  )}
+                </span>
+              </div>
+
+              <div className="flex justify-between font-semibold text-primary">
+                <span>{t("balance")}</span>
+
+                <span>
+                  {money(balance, currency)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          {can("payments.create") ? (
+            <Card className="no-print">
+              <CardContent className="grid gap-4 p-4">
+                <SectionTitle>
+                  {t("record_payment")}
+                </SectionTitle>
+
+                <Field label={t("amount")}>
+                  <Input
+                    type="number"
+                    dir="ltr"
+                    min={0}
+                    value={amount}
+                    onChange={(event) =>
+                      setAmount(
+                        event.target.value,
+                      )
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label={t("payment_method")}
+                >
+                  <Select
+                    value={method}
+                    onValueChange={setMethod}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="cash">
+                        {t("cash")}
+                      </SelectItem>
+
+                      <SelectItem value="bank">
+                        {t("bank")}
+                      </SelectItem>
+
+                      <SelectItem value="bankak">
+                        Bankak / بنكك
+                      </SelectItem>
+
+                      <SelectItem value="mobile">
+                        {t("mobile_money")}
+                      </SelectItem>
+
+                      <SelectItem value="insurance">
+                        {t("insurance")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                {(method === "bankak" ||
+                  method === "mobile" ||
+                  method === "bank") && (
+                  <Field
+                    label={
+                      t("reference") ||
+                      "Transaction reference"
+                    }
+                  >
+                    <Input
+                      dir="ltr"
+                      value={reference}
+                      onChange={(event) =>
+                        setReference(
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Reference / transaction number"
+                    />
+                  </Field>
+                )}
+
+                <Button
+                  disabled={
+                    pay.isPending ||
+                    balance <= 0
+                  }
+                  onClick={() =>
+                    pay.mutate(
+                      undefined as never,
+                    )
+                  }
+                >
+                  {pay.isPending
+                    ? t("saving")
+                    : t("save")}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card>
+            <CardContent className="p-4">
+              <SectionTitle>
+                {t("payments")}
+              </SectionTitle>
+
+              {(
+                (paymentsQ.data ??
+                  []) as Row[]
+              ).length === 0 ? (
+                <Empty />
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {(
+                    (paymentsQ.data ??
+                      []) as Row[]
+                  ).map((payment) => (
+                    <li
+                      key={s(
+                        payment,
+                        "id",
+                      )}
+                      className="flex justify-between rounded-md border p-2"
+                    >
+                      <span>
+                        {money(
+                          n(
+                            payment,
+                            "amount",
+                          ),
+                          currency,
+                        )}
+                      </span>
+
+                      <span className="text-muted-foreground">
+                        {t(
+                          s(
+                            payment,
+                            "payment_method",
+                          ),
+                        )}{" "}
+                        ·{" "}
+                        {formatDateTime(
+                          s(
+                            payment,
+                            "created_at",
+                          ),
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
