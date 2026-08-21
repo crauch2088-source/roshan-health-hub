@@ -1,249 +1,628 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, CheckCircle2, FlaskConical } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, PrintButton, SectionTitle, StatusBadge } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  Loading,
+  PageHeader,
+  PrintButton,
+  SectionTitle,
+  StatusBadge,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-Select,
-SelectContent,
-SelectItem,
-SelectTrigger,
-SelectValue,
-} from "@/components/ui/select";
-import {
-Table,
-TableBody,
-TableCell,
-TableHead,
-TableHeader,
-TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { formatDate, formatDateTime, money } from "@/lib/medical";
+import { calcAge } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
-head: () => ({
-meta: [
-{ title: "Invoice — ROSHAN Medical Center" },
-{ name: "description", content: "Printable invoice with line items, payments and outstanding balance." },
-{ property: "og:title", content: "Invoice — ROSHAN Medical Center" },
-{ property: "og:description", content: "Printable invoice with line items, payments and outstanding balance." },
-],
-}),
-component: InvoicePage,
+export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
+  head: () => ({
+    meta: [{ title: "Lab order — ROSHAN Medical Center" }],
+  }),
+  component: LabOrderPage,
 });
 
-function InvoicePage() {
-const { invoiceId } = useParams({ from: "/_authenticated/billing/$invoiceId" });
-const { t } = useLang();
-const { can, user } = useAuth();
-const { currency, settings } = useSettings();
-const [amount, setAmount] = useState("");
-const [method, setMethod] = useState("cash");
-const [reference, setReference] = useState("");
+function LabOrderPage() {
+  const { orderId } = useParams({
+    from: "/_authenticated/lab_/$orderId",
+  });
 
-const invoiceQ = useRows(["invoice", invoiceId], () =>
-supabase
-.from("invoices")
-.select(
-"id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, patients(id, full_name, mrn, phone), partners(name)",
-)
-.eq("id", invoiceId)
-.limit(1),
-);
-const invoice = ((invoiceQ.data ?? []) as Row[])[0];
+  const { t, lang } = useLang();
+  const { can, user } = useAuth();
 
-const itemsQ = useRows(["invoice-items", invoiceId], () =>
-supabase.from("invoice_items").select("*").eq("invoice_id", invoiceId),
-);
-const paymentsQ = useRows(["payments", invoiceId], () =>
-supabase
-.from("payments")
-.select("id, amount, payment_method, payment_date, created_at")
-.eq("invoice_id", invoiceId)
-.order("created_at", { ascending: false }),
-);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
 
-const pay = useSave(
-async () => {
-const value = Number(amount);
-if (!value || value <= 0) throw new Error(t("invalid_amount") || "مبلغ غير صالح");
-if (value > Math.max(0, n(invoice, "net_amount") - n(invoice, "paid_amount"))) throw new Error("Payment exceeds outstanding balance");
-const { error } = await supabase.from("payments").insert({
-invoice_id: invoiceId,
-patient_id: s(rel(invoice, "patients"), "id"),
-amount: value,
-payment_method: method,
-method,
-reference_no: reference.trim() || null,
-reference: reference.trim() || null,
-payment_date: new Date().toISOString().slice(0, 10),
-received_by: user?.id ?? null,
-});
-if (error) throw new Error(error.message);
+  const orderQ = useRows<Row[]>(
+    ["lab-order", orderId],
+    () =>
+      supabase
+        .from("lab_orders")
+        .select(
+          "id,status,created_at,ordered_at,patient_id,patients(id,full_name,mrn,gender,date_of_birth),users!lab_orders_ordered_by_fkey(full_name)",
+        )
+        .eq("id", orderId)
+        .limit(1),
+  );
 
-const paid = n(invoice, "paid_amount") + value;  
-  const net = n(invoice, "net_amount");  
-  const status = paid >= net ? "paid" : paid > 0 ? "partial" : "unpaid";  
-  const { error: uErr } = await supabase  
-    .from("invoices")  
-    .update({ paid_amount: paid, status })  
-    .eq("id", invoiceId);  
-  if (uErr) throw new Error(uErr.message);  
-  return null;  
-},  
-{  
-  invalidate: [["invoice", invoiceId], ["payments", invoiceId], ["invoices"]],  
-  successMessage: t("saved"),  
-  onDone: () => { setAmount(""); setReference(""); },  
-},
+  const itemsQ = useRows<Row[]>(
+    ["lab-items", orderId],
+    () =>
+      supabase
+        .from("lab_order_items")
+        .select(
+          "id,status,test_id,price,lab_tests(id,name,name_ar)",
+        )
+        .eq("order_id", orderId)
+        .is("deleted_at", null)
+        .order("created_at"),
+  );
 
-);
+  const resultsQ = useRows<Row[]>(
+    ["lab-results", orderId],
+    () =>
+      supabase
+        .from("lab_results")
+        .select(
+          "id,order_item_id,parameter_id,result_value,numeric_value,flag,comment,is_abnormal,verified_by,verified_at",
+        )
+        .eq("order_item_id", orderId)
+        .limit(0),
+  );
 
-if (invoiceQ.isLoading) return <Loading />;
-if (!invoice) return <Empty label={t("no_data")} />;
+  const order = (orderQ.data ?? [])[0] as Row | undefined;
+  const patient = rel(order, "patients");
+  const items = (itemsQ.data ?? []) as Row[];
 
-const patient = rel(invoice, "patients");
-const items = (itemsQ.data ?? []) as Row[];
-const balance = n(invoice, "net_amount") - n(invoice, "paid_amount");
+  const testIds = items
+    .map((i) => s(i, "test_id"))
+    .filter(Boolean);
 
-return (
-<div>
-<PageHeader
-title={${t("invoice")} ${s(invoice, "invoice_number")}}
-subtitle={${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${formatDate(s(invoice, "invoice_date"))}}
->
-<StatusBadge status={s(invoice, "status")} />
-<PrintButton />
-<Button asChild variant="outline" size="sm">
-<Link to="/billing">
-<ArrowLeft className="size-4" /> {t("back")}
-</Link>
-</Button>
-</PageHeader>
+  const parametersQ = useRows<Row[]>(
+    ["lab-parameters", ...testIds],
+    () =>
+      testIds.length
+        ? supabase
+            .from("lab_parameters")
+            .select(
+              "id,test_id,name,code,unit,data_type,display_order,reference_text",
+            )
+            .in("test_id", testIds)
+            .eq("active", true)
+            .is("deleted_at", null)
+            .order("display_order")
+        : supabase
+            .from("lab_parameters")
+            .select(
+              "id,test_id,name,code,unit,data_type,display_order,reference_text",
+            )
+            .eq(
+              "test_id",
+              "00000000-0000-0000-0000-000000000000",
+            ),
+  );
 
-<ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} />  
+  const rangeQ = useRows<Row[]>(
+    ["lab-ranges", s(patient, "gender"), s(patient, "date_of_birth")],
+    () =>
+      supabase
+        .from("lab_reference_ranges")
+        .select(
+          "id,parameter_id,gender,min_age,max_age,lower_limit,upper_limit,text_reference,min_value,max_value,age_min,age_max,text_value,unit",
+        )
+        .is("deleted_at", null),
+  );
 
-  <div className="grid gap-4 lg:grid-cols-3">  
-    <Card className="lg:col-span-2">  
-      <CardContent className="p-4">  
-        <div className="mb-4 border-b pb-3">  
-          <p className="text-lg font-semibold text-primary">  
-            {settings["clinic_name"] || t("app_name")}  
-          </p>  
-          <p className="text-xs text-muted-foreground">  
-            {settings["clinic_address"] || ""} {settings["clinic_phone"] || ""}  
-          </p>  
-        </div>  
-        <SectionTitle>{t("items")}</SectionTitle>  
-        {items.length === 0 ? (  
-          <Empty />  
-        ) : (  
-          <Table>  
-            <TableHeader>  
-              <TableRow>  
-                <TableHead>{t("description")}</TableHead>  
-                <TableHead>{t("quantity")}</TableHead>  
-                <TableHead>{t("unit_price")}</TableHead>  
-                <TableHead>{t("total")}</TableHead>  
-              </TableRow>  
-            </TableHeader>  
-            <TableBody>  
-              {items.map((it) => (  
-                <TableRow key={s(it, "id")}>  
-                  <TableCell>{s(it, "item_name") || s(it, "description") || s(it, "item_type") || "—"}</TableCell>  
-                  <TableCell dir="ltr">{n(it, "quantity")}</TableCell>  
-                  <TableCell>{money(n(it, "unit_price"), currency)}</TableCell>  
-                  <TableCell>{money(n(it, "total_price"), currency)}</TableCell>  
-                </TableRow>  
-              ))}  
-            </TableBody>  
-          </Table>  
-        )}  
+  const actualResultsQ = useRows<Row[]>(
+    [
+      "lab-order-results",
+      orderId,
+      ...items.map((i) => s(i, "id")),
+    ],
+    () => {
+      const itemIds = items
+        .map((i) => s(i, "id"))
+        .filter(Boolean);
 
-        <div className="mt-4 space-y-1 text-sm">  
-          <div className="flex justify-between">  
-            <span className="text-muted-foreground">{t("subtotal")}</span>  
-            <span>{money(n(invoice, "total_amount"), currency)}</span>  
-          </div>  
-          <div className="flex justify-between">  
-            <span className="text-muted-foreground">{t("discount")}</span>  
-            <span>{money(n(invoice, "discount_amount"), currency)}</span>  
-          </div>  
-          <div className="flex justify-between font-semibold">  
-            <span>{t("net")}</span>  
-            <span>{money(n(invoice, "net_amount"), currency)}</span>  
-          </div>  
-          <div className="flex justify-between">  
-            <span className="text-muted-foreground">{t("paid")}</span>  
-            <span>{money(n(invoice, "paid_amount"), currency)}</span>  
-          </div>  
-          <div className="flex justify-between font-semibold text-primary">  
-            <span>{t("balance")}</span>  
-            <span>{money(balance, currency)}</span>  
-          </div>  
-        </div>  
-      </CardContent>  
-    </Card>  
+      return itemIds.length
+        ? supabase
+            .from("lab_results")
+            .select("*")
+            .in("order_item_id", itemIds)
+        : supabase
+            .from("lab_results")
+            .select("*")
+            .eq(
+              "order_item_id",
+              "00000000-0000-0000-0000-000000000000",
+            );
+    },
+  );
 
-    <div className="space-y-4">  
-      {can("payments.create") ? (  
-        <Card className="no-print">  
-          <CardContent className="grid gap-4 p-4">  
-            <SectionTitle>{t("record_payment")}</SectionTitle>  
-            <Field label={t("amount")}>  
-              <Input type="number" dir="ltr" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} />  
-            </Field>  
-            <Field label={t("payment_method")}>  
-              <Select value={method} onValueChange={setMethod}>  
-                <SelectTrigger>  
-                  <SelectValue />  
-                </SelectTrigger>  
-                <SelectContent>  
-                  <SelectItem value="cash">{t("cash")}</SelectItem>  
-                  <SelectItem value="bank">{t("bank")}</SelectItem>  
-                  <SelectItem value="bankak">Bankak / بنكك</SelectItem>  
-                  <SelectItem value="mobile">{t("mobile_money")}</SelectItem>  
-                  <SelectItem value="insurance">{t("insurance")}</SelectItem>  
-                </SelectContent>  
-              </Select>  
-            </Field>  
-            {(method === "bankak" || method === "mobile" || method === "bank") && <Field label={t("reference") || "Transaction reference"}><Input dir="ltr" value={reference} onChange={(e)=>setReference(e.target.value)} placeholder="Reference / transaction number"/></Field>}  
-            <Button disabled={pay.isPending || balance <= 0} onClick={() => pay.mutate(undefined as never)}>  
-              {pay.isPending ? t("saving") : t("save")}  
-            </Button>  
-          </CardContent>  
-        </Card>  
-      ) : null}  
+  useEffect(() => {
+    const v: Record<string, string> = {};
+    const c: Record<string, string> = {};
 
-      <Card>  
-        <CardContent className="p-4">  
-          <SectionTitle>{t("payments")}</SectionTitle>  
-          {((paymentsQ.data ?? []) as Row[]).length === 0 ? (  
-            <Empty />  
-          ) : (  
-            <ul className="space-y-2 text-sm">  
-              {((paymentsQ.data ?? []) as Row[]).map((p) => (  
-                <li key={s(p, "id")} className="flex justify-between rounded-md border p-2">  
-                  <span>{money(n(p, "amount"), currency)}</span>  
-                  <span className="text-muted-foreground">  
-                    {t(s(p, "payment_method"))} · {formatDateTime(s(p, "created_at"))}  
-                  </span>  
-                </li>  
-              ))}  
-            </ul>  
-          )}  
-        </CardContent>  
-      </Card>  
-    </div>  
-  </div>  
-</div>
+    for (const r of (actualResultsQ.data ?? []) as Row[]) {
+      const key = `${s(r, "order_item_id")}:${s(r, "parameter_id")}`;
 
-);
+      v[key] = s(r, "result_value");
+      c[key] = s(r, "comment");
+    }
+
+    setValues(v);
+    setComments(c);
+  }, [actualResultsQ.data]);
+
+  const age = calcAge(s(patient, "date_of_birth")) ?? undefined;
+  const parameters = (parametersQ.data ?? []) as Row[];
+  const ranges = (rangeQ.data ?? []) as Row[];
+
+  function rangeFor(parameterId: string) {
+    return (
+      ranges.find((r) => {
+        if (s(r, "parameter_id") !== parameterId) return false;
+
+        const gender = s(r, "gender");
+
+        if (gender && gender !== s(patient, "gender")) {
+          return false;
+        }
+
+        const min = n(r, "min_age") || n(r, "age_min");
+        const max = n(r, "max_age") || n(r, "age_max");
+
+        if (
+          age !== undefined &&
+          min !== 0 &&
+          min &&
+          age < min
+        ) {
+          return false;
+        }
+
+        if (
+          age !== undefined &&
+          max !== 0 &&
+          max &&
+          age > max
+        ) {
+          return false;
+        }
+
+        return true;
+      }) ??
+      ranges.find(
+        (r) => s(r, "parameter_id") === parameterId,
+      )
+    );
+  }
+
+  const save = useSave(
+    async () => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        const params = parameters.filter(
+          (p) => s(p, "test_id") === s(item, "test_id"),
+        );
+
+        for (const p of params) {
+          const key = `${s(item, "id")}:${s(p, "id")}`;
+          const value = (values[key] ?? "").trim();
+
+          if (!value) continue;
+
+          const numeric = Number(value);
+          const range = rangeFor(s(p, "id"));
+
+          const low = range
+            ? n(range, "lower_limit") || n(range, "min_value")
+            : 0;
+
+          const high = range
+            ? n(range, "upper_limit") || n(range, "max_value")
+            : 0;
+
+          const abnormal =
+            Number.isFinite(numeric) &&
+            ((low !== 0 && numeric < low) ||
+              (high !== 0 && numeric > high));
+
+          const flag = abnormal
+            ? low !== 0 && numeric < low
+              ? "low"
+              : "high"
+            : null;
+
+          const payload = {
+            order_item_id: s(item, "id"),
+            parameter_id: s(p, "id"),
+            result_value: value,
+            numeric_value: Number.isFinite(numeric)
+              ? numeric
+              : null,
+            flag,
+            is_abnormal: abnormal,
+            comment: comments[key] || null,
+            entered_by: user?.id ?? null,
+          };
+
+          const existing = (
+            (actualResultsQ.data ?? []) as Row[]
+          ).find(
+            (r) =>
+              s(r, "order_item_id") === s(item, "id") &&
+              s(r, "parameter_id") === s(p, "id"),
+          );
+
+          const result = existing
+            ? await supabase
+                .from("lab_results")
+                .update(payload)
+                .eq("id", s(existing, "id"))
+            : await supabase
+                .from("lab_results")
+                .insert(payload);
+
+          if (result.error) {
+            throw new Error(result.error.message);
+          }
+        }
+
+        await supabase
+          .from("lab_order_items")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+            updated_by: user?.id ?? null,
+          })
+          .eq("id", s(item, "id"));
+      }
+
+      await supabase
+        .from("lab_orders")
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", orderId);
+
+      return null;
+    },
+    {
+      invalidate: [
+        ["lab-order", orderId],
+        ["lab-items", orderId],
+        ["lab-order-results", orderId],
+        ["lab-orders"],
+      ],
+      successMessage: t("saved"),
+    },
+  );
+
+  const verify = useSave(
+    async () => {
+      const { error } = await supabase
+        .from("lab_results")
+        .update({
+          verified_by: user?.id ?? null,
+          verified_at: new Date().toISOString(),
+        })
+        .in(
+          "order_item_id",
+          items.map((i) => s(i, "id")),
+        );
+
+      if (error) throw new Error(error.message);
+
+      const { error: e } = await supabase
+        .from("lab_orders")
+        .update({ status: "verified" })
+        .eq("id", orderId);
+
+      if (e) throw new Error(e.message);
+
+      return null;
+    },
+    {
+      invalidate: [
+        ["lab-order", orderId],
+        ["lab-order-results", orderId],
+        ["lab-orders"],
+      ],
+      successMessage: t("saved"),
+    },
+  );
+
+  if (orderQ.isLoading || itemsQ.isLoading) {
+    return <Loading />;
+  }
+
+  if (!order) {
+    return <Empty label={t("no_data")} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        title={
+          lang === "ar"
+            ? "طلب المختبر"
+            : "Laboratory order"
+        }
+        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${
+          s(patient, "mrn") || s(patient, "patient_number")
+        } · ${t("age")}: ${age ?? "—"}`}
+      >
+        <StatusBadge status={s(order, "status")} />
+
+        <PrintButton />
+
+        <Button asChild variant="outline" size="sm">
+          <Link to="/lab">
+            <ArrowLeft className="size-4" />
+            {t("back")}
+          </Link>
+        </Button>
+      </PageHeader>
+
+      <ErrorBox
+        error={
+          orderQ.error ??
+          itemsQ.error ??
+          actualResultsQ.error ??
+          parametersQ.error ??
+          rangeQ.error ??
+          resultsQ.error
+        }
+      />
+
+      <Card>
+        <CardContent className="p-4">
+          <SectionTitle
+            title={
+              lang === "ar"
+                ? "النتائج"
+                : "Results"
+            }
+          />
+
+          <div className="mt-4 space-y-6">
+            {items.map((item) => {
+              const test = rel(item, "lab_tests");
+
+              const params = parameters.filter(
+                (p) =>
+                  s(p, "test_id") ===
+                  s(item, "test_id"),
+              );
+
+              return (
+                <div
+                  key={s(item, "id")}
+                  className="rounded-lg border p-3"
+                >
+                  <div className="mb-3 flex items-center gap-2 font-semibold">
+                    <FlaskConical className="size-4" />
+
+                    {lang === "ar"
+                      ? s(test, "name_ar") ||
+                        s(test, "name")
+                      : s(test, "name")}
+
+                    <span className="ms-auto text-xs text-muted-foreground">
+                      {s(item, "status")}
+                    </span>
+                  </div>
+
+                  {params.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      {lang === "ar"
+                        ? "لا توجد معاملات لهذا الفحص"
+                        : "No parameters configured for this test."}
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            {lang === "ar"
+                              ? "المعامل"
+                              : "Parameter"}
+                          </TableHead>
+
+                          <TableHead>
+                            {t("result")}
+                          </TableHead>
+
+                          <TableHead>
+                            {t("unit")}
+                          </TableHead>
+
+                          <TableHead>
+                            {lang === "ar"
+                              ? "المرجع"
+                              : "Reference"}
+                          </TableHead>
+
+                          <TableHead>
+                            {t("notes")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+
+                      <TableBody>
+                        {params.map((p) => {
+                          const key = `${s(item, "id")}:${s(
+                            p,
+                            "id",
+                          )}`;
+
+                          const value =
+                            values[key] ?? "";
+
+                          const range = rangeFor(
+                            s(p, "id"),
+                          );
+
+                          const low = range
+                            ? n(
+                                range,
+                                "lower_limit",
+                              ) ||
+                              n(
+                                range,
+                                "min_value",
+                              )
+                            : 0;
+
+                          const high = range
+                            ? n(
+                                range,
+                                "upper_limit",
+                              ) ||
+                              n(
+                                range,
+                                "max_value",
+                              )
+                            : 0;
+
+                          const num = Number(value);
+
+                          const abnormal =
+                            Number.isFinite(num) &&
+                            ((low !== 0 &&
+                              num < low) ||
+                              (high !== 0 &&
+                                num > high));
+
+                          return (
+                            <TableRow key={key}>
+                              <TableCell className="font-medium">
+                                {s(p, "name")}{" "}
+                                {s(p, "code") && (
+                                  <span className="text-xs text-muted-foreground">
+                                    ({s(p, "code")})
+                                  </span>
+                                )}
+                              </TableCell>
+
+                              <TableCell className="w-40">
+                                <Input
+                                  dir="ltr"
+                                  disabled={!can("lab.update")}
+                                  value={value}
+                                  onChange={(e) =>
+                                    setValues({
+                                      ...values,
+                                      [key]:
+                                        e.target.value,
+                                    })
+                                  }
+                                />
+
+                                {abnormal && (
+                                  <div className="mt-1 text-xs font-medium text-destructive">
+                                    {lang === "ar"
+                                      ? "خارج المدى"
+                                      : "Out of range"}
+                                  </div>
+                                )}
+                              </TableCell>
+
+                              <TableCell dir="ltr">
+                                {s(p, "unit") ||
+                                  s(range, "unit") ||
+                                  "—"}
+                              </TableCell>
+
+                              <TableCell dir="ltr">
+                                {range
+                                  ? s(
+                                      range,
+                                      "text_reference",
+                                    ) ||
+                                    `${low || "—"} – ${
+                                      high || "—"
+                                    }`
+                                  : s(
+                                      p,
+                                      "reference_text",
+                                    ) || "—"}
+                              </TableCell>
+
+                              <TableCell>
+                                <Input
+                                  value={
+                                    comments[key] ?? ""
+                                  }
+                                  disabled={
+                                    !can("lab.update")
+                                  }
+                                  onChange={(e) =>
+                                    setComments({
+                                      ...comments,
+                                      [key]:
+                                        e.target.value,
+                                    })
+                                  }
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="no-print mt-5 flex flex-wrap gap-2">
+            {can("lab.update") && (
+              <Button
+                disabled={save.isPending}
+                onClick={() =>
+                  save.mutate(undefined as never)
+                }
+              >
+                {save.isPending
+                  ? t("saving")
+                  : t("save_results")}
+              </Button>
+            )}
+
+            {can("lab.verify") && (
+              <Button
+                variant="secondary"
+                disabled={verify.isPending}
+                onClick={() =>
+                  verify.mutate(undefined as never)
+                }
+              >
+                <CheckCircle2 className="size-4" />
+                {t("verify")}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
