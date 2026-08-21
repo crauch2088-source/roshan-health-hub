@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, Search, Stethoscope } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -189,14 +189,18 @@ function PatientsPage() {
                         <TableCell dir="ltr">{formatDate(s(patient, "created_at"))}</TableCell>
                         <TableCell className="sticky left-0 z-10 bg-card text-end">
                           <div className="flex justify-end gap-1">
-                            <Button asChild size="sm">
-                              <Link
-                                to="/patients/$patientId"
-                                params={{ patientId: id }}
-                                aria-label={`${t("open")} ${s(patient, "full_name")}`}
-                              >
+                            <Button
+                              size="sm"
+                              type="button"
+                              aria-label={`${t("open")} ${s(patient, "full_name")}`}
+                              onClick={() => {
+                                void navigate({
+                                  to: "/patients/$patientId",
+                                  params: { patientId: id },
+                                });
+                              }}
+                            >
                                 {t("open")}
-                              </Link>
                             </Button>
                             {can("visits.create") && (
                               <Button size="sm" variant="outline" onClick={() => { setClinicPatient(patient); setClinicOpen(true); }}>
