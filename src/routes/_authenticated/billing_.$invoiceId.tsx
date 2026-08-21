@@ -46,6 +46,9 @@ function LabOrderPage() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
 
+  /*
+   * Load the laboratory order.
+   */
   const orderQ = useRows<Row[]>(
     ["lab-order", orderId],
     () =>
@@ -58,6 +61,9 @@ function LabOrderPage() {
         .limit(1),
   );
 
+  /*
+   * Load tests belonging to this order.
+   */
   const itemsQ = useRows<Row[]>(
     ["lab-items", orderId],
     () =>
@@ -71,26 +77,20 @@ function LabOrderPage() {
         .order("created_at"),
   );
 
-  const resultsQ = useRows<Row[]>(
-    ["lab-results", orderId],
-    () =>
-      supabase
-        .from("lab_results")
-        .select(
-          "id,order_item_id,parameter_id,result_value,numeric_value,flag,comment,is_abnormal,verified_by,verified_at",
-        )
-        .eq("order_item_id", orderId)
-        .limit(0),
-  );
-
   const order = (orderQ.data ?? [])[0] as Row | undefined;
   const patient = rel(order, "patients");
   const items = (itemsQ.data ?? []) as Row[];
 
+  /*
+   * Get all test IDs used by this order.
+   */
   const testIds = items
-    .map((i) => s(i, "test_id"))
+    .map((item) => s(item, "test_id"))
     .filter(Boolean);
 
+  /*
+   * Load parameters for all tests in the order.
+   */
   const parametersQ = useRows<Row[]>(
     ["lab-parameters", ...testIds],
     () =>
@@ -115,8 +115,15 @@ function LabOrderPage() {
             ),
   );
 
+  /*
+   * Load reference ranges.
+   */
   const rangeQ = useRows<Row[]>(
-    ["lab-ranges", s(patient, "gender"), s(patient, "date_of_birth")],
+    [
+      "lab-ranges",
+      s(patient, "gender"),
+      s(patient, "date_of_birth"),
+    ],
     () =>
       supabase
         .from("lab_reference_ranges")
@@ -126,79 +133,99 @@ function LabOrderPage() {
         .is("deleted_at", null),
   );
 
+  /*
+   * IMPORTANT:
+   * Results are linked to lab_order_items, NOT directly to lab_orders.
+   */
   const actualResultsQ = useRows<Row[]>(
     [
       "lab-order-results",
       orderId,
-      ...items.map((i) => s(i, "id")),
+      ...items.map((item) => s(item, "id")),
     ],
     () => {
       const itemIds = items
-        .map((i) => s(i, "id"))
+        .map((item) => s(item, "id"))
         .filter(Boolean);
 
-      return itemIds.length
-        ? supabase
-            .from("lab_results")
-            .select("*")
-            .in("order_item_id", itemIds)
-        : supabase
-            .from("lab_results")
-            .select("*")
-            .eq(
-              "order_item_id",
-              "00000000-0000-0000-0000-000000000000",
-            );
+      if (!itemIds.length) {
+        return supabase
+          .from("lab_results")
+          .select("*")
+          .eq(
+            "order_item_id",
+            "00000000-0000-0000-0000-000000000000",
+          );
+      }
+
+      return supabase
+        .from("lab_results")
+        .select("*")
+        .in("order_item_id", itemIds);
     },
   );
 
+  /*
+   * Populate the editable fields from saved results.
+   */
   useEffect(() => {
-    const v: Record<string, string> = {};
-    const c: Record<string, string> = {};
+    const nextValues: Record<string, string> = {};
+    const nextComments: Record<string, string> = {};
 
-    for (const r of (actualResultsQ.data ?? []) as Row[]) {
-      const key = `${s(r, "order_item_id")}:${s(r, "parameter_id")}`;
+    for (const result of (actualResultsQ.data ?? []) as Row[]) {
+      const key = `${s(result, "order_item_id")}:${s(
+        result,
+        "parameter_id",
+      )}`;
 
-      v[key] = s(r, "result_value");
-      c[key] = s(r, "comment");
+      nextValues[key] = s(result, "result_value");
+      nextComments[key] = s(result, "comment");
     }
 
-    setValues(v);
-    setComments(c);
+    setValues(nextValues);
+    setComments(nextComments);
   }, [actualResultsQ.data]);
 
   const age = calcAge(s(patient, "date_of_birth")) ?? undefined;
   const parameters = (parametersQ.data ?? []) as Row[];
   const ranges = (rangeQ.data ?? []) as Row[];
 
+  /*
+   * Find the most appropriate reference range for a parameter.
+   */
   function rangeFor(parameterId: string) {
     return (
-      ranges.find((r) => {
-        if (s(r, "parameter_id") !== parameterId) return false;
+      ranges.find((range) => {
+        if (s(range, "parameter_id") !== parameterId) {
+          return false;
+        }
 
-        const gender = s(r, "gender");
+        const gender = s(range, "gender");
 
         if (gender && gender !== s(patient, "gender")) {
           return false;
         }
 
-        const min = n(r, "min_age") || n(r, "age_min");
-        const max = n(r, "max_age") || n(r, "age_max");
+        const minAge =
+          n(range, "min_age") || n(range, "age_min");
+
+        const maxAge =
+          n(range, "max_age") || n(range, "age_max");
 
         if (
           age !== undefined &&
-          min !== 0 &&
-          min &&
-          age < min
+          minAge !== 0 &&
+          minAge &&
+          age < minAge
         ) {
           return false;
         }
 
         if (
           age !== undefined &&
-          max !== 0 &&
-          max &&
-          age > max
+          maxAge !== 0 &&
+          maxAge &&
+          age > maxAge
         ) {
           return false;
         }
@@ -206,35 +233,50 @@ function LabOrderPage() {
         return true;
       }) ??
       ranges.find(
-        (r) => s(r, "parameter_id") === parameterId,
+        (range) =>
+          s(range, "parameter_id") === parameterId,
       )
     );
   }
 
+  /*
+   * Save laboratory results.
+   */
   const save = useSave(
     async () => {
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
+      for (const item of items) {
+        const itemId = s(item, "id");
 
         const params = parameters.filter(
-          (p) => s(p, "test_id") === s(item, "test_id"),
+          (parameter) =>
+            s(parameter, "test_id") ===
+            s(item, "test_id"),
         );
 
-        for (const p of params) {
-          const key = `${s(item, "id")}:${s(p, "id")}`;
+        for (const parameter of params) {
+          const parameterId = s(parameter, "id");
+
+          const key = `${itemId}:${parameterId}`;
           const value = (values[key] ?? "").trim();
 
-          if (!value) continue;
+          /*
+           * Empty parameters are intentionally allowed.
+           */
+          if (!value) {
+            continue;
+          }
 
           const numeric = Number(value);
-          const range = rangeFor(s(p, "id"));
+          const range = rangeFor(parameterId);
 
           const low = range
-            ? n(range, "lower_limit") || n(range, "min_value")
+            ? n(range, "lower_limit") ||
+              n(range, "min_value")
             : 0;
 
           const high = range
-            ? n(range, "upper_limit") || n(range, "max_value")
+            ? n(range, "upper_limit") ||
+              n(range, "max_value")
             : 0;
 
           const abnormal =
@@ -249,8 +291,8 @@ function LabOrderPage() {
             : null;
 
           const payload = {
-            order_item_id: s(item, "id"),
-            parameter_id: s(p, "id"),
+            order_item_id: itemId,
+            parameter_id: parameterId,
             result_value: value,
             numeric_value: Number.isFinite(numeric)
               ? numeric
@@ -264,9 +306,9 @@ function LabOrderPage() {
           const existing = (
             (actualResultsQ.data ?? []) as Row[]
           ).find(
-            (r) =>
-              s(r, "order_item_id") === s(item, "id") &&
-              s(r, "parameter_id") === s(p, "id"),
+            (result) =>
+              s(result, "order_item_id") === itemId &&
+              s(result, "parameter_id") === parameterId,
           );
 
           const result = existing
@@ -283,17 +325,27 @@ function LabOrderPage() {
           }
         }
 
-        await supabase
+        /*
+         * Mark this individual laboratory item as completed.
+         */
+        const { error: itemError } = await supabase
           .from("lab_order_items")
           .update({
             status: "completed",
             completed_at: new Date().toISOString(),
             updated_by: user?.id ?? null,
           })
-          .eq("id", s(item, "id"));
+          .eq("id", itemId);
+
+        if (itemError) {
+          throw new Error(itemError.message);
+        }
       }
 
-      await supabase
+      /*
+       * Mark the entire order as completed.
+       */
+      const { error: orderError } = await supabase
         .from("lab_orders")
         .update({
           status: "completed",
@@ -301,6 +353,10 @@ function LabOrderPage() {
           updated_by: user?.id ?? null,
         })
         .eq("id", orderId);
+
+      if (orderError) {
+        throw new Error(orderError.message);
+      }
 
       return null;
     },
@@ -315,27 +371,45 @@ function LabOrderPage() {
     },
   );
 
+  /*
+   * Verify laboratory results.
+   */
   const verify = useSave(
     async () => {
+      const itemIds = items
+        .map((item) => s(item, "id"))
+        .filter(Boolean);
+
+      if (!itemIds.length) {
+        throw new Error(
+          lang === "ar"
+            ? "لا توجد فحوصات للتحقق منها"
+            : "There are no laboratory items to verify.",
+        );
+      }
+
       const { error } = await supabase
         .from("lab_results")
         .update({
           verified_by: user?.id ?? null,
           verified_at: new Date().toISOString(),
         })
-        .in(
-          "order_item_id",
-          items.map((i) => s(i, "id")),
-        );
+        .in("order_item_id", itemIds);
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      const { error: e } = await supabase
+      const { error: orderError } = await supabase
         .from("lab_orders")
-        .update({ status: "verified" })
+        .update({
+          status: "verified",
+        })
         .eq("id", orderId);
 
-      if (e) throw new Error(e.message);
+      if (orderError) {
+        throw new Error(orderError.message);
+      }
 
       return null;
     },
@@ -349,12 +423,65 @@ function LabOrderPage() {
     },
   );
 
+  /*
+   * Loading state.
+   */
   if (orderQ.isLoading || itemsQ.isLoading) {
     return <Loading />;
   }
 
+  /*
+   * Explicit query error.
+   */
+  if (orderQ.error || itemsQ.error) {
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title={
+            lang === "ar"
+              ? "طلب المختبر"
+              : "Laboratory order"
+          }
+        >
+          <Button asChild variant="outline" size="sm">
+            <Link to="/lab">
+              <ArrowLeft className="size-4" />
+              {t("back")}
+            </Link>
+          </Button>
+        </PageHeader>
+
+        <ErrorBox
+          error={orderQ.error ?? itemsQ.error}
+        />
+      </div>
+    );
+  }
+
+  /*
+   * No order found.
+   */
   if (!order) {
-    return <Empty label={t("no_data")} />;
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title={
+            lang === "ar"
+              ? "طلب المختبر"
+              : "Laboratory order"
+          }
+        >
+          <Button asChild variant="outline" size="sm">
+            <Link to="/lab">
+              <ArrowLeft className="size-4" />
+              {t("back")}
+            </Link>
+          </Button>
+        </PageHeader>
+
+        <Empty label={t("no_data")} />
+      </div>
+    );
   }
 
   return (
@@ -365,15 +492,22 @@ function LabOrderPage() {
             ? "طلب المختبر"
             : "Laboratory order"
         }
-        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${
-          s(patient, "mrn") || s(patient, "patient_number")
+        subtitle={`${s(patient, "full_name")} · ${t(
+          "mrn",
+        )}: ${
+          s(patient, "mrn") ||
+          s(patient, "patient_number")
         } · ${t("age")}: ${age ?? "—"}`}
       >
         <StatusBadge status={s(order, "status")} />
 
         <PrintButton />
 
-        <Button asChild variant="outline" size="sm">
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+        >
           <Link to="/lab">
             <ArrowLeft className="size-4" />
             {t("back")}
@@ -383,12 +517,9 @@ function LabOrderPage() {
 
       <ErrorBox
         error={
-          orderQ.error ??
-          itemsQ.error ??
           actualResultsQ.error ??
           parametersQ.error ??
-          rangeQ.error ??
-          resultsQ.error
+          rangeQ.error
         }
       />
 
@@ -407,8 +538,8 @@ function LabOrderPage() {
               const test = rel(item, "lab_tests");
 
               const params = parameters.filter(
-                (p) =>
-                  s(p, "test_id") ===
+                (parameter) =>
+                  s(parameter, "test_id") ===
                   s(item, "test_id"),
               );
 
@@ -467,17 +598,17 @@ function LabOrderPage() {
                       </TableHeader>
 
                       <TableBody>
-                        {params.map((p) => {
-                          const key = `${s(item, "id")}:${s(
-                            p,
+                        {params.map((parameter) => {
+                          const key = `${s(
+                            item,
                             "id",
-                          )}`;
+                          )}:${s(parameter, "id")}`;
 
                           const value =
                             values[key] ?? "";
 
                           const range = rangeFor(
-                            s(p, "id"),
+                            s(parameter, "id"),
                           );
 
                           const low = range
@@ -505,6 +636,7 @@ function LabOrderPage() {
                           const num = Number(value);
 
                           const abnormal =
+                            value.trim() !== "" &&
                             Number.isFinite(num) &&
                             ((low !== 0 &&
                               num < low) ||
@@ -514,10 +646,21 @@ function LabOrderPage() {
                           return (
                             <TableRow key={key}>
                               <TableCell className="font-medium">
-                                {s(p, "name")}{" "}
-                                {s(p, "code") && (
+                                {s(
+                                  parameter,
+                                  "name",
+                                )}{" "}
+                                {s(
+                                  parameter,
+                                  "code",
+                                ) && (
                                   <span className="text-xs text-muted-foreground">
-                                    ({s(p, "code")})
+                                    (
+                                    {s(
+                                      parameter,
+                                      "code",
+                                    )}
+                                    )
                                   </span>
                                 )}
                               </TableCell>
@@ -525,13 +668,18 @@ function LabOrderPage() {
                               <TableCell className="w-40">
                                 <Input
                                   dir="ltr"
-                                  disabled={!can("lab.update")}
+                                  disabled={
+                                    !can(
+                                      "lab.update",
+                                    )
+                                  }
                                   value={value}
-                                  onChange={(e) =>
+                                  onChange={(event) =>
                                     setValues({
                                       ...values,
                                       [key]:
-                                        e.target.value,
+                                        event.target
+                                          .value,
                                     })
                                   }
                                 />
@@ -546,7 +694,10 @@ function LabOrderPage() {
                               </TableCell>
 
                               <TableCell dir="ltr">
-                                {s(p, "unit") ||
+                                {s(
+                                  parameter,
+                                  "unit",
+                                ) ||
                                   s(range, "unit") ||
                                   "—"}
                               </TableCell>
@@ -561,7 +712,7 @@ function LabOrderPage() {
                                       high || "—"
                                     }`
                                   : s(
-                                      p,
+                                      parameter,
                                       "reference_text",
                                     ) || "—"}
                               </TableCell>
@@ -569,16 +720,20 @@ function LabOrderPage() {
                               <TableCell>
                                 <Input
                                   value={
-                                    comments[key] ?? ""
+                                    comments[key] ??
+                                    ""
                                   }
                                   disabled={
-                                    !can("lab.update")
+                                    !can(
+                                      "lab.update",
+                                    )
                                   }
-                                  onChange={(e) =>
+                                  onChange={(event) =>
                                     setComments({
                                       ...comments,
                                       [key]:
-                                        e.target.value,
+                                        event.target
+                                          .value,
                                     })
                                   }
                                 />
