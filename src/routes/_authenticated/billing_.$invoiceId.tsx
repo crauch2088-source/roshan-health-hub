@@ -27,7 +27,7 @@ import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_authenticated/billing/$invoiceId")({
+export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
 head: () => ({
 meta: [
 { title: "Invoice — ROSHAN Medical Center" },
