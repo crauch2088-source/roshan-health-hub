@@ -145,6 +145,7 @@ function PatientsPage() {
           <div className="relative min-w-[240px]">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label={lang === "ar" ? "بحث عن مريض" : "Search patients"}
               className="ps-9"
               value={search}
               placeholder={lang === "ar" ? "الاسم، الهاتف، الرقم الطبي أو الرقم الوطني" : "Name, phone, MRN or national ID"}
@@ -186,10 +187,16 @@ function PatientsPage() {
                         <TableCell>{t(s(patient, "gender"))}</TableCell>
                         <TableCell>{calcAge(s(patient, "date_of_birth")) ?? "—"}</TableCell>
                         <TableCell dir="ltr">{formatDate(s(patient, "created_at"))}</TableCell>
-                        <TableCell className="text-end">
+                        <TableCell className="sticky left-0 z-10 bg-card text-end">
                           <div className="flex justify-end gap-1">
-                            <Button asChild size="sm" className="bg-green-600 text-white hover:bg-green-700">
-                              <Link to="/patients/$patientId" params={{ patientId: id }}>{t("open")}</Link>
+                            <Button asChild size="sm">
+                              <Link
+                                to="/patients/$patientId"
+                                params={{ patientId: id }}
+                                aria-label={`${t("open")} ${s(patient, "full_name")}`}
+                              >
+                                {t("open")}
+                              </Link>
                             </Button>
                             {can("visits.create") && (
                               <Button size="sm" variant="outline" onClick={() => { setClinicPatient(patient); setClinicOpen(true); }}>
