@@ -116,6 +116,14 @@ function PatientChart() {
   );
 
   if (patient.isLoading) return <Loading />;
+  if (patient.error) {
+    return (
+      <div>
+        <ErrorBox error={patient.error} />
+        <Empty label={t("no_data")} />
+      </div>
+    );
+  }
   if (!record) return <Empty label={t("no_data")} />;
 
   return (
