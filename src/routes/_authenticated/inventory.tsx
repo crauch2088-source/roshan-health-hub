@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, Pager, StatCard } from "@/components/kit";
@@ -54,10 +54,8 @@ function InventoryPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
-    generic_name: "",
     unit: "",
     cost_price: "0",
     selling_price: "0",
@@ -76,7 +74,7 @@ function InventoryPage() {
       let q = supabase
         .from("medicines")
         .select(
-          "id, name, generic_name, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date, batch_number",
+          "id, name, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date",
           { count: "exact" },
         )
         .is("deleted_at", null);
@@ -109,7 +107,6 @@ function InventoryPage() {
     async () => {
       const { error } = await supabase.from("medicines").insert({
         name: form.name,
-        generic_name: form.generic_name || null,
         unit: form.unit || null,
         cost_price: Number(form.cost_price) || 0,
         selling_price: Number(form.selling_price) || 0,
@@ -125,31 +122,6 @@ function InventoryPage() {
       invalidate: [["inventory"], ["inventory-stats"], ["medicines"]],
       successMessage: t("saved"),
       onDone: () => setOpen(false),
-    },
-  );
-
-  const update = useSave<{ id: string }>(
-    async ({ id }) => {
-      const { error } = await supabase.from("medicines").update({
-        name: form.name,
-        generic_name: form.generic_name || null,
-        unit: form.unit || null,
-        cost_price: Number(form.cost_price) || 0,
-        selling_price: Number(form.selling_price) || 0,
-        reorder_level: Number(form.reorder_level) || 0,
-        expiry_date: form.expiry_date || null,
-        batch_number: form.batch_number || null,
-      }).eq("id", id);
-      if (error) throw new Error(error.message);
-      return null;
-    },
-    {
-      invalidate: [["inventory"], ["inventory-stats"], ["medicines"]],
-      successMessage: t("saved"),
-      onDone: () => {
-        setOpen(false);
-        setEditingId(null);
-      },
     },
   );
 
@@ -190,31 +162,19 @@ function InventoryPage() {
         />
         <ExportButtons rows={rows} filename="roshan-inventory" />
         {can("pharmacy.manage") ? (
-          <Dialog open={open} onOpenChange={(value) => {
-            setOpen(value);
-            if (!value) setEditingId(null);
-          }}>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => {
-                setEditingId(null);
-                setForm({
-                  name: "", generic_name: "", unit: "", cost_price: "0", selling_price: "0",
-                  stock_quantity: "0", reorder_level: "10", expiry_date: "", batch_number: "",
-                });
-              }}>
+              <Button size="sm">
                 <Plus className="size-4" /> {t("add")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingId ? t("edit") : t("medicines")}</DialogTitle>
+                <DialogTitle>{t("medicines")}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`${t("name")} *`} className="sm:col-span-2">
                   <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                </Field>
-                <Field label={t("generic_name")}>
-                  <Input value={form.generic_name} onChange={(e) => setForm({ ...form, generic_name: e.target.value })} />
                 </Field>
                 <Field label={t("unit")}>
                   <Input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
@@ -242,14 +202,14 @@ function InventoryPage() {
                     onChange={(e) => setForm({ ...form, selling_price: e.target.value })}
                   />
                 </Field>
-                {!editingId ? <Field label={t("stock")}>
+                <Field label={t("stock")}>
                   <Input
                     type="number"
                     dir="ltr"
                     value={form.stock_quantity}
                     onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
                   />
-                </Field> : null}
+                </Field>
                 <Field label={t("reorder_level")}>
                   <Input
                     type="number"
@@ -271,11 +231,8 @@ function InventoryPage() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button
-                  disabled={!form.name || create.isPending || update.isPending}
-                  onClick={() => editingId ? update.mutate({ id: editingId }) : create.mutate(undefined as never)}
-                >
-                  {(create.isPending || update.isPending) ? t("saving") : t("save")}
+                <Button disabled={!form.name || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                  {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -323,28 +280,9 @@ function InventoryPage() {
                       <TableCell dir="ltr">{s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}</TableCell>
                       <TableCell className="no-print text-end">
                         {can("pharmacy.manage") ? (
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => {
-                              setEditingId(s(m, "id"));
-                              setForm({
-                                name: s(m, "name"),
-                                generic_name: s(m, "generic_name"),
-                                unit: s(m, "unit"),
-                                cost_price: s(m, "cost_price") || "0",
-                                selling_price: s(m, "selling_price") || "0",
-                                stock_quantity: s(m, "stock_quantity") || "0",
-                                reorder_level: s(m, "reorder_level") || "0",
-                                expiry_date: s(m, "expiry_date"),
-                                batch_number: s(m, "batch_number"),
-                              });
-                              setOpen(true);
-                            }}>
-                              <Pencil className="size-4" /> {t("edit")}
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}>
-                              {t("receive_stock")}
-                            </Button>
-                          </div>
+                          <Button variant="outline" size="sm" onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}>
+                            {t("receive_stock")}
+                          </Button>
                         ) : null}
                       </TableCell>
                     </TableRow>
