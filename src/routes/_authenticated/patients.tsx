@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/patients")({
 const PAGE_SIZE = 20;
 
 function clean(term: string) {
-  return term.replace(/[,()%]/g, "").trim();
+  return term.replace(/[,%()]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function emptyPatient() {
