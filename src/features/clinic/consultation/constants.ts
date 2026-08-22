@@ -1,56 +1,205 @@
-/** * Roshan clinic consultation quick options. * * Keep this file dependency-free: it is imported by the client bundle and * should contain only valid TypeScript data. Do not import types from another * module here; that previously caused the production build to fail in Vite. */
-export type QuickOption = {
-  value: string;
-  label: string;
-  labelAr?: string;
-};
+import type { QuickOption } from "./types";
+
+/**
+ * Roshan Health Hub
+ * Clinical consultation quick-entry options.
+ *
+ * Keep these values centralized so the consultation UI can use
+ * consistent structured choices instead of free-text entry wherever possible.
+ */
 
 export const QUICK_COMPLAINTS: QuickOption[] = [
   { value: "fever", label: "Fever", labelAr: "حمى" },
-  { value: "cough", label: "Cough", labelAr: "سعال" },
   { value: "headache", label: "Headache", labelAr: "صداع" },
-  { value: "abdominal_pain", label: "Abdominal pain", labelAr: "ألم البطن" },
-  { value: "chest_pain", label: "Chest pain", labelAr: "ألم الصدر" },
-  { value: "back_pain", label: "Back pain", labelAr: "ألم الظهر" },
-  { value: "vomiting", label: "Vomiting", labelAr: "قيء" },
-  { value: "diarrhea", label: "Diarrhea", labelAr: "إسهال" },
-  { value: "sore_throat", label: "Sore throat", labelAr: "التهاب/ألم الحلق" },
-  { value: "shortness_of_breath", label: "Shortness of breath", labelAr: "ضيق التنفس" },
   { value: "dizziness", label: "Dizziness", labelAr: "دوخة" },
   { value: "fatigue", label: "Fatigue", labelAr: "إرهاق" },
-  { value: "urinary_symptoms", label: "Urinary symptoms", labelAr: "أعراض بولية" },
+  { value: "cough", label: "Cough", labelAr: "سعال" },
+  { value: "shortness_of_breath", label: "Shortness of breath", labelAr: "ضيق التنفس" },
+  { value: "chest_pain", label: "Chest pain", labelAr: "ألم الصدر" },
+  { value: "palpitations", label: "Palpitations", labelAr: "خفقان" },
+  { value: "abdominal_pain", label: "Abdominal pain", labelAr: "ألم البطن" },
+  { value: "vomiting", label: "Vomiting", labelAr: "قيء" },
+  { value: "diarrhea", label: "Diarrhea", labelAr: "إسهال" },
+  { value: "constipation", label: "Constipation", labelAr: "إمساك" },
+  { value: "nausea", label: "Nausea", labelAr: "غثيان" },
+  { value: "back_pain", label: "Back pain", labelAr: "ألم الظهر" },
+  { value: "joint_pain", label: "Joint pain", labelAr: "ألم المفاصل" },
+  { value: "muscle_pain", label: "Muscle pain", labelAr: "ألم العضلات" },
+  { value: "sore_throat", label: "Sore throat", labelAr: "التهاب الحلق" },
+  { value: "runny_nose", label: "Runny nose", labelAr: "رشح" },
+  { value: "nasal_congestion", label: "Nasal congestion", labelAr: "احتقان الأنف" },
+  { value: "ear_pain", label: "Ear pain", labelAr: "ألم الأذن" },
+  { value: "toothache", label: "Toothache", labelAr: "ألم الأسنان" },
   { value: "skin_rash", label: "Skin rash", labelAr: "طفح جلدي" },
+  { value: "itching", label: "Itching", labelAr: "حكة" },
+  { value: "dysuria", label: "Dysuria", labelAr: "عسر التبول" },
+  { value: "frequency", label: "Urinary frequency", labelAr: "كثرة التبول" },
+  { value: "hematuria", label: "Hematuria", labelAr: "دم في البول" },
+  { value: "vaginal_bleeding", label: "Vaginal bleeding", labelAr: "نزيف مهبلي" },
+  { value: "vaginal_discharge", label: "Vaginal discharge", labelAr: "إفرازات مهبلية" },
+  { value: "pelvic_pain", label: "Pelvic pain", labelAr: "ألم الحوض" },
+  { value: "menstrual_problem", label: "Menstrual problem", labelAr: "اضطراب الدورة الشهرية" },
   { value: "pregnancy_followup", label: "Pregnancy follow-up", labelAr: "متابعة الحمل" },
-  { value: "routine_followup", label: "Routine follow-up", labelAr: "متابعة روتينية" },
+  { value: "poor_appetite", label: "Poor appetite", labelAr: "ضعف الشهية" },
+  { value: "weight_loss", label: "Weight loss", labelAr: "فقدان الوزن" },
+  { value: "weight_gain", label: "Weight gain", labelAr: "زيادة الوزن" },
+  { value: "edema", label: "Edema", labelAr: "تورم / وذمة" },
+  { value: "syncope", label: "Syncope", labelAr: "إغماء" },
+  { value: "seizure", label: "Seizure", labelAr: "تشنجات" },
+  { value: "weakness", label: "Weakness", labelAr: "ضعف" },
+  { value: "other", label: "Other", labelAr: "أخرى" },
 ];
 
-export const QUICK_EXAMINATIONS: QuickOption[] = [
-  { value: "general", label: "General examination", labelAr: "فحص عام" },
-  { value: "respiratory", label: "Respiratory examination", labelAr: "فحص الجهاز التنفسي" },
-  { value: "cardiovascular", label: "Cardiovascular examination", labelAr: "فحص القلب والدورة الدموية" },
-  { value: "abdominal", label: "Abdominal examination", labelAr: "فحص البطن" },
-  { value: "neurological", label: "Neurological examination", labelAr: "فحص عصبي" },
-  { value: "ent", label: "ENT examination", labelAr: "فحص الأنف والأذن والحنجرة" },
-  { value: "skin", label: "Skin examination", labelAr: "فحص الجلد" },
+export const QUICK_HPI: QuickOption[] = [
+  { value: "acute", label: "Acute onset", labelAr: "بداية حادة" },
+  { value: "subacute", label: "Subacute onset", labelAr: "بداية تحت حادة" },
+  { value: "chronic", label: "Chronic", labelAr: "مزمن" },
+  { value: "sudden", label: "Sudden onset", labelAr: "بداية مفاجئة" },
+  { value: "gradual", label: "Gradual onset", labelAr: "بداية تدريجية" },
+  { value: "intermittent", label: "Intermittent", labelAr: "متقطع" },
+  { value: "continuous", label: "Continuous", labelAr: "مستمر" },
+  { value: "progressive", label: "Progressive", labelAr: "متفاقم تدريجيًا" },
+  { value: "stable", label: "Stable", labelAr: "مستقر" },
+  { value: "recurrent", label: "Recurrent", labelAr: "متكرر" },
+  { value: "worse_at_night", label: "Worse at night", labelAr: "أسوأ ليلًا" },
+  { value: "worse_with_exertion", label: "Worse with exertion", labelAr: "يسوء مع المجهود" },
+  { value: "relieved_by_rest", label: "Relieved by rest", labelAr: "يتحسن بالراحة" },
+  { value: "associated_fever", label: "Associated fever", labelAr: "مصاحب بحمى" },
+  { value: "associated_vomiting", label: "Associated vomiting", labelAr: "مصاحب بقيء" },
+  { value: "associated_diarrhea", label: "Associated diarrhea", labelAr: "مصاحب بإسهال" },
+  { value: "no_red_flags", label: "No reported red flags", labelAr: "لا توجد علامات خطورة مذكورة" },
 ];
 
-export const QUICK_FOLLOWUPS: QuickOption[] = [
-  { value: "3_days", label: "Review in 3 days", labelAr: "مراجعة بعد 3 أيام" },
-  { value: "1_week", label: "Review in 1 week", labelAr: "مراجعة بعد أسبوع" },
-  { value: "2_weeks", label: "Review in 2 weeks", labelAr: "مراجعة بعد أسبوعين" },
-  { value: "1_month", label: "Review in 1 month", labelAr: "مراجعة بعد شهر" },
-  { value: "prn", label: "Review as needed", labelAr: "المراجعة عند الحاجة" },
+export const QUICK_EXAM: QuickOption[] = [
+  { value: "well_appearing", label: "Well appearing", labelAr: "يبدو بحالة جيدة" },
+  { value: "ill_appearing", label: "Ill appearing", labelAr: "يبدو مريضًا" },
+  { value: "pale", label: "Pale", labelAr: "شحوب" },
+  { value: "jaundiced", label: "Jaundiced", labelAr: "يرقان" },
+  { value: "cyanosed", label: "Cyanosed", labelAr: "زرقة" },
+  { value: "dehydrated", label: "Dehydrated", labelAr: "جفاف" },
+  { value: "febrile", label: "Febrile", labelAr: "محموم" },
+  { value: "tachycardic", label: "Tachycardic", labelAr: "تسرع قلب" },
+  { value: "tachypneic", label: "Tachypneic", labelAr: "تسرع تنفس" },
+  { value: "hypertensive", label: "Hypertensive", labelAr: "ارتفاع ضغط الدم" },
+  { value: "hypotensive", label: "Hypotensive", labelAr: "انخفاض ضغط الدم" },
+  { value: "chest_clear", label: "Chest clear", labelAr: "الصدر سليم بالسماعة" },
+  { value: "wheeze", label: "Wheeze", labelAr: "صفير" },
+  { value: "crepitations", label: "Crepitations", labelAr: "خراخر" },
+  { value: "normal_heart_sounds", label: "Normal heart sounds", labelAr: "أصوات القلب طبيعية" },
+  { value: "murmur", label: "Murmur", labelAr: "نفخة قلبية" },
+  { value: "soft_abdomen", label: "Soft abdomen", labelAr: "البطن لين" },
+  { value: "tender_abdomen", label: "Abdominal tenderness", labelAr: "إيلام بالبطن" },
+  { value: "guarding", label: "Guarding", labelAr: "تيبس دفاعي" },
+  { value: "edema_present", label: "Edema present", labelAr: "وجود وذمة" },
+  { value: "neurologically_intact", label: "Neurologically intact", labelAr: "الفحص العصبي سليم" },
+  { value: "other", label: "Other", labelAr: "أخرى" },
 ];
 
-export const COMMON_DIAGNOSES: QuickOption[] = [
-  { value: "viral_uri", label: "Viral upper respiratory infection", labelAr: "عدوى فيروسية بالجهاز التنفسي العلوي" },
-  { value: "acute_gastroenteritis", label: "Acute gastroenteritis", labelAr: "التهاب معدة وأمعاء حاد" },
-  { value: "essential_hypertension", label: "Essential hypertension", labelAr: "ارتفاع ضغط الدم الأساسي" },
-  { value: "type2_diabetes", label: "Type 2 diabetes mellitus", labelAr: "داء السكري النوع الثاني" },
-  { value: "iron_deficiency_anemia", label: "Iron deficiency anemia", labelAr: "فقر الدم بعوز الحديد" },
+export const QUICK_ASSESSMENT: QuickOption[] = [
+  { value: "viral_urti", label: "Viral URTI", labelAr: "عدوى فيروسية بالجهاز التنفسي العلوي" },
+  { value: "bacterial_urti", label: "Bacterial URTI", labelAr: "عدوى بكتيرية بالجهاز التنفسي العلوي" },
   { value: "acute_bronchitis", label: "Acute bronchitis", labelAr: "التهاب الشعب الهوائية الحاد" },
+  { value: "pneumonia", label: "Pneumonia", labelAr: "التهاب رئوي" },
+  { value: "asthma_exacerbation", label: "Asthma exacerbation", labelAr: "تفاقم الربو" },
+  { value: "gastroenteritis", label: "Acute gastroenteritis", labelAr: "التهاب المعدة والأمعاء الحاد" },
   { value: "uti", label: "Urinary tract infection", labelAr: "التهاب المسالك البولية" },
-  { value: "low_back_pain", label: "Low back pain", labelAr: "ألم أسفل الظهر" },
+  { value: "malaria_suspected", label: "Suspected malaria", labelAr: "اشتباه ملاريا" },
+  { value: "malaria_confirmed", label: "Confirmed malaria", labelAr: "ملاريا مؤكدة" },
+  { value: "hypertension", label: "Hypertension", labelAr: "ارتفاع ضغط الدم" },
+  { value: "diabetes", label: "Diabetes mellitus", labelAr: "داء السكري" },
+  { value: "migraine", label: "Migraine", labelAr: "صداع نصفي" },
+  { value: "tension_headache", label: "Tension headache", labelAr: "صداع توتري" },
+  { value: "musculoskeletal_pain", label: "Musculoskeletal pain", labelAr: "ألم عضلي هيكلي" },
+  { value: "pregnancy", label: "Pregnancy", labelAr: "حمل" },
+  { value: "other", label: "Other", labelAr: "أخرى" },
 ];
 
-export const QUICK_DIAGNOSES = COMMON_DIAGNOSES;
+export const QUICK_PLAN: QuickOption[] = [
+  { value: "symptomatic_treatment", label: "Symptomatic treatment", labelAr: "علاج عرضي" },
+  { value: "oral_hydration", label: "Oral hydration", labelAr: "إماهة فموية" },
+  { value: "fluids", label: "Fluids", labelAr: "سوائل" },
+  { value: "rest", label: "Rest", labelAr: "راحة" },
+  { value: "diet_advice", label: "Diet advice", labelAr: "نصائح غذائية" },
+  { value: "lifestyle_modification", label: "Lifestyle modification", labelAr: "تعديل نمط الحياة" },
+  { value: "medication", label: "Medication prescribed", labelAr: "تم وصف علاج" },
+  { value: "laboratory_tests", label: "Laboratory tests", labelAr: "فحوصات مخبرية" },
+  { value: "imaging", label: "Imaging requested", labelAr: "طلب تصوير" },
+  { value: "follow_up", label: "Follow-up", labelAr: "متابعة" },
+  { value: "referral", label: "Referral", labelAr: "تحويل" },
+  { value: "emergency_referral", label: "Emergency referral", labelAr: "تحويل للطوارئ" },
+  { value: "return_if_worse", label: "Return if symptoms worsen", labelAr: "العودة عند تدهور الأعراض" },
+  { value: "no_medication", label: "No medication required", labelAr: "لا حاجة لدواء" },
+];
+
+export const DOSAGE_FORMS: QuickOption[] = [
+  { value: "tablet", label: "Tablet", labelAr: "قرص" },
+  { value: "capsule", label: "Capsule", labelAr: "كبسولة" },
+  { value: "syrup", label: "Syrup", labelAr: "شراب" },
+  { value: "suspension", label: "Suspension", labelAr: "معلق" },
+  { value: "drops", label: "Drops", labelAr: "قطرات" },
+  { value: "injection", label: "Injection", labelAr: "حقن" },
+  { value: "cream", label: "Cream", labelAr: "كريم" },
+  { value: "ointment", label: "Ointment", labelAr: "مرهم" },
+  { value: "gel", label: "Gel", labelAr: "جل" },
+  { value: "lotion", label: "Lotion", labelAr: "لوشن" },
+  { value: "suppository", label: "Suppository", labelAr: "تحاميل" },
+  { value: "inhaler", label: "Inhaler", labelAr: "بخاخ" },
+  { value: "solution", label: "Solution", labelAr: "محلول" },
+  { value: "sachet", label: "Sachet", labelAr: "ظرف" },
+];
+
+export const ROUTES: QuickOption[] = [
+  { value: "oral", label: "Oral", labelAr: "عن طريق الفم" },
+  { value: "iv", label: "IV", labelAr: "وريدي" },
+  { value: "im", label: "IM", labelAr: "عضلي" },
+  { value: "sc", label: "SC", labelAr: "تحت الجلد" },
+  { value: "topical", label: "Topical", labelAr: "موضعي" },
+  { value: "inhaled", label: "Inhaled", labelAr: "استنشاق" },
+  { value: "nasal", label: "Nasal", labelAr: "أنفي" },
+  { value: "ophthalmic", label: "Ophthalmic", labelAr: "عيني" },
+  { value: "otic", label: "Otic", labelAr: "أذني" },
+  { value: "rectal", label: "Rectal", labelAr: "شرجي" },
+  { value: "vaginal", label: "Vaginal", labelAr: "مهبلي" },
+];
+
+export const FREQUENCIES: QuickOption[] = [
+  { value: "once_daily", label: "Once daily", labelAr: "مرة يوميًا" },
+  { value: "twice_daily", label: "Twice daily", labelAr: "مرتين يوميًا" },
+  { value: "three_daily", label: "Three times daily", labelAr: "ثلاث مرات يوميًا" },
+  { value: "four_daily", label: "Four times daily", labelAr: "أربع مرات يوميًا" },
+  { value: "every_4_hours", label: "Every 4 hours", labelAr: "كل 4 ساعات" },
+  { value: "every_6_hours", label: "Every 6 hours", labelAr: "كل 6 ساعات" },
+  { value: "every_8_hours", label: "Every 8 hours", labelAr: "كل 8 ساعات" },
+  { value: "every_12_hours", label: "Every 12 hours", labelAr: "كل 12 ساعة" },
+  { value: "weekly", label: "Once weekly", labelAr: "مرة أسبوعيًا" },
+  { value: "prn", label: "As needed", labelAr: "عند اللزوم" },
+  { value: "stat", label: "Immediately", labelAr: "فورًا" },
+];
+
+export const DURATIONS: QuickOption[] = [
+  { value: "1_day", label: "1 day", labelAr: "يوم واحد" },
+  { value: "3_days", label: "3 days", labelAr: "3 أيام" },
+  { value: "5_days", label: "5 days", labelAr: "5 أيام" },
+  { value: "7_days", label: "7 days", labelAr: "7 أيام" },
+  { value: "10_days", label: "10 days", labelAr: "10 أيام" },
+  { value: "14_days", label: "14 days", labelAr: "14 يومًا" },
+  { value: "21_days", label: "21 days", labelAr: "21 يومًا" },
+  { value: "30_days", label: "30 days", labelAr: "30 يومًا" },
+  { value: "60_days", label: "60 days", labelAr: "60 يومًا" },
+  { value: "90_days", label: "90 يومًا", labelAr: "90 يومًا" },
+  { value: "ongoing", label: "Ongoing", labelAr: "مستمر" },
+];
+
+export const DOSES: QuickOption[] = [
+  { value: "1", label: "1", labelAr: "1" },
+  { value: "2", label: "2", labelAr: "2" },
+  { value: "2.5", label: "2.5", labelAr: "2.5" },
+  { value: "5", label: "5", labelAr: "5" },
+  { value: "7.5", label: "7.5", labelAr: "7.5" },
+  { value: "10", label: "10", labelAr: "10" },
+  { value: "15", label: "15", labelAr: "15" },
+  { value: "20", label: "20", labelAr: "20" },
+  { value: "25", label: "25", labelAr: "25" },
+  { value: "50", label: "50", labelAr: "50" },
+  { value: "100", label: "100", labelAr: "100" },
+];
