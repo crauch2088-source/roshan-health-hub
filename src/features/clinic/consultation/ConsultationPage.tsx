@@ -1,39 +1,31 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { QUICK_COMPLAINTS } from "../options";
+import { StatusBadge } from "@/components/kit";
 import { useAuth } from "@/lib/auth";
-import { useRows, useSave, type Row, s } from "@/lib/db";
+import { rel, s, useRows, useSave, type Row } from "@/lib/db";
+import { useLang } from "@/lib/i18n";
+import { calcAge } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
+import { ClinicalNoteTab } from "./components/ClinicalNoteTab";
+import { VitalsTab } from "./components/VitalsTab";
+import { LaboratoryTab } from "./components/LaboratoryTab";
+import { PrescriptionTab } from "./components/PrescriptionTab";
+import { HistoryTab } from "./components/HistoryTab";
 
-export function ClinicalNoteTab({ visitId }: { visitId:string }) {
-  const { user }=useAuth();
-  const [form,setForm]=useState<Record<string,string>>({});
-  const noteQ=useRows<Row[]>(["clinical-note",visitId],()=>supabase.from("clinical_notes").select("*").eq("visit_id",visitId).is("deleted_at",null).order("created_at",{ascending:false}).limit(1));
-  const diagnosesQ=useRows<Row[]>(["diagnoses",visitId],()=>supabase.from("diagnoses").select("*").eq("visit_id",visitId).is("deleted_at",null).order("created_at"));
-  useEffect(()=>{const r=((noteQ.data??[]) as Row[])[0];if(r)setForm(r)},[noteQ.data]);
-
-  const save=useSave(async()=>{
-    const existing=((noteQ.data??[]) as Row[])[0];
-    const payload={visit_id:visitId,chief_complaint:form.chief_complaint||null,hpi:form.hpi||null,past_medical_history:form.past_medical_history||null,drug_history:form.drug_history||null,allergy_history:form.allergy_history||null,examination:form.examination||null,assessment:form.assessment||null,plan:form.plan||null,doctor_id:user?.id??null,updated_by:user?.id??null};
-    const q=existing?supabase.from("clinical_notes").update(payload).eq("id",s(existing,"id")):supabase.from("clinical_notes").insert({...payload,created_by:user?.id??null});
-    const {error}=await q;if(error)throw new Error(error.message);return null;
-  },{invalidate:[["clinical-note",visitId]],successMessage:"تم حفظ الملاحظات / Clinical note saved"});
-  const addDiagnosis=useSave(async()=>{
-    const name=(form.new_diagnosis||"").trim();if(!name)throw new Error("أدخل التشخيص");
-    const {error}=await supabase.from("diagnoses").insert({visit_id:visitId,diagnosis_name:name,icd10_code:form.icd10||null,diagnosis_type:"clinical",is_primary:((diagnosesQ.data??[]) as Row[]).length===0,doctor_id:user?.id??null,created_by:user?.id??null});
-    if(error)throw new Error(error.message);setForm({...form,new_diagnosis:"",icd10:""});return null;
-  },{invalidate:[["diagnoses",visitId]],successMessage:"تم حفظ التشخيص"});
-  const set=(k:string,v:string)=>setForm({...form,[k]:v});
-  const diagnosisSuggestions=["Upper respiratory tract infection","Acute gastroenteritis","Hypertension","Type 2 diabetes mellitus","Malaria","Urinary tract infection","Acute pharyngitis","Low back pain"];
-  return <div className="space-y-5" dir="auto">
-    <Card><CardContent className="grid gap-4 p-4 md:grid-cols-2">
-      <div className="md:col-span-2"><div className="mb-2 text-sm font-medium">الشكوى السريعة / Quick complaints</div><div className="flex flex-wrap gap-2">{QUICK_COMPLAINTS.map((x)=><button type="button" key={x.id} onClick={()=>set("chief_complaint",x.label)} className="rounded-full border px-3 py-1.5 text-xs hover:bg-muted">{x.label}</button>)}</div></div>
-      {([["chief_complaint","الشكوى الرئيسية / Chief complaint"],["hpi","تاريخ المرض الحالي / HPI"],["past_medical_history","التاريخ المرضي السابق"],["drug_history","الأدوية الحالية"],["allergy_history","الحساسيات"],["examination","الفحص السريري"],["assessment","التقييم"],["plan","الخطة العلاجية"]] as const).map(([k,l])=><label key={k} className="space-y-1 text-sm md:col-span-2"><span className="font-medium">{l}</span><Textarea value={form[k]??""} onChange={e=>set(k,e.target.value)} rows={k==="chief_complaint"||k==="assessment"?2:3}/></label>)}
-      <div className="flex justify-end md:col-span-2"><Button disabled={save.isPending} onClick={()=>save.mutate(undefined as never)}>{save.isPending?"Saving...":"حفظ الملاحظات"}</Button></div>
-    </CardContent></Card>
-    <Card><CardContent className="space-y-4 p-4"><h3 className="font-semibold">التشخيصات</h3>{((diagnosesQ.data??[]) as Row[]).map(d=><div key={s(d,"id")} className="flex items-center justify-between rounded border p-2"><span>{s(d,"diagnosis_name")}{s(d,"icd10_code")&&<span className="ms-2 text-xs text-muted-foreground">{s(d,"icd10_code")}</span>}</span><span className="text-xs">{s(d,"is_primary")==="true"?"Primary":""}</span></div>)}<div className="flex flex-wrap gap-2">{diagnosisSuggestions.map(d=><button type="button" key={d} onClick={()=>set("new_diagnosis",d)} className="rounded-full border px-3 py-1.5 text-xs hover:bg-muted">{d}</button>)}</div><div className="grid gap-2 sm:grid-cols-[1fr_180px_auto]"><Input placeholder="التشخيص" value={form.new_diagnosis??""} onChange={e=>set("new_diagnosis",e.target.value)}/><Input dir="ltr" placeholder="ICD-10" value={form.icd10??""} onChange={e=>set("icd10",e.target.value)}/><Button variant="outline" disabled={addDiagnosis.isPending} onClick={()=>addDiagnosis.mutate(undefined as never)}>إضافة</Button></div></CardContent></Card>
-  </div>;
+export function ConsultationPage({visitId}:{visitId:string}){
+ const {lang}=useLang();const {user}=useAuth();const [tab,setTab]=useState("note");
+ const visitQ=useRows<Row[]>(["consultation-visit",visitId],()=>supabase.from("visits").select("id,visit_number,status,visit_date,patient_id,doctor_id,department_id,consultation_fee,patients(id,full_name,mrn,patient_number,gender,date_of_birth),departments(name,name_ar),users!visits_doctor_id_fkey(full_name)").eq("id",visitId).limit(1));
+ const visit=(visitQ.data??[])[0] as Row|undefined;const patient=rel(visit,"patients");
+ const finish=useSave(async()=>{const {error}=await supabase.from("visits").update({status:"completed",completed_at:new Date().toISOString(),updated_by:user?.id??null}).eq("id",visitId);if(error)throw new Error(error.message);return null;},{invalidate:[["consultation-visit",visitId],["clinic-visits"],["visits"]],successMessage:"تم إنهاء الزيارة"});
+ if(!visit)return <div className="p-6">{visitQ.isLoading?"Loading...":"Visit not found"}</div>;
+ const tabs=[["note","الملاحظات"],["vitals","العلامات الحيوية"],["labs","المختبر"],["prescription","الوصفة"],["history","السجل السابق"]];
+ return <div className="container mx-auto max-w-7xl space-y-4 p-4" dir="auto">
+   <div className="flex flex-wrap items-center gap-2"><Button asChild variant="outline" size="sm"><Link to="/clinic"><ArrowLeft className="size-4"/> {lang==="ar"?"العيادة":"Clinic"}</Link></Button><div className="ms-auto flex gap-2"><StatusBadge status={s(visit,"status")}/>{s(visit,"status")!=="completed"&&<Button size="sm" onClick={()=>finish.mutate(undefined as never)} disabled={finish.isPending}><CheckCircle2 className="size-4"/>إنهاء الزيارة</Button>}</div></div>
+   <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4"><div><div className="text-xs text-muted-foreground">Patient</div><div className="font-semibold">{s(patient,"full_name")}</div><div className="text-xs" dir="ltr">{s(patient,"mrn")||s(patient,"patient_number")}</div></div><div><div className="text-xs text-muted-foreground">Age / Sex</div><div>{calcAge(s(patient,"date_of_birth"))??"—"} · {s(patient,"gender")}</div></div><div><div className="text-xs text-muted-foreground">Department</div><div>{lang==="ar"?s(rel(visit,"departments"),"name_ar")||s(rel(visit,"departments"),"name"):s(rel(visit,"departments"),"name")}</div></div><div><div className="text-xs text-muted-foreground">Doctor</div><div>{s(rel(visit,"users"),"full_name")||"—"}</div></div></CardContent></Card>
+   <div className="overflow-x-auto border-b"><div className="flex min-w-max gap-1">{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`border-b-2 px-4 py-3 text-sm font-medium ${tab===k?"border-primary text-primary":"border-transparent text-muted-foreground"}`}>{l}</button>)}</div></div>
+   {tab==="note"&&<ClinicalNoteTab visitId={visitId}/>} {tab==="vitals"&&<VitalsTab visitId={visitId}/>} {tab==="labs"&&<LaboratoryTab visitId={visitId}/>} {tab==="prescription"&&<PrescriptionTab visitId={visitId}/>} {tab==="history"&&<HistoryTab visitId={visitId}/>}
+ </div>;
 }
