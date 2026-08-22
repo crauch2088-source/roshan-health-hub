@@ -26,7 +26,7 @@ function LabPage() {
 
   const orders = useRows<Row[]>(["lab-orders", status], () => {
     let q = supabase.from("lab_orders")
-      .select("id,status,created_at,ordered_at,priority,patients(id,full_name,mrn,patient_number),users!lab_orders_ordered_by_fkey(full_name),lab_order_items(id,status,price,lab_tests(id,name,name_ar))")
+      .select("id,status,created_at,ordered_at,priority,visit_id,patients(id,full_name,mrn,patient_number,phone),users!lab_orders_ordered_by_fkey(full_name),lab_order_items(id,status,price,lab_tests(id,name,name_ar))")
       .is("deleted_at", null).order("created_at", { ascending: false }).limit(300);
     if (status !== "all") q = q.eq("status", status);
     return q;
@@ -39,7 +39,7 @@ function LabPage() {
     const term = search.trim().toLowerCase();
     if (!term) return true;
     const tests = ((o["lab_order_items"] as Row[]) ?? []).map((i) => { const t = rel(i,"lab_tests"); return `${s(t,"name")} ${s(t,"name_ar")}`; }).join(" ");
-    return `${s(p,"full_name")} ${s(p,"mrn")} ${s(p,"patient_number")} ${tests}`.toLowerCase().includes(term);
+    return `${s(p,"full_name")} ${s(p,"mrn")} ${s(p,"patient_number")} ${s(p,"phone")} ${s(o,"id")} ${s(o,"visit_id")} ${tests}`.toLowerCase().includes(term);
   });
 
   return <div className="space-y-4">
