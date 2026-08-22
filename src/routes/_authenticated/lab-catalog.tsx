@@ -128,8 +128,7 @@ function LabCatalogPage() {
 
   const rows = ((tests.data ?? []) as Row[]).filter(
     (x) =>
-      s(x, "name").toLowerCase().includes(search.toLowerCase()) ||
-      s(x, "name_ar").includes(search),
+      `${s(x, "name")} ${s(x, "name_ar")} ${s(x, "code")} ${s(x, "category")}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
   if (tests.isLoading) return <Loading />;
 
