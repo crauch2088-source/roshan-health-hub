@@ -71,18 +71,6 @@ function LabOrderPage() {
         .order("created_at"),
   );
 
-  const resultsQ = useRows<Row[]>(
-    ["lab-results", orderId],
-    () =>
-      supabase
-        .from("lab_results")
-        .select(
-          "id,order_item_id,parameter_id,result_value,numeric_value,flag,comment,is_abnormal,verified_by,verified_at",
-        )
-        .eq("order_item_id", orderId)
-        .limit(0),
-  );
-
   const order = (orderQ.data ?? [])[0] as Row | undefined;
   const patient = rel(order, "patients");
   const items = (itemsQ.data ?? []) as Row[];
@@ -387,8 +375,7 @@ function LabOrderPage() {
           itemsQ.error ??
           actualResultsQ.error ??
           parametersQ.error ??
-          rangeQ.error ??
-          resultsQ.error
+          rangeQ.error
         }
       />
 
