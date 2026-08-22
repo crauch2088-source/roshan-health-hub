@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -44,6 +45,7 @@ function PharmacyPage() {
   const { can, user } = useAuth();
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
+  const [search, setSearch] = useState("");
 
   const list = useRows(
     ["pharmacy-queue", status],
@@ -93,12 +95,13 @@ function PharmacyPage() {
     { invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"]], successMessage: t("dispensed") },
   );
 
-  const rows = (list.data ?? []) as Row[];
+  const rows = useMemo(() => { const q = search.trim().toLowerCase(); return ((list.data ?? []) as Row[]).filter((p) => { if (!q) return true; const patient = rel(p, "patients"); const items = (p["prescription_items"] as Row[]) ?? []; const meds = items.map((i) => s(rel(i, "medicines"), "name")).join(" "); return `${s(patient,"full_name")} ${s(patient,"mrn")} ${s(patient,"patient_number")} ${meds}`.toLowerCase().includes(q); }); }, [list.data, search]);
   if (list.isLoading) return <Loading />;
 
   return (
     <div>
       <PageHeader title={t("pharmacy")} subtitle={t("dispense_queue")}>
+        <Input placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-56" />
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-40">
             <SelectValue />
