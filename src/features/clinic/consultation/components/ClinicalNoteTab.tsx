@@ -28,12 +28,12 @@ function appendText(current: string, value: string) {
   return `${current.trim()}\n${value}`;
 }
 
-function QuickChips({ items, lang, onPick }: { items: { en: string; ar: string }[]; lang: string; onPick: (value: string) => void }) {
+function QuickChips({ items, lang, onPick }: { items: { value: string; label: string; labelAr: string }[]; lang: string; onPick: (value: string) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item) => {
-        const label = lang === "ar" ? item.ar : item.en;
-        return <Button key={`${item.en}-${item.ar}`} type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => onPick(label)}>{label}</Button>;
+        const label = lang === "ar" ? item.labelAr : item.label;
+        return <Button key={item.value} type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => onPick(label)}>{label}</Button>;
       })}
     </div>
   );
@@ -50,21 +50,24 @@ export function ClinicalNoteTab({ visitId }: { visitId: string }) {
 
   useEffect(() => {
     const r = ((noteQ.data ?? []) as Row[])[0];
-    if (r) setForm(r);
+    if (!r) return;
+    const next: Record<string, string> = {};
+    for (const [key, value] of Object.entries(r)) next[key] = value == null ? "" : String(value);
+    setForm(next);
   }, [noteQ.data]);
 
   const save = useSave(async () => {
     const existing = ((noteQ.data ?? []) as Row[])[0];
     const payload = {
       visit_id: visitId,
-      chief_complaint: form.chief_complaint || null,
-      hpi: form.hpi || null,
-      past_medical_history: form.past_medical_history || null,
-      drug_history: form.drug_history || null,
-      allergy_history: form.allergy_history || null,
-      examination: form.examination || null,
-      assessment: form.assessment || null,
-      plan: form.plan || null,
+      chief_complaint: form["chief_complaint"] || null,
+      hpi: form["hpi"] || null,
+      past_medical_history: form["past_medical_history"] || null,
+      drug_history: form["drug_history"] || null,
+      allergy_history: form["allergy_history"] || null,
+      examination: form["examination"] || null,
+      assessment: form["assessment"] || null,
+      plan: form["plan"] || null,
       doctor_id: user?.id ?? null,
       updated_by: user?.id ?? null,
     };
@@ -77,12 +80,12 @@ export function ClinicalNoteTab({ visitId }: { visitId: string }) {
   }, { invalidate: [["clinical-note", visitId]], successMessage: lang === "ar" ? "تم حفظ الملاحظات" : "Clinical note saved" });
 
   const addDiagnosis = useSave(async () => {
-    const name = (form.new_diagnosis || "").trim();
+    const name = (form["new_diagnosis"] || "").trim();
     if (!name) throw new Error(lang === "ar" ? "أدخل التشخيص" : "Enter a diagnosis");
     const { error } = await supabase.from("diagnoses").insert({
       visit_id: visitId,
       diagnosis_name: name,
-      icd10_code: form.icd10 || null,
+      icd10_code: form["icd10"] || null,
       diagnosis_type: "clinical",
       is_primary: ((diagnosesQ.data ?? []) as Row[]).length === 0,
       doctor_id: user?.id ?? null,
@@ -125,8 +128,8 @@ export function ClinicalNoteTab({ visitId }: { visitId: string }) {
         <CardHeader><CardTitle className="text-base">{lang === "ar" ? "التشخيصات" : "Diagnoses"}</CardTitle></CardHeader>
         <CardContent className="space-y-4 p-4">
           <div className="grid gap-2 sm:grid-cols-[1fr_180px_auto]">
-            <Input placeholder={lang === "ar" ? "التشخيص" : "Diagnosis"} value={form.new_diagnosis ?? ""} onChange={(e) => set("new_diagnosis", e.target.value)} />
-            <Input dir="ltr" placeholder="ICD-10" value={form.icd10 ?? ""} onChange={(e) => set("icd10", e.target.value)} />
+            <Input placeholder={lang === "ar" ? "التشخيص" : "Diagnosis"} value={form["new_diagnosis"] ?? ""} onChange={(e) => set("new_diagnosis", e.target.value)} />
+            <Input dir="ltr" placeholder="ICD-10" value={form["icd10"] ?? ""} onChange={(e) => set("icd10", e.target.value)} />
             <Button variant="outline" disabled={addDiagnosis.isPending} onClick={() => addDiagnosis.mutate(undefined as never)}>{lang === "ar" ? "إضافة" : "Add"}</Button>
           </div>
           {diagnoses.length > 3 && <Input value={diagnosisSearch} onChange={(e) => setDiagnosisSearch(e.target.value)} placeholder={lang === "ar" ? "بحث داخل تشخيصات الزيارة" : "Search visit diagnoses"} />}
