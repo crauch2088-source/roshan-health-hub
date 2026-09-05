@@ -33,9 +33,9 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
-import { Route as AuthenticatedBillingInvoiceIdRouteImport } from './routes/_authenticated/billing.$invoiceId'
+import { Route as AuthenticatedBillingInvoiceIdRouteImport } from './routes/_authenticated/billing_.$invoiceId'
 import { Route as AuthenticatedClinicVisitIdRouteImport } from './routes/_authenticated/clinic_.$visitId'
-import { Route as AuthenticatedLabOrderIdRouteImport } from './routes/_authenticated/lab.$orderId'
+import { Route as AuthenticatedLabOrderIdRouteImport } from './routes/_authenticated/lab_.$orderId'
 import { Route as AuthenticatedPatientsPatientIdRouteImport } from './routes/_authenticated/patients_.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -161,9 +161,9 @@ const AuthenticatedVisitsRoute = AuthenticatedVisitsRouteImport.update({
 } as any)
 const AuthenticatedBillingInvoiceIdRoute =
   AuthenticatedBillingInvoiceIdRouteImport.update({
-    id: '/$invoiceId',
-    path: '/$invoiceId',
-    getParentRoute: () => AuthenticatedBillingRoute,
+    id: '/billing_/$invoiceId',
+    path: '/billing/$invoiceId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedClinicVisitIdRoute =
   AuthenticatedClinicVisitIdRouteImport.update({
@@ -172,9 +172,9 @@ const AuthenticatedClinicVisitIdRoute =
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLabOrderIdRoute = AuthenticatedLabOrderIdRouteImport.update({
-  id: '/$orderId',
-  path: '/$orderId',
-  getParentRoute: () => AuthenticatedLabRoute,
+  id: '/lab_/$orderId',
+  path: '/lab/$orderId',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPatientsPatientIdRoute =
   AuthenticatedPatientsPatientIdRouteImport.update({
@@ -190,14 +190,14 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/audit': typeof AuthenticatedAuditRoute
-  '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/billing': typeof AuthenticatedBillingRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
   '/clinic': typeof AuthenticatedClinicRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/expenses': typeof AuthenticatedExpensesRoute
   '/followups': typeof AuthenticatedFollowupsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
-  '/lab': typeof AuthenticatedLabRouteWithChildren
+  '/lab': typeof AuthenticatedLabRoute
   '/lab-catalog': typeof AuthenticatedLabCatalogRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/patients': typeof AuthenticatedPatientsRoute
@@ -219,14 +219,14 @@ export interface FileRoutesByTo {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/audit': typeof AuthenticatedAuditRoute
-  '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/billing': typeof AuthenticatedBillingRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
   '/clinic': typeof AuthenticatedClinicRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/expenses': typeof AuthenticatedExpensesRoute
   '/followups': typeof AuthenticatedFollowupsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
-  '/lab': typeof AuthenticatedLabRouteWithChildren
+  '/lab': typeof AuthenticatedLabRoute
   '/lab-catalog': typeof AuthenticatedLabCatalogRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/patients': typeof AuthenticatedPatientsRoute
@@ -250,14 +250,14 @@ export interface FileRoutesById {
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
-  '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
   '/_authenticated/clinic': typeof AuthenticatedClinicRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
   '/_authenticated/followups': typeof AuthenticatedFollowupsRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
-  '/_authenticated/lab': typeof AuthenticatedLabRouteWithChildren
+  '/_authenticated/lab': typeof AuthenticatedLabRoute
   '/_authenticated/lab-catalog': typeof AuthenticatedLabCatalogRoute
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRoute
@@ -267,9 +267,9 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
-  '/_authenticated/billing/$invoiceId': typeof AuthenticatedBillingInvoiceIdRoute
+  '/_authenticated/billing_/$invoiceId': typeof AuthenticatedBillingInvoiceIdRoute
   '/_authenticated/clinic_/$visitId': typeof AuthenticatedClinicVisitIdRoute
-  '/_authenticated/lab/$orderId': typeof AuthenticatedLabOrderIdRoute
+  '/_authenticated/lab_/$orderId': typeof AuthenticatedLabOrderIdRoute
   '/_authenticated/patients_/$patientId': typeof AuthenticatedPatientsPatientIdRoute
 }
 export interface FileRouteTypes {
@@ -357,9 +357,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/users'
     | '/_authenticated/visits'
-    | '/_authenticated/billing/$invoiceId'
+    | '/_authenticated/billing_/$invoiceId'
     | '/_authenticated/clinic_/$visitId'
-    | '/_authenticated/lab/$orderId'
+    | '/_authenticated/lab_/$orderId'
     | '/_authenticated/patients_/$patientId'
   fileRoutesById: FileRoutesById
 }
@@ -540,12 +540,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVisitsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/billing/$invoiceId': {
-      id: '/_authenticated/billing/$invoiceId'
-      path: '/$invoiceId'
+    '/_authenticated/billing_/$invoiceId': {
+      id: '/_authenticated/billing_/$invoiceId'
+      path: '/billing/$invoiceId'
       fullPath: '/billing/$invoiceId'
       preLoaderRoute: typeof AuthenticatedBillingInvoiceIdRouteImport
-      parentRoute: typeof AuthenticatedBillingRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clinic_/$visitId': {
       id: '/_authenticated/clinic_/$visitId'
@@ -554,12 +554,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClinicVisitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/lab/$orderId': {
-      id: '/_authenticated/lab/$orderId'
-      path: '/$orderId'
+    '/_authenticated/lab_/$orderId': {
+      id: '/_authenticated/lab_/$orderId'
+      path: '/lab/$orderId'
       fullPath: '/lab/$orderId'
       preLoaderRoute: typeof AuthenticatedLabOrderIdRouteImport
-      parentRoute: typeof AuthenticatedLabRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/patients_/$patientId': {
       id: '/_authenticated/patients_/$patientId'
@@ -571,40 +571,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedBillingRouteChildren {
-  AuthenticatedBillingInvoiceIdRoute: typeof AuthenticatedBillingInvoiceIdRoute
-}
-
-const AuthenticatedBillingRouteChildren: AuthenticatedBillingRouteChildren = {
-  AuthenticatedBillingInvoiceIdRoute: AuthenticatedBillingInvoiceIdRoute,
-}
-
-const AuthenticatedBillingRouteWithChildren =
-  AuthenticatedBillingRoute._addFileChildren(AuthenticatedBillingRouteChildren)
-
-interface AuthenticatedLabRouteChildren {
-  AuthenticatedLabOrderIdRoute: typeof AuthenticatedLabOrderIdRoute
-}
-
-const AuthenticatedLabRouteChildren: AuthenticatedLabRouteChildren = {
-  AuthenticatedLabOrderIdRoute: AuthenticatedLabOrderIdRoute,
-}
-
-const AuthenticatedLabRouteWithChildren =
-  AuthenticatedLabRoute._addFileChildren(AuthenticatedLabRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingRoute: typeof AuthenticatedAccountingRoute
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
-  AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
   AuthenticatedClinicRoute: typeof AuthenticatedClinicRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
   AuthenticatedFollowupsRoute: typeof AuthenticatedFollowupsRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
-  AuthenticatedLabRoute: typeof AuthenticatedLabRouteWithChildren
+  AuthenticatedLabRoute: typeof AuthenticatedLabRoute
   AuthenticatedLabCatalogRoute: typeof AuthenticatedLabCatalogRoute
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRoute
@@ -614,7 +592,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVisitsRoute: typeof AuthenticatedVisitsRoute
+  AuthenticatedBillingInvoiceIdRoute: typeof AuthenticatedBillingInvoiceIdRoute
   AuthenticatedClinicVisitIdRoute: typeof AuthenticatedClinicVisitIdRoute
+  AuthenticatedLabOrderIdRoute: typeof AuthenticatedLabOrderIdRoute
   AuthenticatedPatientsPatientIdRoute: typeof AuthenticatedPatientsPatientIdRoute
 }
 
@@ -622,14 +602,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingRoute: AuthenticatedAccountingRoute,
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
-  AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,
   AuthenticatedClinicRoute: AuthenticatedClinicRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
   AuthenticatedFollowupsRoute: AuthenticatedFollowupsRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
-  AuthenticatedLabRoute: AuthenticatedLabRouteWithChildren,
+  AuthenticatedLabRoute: AuthenticatedLabRoute,
   AuthenticatedLabCatalogRoute: AuthenticatedLabCatalogRoute,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRoute,
@@ -639,7 +619,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVisitsRoute: AuthenticatedVisitsRoute,
+  AuthenticatedBillingInvoiceIdRoute: AuthenticatedBillingInvoiceIdRoute,
   AuthenticatedClinicVisitIdRoute: AuthenticatedClinicVisitIdRoute,
+  AuthenticatedLabOrderIdRoute: AuthenticatedLabOrderIdRoute,
   AuthenticatedPatientsPatientIdRoute: AuthenticatedPatientsPatientIdRoute,
 }
 

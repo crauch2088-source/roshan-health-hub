@@ -1,8 +1,9 @@
 /** Shared types for the consultation workspace. */
 
 export type QuickOption = {
-  en: string;
-  ar: string;
+  value: string;
+  label: string;
+  labelAr: string;
 };
 
 export type RxItem = {
