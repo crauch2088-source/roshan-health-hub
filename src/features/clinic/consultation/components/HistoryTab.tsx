@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Empty, Loading, StatusBadge } from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
-import { rel, s, useRows, type Row } from "@/lib/db";
+import { s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
