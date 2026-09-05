@@ -40,15 +40,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useAuth } from "@/lib/auth";
-import {
-  n,
-  rel,
-  s,
-  useRows,
-  useSave,
-  useSettings,
-  type Row,
-} from "@/lib/db";
+import { n, rel, rpc, s, type Row, useRows, useSave, useSettings } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -152,9 +144,9 @@ function VisitsPage() {
   const patients = useRows<Row[]>(
     ["patients-lite", patientSearch],
     () => {
-      let q = supabase.from("patients").select("id, full_name, mrn, patient_number, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
+      let q = supabase.from("patients").select("id, full_name, mrn, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
       const term = patientSearch.replace(/[,()%]/g, "").trim();
-      if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,patient_number.ilike.%${term}%,phone.ilike.%${term}%`);
+      if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,phone.ilike.%${term}%`);
       return q;
     },
   );
@@ -207,7 +199,7 @@ function VisitsPage() {
         status: "waiting",
         consultation_fee: Number(form.consultation_fee) || 0,
         notes: form.notes.trim() || null,
-      });
+      }).select("id").single();
 
       if (error) {
         throw new Error(error.message);
@@ -396,7 +388,7 @@ function VisitsPage() {
                           key={s(patient, "id")}
                           value={s(patient, "id")}
                         >
-                          {s(patient, "full_name")} — {s(patient, "mrn") || s(patient, "patient_number") || s(patient, "phone")}
+                          {s(patient, "full_name")} — {s(patient, "mrn") || s(patient, "phone")}
                         </SelectItem>
                       ))}
                     </SelectContent>

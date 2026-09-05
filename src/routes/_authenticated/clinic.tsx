@@ -79,7 +79,7 @@ function ClinicPage() {
               id,
               full_name,
               mrn,
-              patient_number,
+              mrn,
               phone,
               date_of_birth,
               dob,
@@ -107,7 +107,7 @@ function ClinicPage() {
     if (!term) return true;
     const patient = rel(visit, "patients");
     const dept = rel(visit, "departments");
-    return `${s(patient, "full_name")} ${s(patient, "mrn")} ${s(patient, "patient_number")} ${s(patient, "phone")} ${s(visit, "visit_number")} ${s(dept, "name")} ${s(dept, "name_ar")}`.toLowerCase().includes(term);
+    return `${s(patient, "full_name")} ${s(patient, "mrn")} ${s(patient, "phone")} ${s(visit, "visit_number")} ${s(dept, "name")} ${s(dept, "name_ar")}`.toLowerCase().includes(term);
   });
 
   if (visits.isLoading) {

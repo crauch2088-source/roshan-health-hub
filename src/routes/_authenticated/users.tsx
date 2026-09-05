@@ -35,7 +35,7 @@ import { b, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
-import { createStaffUser } from "./users.server";
+import { createStaffUser } from "./-users.server";
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({

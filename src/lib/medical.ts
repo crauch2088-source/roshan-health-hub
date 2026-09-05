@@ -24,19 +24,40 @@ export function calcBmi(weightKg?: number | null, heightCm?: number | null): num
 /** Naegele's rule: LMP + 280 days. */
 export function calcEdd(lmp?: string | null): string | null {
   if (!lmp) return null;
-  const d = new Date(lmp);
-  if (Number.isNaN(d.getTime())) return null;
-  d.setDate(d.getDate() + 280);
+  const d = parseDateOnly(lmp);
+  if (!d) return null;
+  d.setUTCDate(d.getUTCDate() + 280);
   return d.toISOString().slice(0, 10);
 }
 
 export function calcGestationalDays(lmp?: string | null): number | null {
   if (!lmp) return null;
-  const d = new Date(lmp);
-  if (Number.isNaN(d.getTime())) return null;
-  const diffTime = Math.abs(Date.now() - d.getTime());
-  const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const d = parseDateOnly(lmp);
+  if (!d) return null;
+  const today = new Date();
+  const todayUtc = Date.UTC(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const days = Math.floor((todayUtc - d.getTime()) / (1000 * 60 * 60 * 24));
   return days >= 0 ? days : null;
+}
+
+/** Parse an HTML date value without allowing the local timezone to shift it. */
+function parseDateOnly(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const date = new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00.000Z`);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== Number(match[1]) ||
+    date.getUTCMonth() + 1 !== Number(match[2]) ||
+    date.getUTCDate() !== Number(match[3])
+  ) {
+    return null;
+  }
+  return date;
 }
 
 export function formatGestationalAge(days?: number | null, lang: "ar" | "en" = "ar"): string {

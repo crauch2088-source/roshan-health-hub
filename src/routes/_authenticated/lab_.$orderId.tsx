@@ -353,9 +353,7 @@ function LabOrderPage() {
             ? "طلب المختبر"
             : "Laboratory order"
         }
-        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${
-          s(patient, "mrn") || s(patient, "patient_number")
-        } · ${t("age")}: ${age ?? "—"}`}
+        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${t("age")}: ${age ?? "—"}`}
       >
         <StatusBadge status={s(order, "status")} />
 
@@ -381,13 +379,9 @@ function LabOrderPage() {
 
       <Card>
         <CardContent className="p-4">
-          <SectionTitle
-            title={
-              lang === "ar"
-                ? "النتائج"
-                : "Results"
-            }
-          />
+          <SectionTitle>
+            {lang === "ar" ? "النتائج" : "Results"}
+          </SectionTitle>
 
           <div className="mt-4 space-y-6">
             {items.map((item) => {

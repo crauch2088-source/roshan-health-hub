@@ -95,12 +95,13 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useLang();
+  const { can } = useAuth();
   const location = useLocation();
 
   return (
     <nav className="space-y-4 p-3">
       {NAV.map((section) => {
-        const items = section.items;
+        const items = section.items.filter((item) => can(item.perm));
 
         if (!items.length) return null;
         return (
