@@ -37,7 +37,7 @@ const KEYS = [
 ] as const;
 
 function SettingsPage() {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const { can } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});
 
@@ -66,6 +66,16 @@ function SettingsPage() {
     },
     { invalidate: [["system_settings"]], successMessage: t("saved") },
   );
+
+  if (!can("settings.read")) {
+    return (
+      <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+        {lang === "ar"
+          ? "ليس لديك صلاحية للوصول إلى الإعدادات."
+          : "You are not authorized to access settings."}
+      </div>
+    );
+  }
 
   if (list.isLoading) return <Loading />;
   const set = (k: string) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });

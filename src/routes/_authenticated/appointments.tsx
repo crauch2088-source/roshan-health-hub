@@ -97,9 +97,9 @@ function AppointmentsPage() {
   );
 
   const patients = useRows(["patients-lite", patientSearch], () => {
-    let q = supabase.from("patients").select("id, full_name, mrn, patient_number, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
+    let q = supabase.from("patients").select("id, full_name, mrn, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
     const term = patientSearch.replace(/[,()%]/g, "").trim();
-    if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,patient_number.ilike.%${term}%,phone.ilike.%${term}%`);
+    if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,phone.ilike.%${term}%`);
     return q;
   });
 

@@ -23,13 +23,14 @@ const STATUSES = ["all", "waiting", "called", "in_progress", "completed", "cance
 function QueuePage() {
   const { lang, t } = useLang();
   const { can } = useAuth();
+  const canUpdate = can("visits.update");
   const [date, setDate] = useState(todayISO());
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
 
   const queue = useRows<Row[]>(["queue", date, status], () => {
     let q = supabase.from("queue_tickets")
-      .select("id,visit_id,queue_number,status,created_at,called_at,completed_at,visits(id,visit_number,patient_id,department_id,status,consultation_fee,patients(id,full_name,mrn,patient_number),departments(id,name,name_ar),users!visits_doctor_id_fkey(full_name))")
+      .select("id,visit_id,queue_number,status,created_at,called_at,completed_at,visits(id,visit_number,patient_id,department_id,status,consultation_fee,patients(id,full_name,mrn),departments(id,name,name_ar),users!visits_doctor_id_fkey(full_name))")
       .eq("visit_date", date).is("deleted_at", null).order("created_at", { ascending: true });
     if (status !== "all") q = q.eq("status", status);
     return q;
@@ -37,9 +38,10 @@ function QueuePage() {
 
   const update = useSave<{ id: string; status: string }>(
     async ({ id, status }) => {
+      if (!canUpdate) throw new Error("Not authorized");
       const patch: Row = { status };
-      if (status === "called") patch.called_at = new Date().toISOString();
-      if (status === "completed") patch.completed_at = new Date().toISOString();
+      if (status === "called") patch["called_at"] = new Date().toISOString();
+      if (status === "completed") patch["completed_at"] = new Date().toISOString();
       const { error } = await supabase.from("queue_tickets").update(patch).eq("id", id);
       if (error) throw new Error(error.message);
       const ticket = ((queue.data ?? []) as Row[]).find((r) => s(r, "id") === id);
@@ -58,7 +60,7 @@ function QueuePage() {
     const patient = rel(rel(ticket, "visits"), "patients");
     const q = search.trim().toLowerCase();
     if (!q) return true;
-    return [s(patient, "full_name"), s(patient, "mrn"), s(patient, "patient_number"), s(ticket, "queue_number")].some((x) => x.toLowerCase().includes(q));
+    return [s(patient, "full_name"), s(patient, "mrn"), s(ticket, "queue_number")].some((x) => x.toLowerCase().includes(q));
   });
 
   const waiting = rows.filter((r) => s(r, "status") === "waiting").length;
@@ -72,6 +74,6 @@ function QueuePage() {
     </PageHeader>
     <ErrorBox error={queue.error}/>
     <div className="grid gap-3 sm:grid-cols-2"><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">{lang==="ar"?"بانتظار النداء":"Waiting"}</div><div className="text-3xl font-bold">{waiting}</div></CardContent></Card><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">{lang==="ar"?"نشط":"Active"}</div><div className="text-3xl font-bold">{active}</div></CardContent></Card></div>
-    <Card><CardContent className="p-0">{rows.length===0?<Empty/>:<div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>#</TableHead><TableHead>{t("patient")}</TableHead><TableHead>{t("department")}</TableHead><TableHead>{t("doctor")}</TableHead><TableHead>{t("status")}</TableHead><TableHead className="text-end">{t("actions")}</TableHead></TableRow></TableHeader><TableBody>{rows.map(ticket=>{const visit=rel(ticket,"visits");const patient=rel(visit,"patients");const dept=rel(visit,"departments");const doctor=rel(visit,"users");const st=s(ticket,"status");return <TableRow key={s(ticket,"id")}><TableCell dir="ltr" className="font-mono font-bold">{s(ticket,"queue_number")}</TableCell><TableCell><div className="flex items-center gap-2"><UserRound className="size-4 text-muted-foreground"/><div><div className="font-medium">{s(patient,"full_name")}</div><div className="text-xs text-muted-foreground" dir="ltr">{s(patient,"mrn")||s(patient,"patient_number")}</div></div></div></TableCell><TableCell>{lang==="ar"?s(dept,"name_ar")||s(dept,"name"):s(dept,"name")}</TableCell><TableCell>{s(doctor,"full_name")||"—"}</TableCell><TableCell><StatusBadge status={st}/></TableCell><TableCell className="text-end"><div className="flex justify-end gap-1">{st==="waiting"&&can("visits.update")&&<Button size="sm" variant="outline" onClick={()=>update.mutate({id:s(ticket,"id"),status:"called"})}><Play className="size-4"/>{lang==="ar"?"نداء":"Call"}</Button>}{st==="called"&&<Button size="sm" onClick={()=>update.mutate({id:s(ticket,"id"),status:"in_progress"})}><Clock3 className="size-4"/>{lang==="ar"?"بدء":"Start"}</Button>}{st==="in_progress"&&<Button size="sm" onClick={()=>update.mutate({id:s(ticket,"id"),status:"completed"})}><Check className="size-4"/>{lang==="ar"?"إنهاء":"Complete"}</Button>}<Button asChild size="sm" variant="ghost"><Link to="/clinic/$visitId" params={{visitId:s(visit,"id")}}>{t("clinic")}</Link></Button></div></TableCell></TableRow>})}</TableBody></Table></div>}</CardContent></Card>
+     <Card><CardContent className="p-0">{rows.length===0?<Empty/>:<div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>#</TableHead><TableHead>{t("patient")}</TableHead><TableHead>{t("department")}</TableHead><TableHead>{t("doctor")}</TableHead><TableHead>{t("status")}</TableHead><TableHead className="text-end">{t("actions")}</TableHead></TableRow></TableHeader><TableBody>{rows.map(ticket=>{const visit=rel(ticket,"visits");const patient=rel(visit,"patients");const dept=rel(visit,"departments");const doctor=rel(visit,"users");const st=s(ticket,"status");return <TableRow key={s(ticket,"id")}><TableCell dir="ltr" className="font-mono font-bold">{s(ticket,"queue_number")}</TableCell><TableCell><div className="flex items-center gap-2"><UserRound className="size-4 text-muted-foreground"/><div><div className="font-medium">{s(patient,"full_name")}</div><div className="text-xs text-muted-foreground" dir="ltr">{s(patient,"mrn")}</div></div></div></TableCell><TableCell>{lang==="ar"?s(dept,"name_ar")||s(dept,"name"):s(dept,"name")}</TableCell><TableCell>{s(doctor,"full_name")||"—"}</TableCell><TableCell><StatusBadge status={st}/></TableCell><TableCell className="text-end"><div className="flex justify-end gap-1">{canUpdate&&st==="waiting"&&<Button size="sm" variant="outline" onClick={()=>update.mutate({id:s(ticket,"id"),status:"called"})}><Play className="size-4"/>{lang==="ar"?"نداء":"Call"}</Button>}{canUpdate&&st==="called"&&<Button size="sm" onClick={()=>update.mutate({id:s(ticket,"id"),status:"in_progress"})}><Clock3 className="size-4"/>{lang==="ar"?"بدء":"Start"}</Button>}{canUpdate&&st==="in_progress"&&<Button size="sm" onClick={()=>update.mutate({id:s(ticket,"id"),status:"completed"})}><Check className="size-4"/>{lang==="ar"?"إنهاء":"Complete"}</Button>}<Button asChild size="sm" variant="ghost"><Link to="/clinic/$visitId" params={{visitId:s(visit,"id")}}>{t("clinic")}</Link></Button></div></TableCell></TableRow>})}</TableBody></Table></div>}</CardContent></Card>
   </div>;
 }

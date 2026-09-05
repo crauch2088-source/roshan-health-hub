@@ -95,7 +95,7 @@ function PharmacyPage() {
     { invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"]], successMessage: t("dispensed") },
   );
 
-  const rows = useMemo(() => { const q = search.trim().toLowerCase(); return ((list.data ?? []) as Row[]).filter((p) => { if (!q) return true; const patient = rel(p, "patients"); const items = (p["prescription_items"] as Row[]) ?? []; const meds = items.map((i) => s(rel(i, "medicines"), "name")).join(" "); return `${s(patient,"full_name")} ${s(patient,"mrn")} ${s(patient,"patient_number")} ${meds}`.toLowerCase().includes(q); }); }, [list.data, search]);
+  const rows = useMemo(() => { const q = search.trim().toLowerCase(); return ((list.data ?? []) as Row[]).filter((p) => { if (!q) return true; const patient = rel(p, "patients"); const items = (p["prescription_items"] as Row[]) ?? []; const meds = items.map((i) => s(rel(i, "medicines"), "name")).join(" "); return `${s(patient,"full_name")} ${s(patient,"mrn")} ${meds}`.toLowerCase().includes(q); }); }, [list.data, search]);
   if (list.isLoading) return <Loading />;
 
   return (
