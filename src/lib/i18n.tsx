@@ -66,9 +66,6 @@ const dict: Record<string, { ar: string; en: string }> = {
   unpin: { ar: "إلغاء التثبيت", en: "Unpin" },
   pages: { ar: "الصفحات", en: "Pages" },
   quick_actions: { ar: "إجراءات سريعة", en: "Quick actions" },
-  new_patient: { ar: "مريض جديد", en: "New patient" },
-  new_visit: { ar: "زيارة جديدة", en: "New visit" },
-  new_invoice: { ar: "فاتورة جديدة", en: "New invoice" },
   new_lab_order: { ar: "طلب تحليل جديد", en: "New lab order" },
   new_lab_order_hint: {
     ar: "يجب إنشاء طلب التحليل من داخل زيارة نشطة. تم فتح قائمة الزيارات.",

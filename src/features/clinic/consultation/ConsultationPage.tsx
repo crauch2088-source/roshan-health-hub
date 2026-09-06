@@ -14,7 +14,6 @@ import { VitalsTab } from "./components/VitalsTab";
 import { LaboratoryTab } from "./components/LaboratoryTab";
 import { PrescriptionTab } from "./components/PrescriptionTab";
 import { HistoryTab } from "./components/HistoryTab";
-import { PediatricTab } from "./components/PediatricTab";
 
 export function ConsultationPage({visitId}:{visitId:string}){
  const {lang}=useLang();const {user}=useAuth();const [tab,setTab]=useState("note");
@@ -22,11 +21,11 @@ export function ConsultationPage({visitId}:{visitId:string}){
  const visit=(visitQ.data??[])[0] as Row|undefined;const patient=rel(visit,"patients");
  const finish=useSave(async()=>{const {error}=await supabase.from("visits").update({status:"completed",completed_at:new Date().toISOString(),updated_by:user?.id??null}).eq("id",visitId);if(error)throw new Error(error.message);return null;},{invalidate:[["consultation-visit",visitId],["clinic-visits"],["visits"]],successMessage:"تم إنهاء الزيارة"});
  if(!visit)return <div className="p-6">{visitQ.isLoading?<Loading/>:"Visit not found"}</div>;
- const tabs: [string, string][] = [["note","الملاحظات"],["vitals","العلامات الحيوية"],["labs","المختبر"],["prescription","الوصفة"],["pediatrics","الأطفال"],["history","السجل السابق"]];
+ const tabs: [string, string][] = [["note","الملاحظات"],["vitals","العلامات الحيوية"],["labs","المختبر"],["prescription","الوصفة"],["history","السجل السابق"]];
  return <div className="container mx-auto max-w-7xl space-y-4 p-4" dir="auto">
    <div className="flex flex-wrap items-center gap-2"><Button asChild variant="outline" size="sm"><Link to="/clinic"><ArrowLeft className="size-4"/> {lang==="ar"?"العيادة":"Clinic"}</Link></Button><div className="ms-auto flex gap-2"><StatusBadge status={s(visit,"status")}/>{s(visit,"status")!=="completed"&&<Button size="sm" onClick={()=>finish.mutate(undefined as never)} disabled={finish.isPending}><CheckCircle2 className="size-4"/>إنهاء الزيارة</Button>}</div></div>
    <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4"><div><div className="text-xs text-muted-foreground">Patient</div><div className="font-semibold">{s(patient,"full_name")}</div><div className="text-xs" dir="ltr">{s(patient,"mrn")}</div></div><div><div className="text-xs text-muted-foreground">Age / Sex</div><div>{calcAge(s(patient,"date_of_birth"))??"—"} · {s(patient,"gender")}</div></div><div><div className="text-xs text-muted-foreground">Department</div><div>{lang==="ar"?s(rel(visit,"departments"),"name_ar")||s(rel(visit,"departments"),"name"):s(rel(visit,"departments"),"name")}</div></div><div><div className="text-xs text-muted-foreground">Doctor</div><div>{s(rel(visit,"users"),"full_name")||"—"}</div></div></CardContent></Card>
    <div className="overflow-x-auto border-b"><div className="flex min-w-max gap-1">{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`border-b-2 px-4 py-3 text-sm font-medium ${tab===k?"border-primary text-primary":"border-transparent text-muted-foreground"}`}>{l}</button>)}</div></div>
-   {tab==="note"&&<ClinicalNoteTab visitId={visitId}/>} {tab==="vitals"&&<VitalsTab visitId={visitId}/>} {tab==="labs"&&<LaboratoryTab visitId={visitId}/>} {tab==="prescription"&&<PrescriptionTab visitId={visitId}/>} {tab==="pediatrics"&&<PediatricTab visitId={visitId}/>} {tab==="history"&&<HistoryTab visitId={visitId}/>}
+   {tab==="note"&&<ClinicalNoteTab visitId={visitId}/>} {tab==="vitals"&&<VitalsTab visitId={visitId}/>} {tab==="labs"&&<LaboratoryTab visitId={visitId}/>} {tab==="prescription"&&<PrescriptionTab visitId={visitId}/>} {tab==="history"&&<HistoryTab visitId={visitId}/>}
  </div>;
 }
