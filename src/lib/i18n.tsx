@@ -47,6 +47,42 @@ const dict: Record<string, { ar: string; en: string }> = {
   followups: { ar: "المتابعات", en: "Follow-ups" },
   certificates: { ar: "الشهادات", en: "Certificates" },
 
+  // nav groups (Phase 2)
+  clinical: { ar: "السريري", en: "Clinical" },
+  finance: { ar: "المالية", en: "Finance" },
+  administration: { ar: "الإدارة", en: "Administration" },
+
+  // navigation shell (Phase 1 + 2)
+  search_placeholder: { ar: "بحث عن مريض، زيارة، تحليل أو دواء…", en: "Search patients, visits, labs, medicines…" },
+  search_everywhere: { ar: "بحث شامل", en: "Search everywhere" },
+  no_results: { ar: "لا توجد نتائج", en: "No results found" },
+  type_to_search: { ar: "ابدأ الكتابة للبحث…", en: "Start typing to search…" },
+  recent_searches: { ar: "عمليات البحث الأخيرة", en: "Recent searches" },
+  search_history: { ar: "سجل البحث", en: "Search history" },
+  recent_pages: { ar: "الصفحات الأخيرة", en: "Recent pages" },
+  clear: { ar: "مسح", en: "Clear" },
+  favorites: { ar: "المفضلة", en: "Favorites" },
+  pin: { ar: "تثبيت", en: "Pin" },
+  unpin: { ar: "إلغاء التثبيت", en: "Unpin" },
+  pages: { ar: "الصفحات", en: "Pages" },
+  quick_actions: { ar: "إجراءات سريعة", en: "Quick actions" },
+  new_patient: { ar: "مريض جديد", en: "New patient" },
+  new_visit: { ar: "زيارة جديدة", en: "New visit" },
+  new_invoice: { ar: "فاتورة جديدة", en: "New invoice" },
+  new_lab_order: { ar: "طلب تحليل جديد", en: "New lab order" },
+  new_lab_order_hint: {
+    ar: "يجب إنشاء طلب التحليل من داخل زيارة نشطة. تم فتح قائمة الزيارات.",
+    en: "Lab orders are created from inside an active visit. Opening the visits list.",
+  },
+  collapse_sidebar: { ar: "طي القائمة", en: "Collapse sidebar" },
+  expand_sidebar: { ar: "توسيع القائمة", en: "Expand sidebar" },
+  home: { ar: "الرئيسية", en: "Home" },
+  patient_result: { ar: "مريض", en: "Patient" },
+  visit_result: { ar: "زيارة", en: "Visit" },
+  lab_result: { ar: "تحليل", en: "Lab test" },
+  medicine_result: { ar: "دواء", en: "Medicine" },
+  more: { ar: "المزيد", en: "More" },
+
   // common
   save: { ar: "حفظ", en: "Save" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
