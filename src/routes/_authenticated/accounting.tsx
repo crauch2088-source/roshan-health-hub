@@ -1,417 +1,143 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownCircle, ArrowUpCircle, Landmark, Plus, ReceiptText, WalletCards } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Landmark, Plus, ReceiptText, RefreshCw, Search, Truck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, StatCard } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, s, useRows, useSettings, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { formatDate, money, todayISO } from "@/lib/medical";
+import { money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/accounting")({
-  head: () => ({
-    meta: [
-      { title: "Finance — ROSHAN Medical Center" },
-      { name: "description", content: "Cashbox, receivables, supplier debts and financial activity." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Finance — ROSHAN Medical Center" }] }),
   component: AccountingPage,
 });
 
-type ManualForm = {
-  direction: "in" | "out";
-  amount: string;
-  type: "deposit" | "withdrawal" | "adjustment";
-  method: string;
-  category: string;
-  description: string;
-};
-
-type BillForm = {
-  supplier_id: string;
-  invoice_number: string;
-  bill_date: string;
-  due_date: string;
-  total_amount: string;
-  notes: string;
-};
+type Tab = "overview" | "cashbox" | "receivables" | "suppliers";
 
 function AccountingPage() {
-  const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { t } = useLang();
   const { currency } = useSettings();
-  const [from, setFrom] = useState(`${todayISO().slice(0, 7)}-01`);
-  const [to, setTo] = useState(todayISO());
-  const [manualOpen, setManualOpen] = useState(false);
-  const [billOpen, setBillOpen] = useState(false);
-  const [payBill, setPayBill] = useState<Row | null>(null);
-  const [manual, setManual] = useState<ManualForm>({
-    direction: "in",
-    amount: "",
-    type: "deposit",
-    method: "cash",
-    category: "",
-    description: "",
-  });
-  const [bill, setBill] = useState<BillForm>({
-    supplier_id: "",
-    invoice_number: "",
-    bill_date: todayISO(),
-    due_date: "",
-    total_amount: "",
-    notes: "",
-  });
-  const [billPayment, setBillPayment] = useState({ amount: "", method: "cash", reference: "", notes: "" });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { can } = useAuth();
+  const [tab, setTab] = useState<Tab>("overview");
 
-  const cashbox = useRows(["cashbox", from, to], () =>
-    supabase
-      .from("cashbox_transactions")
-      .select("*")
-      .gte("transaction_date", `${from}T00:00:00`)
-      .lt("transaction_date", `${to}T23:59:59.999`)
-      .is("deleted_at", null)
-      .order("transaction_date", { ascending: false }),
-  );
-  const cashboxAll = useRows(["cashbox-balance"], () =>
-    supabase.from("cashbox_transactions").select("amount").is("deleted_at", null),
-  );
-  const receivables = useRows(["finance-receivables"], () =>
-    supabase
-      .from("invoices")
-      .select("id, invoice_number, invoice_date, net_amount, paid_amount, payment_status, patients(full_name, mrn)")
-      .is("deleted_at", null)
-      .neq("status", "cancelled")
-      .order("invoice_date", { ascending: false })
-      .limit(500),
-  );
-  const suppliers = useRows(["finance-suppliers"], () =>
-    supabase.from("suppliers").select("id, name").eq("active", true).is("deleted_at", null).order("name"),
-  );
-  const supplierBills = useRows(["supplier-bills"], () =>
-    supabase
-      .from("supplier_bills")
-      .select("id, supplier_id, invoice_number, bill_date, due_date, total_amount, paid_amount, status, notes, suppliers(name)")
-      .is("deleted_at", null)
-      .order("bill_date", { ascending: false }),
-  );
-
-  const cashRows = (cashbox.data ?? []) as Row[];
-  const balance = ((cashboxAll.data ?? []) as Row[]).reduce((sum, row) => sum + n(row, "amount"), 0);
-  const periodIn = cashRows.filter((r) => n(r, "amount") > 0).reduce((sum, r) => sum + n(r, "amount"), 0);
-  const periodOut = cashRows.filter((r) => n(r, "amount") < 0).reduce((sum, r) => sum + Math.abs(n(r, "amount")), 0);
-
-  const receivableRows = useMemo(
-    () =>
-      ((receivables.data ?? []) as Row[]).filter(
-        (r) => Math.max(n(r, "net_amount") - n(r, "paid_amount"), 0) > 0,
-      ),
-    [receivables.data],
-  );
-  const totalReceivable = receivableRows.reduce(
-    (sum, r) => sum + Math.max(n(r, "net_amount") - n(r, "paid_amount"), 0),
-    0,
-  );
-  const billRows = (supplierBills.data ?? []) as Row[];
-  const totalSupplierDebt = billRows.reduce(
-    (sum, r) => sum + Math.max(n(r, "total_amount") - n(r, "paid_amount"), 0),
-    0,
-  );
-
-  const refreshKeys = () => {
-    void cashbox.refetch();
-    void cashboxAll.refetch();
-    void supplierBills.refetch();
-    void receivables.refetch();
-  };
-
-  async function addManualEntry() {
-    setBusy(true);
-    setError(null);
-    try {
-      const amount = Number(manual.amount);
-      if (!amount || amount <= 0) throw new Error(t("invalid_amount") || "Invalid amount");
-      const { error: e } = await supabase.rpc("add_cashbox_entry", {
-        _direction: manual.direction,
-        _amount: amount,
-        _type: manual.type,
-        _method: manual.method,
-        _category: manual.category.trim() || null,
-        _description: manual.description.trim() || null,
-        _date: new Date().toISOString(),
-      });
-      if (e) throw new Error(e.message);
-      setManualOpen(false);
-      setManual({ direction: "in", amount: "", type: "deposit", method: "cash", category: "", description: "" });
-      refreshKeys();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+  if (!can("accounting.read")) {
+    return <Card><CardContent className="p-6">{t("no_permission")}</CardContent></Card>;
   }
-
-  async function createSupplierBill() {
-    setBusy(true);
-    setError(null);
-    try {
-      const total = Number(bill.total_amount);
-      if (!bill.supplier_id) throw new Error(t("supplier_required") || "Supplier is required");
-      if (!total || total <= 0) throw new Error(t("invalid_amount") || "Invalid amount");
-      const { error: e } = await supabase.from("supplier_bills").insert({
-        supplier_id: bill.supplier_id,
-        invoice_number: bill.invoice_number.trim() || null,
-        bill_date: bill.bill_date,
-        due_date: bill.due_date || null,
-        subtotal: total,
-        discount_amount: 0,
-        total_amount: total,
-        paid_amount: 0,
-        status: "unpaid",
-        notes: bill.notes.trim() || null,
-      });
-      if (e) throw new Error(e.message);
-      setBillOpen(false);
-      setBill({ supplier_id: "", invoice_number: "", bill_date: todayISO(), due_date: "", total_amount: "", notes: "" });
-      refreshKeys();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function paySupplierBill() {
-    if (!payBill) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const amount = Number(billPayment.amount);
-      const outstanding = Math.max(n(payBill, "total_amount") - n(payBill, "paid_amount"), 0);
-      if (!amount || amount <= 0 || amount > outstanding) {
-        throw new Error(t("invalid_payment_amount") || "Payment exceeds the outstanding balance");
-      }
-      const { error: e } = await supabase.from("supplier_payments").insert({
-        supplier_bill_id: s(payBill, "id"),
-        supplier_id: s(payBill, "supplier_id"),
-        amount,
-        payment_method: billPayment.method,
-        reference: billPayment.reference.trim() || null,
-        notes: billPayment.notes.trim() || null,
-      });
-      if (e) throw new Error(e.message);
-      setPayBill(null);
-      setBillPayment({ amount: "", method: "cash", reference: "", notes: "" });
-      refreshKeys();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const loading =
-    cashbox.isLoading || cashboxAll.isLoading || receivables.isLoading || suppliers.isLoading || supplierBills.isLoading;
-
-  if (loading) return <Loading />;
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title={t("accounting")}
-        subtitle={lang === "ar" ? "الخزنة والذمم المدينة وديون الموردين" : "Cashbox, receivables and supplier payables"}
-      >
-        <Input type="date" dir="ltr" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
-        <Input type="date" dir="ltr" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
-        <ExportButtons rows={cashRows} filename={`roshan-cashbox-${from}-${to}`} />
-        {can("accounting.create") ? (
-          <>
-            <Button size="sm" variant="outline" onClick={() => setManualOpen(true)}>
-              <Plus className="size-4" /> {t("cashbox_entry")}
-            </Button>
-            <Button size="sm" onClick={() => setBillOpen(true)}>
-              <ReceiptText className="size-4" /> {t("new_supplier_bill")}
-            </Button>
-          </>
-        ) : null}
+      <PageHeader title={t("finance_hub")} subtitle={t("finance_hub_subtitle")}>
+        <Button variant="outline" onClick={() => window.location.reload()}><RefreshCw className="me-2 size-4" />{t("refresh")}</Button>
       </PageHeader>
-
-      <ErrorBox error={error ?? cashbox.error ?? cashboxAll.error ?? receivables.error ?? suppliers.error ?? supplierBills.error} />
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("cashbox_balance")} value={money(balance, currency)} tone={balance >= 0 ? "success" : "destructive"} />
-        <StatCard label={t("period_inflow")} value={money(periodIn, currency)} tone="success" />
-        <StatCard label={t("period_outflow")} value={money(periodOut, currency)} tone="destructive" />
-        <StatCard label={t("customer_receivables")} value={money(totalReceivable, currency)} tone="warning" />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {([
+          ["overview", "finance_overview", Landmark],
+          ["cashbox", "cashbox", ReceiptText],
+          ["receivables", "receivables", Users],
+          ["suppliers", "suppliers_finance", Truck],
+        ] as const).map(([key, label, Icon]) => (
+          <Button key={key} variant={tab === key ? "default" : "outline"} className="justify-start" onClick={() => setTab(key)}>
+            <Icon className="me-2 size-4" />{t(label)}
+          </Button>
+        ))}
       </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card>
-          <CardContent className="p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold"><WalletCards className="size-4" />{t("cashbox")}</div>
-            <div className="text-3xl font-bold">{money(balance, currency)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("cashbox_balance_hint")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold"><ArrowUpCircle className="size-4" />{t("customer_receivables")}</div>
-            <div className="text-3xl font-bold">{money(totalReceivable, currency)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">{receivableRows.length} {t("records")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold"><ArrowDownCircle className="size-4" />{t("supplier_debt")}</div>
-            <div className="text-3xl font-bold">{money(totalSupplierDebt, currency)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">{billRows.filter((r) => n(r, "total_amount") > n(r, "paid_amount")).length} {t("records")}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <div className="flex items-center gap-2 border-b p-4 font-semibold"><Landmark className="size-4" />{t("cashbox_movements")}</div>
-          {cashRows.length === 0 ? <Empty /> : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr className="border-b text-start">
-                  <th className="p-3 text-start">{t("date")}</th>
-                  <th className="p-3 text-start">{t("type")}</th>
-                  <th className="p-3 text-start">{t("description")}</th>
-                  <th className="p-3 text-start">{t("payment_method")}</th>
-                  <th className="p-3 text-start">{t("amount")}</th>
-                </tr></thead>
-                <tbody>{cashRows.map((r) => (
-                  <tr key={s(r, "id")} className="border-b last:border-0">
-                    <td className="p-3" dir="ltr">{new Date(s(r, "transaction_date")).toLocaleString()}</td>
-                    <td className="p-3">{t(`cashbox_${s(r, "transaction_type")}`)}</td>
-                    <td className="p-3">{s(r, "description") || s(r, "category") || "—"}</td>
-                    <td className="p-3">{s(r, "payment_method") || "cash"}</td>
-                    <td className={`p-3 font-semibold ${n(r, "amount") >= 0 ? "text-emerald-600" : "text-destructive"}`} dir="ltr">
-                      {money(n(r, "amount"), currency)}
-                    </td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardContent className="p-0">
-            <div className="border-b p-4 font-semibold">{t("customer_receivables")}</div>
-            {receivableRows.length === 0 ? <Empty /> : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b">
-                    <th className="p-3 text-start">{t("invoice_number")}</th>
-                    <th className="p-3 text-start">{t("patient")}</th>
-                    <th className="p-3 text-start">{t("date")}</th>
-                    <th className="p-3 text-start">{t("balance")}</th>
-                  </tr></thead>
-                  <tbody>{receivableRows.map((r) => {
-                    const patient = (r["patients"] as Row | null) ?? {};
-                    return <tr key={s(r, "id")} className="border-b last:border-0">
-                      <td className="p-3">{s(r, "invoice_number")}</td>
-                      <td className="p-3">{s(patient, "full_name") || "—"}</td>
-                      <td className="p-3" dir="ltr">{formatDate(s(r, "invoice_date"))}</td>
-                      <td className="p-3 font-semibold">{money(Math.max(n(r, "net_amount") - n(r, "paid_amount"), 0), currency)}</td>
-                    </tr>;
-                  })}</tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-0">
-            <div className="border-b p-4 font-semibold">{t("supplier_debt")}</div>
-            {billRows.length === 0 ? <Empty /> : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b">
-                    <th className="p-3 text-start">{t("supplier")}</th>
-                    <th className="p-3 text-start">{t("invoice_number")}</th>
-                    <th className="p-3 text-start">{t("date")}</th>
-                    <th className="p-3 text-start">{t("balance")}</th>
-                    <th className="p-3 text-start">{t("actions")}</th>
-                  </tr></thead>
-                  <tbody>{billRows.map((r) => {
-                    const supplier = (r["suppliers"] as Row | null) ?? {};
-                    const outstanding = Math.max(n(r, "total_amount") - n(r, "paid_amount"), 0);
-                    return <tr key={s(r, "id")} className="border-b last:border-0">
-                      <td className="p-3">{s(supplier, "name") || "—"}</td>
-                      <td className="p-3">{s(r, "invoice_number") || "—"}</td>
-                      <td className="p-3" dir="ltr">{formatDate(s(r, "bill_date"))}</td>
-                      <td className="p-3 font-semibold">{money(outstanding, currency)}</td>
-                      <td className="p-3">{outstanding > 0 && can("accounting.create") ? <Button size="sm" variant="outline" onClick={() => setPayBill(r)}>{t("pay")}</Button> : "—"}</td>
-                    </tr>;
-                  })}</tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t("cashbox_entry")}</DialogTitle></DialogHeader>
-          <div className="grid gap-4">
-            <Field label={t("cashbox_direction")}>
-              <Select value={manual.direction} onValueChange={(v: "in" | "out") => setManual({ ...manual, direction: v, type: v === "in" ? "deposit" : "withdrawal" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="in">{t("cash_in")}</SelectItem><SelectItem value="out">{t("cash_out")}</SelectItem></SelectContent>
-              </Select>
-            </Field>
-            <Field label={t("amount")}><Input type="number" min={0} dir="ltr" value={manual.amount} onChange={(e) => setManual({ ...manual, amount: e.target.value })} /></Field>
-            <Field label={t("payment_method")}><Select value={manual.method} onValueChange={(v) => setManual({ ...manual, method: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">{t("cash")}</SelectItem><SelectItem value="bankak">Bankak</SelectItem><SelectItem value="bank">{t("bank")}</SelectItem></SelectContent></Select></Field>
-            <Field label={t("category")}><Input value={manual.category} onChange={(e) => setManual({ ...manual, category: e.target.value })} /></Field>
-            <Field label={t("description")}><Textarea value={manual.description} onChange={(e) => setManual({ ...manual, description: e.target.value })} /></Field>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setManualOpen(false)}>{t("cancel")}</Button><Button disabled={busy} onClick={addManualEntry}>{busy ? t("saving") : t("save")}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={billOpen} onOpenChange={setBillOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t("new_supplier_bill")}</DialogTitle></DialogHeader>
-          <div className="grid gap-4">
-            <Field label={t("supplier")}><Select value={bill.supplier_id} onValueChange={(v) => setBill({ ...bill, supplier_id: v })}><SelectTrigger><SelectValue placeholder={t("supplier")} /></SelectTrigger><SelectContent>{((suppliers.data ?? []) as Row[]).map((r) => <SelectItem key={s(r, "id")} value={s(r, "id")}>{s(r, "name")}</SelectItem>)}</SelectContent></Select></Field>
-            <Field label={t("invoice_number")}><Input dir="ltr" value={bill.invoice_number} onChange={(e) => setBill({ ...bill, invoice_number: e.target.value })} /></Field>
-            <div className="grid gap-4 sm:grid-cols-2"><Field label={t("date")}><Input type="date" dir="ltr" value={bill.bill_date} onChange={(e) => setBill({ ...bill, bill_date: e.target.value })} /></Field><Field label={t("due_date")}><Input type="date" dir="ltr" value={bill.due_date} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} /></Field></div>
-            <Field label={t("amount")}><Input type="number" min={0} dir="ltr" value={bill.total_amount} onChange={(e) => setBill({ ...bill, total_amount: e.target.value })} /></Field>
-            <Field label={t("notes")}><Textarea value={bill.notes} onChange={(e) => setBill({ ...bill, notes: e.target.value })} /></Field>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setBillOpen(false)}>{t("cancel")}</Button><Button disabled={busy} onClick={createSupplierBill}>{busy ? t("saving") : t("save")}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={Boolean(payBill)} onOpenChange={(open) => !open && setPayBill(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t("supplier_payment")}</DialogTitle></DialogHeader>
-          <div className="grid gap-4">
-            <div className="rounded-lg border p-3 text-sm">{t("balance")}: <strong>{money(payBill ? Math.max(n(payBill, "total_amount") - n(payBill, "paid_amount"), 0) : 0, currency)}</strong></div>
-            <Field label={t("amount")}><Input type="number" min={0} dir="ltr" value={billPayment.amount} onChange={(e) => setBillPayment({ ...billPayment, amount: e.target.value })} /></Field>
-            <Field label={t("payment_method")}><Select value={billPayment.method} onValueChange={(v) => setBillPayment({ ...billPayment, method: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">{t("cash")}</SelectItem><SelectItem value="bankak">Bankak</SelectItem><SelectItem value="bank">{t("bank")}</SelectItem></SelectContent></Select></Field>
-            <Field label={t("reference")}><Input dir="ltr" value={billPayment.reference} onChange={(e) => setBillPayment({ ...billPayment, reference: e.target.value })} /></Field>
-            <Field label={t("notes")}><Textarea value={billPayment.notes} onChange={(e) => setBillPayment({ ...billPayment, notes: e.target.value })} /></Field>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setPayBill(null)}>{t("cancel")}</Button><Button disabled={busy} onClick={paySupplierBill}>{busy ? t("saving") : t("save")}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {tab === "overview" && <Overview currency={currency} />}
+      {tab === "cashbox" && <Cashbox currency={currency} canCreate={can("accounting.create")} />}
+      {tab === "receivables" && <Receivables currency={currency} canCreate={can("payments.create") || can("accounting.create")} />}
+      {tab === "suppliers" && <Suppliers currency={currency} canCreate={can("accounting.create")} canUpdate={can("accounting.update")} />}
     </div>
   );
+}
+
+function Overview({ currency }: { currency: string }) {
+  const payments = useRows<Row[]>(["finance-overview-payments"], () => supabase.from("payments").select("id,amount,payment_method,payment_date,deleted_at").is("deleted_at", null).limit(1000));
+  const expenses = useRows<Row[]>(["finance-overview-expenses"], () => supabase.from("expenses").select("id,amount,expense_date,deleted_at").is("deleted_at", null).limit(1000));
+  const bills = useRows<Row[]>(["finance-overview-bills"], () => supabase.from("supplier_bills").select("id,total_amount,paid_amount,status,deleted_at").is("deleted_at", null).limit(1000));
+  const cash = useRows<Row[]>(["finance-overview-cash"], () => supabase.from("cashbox_transactions").select("id,amount,transaction_type,transaction_date,deleted_at").is("deleted_at", null).order("transaction_date", { ascending: false }).limit(1000));
+  if (payments.isLoading || expenses.isLoading || bills.isLoading || cash.isLoading) return <Loading />;
+  const collected = (payments.data ?? []).reduce((a, r) => a + n(r, "amount"), 0);
+  const spent = (expenses.data ?? []).reduce((a, r) => a + n(r, "amount"), 0);
+  const supplierDebt = (bills.data ?? []).reduce((a, r) => a + Math.max(n(r, "total_amount") - n(r, "paid_amount"), 0), 0);
+  const cashBalance = (cash.data ?? []).reduce((a, r) => a + n(r, "amount"), 0);
+  return <>
+    <ErrorBox error={payments.error ?? expenses.error ?? bills.error ?? cash.error} />
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StatCard label="الإيرادات المحصلة" value={money(collected, currency)} tone="success" />
+      <StatCard label="المصروفات" value={money(spent, currency)} tone="destructive" />
+      <StatCard label="رصيد الخزنة" value={money(cashBalance, currency)} tone="primary" />
+      <StatCard label="ديون الموردين" value={money(supplierDebt, currency)} tone="warning" />
+    </div>
+    <Card><CardHeader><CardTitle>ملخص مالي</CardTitle></CardHeader><CardContent><div className="grid gap-3 sm:grid-cols-3"><Summary label="صافي التدفق" value={money(collected - spent, currency)} /><Summary label="عدد الدفعات" value={String(payments.data?.length ?? 0)} /><Summary label="عدد حركات الخزنة" value={String(cash.data?.length ?? 0)} /></div></CardContent></Card>
+  </>;
+}
+
+function Summary({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border p-4"><div className="text-sm text-muted-foreground">{label}</div><div className="mt-1 text-xl font-semibold">{value}</div></div>; }
+
+function Cashbox({ currency, canCreate }: { currency: string; canCreate: boolean }) {
+  const { t } = useLang();
+  const [open, setOpen] = useState<"deposit" | "withdrawal" | null>(null);
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const rows = useRows<Row[]>(["cashbox"], () => supabase.from("cashbox_transactions").select("id,transaction_type,amount,payment_method,category,description,source_type,source_id,transaction_date,created_at").is("deleted_at", null).order("transaction_date", { ascending: false }).limit(300));
+  const save = useSave(async () => {
+    if (!amount || Number(amount) <= 0) throw new Error(t("invalid_amount"));
+    const { error } = await supabase.from("cashbox_transactions").insert({ transaction_type: open, amount: open === "deposit" ? Number(amount) : -Number(amount), payment_method: "cash", description: description || (open === "deposit" ? "Manual deposit" : "Manual withdrawal"), source_type: "manual", });
+    if (error) throw error;
+  }, { invalidate: [["cashbox"], ["finance-overview-cash"]], successMessage: t("saved"), onDone: () => { setOpen(null); setAmount(""); setDescription(""); } });
+  const balance = (rows.data ?? []).reduce((a, r) => a + n(r, "amount"), 0);
+  if (rows.isLoading) return <Loading />;
+  return <>
+    <ErrorBox error={rows.error} />
+    <div className="grid gap-4 sm:grid-cols-3"><StatCard label={t("cashbox_balance")} value={money(balance, currency)} tone="primary" /><StatCard label={t("cash_in")} value={money((rows.data ?? []).filter(r => n(r,"amount") > 0).reduce((a,r)=>a+n(r,"amount"),0), currency)} tone="success" /><StatCard label={t("cash_out")} value={money(Math.abs((rows.data ?? []).filter(r => n(r,"amount") < 0).reduce((a,r)=>a+n(r,"amount"),0)), currency)} tone="destructive" /></div>
+    <div className="flex gap-2"><Button disabled={!canCreate} onClick={() => setOpen("deposit")}><ArrowDownToLine className="me-2 size-4" />{t("deposit")}</Button><Button disabled={!canCreate} variant="outline" onClick={() => setOpen("withdrawal")}><ArrowUpFromLine className="me-2 size-4" />{t("withdrawal")}</Button></div>
+    <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>{t("date")}</TableHead><TableHead>{t("type")}</TableHead><TableHead>{t("description")}</TableHead><TableHead>{t("amount")}</TableHead></TableRow></TableHeader><TableBody>{(rows.data ?? []).length === 0 ? <TableRow><TableCell colSpan={4}><Empty /></TableCell></TableRow> : (rows.data ?? []).map(r => <TableRow key={s(r,"id")}><TableCell dir="ltr">{new Date(s(r,"transaction_date") || s(r,"created_at")).toLocaleString()}</TableCell><TableCell>{s(r,"transaction_type")}</TableCell><TableCell>{s(r,"description") || "—"}</TableCell><TableCell className={n(r,"amount") >= 0 ? "font-medium" : "font-medium text-destructive"}>{money(n(r,"amount"), currency)}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
+    <Dialog open={!!open} onOpenChange={v => !v && setOpen(null)}><DialogContent><DialogHeader><DialogTitle>{open === "deposit" ? t("deposit") : t("withdrawal")}</DialogTitle></DialogHeader><div className="grid gap-4"><Field label={t("amount")}><Input type="number" min="0.01" dir="ltr" value={amount} onChange={e=>setAmount(e.target.value)} /></Field><Field label={t("description")}><Input value={description} onChange={e=>setDescription(e.target.value)} /></Field></div><DialogFooter><Button variant="outline" onClick={()=>setOpen(null)}>{t("cancel")}</Button><Button disabled={save.isPending} onClick={()=>save.mutate(undefined as never)}>{t("save")}</Button></DialogFooter></DialogContent></Dialog>
+  </>;
+}
+
+function Receivables({ currency, canCreate }: { currency: string; canCreate: boolean }) {
+  const { t } = useLang();
+  const [search, setSearch] = useState("");
+  const [paymentFor, setPaymentFor] = useState<Row | null>(null);
+  const [amount, setAmount] = useState("");
+  const invoices = useRows<Row[]>(["receivables", search], () => {
+    let q = supabase.from("invoices").select("id,invoice_number,patient_id,net_amount,paid_amount,status,invoice_date,patients(full_name,mrn)").is("deleted_at", null).order("invoice_date", { ascending: false }).limit(500);
+    if (search.trim()) q = q.or(`invoice_number.ilike.%${search.trim()}%`);
+    return q;
+  });
+  const save = useSave(async () => {
+    if (!paymentFor || Number(amount) <= 0) throw new Error(t("invalid_amount"));
+    const outstanding = Math.max(n(paymentFor,"net_amount") - n(paymentFor,"paid_amount"), 0);
+    if (Number(amount) > outstanding) throw new Error(t("payment_exceeds_balance"));
+    const { error } = await supabase.from("payments").insert({ invoice_id: s(paymentFor,"id"), amount: Number(amount), payment_method: "cash", method: "cash", reference: null, reference_no: null, notes: null });
+    if (error) throw error;
+  }, { invalidate: [["receivables"], ["cashbox"], ["finance-overview-payments"], ["finance-overview-cash"]], successMessage: t("saved"), onDone: ()=>{setPaymentFor(null);setAmount("");} });
+  if (invoices.isLoading) return <Loading />;
+  const rows = (invoices.data ?? []).filter(r => Math.max(n(r,"net_amount") - n(r,"paid_amount"), 0) > 0);
+  return <><ErrorBox error={invoices.error} /><div className="flex gap-2"><div className="relative max-w-sm flex-1"><Search className="absolute start-3 top-2.5 size-4 text-muted-foreground"/><Input className="ps-9" placeholder={t("search") } value={search} onChange={e=>setSearch(e.target.value)} /></div></div><Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>{t("invoice_number")}</TableHead><TableHead>{t("patient")}</TableHead><TableHead>{t("net")}</TableHead><TableHead>{t("paid")}</TableHead><TableHead>{t("balance")}</TableHead><TableHead /></TableRow></TableHeader><TableBody>{rows.length===0?<TableRow><TableCell colSpan={6}><Empty /></TableCell></TableRow>:rows.map(r=><TableRow key={s(r,"id")}><TableCell dir="ltr">{s(r,"invoice_number")}</TableCell><TableCell>{s((Array.isArray(r.patients)?r.patients[0]:r.patients) as Row,"full_name") || s((Array.isArray(r.patients)?r.patients[0]:r.patients) as Row,"mrn")}</TableCell><TableCell>{money(n(r,"net_amount"),currency)}</TableCell><TableCell>{money(n(r,"paid_amount"),currency)}</TableCell><TableCell className="font-semibold">{money(Math.max(n(r,"net_amount")-n(r,"paid_amount"),0),currency)}</TableCell><TableCell><Button size="sm" disabled={!canCreate} onClick={()=>setPaymentFor(r)}>{t("take_payment")}</Button></TableCell></TableRow>)}</TableBody></Table></CardContent></Card><Dialog open={!!paymentFor} onOpenChange={v=>!v&&setPaymentFor(null)}><DialogContent><DialogHeader><DialogTitle>{t("take_payment")}</DialogTitle></DialogHeader><Field label={t("amount")}><Input type="number" min="0.01" dir="ltr" value={amount} onChange={e=>setAmount(e.target.value)} /></Field><DialogFooter><Button variant="outline" onClick={()=>setPaymentFor(null)}>{t("cancel")}</Button><Button disabled={save.isPending} onClick={()=>save.mutate(undefined as never)}>{t("save")}</Button></DialogFooter></DialogContent></Dialog></>;
+}
+
+function Suppliers({ currency, canCreate, canUpdate }: { currency: string; canCreate: boolean; canUpdate: boolean }) {
+  const { t } = useLang();
+  const [supplier, setSupplier] = useState<Row | null>(null);
+  const [billOpen, setBillOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState<Row | null>(null);
+  const [name, setName] = useState(""); const [phone,setPhone]=useState(""); const [address,setAddress]=useState("");
+  const [billTotal,setBillTotal]=useState(""); const [billNo,setBillNo]=useState(""); const [billDate,setBillDate]=useState(new Date().toISOString().slice(0,10));
+  const [payAmount,setPayAmount]=useState("");
+  const suppliers = useRows<Row[]>(["suppliers"], ()=>supabase.from("suppliers").select("id,name,phone,address,active,created_at").is("deleted_at",null).order("name").limit(500));
+  const bills = useRows<Row[]>(["supplier-bills", supplier ? s(supplier,"id") : "none"], ()=>supabase.from("supplier_bills").select("id,supplier_id,invoice_number,bill_date,due_date,total_amount,paid_amount,status,notes").eq("supplier_id",s(supplier,"id")).is("deleted_at",null).order("bill_date",{ascending:false}));
+  const addSupplier = useSave(async()=>{if(!name.trim()) throw new Error(t("required")); const {error}=await supabase.from("suppliers").insert({name:name.trim(),phone:phone||null,address:address||null,active:true}); if(error) throw error;},{invalidate:[["suppliers"]],successMessage:t("saved"),onDone:()=>{setName("");setPhone("");setAddress("");}});
+  const addBill = useSave(async()=>{if(!supplier||Number(billTotal)<=0) throw new Error(t("invalid_amount")); const {error}=await supabase.from("supplier_bills").insert({supplier_id:s(supplier,"id"),invoice_number:billNo||null,bill_date:billDate,total_amount:Number(billTotal),subtotal:Number(billTotal),discount_amount:0,paid_amount:0,status:"unpaid"}); if(error) throw error;},{invalidate:[["supplier-bills",supplier?s(supplier,"id"):"none"],["suppliers"]],successMessage:t("saved"),onDone:()=>{setBillOpen(false);setBillTotal("");setBillNo("");}});
+  const payBill = useSave(async()=>{if(!paymentOpen||Number(payAmount)<=0) throw new Error(t("invalid_amount")); const outstanding=Math.max(n(paymentOpen,"total_amount")-n(paymentOpen,"paid_amount"),0);if(Number(payAmount)>outstanding)throw new Error(t("payment_exceeds_balance"));const {error}=await supabase.from("supplier_payments").insert({supplier_bill_id:s(paymentOpen,"id"),supplier_id:s(paymentOpen,"supplier_id"),amount:Number(payAmount),payment_method:"cash",reference:null,notes:null});if(error)throw error;},{invalidate:[["supplier-bills",supplier?s(supplier,"id"):"none"],["cashbox"],["finance-overview-cash"]],successMessage:t("saved"),onDone:()=>{setPaymentOpen(null);setPayAmount("");}});
+  if(suppliers.isLoading)return <Loading/>;
+  return <><ErrorBox error={suppliers.error??bills.error}/><Card><CardHeader><CardTitle>{t("suppliers_finance")}</CardTitle></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-[1fr_2fr]"><div className="space-y-3"><div className="rounded-lg border p-3"><div className="mb-2 font-medium">{t("add_supplier")}</div><div className="grid gap-2"><Input placeholder={t("name")} value={name} onChange={e=>setName(e.target.value)}/><Input placeholder={t("phone")} value={phone} onChange={e=>setPhone(e.target.value)}/><Input placeholder={t("address")} value={address} onChange={e=>setAddress(e.target.value)}/><Button disabled={!canCreate||addSupplier.isPending} onClick={()=>addSupplier.mutate(undefined as never)}><Plus className="me-2 size-4"/>{t("add")}</Button></div></div>{(suppliers.data??[]).map(r=><button key={s(r,"id")} type="button" onClick={()=>setSupplier(r)} className={`w-full rounded-lg border p-3 text-start hover:bg-muted ${supplier&&s(supplier,"id")===s(r,"id")?"ring-2 ring-primary":""}`}><div className="font-medium">{s(r,"name")}</div><div className="text-xs text-muted-foreground">{s(r,"phone")||"—"}</div></button>)}</div><div>{!supplier?<Empty/>:<><div className="mb-3 flex items-center justify-between"><div><div className="text-lg font-semibold">{s(supplier,"name")}</div><div className="text-sm text-muted-foreground">{s(supplier,"phone")}</div></div><Button disabled={!canCreate} onClick={()=>setBillOpen(true)}><Plus className="me-2 size-4"/>{t("new_supplier_bill")}</Button></div><Table><TableHeader><TableRow><TableHead>{t("invoice_number")}</TableHead><TableHead>{t("date")}</TableHead><TableHead>{t("total")}</TableHead><TableHead>{t("paid")}</TableHead><TableHead>{t("balance")}</TableHead><TableHead /></TableRow></TableHeader><TableBody>{(bills.data??[]).length===0?<TableRow><TableCell colSpan={6}><Empty/></TableCell></TableRow>:(bills.data??[]).map(r=><TableRow key={s(r,"id")}><TableCell dir="ltr">{s(r,"invoice_number")||"—"}</TableCell><TableCell dir="ltr">{s(r,"bill_date")}</TableCell><TableCell>{money(n(r,"total_amount"),currency)}</TableCell><TableCell>{money(n(r,"paid_amount"),currency)}</TableCell><TableCell className="font-semibold">{money(Math.max(n(r,"total_amount")-n(r,"paid_amount"),0),currency)}</TableCell><TableCell><Button size="sm" variant="outline" disabled={!canUpdate||n(r,"total_amount")<=n(r,"paid_amount")} onClick={()=>setPaymentOpen(r)}>{t("take_payment")}</Button></TableCell></TableRow>)}</TableBody></Table></>}</div></div></CardContent></Card><Dialog open={billOpen} onOpenChange={v=>setBillOpen(v)}><DialogContent><DialogHeader><DialogTitle>{t("new_supplier_bill")}</DialogTitle></DialogHeader><div className="grid gap-3"><Field label={t("invoice_number")}><Input value={billNo} onChange={e=>setBillNo(e.target.value)}/></Field><Field label={t("date")}><Input type="date" dir="ltr" value={billDate} onChange={e=>setBillDate(e.target.value)}/></Field><Field label={t("total")}><Input type="number" min="0.01" dir="ltr" value={billTotal} onChange={e=>setBillTotal(e.target.value)}/></Field></div><DialogFooter><Button variant="outline" onClick={()=>setBillOpen(false)}>{t("cancel")}</Button><Button disabled={addBill.isPending} onClick={()=>addBill.mutate(undefined as never)}>{t("save")}</Button></DialogFooter></DialogContent></Dialog><Dialog open={!!paymentOpen} onOpenChange={v=>!v&&setPaymentOpen(null)}><DialogContent><DialogHeader><DialogTitle>{t("supplier_payment")}</DialogTitle></DialogHeader><Field label={t("amount")}><Input type="number" min="0.01" dir="ltr" value={payAmount} onChange={e=>setPayAmount(e.target.value)}/></Field><DialogFooter><Button variant="outline" onClick={()=>setPaymentOpen(null)}>{t("cancel")}</Button><Button disabled={payBill.isPending} onClick={()=>payBill.mutate(undefined as never)}>{t("save")}</Button></DialogFooter></DialogContent></Dialog></>;
 }
