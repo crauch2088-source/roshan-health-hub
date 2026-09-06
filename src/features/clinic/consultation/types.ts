@@ -7,8 +7,8 @@ export type QuickOption = {
 };
 
 export type RxItem = {
-  medicine_id?: string;
-  medicine_name?: string;
+  medicine_id?: string | undefined;
+  medicine_name?: string | undefined;
 
   dosage: string;
   dosage_form: string;
