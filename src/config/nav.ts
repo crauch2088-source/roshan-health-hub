@@ -39,6 +39,7 @@ export const NAV: { group: string; items: NavConfigItem[] }[] = [
     group: "billing",
     items: [
       { to: "/billing", key: "billing", perm: "billing.read", icon: "Receipt" },
+      { to: "/accounting", key: "accounting", perm: "accounting.read", icon: "Landmark" },
       { to: "/expenses", key: "expenses", perm: "accounting.read", icon: "Wallet" },
       { to: "/reports", key: "reports", perm: "reports.read", icon: "BarChart3" },
     ],
