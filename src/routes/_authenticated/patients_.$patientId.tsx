@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
@@ -167,6 +167,13 @@ function PatientChart() {
             <ArrowLeft className="size-4" /> {t("back")}
           </Link>
         </Button>
+        {can("visits.create") ? (
+          <Button asChild size="sm">
+            <Link to="/visits" search={{ patient: s(record, "id") }}>
+              <Plus className="size-4" /> {t("new_visit")}
+            </Link>
+          </Button>
+        ) : null}
       </PageHeader>
 
       <ErrorBox error={patient.error} />
