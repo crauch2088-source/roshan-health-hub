@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { n, rel, s, useRows, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
+import { DEFAULT_EXPIRY_THRESHOLD_DAYS, expiryStatus } from "@/lib/pharmacy";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/reports")({
@@ -160,6 +161,185 @@ function ReportsPage() {
             </Card>
           </TabsContent>
         ))}
+      </Tabs>
+
+      <PharmacyReports />
+    </div>
+  );
+}
+
+// =============================================================================
+// Pharmacy reports — Phase 3 Part 7. Separate section (own data, own date
+// scope: these are point-in-time stock reports, not visit-date-ranged like
+// the section above) so it doesn't disturb the existing clinical reports.
+// =============================================================================
+
+function PharmacyReports() {
+  const { t } = useLang();
+  const { currency, settings } = useSettings();
+  const thresholdDays = Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
+
+  const medicines = useRows<Row[]>(["rep-medicines"], () =>
+    supabase
+      .from("medicines")
+      .select("id, name, unit, stock_quantity, reorder_level, cost_price, selling_price")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+  );
+
+  const batches = useRows<Row[]>(["rep-batches"], () =>
+    supabase
+      .from("pharmacy_inventory")
+      .select(
+        "id, batch_number, expiry_date, quantity_received, quantity_remaining, purchase_price, selling_price, medicines(name), suppliers(name)",
+      )
+      .is("deleted_at", null)
+      .order("expiry_date", { ascending: true, nullsFirst: false }),
+  );
+
+  const medRows = (medicines.data ?? []) as Row[];
+  const batchRows = (batches.data ?? []) as Row[];
+
+  const lowStockRows = medRows.filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level"));
+  const expiryRows = batchRows.filter((b) => {
+    const status = expiryStatus(s(b, "expiry_date") || null, thresholdDays);
+    return status === "expiring_soon" || status === "expired";
+  });
+
+  const batchInventoryValue = batchRows.reduce(
+    (sum, b) => sum + n(b, "quantity_remaining") * n(b, "purchase_price"),
+    0,
+  );
+
+  if (medicines.isLoading) return <Loading />;
+
+  return (
+    <div className="mt-8">
+      <h2 className="mb-4 text-lg font-bold tracking-tight text-foreground">{t("pharmacy")}</h2>
+      <Tabs defaultValue="expiry">
+        <TabsList className="mb-4 flex-wrap">
+          <TabsTrigger value="expiry">{t("expiry_report")}</TabsTrigger>
+          <TabsTrigger value="low-stock">{t("low_stock_report")}</TabsTrigger>
+          <TabsTrigger value="batch-inventory">{t("batch_inventory_report")}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="expiry">
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3 flex justify-end">
+                <ExportButtons rows={expiryRows} filename="roshan-expiry-report" />
+              </div>
+              {expiryRows.length === 0 ? (
+                <Empty />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("medicines")}</TableHead>
+                      <TableHead>{t("batch_number")}</TableHead>
+                      <TableHead>{t("supplier")}</TableHead>
+                      <TableHead>{t("expiry_date")}</TableHead>
+                      <TableHead>{t("remaining_quantity")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {expiryRows.map((b) => (
+                      <TableRow key={s(b, "id")}>
+                        <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                        <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
+                        <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
+                        <TableCell dir="ltr">{formatDate(s(b, "expiry_date"))}</TableCell>
+                        <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
+                        <TableCell>{t(expiryStatus(s(b, "expiry_date") || null, thresholdDays))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="low-stock">
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3 flex justify-end">
+                <ExportButtons rows={lowStockRows} filename="roshan-low-stock-report" />
+              </div>
+              {lowStockRows.length === 0 ? (
+                <Empty />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("medicines")}</TableHead>
+                      <TableHead>{t("stock")}</TableHead>
+                      <TableHead>{t("reorder_level")}</TableHead>
+                      <TableHead>{t("selling_price")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lowStockRows.map((m) => (
+                      <TableRow key={s(m, "id")}>
+                        <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                        <TableCell dir="ltr" className="font-semibold text-destructive">
+                          {n(m, "stock_quantity")}
+                        </TableCell>
+                        <TableCell dir="ltr">{n(m, "reorder_level")}</TableCell>
+                        <TableCell>{money(n(m, "selling_price"), currency)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="batch-inventory">
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
+            <StatCard label={t("batches")} value={String(batchRows.length)} />
+            <StatCard label={t("stock_value")} value={money(batchInventoryValue, currency)} />
+          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3 flex justify-end">
+                <ExportButtons rows={batchRows} filename="roshan-batch-inventory-report" />
+              </div>
+              {batchRows.length === 0 ? (
+                <Empty />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("medicines")}</TableHead>
+                      <TableHead>{t("batch_number")}</TableHead>
+                      <TableHead>{t("supplier")}</TableHead>
+                      <TableHead>{t("expiry_date")}</TableHead>
+                      <TableHead>{t("quantity_received")}</TableHead>
+                      <TableHead>{t("remaining_quantity")}</TableHead>
+                      <TableHead>{t("purchase_price")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {batchRows.map((b) => (
+                      <TableRow key={s(b, "id")}>
+                        <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                        <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
+                        <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
+                        <TableCell dir="ltr">{s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}</TableCell>
+                        <TableCell dir="ltr">{n(b, "quantity_received")}</TableCell>
+                        <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
+                        <TableCell>{money(n(b, "purchase_price"), currency)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
