@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Banknote, FlaskConical, Pill, Receipt, UserRound, Users, Wallet } from "lucide-react";
+import { AlertTriangle, Banknote, FlaskConical, Pill, Receipt, UserRound, Users, Wallet } from "lucide-react";
 
 import { Empty, ErrorBox, Loading, PageHeader, StatCard, StatusBadge } from "@/components/kit";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -15,7 +16,9 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
+import { DEFAULT_EXPIRY_THRESHOLD_DAYS, EXPIRY_TONE, expiryStatus } from "@/lib/pharmacy";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -38,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const { t, lang } = useLang();
   const { user } = useAuth();
-  const { currency } = useSettings();
+  const { currency, settings } = useSettings();
   const today = todayISO();
   const monthStart = `${today.slice(0, 7)}-01`;
 
@@ -115,6 +118,32 @@ function DashboardPage() {
       .limit(8),
   );
 
+  // Phase 3 — pharmacy alert widgets. Low stock reads the medicine-level
+  // aggregate (stock_quantity/reorder_level), same numbers as the
+  // Inventory > Medicines tab. Expiring/expired read actual batches, since
+  // a medicine's aggregate stock can be fine while one specific batch is
+  // about to expire.
+  const thresholdDays = Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
+
+  const lowStockMeds = useRows(["dash-low-stock"], () =>
+    supabase
+      .from("medicines")
+      .select("id, name, stock_quantity, reorder_level")
+      .is("deleted_at", null)
+      .order("stock_quantity", { ascending: true })
+      .limit(200),
+  );
+
+  const batchesForAlerts = useRows(["dash-batches"], () =>
+    supabase
+      .from("pharmacy_inventory")
+      .select("id, expiry_date, quantity_remaining, medicines(name)")
+      .is("deleted_at", null)
+      .gt("quantity_remaining", 0)
+      .order("expiry_date", { ascending: true, nullsFirst: false })
+      .limit(300),
+  );
+
   const anyError =
     visits.error ?? payments.error ?? expenses.error ?? labPending.error ?? rxPending.error;
 
@@ -131,6 +160,17 @@ function DashboardPage() {
     .reduce((sum, p) => sum + n(p, "amount"), 0);
   const expensesMonth = expenseRows.reduce((sum, p) => sum + n(p, "amount"), 0);
   const waiting = visitRows.filter((v) => s(v, "status") === "waiting").length;
+
+  const lowStockRows = ((lowStockMeds.data ?? []) as Row[])
+    .filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level"))
+    .slice(0, 8);
+  const batchRows = (batchesForAlerts.data ?? []) as Row[];
+  const expiringRows = batchRows
+    .filter((b) => expiryStatus(s(b, "expiry_date") || null, thresholdDays) === "expiring_soon")
+    .slice(0, 8);
+  const expiredRows = batchRows
+    .filter((b) => expiryStatus(s(b, "expiry_date") || null, thresholdDays) === "expired")
+    .slice(0, 8);
 
   if (visits.isLoading) return <Loading />;
 
@@ -323,6 +363,112 @@ function DashboardPage() {
                       </TableCell>
                       <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
                       <TableCell className="max-w-40 truncate">{s(f, "reason") || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="size-4 text-warning" /> {t("low_stock_medicines")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {lowStockRows.length === 0 ? (
+              <Empty />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("medicines")}</TableHead>
+                    <TableHead>{t("stock")}</TableHead>
+                    <TableHead>{t("reorder_level")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lowStockRows.map((m) => (
+                    <TableRow key={s(m, "id")}>
+                      <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                      <TableCell dir="ltr" className="font-semibold text-destructive">
+                        {n(m, "stock_quantity")}
+                      </TableCell>
+                      <TableCell dir="ltr">{n(m, "reorder_level")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="size-4 text-warning" /> {t("expiring_medicines")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {expiringRows.length === 0 ? (
+              <Empty />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("medicines")}</TableHead>
+                    <TableHead>{t("expiry_date")}</TableHead>
+                    <TableHead>{t("remaining_quantity")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expiringRows.map((b) => (
+                    <TableRow key={s(b, "id")}>
+                      <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                      <TableCell dir="ltr">
+                        <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.expiring_soon)}>
+                          {formatDate(s(b, "expiry_date"))}
+                        </Badge>
+                      </TableCell>
+                      <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="size-4 text-destructive" /> {t("expired_medicines")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {expiredRows.length === 0 ? (
+              <Empty />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("medicines")}</TableHead>
+                    <TableHead>{t("expiry_date")}</TableHead>
+                    <TableHead>{t("remaining_quantity")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expiredRows.map((b) => (
+                    <TableRow key={s(b, "id")}>
+                      <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                      <TableCell dir="ltr">
+                        <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.expired)}>
+                          {formatDate(s(b, "expiry_date"))}
+                        </Badge>
+                      </TableCell>
+                      <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
