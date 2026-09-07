@@ -34,6 +34,7 @@ const KEYS = [
   "currency",
   "tax_percent",
   "invoice_footer",
+  "pharmacy_expiry_threshold_days",
 ] as const;
 
 function SettingsPage() {
@@ -111,13 +112,31 @@ function SettingsPage() {
           <Field label={t("invoice_footer")}>
             <Textarea rows={2} value={form["invoice_footer"] ?? ""} onChange={set("invoice_footer")} />
           </Field>
-          <div>
-            <Button disabled={!can("settings.update") || save.isPending} onClick={() => save.mutate(undefined as never)}>
-              {save.isPending ? t("saving") : t("save")}
-            </Button>
-          </div>
         </CardContent>
       </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="text-base">{t("pharmacy")}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Field label={t("pharmacy_expiry_threshold")}>
+            <Input
+              type="number"
+              min={1}
+              dir="ltr"
+              value={form["pharmacy_expiry_threshold_days"] ?? "90"}
+              onChange={set("pharmacy_expiry_threshold_days")}
+            />
+          </Field>
+        </CardContent>
+      </Card>
+
+      <div className="mt-4">
+        <Button disabled={!can("settings.update") || save.isPending} onClick={() => save.mutate(undefined as never)}>
+          {save.isPending ? t("saving") : t("save")}
+        </Button>
+      </div>
     </div>
   );
 }
