@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import {
   Empty,
@@ -11,6 +11,7 @@ import {
   PageHeader,
   StatusBadge,
 } from "@/components/kit";
+import { PatientPicker, PatientSnapshotStrip, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -46,6 +47,12 @@ import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/visits")({
+  // ?patient=<id> — set by the "New Visit" button on a patient's chart
+  // (see patients_.$patientId.tsx) so that flow lands here with the
+  // patient pre-selected instead of asking reception to search again.
+  validateSearch: (search: Record<string, unknown>): { patient?: string } => ({
+    patient: typeof search.patient === "string" ? search.patient : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Visits — ROSHAN Medical Center" },
@@ -90,11 +97,12 @@ function VisitsPage() {
   const { t, lang } = useLang();
   const { can, user } = useAuth();
   const { currency } = useSettings();
+  const search = Route.useSearch();
 
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<VisitForm>(emptyForm);
-  const [patientSearch, setPatientSearch] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
 
   const canCreate = can("visits.create");
   const canDelete = can("visits.delete");
@@ -141,15 +149,29 @@ function VisitsPage() {
         .order("queue_number", { ascending: true }),
   );
 
-  const patients = useRows<Row[]>(
-    ["patients-lite", patientSearch],
-    () => {
-      let q = supabase.from("patients").select("id, full_name, mrn, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
-      const term = patientSearch.replace(/[,()%]/g, "").trim();
-      if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,phone.ilike.%${term}%`);
-      return q;
-    },
-  );
+  // Pre-select the patient when arriving from a Patient Profile's
+  // "New Visit" button (?patient=<id>) and open the dialog straight away.
+  useEffect(() => {
+    if (!search.patient || search.patient === selectedPatient?.id) return;
+    let cancelled = false;
+    supabase
+      .from("patients")
+      .select("id, full_name, mrn, phone")
+      .eq("id", search.patient)
+      .is("deleted_at", null)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const picked = data as unknown as PickedPatient;
+        setSelectedPatient(picked);
+        setForm((current) => ({ ...current, patient_id: picked.id }));
+        setOpen(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.patient]);
 
   const departments = useRows<Row[]>(
     ["departments"],
@@ -246,7 +268,7 @@ function VisitsPage() {
       onDone: () => {
         setOpen(false);
         setForm(emptyForm);
-        setPatientSearch("");
+        setSelectedPatient(null);
       },
     },
   );
@@ -344,6 +366,7 @@ function VisitsPage() {
 
               if (!value) {
                 setForm(emptyForm);
+                setSelectedPatient(null);
               }
             }}
           >
@@ -363,36 +386,17 @@ function VisitsPage() {
 
               <div className="grid gap-4">
                 <Field label={`${t("patient")} *`}>
-                  <div className="mb-2 relative">
-                    <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input className="ps-9" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder={lang === "ar" ? "ابحث بالاسم أو الرقم أو الهاتف" : "Search name, MRN or phone"} />
-                  </div>
-                  <Select
-                    value={form.patient_id}
-                    onValueChange={(value) =>
-                      setForm((current) => ({
-                        ...current,
-                        patient_id: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t("search")}
-                      />
-                    </SelectTrigger>
-
-                    <SelectContent className="max-h-72">
-                      {(patients.data ?? []).map((patient) => (
-                        <SelectItem
-                          key={s(patient, "id")}
-                          value={s(patient, "id")}
-                        >
-                          {s(patient, "full_name")} — {s(patient, "mrn") || s(patient, "phone")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <PatientPicker
+                    value={selectedPatient}
+                    autoFocus={open}
+                    onSelect={(patient) => {
+                      setSelectedPatient(patient);
+                      setForm((current) => ({ ...current, patient_id: patient?.id ?? "" }));
+                    }}
+                  />
+                  {selectedPatient ? (
+                    <PatientSnapshotStrip patientId={selectedPatient.id} currency={currency} />
+                  ) : null}
                 </Field>
 
                 <Field label={t("department")}>
