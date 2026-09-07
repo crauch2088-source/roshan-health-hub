@@ -86,7 +86,6 @@ const dict: Record<string, { ar: string; en: string }> = {
   quick_actions: { ar: "إجراءات سريعة", en: "Quick actions" },
   new_patient: { ar: "مريض جديد", en: "New patient" },
   new_visit: { ar: "زيارة جديدة", en: "New visit" },
-  new_invoice: { ar: "فاتورة جديدة", en: "New invoice" },
   new_lab_order: { ar: "طلب تحليل جديد", en: "New lab order" },
   new_lab_order_hint: {
     ar: "يجب إنشاء طلب التحليل من داخل زيارة نشطة. تم فتح قائمة الزيارات.",
@@ -150,12 +149,20 @@ const dict: Record<string, { ar: string; en: string }> = {
   marital_status: { ar: "الحالة الاجتماعية", en: "Marital status" },
   blood_group: { ar: "فصيلة الدم", en: "Blood group" },
   national_id: { ar: "الرقم الوطني", en: "National ID" },
-  new_patient: { ar: "مريض جديد", en: "New patient" },
   register_patient: { ar: "تسجيل مريض", en: "Register patient" },
   patient: { ar: "المريض", en: "Patient" },
+  search_patient_placeholder: { ar: "ابحث بالاسم أو الرقم الطبي أو الهاتف أو الرقم الوطني", en: "Search by name, MRN, phone or national ID" },
+  add_new_patient: { ar: "إضافة مريض جديد", en: "Add new patient" },
+  duplicate_patient_hint: {
+    ar: "تأكد من عدم تسجيل هذا المريض من قبل قبل إنشاء سجل جديد.",
+    en: "Double-check this patient isn't already registered before creating a new record.",
+  },
+  recent_patients: { ar: "مرضى حديثون", en: "Recent patients" },
+  previous_visits: { ar: "الزيارات السابقة", en: "Previous visits" },
+  last_visit: { ar: "آخر زيارة", en: "Last visit" },
+  outstanding_balance: { ar: "الرصيد المستحق", en: "Outstanding balance" },
 
   // visit
-  new_visit: { ar: "زيارة جديدة", en: "New visit" },
   visit_type: { ar: "نوع الزيارة", en: "Visit type" },
   walk_in: { ar: "بدون موعد", en: "Walk-in" },
   scheduled: { ar: "بموعد", en: "Scheduled" },
