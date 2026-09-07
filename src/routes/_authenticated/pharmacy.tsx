@@ -1,129 +1,207 @@
-/**
- * Phase 3 — Pharmacy Inventory Modernization.
- *
- * Shared types + pure helpers for the batch/FEFO/expiry system. This repo
- * doesn't use generated Supabase types anywhere (see lib/db.ts's `Row =
- * Record<string, unknown>` + `s()/n()/rel()` accessor pattern) so these
- * are hand-written to match that same convention, not a codegen dump.
- */
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 
-import { rpc } from "./db";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/lib/auth";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { useLang } from "@/lib/i18n";
+import { formatDateTime, money } from "@/lib/medical";
+import { dispensePrescriptionFefo, type DispenseResultRow } from "@/lib/pharmacy";
+import { supabase } from "@/lib/supabase";
 
-// ---------------------------------------------------------------------------
-// Domain types
-// ---------------------------------------------------------------------------
+export const Route = createFileRoute("/_authenticated/pharmacy")({
+  head: () => ({
+    meta: [
+      { title: "Pharmacy — ROSHAN Medical Center" },
+      { name: "description", content: "Dispense prescriptions using FEFO batch stock and bill medicines." },
+      { property: "og:title", content: "Pharmacy — ROSHAN Medical Center" },
+      { property: "og:description", content: "Dispense prescriptions using FEFO batch stock and bill medicines." },
+    ],
+  }),
+  component: PharmacyPage,
+});
 
-/** A single received lot of a medicine — public.pharmacy_inventory. */
-export type PharmacyBatch = {
-  id: string;
-  medicine_id: string;
-  batch_number: string | null;
-  supplier_id: string | null;
-  purchase_price: number | null;
-  selling_price: number | null;
-  quantity_received: number;
-  quantity_remaining: number;
-  manufacture_date: string | null;
-  expiry_date: string | null;
-  invoice_reference: string | null;
-  reorder_level: number | null;
-  created_at: string;
-  updated_at: string;
-  // Joined
-  medicines?: { id: string; name: string | null; generic_name: string | null; unit: string | null } | null;
-  suppliers?: { id: string; name: string | null; phone: string | null } | null;
-};
+const STATUSES = ["pending", "dispensed", "external", "all"];
 
-export type Supplier = {
-  id: string;
-  name: string;
-  phone: string | null;
-  address: string | null;
-  active: boolean | null;
-};
+function PharmacyPage() {
+  const { t } = useLang();
+  // pharmacy.manage/pharmacy.dispense were never real permission codes (see
+  // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,
+  // medicines and stock_movements already keys off pharmacy.create/update,
+  // so the UI now checks the same codes instead of two dangling ones.
+  const { can } = useAuth();
+  const { currency } = useSettings();
+  const [status, setStatus] = useState("pending");
+  const [search, setSearch] = useState("");
+  const [dispenseDetail, setDispenseDetail] = useState<Record<string, DispenseResultRow[]>>({});
 
-export type StockMovement = {
-  id: string;
-  medicine_id: string;
-  batch_id: string | null;
-  movement_type: "purchase" | "dispense" | "adjustment" | "return" | "writeoff";
-  quantity: number;
-  reference_id: string | null;
-  reference_table: string | null;
-  notes: string | null;
-  created_at: string;
-};
+  const list = useRows(
+    ["pharmacy-queue", status],
+    () => {
+      let q = supabase
+        .from("prescriptions")
+        .select(
+          "id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
+        )
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (status !== "all") q = q.eq("status", status);
+      return q;
+    },
+    { refetchInterval: 20000 },
+  );
 
-/** One row per batch (or legacy fallback) consumed by fn_dispense_prescription(). */
-export type DispenseResultRow = {
-  item_id: string;
-  medicine_id: string;
-  medicine_name: string;
-  batch_id: string | null;
-  batch_number: string | null;
-  expiry_date: string | null;
-  quantity_dispensed: number;
-  batch_quantity_remaining: number | null;
-  source: "batch" | "legacy";
-};
+  const dispense = useSave<{ prescriptionId: string }>(
+    async ({ prescriptionId }) => {
+      const result = await dispensePrescriptionFefo(prescriptionId);
+      setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
+      return result;
+    },
+    { invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"], ["pharmacy-batches"]], successMessage: t("dispensed") },
+  );
 
-export type ExpiryStatus = "healthy" | "expiring_soon" | "expired";
+  const rows = useMemo(() => { const q = search.trim().toLowerCase(); return ((list.data ?? []) as Row[]).filter((p) => { if (!q) return true; const patient = rel(p, "patients"); const items = (p["prescription_items"] as Row[]) ?? []; const meds = items.map((i) => s(rel(i, "medicines"), "name")).join(" "); return `${s(patient,"full_name")} ${s(patient,"mrn")} ${meds}`.toLowerCase().includes(q); }); }, [list.data, search]);
+  if (list.isLoading) return <Loading />;
 
-export const DEFAULT_EXPIRY_THRESHOLD_DAYS = 90;
+  return (
+    <div>
+      <PageHeader title={t("pharmacy")} subtitle={t("dispense_queue")}>
+        <Input placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-56" />
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUSES.map((x) => (
+              <SelectItem key={x} value={x}>
+                {t(x)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <ExportButtons rows={rows} filename="roshan-prescriptions" />
+      </PageHeader>
 
-// ---------------------------------------------------------------------------
-// Expiry status (Part 3)
-// ---------------------------------------------------------------------------
+      <ErrorBox error={list.error} />
 
-/**
- * Classifies a batch by its expiry date against the clinic's configurable
- * threshold (system_settings.pharmacy_expiry_threshold_days, default 90).
- * A null expiry date is treated as healthy (nothing to warn about).
- */
-export function expiryStatus(expiryDate: string | null | undefined, thresholdDays: number): ExpiryStatus {
-  if (!expiryDate) return "healthy";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  if (Number.isNaN(expiry.getTime())) return "healthy";
-  const daysLeft = Math.floor((expiry.getTime() - today.getTime()) / 86_400_000);
-  if (daysLeft < 0) return "expired";
-  if (daysLeft <= thresholdDays) return "expiring_soon";
-  return "healthy";
+      {rows.length === 0 ? (
+        <Empty />
+      ) : (
+        <div className="grid gap-4">
+          {rows.map((p) => {
+            const items = (p["prescription_items"] as Row[]) ?? [];
+            const total = items.reduce(
+              (sum, i) => sum + (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
+              0,
+            );
+            const usedBatches = dispenseDetail[s(p, "id")];
+            return (
+              <Card key={s(p, "id")}>
+                <CardContent className="p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{s(rel(p, "patients"), "full_name")}</p>
+                      <p className="text-xs text-muted-foreground" dir="ltr">
+                        {s(rel(p, "patients"), "mrn")} · {formatDateTime(s(p, "created_at"))} ·{" "}
+                        {s(rel(p, "users"), "full_name")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={s(p, "status")} />
+                      {can("pharmacy.update") && s(p, "status") === "pending" ? (
+                        <Button
+                          size="sm"
+                          disabled={dispense.isPending}
+                          onClick={() => dispense.mutate({ prescriptionId: s(p, "id") })}
+                        >
+                          {t("dispense")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                  <SectionTitle>{t("medicines")}</SectionTitle>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("medicines")}</TableHead>
+                        <TableHead>{t("dosage")}</TableHead>
+                        <TableHead>{t("quantity")}</TableHead>
+                        <TableHead>{t("stock")}</TableHead>
+                        <TableHead>{t("total")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((i) => (
+                        <TableRow key={s(i, "id")}>
+                          <TableCell className="font-medium">{s(rel(i, "medicines"), "name")}</TableCell>
+                          <TableCell>
+                            {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")].filter(Boolean).join(" · ") || "—"}
+                          </TableCell>
+                          <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
+                          <TableCell dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</TableCell>
+                          <TableCell>
+                            {money((n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"), currency)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <p className="mt-2 text-end text-sm font-semibold">
+                    {t("total")}: {money(total, currency)}
+                  </p>
+
+                  {usedBatches && usedBatches.length > 0 ? (
+                    <div className="mt-4 rounded-lg border bg-accent/30 p-3">
+                      <SectionTitle>{t("batches_used")}</SectionTitle>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t("medicines")}</TableHead>
+                            <TableHead>{t("batch_number")}</TableHead>
+                            <TableHead>{t("expiry_date")}</TableHead>
+                            <TableHead>{t("quantity_dispensed")}</TableHead>
+                            <TableHead>{t("remaining_quantity")}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {usedBatches.map((row, idx) => (
+                            <TableRow key={`${row.item_id}-${row.batch_id ?? "legacy"}-${idx}`}>
+                              <TableCell className="font-medium">{row.medicine_name}</TableCell>
+                              <TableCell dir="ltr">{row.batch_number ?? t("legacy_stock")}</TableCell>
+                              <TableCell dir="ltr">{row.expiry_date ?? "—"}</TableCell>
+                              <TableCell dir="ltr">{row.quantity_dispensed}</TableCell>
+                              <TableCell dir="ltr">{row.batch_quantity_remaining ?? "—"}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
-
-export function daysUntil(expiryDate: string | null | undefined): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  if (Number.isNaN(expiry.getTime())) return null;
-  return Math.floor((expiry.getTime() - today.getTime()) / 86_400_000);
-}
-
-/** Tailwind classes for the expiry badge, matching the tone scale already used by StatusBadge. */
-export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
-  healthy: "bg-success/15 text-success border-success/30",
-  expiring_soon: "bg-warning/15 text-warning border-warning/30",
-  expired: "bg-destructive/15 text-destructive border-destructive/30",
-};
-
-// ---------------------------------------------------------------------------
-// FEFO dispensing (Part 2)
-// ---------------------------------------------------------------------------
-
-/**
- * Dispenses every item on a pending prescription First-Expire-First-Out.
- * Runs entirely inside one Postgres function (fn_dispense_prescription) so
- * it's atomic under concurrent dispensing, and returns one row per batch
- * (or legacy-stock) consumption for display.
- */
-export async function dispensePrescriptionFefo(prescriptionId: string): Promise<DispenseResultRow[]> {
-  return rpc<DispenseResultRow[]>("fn_dispense_prescription", { p_prescription_id: prescriptionId });
-}
-
-// ---------------------------------------------------------------------------
-// Misc
-// ---------------------------------------------------------------------------
-
-export const MOVEMENT_TYPES = ["purchase", "dispense", "adjustment", "return", "writeoff"] as const;
