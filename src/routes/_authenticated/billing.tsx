@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge } from "@/components/kit";
+import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -57,6 +58,7 @@ function BillingPage() {
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [patientId, setPatientId] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
   const [partnerId, setPartnerId] = useState("");
   const [discount, setDiscount] = useState("0");
   const [lines, setLines] = useState<Line[]>([
@@ -74,9 +76,6 @@ function BillingPage() {
       .order("created_at", { ascending: false }),
   );
 
-  const patients = useRows(["patients-lite"], () =>
-    supabase.from("patients").select("id, full_name, mrn").is("deleted_at", null).limit(500),
-  );
   const partners = useRows(["partners"], () =>
     supabase.from("partners").select("id, name, discount_percent").is("deleted_at", null),
   );
@@ -124,6 +123,8 @@ function BillingPage() {
       successMessage: t("saved"),
       onDone: (id) => {
         setOpen(false);
+        setSelectedPatient(null);
+        setPatientId("");
         setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "consultation" }]);
         setDiscount("0");
         if (typeof id === "string") void navigate({ to: "/billing/$invoiceId", params: { invoiceId: id } });
@@ -156,18 +157,13 @@ function BillingPage() {
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label={`${t("patient")} *`}>
-                    <Select value={patientId} onValueChange={setPatientId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("search")} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-72">
-                        {((patients.data ?? []) as Row[]).map((p) => (
-                          <SelectItem key={s(p, "id")} value={s(p, "id")}>
-                            {s(p, "full_name")} — {s(p, "mrn")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <PatientPicker
+                      value={selectedPatient}
+                      onSelect={(p) => {
+                        setSelectedPatient(p);
+                        setPatientId(p?.id ?? "");
+                      }}
+                    />
                   </Field>
                   <Field label={t("partners")}>
                     <Select value={partnerId} onValueChange={setPartnerId}>
