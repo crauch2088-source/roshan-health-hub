@@ -50,8 +50,8 @@ export const Route = createFileRoute("/_authenticated/visits")({
   // ?patient=<id> — set by the "New Visit" button on a patient's chart
   // (see patients_.$patientId.tsx) so that flow lands here with the
   // patient pre-selected instead of asking reception to search again.
-  validateSearch: (search: Record<string, unknown>): { patient?: string } => ({
-    patient: typeof search.patient === "string" ? search.patient : undefined,
+  validateSearch: (search: Record<string, unknown>): { patient?: string | undefined } => ({
+    patient: typeof search["patient"] === "string" ? (search["patient"] as string) : undefined,
   }),
   head: () => ({
     meta: [

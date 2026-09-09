@@ -594,7 +594,7 @@ function SupplierDebtTab({ currency }: { currency: string }) {
                   return (
                     <TableRow key={s(b, "id")}>
                       <TableCell dir="ltr">{formatDate(s(b, "bill_date"))}</TableCell>
-                      <TableCell className="font-medium">{s(b, "suppliers") ? (b["suppliers"] as Row).name as string : "—"}</TableCell>
+                      <TableCell className="font-medium">{s(b, "suppliers") ? (b["suppliers"] as Row)["name"] as string : "—"}</TableCell>
                       <TableCell dir="ltr">{s(b, "invoice_number") || "—"}</TableCell>
                       <TableCell>{money(n(b, "total_amount"), currency)}</TableCell>
                       <TableCell>{money(n(b, "paid_amount"), currency)}</TableCell>
