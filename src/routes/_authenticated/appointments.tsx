@@ -570,7 +570,7 @@ function AppointmentsPage() {
       <ErrorBox
         error={
           appointments.error ??
-          patients.error ??
+          
           departments.error ??
           doctors.error
         }
