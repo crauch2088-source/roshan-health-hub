@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { PatientPicker, PatientSnapshotStrip, type PickedPatient } from "@/components/patient-picker";
 import {
   Empty,
   ErrorBox,
@@ -39,7 +40,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { rel, s, useRows, useSave, type Row } from "@/lib/db";
+import { rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -70,10 +71,11 @@ export const Route = createFileRoute("/_authenticated/appointments")({
 function AppointmentsPage() {
   const { lang } = useLang();
   const { user } = useAuth();
+  const { currency } = useSettings();
 
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
-  const [patientSearch, setPatientSearch] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
 
   const [form, setForm] = useState({
     patient_id: "",
@@ -95,13 +97,6 @@ function AppointmentsPage() {
       .is("deleted_at", null)
       .order("appointment_date", { ascending: true }),
   );
-
-  const patients = useRows(["patients-lite", patientSearch], () => {
-    let q = supabase.from("patients").select("id, full_name, mrn, phone").is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
-    const term = patientSearch.replace(/[,()%]/g, "").trim();
-    if (term) q = q.or(`full_name.ilike.%${term}%,mrn.ilike.%${term}%,phone.ilike.%${term}%`);
-    return q;
-  });
 
   const departments = useRows(["departments"], () =>
     supabase
@@ -203,7 +198,7 @@ function AppointmentsPage() {
 
       onDone: () => {
         setOpen(false);
-        setPatientSearch("");
+        setSelectedPatient(null);
 
         setForm({
           patient_id: "",
@@ -341,54 +336,16 @@ function AppointmentsPage() {
                     : "Patient *"
                 }
               >
-                <div className="mb-2 relative"><Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input className="ps-9" value={patientSearch} onChange={(e)=>setPatientSearch(e.target.value)} placeholder={lang==="ar"?"ابحث بالاسم أو الرقم أو الهاتف":"Search name, MRN or phone"}/></div>
-                <Select
-                  value={form.patient_id}
-                  onValueChange={(value) =>
-                    setForm({
-                      ...form,
-                      patient_id: value,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        lang === "ar"
-                          ? "اختر المريض..."
-                          : "Select patient..."
-                      }
-                    />
-                  </SelectTrigger>
-
-                  <SelectContent className="max-h-72">
-                    {((patients.data ??
-                      []) as Row[]).map(
-                      (patient) => (
-                        <SelectItem
-                          key={s(
-                            patient,
-                            "id",
-                          )}
-                          value={s(
-                            patient,
-                            "id",
-                          )}
-                        >
-                          {s(
-                            patient,
-                            "full_name",
-                          )}{" "}
-                          —{" "}
-                          {s(
-                            patient,
-                            "mrn",
-                          )}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
+                <PatientPicker
+                  value={selectedPatient}
+                  onSelect={(patient) => {
+                    setSelectedPatient(patient);
+                    setForm({ ...form, patient_id: patient?.id ?? "" });
+                  }}
+                />
+                {selectedPatient ? (
+                  <PatientSnapshotStrip patientId={selectedPatient.id} currency={currency} />
+                ) : null}
               </Field>
 
               <Field
