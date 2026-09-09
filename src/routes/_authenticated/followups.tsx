@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import {
   Empty,
   ErrorBox,
@@ -64,7 +65,7 @@ function FollowupsPage() {
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
   const [open, setOpen] = useState(false);
-  const [patientSearch, setPatientSearch] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
 
   const [form, setForm] = useState({
     patient_id: "",
@@ -95,27 +96,6 @@ function FollowupsPage() {
       .lte("followup_date", to)
       .is("deleted_at", null)
       .order("followup_date", { ascending: true }),
-  );
-
-  const patients = useRows(
-    ["followup-patients", patientSearch],
-    () => {
-      const term = patientSearch.replace(/[,()%]/g, "").trim();
-
-      let query = supabase
-        .from("patients")
-        .select("id, full_name, mrn, phone")
-        .is("deleted_at", null);
-
-      if (term) {
-        query = query.or(
-          `full_name.ilike.%${term}%,mrn.ilike.%${term}%,phone.ilike.%${term}%`,
-        );
-      }
-
-      return query.order("full_name", { ascending: true }).limit(20);
-    },
-    { enabled: open },
   );
 
   const create = useSave(
@@ -150,7 +130,7 @@ function FollowupsPage() {
           reason: "",
         });
 
-        setPatientSearch("");
+        setSelectedPatient(null);
       },
     },
   );
@@ -317,8 +297,7 @@ function FollowupsPage() {
               followup_date: todayISO(),
               reason: "",
             });
-
-            setPatientSearch("");
+            setSelectedPatient(null);
           }
         }}
       >
@@ -335,49 +314,17 @@ function FollowupsPage() {
                 {t("patient")}
               </label>
 
-              <Input
-                placeholder={t("search")}
-                value={form.patient_name || patientSearch}
-                onChange={(e) => {
+              <PatientPicker
+                value={selectedPatient}
+                onSelect={(patient) => {
+                  setSelectedPatient(patient);
                   setForm({
                     ...form,
-                    patient_id: "",
-                    patient_name: "",
+                    patient_id: patient?.id ?? "",
+                    patient_name: patient?.full_name ?? "",
                   });
-
-                  setPatientSearch(e.target.value);
                 }}
               />
-
-              {form.patient_id ? (
-                <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                  {form.patient_name}
-                </div>
-              ) : (
-                <div className="max-h-40 overflow-y-auto rounded-md border">
-                  {((patients.data ?? []) as Row[]).map((patient) => (
-                    <button
-                      type="button"
-                      key={s(patient, "id")}
-                      className="block w-full border-b px-3 py-2 text-start text-sm last:border-0 hover:bg-muted"
-                      onClick={() => {
-                        setForm({
-                          ...form,
-                          patient_id: s(patient, "id"),
-                          patient_name: s(patient, "full_name"),
-                        });
-
-                        setPatientSearch("");
-                      }}
-                    >
-                      {s(patient, "full_name")}{" "}
-                      {s(patient, "mrn")
-                        ? `(${s(patient, "mrn")})`
-                        : ""}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="grid gap-2">
