@@ -6,8 +6,8 @@ export type SearchCategory = "patient" | "visit" | "lab" | "medicine";
 export type SearchResultItem = {
   key: string;
   title: string;
-  subtitle?: string;
-  meta?: string;
+  subtitle?: string | undefined;
+  meta?: string | undefined;
   to: string;
   category: SearchCategory;
 };
@@ -53,10 +53,10 @@ function readCache(term: string): SearchResults | null {
 async function searchPatients(term: string): Promise<SearchResultItem[]> {
   const { data } = await patientPickerQuery(term, PER_CATEGORY_LIMIT);
   return ((data ?? []) as Record<string, unknown>[]).map((p) => ({
-    key: `patient:${p.id}`,
-    title: String(p.full_name ?? ""),
-    subtitle: [p.mrn, p.phone].filter(Boolean).join(" · "),
-    to: `/patients/${p.id}`,
+    key: `patient:${p["id"]}`,
+    title: String(p["full_name"] ?? ""),
+    subtitle: [p["mrn"], p["phone"]].filter(Boolean).join(" · "),
+    to: `/patients/${p["id"]}`,
     category: "patient" as const,
   }));
 }
@@ -77,13 +77,13 @@ async function searchVisits(term: string): Promise<SearchResultItem[]> {
   const { data } = await filtered;
 
   return ((data ?? []) as Record<string, unknown>[]).map((v) => {
-    const patient = (v.patients as Record<string, unknown> | null) ?? {};
+    const patient = (v["patients"] as Record<string, unknown> | null) ?? {};
     return {
-      key: `visit:${v.id}`,
-      title: String(patient.full_name ?? ""),
-      subtitle: `${String(patient.mrn ?? "")} · ${String(v.visit_date ?? "")}`,
-      meta: String(v.status ?? ""),
-      to: `/clinic/${v.id}`,
+      key: `visit:${v["id"]}`,
+      title: String(patient["full_name"] ?? ""),
+      subtitle: `${String(patient["mrn"] ?? "")} · ${String(v["visit_date"] ?? "")}`,
+      meta: String(v["status"] ?? ""),
+      to: `/clinic/${v["id"]}`,
       category: "visit" as const,
     };
   });
@@ -103,15 +103,15 @@ async function searchLab(term: string): Promise<SearchResultItem[]> {
     .limit(PER_CATEGORY_LIMIT);
 
   return ((data ?? []) as Record<string, unknown>[]).map((o) => {
-    const patient = (o.patients as Record<string, unknown> | null) ?? {};
-    const items = (o.lab_order_items as { lab_tests: { name: string } | null }[] | null) ?? [];
+    const patient = (o["patients"] as Record<string, unknown> | null) ?? {};
+    const items = (o["lab_order_items"] as { lab_tests: { name: string } | null }[] | null) ?? [];
     const testNames = items.map((i) => i.lab_tests?.name).filter(Boolean);
     return {
-      key: `lab:${o.id}`,
-      title: String(patient.full_name ?? ""),
-      subtitle: testNames.length > 0 ? testNames.join(", ") : String(patient.mrn ?? ""),
-      meta: String(o.status ?? ""),
-      to: `/lab/${o.id}`,
+      key: `lab:${o["id"]}`,
+      title: String(patient["full_name"] ?? ""),
+      subtitle: testNames.length > 0 ? testNames.join(", ") : String(patient["mrn"] ?? ""),
+      meta: String(o["status"] ?? ""),
+      to: `/lab/${o["id"]}`,
       category: "lab" as const,
     };
   });
@@ -129,10 +129,10 @@ async function searchMedicines(term: string): Promise<SearchResultItem[]> {
     .limit(PER_CATEGORY_LIMIT);
 
   return ((data ?? []) as Record<string, unknown>[]).map((m) => ({
-    key: `medicine:${m.id}`,
-    title: String(m.name ?? ""),
-    subtitle: m.unit ? String(m.unit) : undefined,
-    meta: `${String(m.stock_quantity ?? 0)}`,
+    key: `medicine:${m["id"]}`,
+    title: String(m["name"] ?? ""),
+    subtitle: m["unit"] ? String(m["unit"]) : undefined,
+    meta: `${String(m["stock_quantity"] ?? 0)}`,
     to: `/inventory`,
     category: "medicine" as const,
   }));
