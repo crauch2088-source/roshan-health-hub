@@ -44,7 +44,7 @@ type AuthCtx = {
   perms: Set<string>;
   error: string | null;
   permissionsReady: boolean;
-  can: (code: string) => boolean;
+  can: (code?: string) => boolean;
   canModule: (module: string) => boolean;
   isSuperAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -289,15 +289,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin = user?.role_code === "super_admin";
 
   const can = useCallback(
-    (code: string) => {
+    (code?: string) => {
       if (!user || !user.active) return false;
 
       if (!permissionsReady) return false;
 
       if (isSuperAdmin) return true;
 
+      if (!code) return true;
+
       return perms.has(code);
     },
+
     [user, permissionsReady, isSuperAdmin, perms],
   );
 
