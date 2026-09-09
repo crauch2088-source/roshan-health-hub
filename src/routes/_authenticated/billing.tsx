@@ -270,7 +270,7 @@ function BillingPage() {
         ) : null}
       </PageHeader>
 
-      <ErrorBox error={invoices.error ?? patients.error ?? partners.error} />
+      <ErrorBox error={invoices.error ?? partners.error} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <StatCard label={t("invoices")} value={String(rows.length)} />
