@@ -168,6 +168,7 @@ export function NavRail({
           )}
         </Button>
       </div>
+      </div>
     </TooltipProvider>
   );
 }
