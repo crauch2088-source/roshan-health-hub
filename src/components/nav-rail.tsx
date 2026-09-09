@@ -26,8 +26,8 @@ function RailLink({
   item: NavConfigItem;
   collapsed: boolean;
   active: boolean;
-  onNavigate?: () => void;
-  trailing?: ReactNode;
+  onNavigate?: (() => void) | undefined;
+  trailing?: ReactNode | undefined;
 }) {
   const { t } = useLang();
   const Icon = getNavIcon(item.icon);
@@ -55,7 +55,7 @@ function RailLink({
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="end">{t(item.key)}</TooltipContent>
+      <TooltipContent side="right">{t(item.key)}</TooltipContent>
     </Tooltip>
   );
 }

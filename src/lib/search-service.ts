@@ -6,8 +6,8 @@ export type SearchCategory = "patient" | "visit" | "lab" | "medicine";
 export type SearchResultItem = {
   key: string;
   title: string;
-  subtitle?: string;
-  meta?: string;
+  subtitle?: string | undefined;
+  meta?: string | undefined;
   to: string;
   category: SearchCategory;
 };
