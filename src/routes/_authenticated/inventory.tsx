@@ -489,7 +489,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           manufacture_date: form.manufacture_date || null,
           expiry_date: form.expiry_date || null,
           invoice_reference: form.invoice_reference || null,
-          branch_id: user?.branch_id ?? null,
+          branch_id: (user as Record<string, unknown> | null)?.["branch_id"] ?? null,
         })
         .select("id")
         .single();
