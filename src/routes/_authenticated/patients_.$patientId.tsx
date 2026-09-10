@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Component, useEffect, useState, type ReactNode } from "react";
+import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, Stethoscope } from "lucide-react";
+import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
@@ -114,6 +114,106 @@ function PatientChart() {
       .order("invoice_date", { ascending: false }),
   );
 
+  const appointments = useRows(["patient-appointments", patientId], () =>
+    supabase
+      .from("appointments")
+      .select("id, appointment_date, appointment_time, status, notes, departments(name, name_ar), users(full_name)")
+      .eq("patient_id", patientId)
+      .is("deleted_at", null)
+      .order("appointment_date", { ascending: false })
+      .limit(50),
+  );
+
+  const followups = useRows(["patient-followups", patientId], () =>
+    supabase
+      .from("followups")
+      .select("id, followup_date, reason, status")
+      .eq("patient_id", patientId)
+      .is("deleted_at", null)
+      .order("followup_date", { ascending: false })
+      .limit(50),
+  );
+
+  type TimelineItem = {
+    id: string;
+    kind: "visit" | "appointment" | "followup" | "lab" | "invoice";
+    date: string;
+    title: string;
+    subtitle?: string;
+    status?: string;
+    href?: string;
+  };
+
+  const timeline = useMemo(() => {
+    const items: TimelineItem[] = [];
+    for (const v of (visits.data ?? []) as Row[]) {
+      const dept = rel(v, "departments");
+      items.push({
+        id: `visit-${s(v, "id")}`,
+        kind: "visit",
+        date: s(v, "visit_date") || "",
+        title: lang === "ar" ? "زيارة" : "Visit",
+        subtitle: (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) || s(rel(v, "users"), "full_name"),
+        status: s(v, "status"),
+        href: `/clinic/${s(v, "id")}`,
+      });
+    }
+    for (const a of (appointments.data ?? []) as Row[]) {
+      const dept = rel(a, "departments");
+      items.push({
+        id: `appt-${s(a, "id")}`,
+        kind: "appointment",
+        date: (s(a, "appointment_date") || "").slice(0, 10),
+        title: lang === "ar" ? "موعد" : "Appointment",
+        subtitle: (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) || s(rel(a, "users"), "full_name"),
+        status: s(a, "status"),
+      });
+    }
+    for (const f of (followups.data ?? []) as Row[]) {
+      items.push({
+        id: `fu-${s(f, "id")}`,
+        kind: "followup",
+        date: s(f, "followup_date") || "",
+        title: lang === "ar" ? "متابعة" : "Follow-up",
+        subtitle: s(f, "reason") || undefined,
+        status: s(f, "status"),
+      });
+    }
+    for (const o of (labs.data ?? []) as Row[]) {
+      const itemsList = (o["lab_order_items"] as Row[]) ?? [];
+      const names = itemsList
+        .map((i) => {
+          const test = rel(i, "lab_tests");
+          return lang === "ar" ? s(test, "name_ar") || s(test, "name") : s(test, "name");
+        })
+        .filter(Boolean)
+        .join(", ");
+      items.push({
+        id: `lab-${s(o, "id")}`,
+        kind: "lab",
+        date: (s(o, "created_at") || "").slice(0, 10),
+        title: lang === "ar" ? "تحاليل" : "Lab order",
+        subtitle: names || undefined,
+        status: s(o, "status"),
+        href: `/lab/${s(o, "id")}`,
+      });
+    }
+    for (const inv of (invoices.data ?? []) as Row[]) {
+      items.push({
+        id: `inv-${s(inv, "id")}`,
+        kind: "invoice",
+        date: s(inv, "invoice_date") || "",
+        title: s(inv, "invoice_number") || (lang === "ar" ? "فاتورة" : "Invoice"),
+        subtitle: money(n(inv, "net_amount"), currency),
+        status: s(inv, "status"),
+        href: `/billing/${s(inv, "id")}`,
+      });
+    }
+    items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    return items;
+  }, [visits.data, appointments.data, followups.data, labs.data, invoices.data, lang, currency]);
+
+
   const prescriptions = useRows(["patient-rx", patientId], () =>
     supabase
       .from("prescriptions")
@@ -180,6 +280,7 @@ function PatientChart() {
 
       <Tabs defaultValue="profile">
         <TabsList className="mb-4 flex-wrap">
+          <TabsTrigger value="timeline">{lang === "ar" ? "الخط الزمني" : "Timeline"}</TabsTrigger>
           <TabsTrigger value="profile">{t("patient")}</TabsTrigger>
           <TabsTrigger value="visits">{t("visits")}</TabsTrigger>
           <TabsTrigger value="labs">{t("laboratory")}</TabsTrigger>
@@ -187,7 +288,66 @@ function PatientChart() {
           <TabsTrigger value="invoices">{t("invoices")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile">
+        
+        <TabsContent value="timeline">
+          <Card>
+            <CardContent className="p-0">
+              {timeline.length === 0 ? (
+                <Empty
+                  title={lang === "ar" ? "لا أحداث بعد" : "No events yet"}
+                  description={lang === "ar" ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير." : "Visits, appointments, labs and invoices will appear here."}
+                />
+              ) : (
+                <ul className="divide-y">
+                  {timeline.map((item) => {
+                    const Icon =
+                      item.kind === "visit"
+                        ? ClipboardList
+                        : item.kind === "appointment"
+                          ? CalendarDays
+                          : item.kind === "followup"
+                            ? Stethoscope
+                            : item.kind === "lab"
+                              ? FlaskConical
+                              : Receipt;
+                    const body = (
+                      <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
+                        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                          <Icon className="size-4" aria-hidden />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-foreground">{item.title}</span>
+                            {item.status ? <StatusBadge status={item.status} /> : null}
+                          </div>
+                          {item.subtitle ? (
+                            <p className="mt-0.5 truncate text-sm text-muted-foreground">{item.subtitle}</p>
+                          ) : null}
+                        </div>
+                        <time className="shrink-0 text-xs tabular-nums text-muted-foreground" dir="ltr">
+                          {item.date ? formatDate(item.date) : "—"}
+                        </time>
+                      </div>
+                    );
+                    if (item.href) {
+                      // Use plain <a> for dynamic path segments to avoid router type friction
+                      return (
+                        <li key={item.id}>
+                          <a href={item.href} className="block">
+                            {body}
+                          </a>
+                        </li>
+                      );
+                    }
+                    return <li key={item.id}>{body}</li>;
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+<TabsContent value="profile">
           <Card>
             <CardContent className="p-4">
               <SectionTitle>{t("patient")}</SectionTitle>
