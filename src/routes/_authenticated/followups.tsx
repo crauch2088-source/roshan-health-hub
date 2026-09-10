@@ -9,6 +9,7 @@ import {
   Loading,
   PageHeader,
   StatusBadge,
+  PermissionGate,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +60,14 @@ export const Route = createFileRoute("/_authenticated/followups")({
 });
 
 function FollowupsPage() {
+  return (
+    <PermissionGate perm="followups.read">
+      <FollowupsPageInner />
+    </PermissionGate>
+  );
+}
+
+function FollowupsPageInner() {
   const { t } = useLang();
   const { can } = useAuth();
 

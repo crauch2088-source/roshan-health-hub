@@ -10,6 +10,7 @@ import {
   Loading,
   PageHeader,
   StatusBadge,
+  PermissionGate,
 } from "@/components/kit";
 import { PatientPicker, PatientSnapshotStrip, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,14 @@ const emptyForm: VisitForm = {
 };
 
 function VisitsPage() {
+  return (
+    <PermissionGate perm="visits.read">
+      <VisitsPageInner />
+    </PermissionGate>
+  );
+}
+
+function VisitsPageInner() {
   const { t, lang } = useLang();
   const { can, user } = useAuth();
   const { currency } = useSettings();

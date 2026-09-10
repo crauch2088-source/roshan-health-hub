@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, Banknote, FlaskConical, Pill, Receipt, UserRound, Users, Wallet } from "lucide-react";
 
-import { Empty, ErrorBox, Loading, PageHeader, SectionTitle, StatCard, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, Loading, PageHeader, SectionTitle, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,6 +39,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function DashboardPage() {
+  return (
+    <PermissionGate perm="dashboard.read">
+      <DashboardPageInner />
+    </PermissionGate>
+  );
+}
+
+function DashboardPageInner() {
   const { t, lang } = useLang();
   const { user } = useAuth();
   const { currency, settings } = useSettings();

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,14 @@ export const Route = createFileRoute("/_authenticated/lab")({
 const STATUSES = ["all", "ordered", "sample_collected", "in_progress", "completed", "verified"];
 
 function LabPage() {
+  return (
+    <PermissionGate perm="lab.read">
+      <LabPageInner />
+    </PermissionGate>
+  );
+}
+
+function LabPageInner() {
   const { t, lang } = useLang();
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");

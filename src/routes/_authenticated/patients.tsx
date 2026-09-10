@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Phone, Plus, Search } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, Pager } from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, Pager, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -65,6 +65,14 @@ function emptyForm() {
 }
 
 function PatientsPage() {
+  return (
+    <PermissionGate perm="patients.read">
+      <PatientsPageInner />
+    </PermissionGate>
+  );
+}
+
+function PatientsPageInner() {
   const { t } = useLang();
   const { can } = useAuth();
 
