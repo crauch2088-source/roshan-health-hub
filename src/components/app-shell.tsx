@@ -126,7 +126,7 @@ function Shell({ children }: { children: ReactNode }) {
 
 function cnRail(collapsed: boolean): string {
   return [
-    "no-print sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar lg:flex transition-[width] duration-150",
+    "no-print sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar lg:flex transition-[width] duration-200 ease-in-out",
     collapsed ? "w-16" : "w-64",
   ].join(" ");
 }

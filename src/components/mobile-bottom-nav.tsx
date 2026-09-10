@@ -1,5 +1,5 @@
-import { Link, useLocation } from "@tanstack/react-router";
-import { Grid2x2, ListOrdered, Pill, UserRound } from "lucide-react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Grid2x2, ListOrdered, Pill, Plus, UserRound } from "lucide-react";
 import { useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -7,6 +7,7 @@ import { HOME_ITEM, NAV_GROUPS } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
+import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
 // The four destinations reception/clinical staff reach for constantly.
@@ -27,77 +28,130 @@ export function MobileBottomNav() {
   const { t, lang } = useLang();
   const { can } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const direction = lang === "ar" ? "rtl" : "ltr";
 
   const allItems = [HOME_ITEM, ...NAV_GROUPS.flatMap((g) => g.items)];
   const primary = PRIMARY_MOBILE_ROUTES.map((to) => allItems.find((i) => i.to === to)).filter(
     (i): i is NonNullable<typeof i> => Boolean(i) && can(i!.perm),
   );
+  const availableActions = QUICK_ACTIONS.filter((a) => can(allItems.find((i) => i.to === a.to)?.perm ?? ""));
 
   return (
-    <nav className="no-print fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-card/95 py-1.5 backdrop-blur lg:hidden">
-      {primary.map((item) => {
-        const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
-        const active = isActive(location.pathname, item.to);
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-medium",
-              active ? "text-primary" : "text-muted-foreground",
-            )}
-          >
-            <Icon className="size-5" />
-            {t(item.key)}
-          </Link>
-        );
-      })}
+    <>
+      {/* Floating quick action button — sits just above the bottom bar,
+          reuses the exact same armQuickAction() flow as the desktop
+          command palette's Quick Actions group (single implementation). */}
+      {availableActions.length > 0 ? (
+        <div className="no-print fixed inset-x-0 bottom-[68px] z-30 flex justify-end px-4 lg:hidden">
+          <Sheet open={fabOpen} onOpenChange={setFabOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("quick_actions")}
+                className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+              >
+                <Plus className="size-6" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl" dir={direction}>
+              <SheetTitle className="mb-2">{t("quick_actions")}</SheetTitle>
+              <div className="grid grid-cols-2 gap-2 pb-4">
+                {availableActions.map((action) => {
+                  const Icon = getNavIcon(action.icon);
+                  return (
+                    <button
+                      key={action.key}
+                      type="button"
+                      className="flex min-h-14 items-center gap-2.5 rounded-xl border p-3 text-start text-sm font-medium hover:bg-accent active:scale-[0.98]"
+                      onClick={() => {
+                        armQuickAction(action.key);
+                        setFabOpen(false);
+                        void navigate({ to: action.to });
+                      }}
+                    >
+                      <Icon className="size-4 text-primary" />
+                      {t(action.labelKey)}
+                    </button>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      ) : null}
 
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetTrigger asChild>
-          <button
-            type="button"
-            className="flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-medium text-muted-foreground"
-          >
-            <Grid2x2 className="size-5" />
-            {t("more")}
-          </button>
-        </SheetTrigger>
-        <SheetContent side="bottom" className="max-h-[75vh] overflow-y-auto rounded-t-2xl" dir={direction}>
-          <SheetTitle className="sr-only">{t("more")}</SheetTitle>
-          <div className="space-y-5 pb-4 pt-2">
-            {NAV_GROUPS.map((group) => {
-              const items = group.items.filter((i) => can(i.perm));
-              if (items.length === 0) return null;
-              return (
-                <div key={group.group}>
-                  <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t(group.group)}
-                  </p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {items.map((item) => {
-                      const Icon = getNavIcon(item.icon);
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          onClick={() => setMoreOpen(false)}
-                          className="flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center text-[11px] font-medium hover:bg-accent"
-                        >
-                          <Icon className="size-5" />
-                          <span className="line-clamp-2">{t(item.key)}</span>
-                        </Link>
-                      );
-                    })}
+      <nav className="no-print fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-card/95 py-1 backdrop-blur lg:hidden">
+        {primary.map((item) => {
+          const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
+          const active = isActive(location.pathname, item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] font-medium"
+            >
+              <span
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-full transition-colors",
+                  active ? "bg-primary/15 text-primary" : "text-muted-foreground",
+                )}
+              >
+                <Icon className="size-5" />
+              </span>
+              <span className={active ? "text-primary" : "text-muted-foreground"}>{t(item.key)}</span>
+            </Link>
+          );
+        })}
+
+        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] font-medium text-muted-foreground"
+            >
+              <span className="flex size-9 items-center justify-center rounded-full">
+                <Grid2x2 className="size-5" />
+              </span>
+              {t("more")}
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[75vh] overflow-y-auto rounded-t-2xl" dir={direction}>
+            <SheetTitle className="sr-only">{t("more")}</SheetTitle>
+            <div className="space-y-5 pb-4 pt-2">
+              {NAV_GROUPS.map((group) => {
+                const items = group.items.filter((i) => can(i.perm));
+                if (items.length === 0) return null;
+                return (
+                  <div key={group.group}>
+                    <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t(group.group)}
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {items.map((item) => {
+                        const Icon = getNavIcon(item.icon);
+                        return (
+                          <Link
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => setMoreOpen(false)}
+                            className="flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]"
+                          >
+                            <Icon className="size-5" />
+                            <span className="line-clamp-2">{t(item.key)}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </SheetContent>
-      </Sheet>
-    </nav>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </nav>
+    </>
   );
 }
