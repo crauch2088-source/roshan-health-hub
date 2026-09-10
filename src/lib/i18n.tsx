@@ -117,6 +117,15 @@ const dict: Record<string, { ar: string; en: string }> = {
   appointment_analytics: { ar: "تحليلات المواعيد", en: "Appointment analytics" },
   laboratory_analytics: { ar: "تحليلات المختبر", en: "Laboratory analytics" },
   unassigned: { ar: "غير محدد", en: "Unassigned" },
+
+  // Phase 7 — dashboard sections
+  executive_summary: { ar: "الملخص التنفيذي", en: "Executive summary" },
+  clinical_summary: { ar: "الملخص السريري", en: "Clinical summary" },
+  pending_tasks: { ar: "مهام قيد الانتظار", en: "Pending tasks" },
+  pharmacy_summary: { ar: "ملخص الصيدلية", en: "Pharmacy summary" },
+  insurance_summary: { ar: "ملخص التأمين", en: "Insurance summary" },
+  revenue_summary: { ar: "ملخص الإيرادات", en: "Revenue summary" },
+  recent_activity: { ar: "النشاط الأخير", en: "Recent activity" },
   cash_in: { ar: "داخل الخزنة", en: "Cash in" },
   cash_out: { ar: "خارج الخزنة", en: "Cash out" },
   deposit: { ar: "إيداع", en: "Deposit" },

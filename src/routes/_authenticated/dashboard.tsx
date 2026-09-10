@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, Banknote, FlaskConical, Pill, Receipt, UserRound, Users, Wallet } from "lucide-react";
 
-import { Empty, ErrorBox, Loading, PageHeader, StatCard, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, Loading, PageHeader, SectionTitle, StatCard, StatusBadge } from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -195,6 +195,7 @@ function DashboardPage() {
       />
       <ErrorBox error={anyError} />
 
+      <SectionTitle>{t("executive_summary")}</SectionTitle>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={t("patients_today")}
@@ -248,6 +249,9 @@ function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="col-span-full">
+          <SectionTitle>{t("clinical_summary")}</SectionTitle>
+        </div>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t("visits_today")}</CardTitle>
@@ -320,6 +324,9 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
+        <div className="col-span-full">
+          <SectionTitle>{t("pending_tasks")}</SectionTitle>
+        </div>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t("pending_lab")}</CardTitle>
@@ -384,6 +391,9 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
+        <div className="col-span-full">
+          <SectionTitle>{t("pharmacy_summary")}</SectionTitle>
+        </div>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -490,6 +500,9 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
+        <div className="col-span-full">
+          <SectionTitle>{t("insurance_summary")}</SectionTitle>
+        </div>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
