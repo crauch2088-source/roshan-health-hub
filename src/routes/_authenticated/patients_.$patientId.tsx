@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, Stethoscope } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, ShieldCheck, Stethoscope } from "lucide-react";
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
@@ -134,9 +134,22 @@ function PatientChart() {
       .limit(50),
   );
 
+  // Claims are scoped through patient_insurance (proven in insurance.tsx nested select).
+  const claims = useRows(["patient-claims", patientId], () =>
+    supabase
+      .from("insurance_claims")
+      .select(
+        "id, claim_number, status, submitted_amount, submitted_at, created_at, patient_insurance!inner(patient_id, insurance_companies(name))",
+      )
+      .eq("patient_insurance.patient_id", patientId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  );
+
   type TimelineItem = {
     id: string;
-    kind: "visit" | "appointment" | "followup" | "lab" | "invoice";
+    kind: "visit" | "appointment" | "followup" | "lab" | "invoice" | "claim";
     date: string;
     title: string;
     subtitle?: string | undefined;
@@ -209,9 +222,23 @@ function PatientChart() {
         href: `/billing/${s(inv, "id")}`,
       });
     }
+    
+    for (const c of (claims.data ?? []) as Row[]) {
+      const pi = rel(c, "patient_insurance");
+      const company = rel(pi, "insurance_companies");
+      items.push({
+        id: `claim-${s(c, "id")}`,
+        kind: "claim",
+        date: (s(c, "submitted_at") || s(c, "created_at") || "").slice(0, 10),
+        title: s(c, "claim_number") || (lang === "ar" ? "مطالبة تأمين" : "Insurance claim"),
+        subtitle: s(company, "name") || undefined,
+        status: s(c, "status"),
+        href: "/insurance",
+      });
+    }
     items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     return items;
-  }, [visits.data, appointments.data, followups.data, labs.data, invoices.data, lang, currency]);
+  }, [visits.data, appointments.data, followups.data, labs.data, invoices.data, claims.data, lang, currency]);
 
 
   const prescriptions = useRows(["patient-rx", patientId], () =>
@@ -309,7 +336,9 @@ function PatientChart() {
                             ? Stethoscope
                             : item.kind === "lab"
                               ? FlaskConical
-                              : Receipt;
+                              : item.kind === "claim"
+                                ? ShieldCheck
+                                : Receipt;
                     const body = (
                       <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
                         <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
@@ -468,7 +497,7 @@ function PatientChart() {
               {((visits.data ?? []) as Row[]).length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("date")}</TableHead>
@@ -515,7 +544,7 @@ function PatientChart() {
               {((labs.data ?? []) as Row[]).length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("date")}</TableHead>
@@ -564,7 +593,7 @@ function PatientChart() {
               {((prescriptions.data ?? []) as Row[]).length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("date")}</TableHead>
@@ -600,7 +629,7 @@ function PatientChart() {
               {((invoices.data ?? []) as Row[]).length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("invoice_number")}</TableHead>

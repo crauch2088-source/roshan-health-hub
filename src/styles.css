@@ -182,3 +182,41 @@
   }
 }
 
+
+
+
+/* Phase 10 — print polish for clinical documents */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-area {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  /* Avoid awkward breaks inside table rows and cards */
+  tr, .print-keep {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  thead {
+    display: table-header-group;
+  }
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}

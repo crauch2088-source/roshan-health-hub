@@ -262,7 +262,7 @@ function InvoicePage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="print-area lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
@@ -283,7 +283,7 @@ function InvoicePage() {
             {items.length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>

@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
 });
 
 function FinancePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { currency } = useSettings();
 
   return (
@@ -78,7 +78,7 @@ function FinancePage() {
 // =============================================================================
 
 function CashboxTab({ currency }: { currency: string }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [entryOpen, setEntryOpen] = useState(false);
   const [direction, setDirection] = useState<"deposit" | "withdrawal">("deposit");
@@ -166,9 +166,9 @@ function CashboxTab({ currency }: { currency: string }) {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <Empty />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا حركات لعرضها." : "No transactions to show."} />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("date")}</TableHead>
@@ -295,7 +295,7 @@ function CashboxTab({ currency }: { currency: string }) {
 // =============================================================================
 
 function ReceivablesTab({ currency }: { currency: string }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [payTarget, setPayTarget] = useState<Row | null>(null);
   const [amount, setAmount] = useState("0");
@@ -349,7 +349,7 @@ function ReceivablesTab({ currency }: { currency: string }) {
           {rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("patient")}</TableHead>
@@ -441,7 +441,7 @@ function ReceivablesTab({ currency }: { currency: string }) {
 // =============================================================================
 
 function SupplierDebtTab({ currency }: { currency: string }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [billOpen, setBillOpen] = useState(false);
   const [supplierId, setSupplierId] = useState("");
@@ -543,7 +543,7 @@ function SupplierDebtTab({ currency }: { currency: string }) {
           {outstandingRows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("supplier")}</TableHead>
@@ -576,7 +576,7 @@ function SupplierDebtTab({ currency }: { currency: string }) {
           {billRows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("date")}</TableHead>

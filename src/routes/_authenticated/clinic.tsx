@@ -156,7 +156,7 @@ function ClinicPage() {
           {rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>

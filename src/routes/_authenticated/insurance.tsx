@@ -191,7 +191,7 @@ function CompaniesTab() {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
@@ -339,7 +339,7 @@ function PlansTab() {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
@@ -524,7 +524,7 @@ function MembershipTab() {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("patient")}</TableHead>
@@ -711,7 +711,7 @@ function ClaimsTab({ currency }: { currency: string }) {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("claim_number")}</TableHead>
@@ -844,7 +844,7 @@ function ClaimsTab({ currency }: { currency: string }) {
             </div>
 
             {items.length > 0 ? (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("description")}</TableHead>
