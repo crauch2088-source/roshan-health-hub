@@ -41,7 +41,7 @@ function monthsAgoISO(months: number): string {
 /** "2026-03" -> "Mar 2026" (or an Arabic-numeral-safe equivalent via Intl when lang=ar handled by caller). */
 function monthLabel(key: string, lang: string): string {
   const [y, m] = key.split("-").map(Number);
-  const d = new Date(y, (m || 1) - 1, 1);
+  const d = new Date(y ?? new Date().getFullYear(), (m || 1) - 1, 1);
   return d.toLocaleDateString(lang === "ar" ? "ar" : "en", { year: "numeric", month: "short" });
 }
 
