@@ -139,9 +139,9 @@ function PatientChart() {
     kind: "visit" | "appointment" | "followup" | "lab" | "invoice";
     date: string;
     title: string;
-    subtitle?: string;
-    status?: string;
-    href?: string;
+    subtitle?: string | undefined;
+    status?: string | undefined;
+    href?: string | undefined;
   };
 
   const timeline = useMemo(() => {
