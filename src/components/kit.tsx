@@ -21,12 +21,14 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="no-print mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-border/60 pb-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-        {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+    <div className="no-print mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-border/50 pb-4">
+      <div className="min-w-0 space-y-1">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{title}</h1>
+        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      {children ? (
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
+      ) : null}
     </div>
   );
 }
@@ -340,5 +342,9 @@ export function Pager({
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary">{children}</h2>;
+  return (
+    <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      {children}
+    </h2>
+  );
 }

@@ -102,7 +102,7 @@ function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col pb-16 lg:pb-0">
-        <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b bg-card/90 px-4 py-2.5 backdrop-blur">
+        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card/85 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-card/70">
           <img src="/roshan-logo.png" alt="" className="size-8 object-contain lg:hidden" />
           <BreadcrumbNav />
           <div className="flex-1" />
@@ -116,7 +116,7 @@ function Shell({ children }: { children: ReactNode }) {
           </Button>
         </header>
 
-        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
 
       <MobileBottomNav />
@@ -127,7 +127,7 @@ function Shell({ children }: { children: ReactNode }) {
 function cnRail(collapsed: boolean): string {
   return [
     "no-print sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar lg:flex transition-[width] duration-200 ease-in-out",
-    collapsed ? "w-16" : "w-64",
+    collapsed ? "w-[4.25rem]" : "w-64",
   ].join(" ");
 }
 
