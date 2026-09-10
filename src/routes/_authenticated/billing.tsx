@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_authenticated/billing")({
 type Line = { description: string; quantity: string; unit_price: string; item_type: string };
 
 function BillingPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();
   const navigate = useNavigate();
@@ -281,9 +281,9 @@ function BillingPage() {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <Empty />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا فواتير في هذا النطاق." : "No invoices in this range."} />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("invoice_number")}</TableHead>

@@ -187,7 +187,7 @@ function UsersPage() {
           {rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("full_name")}</TableHead>

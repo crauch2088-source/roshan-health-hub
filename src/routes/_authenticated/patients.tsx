@@ -73,7 +73,7 @@ function PatientsPage() {
 }
 
 function PatientsPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
 
   const [page, setPage] = useState(1);
@@ -143,7 +143,7 @@ function PatientsPageInner() {
                 <Plus className="size-4" /> {t("add")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("register_patient")}</DialogTitle>
               </DialogHeader>
@@ -217,10 +217,10 @@ function PatientsPageInner() {
           {list.isLoading ? (
             <Loading />
           ) : rows.length === 0 ? (
-            <Empty />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا يوجد مرضى مطابقون. أضف مريضاً جديداً أو غيّر البحث." : "No matching patients. Add a new patient or refine your search."} />
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("mrn")}</TableHead>

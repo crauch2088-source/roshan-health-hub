@@ -50,7 +50,7 @@ function PharmacyPage() {
 }
 
 function PharmacyPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   // pharmacy.manage/pharmacy.dispense were never real permission codes (see
   // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,
   // medicines and stock_movements already keys off pharmacy.create/update,
@@ -112,7 +112,7 @@ function PharmacyPageInner() {
       <ErrorBox error={list.error} />
 
       {rows.length === 0 ? (
-        <Empty />
+        <Empty title={t("no_data")} description={lang === "ar" ? "لا وصفات مطابقة." : "No matching prescriptions."} />
       ) : (
         <div className="grid gap-4">
           {rows.map((p) => {
@@ -147,7 +147,7 @@ function PharmacyPageInner() {
                     </div>
                   </div>
                   <SectionTitle>{t("medicines")}</SectionTitle>
-                  <Table>
+                  <Table density="compact">
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t("medicines")}</TableHead>
@@ -180,7 +180,7 @@ function PharmacyPageInner() {
                   {usedBatches && usedBatches.length > 0 ? (
                     <div className="mt-4 rounded-lg border bg-accent/30 p-3">
                       <SectionTitle>{t("batches_used")}</SectionTitle>
-                      <Table>
+                      <Table density="compact">
                         <TableHeader>
                           <TableRow>
                             <TableHead>{t("medicines")}</TableHead>

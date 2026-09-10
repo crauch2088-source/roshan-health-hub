@@ -302,7 +302,7 @@ function MedicinesTab() {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
@@ -573,7 +573,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("medicines")}</TableHead>
@@ -770,7 +770,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
                 ) : ((movements.data ?? []) as Row[]).length === 0 ? (
                   <Empty />
                 ) : (
-                  <Table>
+                  <Table density="compact">
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t("date")}</TableHead>
@@ -901,7 +901,7 @@ function SuppliersTab({ currency }: { currency: string }) {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
@@ -945,7 +945,7 @@ function SuppliersTab({ currency }: { currency: string }) {
           ) : ((supplierBatches.data ?? []) as Row[]).length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("date")}</TableHead>

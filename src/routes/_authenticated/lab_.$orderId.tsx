@@ -418,7 +418,7 @@ function LabOrderPage() {
                         : "No parameters configured for this test."}
                     </div>
                   ) : (
-                    <Table>
+                    <Table density="compact">
                       <TableHeader>
                         <TableRow>
                           <TableHead>
