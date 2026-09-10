@@ -37,7 +37,7 @@ function RailLink({
       to={item.to}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150",
         collapsed && "justify-center px-2",
         active
           ? "bg-sidebar-primary text-sidebar-primary-foreground"

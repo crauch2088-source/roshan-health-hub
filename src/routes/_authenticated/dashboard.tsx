@@ -144,6 +144,19 @@ function DashboardPage() {
       .limit(300),
   );
 
+  // Phase 6 dashboard addition — reuses insurance_claims (Phase 5), no new
+  // table/RPC. "Pending" = awaiting a decision, i.e. needs someone's attention.
+  const insurance = useRows(["dash-insurance-claims"], () =>
+    supabase
+      .from("insurance_claims")
+      .select("id, claim_number, status, submitted_amount")
+      .is("deleted_at", null)
+      .in("status", ["submitted", "under_review"])
+      .order("created_at", { ascending: false })
+      .limit(8),
+  );
+  const insurancePendingRows = (insurance.data ?? []) as Row[];
+
   const anyError =
     visits.error ?? payments.error ?? expenses.error ?? labPending.error ?? rxPending.error;
 
@@ -469,6 +482,44 @@ function DashboardPage() {
                         </Badge>
                       </TableCell>
                       <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Receipt className="size-4 text-warning" /> {t("insurance_claims")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {insurance.isLoading ? (
+              <Loading />
+            ) : insurancePendingRows.length === 0 ? (
+              <Empty />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("claim_number")}</TableHead>
+                    <TableHead>{t("net")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {insurancePendingRows.map((c) => (
+                    <TableRow key={s(c, "id")}>
+                      <TableCell dir="ltr" className="font-mono text-xs">
+                        {s(c, "claim_number")}
+                      </TableCell>
+                      <TableCell>{money(n(c, "submitted_amount"), currency)}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(c, "status")} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
