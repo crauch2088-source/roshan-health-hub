@@ -588,9 +588,9 @@ function AppointmentsPageInner() {
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           {rows.length === 0 ? (
-            <Empty />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا مواعيد في هذا اليوم." : "No appointments for this day."} />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>

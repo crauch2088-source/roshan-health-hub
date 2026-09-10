@@ -70,7 +70,7 @@ function sumByMonth(rows: Row[], dateField: string, amountField: string, months:
 function TrendTable({ rows, currency, lang }: { rows: { month: string; total: number }[]; currency: string; lang: string }) {
   const { t } = useLang();
   return (
-    <Table>
+    <Table density="compact">
       <TableHeader>
         <TableRow>
           <TableHead>{t("month")}</TableHead>
@@ -206,7 +206,7 @@ function FinancialAnalytics() {
           {receivablesRows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("patient")}</TableHead>
@@ -229,7 +229,7 @@ function FinancialAnalytics() {
           {supplierRows.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("supplier")}</TableHead>
@@ -353,7 +353,7 @@ function PharmacyAnalytics() {
           {performance.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("medicines")}</TableHead>
@@ -378,7 +378,7 @@ function PharmacyAnalytics() {
           {waste.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("medicines")}</TableHead>
@@ -400,7 +400,7 @@ function PharmacyAnalytics() {
         </ReportCard>
 
         <ReportCard title={t("expiry_forecasting")} exportRows={forecast} filename="roshan-expiry-forecast">
-          <Table>
+          <Table density="compact">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("month")}</TableHead>
@@ -543,7 +543,7 @@ function ClinicalAnalytics() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ReportCard title={t("visit_trends")} exportRows={visitTrend} filename="roshan-visit-trends">
-          <Table>
+          <Table density="compact">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("month")}</TableHead>
@@ -565,7 +565,7 @@ function ClinicalAnalytics() {
           {doctorStats.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
@@ -590,7 +590,7 @@ function ClinicalAnalytics() {
           {deptStats.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("department")}</TableHead>
@@ -613,7 +613,7 @@ function ClinicalAnalytics() {
           {appointmentStats.length === 0 ? (
             <Empty />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("status")}</TableHead>
@@ -633,7 +633,7 @@ function ClinicalAnalytics() {
         </ReportCard>
 
         <ReportCard title={t("laboratory_analytics")} exportRows={labStats} filename="roshan-laboratory-analytics">
-          <Table>
+          <Table density="compact">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("month")}</TableHead>

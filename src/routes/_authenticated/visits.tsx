@@ -571,9 +571,9 @@ function VisitsPageInner() {
       <Card>
         <CardContent className="overflow-x-auto p-0">
           {rows.length === 0 ? (
-            <Empty />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا زيارات في هذا النطاق. أنشئ زيارة جديدة من الزر أعلاه." : "No visits in this range. Create a new visit from the button above."} />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>
