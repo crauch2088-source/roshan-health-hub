@@ -1,76 +1,74 @@
-# ROSHAN — Implementation Report (Task A/B/C session)
+# ROSHAN — Implementation Report (Phase 7 session, partial)
 
-## Important limitation, stated upfront
-The Supabase MCP tools were unavailable for this entire session (tool errored as "not available in this turn"
-on first attempt). I could not query the live schema to verify anything new. Per the standing safety rule
-("never guess database columns"), every query in this delivery uses **only columns I could verify by reading
-this exact ZIP's own existing, working queries** (`visits.tsx`, `appointments.tsx`, `lab.tsx`, and the Phase 4/5
-migrations already applied in earlier sessions) — not memory, not inference. Where I could not find a column used
-anywhere in the existing codebase, I did not invent one. This is why, for example, Appointment Analytics groups by
-`status` value generically instead of assuming specific status strings like "no_show" exist.
+## Honest scope statement first
+Phase 7 as written is 8 tasks touching essentially every screen in the application. I did not attempt all of
+them this session — I prioritized the one change with the highest leverage-to-risk ratio, verified it thoroughly,
+and I'm stating plainly what's not done rather than padding this out with thin edits across many files.
 
-## Task A — UI refresh (bounded, not a rebuild)
-Per your instruction to build on the completed Phase 1–5 state, not rebuild it: I made real, verifiable
-improvements rather than a cosmetic-only pass —
-- **`mobile-bottom-nav.tsx`**: added a floating quick-action button (reuses the *existing* `armQuickAction()` /
-  `QUICK_ACTIONS` flow — same single implementation as the desktop command palette's Quick Actions group, not a
-  parallel one), bigger touch targets (14×14 min tap areas), rounded active-state pill instead of plain color change.
-- **`nav-rail.tsx`** / **`app-shell.tsx`**: smoother, slightly longer transitions (150ms→200ms with ease-in-out) on
-  the collapse animation and per-item hover/active states.
-- Command palette architecture untouched, as instructed — visual only, no search logic changes.
+## What I did, and why this was the priority
 
-I did not attempt a full Linear/Raycast-level visual rebuild of every screen — that's a much larger, more
-subjective, multi-week design effort, and stretching this session to also cover it would have meant less rigor on
-Task C.
+**`src/components/kit.tsx`** is the shared design-system file — `PageHeader`, `StatCard`, `StatusBadge`, `Empty`,
+`Loading`, `ExportButtons`, `Field`, `Pager`, `SectionTitle`. Every route in the app (patients, visits, billing,
+finance, insurance, pharmacy, lab, reports, analytics, dashboard — all of them) imports from here. Improving this
+one file cascades a consistent design-system upgrade everywhere, which is exactly Task 1's ask, without touching
+20+ individual page files and risking business-logic regressions in each. Changes, all purely visual (every
+export's signature is byte-identical, so nothing that imports these components needs to change):
+- `StatCard`: hover shadow lift, tinted icon backgrounds matching the card's tone, tighter line-height on the
+  value
+- `StatusBadge`: **found and fixed a real gap** — the color map had no entries for `draft`/`submitted`/
+  `under_review`/`approved`/`partially_approved`/`rejected` (Phase 5 insurance claim statuses) or
+  `active`/`inactive`/`suspended`/`expired` (patient insurance / company statuses). Every insurance status badge
+  in the app has been rendering with no color since Phase 5 shipped. Fixed.
+- `PageHeader`: subtle bottom border for clearer section separation
+- `Empty`: icon now sits in a soft circular badge instead of floating bare
+- Added `LoadingRows` (skeleton placeholder) as a new, additive export — nothing currently calls it, available
+  for table-heavy screens where a bare spinner reads as "stuck"
 
-## Task B — Dashboard
-Added an **Insurance summary widget** (pending claims — status `submitted`/`under_review` — with amount and
-status) to the existing dashboard grid, in the same card pattern as the Phase 3 pharmacy widgets. Reuses
-`insurance_claims` (Phase 5) directly — no new table, no new query pattern invented. Did not restructure the
-entire dashboard layout wholesale — the existing KPI-card-grid structure works and a full re-layout risked
-breaking widgets I couldn't re-verify against a live schema this session.
+**`src/components/nav-rail.tsx`**: favorites section now sits in a subtly tinted rounded panel instead of blending
+into the rest of the list — the one concrete "improved favorites" change from Task 2.
 
-## Task C — Phase 6: Advanced Reporting & Analytics
-**New file**: `src/routes/_authenticated/analytics.tsx` — all 13 requested reports, grouped into three tabs:
+**`src/routes/_authenticated/dashboard.tsx`**: added `SectionTitle` dividers grouping the existing cards into
+**Executive Summary, Clinical Summary, Pending Tasks, Pharmacy Summary, Insurance Summary** — the exact section
+names Task 3 asked for. This is pure JSX restructuring: every query, every card's content, is unchanged. No field
+was invented; I did not add a "Recent Activity" section because I don't have a verified activity/audit-log query
+in this file to reuse honestly, and the standing instruction is not to invent database fields — see below.
 
-**Financial**: Revenue Trends, Expense Trends, Insurance Revenue (all monthly, last 12 months, computed from
-`payments`/`expenses`/`insurance_claims.paid_at`), Outstanding Receivables and Supplier Debt Analysis (both read
-directly from the Phase 4 views `v_patient_receivables` / `v_supplier_outstanding` — reused, not recomputed).
+**`src/lib/i18n.tsx`**: 7 new keys for the dashboard section headers. Full-file duplicate scan clean.
 
-**Pharmacy**: Pharmacy Performance (top medicines by dispensed revenue, from `stock_movements` where
-`movement_type='dispense'`), FEFO Waste Tracking (`movement_type='writeoff'`), Expiry Forecasting (batch value by
-expiry month from `pharmacy_inventory`).
-
-**Clinical**: Visit Trends, Doctor Productivity, Department Statistics (all from `visits`, joined to `users`/
-`departments` exactly as `visits.tsx` itself already joins them), Appointment Analytics (grouped by whatever
-`status` values exist — not assumed), Laboratory Analytics (monthly count + revenue from `lab_orders` →
-`lab_order_items.price`, same join shape `lab.tsx` already uses).
-
-Every report has CSV export via the existing `ExportButtons` component (no new export code, no new library) and
-inherits print support from the app's existing print stylesheet (`.no-print` convention already in use
-throughout). No charting library was added — trends are monthly tables, consistent with "do not add unnecessary
-libraries" from earlier in this project and the fact that no charting library is in `package.json`.
+## Constraint that shaped this session
+Supabase's live-schema tools were unavailable again this session (same as last time). I did not write a single
+new query — every change above either reuses data already flowing through the file, or is pure CSS/JSX. This is
+why I didn't build a "Recent Activity" feed (would need a query I couldn't verify) and why Tasks 4–7 (patients,
+visits/clinic, finance/insurance screen-level redesigns, mobile audit) aren't in this delivery — those genuinely
+need either new aggregation queries or close reading of several large files I judged couldn't be done safely and
+thoroughly in the time available alongside verifying what I did ship.
 
 ## Files
-**New**: `src/routes/_authenticated/analytics.tsx`.
-**Replaced**: `src/components/mobile-bottom-nav.tsx`, `src/components/nav-rail.tsx`, `src/components/app-shell.tsx`,
-`src/routes/_authenticated/dashboard.tsx`, `src/config/nav.ts`, `src/lib/i18n.tsx`.
+**Replaced only** (no new files this session): `src/components/kit.tsx`, `src/components/nav-rail.tsx`,
+`src/routes/_authenticated/dashboard.tsx`, `src/lib/i18n.tsx`.
 
 ## SQL
-**None applied, none pending.** Task C deliberately reuses existing tables/views/columns only — no new schema
-required, matching "do not create duplicate financial logic, reuse existing RPCs and views."
+None. Nothing in this delivery touches the database.
 
 ## Verification
-- Every file above individually `tsc --strict` checked, clean, including cross-file member resolution.
-- Full i18n duplicate-key scan re-run after all edits: zero duplicates.
-- **Could not run `npm run typecheck` / `npm run build`** — no `node_modules`/network in this sandbox, same
-  limitation as every prior session. Stated plainly, not glossed over.
-- **Could not verify against the live Supabase schema this session** (tool unavailable) — mitigated by deriving
-  every column name from this ZIP's own working code rather than assumption, but this is a real gap relative to
-  prior sessions' practice and should be double-checked against the live DB before merging, particularly the
-  `appointments.status` values used in Appointment Analytics.
+- All 4 files individually `tsc --strict` clean.
+- Full i18n duplicate-key scan (whole file, not just new lines): zero duplicates.
+- Could not run `npm run build`/`typecheck` — no `node_modules`/network in this sandbox, consistent with every
+  prior session.
+
+## Recommended next steps (in the order I'd tackle them)
+1. **Task 4/5 (Patient & Visit experience)** — these are the highest-traffic screens; worth their own session
+   with schema access restored, since a real "visit timeline" likely wants data I haven't verified exists in the
+   shape needed (e.g. a unified chronological feed across visits/labs/prescriptions).
+2. **Task 6 (Finance/Insurance UX)** — `finance.tsx` and `insurance.tsx` already benefit automatically from the
+   `kit.tsx` changes above (better StatCard, fixed status colors) without any further edits — worth confirming
+   that's sufficient before investing in table/filter rework.
+3. **Task 7 (mobile audit)** — a systematic per-screen pass, best done as its own scoped task rather than folded
+   into a larger one, so each screen gets real attention rather than a rushed pass.
+4. **Task 8 (final audit)** — cheap to do properly once schema access is back; I'd want live-DB verification for
+   "no duplicate SQL objects" specifically, which I can't responsibly claim without it.
 
 ## Installation
 1. Unzip preserving paths.
 2. `npm install && npm run typecheck && npm run build`.
-3. No database changes required for this delivery.
+3. No database changes.
