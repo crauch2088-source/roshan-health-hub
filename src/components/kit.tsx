@@ -19,7 +19,7 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="no-print mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div className="no-print mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-border/60 pb-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
@@ -32,8 +32,19 @@ export function PageHeader({
 export function Loading() {
   const { t } = useLang();
   return (
-    <div className="flex items-center gap-2 p-8 text-sm text-muted-foreground">
+    <div className="flex items-center gap-2 p-8 text-sm text-muted-foreground" role="status">
       <Loader2 className="size-4 animate-spin" /> {t("loading")}
+    </div>
+  );
+}
+
+/** Skeleton rows for table/list areas — used where a spinner alone reads as "stuck" on slower connections. */
+export function LoadingRows({ count = 4 }: { count?: number }) {
+  return (
+    <div className="space-y-2 p-4" role="status">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="h-10 w-full animate-pulse rounded-md bg-muted/60" />
+      ))}
     </div>
   );
 }
@@ -52,8 +63,10 @@ export function ErrorBox({ error }: { error: unknown }) {
 export function Empty({ label }: { label?: string }) {
   const { t } = useLang();
   return (
-    <div className="flex flex-col items-center gap-2 p-10 text-center text-sm text-muted-foreground">
-      <Inbox className="size-6" />
+    <div className="flex flex-col items-center gap-2.5 p-10 text-center text-sm text-muted-foreground">
+      <div className="flex size-10 items-center justify-center rounded-full bg-muted/70">
+        <Inbox className="size-5" />
+      </div>
       {label ?? t("no_data")}
     </div>
   );
@@ -79,15 +92,22 @@ export function StatCard({
     warning: "text-warning",
     destructive: "text-destructive",
   };
+  const iconTones: Record<string, string> = {
+    default: "bg-accent text-foreground",
+    primary: "bg-primary/10 text-primary",
+    success: "bg-success/10 text-success",
+    warning: "bg-warning/10 text-warning",
+    destructive: "bg-destructive/10 text-destructive",
+  };
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border-border/70 shadow-sm transition-shadow duration-200 hover:shadow-md">
       <CardContent className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-bold tabular-nums", tones[tone])}>{value}</p>
+          <p className={cn("mt-1 text-2xl font-bold tabular-nums leading-tight", tones[tone])}>{value}</p>
           {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
         </div>
-        {icon ? <div className="shrink-0 rounded-lg bg-accent p-2 text-primary">{icon}</div> : null}
+        {icon ? <div className={cn("shrink-0 rounded-xl p-2.5", iconTones[tone])}>{icon}</div> : null}
       </CardContent>
     </Card>
   );
@@ -113,7 +133,11 @@ export function Field({
   );
 }
 
+// Status color scale used by every StatusBadge across the app. Kept as one
+// map so a new workflow status (e.g. Phase 5's insurance claim states)
+// gets a color by being added here once, not per-screen.
 const statusTones: Record<string, string> = {
+  // generic clinical/queue
   waiting: "bg-warning/15 text-warning border-warning/30",
   pending: "bg-warning/15 text-warning border-warning/30",
   in_progress: "bg-primary/15 text-primary border-primary/30",
@@ -121,20 +145,35 @@ const statusTones: Record<string, string> = {
   completed: "bg-success/15 text-success border-success/30",
   verified: "bg-success/15 text-success border-success/30",
   dispensed: "bg-success/15 text-success border-success/30",
+  scheduled: "bg-primary/15 text-primary border-primary/30",
+  // billing / finance
   paid: "bg-success/15 text-success border-success/30",
   partial: "bg-warning/15 text-warning border-warning/30",
   unpaid: "bg-destructive/15 text-destructive border-destructive/30",
   open: "bg-warning/15 text-warning border-warning/30",
+  reversed: "bg-muted text-muted-foreground",
+  // generic negative/neutral
   cancelled: "bg-muted text-muted-foreground",
   no_show: "bg-muted text-muted-foreground",
   missed: "bg-destructive/15 text-destructive border-destructive/30",
+  inactive: "bg-muted text-muted-foreground",
+  active: "bg-success/15 text-success border-success/30",
+  suspended: "bg-warning/15 text-warning border-warning/30",
+  expired: "bg-destructive/15 text-destructive border-destructive/30",
+  // insurance claim workflow (Phase 5)
+  draft: "bg-muted text-muted-foreground",
+  submitted: "bg-primary/15 text-primary border-primary/30",
+  under_review: "bg-primary/15 text-primary border-primary/30",
+  approved: "bg-success/15 text-success border-success/30",
+  partially_approved: "bg-warning/15 text-warning border-warning/30",
+  rejected: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
 export function StatusBadge({ status }: { status: string }) {
   const { t } = useLang();
   const key = (status || "").toLowerCase();
   return (
-    <Badge variant="outline" className={cn("font-medium", statusTones[key] ?? "")}>
+    <Badge variant="outline" className={cn("font-medium transition-colors", statusTones[key] ?? "")}>
       {t(key) === key ? status || "—" : t(key)}
     </Badge>
   );
