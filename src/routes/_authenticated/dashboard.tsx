@@ -268,7 +268,7 @@ function DashboardPageInner() {
             {visitRows.length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("patient")}</TableHead>
@@ -306,7 +306,7 @@ function DashboardPageInner() {
             {((appointments.data ?? []) as Row[]).length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("patient")}</TableHead>
@@ -343,7 +343,7 @@ function DashboardPageInner() {
             {((labPending.data ?? []) as Row[]).length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("patient")}</TableHead>
@@ -375,7 +375,7 @@ function DashboardPageInner() {
             {((followups.data ?? []) as Row[]).length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("patient")}</TableHead>
@@ -412,7 +412,7 @@ function DashboardPageInner() {
             {lowStockRows.length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("medicines")}</TableHead>
@@ -446,7 +446,7 @@ function DashboardPageInner() {
             {expiringRows.length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("medicines")}</TableHead>
@@ -482,7 +482,7 @@ function DashboardPageInner() {
             {expiredRows.length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("medicines")}</TableHead>
@@ -523,7 +523,7 @@ function DashboardPageInner() {
             ) : insurancePendingRows.length === 0 ? (
               <Empty />
             ) : (
-              <Table>
+              <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("claim_number")}</TableHead>

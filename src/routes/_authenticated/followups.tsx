@@ -68,7 +68,7 @@ function FollowupsPage() {
 }
 
 function FollowupsPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
 
   const [from, setFrom] = useState(todayISO());
@@ -208,9 +208,9 @@ function FollowupsPageInner() {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <Empty />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا متابعات في هذه الفترة." : "No follow-ups in this period."} />
           ) : (
-            <Table>
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("date")}</TableHead>

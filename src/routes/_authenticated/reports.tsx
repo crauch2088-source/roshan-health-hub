@@ -148,7 +148,7 @@ function ReportsPageInner() {
                 {Object.keys(map).length === 0 ? (
                   <Empty />
                 ) : (
-                  <Table>
+                  <Table density="compact">
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t("name")}</TableHead>
@@ -240,7 +240,7 @@ function PharmacyReports() {
               {expiryRows.length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("medicines")}</TableHead>
@@ -278,7 +278,7 @@ function PharmacyReports() {
               {lowStockRows.length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("medicines")}</TableHead>
@@ -318,7 +318,7 @@ function PharmacyReports() {
               {batchRows.length === 0 ? (
                 <Empty />
               ) : (
-                <Table>
+                <Table density="compact">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("medicines")}</TableHead>
