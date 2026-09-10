@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
 import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +53,14 @@ export const Route = createFileRoute("/_authenticated/insurance")({
 });
 
 function InsurancePage() {
+  return (
+    <PermissionGate perm="insurance.read">
+      <InsurancePageInner />
+    </PermissionGate>
+  );
+}
+
+function InsurancePageInner() {
   const { t } = useLang();
   const { currency } = useSettings();
 

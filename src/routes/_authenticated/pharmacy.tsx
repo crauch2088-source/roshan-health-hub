@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, SectionTitle, StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +42,14 @@ export const Route = createFileRoute("/_authenticated/pharmacy")({
 const STATUSES = ["pending", "dispensed", "external", "all"];
 
 function PharmacyPage() {
+  return (
+    <PermissionGate perm="pharmacy.read">
+      <PharmacyPageInner />
+    </PermissionGate>
+  );
+}
+
+function PharmacyPageInner() {
   const { t } = useLang();
   // pharmacy.manage/pharmacy.dispense were never real permission codes (see
   // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,

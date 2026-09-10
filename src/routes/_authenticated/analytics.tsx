@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, type ReactNode } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, PermissionGate, StatCard } from "@/components/kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -105,25 +105,27 @@ function AnalyticsPage() {
   const { t } = useLang();
 
   return (
-    <div>
-      <PageHeader title={t("analytics")} subtitle={t("analytics_subtitle")} />
-      <Tabs defaultValue="financial">
-        <TabsList className="mb-4 flex-wrap">
-          <TabsTrigger value="financial">{t("finance")}</TabsTrigger>
-          <TabsTrigger value="pharmacy">{t("pharmacy")}</TabsTrigger>
-          <TabsTrigger value="clinical">{t("clinical")}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="financial">
-          <FinancialAnalytics />
-        </TabsContent>
-        <TabsContent value="pharmacy">
-          <PharmacyAnalytics />
-        </TabsContent>
-        <TabsContent value="clinical">
-          <ClinicalAnalytics />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <PermissionGate perm="reports.read">
+      <div>
+        <PageHeader title={t("analytics")} subtitle={t("analytics_subtitle")} />
+        <Tabs defaultValue="financial">
+          <TabsList className="mb-4 flex-wrap">
+            <TabsTrigger value="financial">{t("finance")}</TabsTrigger>
+            <TabsTrigger value="pharmacy">{t("pharmacy")}</TabsTrigger>
+            <TabsTrigger value="clinical">{t("clinical")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="financial">
+            <FinancialAnalytics />
+          </TabsContent>
+          <TabsContent value="pharmacy">
+            <PharmacyAnalytics />
+          </TabsContent>
+          <TabsContent value="clinical">
+            <ClinicalAnalytics />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </PermissionGate>
   );
 }
 
