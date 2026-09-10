@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Clock3, Play, Search, UserRound } from "lucide-react";
 import { useState } from "react";
-import { Empty, ErrorBox, Loading, PageHeader, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, Loading, PageHeader, StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,14 @@ export const Route = createFileRoute("/_authenticated/queue")({
 const STATUSES = ["all", "waiting", "called", "in_progress", "completed", "cancelled"];
 
 function QueuePage() {
+  return (
+    <PermissionGate perm="queue.read">
+      <QueuePageInner />
+    </PermissionGate>
+  );
+}
+
+function QueuePageInner() {
   const { lang, t } = useLang();
   const { can } = useAuth();
   const canUpdate = can("visits.update");

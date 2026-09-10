@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, PermissionGate, StatCard } from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,6 +32,14 @@ export const Route = createFileRoute("/_authenticated/reports")({
 });
 
 function ReportsPage() {
+  return (
+    <PermissionGate perm="reports.read">
+      <ReportsPageInner />
+    </PermissionGate>
+  );
+}
+
+function ReportsPageInner() {
   const { t, lang } = useLang();
   const { currency } = useSettings();
   const [from, setFrom] = useState(`${todayISO().slice(0, 7)}-01`);

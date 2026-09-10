@@ -11,6 +11,7 @@ import {
   Loading,
   PageHeader,
   StatusBadge,
+  PermissionGate,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +70,14 @@ export const Route = createFileRoute("/_authenticated/appointments")({
 });
 
 function AppointmentsPage() {
+  return (
+    <PermissionGate perm="appointments.read">
+      <AppointmentsPageInner />
+    </PermissionGate>
+  );
+}
+
+function AppointmentsPageInner() {
   const { lang } = useLang();
   const { user } = useAuth();
   const { currency } = useSettings();
