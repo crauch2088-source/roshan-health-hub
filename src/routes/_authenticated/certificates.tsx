@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Printer, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Empty, ErrorBox, Field, Loading, PageHeader } from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { s, useRows, useSave, type Row, rel } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
+import { patientPickerQuery } from "@/lib/search";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
@@ -23,9 +24,16 @@ export const Route = createFileRoute("/_authenticated/certificates")({
 function addDays(date:string,days:number){const d=new Date(`${date}T00:00:00`);d.setDate(d.getDate()+Math.max(days-1,0));return d.toISOString().slice(0,10)}
 
 function CertificatesPage(){
+  return (
+    <PermissionGate perm="certificates.read">
+      <CertificatesPageInner />
+    </PermissionGate>
+  );
+}
+function CertificatesPageInner(){
  const {lang}=useLang();const {can,user}=useAuth();const [open,setOpen]=useState(false);const [q,setQ]=useState("");const [form,setForm]=useState({patient_id:"",type:"sick_leave",days:"1",start_date:todayISO(),diagnosis:"",notes:""});
  const list=useRows<Row[]>(["certificates"],()=>supabase.from("medical_certificates").select("*,patients(full_name,mrn,phone),users!medical_certificates_doctor_id_fkey(full_name)").is("deleted_at",null).order("created_at",{ascending:false}).limit(200));
- const patients=useRows<Row[]>(["cert-patients",q],()=>{const clean=q.replace(/[,()%]/g,"").trim();let query=supabase.from("patients").select("id,full_name,mrn,phone").is("deleted_at",null).order("created_at",{ascending:false}).limit(30);if(clean.length>=2)query=query.or(`full_name.ilike.%${clean}%,mrn.ilike.%${clean}%,phone.ilike.%${clean}%`);return query});
+ const patients=useRows<Row[]>(["cert-patients",q],()=>patientPickerQuery(q,30));
  const endDate=useMemo(()=>addDays(form.start_date,Number(form.days)||1),[form.start_date,form.days]);
  const create=useSave(async()=>{if(!form.patient_id)throw new Error(lang==="ar"?"اختر المريض":"Select patient");const purpose=form.type==="sick_leave"?(lang==="ar"?"إجازة مرضية":"Sick leave"):(lang==="ar"?"لياقة طبية":"Medical fitness");const diagnosis=[purpose,form.diagnosis.trim()].filter(Boolean).join(" — ");const {error}=await supabase.from("medical_certificates").insert({patient_id:form.patient_id,doctor_id:user?.id??null,diagnosis,start_date:form.start_date,end_date:endDate});if(error)throw new Error(error.message);return null},{invalidate:[["certificates"]],successMessage:lang==="ar"?"تم إصدار الشهادة":"Certificate issued",onDone:()=>{setOpen(false);setQ("");setForm({patient_id:"",type:"sick_leave",days:"1",start_date:todayISO(),diagnosis:"",notes:""})}});
  if(list.isLoading)return <Loading/>;const rows=(list.data??[]) as Row[];

@@ -1,10 +1,12 @@
-import { Loader2, AlertTriangle, Inbox, Printer, FileDown } from "lucide-react";
+import { Loader2, AlertTriangle, Inbox, Printer, FileDown, ShieldOff } from "lucide-react";
 import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth";
 import { csvExport, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -60,14 +62,107 @@ export function ErrorBox({ error }: { error: unknown }) {
   );
 }
 
-export function Empty({ label }: { label?: string }) {
+export function Empty({
+  label,
+  title,
+  description,
+  action,
+  icon,
+}: {
+  label?: string;
+  title?: string;
+  description?: string;
+  action?: ReactNode;
+  icon?: ReactNode;
+}) {
   const { t } = useLang();
+  const heading = title ?? label ?? t("no_data");
   return (
-    <div className="flex flex-col items-center gap-2.5 p-10 text-center text-sm text-muted-foreground">
-      <div className="flex size-10 items-center justify-center rounded-full bg-muted/70">
-        <Inbox className="size-5" />
+    <div
+      className="flex flex-col items-center gap-3 px-6 py-12 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex size-12 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+        {icon ?? <Inbox className="size-5" aria-hidden />}
       </div>
-      {label ?? t("no_data")}
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground">{heading}</p>
+        {description ? (
+          <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {action ? <div className="pt-1">{action}</div> : null}
+    </div>
+  );
+}
+
+/** Full-page access denied state used by PermissionGate. */
+export function Forbidden({ message }: { message?: string }) {
+  const { t, lang } = useLang();
+  return (
+    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">
+      <div className="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+        <ShieldOff className="size-6" aria-hidden />
+      </div>
+      <div className="space-y-1.5">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {lang === "ar" ? "غير مصرح" : "Access denied"}
+        </h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          {message ?? t("no_permission")}
+        </p>
+      </div>
+      <Button asChild variant="outline" size="sm">
+        <Link to="/dashboard">{lang === "ar" ? "العودة للرئيسية" : "Back to dashboard"}</Link>
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * Gate that renders children only when the user holds the required permission.
+ * Fails closed while permissions are loading or when the user lacks access.
+ */
+export function PermissionGate({
+  perm,
+  children,
+  fallback,
+}: {
+  perm: string | string[];
+  children: ReactNode;
+  fallback?: ReactNode;
+}) {
+  const { can, permissionsReady, loading } = useAuth();
+
+  if (loading || !permissionsReady) {
+    return <Loading />;
+  }
+
+  const required = Array.isArray(perm) ? perm : [perm];
+  const allowed = required.some((p) => can(p));
+
+  if (!allowed) {
+    return <>{fallback ?? <Forbidden />}</>;
+  }
+
+  return <>{children}</>;
+}
+
+/** Lightweight page-level skeleton for first paint. */
+export function PageSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-6 p-1" role="status" aria-busy="true">
+      <div className="space-y-2">
+        <div className="h-7 w-48 animate-pulse rounded-md bg-muted/70" />
+        <div className="h-4 w-72 animate-pulse rounded-md bg-muted/50" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/60" />
+        ))}
+      </div>
+      <LoadingRows count={rows} />
     </div>
   );
 }
