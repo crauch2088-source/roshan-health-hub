@@ -78,7 +78,7 @@ function AppointmentsPage() {
 }
 
 function AppointmentsPageInner() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const { user } = useAuth();
   const { currency } = useSettings();
 
