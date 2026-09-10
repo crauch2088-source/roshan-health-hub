@@ -62,6 +62,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/expenses", key: "expenses", perm: "accounting.read", icon: "Wallet" },
       { to: "/partners", key: "partners", perm: "partners.read", icon: "Handshake" },
       { to: "/reports", key: "reports", perm: "reports.read", icon: "BarChart3" },
+      { to: "/analytics", key: "analytics", perm: "reports.read", icon: "Activity" },
       { to: "/insurance", key: "insurance", perm: "insurance.read", icon: "ShieldCheck" },
     ],
   },
