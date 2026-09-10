@@ -1,79 +1,76 @@
-# ROSHAN — Implementation Report (Phase 5 session)
+# ROSHAN — Implementation Report (Task A/B/C session)
 
-## 1. Audit (Step 1 — before any change)
+## Important limitation, stated upfront
+The Supabase MCP tools were unavailable for this entire session (tool errored as "not available in this turn"
+on first attempt). I could not query the live schema to verify anything new. Per the standing safety rule
+("never guess database columns"), every query in this delivery uses **only columns I could verify by reading
+this exact ZIP's own existing, working queries** (`visits.tsx`, `appointments.tsx`, `lab.tsx`, and the Phase 4/5
+migrations already applied in earlier sessions) — not memory, not inference. Where I could not find a column used
+anywhere in the existing codebase, I did not invent one. This is why, for example, Appointment Analytics groups by
+`status` value generically instead of assuming specific status strings like "no_show" exist.
 
-Verified against the `__13_` ZIP directly:
-- Phase 1–4 files are genuinely merged and wired, not orphaned: `app-shell.tsx` imports and uses `NavRail`,
-  `CommandPaletteProvider`, `MobileBottomNav`, `BreadcrumbNav`; `routeTree.gen.ts` contains 13 references to
-  `finance`, confirming a real build ran and picked up last session's route. No re-implementation needed or done.
-- Patient-picker audit across every visit-creation-adjacent path: only `visits.tsx` inserts into `visits` (single,
-  coherent entry point — good). But `appointments.tsx` had its own separate, older patient search+select
-  implementation (search box + plain `<Select>`, no debounce, no keyboard nav, no previous-visit snapshot) —
-  exactly the kind of duplicate the earlier phases were meant to eliminate. **Fixed**: now uses `PatientPicker` +
-  `PatientSnapshotStrip`, same component as Visits and Patient Profile.
-- `followups.tsx` has a similar older pattern but also supports a free-text `patient_name` fallback (for contacts
-  not yet in the system) — a materially different data model, not a drop-in swap. **Not changed this session** —
-  flagged below as a real, known remaining item rather than risking a rushed edit to a more complex form under
-  time pressure.
-- Live schema re-checked directly before writing any Insurance table (no assumptions from old SQL files). Only
-  pre-existing insurance-adjacent structure is `partners` (0 rows) — a flat per-company discount-percent table,
-  structurally unsuited to plans/coverage-rules/claims. Left untouched; new `insurance_*` tables built instead,
-  as the brief anticipated for this exact case.
+## Task A — UI refresh (bounded, not a rebuild)
+Per your instruction to build on the completed Phase 1–5 state, not rebuild it: I made real, verifiable
+improvements rather than a cosmetic-only pass —
+- **`mobile-bottom-nav.tsx`**: added a floating quick-action button (reuses the *existing* `armQuickAction()` /
+  `QUICK_ACTIONS` flow — same single implementation as the desktop command palette's Quick Actions group, not a
+  parallel one), bigger touch targets (14×14 min tap areas), rounded active-state pill instead of plain color change.
+- **`nav-rail.tsx`** / **`app-shell.tsx`**: smoother, slightly longer transitions (150ms→200ms with ease-in-out) on
+  the collapse animation and per-item hover/active states.
+- Command palette architecture untouched, as instructed — visual only, no search logic changes.
 
-## 2. Phase 5 — Insurance (built and applied live)
+I did not attempt a full Linear/Raycast-level visual rebuild of every screen — that's a much larger, more
+subjective, multi-week design effort, and stretching this session to also cover it would have meant less rigor on
+Task C.
 
-**Database** (`db/roshan_phase5_insurance.sql`, already applied to the live project in 3 steps this session):
-- Tables: `insurance_companies`, `insurance_plans`, `patient_insurance`, `insurance_coverage_rules`,
-  `insurance_prior_authorizations`, `insurance_claims`, `insurance_claim_items`, `insurance_claim_payments`.
-- Coverage matching for medicines is by **generic name** first (falls back to plan default), per the brief's
-  Amoxicillin example — a specific `reference_id` rule outranks a generic-name rule, which outranks the plan's
-  blanket default for that service type.
-- Claim workflow enforced *in the database*, not just the UI: `update_insurance_claim_status()` only allows
-  `draft→submitted→under_review→{approved|partially_approved|rejected}→paid`. Anything else raises an exception.
-- `post_insurance_claim_payment()` is one atomic function: inserts the payment, recomputes `paid_amount`/status,
-  and posts to the cashbox via the **existing** Phase 4 `fn_ledger_post()` — reused, not duplicated. That function
-  is idempotent on `(source_type, source_id)`, so this cannot double-post the same settlement.
-- Permissions: **3 new codes** (`insurance.read/create/update`) — nothing existing covered this module, so this is
-  the minimum necessary, matching the existing per-module pattern (`pharmacy.*`, `cashbox.*`, `debts.*`). Granted
-  to `super_admin`/`admin` (full) and `receptionist` (read/create, for registering patient membership at the
-  front desk). RLS mirrors the exact pattern already used for Phase 3/4 tables.
-- The dual-column `invoices`/`payments` issue was **not re-touched** — Phase 4's `fn_recompute_invoice_paid()`
-  already keeps both column pairs in sync, and this session's insurance payments flow through the cashbox ledger,
-  not through `invoices`/`payments` directly, so no new interaction with that issue was introduced.
+## Task B — Dashboard
+Added an **Insurance summary widget** (pending claims — status `submitted`/`under_review` — with amount and
+status) to the existing dashboard grid, in the same card pattern as the Phase 3 pharmacy widgets. Reuses
+`insurance_claims` (Phase 5) directly — no new table, no new query pattern invented. Did not restructure the
+entire dashboard layout wholesale — the existing KPI-card-grid structure works and a full re-layout risked
+breaking widgets I couldn't re-verify against a live schema this session.
 
-**Frontend**:
-- `src/lib/insurance.ts` (new) — types + thin RPC wrappers, no business logic duplicated client-side.
-- `src/routes/_authenticated/insurance.tsx` (new) — Companies, Plans, Patient Insurance (reuses `PatientPicker`),
-  and Claims (create with live coverage calculation per line item, status transitions, payment recording) tabs.
-- Nav: added to the Finance group in `nav.ts`, `ShieldCheck` icon registered in `nav-icons.tsx`.
-- `i18n.tsx`: 25 new keys, Arabic + English, checked for zero duplicates against the full file (not just the new
-  block).
+## Task C — Phase 6: Advanced Reporting & Analytics
+**New file**: `src/routes/_authenticated/analytics.tsx` — all 13 requested reports, grouped into three tabs:
 
-## 3. Files
+**Financial**: Revenue Trends, Expense Trends, Insurance Revenue (all monthly, last 12 months, computed from
+`payments`/`expenses`/`insurance_claims.paid_at`), Outstanding Receivables and Supplier Debt Analysis (both read
+directly from the Phase 4 views `v_patient_receivables` / `v_supplier_outstanding` — reused, not recomputed).
 
-**ADD**: `src/lib/insurance.ts`, `src/routes/_authenticated/insurance.tsx`, `db/roshan_phase5_insurance.sql`.
-**REPLACE**: `src/config/nav.ts`, `src/lib/nav-icons.tsx`, `src/lib/i18n.tsx`, `src/routes/_authenticated/appointments.tsx`.
+**Pharmacy**: Pharmacy Performance (top medicines by dispensed revenue, from `stock_movements` where
+`movement_type='dispense'`), FEFO Waste Tracking (`movement_type='writeoff'`), Expiry Forecasting (batch value by
+expiry month from `pharmacy_inventory`).
 
-## 4. Verification
+**Clinical**: Visit Trends, Doctor Productivity, Department Statistics (all from `visits`, joined to `users`/
+`departments` exactly as `visits.tsx` itself already joins them), Appointment Analytics (grouped by whatever
+`status` values exist — not assumed), Laboratory Analytics (monthly count + revenue from `lab_orders` →
+`lab_order_items.price`, same join shape `lab.tsx` already uses).
 
-- Every file above individually type-checked with `tsc --strict` against this repo's actual compiler options,
-  including cross-file member resolution. All clean.
-- i18n duplicate-key scan run against the full file after edits, not just the new block: zero duplicates.
-- **`npm run typecheck` / `npm run build` were not run** — this sandbox has no `node_modules` and no network to
-  install them. This is stated plainly per your instruction not to claim "clean" from syntax-checking alone:
-  isolated `tsc` catches type/syntax errors but not Vite bundling, route-tree regeneration, or circular-import
-  issues. Please run both before merging.
+Every report has CSV export via the existing `ExportButtons` component (no new export code, no new library) and
+inherits print support from the app's existing print stylesheet (`.no-print` convention already in use
+throughout). No charting library was added — trends are monthly tables, consistent with "do not add unnecessary
+libraries" from earlier in this project and the fact that no charting library is in `package.json`.
 
-## 5. Known remaining item
+## Files
+**New**: `src/routes/_authenticated/analytics.tsx`.
+**Replaced**: `src/components/mobile-bottom-nav.tsx`, `src/components/nav-rail.tsx`, `src/components/app-shell.tsx`,
+`src/routes/_authenticated/dashboard.tsx`, `src/config/nav.ts`, `src/lib/i18n.tsx`.
 
-`followups.tsx` still has the older, non-debounced patient search pattern, and additionally supports a free-text
-patient name for people not yet in the system — changing it safely means deciding how that free-text case should
-interact with `PatientPicker` (which assumes a registered patient), not just swapping the component in. Left as-is
-rather than guessing that behavior under time pressure.
+## SQL
+**None applied, none pending.** Task C deliberately reuses existing tables/views/columns only — no new schema
+required, matching "do not create duplicate financial logic, reuse existing RPCs and views."
 
-## 6. Installation
+## Verification
+- Every file above individually `tsc --strict` checked, clean, including cross-file member resolution.
+- Full i18n duplicate-key scan re-run after all edits: zero duplicates.
+- **Could not run `npm run typecheck` / `npm run build`** — no `node_modules`/network in this sandbox, same
+  limitation as every prior session. Stated plainly, not glossed over.
+- **Could not verify against the live Supabase schema this session** (tool unavailable) — mitigated by deriving
+  every column name from this ZIP's own working code rather than assumption, but this is a real gap relative to
+  prior sessions' practice and should be double-checked against the live DB before merging, particularly the
+  `appointments.status` values used in Appointment Analytics.
 
+## Installation
 1. Unzip preserving paths.
-2. Database is already live — `db/roshan_phase5_insurance.sql` is included for the repo record and is safe to
-   re-run (fully idempotent) if you want to apply it from a fresh environment instead.
-3. `npm install && npm run typecheck && npm run build`.
+2. `npm install && npm run typecheck && npm run build`.
+3. No database changes required for this delivery.
