@@ -2,10 +2,28 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+type TableProps = React.HTMLAttributes<HTMLTableElement> & {
+  /** When true, thead sticks to the top of the scroll container. */
+  stickyHeader?: boolean;
+  /** compact = tighter row height for dense lists */
+  density?: "comfortable" | "compact";
+};
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, stickyHeader, density = "comfortable", ...props }, ref) => (
+    <div
+      className={cn(
+        "relative w-full overflow-auto",
+        density === "compact" && "[&_th]:h-8 [&_th]:px-2 [&_td]:p-1.5 [&_td]:text-[13px]",
+      )}
+      data-density={density}
+    >
+      <table
+        ref={ref}
+        className={cn("w-full caption-bottom text-sm", className)}
+        data-sticky-header={stickyHeader ? "true" : undefined}
+        {...props}
+      />
     </div>
   ),
 );
@@ -15,7 +33,14 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead
+    ref={ref}
+    className={cn(
+      "sticky top-0 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
+      className,
+    )}
+    {...props}
+  />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -44,7 +69,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/8 data-[state=selected]:hover:bg-primary/12",
         className,
       )}
       {...props}

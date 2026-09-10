@@ -36,15 +36,31 @@ function RailLink({
     <Link
       to={item.to}
       onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150",
+        "group/link relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium outline-none transition-colors duration-150",
+        "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
         collapsed && "justify-center px-2",
         active
-          ? "bg-sidebar-primary text-sidebar-primary-foreground"
-          : "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary-foreground"
+          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
       )}
     >
-      <Icon className="size-4 shrink-0" />
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-1 start-0 w-[3px] rounded-full bg-sidebar-primary transition-opacity duration-150",
+          active ? "opacity-100" : "opacity-0",
+        )}
+      />
+      <Icon
+        className={cn(
+          "size-4 shrink-0 transition-colors",
+          active
+            ? "text-sidebar-primary"
+            : "text-sidebar-foreground/70 group-hover/link:text-sidebar-accent-foreground",
+        )}
+      />
       {!collapsed ? <span className="truncate">{t(item.key)}</span> : null}
       {!collapsed ? trailing : null}
     </Link>
@@ -53,9 +69,11 @@ function RailLink({
   if (!collapsed) return link;
 
   return (
-    <Tooltip delayDuration={200}>
+    <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{t(item.key)}</TooltipContent>
+      <TooltipContent side="right" sideOffset={8} className="font-medium">
+        {t(item.key)}
+      </TooltipContent>
     </Tooltip>
   );
 }
@@ -74,29 +92,34 @@ export function NavRail({
   const location = useLocation();
   const { favorites, toggleFavorite } = useNavPreferences();
 
-  const favoriteItems = NAV_GROUPS.flatMap((g) => g.items)
-    .filter((item) => can(item.perm) && favorites.includes(item.to));
+  const favoriteItems = NAV_GROUPS.flatMap((g) => g.items).filter(
+    (item) => can(item.perm) && favorites.includes(item.to),
+  );
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider delayDuration={150}>
       <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1">
-        <nav className="space-y-4 p-3">
-          <RailLink
-            item={HOME_ITEM}
-            collapsed={collapsed}
-            active={isActive(location.pathname, HOME_ITEM.to)}
-            onNavigate={onNavigate}
-          />
+        <ScrollArea className="flex-1">
+          <nav className="space-y-5 p-2.5" aria-label="Main">
+            <RailLink
+              item={HOME_ITEM}
+              collapsed={collapsed}
+              active={isActive(location.pathname, HOME_ITEM.to)}
+              onNavigate={onNavigate}
+            />
 
-          {favoriteItems.length > 0 ? (
-            <div className={cn("rounded-xl", !collapsed && "bg-sidebar-accent/40 p-1.5")}>
-              {!collapsed ? (
-                <p className="px-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                  {t("favorites")}
-                </p>
-              ) : null}
-              <div className="space-y-0.5">
+            {favoriteItems.length > 0 ? (
+              <div
+                className={cn(
+                  "space-y-0.5",
+                  !collapsed && "rounded-xl border border-sidebar-border/60 bg-sidebar-accent/25 p-1.5",
+                )}
+              >
+                {!collapsed ? (
+                  <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">
+                    {t("favorites")}
+                  </p>
+                ) : null}
                 {favoriteItems.map((item) => (
                   <RailLink
                     key={`fav-${item.to}`}
@@ -107,20 +130,20 @@ export function NavRail({
                   />
                 ))}
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {NAV_GROUPS.map((group) => {
-            const items = group.items.filter((item) => can(item.perm));
-            if (items.length === 0) return null;
-            return (
-              <div key={group.group}>
-                {!collapsed ? (
-                  <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                    {t(group.group)}
-                  </p>
-                ) : null}
-                <div className="space-y-0.5">
+            {NAV_GROUPS.map((group) => {
+              const items = group.items.filter((item) => can(item.perm));
+              if (items.length === 0) return null;
+              return (
+                <div key={group.group} className="space-y-0.5">
+                  {!collapsed ? (
+                    <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">
+                      {t(group.group)}
+                    </p>
+                  ) : (
+                    <div className="mx-auto my-1 h-px w-6 bg-sidebar-border/80" aria-hidden />
+                  )}
                   {items.map((item) => {
                     const pinned = favorites.includes(item.to);
                     return (
@@ -139,10 +162,16 @@ export function NavRail({
                                   e.stopPropagation();
                                   toggleFavorite(item.to);
                                 }}
-                                className="ms-auto shrink-0 rounded p-0.5 opacity-0 group-hover:opacity-100"
+                                className={cn(
+                                  "ms-auto shrink-0 rounded-md p-0.5 transition-opacity",
+                                  pinned
+                                    ? "opacity-100 text-amber-400"
+                                    : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 hover:!opacity-100",
+                                )}
                                 aria-label={pinned ? t("unpin") : t("pin")}
+                                aria-pressed={pinned}
                               >
-                                <Star className={cn("size-3.5", pinned ? "fill-current text-amber-400" : "")} />
+                                <Star className={cn("size-3.5", pinned && "fill-current")} />
                               </button>
                             ) : null
                           }
@@ -151,23 +180,28 @@ export function NavRail({
                     );
                   })}
                 </div>
-              </div>
-            );
-          })}
-        </nav>
-      </ScrollArea>
+              );
+            })}
+          </nav>
+        </ScrollArea>
 
-      <div className="hidden border-t border-sidebar-border p-2 lg:block">
-        <Button variant="ghost" size="sm" className="w-full justify-center" onClick={onToggleCollapsed}>
-          {collapsed ? (
-            <ChevronsRight className="size-4" />
-          ) : (
-            <>
-              <ChevronsLeft className="size-4" /> {t("collapse_sidebar")}
-            </>
-          )}
-        </Button>
-      </div>
+        <div className="hidden border-t border-sidebar-border p-2 lg:block">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-center text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? t("expand_sidebar") : t("collapse_sidebar")}
+          >
+            {collapsed ? (
+              <ChevronsRight className="size-4" />
+            ) : (
+              <>
+                <ChevronsLeft className="size-4" /> {t("collapse_sidebar")}
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </TooltipProvider>
   );
