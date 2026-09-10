@@ -90,9 +90,9 @@ export function NavRail({
           />
 
           {favoriteItems.length > 0 ? (
-            <div>
+            <div className={cn("rounded-xl", !collapsed && "bg-sidebar-accent/40 p-1.5")}>
               {!collapsed ? (
-                <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                <p className="px-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
                   {t("favorites")}
                 </p>
               ) : null}
