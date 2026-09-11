@@ -19,7 +19,14 @@ export function ConsultationPage({visitId}:{visitId:string}){
  const {lang}=useLang();const {user}=useAuth();const {currency}=useSettings();const [tab,setTab]=useState("note");
  const visitQ=useRows<Row[]>(["consultation-visit",visitId],()=>supabase.from("visits").select("id,visit_number,status,visit_date,patient_id,doctor_id,department_id,consultation_fee,patients(id,full_name,mrn,gender,date_of_birth),departments(name,name_ar),users!visits_doctor_id_fkey(full_name)").eq("id",visitId).limit(1));
  const visit=(visitQ.data??[])[0] as Row|undefined;const patient=rel(visit,"patients");
- const finish=useSave(async()=>{const {error}=await supabase.from("visits").update({status:"completed",completed_at:new Date().toISOString(),updated_by:user?.id??null}).eq("id",visitId);if(error)throw new Error(error.message);return null;},{invalidate:[["consultation-visit",visitId],["clinic-visits"],["visits"]],successMessage:"تم إنهاء الزيارة"});
+ const finish=useSave(async()=>{
+  const {error}=await supabase.from("visits").update({status:"completed",completed_at:new Date().toISOString(),updated_by:user?.id??null}).eq("id",visitId);
+  if(error)throw new Error(error.message);
+  // Keep queue in sync so reception does not still see this patient as waiting/in progress.
+  const {error:qErr}=await supabase.from("queue_tickets").update({status:"completed",completed_at:new Date().toISOString()}).eq("visit_id",visitId).in("status",["waiting","called","in_progress"]);
+  if(qErr)throw new Error(qErr.message);
+  return null;
+},{invalidate:[["consultation-visit",visitId],["clinic-visits"],["visits"],["queue"]],successMessage:lang==="ar"?"تم إنهاء الزيارة":"Visit completed"});
 
  // Visit -> Billing integration. visits.tsx already auto-creates an invoice
  // (linked via invoices.visit_id) at the moment the visit is created, IF a

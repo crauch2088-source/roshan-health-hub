@@ -10,8 +10,7 @@ import {
   PageHeader,
   PrintButton,
   SectionTitle,
-  StatusBadge,
-} from "@/components/kit";
+  StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +67,14 @@ export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
 });
 
 function InvoicePage() {
+  return (
+    <PermissionGate perm="billing.read">
+      <InvoicePageInner />
+    </PermissionGate>
+  );
+}
+
+function InvoicePageInner() {
   const { invoiceId } = useParams({
     from: "/_authenticated/billing_/$invoiceId",
   });

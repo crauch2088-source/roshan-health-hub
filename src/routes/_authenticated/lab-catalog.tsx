@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -53,6 +53,14 @@ const blank = {
 };
 
 function LabCatalogPage() {
+  return (
+    <PermissionGate perm="lab_admin.read">
+      <LabCatalogPageInner />
+    </PermissionGate>
+  );
+}
+
+function LabCatalogPageInner() {
   const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();

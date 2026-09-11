@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, Pager } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, Pager, PermissionGate } from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,6 +37,14 @@ function sanitizeSearch(term: string): string {
 }
 
 function AuditPage() {
+  return (
+    <PermissionGate perm="audit.read">
+      <AuditPageInner />
+    </PermissionGate>
+  );
+}
+
+function AuditPageInner() {
   const { t } = useLang();
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
