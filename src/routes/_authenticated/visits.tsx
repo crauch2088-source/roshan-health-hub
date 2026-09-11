@@ -411,7 +411,7 @@ function VisitsPageInner() {
                 <Field label={t("department")}>
                   <Select
                     // Radix Select must not receive value="" — use undefined for placeholder.
-                    value={form.department_id || undefined}
+                    {...(form.department_id ? { value: form.department_id } : {})}
                     onValueChange={(value) =>
                       setForm((current) => ({
                         ...current,
@@ -455,7 +455,7 @@ function VisitsPageInner() {
                 <Field label={t("doctor")}>
                   <Select
                     // Radix Select must not receive value="" — use undefined for placeholder.
-                    value={form.doctor_id || undefined}
+                    {...(form.doctor_id ? { value: form.doctor_id } : {})}
                     onValueChange={(value) =>
                       setForm((current) => ({
                         ...current,
