@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, ShieldCheck, Stethoscope } from "lucide-react";
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,9 +65,11 @@ class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBo
 
 function PatientChartWithBoundary() {
   return (
-    <ChartErrorBoundary>
-      <PatientChart />
-    </ChartErrorBoundary>
+    <PermissionGate perm="patients.read">
+      <ChartErrorBoundary>
+        <PatientChart />
+      </ChartErrorBoundary>
+    </PermissionGate>
   );
 }
 

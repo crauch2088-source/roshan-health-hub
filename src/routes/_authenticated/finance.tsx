@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Banknote, Plus, RotateCcw, Wallet } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, PermissionGate } from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +44,14 @@ export const Route = createFileRoute("/_authenticated/finance")({
 });
 
 function FinancePage() {
+  return (
+    <PermissionGate perm="cashbox.read">
+      <FinancePageInner />
+    </PermissionGate>
+  );
+}
+
+function FinancePageInner() {
   const { t, lang } = useLang();
   const { currency } = useSettings();
 

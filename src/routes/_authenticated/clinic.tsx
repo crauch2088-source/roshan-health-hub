@@ -7,8 +7,7 @@ import {
   ExportButtons,
   Loading,
   PageHeader,
-  StatusBadge,
-} from "@/components/kit";
+  StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,6 +49,14 @@ export const Route = createFileRoute("/_authenticated/clinic")({
 });
 
 function ClinicPage() {
+  return (
+    <PermissionGate perm="visits.read">
+      <ClinicPageInner />
+    </PermissionGate>
+  );
+}
+
+function ClinicPageInner() {
   const { lang } = useLang();
   const { user } = useAuth();
   const [search, setSearch] = useState("");

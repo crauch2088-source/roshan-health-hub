@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
 import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +51,14 @@ export const Route = createFileRoute("/_authenticated/billing")({
 type Line = { description: string; quantity: string; unit_price: string; item_type: string };
 
 function BillingPage() {
+  return (
+    <PermissionGate perm="billing.read">
+      <BillingPageInner />
+    </PermissionGate>
+  );
+}
+
+function BillingPageInner() {
   const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();

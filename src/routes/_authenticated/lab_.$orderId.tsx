@@ -9,8 +9,7 @@ import {
   PageHeader,
   PrintButton,
   SectionTitle,
-  StatusBadge,
-} from "@/components/kit";
+  StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +35,14 @@ export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
 });
 
 function LabOrderPage() {
+  return (
+    <PermissionGate perm="lab.read">
+      <LabOrderPageInner />
+    </PermissionGate>
+  );
+}
+
+function LabOrderPageInner() {
   const { orderId } = useParams({
     from: "/_authenticated/lab_/$orderId",
   });

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -49,6 +49,14 @@ export const Route = createFileRoute("/_authenticated/expenses")({
 });
 
 function ExpensesPage() {
+  return (
+    <PermissionGate perm="accounting.read">
+      <ExpensesPageInner />
+    </PermissionGate>
+  );
+}
+
+function ExpensesPageInner() {
   const { t } = useLang();
   const { can, user } = useAuth();
   const { currency } = useSettings();
