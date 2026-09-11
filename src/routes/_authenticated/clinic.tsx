@@ -79,10 +79,8 @@ function ClinicPage() {
               id,
               full_name,
               mrn,
-              mrn,
               phone,
               date_of_birth,
-              dob,
               gender
             ),
             departments(
@@ -198,9 +196,7 @@ function ClinicPage() {
                   const patientId = s(patient, "id");
                   const visitId = s(visit, "id");
 
-                  const dob =
-                    s(patient, "date_of_birth") ||
-                    s(patient, "dob");
+                  const dob = s(patient, "date_of_birth");
 
                   const ageVal = calcAge(dob);
 
@@ -226,10 +222,6 @@ function ClinicPage() {
                    * The target route is:
                    * /clinic/{visitId}
                    */
-
-                  const clinicUrl = visitId
-                    ? `/clinic/${encodeURIComponent(visitId)}`
-                    : "";
 
                   return (
                     <TableRow
@@ -296,48 +288,25 @@ function ClinicPage() {
                         />
                       </TableCell>
 
-                      {/* ACTION */}
+                      {/* ACTION — plain <Link>, not wrapped in
+                          Button asChild, so this gets real SPA
+                          navigation without the Radix Slot /
+                          pointer-events composition issue the
+                          previous <a href> was written to avoid. */}
                       <TableCell className="whitespace-nowrap text-end">
                         {visitId ? (
-                          <a
-                            href={clinicUrl}
-                            className="
-                              inline-flex
-                              h-8
-                              items-center
-                              justify-center
-                              gap-2
-                              whitespace-nowrap
-                              rounded-md
-                              bg-primary
-                              px-3
-                              text-xs
-                              font-medium
-                              text-primary-foreground
-                              shadow
-                              transition-colors
-                              hover:bg-primary/90
-                              focus-visible:outline-none
-                              focus-visible:ring-1
-                              focus-visible:ring-ring
-                              cursor-pointer
-                            "
+                          <Link
+                            to="/clinic/$visitId"
+                            params={{ visitId }}
+                            className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             title={
                               lang === "ar"
-                                ? `فتح زيارة ${s(
-                                    visit,
-                                    "visit_number",
-                                  )}`
-                                : `Open visit ${s(
-                                    visit,
-                                    "visit_number",
-                                  )}`
+                                ? `فتح زيارة ${s(visit, "visit_number")}`
+                                : `Open visit ${s(visit, "visit_number")}`
                             }
                           >
-                            {lang === "ar"
-                              ? "فتح"
-                              : "Open"}
-                          </a>
+                            {lang === "ar" ? "فتح" : "Open"}
+                          </Link>
                         ) : (
                           <Button
                             type="button"

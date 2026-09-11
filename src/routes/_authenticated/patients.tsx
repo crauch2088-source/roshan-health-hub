@@ -228,6 +228,7 @@ function PatientsPageInner() {
                     <TableHead>{t("phone")}</TableHead>
                     <TableHead>{t("age")}</TableHead>
                     <TableHead>{t("date")}</TableHead>
+                    <TableHead className="no-print" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -256,6 +257,18 @@ function PatientsPageInner() {
                       </TableCell>
                       <TableCell>{calcAge(s(p, "date_of_birth")) ?? "—"}</TableCell>
                       <TableCell dir="ltr">{formatDate(s(p, "created_at"))}</TableCell>
+                      <TableCell className="no-print text-end">
+                        {can("visits.create") ? (
+                          <Link
+                            to="/visits"
+                            search={{ patient: s(p, "id") }}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+                            title={t("new_visit")}
+                          >
+                            <Plus className="size-3.5" /> {t("new_visit")}
+                          </Link>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
