@@ -294,9 +294,9 @@ function PlansTab() {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={`${t("insurance_companies")} *`}>
-                  <Select value={form.company_id} onValueChange={(v) => setForm({ ...form, company_id: v })}>
+                  <Select {...(form.company_id ? { value: form.company_id } : {})} onValueChange={(v) => setForm({ ...form, company_id: v })}>
                     <SelectTrigger>
-                      <SelectValue placeholder={t("select_medicine")} />
+                      <SelectValue placeholder={t("none")} />
                     </SelectTrigger>
                     <SelectContent>
                       {((companies.data ?? []) as Row[]).map((c) => (
@@ -373,7 +373,7 @@ function PlansTab() {
 // =============================================================================
 
 function MembershipTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
   const [patient, setPatient] = useState<PickedPatient | null>(null);
@@ -412,7 +412,7 @@ function MembershipTab() {
 
   const create = useSave(
     async () => {
-      if (!patient || !companyId || !planId) throw new Error(t("select_medicine"));
+      if (!patient || !companyId || !planId) throw new Error(lang === "ar" ? "اختر المريض والشركة والخطة" : "Select patient, company and plan");
       const { error } = await supabase.from("patient_insurance").insert({
         patient_id: patient.id,
         company_id: companyId,
@@ -462,14 +462,14 @@ function MembershipTab() {
                 </Field>
                 <Field label={`${t("insurance_companies")} *`}>
                   <Select
-                    value={companyId}
+                    {...(companyId ? { value: companyId } : {})}
                     onValueChange={(v) => {
                       setCompanyId(v);
                       setPlanId("");
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("select_medicine")} />
+                      <SelectValue placeholder={t("none")} />
                     </SelectTrigger>
                     <SelectContent>
                       {((companies.data ?? []) as Row[]).map((c) => (
@@ -481,9 +481,9 @@ function MembershipTab() {
                   </Select>
                 </Field>
                 <Field label={`${t("insurance_plans")} *`}>
-                  <Select value={planId} onValueChange={setPlanId}>
+                  <Select {...(planId ? { value: planId } : {})} onValueChange={setPlanId}>
                     <SelectTrigger>
-                      <SelectValue placeholder={t("select_medicine")} />
+                      <SelectValue placeholder={t("none")} />
                     </SelectTrigger>
                     <SelectContent>
                       {((plans.data ?? []) as Row[]).map((p) => (
@@ -569,7 +569,7 @@ function MembershipTab() {
 type DraftItem = ClaimItemInput;
 
 function ClaimsTab({ currency }: { currency: string }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
   const [patientInsuranceId, setPatientInsuranceId] = useState("");
@@ -626,7 +626,7 @@ function ClaimsTab({ currency }: { currency: string }) {
 
   const create = useSave(
     async () => {
-      if (!patientInsuranceId || items.length === 0) throw new Error(t("select_medicine"));
+      if (!patientInsuranceId || items.length === 0) throw new Error(lang === "ar" ? "اختر تأمين المريض وأضف بنوداً" : "Select patient insurance and add line items");
       await createInsuranceClaim({ patientInsuranceId, invoiceId: null, items });
       return null;
     },
@@ -788,9 +788,9 @@ function ClaimsTab({ currency }: { currency: string }) {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label={`${t("patient_insurance")} *`}>
-              <Select value={patientInsuranceId} onValueChange={setPatientInsuranceId}>
+              <Select {...(patientInsuranceId ? { value: patientInsuranceId } : {})} onValueChange={setPatientInsuranceId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("select_medicine")} />
+                  <SelectValue placeholder={t("none")} />
                 </SelectTrigger>
                 <SelectContent>
                   {((membership.data ?? []) as Row[]).map((m) => (
