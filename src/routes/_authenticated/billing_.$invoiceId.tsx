@@ -33,6 +33,7 @@ import { useAuth } from "@/lib/auth";
 import {
   n,
   rel,
+  rpc,
   s,
   useRows,
   useSave,
@@ -80,7 +81,7 @@ function InvoicePageInner() {
   });
 
   const { t } = useLang();
-  const { can, user } = useAuth();
+  const { can } = useAuth();
   const { currency, settings } = useSettings();
 
   const [amount, setAmount] = useState("");
@@ -116,6 +117,9 @@ function InvoicePageInner() {
       .order("created_at", { ascending: false }),
   );
 
+  // Same atomic path as Finance → Receivables: post_invoice_payment locks the
+  // invoice, validates outstanding, inserts payment; triggers recompute
+  // paid_amount/status and post cashbox ledger. Do not dual-write from the client.
   const pay = useSave(
     async () => {
       if (!invoice) {
@@ -130,69 +134,12 @@ function InvoicePageInner() {
         );
       }
 
-      const outstanding = Math.max(
-        0,
-        n(invoice, "net_amount") -
-          n(invoice, "paid_amount"),
-      );
-
-      if (value > outstanding) {
-        throw new Error(
-          "Payment exceeds outstanding balance",
-        );
-      }
-
-      const patientId = s(
-        rel(invoice, "patients"),
-        "id",
-      );
-
-      const { error } = await supabase
-        .from("payments")
-        .insert({
-          invoice_id: invoiceId,
-          patient_id: patientId || null,
-          amount: value,
-          payment_method: method,
-          method,
-          reference_no:
-            reference.trim() || null,
-          reference:
-            reference.trim() || null,
-          payment_date: new Date()
-            .toISOString()
-            .slice(0, 10),
-          received_by: user?.id ?? null,
-        });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const paid =
-        n(invoice, "paid_amount") + value;
-
-      const net = n(invoice, "net_amount");
-
-      const status =
-        paid >= net
-          ? "paid"
-          : paid > 0
-            ? "partial"
-            : "unpaid";
-
-      const { error: updateError } =
-        await supabase
-          .from("invoices")
-          .update({
-            paid_amount: paid,
-            status,
-          })
-          .eq("id", invoiceId);
-
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
+      await rpc("post_invoice_payment", {
+        _invoice_id: invoiceId,
+        _amount: value,
+        _method: method,
+        _reference: reference.trim() || null,
+      });
 
       return null;
     },
@@ -201,6 +148,9 @@ function InvoicePageInner() {
         ["invoice", invoiceId],
         ["payments", invoiceId],
         ["invoices"],
+        ["patient-receivables"],
+        ["cashbox-balance"],
+        ["cashbox-transactions"],
       ],
       successMessage: t("saved"),
       onDone: () => {
