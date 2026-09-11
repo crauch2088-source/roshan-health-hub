@@ -632,7 +632,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={`${t("medicines")} *`} className="sm:col-span-2">
-              <Select value={form.medicine_id} onValueChange={(v) => setForm({ ...form, medicine_id: v })}>
+              <Select {...(form.medicine_id ? { value: form.medicine_id } : {})} onValueChange={(v) => setForm({ ...form, medicine_id: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("select_medicine")} />
                 </SelectTrigger>
@@ -646,7 +646,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
               </Select>
             </Field>
             <Field label={t("supplier")}>
-              <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
+              <Select {...(form.supplier_id ? { value: form.supplier_id } : {})} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("none")} />
                 </SelectTrigger>

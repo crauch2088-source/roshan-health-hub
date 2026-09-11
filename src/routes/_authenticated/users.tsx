@@ -152,7 +152,7 @@ function UsersPageInner() {
                   <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </Field>
                 <Field label={`${t("role")} *`}>
-                  <Select value={form.role_id} onValueChange={(v) => setForm({ ...form, role_id: v })}>
+                  <Select {...(form.role_id ? { value: form.role_id } : {})} onValueChange={(v) => setForm({ ...form, role_id: v })}>
                     <SelectTrigger>
                       <SelectValue placeholder={t("role")} />
                     </SelectTrigger>
