@@ -26,7 +26,7 @@ export function ConsultationPage({visitId}:{visitId:string}){
   const {error:qErr}=await supabase.from("queue_tickets").update({status:"completed",completed_at:new Date().toISOString()}).eq("visit_id",visitId).in("status",["waiting","called","in_progress"]);
   if(qErr)throw new Error(qErr.message);
   return null;
-},{invalidate:[["consultation-visit",visitId],["clinic-visits"],["visits"],["queue"]],successMessage:lang==="ar"?"تم إنهاء الزيارة":"Visit completed"});
+},{invalidate:[["consultation-visit",visitId],["clinic-visits"],["visits"],["queue"],["patient-visits"],["patient-snapshot-visits"]],successMessage:lang==="ar"?"تم إنهاء الزيارة":"Visit completed"});
 
  // Visit -> Billing integration. visits.tsx already auto-creates an invoice
  // (linked via invoices.visit_id) at the moment the visit is created, IF a
@@ -101,10 +101,10 @@ export function ConsultationPage({visitId}:{visitId:string}){
          </Button>
        ) : null}
 
-       {s(visit,"status")!=="completed"&&<Button size="sm" onClick={()=>finish.mutate(undefined as never)} disabled={finish.isPending}><CheckCircle2 className="size-4"/>إنهاء الزيارة</Button>}
+       {s(visit,"status")!=="completed"&&<Button size="sm" onClick={()=>finish.mutate(undefined as never)} disabled={finish.isPending}><CheckCircle2 className="size-4"/>{lang==="ar"?"إنهاء الزيارة":"Finish visit"}</Button>}
      </div>
    </div>
-   <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4"><div><div className="text-xs text-muted-foreground">Patient</div><div className="font-semibold">{s(patient,"full_name")}</div><div className="text-xs" dir="ltr">{s(patient,"mrn")}</div></div><div><div className="text-xs text-muted-foreground">Age / Sex</div><div>{calcAge(s(patient,"date_of_birth"))??"—"} · {s(patient,"gender")}</div></div><div><div className="text-xs text-muted-foreground">Department</div><div>{lang==="ar"?s(rel(visit,"departments"),"name_ar")||s(rel(visit,"departments"),"name"):s(rel(visit,"departments"),"name")}</div></div><div><div className="text-xs text-muted-foreground">Doctor</div><div>{s(rel(visit,"users"),"full_name")||"—"}</div></div></CardContent></Card>
+   <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4"><div><div className="text-xs text-muted-foreground">{lang==="ar"?"المريض":"Patient"}</div><div className="font-semibold">{s(patient,"full_name")}</div><div className="text-xs" dir="ltr">{s(patient,"mrn")}</div></div><div><div className="text-xs text-muted-foreground">{lang==="ar"?"العمر / الجنس":"Age / Sex"}</div><div>{calcAge(s(patient,"date_of_birth"))??"—"} · {s(patient,"gender")}</div></div><div><div className="text-xs text-muted-foreground">{lang==="ar"?"القسم":"Department"}</div><div>{lang==="ar"?s(rel(visit,"departments"),"name_ar")||s(rel(visit,"departments"),"name"):s(rel(visit,"departments"),"name")}</div></div><div><div className="text-xs text-muted-foreground">{lang==="ar"?"الطبيب":"Doctor"}</div><div>{s(rel(visit,"users"),"full_name")||"—"}</div></div></CardContent></Card>
    <div className="overflow-x-auto border-b"><div className="flex min-w-max gap-1">{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`border-b-2 px-4 py-3 text-sm font-medium ${tab===k?"border-primary text-primary":"border-transparent text-muted-foreground"}`}>{l}</button>)}</div></div>
    {tab==="note"&&<ClinicalNoteTab visitId={visitId}/>} {tab==="vitals"&&<VitalsTab visitId={visitId}/>} {tab==="labs"&&<LaboratoryTab visitId={visitId}/>} {tab==="prescription"&&<PrescriptionTab visitId={visitId}/>} {tab==="history"&&<HistoryTab visitId={visitId}/>}
  </div>;
