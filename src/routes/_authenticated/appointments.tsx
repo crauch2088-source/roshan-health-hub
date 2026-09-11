@@ -365,7 +365,8 @@ function AppointmentsPageInner() {
                 }
               >
                 <Select
-                  value={form.doctor_id}
+                  // Radix Select must not receive value="" — use undefined for placeholder.
+                  {...(form.doctor_id ? { value: form.doctor_id } : {})}
                   onValueChange={(value) =>
                     setForm({
                       ...form,
