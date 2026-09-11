@@ -386,7 +386,7 @@ function VisitsPageInner() {
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[min(90dvh,90vh)] w-[calc(100%-1.5rem)] max-w-lg overflow-y-auto overscroll-contain sm:w-full">
               <DialogHeader>
                 <DialogTitle>
                   {t("new_visit")}
@@ -410,7 +410,8 @@ function VisitsPageInner() {
 
                 <Field label={t("department")}>
                   <Select
-                    value={form.department_id}
+                    // Radix Select must not receive value="" — use undefined for placeholder.
+                    value={form.department_id || undefined}
                     onValueChange={(value) =>
                       setForm((current) => ({
                         ...current,
@@ -453,7 +454,8 @@ function VisitsPageInner() {
 
                 <Field label={t("doctor")}>
                   <Select
-                    value={form.doctor_id}
+                    // Radix Select must not receive value="" — use undefined for placeholder.
+                    value={form.doctor_id || undefined}
                     onValueChange={(value) =>
                       setForm((current) => ({
                         ...current,

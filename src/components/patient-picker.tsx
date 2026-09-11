@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,9 +30,12 @@ export type PickedPatient = {
  * Patient search-and-select combobox. Built on the shared `patientPickerQuery`
  * from lib/search.ts (name / MRN / phone / national ID, MRN-first) so this
  * doesn't become a second, slightly-different patient search implementation.
- * Typing narrows results live (debounced 300ms); arrow keys + Enter + Escape
- * are handled by cmdk's <Command>, matching the keyboard behaviour of the
- * global search dialog elsewhere in the app.
+ *
+ * Inside modal Dialogs (e.g. New Visit):
+ * - Popover is modal so focus is managed correctly with the parent Dialog
+ * - Content width is measured from the trigger (Radix Popover does NOT set
+ *   --radix-popover-trigger-width the way Select does)
+ * - pointer-events-auto is applied at the PopoverContent primitive level
  */
 export function PatientPicker({
   value,
@@ -49,6 +52,8 @@ export function PatientPicker({
   const [open, setOpen] = useState(Boolean(autoFocus));
   const [term, setTerm] = useState("");
   const debounced = useDebounced(term, 300);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [triggerWidth, setTriggerWidth] = useState<number | undefined>(undefined);
 
   const results = useRows<Row[]>(
     ["patient-picker", debounced],
@@ -59,10 +64,24 @@ export function PatientPicker({
   const rows = (results.data ?? []) as Row[];
   const searching = term.length > 0 && (results.isFetching || term !== debounced);
 
+  // Measure trigger so the panel matches field width on mobile and desktop.
+  // Radix Popover does not publish --radix-popover-trigger-width.
+  useEffect(() => {
+    if (!open) return;
+    const el = triggerRef.current;
+    if (!el) return;
+    const update = () => setTriggerWidth(el.offsetWidth);
+    update();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [open]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover modal open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          ref={triggerRef}
           type="button"
           variant="outline"
           role="combobox"
@@ -80,22 +99,32 @@ export function PatientPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] max-w-[min(100vw-2rem,var(--radix-popover-trigger-width))] p-0"
         align="start"
-        // Keep the combobox above Dialog overlays (see popover.tsx z-[10050]).
-        // Avoid modal focus trap fighting the parent Dialog on mobile keyboards.
+        sideOffset={4}
+        collisionPadding={12}
+        // Explicit pixel width from trigger; fall back to full usable mobile width.
+        style={triggerWidth ? { width: triggerWidth } : undefined}
+        className="max-w-[calc(100vw-1.5rem)] p-0"
         onOpenAutoFocus={(e) => {
-          // Let CommandInput take focus without the Dialog stealing it back.
+          // Focus the search input without letting the parent Dialog reclaim focus.
           e.preventDefault();
-          const input = (e.currentTarget as HTMLElement).querySelector<HTMLInputElement>(
-            "[cmdk-input], input",
-          );
-          input?.focus();
+          const root = e.currentTarget as HTMLElement;
+          const input = root.querySelector<HTMLInputElement>("[cmdk-input], input");
+          // Defer one frame so the portal is fully mounted on mobile browsers.
+          requestAnimationFrame(() => input?.focus());
+        }}
+        onCloseAutoFocus={(e) => {
+          // Prevent Dialog from scrolling/jumping when the popover closes on mobile.
+          e.preventDefault();
         }}
       >
-        <Command shouldFilter={false}>
-          <CommandInput value={term} onValueChange={setTerm} placeholder={t("search_patient_placeholder")} />
-          <CommandList>
+        <Command shouldFilter={false} className="pointer-events-auto">
+          <CommandInput
+            value={term}
+            onValueChange={setTerm}
+            placeholder={t("search_patient_placeholder")}
+          />
+          <CommandList className="max-h-[min(280px,40vh)] overscroll-contain">
             {searching ? (
               <div className="py-6 text-center text-sm text-muted-foreground">{t("loading")}</div>
             ) : rows.length === 0 ? (

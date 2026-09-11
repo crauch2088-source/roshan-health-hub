@@ -34,9 +34,11 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/patients", key: "patients", perm: "patients.read", icon: "UserRound" },
       { to: "/visits", key: "visits", perm: "visits.read", icon: "ClipboardList" },
       { to: "/queue", key: "queue", perm: "queue.read", icon: "ListOrdered" },
-      // Clinic is the doctor-facing consultation surface (emr.* permissions).
-      // Must appear in NavRail, mobile nav, and command palette via this config.
-      { to: "/clinic", key: "clinic", perm: "emr.read", icon: "Stethoscope" },
+      // Clinic lists visits for consultation. Gate on visits.read (not emr.read)
+      // so reception and clinical roles both see it — same access as the Clinic
+      // links already shown on the Visits table. Writing clinical notes remains
+      // protected by emr RLS on clinical_notes / vitals tables.
+      { to: "/clinic", key: "clinic", perm: "visits.read", icon: "Stethoscope" },
       { to: "/appointments", key: "appointments", perm: "appointments.read", icon: "CalendarDays" },
       { to: "/followups", key: "followups", perm: "followups.read", icon: "HeartPulse" },
       { to: "/certificates", key: "certificates", perm: "certificates.read", icon: "FileText" },
