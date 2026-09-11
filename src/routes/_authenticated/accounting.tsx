@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, Landmark, Plus, ReceiptText, RefreshCw, Search, Truck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, StatCard, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,14 @@ export const Route = createFileRoute("/_authenticated/accounting")({
 type Tab = "overview" | "cashbox" | "receivables" | "suppliers";
 
 function AccountingPage() {
+  return (
+    <PermissionGate perm="accounting.read">
+      <AccountingPageInner />
+    </PermissionGate>
+  );
+}
+
+function AccountingPageInner() {
   const { t } = useLang();
   const { currency } = useSettings();
   const { can } = useAuth();
