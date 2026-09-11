@@ -34,8 +34,11 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/patients", key: "patients", perm: "patients.read", icon: "UserRound" },
       { to: "/visits", key: "visits", perm: "visits.read", icon: "ClipboardList" },
       { to: "/queue", key: "queue", perm: "queue.read", icon: "ListOrdered" },
+      // Clinic is the doctor-facing consultation surface (emr.* permissions).
+      // Must appear in NavRail, mobile nav, and command palette via this config.
+      { to: "/clinic", key: "clinic", perm: "emr.read", icon: "Stethoscope" },
       { to: "/appointments", key: "appointments", perm: "appointments.read", icon: "CalendarDays" },
-      { to: "/followups", key: "followups", perm: "followups.read", icon: "Stethoscope" },
+      { to: "/followups", key: "followups", perm: "followups.read", icon: "HeartPulse" },
       { to: "/certificates", key: "certificates", perm: "certificates.read", icon: "FileText" },
     ],
   },

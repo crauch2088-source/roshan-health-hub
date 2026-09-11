@@ -79,7 +79,20 @@ export function PatientPicker({
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] max-w-[min(100vw-2rem,var(--radix-popover-trigger-width))] p-0"
+        align="start"
+        // Keep the combobox above Dialog overlays (see popover.tsx z-[10050]).
+        // Avoid modal focus trap fighting the parent Dialog on mobile keyboards.
+        onOpenAutoFocus={(e) => {
+          // Let CommandInput take focus without the Dialog stealing it back.
+          e.preventDefault();
+          const input = (e.currentTarget as HTMLElement).querySelector<HTMLInputElement>(
+            "[cmdk-input], input",
+          );
+          input?.focus();
+        }}
+      >
         <Command shouldFilter={false}>
           <CommandInput value={term} onValueChange={setTerm} placeholder={t("search_patient_placeholder")} />
           <CommandList>
