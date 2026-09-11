@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { ErrorBox, Field, Loading, PageHeader } from "@/components/kit";
+import { ErrorBox, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,14 @@ const KEYS = [
 ] as const;
 
 function SettingsPage() {
+  return (
+    <PermissionGate perm="settings.read">
+      <SettingsPageInner />
+    </PermissionGate>
+  );
+}
+
+function SettingsPageInner() {
   const { lang, t } = useLang();
   const { can } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});

@@ -3,7 +3,7 @@ import { Package, Plus, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, Pager, StatCard } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, Pager, StatCard, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -68,6 +68,14 @@ function ExpiryBadge({ status }: { status: ExpiryStatus }) {
 }
 
 function InventoryPage() {
+  return (
+    <PermissionGate perm="pharmacy.read">
+      <InventoryPageInner />
+    </PermissionGate>
+  );
+}
+
+function InventoryPageInner() {
   const { t } = useLang();
   const { currency, settings } = useSettings();
   const thresholdDays = Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;

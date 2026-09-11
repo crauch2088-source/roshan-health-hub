@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader } from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -40,6 +40,14 @@ export const Route = createFileRoute("/_authenticated/partners")({
 });
 
 function PartnersPage() {
+  return (
+    <PermissionGate perm="partners.read">
+      <PartnersPageInner />
+    </PermissionGate>
+  );
+}
+
+function PartnersPageInner() {
   const { t } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
