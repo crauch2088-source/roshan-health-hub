@@ -31,6 +31,7 @@ function RailLink({
 }) {
   const { t } = useLang();
   const Icon = getNavIcon(item.icon);
+  const hasTrailing = Boolean(trailing) && !collapsed;
 
   const link = (
     <Link
@@ -41,6 +42,7 @@ function RailLink({
         "group/link relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium outline-none transition-colors duration-150",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
         collapsed && "justify-center px-2",
+        hasTrailing && "pe-9",
         active
           ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary-foreground"
           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -62,21 +64,32 @@ function RailLink({
         )}
       />
       {!collapsed ? <span className="truncate">{t(item.key)}</span> : null}
-      {!collapsed ? trailing : null}
     </Link>
   );
 
-  if (!collapsed) return link;
-
-  return (
+  const body = collapsed ? (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
       <TooltipContent side="right" sideOffset={8} className="font-medium">
         {t(item.key)}
       </TooltipContent>
     </Tooltip>
+  ) : (
+    link
+  );
+
+  // The trailing control (pin/unpin) is a real <button>, so it must be a
+  // SIBLING of the link, never nested inside an anchor.
+  if (!hasTrailing) return body;
+
+  return (
+    <div className="relative">
+      {body}
+      <span className="absolute end-1 top-1/2 -translate-y-1/2">{trailing}</span>
+    </div>
   );
 }
+
 
 export function NavRail({
   collapsed,
@@ -163,7 +176,7 @@ export function NavRail({
                                   toggleFavorite(item.to);
                                 }}
                                 className={cn(
-                                  "ms-auto shrink-0 rounded-md p-0.5 transition-opacity",
+                                  "flex size-6 shrink-0 items-center justify-center rounded-md transition-opacity",
                                   pinned
                                     ? "opacity-100 text-amber-400"
                                     : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 hover:!opacity-100",

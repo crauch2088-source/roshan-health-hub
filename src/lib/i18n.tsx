@@ -26,6 +26,9 @@ const dict: Record<string, { ar: string; en: string }> = {
 
   // nav
   dashboard: { ar: "الرئيسية", en: "Dashboard" },
+  navigation: { ar: "التنقل", en: "Navigation" },
+  skip_to_content: { ar: "الانتقال إلى المحتوى", en: "Skip to content" },
+
   patients: { ar: "المرضى", en: "Patients" },
   visits: { ar: "الزيارات", en: "Visits" },
   queue: { ar: "الطابور", en: "Queue" },

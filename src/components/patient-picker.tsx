@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, UserPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -12,12 +13,13 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { s, useRows, type Row } from "@/lib/db";
+import { n, s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money } from "@/lib/medical";
 import { patientPickerQuery, useDebounced } from "@/lib/search";
-import { supabase } from "@/lib/supabase";
+import { dbError, supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+
 
 export type PickedPatient = {
   id: string;
@@ -187,47 +189,63 @@ export function PatientPicker({
  * for a selected patient — shown under the picker so reception can spot
  * "this patient owes money" or "they were just here yesterday" before
  * confirming the new visit.
+ *
+ * The visit count is resolved with a PostgREST exact count + a single row
+ * instead of downloading the patient's whole visit history just to call
+ * `.length` on it. Query keys are unchanged so existing invalidations
+ * (visits, consultation finish) still refresh this strip.
  */
 export function usePatientSnapshot(patientId: string | null) {
-  const visits = useRows<Row[]>(
-    ["patient-snapshot-visits", patientId ?? ""],
-    () =>
-      supabase
+  const enabled = Boolean(patientId);
+
+  const visits = useQuery({
+    queryKey: ["patient-snapshot-visits", patientId ?? ""],
+    enabled,
+    retry: false,
+    queryFn: async () => {
+      const { data, error, count } = await supabase
         .from("visits")
-        .select("visit_date")
+        .select("visit_date", { count: "exact" })
         .eq("patient_id", patientId as string)
         .is("deleted_at", null)
         .order("visit_date", { ascending: false })
-        .limit(500),
-    { enabled: Boolean(patientId) },
-  );
+        .limit(1);
+      if (error) throw new Error(dbError(error));
+      const rows = (data ?? []) as Row[];
+      return {
+        count: count ?? rows.length,
+        last: rows[0] ? s(rows[0], "visit_date") : null,
+      };
+    },
+  });
 
-  const invoices = useRows<Row[]>(
-    ["patient-snapshot-invoices", patientId ?? ""],
-    () =>
-      supabase
+  const invoices = useQuery({
+    queryKey: ["patient-snapshot-invoices", patientId ?? ""],
+    enabled,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("invoices")
         .select("net_amount, paid_amount")
         .eq("patient_id", patientId as string)
         .is("deleted_at", null)
-        .limit(1000),
-    { enabled: Boolean(patientId) },
-  );
-
-  const visitRows = (visits.data ?? []) as Row[];
-  const invoiceRows = (invoices.data ?? []) as Row[];
-  const outstanding = invoiceRows.reduce(
-    (sum, inv) => sum + (Number(inv["net_amount"]) || 0) - (Number(inv["paid_amount"]) || 0),
-    0,
-  );
+        .limit(1000);
+      if (error) throw new Error(dbError(error));
+      return ((data ?? []) as Row[]).reduce(
+        (sum, inv) => sum + n(inv, "net_amount") - n(inv, "paid_amount"),
+        0,
+      );
+    },
+  });
 
   return {
     isLoading: visits.isLoading || invoices.isLoading,
-    visitsCount: visitRows.length,
-    lastVisitDate: visitRows[0] ? s(visitRows[0], "visit_date") : null,
-    outstandingBalance: outstanding,
+    visitsCount: visits.data?.count ?? 0,
+    lastVisitDate: visits.data?.last ?? null,
+    outstandingBalance: invoices.data ?? 0,
   };
 }
+
 
 /** Small inline strip rendered under the picker once a patient is selected. */
 export function PatientSnapshotStrip({ patientId, currency }: { patientId: string; currency: string }) {
