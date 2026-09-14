@@ -83,7 +83,10 @@ export function MobileBottomNav() {
         </div>
       ) : null}
 
-      <nav className="no-print fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-card/95 py-1 backdrop-blur lg:hidden">
+      <nav
+        className="no-print fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-card/95 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden"
+        aria-label={t("navigation")}
+      >
         {primary.map((item) => {
           const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
           const active = isActive(location.pathname, item.to);
@@ -91,6 +94,7 @@ export function MobileBottomNav() {
             <Link
               key={item.to}
               to={item.to}
+              aria-current={active ? "page" : undefined}
               className="flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] font-medium"
             >
               <span
@@ -105,6 +109,7 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
+
 
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger asChild>
@@ -132,12 +137,17 @@ export function MobileBottomNav() {
                     <div className="grid grid-cols-4 gap-2">
                       {items.map((item) => {
                         const Icon = getNavIcon(item.icon);
+                        const active = isActive(location.pathname, item.to);
                         return (
                           <Link
                             key={item.to}
                             to={item.to}
                             onClick={() => setMoreOpen(false)}
-                            className="flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]"
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]",
+                              active && "border-primary/40 bg-primary/10 text-primary",
+                            )}
                           >
                             <Icon className="size-5" />
                             <span className="line-clamp-2">{t(item.key)}</span>
@@ -145,10 +155,7 @@ export function MobileBottomNav() {
                         );
                       })}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+
           </SheetContent>
         </Sheet>
       </nav>
