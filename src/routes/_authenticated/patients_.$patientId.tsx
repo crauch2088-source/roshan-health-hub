@@ -303,6 +303,13 @@ function PatientChart() {
             </Link>
           </Button>
         ) : null}
+        {can("billing.create") ? (
+          <Button asChild size="sm" variant="outline">
+            <Link to="/billing" search={{ patient: s(record, "id") }}>
+              <Receipt className="size-4" /> {t("new_invoice") || (lang === "ar" ? "فاتورة جديدة" : "New invoice")}
+            </Link>
+          </Button>
+        ) : null}
       </PageHeader>
 
       <ErrorBox error={patient.error} />
