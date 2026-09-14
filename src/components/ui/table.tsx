@@ -36,7 +36,13 @@ const TableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      "sticky top-0 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
+      // top-14 (3.5rem), not top-0: the app shell's own header is a fixed
+      // 56px bar (h-14) sticky at top-0 with a higher z-index. Every table
+      // in the app scrolls under that same header, so a table thead stuck
+      // at top-0 was rendering directly behind the app header instead of
+      // just below it - on any list long enough to scroll, the column
+      // labels disappeared under the top bar instead of staying visible.
+      "sticky top-14 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
       className,
     )}
     {...props}
