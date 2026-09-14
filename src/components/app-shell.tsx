@@ -109,23 +109,25 @@ function Shell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col pb-16 lg:pb-0">
-        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card/85 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-card/70">
-          <img src="/roshan-logo.png" alt="" className="size-8 object-contain lg:hidden" />
+      <div className="flex min-w-0 flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-card/70 sm:gap-3 sm:px-4">
+          <img src="/roshan-logo.png" alt="" className="size-8 shrink-0 object-contain lg:hidden" />
           <BreadcrumbNav />
-          <div className="flex-1" />
+          <div className="min-w-0 flex-1" />
           <SearchTrigger />
-          <Button variant="outline" size="sm" onClick={toggle}>
-            <Languages className="size-4" /> {lang === "ar" ? "English" : "العربية"}
+          <Button variant="outline" size="sm" onClick={toggle} aria-label={lang === "ar" ? "Switch to English" : "التبديل إلى العربية"}>
+            <Languages className="size-4" />
+            <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
           </Button>
           <Separator orientation="vertical" className="mx-1 hidden h-6 sm:block" />
-          <Button variant="ghost" size="sm" className="lg:hidden" onClick={handleSignOut}>
+          <Button variant="ghost" size="sm" className="lg:hidden" onClick={handleSignOut} aria-label={t("sign_out")}>
             <LogOut className="size-4" />
           </Button>
         </header>
 
-        <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+        <main id="main-content" className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
+
 
       <MobileBottomNav />
     </div>
