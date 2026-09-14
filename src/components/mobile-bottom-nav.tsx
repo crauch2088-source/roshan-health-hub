@@ -4,15 +4,16 @@ import { useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HOME_ITEM, NAV_GROUPS } from "@/config/nav";
+import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
-// The four destinations reception/clinical staff reach for constantly.
+// Sensible defaults for staff who haven't pinned anything yet.
 // Everything else — settings, reports, suppliers, etc. — lives in More.
-const PRIMARY_MOBILE_ROUTES = ["/dashboard", "/patients", "/visits", "/pharmacy"];
+const DEFAULT_MOBILE_ROUTES = ["/patients", "/visits", "/pharmacy"];
 const PRIMARY_ICONS: Record<string, typeof UserRound> = {
   "/dashboard": Grid2x2,
   "/patients": UserRound,
@@ -29,14 +30,29 @@ export function MobileBottomNav() {
   const { can } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { favorites } = useNavPreferences();
   const [moreOpen, setMoreOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const direction = lang === "ar" ? "rtl" : "ltr";
 
   const allItems = [HOME_ITEM, ...NAV_GROUPS.flatMap((g) => g.items)];
-  const primary = PRIMARY_MOBILE_ROUTES.map((to) => allItems.find((i) => i.to === to)).filter(
-    (i): i is NonNullable<typeof i> => Boolean(i) && can(i!.perm),
-  );
+
+  // Dashboard is always first. The next 3 slots prefer whatever the user
+  // has pinned as a favorite (same favorites list the NavRail and command
+  // palette already use) — so pinning Queue or Clinic on desktop actually
+  // shortens the path on mobile too, instead of leaving pins as a
+  // desktop-only feature. Falls back to the previous fixed defaults for
+  // anyone who hasn't pinned anything, so today's behavior is unchanged.
+  const pinnedRoutes = favorites.filter((to) => to !== HOME_ITEM.to);
+  const primaryRoutes = [
+    HOME_ITEM.to,
+    ...[...pinnedRoutes, ...DEFAULT_MOBILE_ROUTES].filter(
+      (to, idx, arr) => arr.indexOf(to) === idx,
+    ),
+  ].slice(0, 4);
+  const primary = primaryRoutes
+    .map((to) => allItems.find((i) => i.to === to))
+    .filter((i): i is NonNullable<typeof i> => Boolean(i) && can(i!.perm));
   const availableActions = QUICK_ACTIONS.filter((a) => can(allItems.find((i) => i.to === a.to)?.perm ?? ""));
 
   return (
