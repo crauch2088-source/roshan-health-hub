@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -107,6 +107,7 @@ function VisitsPageInner() {
   const { can, user } = useAuth();
   const { currency } = useSettings();
   const search = Route.useSearch();
+  const navigate = useNavigate();
 
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
@@ -175,6 +176,11 @@ function VisitsPageInner() {
         setSelectedPatient(picked);
         setForm((current) => ({ ...current, patient_id: picked.id }));
         setOpen(true);
+        // Clear the deep-link once consumed. Otherwise refreshing this page,
+        // or coming back to it via the browser's back button after the visit
+        // was already created, would re-fetch the same patient and pop the
+        // "New Visit" dialog open again for no reason.
+        void navigate({ to: "/visits", search: {}, replace: true });
       });
     return () => {
       cancelled = true;
