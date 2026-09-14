@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Banknote, FlaskConical, Pill, Receipt, UserRound, Users, Wallet } from "lucide-react";
 
 import { Empty, ErrorBox, Loading, PageHeader, SectionTitle, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
@@ -49,6 +49,7 @@ function DashboardPage() {
 function DashboardPageInner() {
   const { t, lang } = useLang();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { currency, settings } = useSettings();
   const today = todayISO();
   const monthStart = `${today.slice(0, 7)}-01`;
@@ -119,7 +120,7 @@ function DashboardPageInner() {
   const followups = useRows(["dash-followups"], () =>
     supabase
       .from("followups")
-      .select("id, followup_date, status, reason, patients(full_name)")
+      .select("id, followup_date, status, reason, patients(id, full_name)")
       .gte("followup_date", today)
       .is("deleted_at", null)
       .order("followup_date", { ascending: true })
@@ -262,7 +263,11 @@ function DashboardPageInner() {
         </div>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("visits_today")}</CardTitle>
+            <CardTitle className="text-base">
+              <Link to="/visits" className="hover:underline">
+                {t("visits_today")}
+              </Link>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {visitRows.length === 0 ? (
@@ -278,7 +283,11 @@ function DashboardPageInner() {
                 </TableHeader>
                 <TableBody>
                   {visitRows.slice(0, 8).map((v) => (
-                    <TableRow key={s(v, "id")}>
+                    <TableRow
+                      key={s(v, "id")}
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => void navigate({ to: "/clinic/$visitId", params: { visitId: s(v, "id") } })}
+                    >
                       <TableCell className="font-medium">
                         {s(rel(v, "patients"), "full_name") || "—"}
                       </TableCell>
@@ -300,7 +309,11 @@ function DashboardPageInner() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("upcoming_appointments")}</CardTitle>
+            <CardTitle className="text-base">
+              <Link to="/appointments" className="hover:underline">
+                {t("upcoming_appointments")}
+              </Link>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {((appointments.data ?? []) as Row[]).length === 0 ? (
@@ -337,7 +350,11 @@ function DashboardPageInner() {
         </div>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("pending_lab")}</CardTitle>
+            <CardTitle className="text-base">
+              <Link to="/lab" className="hover:underline">
+                {t("pending_lab")}
+              </Link>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {((labPending.data ?? []) as Row[]).length === 0 ? (
@@ -352,7 +369,11 @@ function DashboardPageInner() {
                 </TableHeader>
                 <TableBody>
                   {((labPending.data ?? []) as Row[]).map((o) => (
-                    <TableRow key={s(o, "id")}>
+                    <TableRow
+                      key={s(o, "id")}
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => void navigate({ to: "/lab/$orderId", params: { orderId: s(o, "id") } })}
+                    >
                       <TableCell className="font-medium">
                         {s(rel(o, "patients"), "full_name") || "—"}
                       </TableCell>
@@ -369,7 +390,11 @@ function DashboardPageInner() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("upcoming_followups")}</CardTitle>
+            <CardTitle className="text-base">
+              <Link to="/followups" className="hover:underline">
+                {t("upcoming_followups")}
+              </Link>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {((followups.data ?? []) as Row[]).length === 0 ? (
@@ -384,15 +409,26 @@ function DashboardPageInner() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {((followups.data ?? []) as Row[]).map((f) => (
-                    <TableRow key={s(f, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(f, "patients"), "full_name") || "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
-                      <TableCell className="max-w-40 truncate">{s(f, "reason") || "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                  {((followups.data ?? []) as Row[]).map((f) => {
+                    const patientId = s(rel(f, "patients"), "id");
+                    return (
+                      <TableRow
+                        key={s(f, "id")}
+                        className={patientId ? "cursor-pointer hover:bg-accent/50" : undefined}
+                        onClick={
+                          patientId
+                            ? () => void navigate({ to: "/patients/$patientId", params: { patientId } })
+                            : undefined
+                        }
+                      >
+                        <TableCell className="font-medium">
+                          {s(rel(f, "patients"), "full_name") || "—"}
+                        </TableCell>
+                        <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
+                        <TableCell className="max-w-40 truncate">{s(f, "reason") || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -405,7 +441,10 @@ function DashboardPageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-warning" /> {t("low_stock_medicines")}
+              <AlertTriangle className="size-4 text-warning" />
+              <Link to="/inventory" className="hover:underline">
+                {t("low_stock_medicines")}
+              </Link>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -439,7 +478,10 @@ function DashboardPageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-warning" /> {t("expiring_medicines")}
+              <AlertTriangle className="size-4 text-warning" />
+              <Link to="/inventory" className="hover:underline">
+                {t("expiring_medicines")}
+              </Link>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -475,7 +517,10 @@ function DashboardPageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-destructive" /> {t("expired_medicines")}
+              <AlertTriangle className="size-4 text-destructive" />
+              <Link to="/inventory" className="hover:underline">
+                {t("expired_medicines")}
+              </Link>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -514,7 +559,10 @@ function DashboardPageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Receipt className="size-4 text-warning" /> {t("insurance_claims")}
+              <Receipt className="size-4 text-warning" />
+              <Link to="/insurance" className="hover:underline">
+                {t("insurance_claims")}
+              </Link>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
