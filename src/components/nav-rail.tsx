@@ -176,7 +176,7 @@ export function NavRail({
                                   toggleFavorite(item.to);
                                 }}
                                 className={cn(
-                                  "ms-auto shrink-0 rounded-md p-0.5 transition-opacity",
+                                  "flex size-6 shrink-0 items-center justify-center rounded-md transition-opacity",
                                   pinned
                                     ? "opacity-100 text-amber-400"
                                     : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 hover:!opacity-100",
