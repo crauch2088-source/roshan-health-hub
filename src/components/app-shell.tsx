@@ -76,13 +76,21 @@ function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background" dir={direction}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground"
+      >
+        {t("skip_to_content")}
+      </a>
       <aside
         className={cnRail(collapsed)}
+        aria-label={t("navigation")}
       >
         <Brand collapsed={collapsed} />
         <div className="min-h-0 flex-1">
           <NavRail collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
         </div>
+
         <div className={collapsed ? "border-t border-sidebar-border p-2" : "border-t border-sidebar-border p-3"}>
           {!collapsed ? (
             <>
