@@ -155,8 +155,12 @@ export function MobileBottomNav() {
                         );
                       })}
                     </div>
-
+                  </div>
+                );
+              })}
+            </div>
           </SheetContent>
+
         </Sheet>
       </nav>
     </>
