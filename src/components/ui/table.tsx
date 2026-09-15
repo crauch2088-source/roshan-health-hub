@@ -3,14 +3,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 type TableProps = React.HTMLAttributes<HTMLTableElement> & {
-  /** When true, thead sticks to the top of the scroll container. */
-  stickyHeader?: boolean;
   /** compact = tighter row height for dense lists */
   density?: "comfortable" | "compact";
 };
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, stickyHeader, density = "comfortable", ...props }, ref) => (
+  ({ className, density = "comfortable", ...props }, ref) => (
     <div
       className={cn(
         "relative w-full overflow-auto",
@@ -18,12 +16,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
       )}
       data-density={density}
     >
-      <table
-        ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
-        data-sticky-header={stickyHeader ? "true" : undefined}
-        {...props}
-      />
+      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   ),
 );
