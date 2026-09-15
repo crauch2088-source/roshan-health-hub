@@ -119,6 +119,36 @@ export function useSettings() {
   return { ...query, settings, currency: settings["currency"] || "SDG" };
 }
 
+/** Best-effort human label for a joined relation object (e.g. a nested
+ * `patients`/`departments`/`medicines` row) so exports show a name
+ * instead of a raw reference. */
+function relationLabel(value: Record<string, unknown>): string {
+  for (const key of ["full_name", "name", "name_ar", "label", "title"]) {
+    const v = value[key];
+    if (typeof v === "string" && v) return v;
+  }
+  const id = value["id"];
+  return typeof id === "string" || typeof id === "number" ? String(id) : "";
+}
+
+/** Renders any cell value as CSV-safe text. Every screen in the app
+ * passes rows straight from Supabase into csvExport, and those rows
+ * routinely carry nested joined relations (e.g. `departments`,
+ * `patients`, `lab_order_items`) - before this, any such column
+ * exported as the literal text "[object Object]" instead of a name,
+ * silently dropping the actual data the person was trying to export. */
+function cellText(v: unknown): string {
+  if (v == null) return "";
+  if (Array.isArray(v)) {
+    return v
+      .map((item) => (item && typeof item === "object" ? relationLabel(item as Record<string, unknown>) : String(item)))
+      .filter(Boolean)
+      .join("; ");
+  }
+  if (typeof v === "object") return relationLabel(v as Record<string, unknown>);
+  return String(v);
+}
+
 export function csvExport(rows: Row[], filename: string) {
   const first = rows[0];
   if (!first) {
@@ -126,7 +156,7 @@ export function csvExport(rows: Row[], filename: string) {
     return;
   }
   const headers = Object.keys(first);
-  const escape = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const escape = (v: unknown) => `"${cellText(v).replace(/"/g, '""')}"`;
   const csv = [
     headers.join(","),
     ...rows.map((r) => headers.map((h) => escape(r[h])).join(",")),
