@@ -1,5 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
+import { StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { n, rpc, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { formatDateTime } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 const CATEGORY_ORDER = ["Hematology", "Clinical Chemistry", "Hormones", "Microbiology", "Serology", "Immunology", "Urinalysis", "Parasitology", "Other"];
@@ -41,6 +44,21 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () => supabase.from("visits").select("id,patient_id,patients(id,full_name)").eq("id", visitId).limit(1));
   const visit = (visitQ.data ?? [])[0] as Row | undefined;
   const patient = rel(visit, "patients");
+
+  // Same shape the standalone Lab worklist (routes/_authenticated/lab.tsx)
+  // already queries with, scoped to this visit. Without this, a doctor
+  // ordering tests here had no way to see tests already ordered earlier
+  // in the same visit - risking a duplicate order and a duplicate charge
+  // on the patient's invoice.
+  const existingOrdersQ = useRows<Row[]>(["clinic-lab-orders", visitId], () =>
+    supabase
+      .from("lab_orders")
+      .select("id,status,created_at,priority,lab_order_items(id,lab_tests(name,name_ar))")
+      .eq("visit_id", visitId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
+  );
+  const existingOrders = (existingOrdersQ.data ?? []) as Row[];
 
   const testsQ = useRows<Row[]>(["clinic-lab-tests", search], () => {
     let q = supabase.from("lab_tests").select("id,name,name_ar,code,price,category").eq("active", true).is("deleted_at", null).order("name").limit(300);
@@ -97,7 +115,45 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
   }, { invalidate: [["lab-orders"], ["lab-orders", visitId], ["patient-labs", s(patient, "id")], ["invoices"]], successMessage: lang === "ar" ? "تم إرسال طلب المختبر وإنشاء الفاتورة" : "Lab order created and invoice generated" });
 
   return (
-    <Card>
+    <div className="space-y-4">
+      {existingOrders.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {lang === "ar" ? "طلبات المختبر لهذه الزيارة" : "Lab orders already placed this visit"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 p-4 pt-0">
+            {existingOrders.map((order) => {
+              const items = (order["lab_order_items"] as Row[]) ?? [];
+              const testNames = items
+                .map((i) => {
+                  const t = rel(i, "lab_tests");
+                  return lang === "ar" ? s(t, "name_ar") || s(t, "name") : s(t, "name");
+                })
+                .filter(Boolean)
+                .join(", ");
+              return (
+                <Link
+                  key={s(order, "id")}
+                  to="/lab/$orderId"
+                  params={{ orderId: s(order, "id") }}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm transition hover:bg-muted/50"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{testNames || "—"}</div>
+                    <div className="text-xs text-muted-foreground" dir="ltr">
+                      {formatDateTime(s(order, "created_at"))}
+                    </div>
+                  </div>
+                  <StatusBadge status={s(order, "status")} />
+                </Link>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+      <Card>
       <CardHeader><CardTitle className="text-base">{lang === "ar" ? "اختيار الفحوصات" : "Select investigations"}</CardTitle></CardHeader>
       <CardContent className="space-y-4 p-4">
         <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
@@ -118,6 +174,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         <div className="flex justify-end"><Button disabled={create.isPending || !selected.length} onClick={() => create.mutate(undefined as never)}>{create.isPending ? (lang === "ar" ? "جاري الإنشاء..." : "Creating...") : (lang === "ar" ? "طلب الفحوصات وإنشاء الفاتورة" : "Order tests & create bill")}</Button></div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 function rel(row: Row | undefined, key: string): Row { const x = row?.[key]; return (Array.isArray(x) ? x[0] : x) || {}; }
