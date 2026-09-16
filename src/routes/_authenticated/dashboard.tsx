@@ -205,56 +205,76 @@ function DashboardPageInner() {
       <ErrorBox error={anyError} />
 
       <SectionTitle>{t("executive_summary")}</SectionTitle>
+      {/* Every KPI below links to the screen that lets you act on it - the
+          dashboard was previously informational only, not operational. None
+          of these routes are new; StatCard's own props are untouched (no
+          API change), it's just wrapped in a Link from this call site. */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label={t("patients_today")}
-          value={((patientsToday.data ?? []) as Row[]).length}
-          icon={<UserRound className="size-5" />}
-          tone="primary"
-        />
-        <StatCard
-          label={t("visits_today")}
-          value={visitRows.length}
-          hint={`${t("waiting_patients")}: ${waiting}`}
-          icon={<Users className="size-5" />}
-        />
-        <StatCard
-          label={t("revenue_today")}
-          value={money(revenueToday, currency)}
-          hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
-          icon={<Banknote className="size-5" />}
-          tone="success"
-        />
-        <StatCard
-          label={t("expenses_today")}
-          value={money(expensesToday, currency)}
-          hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
-          icon={<Wallet className="size-5" />}
-          tone="warning"
-        />
-        <StatCard
-          label={t("appointments_today")}
-          value={((appointments.data ?? []) as Row[]).length}
-          icon={<Receipt className="size-5" />}
-        />
-        <StatCard
-          label={t("pending_lab")}
-          value={((labPending.data ?? []) as Row[]).length}
-          icon={<FlaskConical className="size-5" />}
-          tone="warning"
-        />
-        <StatCard
-          label={t("pending_pharmacy")}
-          value={((rxPending.data ?? []) as Row[]).length}
-          icon={<Pill className="size-5" />}
-          tone="warning"
-        />
-        <StatCard
-          label={t("net_profit")}
-          value={money(revenueMonth - expensesMonth, currency)}
-          hint={t("monthly_revenue")}
-          tone={revenueMonth - expensesMonth >= 0 ? "success" : "destructive"}
-        />
+        <Link to="/patients" className="block">
+          <StatCard
+            label={t("patients_today")}
+            value={((patientsToday.data ?? []) as Row[]).length}
+            icon={<UserRound className="size-5" />}
+            tone="primary"
+          />
+        </Link>
+        <Link to="/queue" className="block">
+          <StatCard
+            label={t("visits_today")}
+            value={visitRows.length}
+            hint={`${t("waiting_patients")}: ${waiting}`}
+            icon={<Users className="size-5" />}
+          />
+        </Link>
+        <Link to="/billing" className="block">
+          <StatCard
+            label={t("revenue_today")}
+            value={money(revenueToday, currency)}
+            hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
+            icon={<Banknote className="size-5" />}
+            tone="success"
+          />
+        </Link>
+        <Link to="/expenses" className="block">
+          <StatCard
+            label={t("expenses_today")}
+            value={money(expensesToday, currency)}
+            hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
+            icon={<Wallet className="size-5" />}
+            tone="warning"
+          />
+        </Link>
+        <Link to="/appointments" className="block">
+          <StatCard
+            label={t("appointments_today")}
+            value={((appointments.data ?? []) as Row[]).length}
+            icon={<Receipt className="size-5" />}
+          />
+        </Link>
+        <Link to="/lab" className="block">
+          <StatCard
+            label={t("pending_lab")}
+            value={((labPending.data ?? []) as Row[]).length}
+            icon={<FlaskConical className="size-5" />}
+            tone="warning"
+          />
+        </Link>
+        <Link to="/pharmacy" className="block">
+          <StatCard
+            label={t("pending_pharmacy")}
+            value={((rxPending.data ?? []) as Row[]).length}
+            icon={<Pill className="size-5" />}
+            tone="warning"
+          />
+        </Link>
+        <Link to="/finance" className="block">
+          <StatCard
+            label={t("net_profit")}
+            value={money(revenueMonth - expensesMonth, currency)}
+            hint={t("monthly_revenue")}
+            tone={revenueMonth - expensesMonth >= 0 ? "success" : "destructive"}
+          />
+        </Link>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
