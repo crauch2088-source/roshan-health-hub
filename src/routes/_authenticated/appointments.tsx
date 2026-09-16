@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { PatientPicker, PatientSnapshotStrip, type PickedPatient } from "@/components/patient-picker";
 import {
@@ -47,6 +47,13 @@ import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/appointments")({
+  // ?patient=<id> - same deep-link pattern already used by visits.tsx and
+  // billing.tsx, so the patient chart's "New Appointment" action can open
+  // this dialog pre-filled instead of making the user search for the
+  // patient a second time.
+  validateSearch: (search: Record<string, unknown>): { patient?: string | undefined } => ({
+    patient: typeof search["patient"] === "string" ? (search["patient"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       {
@@ -82,6 +89,8 @@ function AppointmentsPageInner() {
   const { user } = useAuth();
   const { currency } = useSettings();
 
+  const search = Route.useSearch();
+  const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
@@ -94,6 +103,29 @@ function AppointmentsPageInner() {
     appointment_time: "09:00",
     notes: "",
   });
+
+  useEffect(() => {
+    if (!search.patient || search.patient === selectedPatient?.id) return;
+    let cancelled = false;
+    supabase
+      .from("patients")
+      .select("id, full_name, mrn, phone")
+      .eq("id", search.patient)
+      .is("deleted_at", null)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const picked = data as unknown as PickedPatient;
+        setSelectedPatient(picked);
+        setForm((current) => ({ ...current, patient_id: picked.id }));
+        setOpen(true);
+        void navigate({ to: "/appointments", search: {}, replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.patient]);
 
   const appointments = useRows(["appointments", date], () =>
     supabase

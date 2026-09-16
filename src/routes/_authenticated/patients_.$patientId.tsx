@@ -289,7 +289,7 @@ function PatientChart() {
     <div>
       <PageHeader
         title={s(record, "full_name")}
-        subtitle={`${t("mrn")}: ${s(record, "mrn")} · ${t("age")}: ${calcAge(s(record, "date_of_birth")) ?? "—"} · ${t(s(record, "gender"))}`}
+        subtitle={`${t("mrn")}: ${s(record, "mrn")} · ${t("age")}: ${calcAge(s(record, "date_of_birth")) ?? "—"} · ${t(s(record, "gender"))}${s(record, "phone") ? ` · ${s(record, "phone")}` : ""}`}
       >
         <Button asChild variant="outline" size="sm">
           <Link to="/patients">
@@ -300,6 +300,13 @@ function PatientChart() {
           <Button asChild size="sm">
             <Link to="/visits" search={{ patient: s(record, "id") }}>
               <Plus className="size-4" /> {t("new_visit")}
+            </Link>
+          </Button>
+        ) : null}
+        {can("appointments.create") ? (
+          <Button asChild size="sm" variant="outline">
+            <Link to="/appointments" search={{ patient: s(record, "id") }}>
+              <CalendarDays className="size-4" /> {t("new_appointment") || (lang === "ar" ? "ميعاد جديد" : "New appointment")}
             </Link>
           </Button>
         ) : null}
@@ -314,7 +321,7 @@ function PatientChart() {
 
       <ErrorBox error={patient.error} />
 
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue="timeline">
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="timeline">{lang === "ar" ? "الخط الزمني" : "Timeline"}</TabsTrigger>
           <TabsTrigger value="profile">{t("patient")}</TabsTrigger>
