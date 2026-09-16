@@ -151,6 +151,13 @@ const dict: Record<string, { ar: string; en: string }> = {
   clinical: { ar: "السريري", en: "Clinical" },
   finance: { ar: "المالية", en: "Finance" },
   administration: { ar: "الإدارة", en: "Administration" },
+  // nav groups (Phase 20) — the old "finance" group had grown to 8 items
+  // mixing billing, accounting, reports, analytics and insurance together;
+  // split into its own reporting group, and insurance/pharmacy/lab (each
+  // previously a separate top-level group) now share one clinical-services
+  // group, matching how those teams actually work day to day.
+  clinical_services: { ar: "الخدمات السريرية", en: "Clinical services" },
+  reporting: { ar: "التقارير", en: "Reporting" },
 
   // navigation shell (Phase 1 + 2)
   search_placeholder: { ar: "بحث عن مريض، زيارة، تحليل أو دواء…", en: "Search patients, visits, labs, medicines…" },
