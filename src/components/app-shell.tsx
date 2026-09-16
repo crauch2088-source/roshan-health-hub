@@ -32,8 +32,21 @@ function Brand({ collapsed }: { collapsed: boolean }) {
 function SearchTrigger() {
   const { t } = useLang();
   const { setOpen } = useCommandPalette();
+  // Was `hidden ... sm:flex` — below the sm breakpoint (any phone) this
+  // button, and with it the only way to open the command palette, simply
+  // didn't render. Ctrl+K doesn't help on a touchscreen either, and the
+  // mobile bottom nav has no search entry point of its own, so mobile
+  // users had zero access to global/patient search. Now always renders,
+  // as an icon-only button on narrow screens and the full labeled button
+  // from md up.
   return (
-    <Button variant="outline" size="sm" className="hidden gap-2 text-muted-foreground sm:flex" onClick={() => setOpen(true)}>
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-2 text-muted-foreground"
+      onClick={() => setOpen(true)}
+      aria-label={t("search_everywhere")}
+    >
       <Search className="size-4" />
       <span className="hidden md:inline">{t("search_everywhere")}</span>
       <kbd className="ms-1 hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] md:inline">Ctrl K</kbd>
