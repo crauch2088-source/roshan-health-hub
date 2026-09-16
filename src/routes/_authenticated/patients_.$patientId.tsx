@@ -2,7 +2,8 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, ShieldCheck, Stethoscope } from "lucide-react";
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge, PermissionGate } from "@/components/kit";
+import { Empty, ErrorBox, Field, Loading, PageHeader, PrintButton, SectionTitle, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -285,39 +286,126 @@ function PatientChart() {
   }
   if (!record) return <Empty label={t("no_data")} />;
 
+  // Summary-card counts reuse the exact same queries already loaded for the
+  // Timeline tab (visits/appointments/invoices/claims) - no new fetches.
+  const visitsCount = ((visits.data ?? []) as Row[]).length;
+  const appointmentsCount = ((appointments.data ?? []) as Row[]).length;
+  const invoiceRows = (invoices.data ?? []) as Row[];
+  const invoicesCount = invoiceRows.length;
+  const outstandingBalance = invoiceRows.reduce(
+    (sum, inv) => sum + Math.max(0, n(inv, "net_amount") - n(inv, "paid_amount")),
+    0,
+  );
+  const claimsCount = ((claims.data ?? []) as Row[]).length;
+  const initials = (s(record, "full_name") || "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
   return (
-    <div>
-      <PageHeader
-        title={s(record, "full_name")}
-        subtitle={`${t("mrn")}: ${s(record, "mrn")} · ${t("age")}: ${calcAge(s(record, "date_of_birth")) ?? "—"} · ${t(s(record, "gender"))}${s(record, "phone") ? ` · ${s(record, "phone")}` : ""}`}
-      >
-        <Button asChild variant="outline" size="sm">
-          <Link to="/patients">
-            <ArrowLeft className="size-4" /> {t("back")}
-          </Link>
-        </Button>
-        {can("visits.create") ? (
-          <Button asChild size="sm">
-            <Link to="/visits" search={{ patient: s(record, "id") }}>
-              <Plus className="size-4" /> {t("new_visit")}
-            </Link>
-          </Button>
-        ) : null}
-        {can("appointments.create") ? (
-          <Button asChild size="sm" variant="outline">
-            <Link to="/appointments" search={{ patient: s(record, "id") }}>
-              <CalendarDays className="size-4" /> {t("new_appointment") || (lang === "ar" ? "ميعاد جديد" : "New appointment")}
-            </Link>
-          </Button>
-        ) : null}
-        {can("billing.create") ? (
-          <Button asChild size="sm" variant="outline">
-            <Link to="/billing" search={{ patient: s(record, "id") }}>
-              <Receipt className="size-4" /> {t("new_invoice") || (lang === "ar" ? "فاتورة جديدة" : "New invoice")}
-            </Link>
-          </Button>
-        ) : null}
-      </PageHeader>
+    <div className="space-y-4">
+      {/* Hero header: identity + demographics badges + primary actions, all
+          in one glance instead of a single-line PageHeader subtitle. */}
+      <Card className="overflow-hidden border-border/70">
+        <CardContent className="flex flex-wrap items-start justify-between gap-4 p-5">
+          <div className="flex min-w-0 items-start gap-4">
+            <div
+              className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary"
+              aria-hidden
+            >
+              {initials || "—"}
+            </div>
+            <div className="min-w-0 space-y-2">
+              <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                {s(record, "full_name")}
+              </h1>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="outline" className="font-mono text-xs" dir="ltr">
+                  {t("mrn")}: {s(record, "mrn") || "—"}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {t("age")}: {calcAge(s(record, "date_of_birth")) ?? "—"}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {t(s(record, "gender"))}
+                </Badge>
+                {s(record, "phone") ? (
+                  <Badge variant="outline" className="text-xs" dir="ltr">
+                    {s(record, "phone")}
+                  </Badge>
+                ) : null}
+                {s(record, "blood_group") ? (
+                  <Badge variant="outline" className="text-xs">
+                    {t("blood_group") || (lang === "ar" ? "فصيلة الدم" : "Blood group")}: {s(record, "blood_group")}
+                  </Badge>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          {/* Sticky action bar - stays with the header on scroll since the
+              header itself isn't position:sticky (that's a page-level
+              concern for AppShell, not this card), but every primary
+              workflow entry point now lives together in one visually
+              distinct row instead of blending into a generic PageHeader. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/patients">
+                <ArrowLeft className="size-4" /> {t("back")}
+              </Link>
+            </Button>
+            {can("visits.create") ? (
+              <Button asChild size="sm">
+                <Link to="/visits" search={{ patient: s(record, "id") }}>
+                  <Plus className="size-4" /> {t("new_visit")}
+                </Link>
+              </Button>
+            ) : null}
+            {can("appointments.create") ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to="/appointments" search={{ patient: s(record, "id") }}>
+                  <CalendarDays className="size-4" /> {t("new_appointment") || (lang === "ar" ? "ميعاد جديد" : "New appointment")}
+                </Link>
+              </Button>
+            ) : null}
+            {can("billing.create") ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to="/billing" search={{ patient: s(record, "id") }}>
+                  <Receipt className="size-4" /> {t("new_invoice") || (lang === "ar" ? "فاتورة جديدة" : "New invoice")}
+                </Link>
+              </Button>
+            ) : null}
+            <PrintButton />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary cards - Priority 1.C: visits/appointments/invoices count,
+          outstanding balance, and insurance claim activity, all computed
+          from data already loaded for the Timeline tab below. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label={t("visits")} value={visitsCount} icon={<ClipboardList className="size-5" />} />
+        <StatCard
+          label={t("appointments") || (lang === "ar" ? "المواعيد" : "Appointments")}
+          value={appointmentsCount}
+          icon={<CalendarDays className="size-5" />}
+        />
+        <StatCard
+          label={t("invoices")}
+          value={invoicesCount}
+          hint={outstandingBalance > 0 ? `${t("outstanding_balance")}: ${money(outstandingBalance, currency)}` : undefined}
+          icon={<Receipt className="size-5" />}
+          tone={outstandingBalance > 0 ? "warning" : "default"}
+        />
+        <StatCard
+          label={lang === "ar" ? "مطالبات التأمين" : "Insurance claims"}
+          value={claimsCount}
+          icon={<ShieldCheck className="size-5" />}
+        />
+      </div>
 
       <ErrorBox error={patient.error} />
 
