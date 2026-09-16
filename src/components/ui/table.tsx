@@ -84,7 +84,13 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      // text-start, not text-left: the app is RTL in Arabic
+      // (document.documentElement.dir follows the language), but every
+      // table header in the app shares this component, and `text-left`
+      // doesn't respond to `dir` the way the logical `text-start` does.
+      // Column headers were staying left-aligned even on RTL screens,
+      // where they should read from the right like the rest of the row.
+      "h-10 px-2 text-start align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}
