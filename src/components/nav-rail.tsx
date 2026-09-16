@@ -33,33 +33,31 @@ function RailLink({
   const Icon = getNavIcon(item.icon);
   const hasTrailing = Boolean(trailing) && !collapsed;
 
+  // Active state is now a solid pill (Linear/Raycast style) instead of a
+  // 15%-tint background plus a separate 3px accent bar competing for
+  // attention on the same element. One clear signal reads faster than two
+  // weak ones, and it now actually meets contrast against the sidebar
+  // background instead of a translucent tint.
   const link = (
     <Link
       to={item.to}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group/link relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium outline-none transition-colors duration-150",
+        "group/link relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium outline-none transition-all duration-200",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
         collapsed && "justify-center px-2",
         hasTrailing && "pe-9",
         active
-          ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary-foreground"
+          ? "bg-sidebar-primary font-semibold text-sidebar-primary-foreground shadow-sm"
           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          "absolute inset-y-1 start-0 w-[3px] rounded-full bg-sidebar-primary transition-opacity duration-150",
-          active ? "opacity-100" : "opacity-0",
-        )}
-      />
       <Icon
         className={cn(
           "size-4 shrink-0 transition-colors",
           active
-            ? "text-sidebar-primary"
+            ? "text-sidebar-primary-foreground"
             : "text-sidebar-foreground/70 group-hover/link:text-sidebar-accent-foreground",
         )}
       />
