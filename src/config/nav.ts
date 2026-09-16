@@ -27,6 +27,11 @@ export const HOME_ITEM: NavConfigItem = {
   favoritable: false,
 };
 
+// Phase 20 — regrouped for clearer information architecture. Every `to`,
+// `perm`, and `icon` value below is unchanged from before this pass, so
+// routes, permission gates, deep links, and favorites (which key off `to`,
+// not group) are unaffected — only which named group an item renders under
+// in the NavRail/mobile "More" sheet changes.
 export const NAV_GROUPS: NavGroup[] = [
   {
     group: "clinical",
@@ -45,17 +50,17 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    group: "pharmacy",
+    // Was 3 separate top-level groups (pharmacy, laboratory, and insurance
+    // living inside the old 8-item "finance" group) — merged into one
+    // clinical-support group, the way these services are actually used
+    // together around a visit.
+    group: "clinical_services",
     items: [
       { to: "/pharmacy", key: "pharmacy", perm: "pharmacy.read", icon: "Pill" },
       { to: "/inventory", key: "inventory", perm: "pharmacy.read", icon: "Warehouse" },
-    ],
-  },
-  {
-    group: "laboratory",
-    items: [
       { to: "/lab", key: "laboratory", perm: "lab.read", icon: "FlaskConical" },
       { to: "/lab-catalog", key: "lab_catalog", perm: "lab_admin.read", icon: "ScrollText" },
+      { to: "/insurance", key: "insurance", perm: "insurance.read", icon: "ShieldCheck" },
     ],
   },
   {
@@ -66,9 +71,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/accounting", key: "accounting", perm: "accounting.read", icon: "Landmark" },
       { to: "/expenses", key: "expenses", perm: "accounting.read", icon: "Banknote" },
       { to: "/partners", key: "partners", perm: "partners.read", icon: "Handshake" },
+    ],
+  },
+  {
+    // Reports/Analytics were previously stranded inside "finance" even
+    // though they cover clinical volume and lab activity too, not just
+    // money — split out as their own group.
+    group: "reporting",
+    items: [
       { to: "/reports", key: "reports", perm: "reports.read", icon: "BarChart3" },
       { to: "/analytics", key: "analytics", perm: "reports.read", icon: "Activity" },
-      { to: "/insurance", key: "insurance", perm: "insurance.read", icon: "ShieldCheck" },
     ],
   },
   {
