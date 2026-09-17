@@ -68,7 +68,13 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/8 data-[state=selected]:hover:bg-primary/12",
+        // Selected-row tint was 8% opacity - close to imperceptible next to
+      // the plain hover:bg-muted/50 state right above it in this same
+      // class list, so a "selected" row barely read differently from a
+      // merely-hovered one. Bumped the tint and added an inset ring so
+      // selection has its own unmistakable signal (Notion/Linear-style)
+      // instead of relying on a few percent of background opacity alone.
+      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/15 data-[state=selected]:hover:bg-primary/20 data-[state=selected]:ring-1 data-[state=selected]:ring-inset data-[state=selected]:ring-primary/30",
         className,
       )}
       {...props}
