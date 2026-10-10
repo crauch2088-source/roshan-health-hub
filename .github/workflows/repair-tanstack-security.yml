@@ -1,0 +1,165 @@
+
+name: Repair TanStack Start Security
+
+on:
+  push:
+    branches:
+      - fix/tanstack-start-security
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/repair-tanstack-security.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tanstack-security-repair
+  cancel-in-progress: false
+
+jobs:
+  repair-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/tanstack-start-security
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Regenerate package lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Commit updated lockfile if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- package-lock.json; then
+            git add package-lock.json
+            git commit -m "fix: regenerate TanStack security lockfile"
+            git push origin HEAD:fix/tanstack-start-security
+          else
+            echo "Lockfile already up to date."
+          fi
+
+      - name: Install exactly from lockfile
+        run: npm ci
+
+      - name: Show resolved TanStack versions
+        run: npm ls @tanstack/react-start @tanstack/start-server-core @tanstack/react-router @tanstack/router-plugin
+
+      - name: Enforce patched versions
+        run: |
+          node <<'NODE'
+          const lock = require('./package-lock.json');
+          const packages = lock.packages || {};
+
+          function versions(name) {
+            const suffix = `node_modules/${name}`;
+            return Object.entries(packages)
+              .filter(([path, info]) =>
+                (path === suffix || path.endsWith('/' + suffix)) &&
+                info.version
+              )
+              .map(([, info]) => info.version);
+          }
+
+          function atLeast(version, minimum) {
+            const parse = v => v.split(/[.-]/).slice(0, 3)
+              .map(x => /^\d+$/.test(x) ? Number(x) : 0);
+            const a = parse(version);
+            const b = parse(minimum);
+            for (let i = 0; i < 3; i++) {
+              if (a[i] > b[i]) return true;
+              if (a[i] < b[i]) return false;
+            }
+            return true;
+          }
+
+          const required = [
+            ['@tanstack/react-start', '1.168.60'],
+            ['@tanstack/start-server-core', '1.169.39']
+          ];
+
+          let failed = false;
+          for (const [name, minimum] of required) {
+            const found = versions(name);
+            console.log(`${name}: ${found.join(', ') || 'NOT FOUND'}`);
+            if (!found.length || !found.some(v => atLeast(v, minimum))) {
+              console.error(`FAIL: ${name} must resolve to >= ${minimum}`);
+              failed = true;
+            }
+          }
+          if (failed) process.exit(1);
+          NODE
+
+      - name: Security audit
+        id: audit
+        continue-on-error: true
+        run: npm audit
+
+      - name: TypeScript check
+        id: typecheck
+        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Production build
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Run tests when available
+        id: tests
+        continue-on-error: true
+        run: |
+          node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)" \
+            && npm test \
+            || {
+              code=$?
+              if [ "$code" -eq 1 ] && ! node -e "process.exit(require('./package.json').scripts?.test ? 1 : 0)"; then
+                echo "No test script configured; skipped."
+              else
+                exit "$code"
+              fi
+            }
+
+      - name: Summarize validation results
+        if: always()
+        env:
+          AUDIT: ${{ steps.audit.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+        run: |
+          {
+            echo "## TanStack security repair results"
+            echo "- npm audit: $AUDIT"
+            echo "- Typecheck: $TYPECHECK"
+            echo "- Build: $BUILD"
+            echo "- Lint: $LINT"
+            echo "- Tests: $TESTS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$AUDIT" != success ] ||
+             [ "$TYPECHECK" != success ] ||
+             [ "$BUILD" != success ] ||
+             [ "$LINT" != success ] ||
+             [ "$TESTS" != success ]; then
+            echo "One or more validations failed or were skipped; inspect the job logs."
+            exit 1
+          fi
