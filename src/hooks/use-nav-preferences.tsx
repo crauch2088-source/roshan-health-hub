@@ -53,7 +53,6 @@ export function NavPreferencesProvider({ children }: { children: ReactNode }) {
       return next;
     });
     // Only the path should re-trigger this, not a new `location` object.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   const toggleFavorite = useCallback((to: string) => {
