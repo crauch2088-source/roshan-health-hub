@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { canAssignRole, SUPER_ADMIN_ROLE_CODE } from "@/lib/role-guard";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const CreateStaffUserInput = z.object({
@@ -41,7 +42,9 @@ export const createStaffUser = createServerFn({ method: "POST" })
       throw new Error("Your account is not permitted to create users.");
     }
 
-    let allowed = roleCode(callerRow.roles as RoleRel) === "super_admin";
+    const callerIsSuperAdmin =
+      roleCode(callerRow.roles as RoleRel) === SUPER_ADMIN_ROLE_CODE;
+    let allowed = callerIsSuperAdmin;
     if (!allowed && callerRow.role_id) {
       const { data: perm } = await admin
         .from("role_permissions")
@@ -53,6 +56,26 @@ export const createStaffUser = createServerFn({ method: "POST" })
     }
     if (!allowed) {
       throw new Error("Your account is not permitted to create users.");
+    }
+
+    // Privilege-escalation guard: `users.create` must never be enough to hand
+    // out the super_admin role. Resolve the target role on the server (never
+    // trust the client) and fail closed if it cannot be loaded.
+    const { data: targetRole, error: targetRoleError } = await admin
+      .from("roles")
+      .select("id, code")
+      .eq("id", data.role_id)
+      .maybeSingle();
+    if (targetRoleError || !targetRole) {
+      throw new Error("The selected role is invalid.");
+    }
+    if (
+      !canAssignRole(
+        { isSuperAdmin: callerIsSuperAdmin },
+        { code: (targetRole as { code?: string | null }).code ?? null },
+      )
+    ) {
+      throw new Error("Only a super admin can assign this role.");
     }
 
     const { data: created, error: createError } =
