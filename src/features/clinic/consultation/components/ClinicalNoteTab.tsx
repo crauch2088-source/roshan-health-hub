@@ -97,7 +97,7 @@ export function ClinicalNoteTab({ visitId }: { visitId: string }) {
   }, { invalidate: [["diagnoses", visitId]], successMessage: lang === "ar" ? "تم حفظ التشخيص" : "Diagnosis saved" });
 
   const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
-  const diagnoses = (diagnosesQ.data ?? []) as Row[];
+  const diagnoses = useMemo(() => (diagnosesQ.data ?? []) as Row[], [diagnosesQ.data]);
   const filteredDiagnoses = useMemo(() => {
     const term = diagnosisSearch.trim().toLowerCase();
     if (!term) return diagnoses;

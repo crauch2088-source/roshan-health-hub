@@ -49,7 +49,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
     return q;
   });
 
-  const tests = (testsQ.data ?? []) as Row[];
+  const tests = useMemo(() => (testsQ.data ?? []) as Row[], [testsQ.data]);
   const categories = useMemo(() => {
     const set = new Set<string>();
     for (const test of tests) set.add(normalizeCategory(s(test, "category")));

@@ -21,7 +21,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const [items, setItems] = useState<Med[]>([]);
   const [external, setExternal] = useState(false);
   const [search, setSearch] = useState("");
-  const medicines = (medsQ.data ?? []) as Row[];
+  const medicines = useMemo(() => (medsQ.data ?? []) as Row[], [medsQ.data]);
   const filtered = useMemo(() => { const q = search.trim().toLowerCase(); if (!q) return medicines.slice(0, 30); return medicines.filter((m) => `${s(m, "name")} ${s(m, "generic_name")} ${s(m, "brand_name")} ${s(m, "strength")}`.toLowerCase().includes(q)).slice(0, 30); }, [medicines, search]);
   const chooseMedicine = (id: string) => { const m = medicines.find((x) => s(x, "id") === id); const formName = m ? s(m, "name") || s(m, "generic_name") : ""; const dosageForm = m ? s(m, "dosage_form") : ""; const defaultRoute = dosageForm.toLowerCase().includes("tablet") || dosageForm.toLowerCase().includes("capsule") || dosageForm.toLowerCase().includes("syrup") ? "Oral" : ""; setForm((p) => ({ ...p, medicine_id: id, name: formName, dosage_form: dosageForm, route: defaultRoute })); setSearch(formName); };
   const add = () => { if (!form.name.trim() && !form.medicine_id) return; setItems((current) => [...current, { ...form }]); setForm({ ...form, medicine_id: "", name: "", quantity: "1", instructions: "" }); setSearch(""); };
