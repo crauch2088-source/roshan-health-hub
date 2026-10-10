@@ -26,9 +26,7 @@ export function PageHeader({
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{title}</h1>
         {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
-      {children ? (
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
-      ) : null}
+      {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
     </div>
   );
 }
@@ -111,9 +109,7 @@ export function Forbidden({ message }: { message?: string }) {
         <h2 className="text-lg font-semibold tracking-tight">
           {lang === "ar" ? "غير مصرح" : "Access denied"}
         </h2>
-        <p className="max-w-md text-sm text-muted-foreground">
-          {message ?? t("no_permission")}
-        </p>
+        <p className="max-w-md text-sm text-muted-foreground">{message ?? t("no_permission")}</p>
       </div>
       <Button asChild variant="outline" size="sm">
         <Link to="/dashboard">{lang === "ar" ? "العودة للرئيسية" : "Back to dashboard"}</Link>
@@ -201,10 +197,14 @@ export function StatCard({
       <CardContent className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-bold tabular-nums leading-tight", tones[tone])}>{value}</p>
+          <p className={cn("mt-1 text-2xl font-bold tabular-nums leading-tight", tones[tone])}>
+            {value}
+          </p>
           {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
         </div>
-        {icon ? <div className={cn("shrink-0 rounded-xl p-2.5", iconTones[tone])}>{icon}</div> : null}
+        {icon ? (
+          <div className={cn("shrink-0 rounded-xl p-2.5", iconTones[tone])}>{icon}</div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -270,7 +270,10 @@ export function StatusBadge({ status }: { status: string }) {
   const { t } = useLang();
   const key = (status || "").toLowerCase();
   return (
-    <Badge variant="outline" className={cn("font-medium transition-colors", statusTones[key] ?? "")}>
+    <Badge
+      variant="outline"
+      className={cn("font-medium transition-colors", statusTones[key] ?? "")}
+    >
       {t(key) === key ? status || "—" : t(key)}
     </Badge>
   );

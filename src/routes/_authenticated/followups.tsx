@@ -42,8 +42,7 @@ export const Route = createFileRoute("/_authenticated/followups")({
       { title: "Follow-ups — ROSHAN Medical Center" },
       {
         name: "description",
-        content:
-          "Track scheduled patient follow-up visits and contact status.",
+        content: "Track scheduled patient follow-up visits and contact status.",
       },
       {
         property: "og:title",
@@ -51,8 +50,7 @@ export const Route = createFileRoute("/_authenticated/followups")({
       },
       {
         property: "og:description",
-        content:
-          "Track scheduled patient follow-up visits and contact status.",
+        content: "Track scheduled patient follow-up visits and contact status.",
       },
     ],
   }),
@@ -98,9 +96,7 @@ function FollowupsPageInner() {
   const list = useRows(["followups", from, to], () =>
     supabase
       .from("followups")
-      .select(
-        "*, patients(id, full_name, phone, mrn), users!followups_created_by_fkey(full_name)",
-      )
+      .select("*, patients(id, full_name, phone, mrn), users!followups_created_by_fkey(full_name)")
       .gte("followup_date", from)
       .lte("followup_date", to)
       .is("deleted_at", null)
@@ -146,10 +142,7 @@ function FollowupsPageInner() {
 
   const mark = useSave<{ id: string; status: string }>(
     async ({ id, status }) => {
-      const { error } = await supabase
-        .from("followups")
-        .update({ status })
-        .eq("id", id);
+      const { error } = await supabase.from("followups").update({ status }).eq("id", id);
 
       if (error) {
         throw new Error(error.message);
@@ -171,10 +164,7 @@ function FollowupsPageInner() {
 
   return (
     <div>
-      <PageHeader
-        title={t("followups")}
-        subtitle={`${formatDate(from)} — ${formatDate(to)}`}
-      >
+      <PageHeader title={t("followups")} subtitle={`${formatDate(from)} — ${formatDate(to)}`}>
         <Input
           type="date"
           dir="ltr"
@@ -191,10 +181,7 @@ function FollowupsPageInner() {
           className="w-40"
         />
 
-        <ExportButtons
-          rows={rows}
-          filename={`roshan-followups-${from}`}
-        />
+        <ExportButtons rows={rows} filename={`roshan-followups-${from}`} />
 
         {can("followups.create") ? (
           <Button size="sm" onClick={() => setOpen(true)}>
@@ -208,7 +195,12 @@ function FollowupsPageInner() {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <Empty title={t("no_data")} description={lang === "ar" ? "لا متابعات في هذه الفترة." : "No follow-ups in this period."} />
+            <Empty
+              title={t("no_data")}
+              description={
+                lang === "ar" ? "لا متابعات في هذه الفترة." : "No follow-ups in this period."
+              }
+            />
           ) : (
             <Table density="compact">
               <TableHeader>
@@ -233,9 +225,7 @@ function FollowupsPageInner() {
 
                   return (
                     <TableRow key={s(f, "id")}>
-                      <TableCell dir="ltr">
-                        {formatDate(s(f, "followup_date"))}
-                      </TableCell>
+                      <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
 
                       <TableCell className="font-medium">
                         {s(p, "id") ? (
@@ -253,13 +243,9 @@ function FollowupsPageInner() {
                         )}
                       </TableCell>
 
-                      <TableCell dir="ltr">
-                        {s(p, "phone") || "—"}
-                      </TableCell>
+                      <TableCell dir="ltr">{s(p, "phone") || "—"}</TableCell>
 
-                      <TableCell>
-                        {s(creator, "full_name") || "—"}
-                      </TableCell>
+                      <TableCell>{s(creator, "full_name") || "—"}</TableCell>
 
                       <TableCell className="max-w-[16rem] truncate">
                         {s(f, "reason") || s(f, "notes") || "—"}
@@ -319,9 +305,7 @@ function FollowupsPageInner() {
 
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <label className="text-sm font-medium">
-                {t("patient")}
-              </label>
+              <label className="text-sm font-medium">{t("patient")}</label>
 
               <PatientPicker
                 value={selectedPatient}
@@ -337,9 +321,7 @@ function FollowupsPageInner() {
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">
-                {t("due_date")}
-              </label>
+              <label className="text-sm font-medium">{t("due_date")}</label>
 
               <Input
                 type="date"
@@ -355,9 +337,7 @@ function FollowupsPageInner() {
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">
-                {t("reason")}
-              </label>
+              <label className="text-sm font-medium">{t("reason")}</label>
 
               <Textarea
                 value={form.reason}
@@ -372,22 +352,13 @@ function FollowupsPageInner() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setOpen(false)}>
               {t("cancel")}
             </Button>
 
             <Button
-              disabled={
-                !form.patient_id ||
-                !form.followup_date ||
-                create.isPending
-              }
-              onClick={() =>
-                create.mutate(undefined as never)
-              }
+              disabled={!form.patient_id || !form.followup_date || create.isPending}
+              onClick={() => create.mutate(undefined as never)}
             >
               {create.isPending ? t("saving") : t("save")}
             </Button>

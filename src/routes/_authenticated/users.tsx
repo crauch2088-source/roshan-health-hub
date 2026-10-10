@@ -61,7 +61,13 @@ function UsersPageInner() {
   const { t, lang } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", role_id: "" });
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    phone: "",
+    role_id: "",
+  });
 
   const list = useRows(["users"], () =>
     supabase
@@ -134,10 +140,18 @@ function UsersPageInner() {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={`${t("full_name")} *`}>
-                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                  <Input
+                    value={form.full_name}
+                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  />
                 </Field>
                 <Field label={`${t("email")} *`}>
-                  <Input type="email" dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  <Input
+                    type="email"
+                    dir="ltr"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
                 </Field>
                 <Field label={`${t("password")} * (min. 8 characters)`}>
                   <Input
@@ -149,10 +163,17 @@ function UsersPageInner() {
                   />
                 </Field>
                 <Field label={t("phone")}>
-                  <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <Input
+                    dir="ltr"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
                 </Field>
                 <Field label={`${t("role")} *`}>
-                  <Select {...(form.role_id ? { value: form.role_id } : {})} onValueChange={(v) => setForm({ ...form, role_id: v })}>
+                  <Select
+                    {...(form.role_id ? { value: form.role_id } : {})}
+                    onValueChange={(v) => setForm({ ...form, role_id: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder={t("role")} />
                     </SelectTrigger>
