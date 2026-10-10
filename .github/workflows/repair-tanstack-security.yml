@@ -35,7 +35,7 @@ jobs:
           cache: npm
 
       - name: Regenerate package lock
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Commit updated lockfile if needed
         run: |
