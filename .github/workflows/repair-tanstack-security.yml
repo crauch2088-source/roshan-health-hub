@@ -1,4 +1,3 @@
-
 name: Repair TanStack Start Security
 
 on:
@@ -7,7 +6,6 @@ on:
       - fix/tanstack-start-security
     paths:
       - package.json
-      - package-lock.json
       - .github/workflows/repair-tanstack-security.yml
   workflow_dispatch:
 
@@ -55,6 +53,7 @@ jobs:
         run: npm ci
 
       - name: Show resolved TanStack versions
+        id: versions
         run: npm ls @tanstack/react-start @tanstack/start-server-core @tanstack/react-router @tanstack/router-plugin
 
       - name: Enforce patched versions
@@ -122,20 +121,19 @@ jobs:
         continue-on-error: true
         run: npm run lint
 
+      - name: Check for test script
+        id: has-test
+        run: node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)" || echo "no_test_script=true" >> $GITHUB_OUTPUT
+
       - name: Run tests when available
         id: tests
+        if: steps.has-test.outputs.no_test_script != 'true'
         continue-on-error: true
-        run: |
-          node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)" \
-            && npm test \
-            || {
-              code=$?
-              if [ "$code" -eq 1 ] && ! node -e "process.exit(require('./package.json').scripts?.test ? 1 : 0)"; then
-                echo "No test script configured; skipped."
-              else
-                exit "$code"
-              fi
-            }
+        run: npm test
+
+      - name: Mark tests as skipped
+        if: steps.has-test.outputs.no_test_script == 'true'
+        run: echo "TESTS_SKIPPED=true" >> $GITHUB_ENV
 
       - name: Summarize validation results
         if: always()
@@ -145,21 +143,38 @@ jobs:
           BUILD: ${{ steps.build.outcome }}
           LINT: ${{ steps.lint.outcome }}
           TESTS: ${{ steps.tests.outcome }}
+          TESTS_SKIPPED: ${{ env.TESTS_SKIPPED }}
         run: |
           {
             echo "## TanStack security repair results"
+            echo ""
+            echo "### Validation Steps"
             echo "- npm audit: $AUDIT"
             echo "- Typecheck: $TYPECHECK"
             echo "- Build: $BUILD"
             echo "- Lint: $LINT"
-            echo "- Tests: $TESTS"
+            if [ "$TESTS_SKIPPED" == "true" ]; then
+              echo "- Tests: skipped (no test script configured)"
+            else
+              echo "- Tests: $TESTS"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+          # Fail only if critical steps failed (not skipped)
           if [ "$AUDIT" != success ] ||
              [ "$TYPECHECK" != success ] ||
              [ "$BUILD" != success ] ||
-             [ "$LINT" != success ] ||
-             [ "$TESTS" != success ]; then
-            echo "One or more validations failed or were skipped; inspect the job logs."
+             [ "$LINT" != success ]; then
+            echo ""
+            echo "❌ One or more critical validations failed; inspect the job logs."
             exit 1
           fi
+
+          if [ "$TESTS" != skipped ] && [ "$TESTS" != success ] && [ "$TESTS_SKIPPED" != "true" ]; then
+            echo ""
+            echo "❌ Tests failed; inspect the job logs."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All critical validations passed."
