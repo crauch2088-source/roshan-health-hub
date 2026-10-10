@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { PatientPicker, PatientSnapshotStrip, type PickedPatient } from "@/components/patient-picker";
+import {
+  PatientPicker,
+  PatientSnapshotStrip,
+  type PickedPatient,
+} from "@/components/patient-picker";
 import {
   Empty,
   ErrorBox,
@@ -102,16 +106,16 @@ function AppointmentsPageInner() {
         "id, appointment_date, appointment_time, status, notes, patients(id, full_name, mrn), users(full_name), departments(name, name_ar)",
       )
       .gte("appointment_date", new Date(`${date}T00:00:00+02:00`).toISOString())
-      .lt("appointment_date", new Date(new Date(`${date}T00:00:00+02:00`).getTime() + 86400000).toISOString())
+      .lt(
+        "appointment_date",
+        new Date(new Date(`${date}T00:00:00+02:00`).getTime() + 86400000).toISOString(),
+      )
       .is("deleted_at", null)
       .order("appointment_date", { ascending: true }),
   );
 
   const departments = useRows(["departments"], () =>
-    supabase
-      .from("departments")
-      .select("id, name, name_ar")
-      .is("deleted_at", null),
+    supabase.from("departments").select("id, name, name_ar").is("deleted_at", null),
   );
 
   const doctors = useRows(["doctors"], () =>
@@ -147,31 +151,22 @@ function AppointmentsPageInner() {
       }
 
       if (!form.patient_id) {
-        throw new Error(
-          lang === "ar"
-            ? "يرجى اختيار المريض."
-            : "Please select a patient.",
-        );
+        throw new Error(lang === "ar" ? "يرجى اختيار المريض." : "Please select a patient.");
       }
 
       if (!form.appointment_date) {
         throw new Error(
-          lang === "ar"
-            ? "يرجى اختيار تاريخ الموعد."
-            : "Please select an appointment date.",
+          lang === "ar" ? "يرجى اختيار تاريخ الموعد." : "Please select an appointment date.",
         );
       }
 
       if (!form.appointment_time) {
         throw new Error(
-          lang === "ar"
-            ? "يرجى اختيار وقت الموعد."
-            : "Please select an appointment time.",
+          lang === "ar" ? "يرجى اختيار وقت الموعد." : "Please select an appointment time.",
         );
       }
 
-      const appointmentDateTime =
-        `${form.appointment_date}T${form.appointment_time}:00`;
+      const appointmentDateTime = `${form.appointment_date}T${form.appointment_time}:00`;
 
       /*
        * created_by is intentionally omitted.
@@ -179,17 +174,15 @@ function AppointmentsPageInner() {
        * Database default:
        * current_app_user_id()
        */
-      const { error } = await supabase
-        .from("appointments")
-        .insert({
-          patient_id: form.patient_id,
-          doctor_id: form.doctor_id || null,
-          department_id: form.department_id || null,
-          appointment_date: appointmentDateTime,
-          appointment_time: form.appointment_time,
-          status: "scheduled",
-          notes: form.notes || null,
-        });
+      const { error } = await supabase.from("appointments").insert({
+        patient_id: form.patient_id,
+        doctor_id: form.doctor_id || null,
+        department_id: form.department_id || null,
+        appointment_date: appointmentDateTime,
+        appointment_time: form.appointment_time,
+        status: "scheduled",
+        notes: form.notes || null,
+      });
 
       if (error) {
         throw new Error(error.message);
@@ -200,10 +193,7 @@ function AppointmentsPageInner() {
     {
       invalidate: [["appointments", date]],
 
-      successMessage:
-        lang === "ar"
-          ? "تم حفظ الموعد بنجاح"
-          : "Appointment saved successfully",
+      successMessage: lang === "ar" ? "تم حفظ الموعد بنجاح" : "Appointment saved successfully",
 
       onDone: () => {
         setOpen(false);
@@ -254,34 +244,17 @@ function AppointmentsPageInner() {
     },
     {
       invalidate: [["appointments", date]],
-      successMessage:
-        lang === "ar"
-          ? "تم حذف الموعد"
-          : "Appointment deleted",
+      successMessage: lang === "ar" ? "تم حذف الموعد" : "Appointment deleted",
     },
   );
 
   const rows = (appointments.data ?? []) as Row[];
 
-  const doctorRows = ((doctors.data ?? []) as Row[]).filter(
-    (doctor) => {
-      const roleCode = s(
-        rel(doctor, "roles"),
-        "code",
-      ).toLowerCase();
+  const doctorRows = ((doctors.data ?? []) as Row[]).filter((doctor) => {
+    const roleCode = s(rel(doctor, "roles"), "code").toLowerCase();
 
-      return (
-        !roleCode ||
-        [
-          "gp",
-          "dentist",
-          "specialist",
-          "doctor",
-          "physician",
-        ].includes(roleCode)
-      );
-    },
-  );
+    return !roleCode || ["gp", "dentist", "specialist", "doctor", "physician"].includes(roleCode);
+  });
 
   if (appointments.isLoading) {
     return <Loading />;
@@ -289,62 +262,32 @@ function AppointmentsPageInner() {
 
   return (
     <div>
-      <PageHeader
-        title={
-          lang === "ar"
-            ? "المواعيد"
-            : "Appointments"
-        }
-        subtitle={formatDate(date)}
-      >
+      <PageHeader title={lang === "ar" ? "المواعيد" : "Appointments"} subtitle={formatDate(date)}>
         <Input
           type="date"
           dir="ltr"
           value={date}
-          onChange={(e) =>
-            setDate(e.target.value)
-          }
+          onChange={(e) => setDate(e.target.value)}
           className="w-40"
         />
 
-        <ExportButtons
-          rows={rows}
-          filename={`roshan-appointments-${date}`}
-        />
+        <ExportButtons rows={rows} filename={`roshan-appointments-${date}`} />
 
-        <Dialog
-          open={open}
-          onOpenChange={setOpen}
-        >
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              type="button"
-            >
+            <Button size="sm" type="button">
               <Plus className="size-4" />
-              {lang === "ar"
-                ? "ميعاد جديد"
-                : "New Appointment"}
+              {lang === "ar" ? "ميعاد جديد" : "New Appointment"}
             </Button>
           </DialogTrigger>
 
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {lang === "ar"
-                  ? "حجز ميعاد جديد"
-                  : "New Appointment"}
-              </DialogTitle>
+              <DialogTitle>{lang === "ar" ? "حجز ميعاد جديد" : "New Appointment"}</DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-4">
-              <Field
-                label={
-                  lang === "ar"
-                    ? "المريض *"
-                    : "Patient *"
-                }
-              >
+              <Field label={lang === "ar" ? "المريض *" : "Patient *"}>
                 <PatientPicker
                   value={selectedPatient}
                   onSelect={(patient) => {
@@ -357,13 +300,7 @@ function AppointmentsPageInner() {
                 ) : null}
               </Field>
 
-              <Field
-                label={
-                  lang === "ar"
-                    ? "الطبيب"
-                    : "Doctor"
-                }
-              >
+              <Field label={lang === "ar" ? "الطبيب" : "Doctor"}>
                 <Select
                   // Radix Select must not receive value="" — use undefined for placeholder.
                   {...(form.doctor_id ? { value: form.doctor_id } : {})}
@@ -375,157 +312,76 @@ function AppointmentsPageInner() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        lang === "ar"
-                          ? "بدون"
-                          : "None"
-                      }
-                    />
+                    <SelectValue placeholder={lang === "ar" ? "بدون" : "None"} />
                   </SelectTrigger>
 
                   <SelectContent>
-                    {doctorRows.map(
-                      (doctor) => (
-                        <SelectItem
-                          key={s(
-                            doctor,
-                            "id",
-                          )}
-                          value={s(
-                            doctor,
-                            "id",
-                          )}
-                        >
-                          {s(
-                            doctor,
-                            "full_name",
-                          )}
-                        </SelectItem>
-                      ),
-                    )}
+                    {doctorRows.map((doctor) => (
+                      <SelectItem key={s(doctor, "id")} value={s(doctor, "id")}>
+                        {s(doctor, "full_name")}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </Field>
 
-              <Field
-                label={
-                  lang === "ar"
-                    ? "القسم"
-                    : "Department"
-                }
-              >
+              <Field label={lang === "ar" ? "القسم" : "Department"}>
                 <Select
-                  value={
-                    form.department_id
-                  }
+                  value={form.department_id}
                   onValueChange={(value) =>
                     setForm({
                       ...form,
-                      department_id:
-                        value,
+                      department_id: value,
                     })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        lang === "ar"
-                          ? "بدون"
-                          : "None"
-                      }
-                    />
+                    <SelectValue placeholder={lang === "ar" ? "بدون" : "None"} />
                   </SelectTrigger>
 
                   <SelectContent>
-                    {((departments.data ??
-                      []) as Row[]).map(
-                      (department) => (
-                        <SelectItem
-                          key={s(
-                            department,
-                            "id",
-                          )}
-                          value={s(
-                            department,
-                            "id",
-                          )}
-                        >
-                          {lang === "ar"
-                            ? s(
-                                department,
-                                "name_ar",
-                              ) ||
-                              s(
-                                department,
-                                "name",
-                              )
-                            : s(
-                                department,
-                                "name",
-                              )}
-                        </SelectItem>
-                      ),
-                    )}
+                    {((departments.data ?? []) as Row[]).map((department) => (
+                      <SelectItem key={s(department, "id")} value={s(department, "id")}>
+                        {lang === "ar"
+                          ? s(department, "name_ar") || s(department, "name")
+                          : s(department, "name")}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </Field>
 
               <div className="grid grid-cols-2 gap-2">
-                <Field
-                  label={
-                    lang === "ar"
-                      ? "تاريخ الموعد"
-                      : "Appointment Date"
-                  }
-                >
+                <Field label={lang === "ar" ? "تاريخ الموعد" : "Appointment Date"}>
                   <Input
                     type="date"
                     dir="ltr"
-                    value={
-                      form.appointment_date
-                    }
+                    value={form.appointment_date}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        appointment_date:
-                          e.target.value,
+                        appointment_date: e.target.value,
                       })
                     }
                   />
                 </Field>
 
-                <Field
-                  label={
-                    lang === "ar"
-                      ? "الوقت"
-                      : "Time"
-                  }
-                >
+                <Field label={lang === "ar" ? "الوقت" : "Time"}>
                   <Input
                     type="time"
                     dir="ltr"
-                    value={
-                      form.appointment_time
-                    }
+                    value={form.appointment_time}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        appointment_time:
-                          e.target.value,
+                        appointment_time: e.target.value,
                       })
                     }
                   />
                 </Field>
               </div>
 
-              <Field
-                label={
-                  lang === "ar"
-                    ? "ملاحظات"
-                    : "Notes"
-                }
-              >
+              <Field label={lang === "ar" ? "ملاحظات" : "Notes"}>
                 <Textarea
                   rows={2}
                   value={form.notes}
@@ -540,29 +396,14 @@ function AppointmentsPageInner() {
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  setOpen(false)
-                }
-              >
-                {lang === "ar"
-                  ? "إلغاء"
-                  : "Cancel"}
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                {lang === "ar" ? "إلغاء" : "Cancel"}
               </Button>
 
               <Button
                 type="button"
-                disabled={
-                  !form.patient_id ||
-                  create.isPending
-                }
-                onClick={() =>
-                  create.mutate(
-                    undefined as never,
-                  )
-                }
+                disabled={!form.patient_id || create.isPending}
+                onClick={() => create.mutate(undefined as never)}
               >
                 {create.isPending
                   ? lang === "ar"
@@ -577,167 +418,82 @@ function AppointmentsPageInner() {
         </Dialog>
       </PageHeader>
 
-      <ErrorBox
-        error={
-          appointments.error ??
-          
-          departments.error ??
-          doctors.error
-        }
-      />
+      <ErrorBox error={appointments.error ?? departments.error ?? doctors.error} />
 
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           {rows.length === 0 ? (
-            <Empty title={t("no_data")} description={lang === "ar" ? "لا مواعيد في هذا اليوم." : "No appointments for this day."} />
+            <Empty
+              title={t("no_data")}
+              description={
+                lang === "ar" ? "لا مواعيد في هذا اليوم." : "No appointments for this day."
+              }
+            />
           ) : (
             <Table density="compact">
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    {lang === "ar"
-                      ? "المريض"
-                      : "Patient"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "الطبيب"
-                      : "Doctor"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "الطبيب" : "Doctor"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "القسم"
-                      : "Department"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "التاريخ"
-                      : "Date"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "الوقت"
-                      : "Time"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "الوقت" : "Time"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "الحالة"
-                      : "Status"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
 
                   <TableHead className="text-end">
-                    {lang === "ar"
-                      ? "الإجراءات"
-                      : "Actions"}
+                    {lang === "ar" ? "الإجراءات" : "Actions"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {rows.map((item) => {
-                  const patient = rel(
-                    item,
-                    "patients",
-                  );
+                  const patient = rel(item, "patients");
 
-                  const doctor = rel(
-                    item,
-                    "users",
-                  );
+                  const doctor = rel(item, "users");
 
-                  const department =
-                    rel(
-                      item,
-                      "departments",
-                    );
+                  const department = rel(item, "departments");
 
-                  const dateVal =
-                    s(
-                      item,
-                      "appointment_date",
-                    ) || "";
+                  const dateVal = s(item, "appointment_date") || "";
 
-                  const [datePart, timePart] =
-                    dateVal.includes("T")
-                      ? dateVal.split("T")
-                      : [dateVal, ""];
+                  const [datePart, timePart] = dateVal.includes("T")
+                    ? dateVal.split("T")
+                    : [dateVal, ""];
 
-                  const storedAppointmentTime =
-                    s(
-                      item,
-                      "appointment_time",
-                    );
+                  const storedAppointmentTime = s(item, "appointment_time");
 
-                  const formattedTime =
-                    storedAppointmentTime
-                      ? storedAppointmentTime.substring(
-                          0,
-                          5,
-                        )
-                      : timePart
-                        ? timePart.substring(
-                            0,
-                            5,
-                          )
-                        : "—";
+                  const formattedTime = storedAppointmentTime
+                    ? storedAppointmentTime.substring(0, 5)
+                    : timePart
+                      ? timePart.substring(0, 5)
+                      : "—";
 
                   return (
-                    <TableRow
-                      key={s(
-                        item,
-                        "id",
-                      )}
-                    >
+                    <TableRow key={s(item, "id")}>
                       <TableCell className="font-medium whitespace-nowrap">
-                        {s(
-                          patient,
-                          "full_name",
-                        ) || "—"}
+                        {s(patient, "full_name") || "—"}
 
-                        <span
-                          className="ms-2 text-xs text-muted-foreground"
-                          dir="ltr"
-                        >
-                          {s(
-                            patient,
-                            "mrn",
-                          )}
+                        <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
+                          {s(patient, "mrn")}
                         </span>
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
-                        {s(
-                          doctor,
-                          "full_name",
-                        ) || "—"}
+                        {s(doctor, "full_name") || "—"}
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
                         {lang === "ar"
-                          ? s(
-                              department,
-                              "name_ar",
-                            ) ||
-                            s(
-                              department,
-                              "name",
-                            ) ||
-                            "—"
-                          : s(
-                              department,
-                              "name",
-                            ) || "—"}
+                          ? s(department, "name_ar") || s(department, "name") || "—"
+                          : s(department, "name") || "—"}
                       </TableCell>
 
-                      <TableCell
-                        dir="ltr"
-                        className="whitespace-nowrap font-mono text-xs"
-                      >
+                      <TableCell dir="ltr" className="whitespace-nowrap font-mono text-xs">
                         {datePart || "—"}
                       </TableCell>
 
@@ -749,12 +505,7 @@ function AppointmentsPageInner() {
                       </TableCell>
 
                       <TableCell>
-                        <StatusBadge
-                          status={s(
-                            item,
-                            "status",
-                          )}
-                        />
+                        <StatusBadge status={s(item, "status")} />
                       </TableCell>
 
                       <TableCell className="text-end whitespace-nowrap">
@@ -763,9 +514,7 @@ function AppointmentsPageInner() {
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:text-destructive"
-                          disabled={
-                            deleteAppointment.isPending
-                          }
+                          disabled={deleteAppointment.isPending}
                           onClick={() => {
                             if (
                               confirm(
@@ -774,12 +523,7 @@ function AppointmentsPageInner() {
                                   : "Are you sure you want to delete this appointment?",
                               )
                             ) {
-                              deleteAppointment.mutate(
-                                s(
-                                  item,
-                                  "id",
-                                ),
-                              );
+                              deleteAppointment.mutate(s(item, "id"));
                             }
                           }}
                         >

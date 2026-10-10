@@ -18,7 +18,11 @@ function Brand({ collapsed }: { collapsed: boolean }) {
   const { t } = useLang();
   return (
     <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-3.5">
-      <img src="/roshan-logo.png" alt={t("app_name")} className="size-9 shrink-0 rounded-md bg-white object-contain p-0.5" />
+      <img
+        src="/roshan-logo.png"
+        alt={t("app_name")}
+        className="size-9 shrink-0 rounded-md bg-white object-contain p-0.5"
+      />
       {!collapsed ? (
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-sidebar-foreground">{t("app_name")}</p>
@@ -33,10 +37,17 @@ function SearchTrigger() {
   const { t } = useLang();
   const { setOpen } = useCommandPalette();
   return (
-    <Button variant="outline" size="sm" className="hidden gap-2 text-muted-foreground sm:flex" onClick={() => setOpen(true)}>
+    <Button
+      variant="outline"
+      size="sm"
+      className="hidden gap-2 text-muted-foreground sm:flex"
+      onClick={() => setOpen(true)}
+    >
       <Search className="size-4" />
       <span className="hidden md:inline">{t("search_everywhere")}</span>
-      <kbd className="ms-1 hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] md:inline">Ctrl K</kbd>
+      <kbd className="ms-1 hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] md:inline">
+        Ctrl K
+      </kbd>
     </Button>
   );
 }
@@ -82,19 +93,22 @@ function Shell({ children }: { children: ReactNode }) {
       >
         {t("skip_to_content")}
       </a>
-      <aside
-        className={cnRail(collapsed)}
-        aria-label={t("navigation")}
-      >
+      <aside className={cnRail(collapsed)} aria-label={t("navigation")}>
         <Brand collapsed={collapsed} />
         <div className="min-h-0 flex-1">
           <NavRail collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
         </div>
 
-        <div className={collapsed ? "border-t border-sidebar-border p-2" : "border-t border-sidebar-border p-3"}>
+        <div
+          className={
+            collapsed ? "border-t border-sidebar-border p-2" : "border-t border-sidebar-border p-3"
+          }
+        >
           {!collapsed ? (
             <>
-              <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.full_name ?? "—"}</p>
+              <p className="truncate text-sm font-medium text-sidebar-foreground">
+                {user?.full_name ?? "—"}
+              </p>
               <p className="truncate text-xs text-sidebar-foreground/60">{user?.role_name ?? ""}</p>
             </>
           ) : null}
@@ -115,19 +129,31 @@ function Shell({ children }: { children: ReactNode }) {
           <BreadcrumbNav />
           <div className="min-w-0 flex-1" />
           <SearchTrigger />
-          <Button variant="outline" size="sm" onClick={toggle} aria-label={lang === "ar" ? "Switch to English" : "التبديل إلى العربية"}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggle}
+            aria-label={lang === "ar" ? "Switch to English" : "التبديل إلى العربية"}
+          >
             <Languages className="size-4" />
             <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
           </Button>
           <Separator orientation="vertical" className="mx-1 hidden h-6 sm:block" />
-          <Button variant="ghost" size="sm" className="lg:hidden" onClick={handleSignOut} aria-label={t("sign_out")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={handleSignOut}
+            aria-label={t("sign_out")}
+          >
             <LogOut className="size-4" />
           </Button>
         </header>
 
-        <main id="main-content" className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+        <main id="main-content" className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
-
 
       <MobileBottomNav />
     </div>

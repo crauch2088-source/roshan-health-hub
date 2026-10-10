@@ -32,10 +32,16 @@ export function BreadcrumbNav() {
   const onSection = location.pathname === current.to;
 
   return (
-    <nav className="no-print flex min-w-0 items-center gap-1 text-sm text-muted-foreground" aria-label={t("navigation")}>
+    <nav
+      className="no-print flex min-w-0 items-center gap-1 text-sm text-muted-foreground"
+      aria-label={t("navigation")}
+    >
       {can(HOME_ITEM.perm) ? (
         <>
-          <Link to={HOME_ITEM.to} className="hidden rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline">
+          <Link
+            to={HOME_ITEM.to}
+            className="hidden rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline"
+          >
             {t(HOME_ITEM.key)}
           </Link>
           <Chevron className="hidden size-3.5 shrink-0 sm:inline" aria-hidden />
@@ -51,4 +57,3 @@ export function BreadcrumbNav() {
     </nav>
   );
 }
-

@@ -20,7 +20,6 @@ import { patientPickerQuery, useDebounced } from "@/lib/search";
 import { dbError, supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-
 export type PickedPatient = {
   id: string;
   full_name: string;
@@ -95,7 +94,9 @@ export function PatientPicker({
               {value.full_name} — {value.mrn || value.phone || "—"}
             </span>
           ) : (
-            <span className="text-muted-foreground">{placeholder ?? t("search_patient_placeholder")}</span>
+            <span className="text-muted-foreground">
+              {placeholder ?? t("search_patient_placeholder")}
+            </span>
           )}
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
         </Button>
@@ -166,7 +167,12 @@ export function PatientPicker({
                       setTerm("");
                     }}
                   >
-                    <Check className={cn("me-2 size-4", value?.id === s(p, "id") ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn(
+                        "me-2 size-4",
+                        value?.id === s(p, "id") ? "opacity-100" : "opacity-0",
+                      )}
+                    />
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{s(p, "full_name")}</span>
                       <span className="truncate text-xs text-muted-foreground" dir="ltr">
@@ -246,9 +252,14 @@ export function usePatientSnapshot(patientId: string | null) {
   };
 }
 
-
 /** Small inline strip rendered under the picker once a patient is selected. */
-export function PatientSnapshotStrip({ patientId, currency }: { patientId: string; currency: string }) {
+export function PatientSnapshotStrip({
+  patientId,
+  currency,
+}: {
+  patientId: string;
+  currency: string;
+}) {
   const { t } = useLang();
   const snap = usePatientSnapshot(patientId);
 

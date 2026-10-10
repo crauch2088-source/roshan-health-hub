@@ -1,7 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Banknote, FlaskConical, Pill, Receipt, UserRound, Users, Wallet } from "lucide-react";
+import {
+  AlertTriangle,
+  Banknote,
+  FlaskConical,
+  Pill,
+  Receipt,
+  UserRound,
+  Users,
+  Wallet,
+} from "lucide-react";
 
-import { Empty, ErrorBox, Loading, PageHeader, SectionTitle, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  Loading,
+  PageHeader,
+  SectionTitle,
+  StatCard,
+  StatusBadge,
+  PermissionGate,
+} from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -56,7 +74,9 @@ function DashboardPageInner() {
   const visits = useRows(["dash-visits", today], () =>
     supabase
       .from("visits")
-      .select("id, status, visit_date, consultation_fee, patients(full_name, mrn), departments(name, name_ar)")
+      .select(
+        "id, status, visit_date, consultation_fee, patients(full_name, mrn), departments(name, name_ar)",
+      )
       .eq("visit_date", today)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
@@ -131,7 +151,8 @@ function DashboardPageInner() {
   // Inventory > Medicines tab. Expiring/expired read actual batches, since
   // a medicine's aggregate stock can be fine while one specific batch is
   // about to expire.
-  const thresholdDays = Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
+  const thresholdDays =
+    Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
 
   const lowStockMeds = useRows(["dash-low-stock"], () =>
     supabase
@@ -457,9 +478,14 @@ function DashboardPageInner() {
                 <TableBody>
                   {expiringRows.map((b) => (
                     <TableRow key={s(b, "id")}>
-                      <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                      <TableCell className="font-medium">
+                        {s(rel(b, "medicines"), "name") || "—"}
+                      </TableCell>
                       <TableCell dir="ltr">
-                        <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.expiring_soon)}>
+                        <Badge
+                          variant="outline"
+                          className={cn("font-medium", EXPIRY_TONE.expiring_soon)}
+                        >
                           {formatDate(s(b, "expiry_date"))}
                         </Badge>
                       </TableCell>
@@ -493,7 +519,9 @@ function DashboardPageInner() {
                 <TableBody>
                   {expiredRows.map((b) => (
                     <TableRow key={s(b, "id")}>
-                      <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                      <TableCell className="font-medium">
+                        {s(rel(b, "medicines"), "name") || "—"}
+                      </TableCell>
                       <TableCell dir="ltr">
                         <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.expired)}>
                           {formatDate(s(b, "expiry_date"))}

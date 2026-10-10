@@ -1,8 +1,26 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, ShieldCheck, Stethoscope } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  ClipboardList,
+  FlaskConical,
+  Plus,
+  Receipt,
+  ShieldCheck,
+  Stethoscope,
+} from "lucide-react";
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  Field,
+  Loading,
+  PageHeader,
+  SectionTitle,
+  StatusBadge,
+  PermissionGate,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,9 +51,15 @@ export const Route = createFileRoute("/_authenticated/patients_/$patientId")({
   head: () => ({
     meta: [
       { title: "Patient chart — ROSHAN Medical Center" },
-      { name: "description", content: "Patient demographics, visit history, laboratory results and invoices." },
+      {
+        name: "description",
+        content: "Patient demographics, visit history, laboratory results and invoices.",
+      },
       { property: "og:title", content: "Patient chart — ROSHAN Medical Center" },
-      { property: "og:description", content: "Patient demographics, visit history, laboratory results and invoices." },
+      {
+        property: "og:description",
+        content: "Patient demographics, visit history, laboratory results and invoices.",
+      },
     ],
   }),
   component: PatientChartWithBoundary,
@@ -92,7 +116,9 @@ function PatientChart() {
   const visits = useRows(["patient-visits", patientId], () =>
     supabase
       .from("visits")
-      .select("id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)")
+      .select(
+        "id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)",
+      )
       .eq("patient_id", patientId)
       .is("deleted_at", null)
       .order("visit_date", { ascending: false }),
@@ -119,7 +145,9 @@ function PatientChart() {
   const appointments = useRows(["patient-appointments", patientId], () =>
     supabase
       .from("appointments")
-      .select("id, appointment_date, appointment_time, status, notes, departments(name, name_ar), users(full_name)")
+      .select(
+        "id, appointment_date, appointment_time, status, notes, departments(name, name_ar), users(full_name)",
+      )
       .eq("patient_id", patientId)
       .is("deleted_at", null)
       .order("appointment_date", { ascending: false })
@@ -168,7 +196,9 @@ function PatientChart() {
         kind: "visit",
         date: s(v, "visit_date") || "",
         title: lang === "ar" ? "زيارة" : "Visit",
-        subtitle: (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) || s(rel(v, "users"), "full_name"),
+        subtitle:
+          (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) ||
+          s(rel(v, "users"), "full_name"),
         status: s(v, "status"),
         href: `/clinic/${s(v, "id")}`,
       });
@@ -180,7 +210,9 @@ function PatientChart() {
         kind: "appointment",
         date: (s(a, "appointment_date") || "").slice(0, 10),
         title: lang === "ar" ? "موعد" : "Appointment",
-        subtitle: (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) || s(rel(a, "users"), "full_name"),
+        subtitle:
+          (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) ||
+          s(rel(a, "users"), "full_name"),
         status: s(a, "status"),
       });
     }
@@ -224,7 +256,7 @@ function PatientChart() {
         href: `/billing/${s(inv, "id")}`,
       });
     }
-    
+
     for (const c of (claims.data ?? []) as Row[]) {
       const pi = rel(c, "patient_insurance");
       const company = rel(pi, "insurance_companies");
@@ -240,13 +272,23 @@ function PatientChart() {
     }
     items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     return items;
-  }, [visits.data, appointments.data, followups.data, labs.data, invoices.data, claims.data, lang, currency]);
-
+  }, [
+    visits.data,
+    appointments.data,
+    followups.data,
+    labs.data,
+    invoices.data,
+    claims.data,
+    lang,
+    currency,
+  ]);
 
   const prescriptions = useRows(["patient-rx", patientId], () =>
     supabase
       .from("prescriptions")
-      .select("id, created_at, status, is_external, prescription_items(id, dosage, medicines(name))")
+      .select(
+        "id, created_at, status, is_external, prescription_items(id, dosage, medicines(name))",
+      )
       .eq("patient_id", patientId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
@@ -317,14 +359,17 @@ function PatientChart() {
           <TabsTrigger value="invoices">{t("invoices")}</TabsTrigger>
         </TabsList>
 
-        
         <TabsContent value="timeline">
           <Card>
             <CardContent className="p-0">
               {timeline.length === 0 ? (
                 <Empty
                   title={lang === "ar" ? "لا أحداث بعد" : "No events yet"}
-                  description={lang === "ar" ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير." : "Visits, appointments, labs and invoices will appear here."}
+                  description={
+                    lang === "ar"
+                      ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير."
+                      : "Visits, appointments, labs and invoices will appear here."
+                  }
                 />
               ) : (
                 <ul className="divide-y">
@@ -352,10 +397,15 @@ function PatientChart() {
                             {item.status ? <StatusBadge status={item.status} /> : null}
                           </div>
                           {item.subtitle ? (
-                            <p className="mt-0.5 truncate text-sm text-muted-foreground">{item.subtitle}</p>
+                            <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                              {item.subtitle}
+                            </p>
                           ) : null}
                         </div>
-                        <time className="shrink-0 text-xs tabular-nums text-muted-foreground" dir="ltr">
+                        <time
+                          className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                          dir="ltr"
+                        >
                           {item.date ? formatDate(item.date) : "—"}
                         </time>
                       </div>
@@ -378,7 +428,7 @@ function PatientChart() {
           </Card>
         </TabsContent>
 
-<TabsContent value="profile">
+        <TabsContent value="profile">
           <Card>
             <CardContent className="p-4">
               <SectionTitle>{t("patient")}</SectionTitle>
@@ -515,7 +565,8 @@ function PatientChart() {
                         <TableCell dir="ltr">{formatDate(s(v, "visit_date"))}</TableCell>
                         <TableCell>
                           {lang === "ar"
-                            ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
+                            ? s(rel(v, "departments"), "name_ar") ||
+                              s(rel(v, "departments"), "name")
                             : s(rel(v, "departments"), "name")}
                         </TableCell>
                         <TableCell>{s(rel(v, "users"), "full_name") || "—"}</TableCell>
@@ -563,7 +614,8 @@ function PatientChart() {
                           {((o["lab_order_items"] as Row[]) ?? [])
                             .map((i) =>
                               lang === "ar"
-                                ? s(rel(i, "lab_tests"), "name_ar") || s(rel(i, "lab_tests"), "name")
+                                ? s(rel(i, "lab_tests"), "name_ar") ||
+                                  s(rel(i, "lab_tests"), "name")
                                 : s(rel(i, "lab_tests"), "name"),
                             )
                             .join(", ") || "—"}
