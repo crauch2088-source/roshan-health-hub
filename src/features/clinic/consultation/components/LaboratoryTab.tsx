@@ -1,5 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
+import { StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { n, rpc, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { formatDateTime } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 const CATEGORY_ORDER = [
@@ -79,6 +82,21 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
   );
   const visit = (visitQ.data ?? [])[0] as Row | undefined;
   const patient = rel(visit, "patients");
+
+  // Same shape the standalone Lab worklist (routes/_authenticated/lab.tsx)
+  // already queries with, scoped to this visit. Without this, a doctor
+  // ordering tests here had no way to see tests already ordered earlier
+  // in the same visit - risking a duplicate order and a duplicate charge
+  // on the patient's invoice.
+  const existingOrdersQ = useRows<Row[]>(["clinic-lab-orders", visitId], () =>
+    supabase
+      .from("lab_orders")
+      .select("id,status,created_at,priority,lab_order_items(id,lab_tests(name,name_ar))")
+      .eq("visit_id", visitId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
+  );
+  const existingOrders = (existingOrdersQ.data ?? []) as Row[];
 
   const testsQ = useRows<Row[]>(["clinic-lab-tests", search], () => {
     let q = supabase
@@ -241,174 +259,215 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          {lang === "ar" ? "اختيار الفحوصات" : "Select investigations"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 p-4">
-        <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="ps-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={
-                lang === "ar"
-                  ? "ابحث باسم الفحص أو الرمز أو التصنيف"
-                  : "Search test, code or category"
-              }
-            />
-          </div>
-          <select
-            className="rounded-md border bg-background px-3 py-2 text-sm"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="all">{lang === "ar" ? "كل التصنيفات" : "All categories"}</option>
-            {categories
-              .filter((x) => x !== "all")
-              .map((x) => (
-                <option key={x} value={x}>
-                  {lang === "ar" ? (CATEGORY_AR[x] ?? x) : x}
-                </option>
-              ))}
-          </select>
-        </div>
-        {profiles.length > 0 && (
-          <div>
-            <div className="mb-2 text-xs font-medium text-muted-foreground">
-              {lang === "ar" ? "حزم سريعة" : "Quick profiles"}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {profiles.map((p) => (
-                <Button
-                  key={p.id}
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => addProfile(p)}
-                >
-                  {p.label} <span className="ms-1 text-xs opacity-70">{p.tests.length}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="grid gap-4 lg:grid-cols-2">
-          {categories
-            .filter((x) => x !== "all")
-            .map((cat) => {
-              const group = visible.filter((t) => normalizeCategory(s(t, "category")) === cat);
-              if (!group.length) return null;
+    <div className="space-y-4">
+      {existingOrders.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {lang === "ar"
+                ? "طلبات المختبر لهذه الزيارة"
+                : "Lab orders already placed this visit"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 p-4 pt-0">
+            {existingOrders.map((order) => {
+              const items = (order["lab_order_items"] as Row[]) ?? [];
+              const testNames = items
+                .map((i) => {
+                  const t = rel(i, "lab_tests");
+                  return lang === "ar" ? s(t, "name_ar") || s(t, "name") : s(t, "name");
+                })
+                .filter(Boolean)
+                .join(", ");
               return (
-                <div key={cat} className="rounded-xl border">
-                  <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-                    <span className="font-medium">
-                      {lang === "ar" ? (CATEGORY_AR[cat] ?? cat) : cat}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{group.length}</span>
+                <Link
+                  key={s(order, "id")}
+                  to="/lab/$orderId"
+                  params={{ orderId: s(order, "id") }}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm transition hover:bg-muted/50"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{testNames || "—"}</div>
+                    <div className="text-xs text-muted-foreground" dir="ltr">
+                      {formatDateTime(s(order, "created_at"))}
+                    </div>
                   </div>
-                  <div className="grid gap-2 p-2">
-                    {group.map((test) => {
-                      const chosen = selectedIds.has(s(test, "id"));
-                      return (
-                        <button
-                          type="button"
-                          key={s(test, "id")}
-                          onClick={() => toggle(test)}
-                          className={`rounded-lg border p-3 text-start transition ${chosen ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="font-medium">
-                              {lang === "ar"
-                                ? s(test, "name_ar") || s(test, "name")
-                                : s(test, "name")}
-                            </div>
-                            {chosen && <span className="text-xs text-primary">✓</span>}
-                          </div>
-                          <div className="mt-1 text-xs text-muted-foreground" dir="ltr">
-                            {s(test, "code") || "—"} · {n(test, "price")}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                  <StatusBadge status={s(order, "status")} />
+                </Link>
               );
             })}
-        </div>
-        {!visible.length && (
-          <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-            {lang === "ar" ? "لا توجد فحوصات مطابقة" : "No matching tests"}
-          </div>
-        )}
-        {selected.length > 0 && (
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium">
-                {lang === "ar"
-                  ? `الفحوصات المختارة (${selected.length})`
-                  : `Selected tests (${selected.length})`}
-              </span>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setSelected([])}>
-                {lang === "ar" ? "مسح الكل" : "Clear all"}
-              </Button>
+          </CardContent>
+        </Card>
+      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {lang === "ar" ? "اختيار الفحوصات" : "Select investigations"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="ps-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={
+                  lang === "ar"
+                    ? "ابحث باسم الفحص أو الرمز أو التصنيف"
+                    : "Search test, code or category"
+                }
+              />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {selected.map((t) => (
-                <span
-                  key={s(t, "id")}
-                  className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs"
-                >
-                  {lang === "ar" ? s(t, "name_ar") || s(t, "name") : s(t, "name")}
-                  <button type="button" onClick={() => toggle(t)} aria-label="remove">
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">
-            {lang === "ar" ? "الأولوية" : "Priority"}
             <select
-              className="mt-1 w-full rounded-md border bg-background p-2 font-normal"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
+              className="rounded-md border bg-background px-3 py-2 text-sm"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
             >
-              <option value="normal">{lang === "ar" ? "عادي" : "Normal"}</option>
-              <option value="urgent">{lang === "ar" ? "عاجل" : "Urgent"}</option>
+              <option value="all">{lang === "ar" ? "كل التصنيفات" : "All categories"}</option>
+              {categories
+                .filter((x) => x !== "all")
+                .map((x) => (
+                  <option key={x} value={x}>
+                    {lang === "ar" ? (CATEGORY_AR[x] ?? x) : x}
+                  </option>
+                ))}
             </select>
-          </label>
-          <label className="text-sm font-medium">
-            {lang === "ar" ? "ملاحظات الطلب" : "Order notes"}
-            <Textarea
-              className="mt-1 font-normal"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </label>
-        </div>
-        <div className="flex justify-end">
-          <Button
-            disabled={create.isPending || !selected.length}
-            onClick={() => create.mutate(undefined as never)}
-          >
-            {create.isPending
-              ? lang === "ar"
-                ? "جاري الإنشاء..."
-                : "Creating..."
-              : lang === "ar"
-                ? "طلب الفحوصات وإنشاء الفاتورة"
-                : "Order tests & create bill"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+          {profiles.length > 0 && (
+            <div>
+              <div className="mb-2 text-xs font-medium text-muted-foreground">
+                {lang === "ar" ? "حزم سريعة" : "Quick profiles"}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {profiles.map((p) => (
+                  <Button
+                    key={p.id}
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => addProfile(p)}
+                  >
+                    {p.label} <span className="ms-1 text-xs opacity-70">{p.tests.length}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {categories
+              .filter((x) => x !== "all")
+              .map((cat) => {
+                const group = visible.filter((t) => normalizeCategory(s(t, "category")) === cat);
+                if (!group.length) return null;
+                return (
+                  <div key={cat} className="rounded-xl border">
+                    <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
+                      <span className="font-medium">
+                        {lang === "ar" ? (CATEGORY_AR[cat] ?? cat) : cat}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{group.length}</span>
+                    </div>
+                    <div className="grid gap-2 p-2">
+                      {group.map((test) => {
+                        const chosen = selectedIds.has(s(test, "id"));
+                        return (
+                          <button
+                            type="button"
+                            key={s(test, "id")}
+                            onClick={() => toggle(test)}
+                            className={`rounded-lg border p-3 text-start transition ${chosen ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="font-medium">
+                                {lang === "ar"
+                                  ? s(test, "name_ar") || s(test, "name")
+                                  : s(test, "name")}
+                              </div>
+                              {chosen && <span className="text-xs text-primary">✓</span>}
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground" dir="ltr">
+                              {s(test, "code") || "—"} · {n(test, "price")}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+          {!visible.length && (
+            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+              {lang === "ar" ? "لا توجد فحوصات مطابقة" : "No matching tests"}
+            </div>
+          )}
+          {selected.length > 0 && (
+            <div className="rounded-xl border bg-muted/20 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-medium">
+                  {lang === "ar"
+                    ? `الفحوصات المختارة (${selected.length})`
+                    : `Selected tests (${selected.length})`}
+                </span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setSelected([])}>
+                  {lang === "ar" ? "مسح الكل" : "Clear all"}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selected.map((t) => (
+                  <span
+                    key={s(t, "id")}
+                    className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs"
+                  >
+                    {lang === "ar" ? s(t, "name_ar") || s(t, "name") : s(t, "name")}
+                    <button type="button" onClick={() => toggle(t)} aria-label="remove">
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm font-medium">
+              {lang === "ar" ? "الأولوية" : "Priority"}
+              <select
+                className="mt-1 w-full rounded-md border bg-background p-2 font-normal"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              >
+                <option value="normal">{lang === "ar" ? "عادي" : "Normal"}</option>
+                <option value="urgent">{lang === "ar" ? "عاجل" : "Urgent"}</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium">
+              {lang === "ar" ? "ملاحظات الطلب" : "Order notes"}
+              <Textarea
+                className="mt-1 font-normal"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              disabled={create.isPending || !selected.length}
+              onClick={() => create.mutate(undefined as never)}
+            >
+              {create.isPending
+                ? lang === "ar"
+                  ? "جاري الإنشاء..."
+                  : "Creating..."
+                : lang === "ar"
+                  ? "طلب الفحوصات وإنشاء الفاتورة"
+                  : "Order tests & create bill"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 function rel(row: Row | undefined, key: string): Row {

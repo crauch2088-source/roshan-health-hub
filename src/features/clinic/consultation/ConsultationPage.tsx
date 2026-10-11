@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const { lang } = useLang();
   const { user } = useAuth();
   const { currency } = useSettings();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("note");
   const visitQ = useRows<Row[]>(["consultation-visit", visitId], () =>
     supabase
@@ -61,6 +62,15 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         ["patient-snapshot-visits"],
       ],
       successMessage: lang === "ar" ? "تم إنهاء الزيارة" : "Visit completed",
+      onDone: () => {
+        // Without this the doctor was stuck on a now-completed visit with no way
+        // back to the queue except the manual "Clinic" link — a dead end at the
+        // exact moment they need to move to the next patient. Send them back to
+        // the clinic queue automatically once the success toast has shown.
+        setTimeout(() => {
+          void navigate({ to: "/clinic" });
+        }, 600);
+      },
     },
   );
 
