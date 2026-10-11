@@ -6,12 +6,15 @@ import { createClient } from "@supabase/supabase-js";
  * by RLS policies (see db/roshan_phase1_migration.sql).
  */
 export const SUPABASE_URL = "https://jewzonxplxhogqrnhosl.supabase.co";
-export const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impld3pvbnhwbHhob2dxcm5ob3NsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MzQ1MzgsImV4cCI6MjEwMjExMDUzOH0.jYy4Gevuv9s-AOIOYGkQynryNblR-zW4vUPr-tARMMI";
+export const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error("Missing VITE_SUPABASE_PUBLISHABLE_KEY environment variable.");
+}
 
 const isBrowser = typeof window !== "undefined";
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: isBrowser,
     autoRefreshToken: isBrowser,
