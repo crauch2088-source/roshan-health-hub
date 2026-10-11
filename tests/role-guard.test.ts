@@ -3,20 +3,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import {
-  canAssignRole,
-  isPrivilegedRole,
-  SUPER_ADMIN_ROLE_CODE,
-} from "../src/lib/role-guard.ts";
+import { canAssignRole, isPrivilegedRole, SUPER_ADMIN_ROLE_CODE } from "../src/lib/role-guard.ts";
 
 const ordinaryUserManager = { isSuperAdmin: false };
 const superAdmin = { isSuperAdmin: true };
 
 test("a user manager (users.create) cannot assign super_admin", () => {
-  assert.equal(
-    canAssignRole(ordinaryUserManager, { code: SUPER_ADMIN_ROLE_CODE }),
-    false,
-  );
+  assert.equal(canAssignRole(ordinaryUserManager, { code: SUPER_ADMIN_ROLE_CODE }), false);
 });
 
 test("a user manager can still assign ordinary roles", () => {
