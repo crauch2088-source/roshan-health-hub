@@ -6,12 +6,15 @@ import { createClient } from "@supabase/supabase-js";
  * by RLS policies (see db/roshan_phase1_migration.sql).
  */
 export const SUPABASE_URL = "https://jewzonxplxhogqrnhosl.supabase.co";
-export const SUPABASE_ANON_KEY =
-  "***REMOVED-JWT***";
+export const SUPABASE_PUBLISHABLE_KEY = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+
+if (!SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error("Missing VITE_SUPABASE_PUBLISHABLE_KEY environment variable.");
+}
 
 const isBrowser = typeof window !== "undefined";
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: isBrowser,
     autoRefreshToken: isBrowser,

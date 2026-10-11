@@ -116,44 +116,16 @@ export function VitalsTab({ visitId }: { visitId: string }) {
     },
   );
 
-  const fields: { key: string; label: string; unit: string; placeholder: string; step?: string }[] =
-    [
-      {
-        key: "bp_systolic",
-        label: lang === "ar" ? "الضغط الانقباضي" : "BP systolic",
-        unit: "mmHg",
-        placeholder: "120",
-      },
-      {
-        key: "bp_diastolic",
-        label: lang === "ar" ? "الضغط الانبساطي" : "BP diastolic",
-        unit: "mmHg",
-        placeholder: "80",
-      },
-      { key: "pulse", label: lang === "ar" ? "النبض" : "Pulse", unit: "bpm", placeholder: "78" },
-      {
-        key: "respiratory_rate",
-        label: lang === "ar" ? "معدل التنفس" : "Respiratory rate",
-        unit: "/min",
-        placeholder: "16",
-      },
-      {
-        key: "temperature",
-        label: lang === "ar" ? "الحرارة" : "Temperature",
-        unit: "°C",
-        placeholder: "36.8",
-        step: "0.1",
-      },
-      { key: "spo2", label: "SpO₂", unit: "%", placeholder: "98" },
-      {
-        key: "weight",
-        label: lang === "ar" ? "الوزن" : "Weight",
-        unit: "kg",
-        placeholder: "70",
-        step: "0.1",
-      },
-      { key: "height", label: lang === "ar" ? "الطول" : "Height", unit: "cm", placeholder: "170" },
-    ];
+  const fields: { key: string; label: string; unit: string; placeholder: string; step?: string }[] = [
+    { key: "bp_systolic", label: lang === "ar" ? "الضغط الانقباضي" : "BP systolic", unit: "mmHg", placeholder: "120" },
+    { key: "bp_diastolic", label: lang === "ar" ? "الضغط الانبساطي" : "BP diastolic", unit: "mmHg", placeholder: "80" },
+    { key: "pulse", label: lang === "ar" ? "النبض" : "Pulse", unit: "bpm", placeholder: "78" },
+    { key: "respiratory_rate", label: lang === "ar" ? "معدل التنفس" : "Respiratory rate", unit: "/min", placeholder: "16" },
+    { key: "temperature", label: lang === "ar" ? "الحرارة" : "Temperature", unit: "°C", placeholder: "36.8", step: "0.1" },
+    { key: "spo2", label: "SpO₂", unit: "%", placeholder: "98" },
+    { key: "weight", label: lang === "ar" ? "الوزن" : "Weight", unit: "kg", placeholder: "70", step: "0.1" },
+    { key: "height", label: lang === "ar" ? "الطول" : "Height", unit: "cm", placeholder: "170" },
+  ];
 
   const anyDanger = fields.some((x) => isDanger(x.key, get(x.key)));
 
@@ -185,9 +157,7 @@ export function VitalsTab({ visitId }: { visitId: string }) {
                   value={get(x.key)}
                   onChange={(e) => set(x.key, e.target.value)}
                   className={
-                    danger
-                      ? "border-destructive bg-destructive/10 focus-visible:ring-destructive"
-                      : undefined
+                    danger ? "border-destructive bg-destructive/10 focus-visible:ring-destructive" : undefined
                   }
                 />
               </label>
@@ -206,12 +176,7 @@ export function VitalsTab({ visitId }: { visitId: string }) {
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="space-y-1 text-sm">
                 <span className="font-medium">LMP</span>
-                <Input
-                  dir="ltr"
-                  type="date"
-                  value={lmp}
-                  onChange={(e) => set("lmp", e.target.value)}
-                />
+                <Input dir="ltr" type="date" value={lmp} onChange={(e) => set("lmp", e.target.value)} />
               </label>
               <div className="text-sm">
                 EDD
@@ -221,9 +186,7 @@ export function VitalsTab({ visitId }: { visitId: string }) {
               </div>
               <div className="text-sm">
                 GA
-                <div className="font-semibold">
-                  {lmp ? `${Math.floor(ga / 7)}w ${ga % 7}d` : "—"}
-                </div>
+                <div className="font-semibold">{lmp ? `${Math.floor(ga / 7)}w ${ga % 7}d` : "—"}</div>
               </div>
             </div>
           </div>

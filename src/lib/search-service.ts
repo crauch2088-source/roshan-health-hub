@@ -187,10 +187,10 @@ export function getRecentSearchTerms(): string[] {
 export function pushRecentSearchTerm(term: string): void {
   const clean = term.trim();
   if (!clean) return;
-  const next = [
-    clean,
-    ...getRecentSearchTerms().filter((t) => t.toLowerCase() !== clean.toLowerCase()),
-  ].slice(0, MAX_RECENT_TERMS);
+  const next = [clean, ...getRecentSearchTerms().filter((t) => t.toLowerCase() !== clean.toLowerCase())].slice(
+    0,
+    MAX_RECENT_TERMS,
+  );
   writeList(RECENT_TERMS_KEY, next);
 }
 
@@ -203,10 +203,7 @@ export function getSearchHistory(): SearchResultItem[] {
 }
 
 export function pushSearchHistoryItem(item: SearchResultItem): void {
-  const next = [item, ...getSearchHistory().filter((h) => h.key !== item.key)].slice(
-    0,
-    MAX_HISTORY,
-  );
+  const next = [item, ...getSearchHistory().filter((h) => h.key !== item.key)].slice(0, MAX_HISTORY);
   writeList(HISTORY_KEY, next);
 }
 

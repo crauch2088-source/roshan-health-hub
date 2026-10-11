@@ -3,17 +3,7 @@ import { Package, Plus, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  Empty,
-  ErrorBox,
-  ExportButtons,
-  Field,
-  Loading,
-  PageHeader,
-  Pager,
-  StatCard,
-  PermissionGate,
-} from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, Pager, StatCard, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -45,12 +35,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, usePagedRows, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money } from "@/lib/medical";
-import {
-  DEFAULT_EXPIRY_THRESHOLD_DAYS,
-  EXPIRY_TONE,
-  expiryStatus,
-  type ExpiryStatus,
-} from "@/lib/pharmacy";
+import { DEFAULT_EXPIRY_THRESHOLD_DAYS, EXPIRY_TONE, expiryStatus, type ExpiryStatus } from "@/lib/pharmacy";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -58,15 +43,9 @@ export const Route = createFileRoute("/_authenticated/inventory")({
   head: () => ({
     meta: [
       { title: "Inventory — ROSHAN Medical Center" },
-      {
-        name: "description",
-        content: "Medicine stock levels, batch tracking, expiry and suppliers.",
-      },
+      { name: "description", content: "Medicine stock levels, batch tracking, expiry and suppliers." },
       { property: "og:title", content: "Inventory — ROSHAN Medical Center" },
-      {
-        property: "og:description",
-        content: "Medicine stock levels, batch tracking, expiry and suppliers.",
-      },
+      { property: "og:description", content: "Medicine stock levels, batch tracking, expiry and suppliers." },
     ],
   }),
   component: InventoryPage,
@@ -99,8 +78,7 @@ function InventoryPage() {
 function InventoryPageInner() {
   const { t } = useLang();
   const { currency, settings } = useSettings();
-  const thresholdDays =
-    Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
+  const thresholdDays = Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
 
   return (
     <div>
@@ -173,17 +151,11 @@ function MedicinesTab() {
   );
 
   const stats = useRows<Row[]>(["inventory-stats"], () =>
-    supabase
-      .from("medicines")
-      .select("stock_quantity, reorder_level, cost_price")
-      .is("deleted_at", null),
+    supabase.from("medicines").select("stock_quantity, reorder_level, cost_price").is("deleted_at", null),
   );
   const statRows = (stats.data ?? []) as Row[];
   const lowStock = statRows.filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level")).length;
-  const stockValue = statRows.reduce(
-    (sum, m) => sum + n(m, "stock_quantity") * n(m, "cost_price"),
-    0,
-  );
+  const stockValue = statRows.reduce((sum, m) => sum + n(m, "stock_quantity") * n(m, "cost_price"), 0);
 
   const create = useSave(
     async () => {
@@ -226,11 +198,7 @@ function MedicinesTab() {
       if (mErr) throw new Error(mErr.message);
       return null;
     },
-    {
-      invalidate: [["inventory"], ["inventory-stats"]],
-      successMessage: t("saved"),
-      onDone: () => setReceive(null),
-    },
+    { invalidate: [["inventory"], ["inventory-stats"]], successMessage: t("saved"), onDone: () => setReceive(null) },
   );
 
   const rows = list.rows;
@@ -261,16 +229,10 @@ function MedicinesTab() {
               </DialogHeader>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`${t("name")} *`} className="sm:col-span-2">
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </Field>
                 <Field label={t("unit")}>
-                  <Input
-                    value={form.unit}
-                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  />
+                  <Input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
                 </Field>
                 <Field label={t("batch_number")}>
                   <Input
@@ -324,10 +286,7 @@ function MedicinesTab() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button
-                  disabled={!form.name || create.isPending}
-                  onClick={() => create.mutate(undefined as never)}
-                >
+                <Button disabled={!form.name || create.isPending} onClick={() => create.mutate(undefined as never)}>
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -369,23 +328,14 @@ function MedicinesTab() {
                     <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
                       <TableCell className="font-medium">{s(m, "name")}</TableCell>
                       <TableCell>{s(m, "unit") || "—"}</TableCell>
-                      <TableCell
-                        dir="ltr"
-                        className={low ? "font-semibold text-destructive" : undefined}
-                      >
+                      <TableCell dir="ltr" className={low ? "font-semibold text-destructive" : undefined}>
                         {n(m, "stock_quantity")}
                       </TableCell>
                       <TableCell>{money(n(m, "selling_price"), currency)}</TableCell>
-                      <TableCell dir="ltr">
-                        {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
-                      </TableCell>
+                      <TableCell dir="ltr">{s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}</TableCell>
                       <TableCell className="no-print text-end">
                         {can("pharmacy.create") ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
-                          >
+                          <Button variant="outline" size="sm" onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}>
                             {t("receive_stock")}
                           </Button>
                         ) : null}
@@ -428,10 +378,7 @@ function MedicinesTab() {
             <Button variant="outline" onClick={() => setReceive(null)}>
               {t("cancel")}
             </Button>
-            <Button
-              disabled={addStock.isPending}
-              onClick={() => addStock.mutate(undefined as never)}
-            >
+            <Button disabled={addStock.isPending} onClick={() => addStock.mutate(undefined as never)}>
               {addStock.isPending ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
@@ -492,20 +439,11 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
   );
 
   const medicines = useRows<Row[]>(["medicines-picker"], () =>
-    supabase
-      .from("medicines")
-      .select("id, name, unit")
-      .is("deleted_at", null)
-      .order("name", { ascending: true }),
+    supabase.from("medicines").select("id, name, unit").is("deleted_at", null).order("name", { ascending: true }),
   );
 
   const suppliers = useRows<Row[]>(["suppliers-picker"], () =>
-    supabase
-      .from("suppliers")
-      .select("id, name")
-      .is("deleted_at", null)
-      .eq("active", true)
-      .order("name", { ascending: true }),
+    supabase.from("suppliers").select("id, name").is("deleted_at", null).eq("active", true).order("name", { ascending: true }),
   );
 
   const movements = useRows<Row[]>(
@@ -525,8 +463,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
       const status = expiryStatus(s(b, "expiry_date") || null, thresholdDays);
       if (statusFilter !== "all" && status !== statusFilter) return false;
       if (!term) return true;
-      const hay =
-        `${s(b, "batch_number")} ${s(rel(b, "medicines"), "name")} ${s(rel(b, "suppliers"), "name")} ${s(b, "invoice_reference")}`.toLowerCase();
+      const hay = `${s(b, "batch_number")} ${s(rel(b, "medicines"), "name")} ${s(rel(b, "suppliers"), "name")} ${s(b, "invoice_reference")}`.toLowerCase();
       return hay.includes(term);
     });
   }, [batches.data, search, statusFilter, thresholdDays]);
@@ -609,16 +546,8 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
   return (
     <div>
       <div className="no-print mb-4 flex flex-wrap items-center justify-end gap-2">
-        <Input
-          placeholder={t("search")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-52"
-        />
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as "all" | ExpiryStatus)}
-        >
+        <Input placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-52" />
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | ExpiryStatus)}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -674,24 +603,13 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
                       className="cursor-pointer hover:bg-accent/40"
                       onClick={() => setDetail(b)}
                     >
-                      <TableCell className="font-medium">
-                        {s(rel(b, "medicines"), "name") || "—"}
-                      </TableCell>
+                      <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
                       <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                       <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
-                      <TableCell dir="ltr">
-                        {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}
-                      </TableCell>
+                      <TableCell dir="ltr">{s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}</TableCell>
                       <TableCell>{money(n(b, "purchase_price"), currency)}</TableCell>
                       <TableCell>{money(n(b, "selling_price"), currency)}</TableCell>
-                      <TableCell
-                        dir="ltr"
-                        className={
-                          n(b, "quantity_remaining") <= 10
-                            ? "font-semibold text-destructive"
-                            : undefined
-                        }
-                      >
+                      <TableCell dir="ltr" className={n(b, "quantity_remaining") <= 10 ? "font-semibold text-destructive" : undefined}>
                         {n(b, "quantity_remaining")}
                       </TableCell>
                       <TableCell>
@@ -714,10 +632,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={`${t("medicines")} *`} className="sm:col-span-2">
-              <Select
-                {...(form.medicine_id ? { value: form.medicine_id } : {})}
-                onValueChange={(v) => setForm({ ...form, medicine_id: v })}
-              >
+              <Select {...(form.medicine_id ? { value: form.medicine_id } : {})} onValueChange={(v) => setForm({ ...form, medicine_id: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("select_medicine")} />
                 </SelectTrigger>
@@ -731,10 +646,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
               </Select>
             </Field>
             <Field label={t("supplier")}>
-              <Select
-                {...(form.supplier_id ? { value: form.supplier_id } : {})}
-                onValueChange={(v) => setForm({ ...form, supplier_id: v })}
-              >
+              <Select {...(form.supplier_id ? { value: form.supplier_id } : {})} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("none")} />
                 </SelectTrigger>
@@ -748,11 +660,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
               </Select>
             </Field>
             <Field label={t("batch_number")}>
-              <Input
-                dir="ltr"
-                value={form.batch_number}
-                onChange={(e) => setForm({ ...form, batch_number: e.target.value })}
-              />
+              <Input dir="ltr" value={form.batch_number} onChange={(e) => setForm({ ...form, batch_number: e.target.value })} />
             </Field>
             <Field label={`${t("quantity_received")} *`}>
               <Input
@@ -795,11 +703,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
               />
             </Field>
             <Field label={t("invoice_reference")} className="sm:col-span-2">
-              <Input
-                dir="ltr"
-                value={form.invoice_reference}
-                onChange={(e) => setForm({ ...form, invoice_reference: e.target.value })}
-              />
+              <Input dir="ltr" value={form.invoice_reference} onChange={(e) => setForm({ ...form, invoice_reference: e.target.value })} />
             </Field>
           </div>
           <DialogFooter>
@@ -833,23 +737,15 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("status")}</p>
-                  <ExpiryBadge
-                    status={expiryStatus(s(detail, "expiry_date") || null, thresholdDays)}
-                  />
+                  <ExpiryBadge status={expiryStatus(s(detail, "expiry_date") || null, thresholdDays)} />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("manufacture_date")}</p>
-                  <p dir="ltr">
-                    {s(detail, "manufacture_date")
-                      ? formatDate(s(detail, "manufacture_date"))
-                      : "—"}
-                  </p>
+                  <p dir="ltr">{s(detail, "manufacture_date") ? formatDate(s(detail, "manufacture_date")) : "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("expiry_date")}</p>
-                  <p dir="ltr">
-                    {s(detail, "expiry_date") ? formatDate(s(detail, "expiry_date")) : "—"}
-                  </p>
+                  <p dir="ltr">{s(detail, "expiry_date") ? formatDate(s(detail, "expiry_date")) : "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("quantity_received")}</p>
@@ -895,10 +791,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
                         <TableRow key={s(mv, "id")}>
                           <TableCell dir="ltr">{formatDate(s(mv, "created_at"))}</TableCell>
                           <TableCell>{t(s(mv, "movement_type"))}</TableCell>
-                          <TableCell
-                            dir="ltr"
-                            className={n(mv, "quantity") < 0 ? "text-destructive" : "text-success"}
-                          >
+                          <TableCell dir="ltr" className={n(mv, "quantity") < 0 ? "text-destructive" : "text-success"}>
                             {n(mv, "quantity") > 0 ? `+${n(mv, "quantity")}` : n(mv, "quantity")}
                           </TableCell>
                         </TableRow>
@@ -930,11 +823,7 @@ function SuppliersTab({ currency }: { currency: string }) {
   const [history, setHistory] = useState<Row | null>(null);
 
   const suppliers = useRows<Row[]>(["suppliers"], () =>
-    supabase
-      .from("suppliers")
-      .select("id, name, phone, address, active")
-      .is("deleted_at", null)
-      .order("name", { ascending: true }),
+    supabase.from("suppliers").select("id, name, phone, address, active").is("deleted_at", null).order("name", { ascending: true }),
   );
 
   const supplierBatches = useRows<Row[]>(
@@ -942,9 +831,7 @@ function SuppliersTab({ currency }: { currency: string }) {
     () =>
       supabase
         .from("pharmacy_inventory")
-        .select(
-          "id, batch_number, expiry_date, quantity_received, purchase_price, invoice_reference, created_at, medicines(name)",
-        )
+        .select("id, batch_number, expiry_date, quantity_received, purchase_price, invoice_reference, created_at, medicines(name)")
         .eq("supplier_id", s(history, "id"))
         .is("deleted_at", null)
         .order("created_at", { ascending: false }),
@@ -991,33 +878,20 @@ function SuppliersTab({ currency }: { currency: string }) {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={`${t("name")} *`}>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </Field>
                 <Field label={t("phone")}>
-                  <Input
-                    dir="ltr"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
+                  <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </Field>
                 <Field label={t("address")}>
-                  <Input
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  />
+                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
                 </Field>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button
-                  disabled={!form.name || create.isPending}
-                  onClick={() => create.mutate(undefined as never)}
-                >
+                <Button disabled={!form.name || create.isPending} onClick={() => create.mutate(undefined as never)}>
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -1094,15 +968,11 @@ function SuppliersTab({ currency }: { currency: string }) {
                 {((supplierBatches.data ?? []) as Row[]).map((b) => (
                   <TableRow key={s(b, "id")}>
                     <TableCell dir="ltr">{formatDate(s(b, "created_at"))}</TableCell>
-                    <TableCell className="font-medium">
-                      {s(rel(b, "medicines"), "name") || "—"}
-                    </TableCell>
+                    <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
                     <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                     <TableCell dir="ltr">{n(b, "quantity_received")}</TableCell>
                     <TableCell>{money(n(b, "purchase_price"), currency)}</TableCell>
-                    <TableCell dir="ltr">
-                      {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}
-                    </TableCell>
+                    <TableCell dir="ltr">{s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

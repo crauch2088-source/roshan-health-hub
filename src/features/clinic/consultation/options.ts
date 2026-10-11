@@ -23,7 +23,15 @@ export const QUICK_COMPLAINTS: QuickOption[] = [
   { id: "rash", label: "طفح جلدي" },
 ];
 
-export const DOSES = ["نصف قرص", "قرص واحد", "قرصان", "5 مل", "10 مل", "15 مل", "20 مل"];
+export const DOSES = [
+  "نصف قرص",
+  "قرص واحد",
+  "قرصان",
+  "5 مل",
+  "10 مل",
+  "15 مل",
+  "20 مل",
+];
 
 export const FREQUENCIES = [
   "مرة يومياً",
@@ -35,4 +43,11 @@ export const FREQUENCIES = [
   "عند اللزوم",
 ];
 
-export const DURATIONS = ["يوم واحد", "3 أيام", "5 أيام", "7 أيام", "أسبوعان", "شهر"];
+export const DURATIONS = [
+  "يوم واحد",
+  "3 أيام",
+  "5 أيام",
+  "7 أيام",
+  "أسبوعان",
+  "شهر",
+];

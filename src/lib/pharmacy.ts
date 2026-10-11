@@ -30,12 +30,7 @@ export type PharmacyBatch = {
   created_at: string;
   updated_at: string;
   // Joined
-  medicines?: {
-    id: string;
-    name: string | null;
-    generic_name: string | null;
-    unit: string | null;
-  } | null;
+  medicines?: { id: string; name: string | null; generic_name: string | null; unit: string | null } | null;
   suppliers?: { id: string; name: string | null; phone: string | null } | null;
 };
 
@@ -85,10 +80,7 @@ export const DEFAULT_EXPIRY_THRESHOLD_DAYS = 90;
  * threshold (system_settings.pharmacy_expiry_threshold_days, default 90).
  * A null expiry date is treated as healthy (nothing to warn about).
  */
-export function expiryStatus(
-  expiryDate: string | null | undefined,
-  thresholdDays: number,
-): ExpiryStatus {
+export function expiryStatus(expiryDate: string | null | undefined, thresholdDays: number): ExpiryStatus {
   if (!expiryDate) return "healthy";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -126,12 +118,8 @@ export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
  * it's atomic under concurrent dispensing, and returns one row per batch
  * (or legacy-stock) consumption for display.
  */
-export async function dispensePrescriptionFefo(
-  prescriptionId: string,
-): Promise<DispenseResultRow[]> {
-  return rpc<DispenseResultRow[]>("fn_dispense_prescription", {
-    p_prescription_id: prescriptionId,
-  });
+export async function dispensePrescriptionFefo(prescriptionId: string): Promise<DispenseResultRow[]> {
+  return rpc<DispenseResultRow[]>("fn_dispense_prescription", { p_prescription_id: prescriptionId });
 }
 
 // ---------------------------------------------------------------------------

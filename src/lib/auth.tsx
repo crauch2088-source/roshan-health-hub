@@ -80,7 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { data, error: profileError } = await supabase
         .from("users")
-        .select("id, full_name, email, phone, role_id, active, roles(code, name)")
+        .select(
+          "id, full_name, email, phone, role_id, active, roles(code, name)",
+        )
         .eq("auth_user_id", authUserId)
         .maybeSingle();
 
@@ -99,7 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userData = data as unknown as UserDbResponse;
 
-      const roleRel = Array.isArray(userData.roles) ? userData.roles[0] : userData.roles;
+      const roleRel = Array.isArray(userData.roles)
+        ? userData.roles[0]
+        : userData.roles;
 
       const appUser: AppUser = {
         id: userData.id,
@@ -141,10 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data: rolePermissions, error: permissionsError } = await supabase
-        .from("role_permissions")
-        .select("permissions(code)")
-        .eq("role_id", appUser.role_id);
+      const { data: rolePermissions, error: permissionsError } =
+        await supabase
+          .from("role_permissions")
+          .select("permissions(code)")
+          .eq("role_id", appUser.role_id);
 
       if (permissionsError) {
         setPerms(new Set());
@@ -154,7 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const codes = (rolePermissions ?? [])
-        .map((row) => (row as unknown as { permissions?: { code?: string } }).permissions?.code)
+        .map(
+          (row) =>
+            (row as unknown as { permissions?: { code?: string } }).permissions
+              ?.code,
+        )
         .filter((code): code is string => Boolean(code));
 
       setPerms(new Set(codes));
@@ -167,7 +176,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initialize = async () => {
-      const { data, error: sessionError } = await supabase.auth.getSession();
+      const { data, error: sessionError } =
+        await supabase.auth.getSession();
 
       if (!mounted) return;
 
@@ -205,7 +215,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        * Avoid database queries directly inside the Supabase auth event
        * callback. Schedule profile loading instead.
        */
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED"
+      ) {
         setTimeout(() => {
           if (!mounted) return;
           void loadProfile(nextSession?.user?.id);
@@ -226,10 +240,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const normalizedEmail = email.trim().toLowerCase();
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
+    const { error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
 
     if (signInError) {
       throw new Error(signInError.message);
@@ -247,7 +262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearProfile]);
 
   const refresh = useCallback(async () => {
-    const { data, error: sessionError } = await supabase.auth.getSession();
+    const { data, error: sessionError } =
+      await supabase.auth.getSession();
 
     if (sessionError) {
       setError(sessionError.message);
@@ -288,7 +304,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, permissionsReady, isSuperAdmin, perms],
   );
 
-  const canModule = useCallback((module: string) => can(`${module}.read`), [can]);
+  const canModule = useCallback(
+    (module: string) => can(`${module}.read`),
+    [can],
+  );
 
   const value = useMemo<AuthCtx>(
     () => ({

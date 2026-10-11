@@ -2,16 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import {
-  Empty,
-  ErrorBox,
-  ExportButtons,
-  Field,
-  Loading,
-  PageHeader,
-  StatCard,
-  PermissionGate,
-} from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -49,15 +40,9 @@ export const Route = createFileRoute("/_authenticated/expenses")({
   head: () => ({
     meta: [
       { title: "Expenses — ROSHAN Medical Center" },
-      {
-        name: "description",
-        content: "Record and review operating expenses by category and date.",
-      },
+      { name: "description", content: "Record and review operating expenses by category and date." },
       { property: "og:title", content: "Expenses — ROSHAN Medical Center" },
-      {
-        property: "og:description",
-        content: "Record and review operating expenses by category and date.",
-      },
+      { property: "og:description", content: "Record and review operating expenses by category and date." },
     ],
   }),
   component: ExpensesPage,
@@ -111,11 +96,7 @@ function ExpensesPageInner() {
       if (error) throw new Error(error.message);
       return null;
     },
-    {
-      invalidate: [["expenses", month], ["acc-expenses"]],
-      successMessage: t("saved"),
-      onDone: () => setOpen(false),
-    },
+    { invalidate: [["expenses", month], ["acc-expenses"]], successMessage: t("saved"), onDone: () => setOpen(false) },
   );
 
   const rows = (list.data ?? []) as Row[];
@@ -125,13 +106,7 @@ function ExpensesPageInner() {
   return (
     <div>
       <PageHeader title={t("expenses")} subtitle={month}>
-        <Input
-          type="month"
-          dir="ltr"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          className="w-40"
-        />
+        <Input type="month" dir="ltr" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
         <ExportButtons rows={rows} filename={`roshan-expenses-${month}`} />
         {can("accounting.create") ? (
           <Dialog open={open} onOpenChange={setOpen}>
@@ -146,10 +121,7 @@ function ExpensesPageInner() {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={t("category")}>
-                  <Select
-                    value={form.category}
-                    onValueChange={(v) => setForm({ ...form, category: v })}
-                  >
+                  <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -190,10 +162,7 @@ function ExpensesPageInner() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button
-                  disabled={create.isPending}
-                  onClick={() => create.mutate(undefined as never)}
-                >
+                <Button disabled={create.isPending} onClick={() => create.mutate(undefined as never)}>
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>

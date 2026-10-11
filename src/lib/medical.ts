@@ -35,7 +35,11 @@ export function calcGestationalDays(lmp?: string | null): number | null {
   const d = parseDateOnly(lmp);
   if (!d) return null;
   const today = new Date();
-  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayUtc = Date.UTC(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
   const days = Math.floor((todayUtc - d.getTime()) / (1000 * 60 * 60 * 24));
   return days >= 0 ? days : null;
 }
@@ -88,13 +92,7 @@ export function formatDateTime(value?: string | null): string {
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
 export const MARITAL = ["single", "married", "divorced", "widowed"] as const;
 export const EXPENSE_CATEGORIES = [
-  "salaries",
-  "rent",
-  "electricity",
-  "water",
-  "internet",
-  "maintenance",
-  "other",
+  "salaries", "rent", "electricity", "water", "internet", "maintenance", "other"
 ] as const;
 
 export type ResultFlag = "low" | "high" | "normal";

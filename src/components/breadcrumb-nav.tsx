@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { flatNavItems, HOME_ITEM } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { isNavItemActive } from "@/lib/nav-active";
 
 /**
  * A single-level trail (Home / Current section) rather than a full path
@@ -25,23 +26,17 @@ export function BreadcrumbNav() {
   const items = flatNavItems().filter((item) => can(item.perm));
   const current =
     items.find((item) => location.pathname === item.to) ??
-    items.find((item) => location.pathname.startsWith(`${item.to}/`));
+    items.find((item) => isNavItemActive(location.pathname, item.to));
 
   if (!current) return null;
 
   const onSection = location.pathname === current.to;
 
   return (
-    <nav
-      className="no-print flex min-w-0 items-center gap-1 text-sm text-muted-foreground"
-      aria-label={t("navigation")}
-    >
+    <nav className="no-print flex min-w-0 items-center gap-1 text-sm text-muted-foreground" aria-label={t("navigation")}>
       {can(HOME_ITEM.perm) ? (
         <>
-          <Link
-            to={HOME_ITEM.to}
-            className="hidden rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline"
-          >
+          <Link to={HOME_ITEM.to} className="hidden rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline">
             {t(HOME_ITEM.key)}
           </Link>
           <Chevron className="hidden size-3.5 shrink-0 sm:inline" aria-hidden />
@@ -57,3 +52,4 @@ export function BreadcrumbNav() {
     </nav>
   );
 }
+

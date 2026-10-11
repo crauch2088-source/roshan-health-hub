@@ -1,13 +1,5 @@
 import { useLocation } from "@tanstack/react-router";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 const FAVORITES_KEY = "roshan:nav:favorites";
 const RECENTS_KEY = "roshan:nav:recents";
@@ -50,24 +42,18 @@ function writeList<T>(key: string, value: T) {
  */
 export function NavPreferencesProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const [favorites, setFavorites] = useState<string[]>(() =>
-    readList(FAVORITES_KEY, [] as string[]),
-  );
-  const [recents, setRecents] = useState<RecentPage[]>(() =>
-    readList(RECENTS_KEY, [] as RecentPage[]),
-  );
+  const [favorites, setFavorites] = useState<string[]>(() => readList(FAVORITES_KEY, [] as string[]));
+  const [recents, setRecents] = useState<RecentPage[]>(() => readList(RECENTS_KEY, [] as RecentPage[]));
 
   useEffect(() => {
     const to = location.pathname;
     setRecents((prev) => {
-      const next = [{ to, visitedAt: Date.now() }, ...prev.filter((r) => r.to !== to)].slice(
-        0,
-        MAX_RECENTS,
-      );
+      const next = [{ to, visitedAt: Date.now() }, ...prev.filter((r) => r.to !== to)].slice(0, MAX_RECENTS);
       writeList(RECENTS_KEY, next);
       return next;
     });
     // Only the path should re-trigger this, not a new `location` object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   const toggleFavorite = useCallback((to: string) => {

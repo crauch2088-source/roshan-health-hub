@@ -2,13 +2,12 @@ const FLAG_PREFIX = "roshan:quick-action:";
 
 export type QuickActionKey = "new_patient" | "new_visit" | "new_invoice" | "new_lab_order";
 
-export const QUICK_ACTIONS: { key: QuickActionKey; labelKey: string; to: string; icon: string }[] =
-  [
-    { key: "new_patient", labelKey: "new_patient", to: "/patients", icon: "UserRound" },
-    { key: "new_visit", labelKey: "new_visit", to: "/visits", icon: "ClipboardList" },
-    { key: "new_invoice", labelKey: "new_invoice", to: "/billing", icon: "Receipt" },
-    { key: "new_lab_order", labelKey: "new_lab_order", to: "/lab", icon: "FlaskConical" },
-  ];
+export const QUICK_ACTIONS: { key: QuickActionKey; labelKey: string; to: string; icon: string }[] = [
+  { key: "new_patient", labelKey: "new_patient", to: "/patients", icon: "UserRound" },
+  { key: "new_visit", labelKey: "new_visit", to: "/visits", icon: "ClipboardList" },
+  { key: "new_invoice", labelKey: "new_invoice", to: "/billing", icon: "Receipt" },
+  { key: "new_lab_order", labelKey: "new_lab_order", to: "/lab", icon: "FlaskConical" },
+];
 
 /**
  * The command palette navigates to a plain route (e.g. /patients) — it has
