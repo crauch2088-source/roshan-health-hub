@@ -10,11 +10,8 @@ import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
+import { isNavItemActive } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
-
-function isActive(pathname: string, to: string): boolean {
-  return pathname === to || pathname.startsWith(`${to}/`);
-}
 
 function RailLink({
   item,
@@ -39,19 +36,19 @@ function RailLink({
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group/link relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium outline-none transition-colors duration-150",
+        "group/link relative flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium outline-none transition-[background-color,color,transform] duration-150 active:translate-y-px",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
         collapsed && "justify-center px-2",
         hasTrailing && "pe-9",
         active
-          ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary-foreground"
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-xs"
           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-1 start-0 w-[3px] rounded-full bg-sidebar-primary transition-opacity duration-150",
+          "absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-sidebar-primary transition-opacity duration-150",
           active ? "opacity-100" : "opacity-0",
         )}
       />
@@ -100,7 +97,7 @@ export function NavRail({
   onToggleCollapsed: () => void;
   onNavigate?: () => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const location = useLocation();
   const { favorites, toggleFavorite } = useNavPreferences();
@@ -117,7 +114,7 @@ export function NavRail({
             <RailLink
               item={HOME_ITEM}
               collapsed={collapsed}
-              active={isActive(location.pathname, HOME_ITEM.to)}
+              active={isNavItemActive(location.pathname, HOME_ITEM.to)}
               onNavigate={onNavigate}
             />
 
@@ -138,7 +135,7 @@ export function NavRail({
                     key={`fav-${item.to}`}
                     item={item}
                     collapsed={collapsed}
-                    active={isActive(location.pathname, item.to)}
+                    active={isNavItemActive(location.pathname, item.to)}
                     onNavigate={onNavigate}
                   />
                 ))}
@@ -164,7 +161,7 @@ export function NavRail({
                         <RailLink
                           item={item}
                           collapsed={collapsed}
-                          active={isActive(location.pathname, item.to)}
+                           active={isNavItemActive(location.pathname, item.to)}
                           onNavigate={onNavigate}
                           trailing={
                             item.favoritable !== false ? (
@@ -176,7 +173,7 @@ export function NavRail({
                                   toggleFavorite(item.to);
                                 }}
                                 className={cn(
-                                  "flex size-6 shrink-0 items-center justify-center rounded-md transition-opacity",
+                                   "flex size-8 shrink-0 items-center justify-center rounded-md transition-[opacity,background-color] hover:bg-sidebar-accent",
                                   pinned
                                     ? "opacity-100 text-amber-400"
                                     : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 hover:!opacity-100",
@@ -207,10 +204,10 @@ export function NavRail({
             aria-label={collapsed ? t("expand_sidebar") : t("collapse_sidebar")}
           >
             {collapsed ? (
-              <ChevronsRight className="size-4" />
+              lang === "ar" ? <ChevronsLeft className="size-4" /> : <ChevronsRight className="size-4" />
             ) : (
               <>
-                <ChevronsLeft className="size-4" /> {t("collapse_sidebar")}
+                {lang === "ar" ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />} {t("collapse_sidebar")}
               </>
             )}
           </Button>
