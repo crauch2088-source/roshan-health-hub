@@ -58,7 +58,7 @@ function PinToggle({ pinned, onToggle, label }: { pinned: boolean; onToggle: () 
         onToggle();
       }}
       aria-label={label}
-      className="ms-auto shrink-0 rounded p-0.5 opacity-60 hover:opacity-100"
+      className="ms-auto flex size-8 shrink-0 items-center justify-center rounded-md opacity-60 transition-colors hover:bg-accent hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
     >
       <Star className={cn("size-3.5", pinned ? "fill-current text-amber-500" : "text-muted-foreground")} />
     </button>
@@ -151,23 +151,23 @@ export function GlobalSearchDialog({
         if (!next) reset();
       }}
     >
-      <DialogContent className="max-w-xl overflow-hidden p-0" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <DialogContent className="top-[8dvh] max-h-[84dvh] max-w-2xl translate-y-0 overflow-hidden p-0 sm:top-[12dvh]" dir={lang === "ar" ? "rtl" : "ltr"}>
         <DialogTitle className="sr-only">{t("search_everywhere")}</DialogTitle>
-        <Command shouldFilter={false} className="flex h-full max-h-[70vh] flex-col overflow-hidden">
-          <div className="flex items-center gap-2 border-b px-3">
-            <Search className="size-4 shrink-0 opacity-50" />
+        <Command shouldFilter={false} className="flex h-full max-h-[76dvh] flex-col overflow-hidden rounded-lg">
+          <div className="flex items-center gap-3 border-b px-4">
+            <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("search_placeholder")}
-              className="flex h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              className="flex h-14 w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
             />
             {query.length > 0 && (
               <button
                 type="button"
                 onClick={reset}
-                className="rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                 className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 aria-label={t("clear")}
               >
                 <X className="size-4" />
@@ -175,7 +175,7 @@ export function GlobalSearchDialog({
             )}
           </div>
 
-          <CommandList className="max-h-[60vh]">
+          <CommandList className="max-h-[calc(76dvh-7rem)] px-1 py-1">
             {!hasQuery && (
               <>
                 {favoritePages.length > 0 && (
@@ -325,7 +325,7 @@ export function GlobalSearchDialog({
             )}
           </CommandList>
 
-          <div className="flex items-center justify-between border-t px-3 py-2 text-[11px] text-muted-foreground">
+           <div className="hidden items-center justify-between border-t px-4 py-2 text-[11px] text-muted-foreground sm:flex">
             <span>{t("type_to_search")}</span>
             <span className="flex items-center gap-1">
               <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono">↑↓</kbd>

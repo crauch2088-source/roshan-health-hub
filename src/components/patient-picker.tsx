@@ -88,7 +88,7 @@ export function PatientPicker({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between font-normal"
+          className="w-full justify-between font-normal text-start"
         >
           {value ? (
             <span className="truncate">
@@ -97,7 +97,7 @@ export function PatientPicker({
           ) : (
             <span className="text-muted-foreground">{placeholder ?? t("search_patient_placeholder")}</span>
           )}
-          <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
+           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" aria-hidden />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -106,7 +106,7 @@ export function PatientPicker({
         collisionPadding={12}
         // Explicit pixel width from trigger; fall back to full usable mobile width.
         style={triggerWidth ? { width: triggerWidth } : undefined}
-        className="max-w-[calc(100vw-1.5rem)] p-0"
+        className="max-w-[calc(100vw-1.5rem)] overflow-hidden p-0 shadow-xl"
         onOpenAutoFocus={(e) => {
           // Focus the search input without letting the parent Dialog reclaim focus.
           e.preventDefault();
@@ -166,7 +166,7 @@ export function PatientPicker({
                       setTerm("");
                     }}
                   >
-                    <Check className={cn("me-2 size-4", value?.id === s(p, "id") ? "opacity-100" : "opacity-0")} />
+                     <Check aria-hidden className={cn("me-2 size-4", value?.id === s(p, "id") ? "opacity-100" : "opacity-0")} />
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{s(p, "full_name")}</span>
                       <span className="truncate text-xs text-muted-foreground" dir="ltr">
@@ -252,10 +252,10 @@ export function PatientSnapshotStrip({ patientId, currency }: { patientId: strin
   const { t } = useLang();
   const snap = usePatientSnapshot(patientId);
 
-  if (snap.isLoading) return null;
+  if (snap.isLoading) return <div className="mt-2 h-9 animate-pulse rounded-md bg-muted/60" aria-hidden />;
 
   return (
-    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 rounded-md border bg-muted/40 px-3 py-2 text-xs">
+    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-xs">
       <span>
         <span className="text-muted-foreground">{t("previous_visits")}: </span>
         <span className="font-medium" dir="ltr">
