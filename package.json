@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:guard": "node --test --experimental-strip-types tests/role-guard.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
