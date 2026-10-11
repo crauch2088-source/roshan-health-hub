@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Languages, Search } from "lucide-react";
+import { LogOut, Languages, Search, UserRound } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -11,18 +11,19 @@ import { Separator } from "@/components/ui/separator";
 import { NavPreferencesProvider } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 const RAIL_COLLAPSED_KEY = "roshan:nav:rail-collapsed";
 
 function Brand({ collapsed }: { collapsed: boolean }) {
   const { t } = useLang();
   return (
-    <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-3.5">
-      <img src="/roshan-logo.png" alt={t("app_name")} className="size-9 shrink-0 rounded-md bg-white object-contain p-0.5" />
+    <div className={cn("flex h-16 items-center gap-2.5 px-3", collapsed && "justify-center px-2")}>
+      <img src="/roshan-logo.png" alt={t("app_name")} className="size-9 shrink-0 rounded-md bg-sidebar-accent object-contain p-0.5" />
       {!collapsed ? (
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-sidebar-foreground">{t("app_name")}</p>
-          <p className="truncate text-[11px] text-sidebar-foreground/60">ERP / EMR</p>
+          <p className="truncate text-sm font-bold text-sidebar-foreground">ROSHAN</p>
+          <p className="truncate text-[11px] text-sidebar-foreground/60">{t("app_name")}</p>
         </div>
       ) : null}
     </div>
@@ -33,10 +34,10 @@ function SearchTrigger() {
   const { t } = useLang();
   const { setOpen } = useCommandPalette();
   return (
-    <Button variant="outline" size="sm" className="hidden gap-2 text-muted-foreground sm:flex" onClick={() => setOpen(true)}>
+    <Button variant="outline" size="sm" className="hidden min-w-40 justify-between gap-2 border-border/70 bg-background/70 text-muted-foreground shadow-xs sm:flex" onClick={() => setOpen(true)}>
       <Search className="size-4" />
       <span className="hidden md:inline">{t("search_everywhere")}</span>
-      <kbd className="ms-1 hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] md:inline">Ctrl K</kbd>
+      <kbd className="ms-auto hidden rounded border border-border/70 bg-muted/70 px-1.5 py-0.5 font-mono text-[10px] md:inline">Ctrl K</kbd>
     </Button>
   );
 }
@@ -91,11 +92,13 @@ function Shell({ children }: { children: ReactNode }) {
           <NavRail collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
         </div>
 
-        <div className={collapsed ? "border-t border-sidebar-border p-2" : "border-t border-sidebar-border p-3"}>
+        <div className={collapsed ? "border-t border-sidebar-border/70 p-2" : "border-t border-sidebar-border/70 p-3"}>
           {!collapsed ? (
             <>
-              <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.full_name ?? "—"}</p>
-              <p className="truncate text-xs text-sidebar-foreground/60">{user?.role_name ?? ""}</p>
+              <div className="mb-2 flex min-w-0 items-center gap-2.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-accent text-sidebar-foreground"><UserRound className="size-4" /></span>
+                <div className="min-w-0"><p className="truncate text-sm font-medium text-sidebar-foreground">{user?.full_name ?? "—"}</p><p className="truncate text-xs text-sidebar-foreground/60">{user?.role_name ?? ""}</p></div>
+              </div>
             </>
           ) : null}
           <Button
@@ -109,8 +112,8 @@ function Shell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
-        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-card/70 sm:gap-3 sm:px-4">
+       <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+         <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border/70 bg-background/90 px-3 backdrop-blur-xl sm:gap-3 sm:px-5">
           <img src="/roshan-logo.png" alt="" className="size-8 shrink-0 object-contain lg:hidden" />
           <BreadcrumbNav />
           <div className="min-w-0 flex-1" />
@@ -125,7 +128,7 @@ function Shell({ children }: { children: ReactNode }) {
           </Button>
         </header>
 
-        <main id="main-content" className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+         <main id="main-content" className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 p-3 sm:p-5 lg:p-7">{children}</main>
       </div>
 
 
@@ -135,10 +138,10 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 function cnRail(collapsed: boolean): string {
-  return [
-    "no-print sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar lg:flex transition-[width] duration-200 ease-in-out",
-    collapsed ? "w-[4.25rem]" : "w-64",
-  ].join(" ");
+  return cn(
+    "no-print sticky top-0 hidden h-dvh shrink-0 flex-col border-e border-sidebar-border/60 bg-sidebar lg:flex transition-[width] duration-200 ease-out",
+    collapsed ? "w-[4.25rem]" : "w-60",
+  );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

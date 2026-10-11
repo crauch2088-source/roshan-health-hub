@@ -7,6 +7,7 @@ import { HOME_ITEM, NAV_GROUPS } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
+import { isNavItemActive } from "@/lib/nav-active";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
@@ -20,10 +21,6 @@ const PRIMARY_ICONS: Record<string, typeof UserRound> = {
   "/pharmacy": Pill,
 };
 
-function isActive(pathname: string, to: string): boolean {
-  return pathname === to || pathname.startsWith(`${to}/`);
-}
-
 export function MobileBottomNav() {
   const { t, lang } = useLang();
   const { can } = useAuth();
@@ -35,9 +32,17 @@ export function MobileBottomNav() {
 
   const allItems = [HOME_ITEM, ...NAV_GROUPS.flatMap((g) => g.items)];
   const primary = PRIMARY_MOBILE_ROUTES.map((to) => allItems.find((i) => i.to === to)).filter(
-    (i): i is NonNullable<typeof i> => Boolean(i) && can(i!.perm),
+    (item): item is (typeof allItems)[number] => Boolean(item && can(item.perm)),
   );
-  const availableActions = QUICK_ACTIONS.filter((a) => can(allItems.find((i) => i.to === a.to)?.perm ?? ""));
+  const availableActions = QUICK_ACTIONS.filter((action) => {
+    const destination = allItems.find((item) => item.to === action.to);
+    return destination ? can(destination.perm) : false;
+  });
+  const moreActive = NAV_GROUPS.some((group) =>
+    group.items.some(
+      (item) => !PRIMARY_MOBILE_ROUTES.includes(item.to) && can(item.perm) && isNavItemActive(location.pathname, item.to),
+    ),
+  );
 
   return (
     <>
@@ -45,13 +50,13 @@ export function MobileBottomNav() {
           reuses the exact same armQuickAction() flow as the desktop
           command palette's Quick Actions group (single implementation). */}
       {availableActions.length > 0 ? (
-        <div className="no-print fixed inset-x-0 bottom-[68px] z-30 flex justify-end px-4 lg:hidden">
+        <div className="no-print fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 flex justify-end px-4 lg:hidden">
           <Sheet open={fabOpen} onOpenChange={setFabOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
                 aria-label={t("quick_actions")}
-                className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+                 className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 active:scale-95"
               >
                 <Plus className="size-6" />
               </button>
@@ -65,7 +70,7 @@ export function MobileBottomNav() {
                     <button
                       key={action.key}
                       type="button"
-                      className="flex min-h-14 items-center gap-2.5 rounded-xl border p-3 text-start text-sm font-medium hover:bg-accent active:scale-[0.98]"
+                       className="flex min-h-14 items-center gap-2.5 rounded-lg border border-border/70 p-3 text-start text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98]"
                       onClick={() => {
                         armQuickAction(action.key);
                         setFabOpen(false);
@@ -84,28 +89,28 @@ export function MobileBottomNav() {
       ) : null}
 
       <nav
-        className="no-print fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-card/95 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-5 items-center border-t border-border/70 bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_var(--foreground)] backdrop-blur-xl lg:hidden"
         aria-label={t("navigation")}
       >
         {primary.map((item) => {
           const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
-          const active = isActive(location.pathname, item.to);
+           const active = isNavItemActive(location.pathname, item.to);
           return (
             <Link
               key={item.to}
               to={item.to}
               aria-current={active ? "page" : undefined}
-              className="flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] font-medium"
+               className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             >
               <span
                 className={cn(
-                  "flex size-9 items-center justify-center rounded-full transition-colors",
-                  active ? "bg-primary/15 text-primary" : "text-muted-foreground",
+                   "flex h-7 w-10 items-center justify-center rounded-full transition-colors",
+                   active ? "bg-primary/12 text-primary" : "text-muted-foreground",
                 )}
               >
                 <Icon className="size-5" />
               </span>
-              <span className={active ? "text-primary" : "text-muted-foreground"}>{t(item.key)}</span>
+               <span className={cn("max-w-full truncate", active ? "text-primary" : "text-muted-foreground")}>{t(item.key)}</span>
             </Link>
           );
         })}
@@ -115,9 +120,10 @@ export function MobileBottomNav() {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] font-medium text-muted-foreground"
+               aria-current={moreActive ? "page" : undefined}
+               className={cn("flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40", moreActive ? "text-primary" : "text-muted-foreground")}
             >
-              <span className="flex size-9 items-center justify-center rounded-full">
+               <span className={cn("flex h-7 w-10 items-center justify-center rounded-full", moreActive && "bg-primary/12")}>
                 <Grid2x2 className="size-5" />
               </span>
               {t("more")}
@@ -137,7 +143,7 @@ export function MobileBottomNav() {
                     <div className="grid grid-cols-4 gap-2">
                       {items.map((item) => {
                         const Icon = getNavIcon(item.icon);
-                        const active = isActive(location.pathname, item.to);
+                         const active = isNavItemActive(location.pathname, item.to);
                         return (
                           <Link
                             key={item.to}
@@ -145,7 +151,7 @@ export function MobileBottomNav() {
                             onClick={() => setMoreOpen(false)}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                              "flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]",
+                               "flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border border-border/70 p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]",
                               active && "border-primary/40 bg-primary/10 text-primary",
                             )}
                           >

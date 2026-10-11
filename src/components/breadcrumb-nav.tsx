@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { flatNavItems, HOME_ITEM } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { isNavItemActive } from "@/lib/nav-active";
 
 /**
  * A single-level trail (Home / Current section) rather than a full path
@@ -25,7 +26,7 @@ export function BreadcrumbNav() {
   const items = flatNavItems().filter((item) => can(item.perm));
   const current =
     items.find((item) => location.pathname === item.to) ??
-    items.find((item) => location.pathname.startsWith(`${item.to}/`));
+    items.find((item) => isNavItemActive(location.pathname, item.to));
 
   if (!current) return null;
 
