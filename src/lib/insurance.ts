@@ -1,7 +1,13 @@
 import { rpc } from "./db";
 
 export type ClaimStatus =
-  "draft" | "submitted" | "under_review" | "approved" | "partially_approved" | "rejected" | "paid";
+  | "draft"
+  | "submitted"
+  | "under_review"
+  | "approved"
+  | "partially_approved"
+  | "rejected"
+  | "paid";
 
 export const CLAIM_STATUSES: ClaimStatus[] = [
   "draft",

@@ -41,10 +41,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   billing: { ar: "الفواتير", en: "Billing" },
   accounting: { ar: "المحاسبة", en: "Accounting" },
   finance_hub: { ar: "المركز المالي", en: "Finance Hub" },
-  finance_hub_subtitle: {
-    ar: "الخزنة، التحصيل، المستحقات وديون الموردين",
-    en: "Cashbox, collections, receivables and supplier debts",
-  },
+  finance_hub_subtitle: { ar: "الخزنة، التحصيل، المستحقات وديون الموردين", en: "Cashbox, collections, receivables and supplier debts" },
   finance_overview: { ar: "نظرة عامة", en: "Overview" },
   cashbox: { ar: "الخزنة", en: "Cashbox" },
   receivables: { ar: "مستحقات العملاء", en: "Receivables" },
@@ -73,10 +70,7 @@ const dict: Record<string, { ar: string; en: string }> = {
 
   // insurance — Phase 5
   insurance: { ar: "التأمين", en: "Insurance" },
-  insurance_subtitle: {
-    ar: "شركات التأمين، الخطط، عضوية المرضى والمطالبات",
-    en: "Companies, plans, patient membership, and claims",
-  },
+  insurance_subtitle: { ar: "شركات التأمين، الخطط، عضوية المرضى والمطالبات", en: "Companies, plans, patient membership, and claims" },
   insurance_companies: { ar: "شركات التأمين", en: "Insurance companies" },
   insurance_plans: { ar: "خطط التأمين", en: "Insurance plans" },
   patient_insurance: { ar: "تأمين المريض", en: "Patient insurance" },
@@ -102,10 +96,7 @@ const dict: Record<string, { ar: string; en: string }> = {
 
   // Phase 6 — analytics
   analytics: { ar: "التحليلات", en: "Analytics" },
-  analytics_subtitle: {
-    ar: "اتجاهات الإيرادات، الصيدلية والأداء السريري",
-    en: "Revenue, pharmacy, and clinical performance trends",
-  },
+  analytics_subtitle: { ar: "اتجاهات الإيرادات، الصيدلية والأداء السريري", en: "Revenue, pharmacy, and clinical performance trends" },
   month: { ar: "الشهر", en: "Month" },
   revenue_12mo: { ar: "الإيرادات (12 شهراً)", en: "Revenue (12mo)" },
   expenses_12mo: { ar: "المصروفات (12 شهراً)", en: "Expenses (12mo)" },
@@ -142,14 +133,8 @@ const dict: Record<string, { ar: string; en: string }> = {
   cash_out: { ar: "خارج الخزنة", en: "Cash out" },
   deposit: { ar: "إيداع", en: "Deposit" },
   withdrawal: { ar: "سحب", en: "Withdrawal" },
-  invalid_amount: {
-    ar: "أدخل مبلغاً صحيحاً أكبر من صفر",
-    en: "Enter a valid amount greater than zero",
-  },
-  payment_exceeds_balance: {
-    ar: "المبلغ يتجاوز الرصيد المستحق",
-    en: "Payment exceeds the outstanding balance",
-  },
+  invalid_amount: { ar: "أدخل مبلغاً صحيحاً أكبر من صفر", en: "Enter a valid amount greater than zero" },
+  payment_exceeds_balance: { ar: "المبلغ يتجاوز الرصيد المستحق", en: "Payment exceeds the outstanding balance" },
   refresh: { ar: "تحديث", en: "Refresh" },
   type: { ar: "النوع", en: "Type" },
   expenses: { ar: "المصروفات", en: "Expenses" },
@@ -166,19 +151,9 @@ const dict: Record<string, { ar: string; en: string }> = {
   clinical: { ar: "السريري", en: "Clinical" },
   finance: { ar: "المالية", en: "Finance" },
   administration: { ar: "الإدارة", en: "Administration" },
-  // nav groups (Phase 20) — the old "finance" group had grown to 8 items
-  // mixing billing, accounting, reports, analytics and insurance together;
-  // split into its own reporting group, and insurance/pharmacy/lab (each
-  // previously a separate top-level group) now share one clinical-services
-  // group, matching how those teams actually work day to day.
-  clinical_services: { ar: "الخدمات السريرية", en: "Clinical services" },
-  reporting: { ar: "التقارير", en: "Reporting" },
 
   // navigation shell (Phase 1 + 2)
-  search_placeholder: {
-    ar: "بحث عن مريض، زيارة، تحليل أو دواء…",
-    en: "Search patients, visits, labs, medicines…",
-  },
+  search_placeholder: { ar: "بحث عن مريض، زيارة، تحليل أو دواء…", en: "Search patients, visits, labs, medicines…" },
   search_everywhere: { ar: "بحث شامل", en: "Search everywhere" },
   no_results: { ar: "لا توجد نتائج", en: "No results found" },
   type_to_search: { ar: "ابدأ الكتابة للبحث…", en: "Start typing to search…" },
@@ -258,10 +233,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   national_id: { ar: "الرقم الوطني", en: "National ID" },
   register_patient: { ar: "تسجيل مريض", en: "Register patient" },
   patient: { ar: "المريض", en: "Patient" },
-  search_patient_placeholder: {
-    ar: "ابحث بالاسم أو الرقم الطبي أو الهاتف أو الرقم الوطني",
-    en: "Search by name, MRN, phone or national ID",
-  },
+  search_patient_placeholder: { ar: "ابحث بالاسم أو الرقم الطبي أو الهاتف أو الرقم الوطني", en: "Search by name, MRN, phone or national ID" },
   add_new_patient: { ar: "إضافة مريض جديد", en: "Add new patient" },
   duplicate_patient_hint: {
     ar: "تأكد من عدم تسجيل هذا المريض من قبل قبل إنشاء سجل جديد.",
@@ -379,7 +351,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   select_medicine: { ar: "اختر الدواء", en: "Select medicine" },
   invalid_quantity: { ar: "كمية غير صحيحة", en: "Invalid quantity" },
   legacy_receive_hint: {
-    ar: 'لتتبع كامل للتشغيلة وتاريخ الانتهاء، استخدم تبويب "التشغيلات" بدلاً من ذلك.',
+    ar: "لتتبع كامل للتشغيلة وتاريخ الانتهاء، استخدم تبويب \"التشغيلات\" بدلاً من ذلك.",
     en: "For full batch and expiry tracking, use the Batches tab instead.",
   },
   all: { ar: "الكل", en: "All" },
@@ -402,10 +374,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   expiry_report: { ar: "تقرير انتهاء الصلاحية", en: "Expiry report" },
   low_stock_report: { ar: "تقرير المخزون المنخفض", en: "Low stock report" },
   batch_inventory_report: { ar: "تقرير مخزون التشغيلات", en: "Batch inventory report" },
-  pharmacy_expiry_threshold: {
-    ar: "حد التنبيه لانتهاء الصلاحية (أيام)",
-    en: "Expiry alert threshold (days)",
-  },
+  pharmacy_expiry_threshold: { ar: "حد التنبيه لانتهاء الصلاحية (أيام)", en: "Expiry alert threshold (days)" },
 
   // billing
   invoice: { ar: "فاتورة", en: "Invoice" },
@@ -555,7 +524,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const t = useCallback((k: string) => dict[k]?.[lang] ?? k, [lang]);
+  const t = useCallback(
+    (k: string) => dict[k]?.[lang] ?? k,
+    [lang],
+  );
 
   return (
     <LangCtx.Provider

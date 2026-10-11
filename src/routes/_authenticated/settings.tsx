@@ -69,9 +69,7 @@ function SettingsPageInner() {
         setting_value: form[k] ?? "",
         is_public: true,
       }));
-      const { error } = await supabase
-        .from("system_settings")
-        .upsert(payload, { onConflict: "setting_key" });
+      const { error } = await supabase.from("system_settings").upsert(payload, { onConflict: "setting_key" });
       if (error) throw new Error(error.message);
       return null;
     },
@@ -89,8 +87,7 @@ function SettingsPageInner() {
   }
 
   if (list.isLoading) return <Loading />;
-  const set = (k: string) => (e: { target: { value: string } }) =>
-    setForm({ ...form, [k]: e.target.value });
+  const set = (k: string) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
 
   return (
     <div className="max-w-2xl">
@@ -118,19 +115,10 @@ function SettingsPageInner() {
             <Input dir="ltr" value={form["currency"] ?? ""} onChange={set("currency")} />
           </Field>
           <Field label={t("tax_percent")}>
-            <Input
-              type="number"
-              dir="ltr"
-              value={form["tax_percent"] ?? "0"}
-              onChange={set("tax_percent")}
-            />
+            <Input type="number" dir="ltr" value={form["tax_percent"] ?? "0"} onChange={set("tax_percent")} />
           </Field>
           <Field label={t("invoice_footer")}>
-            <Textarea
-              rows={2}
-              value={form["invoice_footer"] ?? ""}
-              onChange={set("invoice_footer")}
-            />
+            <Textarea rows={2} value={form["invoice_footer"] ?? ""} onChange={set("invoice_footer")} />
           </Field>
         </CardContent>
       </Card>
@@ -153,10 +141,7 @@ function SettingsPageInner() {
       </Card>
 
       <div className="mt-4">
-        <Button
-          disabled={!can("settings.update") || save.isPending}
-          onClick={() => save.mutate(undefined as never)}
-        >
+        <Button disabled={!can("settings.update") || save.isPending} onClick={() => save.mutate(undefined as never)}>
           {save.isPending ? t("saving") : t("save")}
         </Button>
       </div>

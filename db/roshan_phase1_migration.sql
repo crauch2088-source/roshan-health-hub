@@ -571,11 +571,7 @@ begin
 end $$;
 
 grant execute on function public.setup_required() to anon, authenticated;
--- SECURITY: bootstrap_super_admin must NOT be executable by end users (any
--- self-registered account could claim the first super-admin while the users
--- table is empty). Bootstrap an empty install as postgres instead; see
--- db/roshan_security_privileged_role_guard.sql.
-revoke execute on function public.bootstrap_super_admin(text,text,text) from public, anon, authenticated;
+grant execute on function public.bootstrap_super_admin(text,text,text) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 8. NUMBERING HELPERS

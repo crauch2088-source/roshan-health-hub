@@ -3,20 +3,27 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 type TableProps = React.HTMLAttributes<HTMLTableElement> & {
+  /** When true, thead sticks to the top of the scroll container. */
+  stickyHeader?: boolean;
   /** compact = tighter row height for dense lists */
   density?: "comfortable" | "compact";
 };
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, density = "comfortable", ...props }, ref) => (
+  ({ className, stickyHeader = true, density = "compact", ...props }, ref) => (
     <div
       className={cn(
-        "relative w-full overflow-auto",
-        density === "compact" && "[&_th]:h-8 [&_th]:px-2 [&_td]:p-1.5 [&_td]:text-[13px]",
+        "relative w-full overflow-auto overscroll-x-contain",
+        density === "compact" && "[&_th]:h-9 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2 [&_td]:text-[13px]",
       )}
       data-density={density}
     >
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+      <table
+        ref={ref}
+        className={cn("w-full caption-bottom text-sm tabular-nums", className)}
+        data-sticky-header={stickyHeader ? "true" : undefined}
+        {...props}
+      />
     </div>
   ),
 );
@@ -29,13 +36,7 @@ const TableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      // top-14 (3.5rem), not top-0: the app shell's own header is a fixed
-      // 56px bar (h-14) sticky at top-0 with a higher z-index. Every table
-      // in the app scrolls under that same header, so a table thead stuck
-      // at top-0 was rendering directly behind the app header instead of
-      // just below it - on any list long enough to scroll, the column
-      // labels disappeared under the top bar instead of staying visible.
-      "sticky top-14 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
+      "sticky top-0 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
       className,
     )}
     {...props}
@@ -68,13 +69,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        // Selected-row tint was 8% opacity - close to imperceptible next to
-        // the plain hover:bg-muted/50 state right above it in this same
-        // class list, so a "selected" row barely read differently from a
-        // merely-hovered one. Bumped the tint and added an inset ring so
-        // selection has its own unmistakable signal (Notion/Linear-style)
-        // instead of relying on a few percent of background opacity alone.
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/15 data-[state=selected]:hover:bg-primary/20 data-[state=selected]:ring-1 data-[state=selected]:ring-inset data-[state=selected]:ring-primary/30",
+        "border-b border-border/60 transition-colors hover:bg-accent/45 data-[state=selected]:bg-primary/10 data-[state=selected]:hover:bg-primary/15",
         className,
       )}
       {...props}
@@ -90,13 +85,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      // text-start, not text-left: the app is RTL in Arabic
-      // (document.documentElement.dir follows the language), but every
-      // table header in the app shares this component, and `text-left`
-      // doesn't respond to `dir` the way the logical `text-start` does.
-      // Column headers were staying left-aligned even on RTL screens,
-      // where they should read from the right like the rest of the row.
-      "h-10 px-2 text-start align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-10 px-3 text-start align-middle text-[11px] font-semibold uppercase text-muted-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}
@@ -111,7 +100,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "px-3 py-2.5 align-middle [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}

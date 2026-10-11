@@ -17,10 +17,7 @@ import { supabase } from "./supabase";
 
 /** Strips characters that would break a PostgREST `or(...)` filter string. */
 export function sanitizeTerm(term: string): string {
-  return term
-    .replace(/[,()%*\\"']/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return term.replace(/[,()%*\\"']/g, " ").replace(/\s+/g, " ").trim();
 }
 
 /** Debounces a fast-changing value (typing / scanning) for query keys. */
@@ -66,7 +63,10 @@ export async function searchPatientsPaged(opts: {
 }): Promise<PagedResponse> {
   const columns = opts.columns ?? PATIENT_LIST_COLUMNS;
   const base = () =>
-    supabase.from("patients").select(columns, { count: "exact" }).is("deleted_at", null);
+    supabase
+      .from("patients")
+      .select(columns, { count: "exact" })
+      .is("deleted_at", null);
 
   const term = sanitizeTerm(opts.term);
   if (!term) {
@@ -117,9 +117,10 @@ export function patientEmbeddedFilter<
 >(query: T, term: string): T {
   const clean = sanitizeTerm(term);
   if (!clean) return query;
-  return query.or(`mrn.ilike.%${clean}%,full_name.ilike.%${clean}%,phone.ilike.%${clean}%`, {
-    referencedTable: "patients",
-  });
+  return query.or(
+    `mrn.ilike.%${clean}%,full_name.ilike.%${clean}%,phone.ilike.%${clean}%`,
+    { referencedTable: "patients" },
+  );
 }
 
 /** Resolves a scanned barcode (or a code typed by hand) to one medicine. */

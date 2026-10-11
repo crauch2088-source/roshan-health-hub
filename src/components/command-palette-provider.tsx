@@ -68,6 +68,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [navigate, can]);
 
+
   return (
     <CommandPaletteContext.Provider value={{ open, setOpen }}>
       {children}

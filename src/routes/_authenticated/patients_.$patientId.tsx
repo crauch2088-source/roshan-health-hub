@@ -1,29 +1,8 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  CalendarDays,
-  ClipboardList,
-  FlaskConical,
-  Plus,
-  Receipt,
-  ShieldCheck,
-  Stethoscope,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardList, FlaskConical, Plus, Receipt, ShieldCheck, Stethoscope } from "lucide-react";
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import {
-  Empty,
-  ErrorBox,
-  Field,
-  Loading,
-  PageHeader,
-  PrintButton,
-  SectionTitle,
-  StatCard,
-  StatusBadge,
-  PermissionGate,
-} from "@/components/kit";
-import { Badge } from "@/components/ui/badge";
+import { Empty, ErrorBox, Field, Loading, PageHeader, SectionTitle, StatusBadge, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,15 +33,9 @@ export const Route = createFileRoute("/_authenticated/patients_/$patientId")({
   head: () => ({
     meta: [
       { title: "Patient chart — ROSHAN Medical Center" },
-      {
-        name: "description",
-        content: "Patient demographics, visit history, laboratory results and invoices.",
-      },
+      { name: "description", content: "Patient demographics, visit history, laboratory results and invoices." },
       { property: "og:title", content: "Patient chart — ROSHAN Medical Center" },
-      {
-        property: "og:description",
-        content: "Patient demographics, visit history, laboratory results and invoices.",
-      },
+      { property: "og:description", content: "Patient demographics, visit history, laboratory results and invoices." },
     ],
   }),
   component: PatientChartWithBoundary,
@@ -119,9 +92,7 @@ function PatientChart() {
   const visits = useRows(["patient-visits", patientId], () =>
     supabase
       .from("visits")
-      .select(
-        "id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)",
-      )
+      .select("id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)")
       .eq("patient_id", patientId)
       .is("deleted_at", null)
       .order("visit_date", { ascending: false }),
@@ -148,9 +119,7 @@ function PatientChart() {
   const appointments = useRows(["patient-appointments", patientId], () =>
     supabase
       .from("appointments")
-      .select(
-        "id, appointment_date, appointment_time, status, notes, departments(name, name_ar), users(full_name)",
-      )
+      .select("id, appointment_date, appointment_time, status, notes, departments(name, name_ar), users(full_name)")
       .eq("patient_id", patientId)
       .is("deleted_at", null)
       .order("appointment_date", { ascending: false })
@@ -199,9 +168,7 @@ function PatientChart() {
         kind: "visit",
         date: s(v, "visit_date") || "",
         title: lang === "ar" ? "زيارة" : "Visit",
-        subtitle:
-          (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) ||
-          s(rel(v, "users"), "full_name"),
+        subtitle: (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) || s(rel(v, "users"), "full_name"),
         status: s(v, "status"),
         href: `/clinic/${s(v, "id")}`,
       });
@@ -213,9 +180,7 @@ function PatientChart() {
         kind: "appointment",
         date: (s(a, "appointment_date") || "").slice(0, 10),
         title: lang === "ar" ? "موعد" : "Appointment",
-        subtitle:
-          (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) ||
-          s(rel(a, "users"), "full_name"),
+        subtitle: (lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")) || s(rel(a, "users"), "full_name"),
         status: s(a, "status"),
       });
     }
@@ -259,7 +224,7 @@ function PatientChart() {
         href: `/billing/${s(inv, "id")}`,
       });
     }
-
+    
     for (const c of (claims.data ?? []) as Row[]) {
       const pi = rel(c, "patient_insurance");
       const company = rel(pi, "insurance_companies");
@@ -275,23 +240,13 @@ function PatientChart() {
     }
     items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     return items;
-  }, [
-    visits.data,
-    appointments.data,
-    followups.data,
-    labs.data,
-    invoices.data,
-    claims.data,
-    lang,
-    currency,
-  ]);
+  }, [visits.data, appointments.data, followups.data, labs.data, invoices.data, claims.data, lang, currency]);
+
 
   const prescriptions = useRows(["patient-rx", patientId], () =>
     supabase
       .from("prescriptions")
-      .select(
-        "id, created_at, status, is_external, prescription_items(id, dosage, medicines(name))",
-      )
+      .select("id, created_at, status, is_external, prescription_items(id, dosage, medicines(name))")
       .eq("patient_id", patientId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
@@ -330,139 +285,29 @@ function PatientChart() {
   }
   if (!record) return <Empty label={t("no_data")} />;
 
-  // Summary-card counts reuse the exact same queries already loaded for the
-  // Timeline tab (visits/appointments/invoices/claims) - no new fetches.
-  const visitsCount = ((visits.data ?? []) as Row[]).length;
-  const appointmentsCount = ((appointments.data ?? []) as Row[]).length;
-  const invoiceRows = (invoices.data ?? []) as Row[];
-  const invoicesCount = invoiceRows.length;
-  const outstandingBalance = invoiceRows.reduce(
-    (sum, inv) => sum + Math.max(0, n(inv, "net_amount") - n(inv, "paid_amount")),
-    0,
-  );
-  const claimsCount = ((claims.data ?? []) as Row[]).length;
-  const initials = (s(record, "full_name") || "")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
   return (
-    <div className="space-y-4">
-      {/* Hero header: identity + demographics badges + primary actions, all
-          in one glance instead of a single-line PageHeader subtitle. */}
-      <Card className="overflow-hidden border-border/70">
-        <CardContent className="flex flex-wrap items-start justify-between gap-4 p-5">
-          <div className="flex min-w-0 items-start gap-4">
-            <div
-              className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary"
-              aria-hidden
-            >
-              {initials || "—"}
-            </div>
-            <div className="min-w-0 space-y-2">
-              <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                {s(record, "full_name")}
-              </h1>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Badge variant="outline" className="font-mono text-xs" dir="ltr">
-                  {t("mrn")}: {s(record, "mrn") || "—"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {t("age")}: {calcAge(s(record, "date_of_birth")) ?? "—"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {t(s(record, "gender"))}
-                </Badge>
-                {s(record, "phone") ? (
-                  <Badge variant="outline" className="text-xs" dir="ltr">
-                    {s(record, "phone")}
-                  </Badge>
-                ) : null}
-                {s(record, "blood_group") ? (
-                  <Badge variant="outline" className="text-xs">
-                    {t("blood_group") || (lang === "ar" ? "فصيلة الدم" : "Blood group")}:{" "}
-                    {s(record, "blood_group")}
-                  </Badge>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          {/* Sticky action bar - stays with the header on scroll since the
-              header itself isn't position:sticky (that's a page-level
-              concern for AppShell, not this card), but every primary
-              workflow entry point now lives together in one visually
-              distinct row instead of blending into a generic PageHeader. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/patients">
-                <ArrowLeft className="size-4" /> {t("back")}
-              </Link>
-            </Button>
-            {can("visits.create") ? (
-              <Button asChild size="sm">
-                <Link to="/visits" search={{ patient: s(record, "id") }}>
-                  <Plus className="size-4" /> {t("new_visit")}
-                </Link>
-              </Button>
-            ) : null}
-            {can("appointments.create") ? (
-              <Button asChild size="sm" variant="outline">
-                <Link to="/appointments" search={{ patient: s(record, "id") }}>
-                  <CalendarDays className="size-4" />{" "}
-                  {t("new_appointment") || (lang === "ar" ? "ميعاد جديد" : "New appointment")}
-                </Link>
-              </Button>
-            ) : null}
-            {can("billing.create") ? (
-              <Button asChild size="sm" variant="outline">
-                <Link to="/billing" search={{ patient: s(record, "id") }}>
-                  <Receipt className="size-4" />{" "}
-                  {t("new_invoice") || (lang === "ar" ? "فاتورة جديدة" : "New invoice")}
-                </Link>
-              </Button>
-            ) : null}
-            <PrintButton />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary cards - Priority 1.C: visits/appointments/invoices count,
-          outstanding balance, and insurance claim activity, all computed
-          from data already loaded for the Timeline tab below. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard
-          label={t("visits")}
-          value={visitsCount}
-          icon={<ClipboardList className="size-5" />}
-        />
-        <StatCard
-          label={t("appointments") || (lang === "ar" ? "المواعيد" : "Appointments")}
-          value={appointmentsCount}
-          icon={<CalendarDays className="size-5" />}
-        />
-        <StatCard
-          label={t("invoices")}
-          value={invoicesCount}
-          {...(outstandingBalance > 0
-            ? { hint: `${t("outstanding_balance")}: ${money(outstandingBalance, currency)}` }
-            : {})}
-          icon={<Receipt className="size-5" />}
-          tone={outstandingBalance > 0 ? "warning" : "default"}
-        />
-        <StatCard
-          label={lang === "ar" ? "مطالبات التأمين" : "Insurance claims"}
-          value={claimsCount}
-          icon={<ShieldCheck className="size-5" />}
-        />
-      </div>
+    <div>
+      <PageHeader
+        title={s(record, "full_name")}
+        subtitle={`${t("mrn")}: ${s(record, "mrn")} · ${t("age")}: ${calcAge(s(record, "date_of_birth")) ?? "—"} · ${t(s(record, "gender"))}`}
+      >
+        <Button asChild variant="outline" size="sm">
+          <Link to="/patients">
+            <ArrowLeft className="size-4" /> {t("back")}
+          </Link>
+        </Button>
+        {can("visits.create") ? (
+          <Button asChild size="sm">
+            <Link to="/visits" search={{ patient: s(record, "id") }}>
+              <Plus className="size-4" /> {t("new_visit")}
+            </Link>
+          </Button>
+        ) : null}
+      </PageHeader>
 
       <ErrorBox error={patient.error} />
 
-      <Tabs defaultValue="timeline">
+      <Tabs defaultValue="profile">
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="timeline">{lang === "ar" ? "الخط الزمني" : "Timeline"}</TabsTrigger>
           <TabsTrigger value="profile">{t("patient")}</TabsTrigger>
@@ -472,17 +317,14 @@ function PatientChart() {
           <TabsTrigger value="invoices">{t("invoices")}</TabsTrigger>
         </TabsList>
 
+        
         <TabsContent value="timeline">
           <Card>
             <CardContent className="p-0">
               {timeline.length === 0 ? (
                 <Empty
                   title={lang === "ar" ? "لا أحداث بعد" : "No events yet"}
-                  description={
-                    lang === "ar"
-                      ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير."
-                      : "Visits, appointments, labs and invoices will appear here."
-                  }
+                  description={lang === "ar" ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير." : "Visits, appointments, labs and invoices will appear here."}
                 />
               ) : (
                 <ul className="divide-y">
@@ -510,15 +352,10 @@ function PatientChart() {
                             {item.status ? <StatusBadge status={item.status} /> : null}
                           </div>
                           {item.subtitle ? (
-                            <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                              {item.subtitle}
-                            </p>
+                            <p className="mt-0.5 truncate text-sm text-muted-foreground">{item.subtitle}</p>
                           ) : null}
                         </div>
-                        <time
-                          className="shrink-0 text-xs tabular-nums text-muted-foreground"
-                          dir="ltr"
-                        >
+                        <time className="shrink-0 text-xs tabular-nums text-muted-foreground" dir="ltr">
                           {item.date ? formatDate(item.date) : "—"}
                         </time>
                       </div>
@@ -541,7 +378,7 @@ function PatientChart() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="profile">
+<TabsContent value="profile">
           <Card>
             <CardContent className="p-4">
               <SectionTitle>{t("patient")}</SectionTitle>
@@ -678,8 +515,7 @@ function PatientChart() {
                         <TableCell dir="ltr">{formatDate(s(v, "visit_date"))}</TableCell>
                         <TableCell>
                           {lang === "ar"
-                            ? s(rel(v, "departments"), "name_ar") ||
-                              s(rel(v, "departments"), "name")
+                            ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
                             : s(rel(v, "departments"), "name")}
                         </TableCell>
                         <TableCell>{s(rel(v, "users"), "full_name") || "—"}</TableCell>
@@ -727,8 +563,7 @@ function PatientChart() {
                           {((o["lab_order_items"] as Row[]) ?? [])
                             .map((i) =>
                               lang === "ar"
-                                ? s(rel(i, "lab_tests"), "name_ar") ||
-                                  s(rel(i, "lab_tests"), "name")
+                                ? s(rel(i, "lab_tests"), "name_ar") || s(rel(i, "lab_tests"), "name")
                                 : s(rel(i, "lab_tests"), "name"),
                             )
                             .join(", ") || "—"}

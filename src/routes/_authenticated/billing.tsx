@@ -1,18 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import {
-  Empty,
-  ErrorBox,
-  ExportButtons,
-  Field,
-  Loading,
-  PageHeader,
-  StatCard,
-  StatusBadge,
-  PermissionGate,
-} from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
 import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,24 +37,12 @@ import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/billing")({
-  // ?patient=<id> — mirrors the same deep-link the Visits page and the
-  // patient chart's "New Invoice" action use, so billing staff arriving
-  // from a patient's chart don't have to search for the patient again.
-  validateSearch: (search: Record<string, unknown>): { patient?: string | undefined } => ({
-    patient: typeof search["patient"] === "string" ? (search["patient"] as string) : undefined,
-  }),
   head: () => ({
     meta: [
       { title: "Billing — ROSHAN Medical Center" },
-      {
-        name: "description",
-        content: "Create invoices, record payments and track outstanding balances.",
-      },
+      { name: "description", content: "Create invoices, record payments and track outstanding balances." },
       { property: "og:title", content: "Billing — ROSHAN Medical Center" },
-      {
-        property: "og:description",
-        content: "Create invoices, record payments and track outstanding balances.",
-      },
+      { property: "og:description", content: "Create invoices, record payments and track outstanding balances." },
     ],
   }),
   component: BillingPage,
@@ -85,7 +63,6 @@ function BillingPageInner() {
   const { can } = useAuth();
   const { currency } = useSettings();
   const navigate = useNavigate();
-  const search = Route.useSearch();
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [patientId, setPatientId] = useState("");
@@ -111,36 +88,7 @@ function BillingPageInner() {
     supabase.from("partners").select("id, name, discount_percent").is("deleted_at", null),
   );
 
-  // Pre-select the patient when arriving from a Patient Profile's
-  // "New Invoice" action (?patient=<id>) and open the dialog straight away,
-  // the same pattern the Visits page uses for "New Visit".
-  useEffect(() => {
-    if (!search.patient || search.patient === selectedPatient?.id) return;
-    let cancelled = false;
-    supabase
-      .from("patients")
-      .select("id, full_name, mrn, phone")
-      .eq("id", search.patient)
-      .is("deleted_at", null)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled || !data) return;
-        const picked = data as unknown as PickedPatient;
-        setSelectedPatient(picked);
-        setPatientId(picked.id);
-        setOpen(true);
-        void navigate({ to: "/billing", search: {}, replace: true });
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search.patient]);
-
-  const subtotal = lines.reduce(
-    (sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0),
-    0,
-  );
+  const subtotal = lines.reduce((sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0), 0);
   const net = Math.max(subtotal - Number(discount || 0), 0);
 
   const create = useSave(
@@ -187,8 +135,7 @@ function BillingPageInner() {
         setPatientId("");
         setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "consultation" }]);
         setDiscount("0");
-        if (typeof id === "string")
-          void navigate({ to: "/billing/$invoiceId", params: { invoiceId: id } });
+        if (typeof id === "string") void navigate({ to: "/billing/$invoiceId", params: { invoiceId: id } });
       },
     },
   );
@@ -202,13 +149,7 @@ function BillingPageInner() {
   return (
     <div>
       <PageHeader title={t("billing")} subtitle={formatDate(date)}>
-        <Input
-          type="date"
-          dir="ltr"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-40"
-        />
+        <Input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
         <ExportButtons rows={rows} filename={`roshan-invoices-${date}`} />
         {can("billing.create") ? (
           <Dialog open={open} onOpenChange={setOpen}>
@@ -256,18 +197,12 @@ function BillingPageInner() {
                         placeholder={t("description")}
                         value={l.description}
                         onChange={(e) =>
-                          setLines(
-                            lines.map((x, i) =>
-                              i === idx ? { ...x, description: e.target.value } : x,
-                            ),
-                          )
+                          setLines(lines.map((x, i) => (i === idx ? { ...x, description: e.target.value } : x)))
                         }
                       />
                       <Select
                         value={l.item_type}
-                        onValueChange={(v) =>
-                          setLines(lines.map((x, i) => (i === idx ? { ...x, item_type: v } : x)))
-                        }
+                        onValueChange={(v) => setLines(lines.map((x, i) => (i === idx ? { ...x, item_type: v } : x)))}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -287,11 +222,7 @@ function BillingPageInner() {
                         placeholder={t("quantity")}
                         value={l.quantity}
                         onChange={(e) =>
-                          setLines(
-                            lines.map((x, i) =>
-                              i === idx ? { ...x, quantity: e.target.value } : x,
-                            ),
-                          )
+                          setLines(lines.map((x, i) => (i === idx ? { ...x, quantity: e.target.value } : x)))
                         }
                       />
                       <div className="flex gap-2">
@@ -302,18 +233,10 @@ function BillingPageInner() {
                           placeholder={t("unit_price")}
                           value={l.unit_price}
                           onChange={(e) =>
-                            setLines(
-                              lines.map((x, i) =>
-                                i === idx ? { ...x, unit_price: e.target.value } : x,
-                              ),
-                            )
+                            setLines(lines.map((x, i) => (i === idx ? { ...x, unit_price: e.target.value } : x)))
                           }
                         />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setLines(lines.filter((_, i) => i !== idx))}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => setLines(lines.filter((_, i) => i !== idx))}>
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
@@ -323,10 +246,7 @@ function BillingPageInner() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setLines([
-                        ...lines,
-                        { description: "", quantity: "1", unit_price: "0", item_type: "other" },
-                      ])
+                      setLines([...lines, { description: "", quantity: "1", unit_price: "0", item_type: "other" }])
                     }
                   >
                     <Plus className="size-4" /> {t("add")}
@@ -338,13 +258,7 @@ function BillingPageInner() {
                     <Input readOnly dir="ltr" value={money(subtotal, currency)} />
                   </Field>
                   <Field label={t("discount")}>
-                    <Input
-                      type="number"
-                      dir="ltr"
-                      min={0}
-                      value={discount}
-                      onChange={(e) => setDiscount(e.target.value)}
-                    />
+                    <Input type="number" dir="ltr" min={0} value={discount} onChange={(e) => setDiscount(e.target.value)} />
                   </Field>
                   <Field label={t("net")}>
                     <Input readOnly dir="ltr" value={money(net, currency)} />
@@ -355,10 +269,7 @@ function BillingPageInner() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button
-                  disabled={!patientId || create.isPending}
-                  onClick={() => create.mutate(undefined as never)}
-                >
+                <Button disabled={!patientId || create.isPending} onClick={() => create.mutate(undefined as never)}>
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -378,12 +289,7 @@ function BillingPageInner() {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <Empty
-              title={t("no_data")}
-              description={
-                lang === "ar" ? "لا فواتير في هذا النطاق." : "No invoices in this range."
-              }
-            />
+            <Empty title={t("no_data")} description={lang === "ar" ? "لا فواتير في هذا النطاق." : "No invoices in this range."} />
           ) : (
             <Table density="compact">
               <TableHeader>
@@ -403,14 +309,10 @@ function BillingPageInner() {
                     <TableCell dir="ltr" className="font-mono text-xs">
                       {s(inv, "invoice_number")}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {s(rel(inv, "patients"), "full_name")}
-                    </TableCell>
+                    <TableCell className="font-medium">{s(rel(inv, "patients"), "full_name")}</TableCell>
                     <TableCell>{money(n(inv, "net_amount"), currency)}</TableCell>
                     <TableCell>{money(n(inv, "paid_amount"), currency)}</TableCell>
-                    <TableCell>
-                      {money(n(inv, "net_amount") - n(inv, "paid_amount"), currency)}
-                    </TableCell>
+                    <TableCell>{money(n(inv, "net_amount") - n(inv, "paid_amount"), currency)}</TableCell>
                     <TableCell>
                       <StatusBadge status={s(inv, "status")} />
                     </TableCell>

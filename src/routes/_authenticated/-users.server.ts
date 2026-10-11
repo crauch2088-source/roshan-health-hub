@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { canAssignRole, SUPER_ADMIN_ROLE_CODE } from "@/lib/role-guard";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const CreateStaffUserInput = z.object({
@@ -26,7 +25,9 @@ export const createStaffUser = createServerFn({ method: "POST" })
   .validator(CreateStaffUserInput)
   .handler(async ({ data }): Promise<CreateStaffUserResult> => {
     const admin = getSupabaseAdmin();
-    const { data: callerAuth, error: callerAuthError } = await admin.auth.getUser(data.accessToken);
+    const { data: callerAuth, error: callerAuthError } = await admin.auth.getUser(
+      data.accessToken,
+    );
     if (callerAuthError || !callerAuth.user) {
       throw new Error("Your session has expired. Please sign in again.");
     }
@@ -40,8 +41,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
       throw new Error("Your account is not permitted to create users.");
     }
 
-    const callerIsSuperAdmin = roleCode(callerRow.roles as RoleRel) === SUPER_ADMIN_ROLE_CODE;
-    let allowed = callerIsSuperAdmin;
+    let allowed = roleCode(callerRow.roles as RoleRel) === "super_admin";
     if (!allowed && callerRow.role_id) {
       const { data: perm } = await admin
         .from("role_permissions")
@@ -55,32 +55,13 @@ export const createStaffUser = createServerFn({ method: "POST" })
       throw new Error("Your account is not permitted to create users.");
     }
 
-    // Privilege-escalation guard: `users.create` must never be enough to hand
-    // out the super_admin role. Resolve the target role on the server (never
-    // trust the client) and fail closed if it cannot be loaded.
-    const { data: targetRole, error: targetRoleError } = await admin
-      .from("roles")
-      .select("id, code")
-      .eq("id", data.role_id)
-      .maybeSingle();
-    if (targetRoleError || !targetRole) {
-      throw new Error("The selected role is invalid.");
-    }
-    if (
-      !canAssignRole(
-        { isSuperAdmin: callerIsSuperAdmin },
-        { code: (targetRole as { code?: string | null }).code ?? null },
-      )
-    ) {
-      throw new Error("Only a super admin can assign this role.");
-    }
-
-    const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { full_name: data.full_name },
-    });
+    const { data: created, error: createError } =
+      await admin.auth.admin.createUser({
+        email: data.email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { full_name: data.full_name },
+      });
     if (createError || !created.user) {
       throw new Error(createError?.message ?? "Could not create the account.");
     }

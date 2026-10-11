@@ -2,15 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import {
-  Empty,
-  ErrorBox,
-  ExportButtons,
-  Field,
-  Loading,
-  PageHeader,
-  PermissionGate,
-} from "@/components/kit";
+import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -41,10 +33,7 @@ export const Route = createFileRoute("/_authenticated/partners")({
       { title: "Partners — ROSHAN Medical Center" },
       { name: "description", content: "Contracted companies and insurers with agreed discounts." },
       { property: "og:title", content: "Partners — ROSHAN Medical Center" },
-      {
-        property: "og:description",
-        content: "Contracted companies and insurers with agreed discounts.",
-      },
+      { property: "og:description", content: "Contracted companies and insurers with agreed discounts." },
     ],
   }),
   component: PartnersPage,
@@ -62,12 +51,7 @@ function PartnersPageInner() {
   const { t } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    contact_person: "",
-    phone: "",
-    discount_percent: "0",
-  });
+  const [form, setForm] = useState({ name: "", contact_person: "", phone: "", discount_percent: "0" });
 
   const list = useRows(["partners-all"], () =>
     supabase.from("partners").select("*").is("deleted_at", null).order("name", { ascending: true }),
@@ -84,11 +68,7 @@ function PartnersPageInner() {
       if (error) throw new Error(error.message);
       return null;
     },
-    {
-      invalidate: [["partners-all"], ["partners"]],
-      successMessage: t("saved"),
-      onDone: () => setOpen(false),
-    },
+    { invalidate: [["partners-all"], ["partners"]], successMessage: t("saved"), onDone: () => setOpen(false) },
   );
 
   const rows = (list.data ?? []) as Row[];
@@ -111,10 +91,7 @@ function PartnersPageInner() {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={`${t("name")} *`}>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </Field>
                 <Field label={t("contact_person")}>
                   <Input
@@ -123,11 +100,7 @@ function PartnersPageInner() {
                   />
                 </Field>
                 <Field label={t("phone")}>
-                  <Input
-                    dir="ltr"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
+                  <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </Field>
                 <Field label={t("discount_percent")}>
                   <Input
@@ -144,10 +117,7 @@ function PartnersPageInner() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button
-                  disabled={!form.name || create.isPending}
-                  onClick={() => create.mutate(undefined as never)}
-                >
+                <Button disabled={!form.name || create.isPending} onClick={() => create.mutate(undefined as never)}>
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
