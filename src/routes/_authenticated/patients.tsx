@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Phone, Plus, Search } from "lucide-react";
+import { ArrowUpRight, Phone, Plus, Search, UserRound } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, Pager, PermissionGate } from "@/components/kit";
+import { Empty, ErrorBox, Field, LoadingRows, PageHeader, Pager, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -33,6 +33,7 @@ import { useAuth } from "@/lib/auth";
 import { rpc, s, usePagedRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, formatDate } from "@/lib/medical";
+import { searchPatientsPaged, useDebounced } from "@/lib/search";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/patients")({
@@ -48,11 +49,6 @@ export const Route = createFileRoute("/_authenticated/patients")({
 });
 
 const PAGE_SIZE = 20;
-
-/** Keeps free-text search safe to embed in a PostgREST `.or()` filter string. */
-function sanitizeSearch(term: string): string {
-  return term.replace(/[,()%]/g, "").trim();
-}
 
 function emptyForm() {
   return {
@@ -78,26 +74,13 @@ function PatientsPageInner() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounced(search, 300);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm());
 
   const list = usePagedRows<Row[]>(
-    ["patients", search],
-    ({ from, to }) => {
-      let q = supabase
-        .from("patients")
-        .select("id, mrn, full_name, phone, gender, date_of_birth, national_id, created_at", {
-          count: "exact",
-        })
-        .is("deleted_at", null);
-
-      const term = sanitizeSearch(search);
-      if (term) {
-        q = q.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%,mrn.ilike.%${term}%,national_id.ilike.%${term}%`);
-      }
-
-      return q.order("created_at", { ascending: false }).range(from, to);
-    },
+    ["patients", debouncedSearch],
+    ({ from, to }) => searchPatientsPaged({ term: debouncedSearch, from, to }),
     page,
     PAGE_SIZE,
   );
@@ -134,8 +117,8 @@ function PatientsPageInner() {
   const rows = list.rows;
 
   return (
-    <div>
-      <PageHeader title={t("patients")} subtitle={t("register_patient")}>
+    <div className="space-y-4">
+      <PageHeader title={t("patients")} subtitle={list.count != null ? `${list.count} ${t("records")}` : t("register_patient")}>
         {can("patients.create") ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -143,13 +126,15 @@ function PatientsPageInner() {
                 <Plus className="size-4" /> {t("add")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>{t("register_patient")}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`${t("full_name")} *`} className="sm:col-span-2">
                   <Input
+                    required
+                    aria-required="true"
                     value={form.full_name}
                     onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                   />
@@ -197,29 +182,44 @@ function PatientsPageInner() {
         ) : null}
       </PageHeader>
 
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative">
+        <Search aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder={t("search")}
+          aria-label={t("search")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="ps-9"
+          className="h-12 rounded-lg border-border/80 bg-card ps-12 text-base shadow-xs md:h-12 md:text-base"
         />
       </div>
 
       <ErrorBox error={list.error} />
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {list.isLoading ? (
-            <Loading />
+            <LoadingRows count={6} />
           ) : rows.length === 0 ? (
             <Empty title={t("no_data")} description={lang === "ar" ? "لا يوجد مرضى مطابقون. أضف مريضاً جديداً أو غيّر البحث." : "No matching patients. Add a new patient or refine your search."} />
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="divide-y sm:hidden">
+              {rows.map((patient) => (
+                <div key={s(patient, "id")} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4">
+                  <Link to="/patients/$patientId" params={{ patientId: s(patient, "id") }} className="min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><UserRound className="size-5" /></span>
+                      <div className="min-w-0"><p className="truncate font-semibold">{s(patient, "full_name")}</p><p className="truncate text-xs text-muted-foreground" dir="ltr">{s(patient, "mrn") || "—"} · {s(patient, "phone") || "—"}</p><p className="mt-1 text-xs text-muted-foreground">{calcAge(s(patient, "date_of_birth")) ?? "—"} · {t(s(patient, "gender"))}</p></div>
+                    </div>
+                  </Link>
+                  {can("visits.create") ? <Button asChild size="icon" aria-label={t("new_visit")}><Link to="/visits" search={{ patient: s(patient, "id") }}><Plus /></Link></Button> : <ArrowUpRight className="size-4 text-muted-foreground" />}
+                </div>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
               <Table density="compact">
                 <TableHeader>
                   <TableRow>
@@ -259,14 +259,7 @@ function PatientsPageInner() {
                       <TableCell dir="ltr">{formatDate(s(p, "created_at"))}</TableCell>
                       <TableCell className="no-print text-end">
                         {can("visits.create") ? (
-                          <Link
-                            to="/visits"
-                            search={{ patient: s(p, "id") }}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-                            title={t("new_visit")}
-                          >
-                            <Plus className="size-3.5" /> {t("new_visit")}
-                          </Link>
+                          <Button asChild size="sm"><Link to="/visits" search={{ patient: s(p, "id") }} title={t("new_visit")}><Plus className="size-3.5" /> {t("new_visit")}</Link></Button>
                         ) : null}
                       </TableCell>
                     </TableRow>
@@ -274,6 +267,7 @@ function PatientsPageInner() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
           <Pager
             page={list.page}
