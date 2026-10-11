@@ -14,7 +14,8 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
     <div
       className={cn(
         "relative w-full overflow-auto overscroll-x-contain",
-        density === "compact" && "[&_th]:h-9 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2 [&_td]:text-[13px]",
+        density === "compact" &&
+          "[&_th]:h-9 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2 [&_td]:text-[13px]",
       )}
       data-density={density}
     >

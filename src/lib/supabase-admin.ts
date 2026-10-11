@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "./supabase";
 
 /**
- * SERVER-ONLY Supabase client authenticated with the `service_role` key.
+ * SERVER-ONLY Supabase client authenticated with the Supabase secret key (full access).
  *
  * ⚠️ Import this ONLY from `createServerFn` handlers (e.g. `*.server.ts`
  * files). Never import it from a route `component`, a hook that runs in the
@@ -22,10 +22,13 @@ let cached: SupabaseClient | null = null;
 export function getSupabaseAdmin(): SupabaseClient {
   if (cached) return cached;
 
-  const serviceRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  // Prefer the new Supabase secret key (sb_secret_...). SUPABASE_SERVICE_ROLE_KEY is read only as a
+  // fallback name so existing host settings keep working; it should hold the secret key too.
+  const serviceRoleKey =
+    process.env["SUPABASE_SECRET_KEY"] ?? process.env["SUPABASE_SERVICE_ROLE_KEY"];
   if (!serviceRoleKey) {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not set on the server. Add it to your " +
+      "SUPABASE_SECRET_KEY is not set on the server. Add it to your " +
         "environment (.env locally, your host's project settings in " +
         "production) — see .env.example. Do NOT prefix it with VITE_, or " +
         "it will be bundled into the client and exposed publicly.",

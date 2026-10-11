@@ -40,7 +40,10 @@ export function MobileBottomNav() {
   });
   const moreActive = NAV_GROUPS.some((group) =>
     group.items.some(
-      (item) => !PRIMARY_MOBILE_ROUTES.includes(item.to) && can(item.perm) && isNavItemActive(location.pathname, item.to),
+      (item) =>
+        !PRIMARY_MOBILE_ROUTES.includes(item.to) &&
+        can(item.perm) &&
+        isNavItemActive(location.pathname, item.to),
     ),
   );
 
@@ -56,7 +59,7 @@ export function MobileBottomNav() {
               <button
                 type="button"
                 aria-label={t("quick_actions")}
-                 className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 active:scale-95"
+                className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 active:scale-95"
               >
                 <Plus className="size-6" />
               </button>
@@ -70,7 +73,7 @@ export function MobileBottomNav() {
                     <button
                       key={action.key}
                       type="button"
-                       className="flex min-h-14 items-center gap-2.5 rounded-lg border border-border/70 p-3 text-start text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98]"
+                      className="flex min-h-14 items-center gap-2.5 rounded-lg border border-border/70 p-3 text-start text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98]"
                       onClick={() => {
                         armQuickAction(action.key);
                         setFabOpen(false);
@@ -94,42 +97,60 @@ export function MobileBottomNav() {
       >
         {primary.map((item) => {
           const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
-           const active = isNavItemActive(location.pathname, item.to);
+          const active = isNavItemActive(location.pathname, item.to);
           return (
             <Link
               key={item.to}
               to={item.to}
               aria-current={active ? "page" : undefined}
-               className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             >
               <span
                 className={cn(
-                   "flex h-7 w-10 items-center justify-center rounded-full transition-colors",
-                   active ? "bg-primary/12 text-primary" : "text-muted-foreground",
+                  "flex h-7 w-10 items-center justify-center rounded-full transition-colors",
+                  active ? "bg-primary/12 text-primary" : "text-muted-foreground",
                 )}
               >
                 <Icon className="size-5" />
               </span>
-               <span className={cn("max-w-full truncate", active ? "text-primary" : "text-muted-foreground")}>{t(item.key)}</span>
+              <span
+                className={cn(
+                  "max-w-full truncate",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {t(item.key)}
+              </span>
             </Link>
           );
         })}
-
 
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger asChild>
             <button
               type="button"
-               aria-current={moreActive ? "page" : undefined}
-               className={cn("flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40", moreActive ? "text-primary" : "text-muted-foreground")}
+              aria-current={moreActive ? "page" : undefined}
+              className={cn(
+                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                moreActive ? "text-primary" : "text-muted-foreground",
+              )}
             >
-               <span className={cn("flex h-7 w-10 items-center justify-center rounded-full", moreActive && "bg-primary/12")}>
+              <span
+                className={cn(
+                  "flex h-7 w-10 items-center justify-center rounded-full",
+                  moreActive && "bg-primary/12",
+                )}
+              >
                 <Grid2x2 className="size-5" />
               </span>
               {t("more")}
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[75vh] overflow-y-auto rounded-t-2xl" dir={direction}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[75vh] overflow-y-auto rounded-t-2xl"
+            dir={direction}
+          >
             <SheetTitle className="sr-only">{t("more")}</SheetTitle>
             <div className="space-y-5 pb-4 pt-2">
               {NAV_GROUPS.map((group) => {
@@ -143,7 +164,7 @@ export function MobileBottomNav() {
                     <div className="grid grid-cols-4 gap-2">
                       {items.map((item) => {
                         const Icon = getNavIcon(item.icon);
-                         const active = isNavItemActive(location.pathname, item.to);
+                        const active = isNavItemActive(location.pathname, item.to);
                         return (
                           <Link
                             key={item.to}
@@ -151,7 +172,7 @@ export function MobileBottomNav() {
                             onClick={() => setMoreOpen(false)}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                               "flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border border-border/70 p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]",
+                              "flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border border-border/70 p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]",
                               active && "border-primary/40 bg-primary/10 text-primary",
                             )}
                           >
@@ -166,7 +187,6 @@ export function MobileBottomNav() {
               })}
             </div>
           </SheetContent>
-
         </Sheet>
       </nav>
     </>
