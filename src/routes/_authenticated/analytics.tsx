@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, type ReactNode } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, PermissionGate, StatCard } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Loading,
+  PageHeader,
+  PermissionGate,
+  StatCard,
+} from "@/components/kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -23,7 +31,10 @@ export const Route = createFileRoute("/_authenticated/analytics")({
       { title: "Analytics — ROSHAN Medical Center" },
       { name: "description", content: "Revenue, pharmacy, and clinical performance trends." },
       { property: "og:title", content: "Analytics — ROSHAN Medical Center" },
-      { property: "og:description", content: "Revenue, pharmacy, and clinical performance trends." },
+      {
+        property: "og:description",
+        content: "Revenue, pharmacy, and clinical performance trends.",
+      },
     ],
   }),
   component: AnalyticsPage,
@@ -51,7 +62,12 @@ function monthKey(dateStr: string | null | undefined): string {
 }
 
 /** Groups rows by month and sums one numeric field, returning the last N months in order (oldest first). */
-function sumByMonth(rows: Row[], dateField: string, amountField: string, months: number): { month: string; total: number }[] {
+function sumByMonth(
+  rows: Row[],
+  dateField: string,
+  amountField: string,
+  months: number,
+): { month: string; total: number }[] {
   const buckets = new Map<string, number>();
   for (const r of rows) {
     const key = monthKey(s(r, dateField));
@@ -67,7 +83,15 @@ function sumByMonth(rows: Row[], dateField: string, amountField: string, months:
   return keys.map((k) => ({ month: k, total: buckets.get(k) ?? 0 }));
 }
 
-function TrendTable({ rows, currency, lang }: { rows: { month: string; total: number }[]; currency: string; lang: string }) {
+function TrendTable({
+  rows,
+  currency,
+  lang,
+}: {
+  rows: { month: string; total: number }[];
+  currency: string;
+  lang: string;
+}) {
   const { t } = useLang();
   return (
     <Table density="compact">
@@ -89,12 +113,24 @@ function TrendTable({ rows, currency, lang }: { rows: { month: string; total: nu
   );
 }
 
-function ReportCard({ title, children, exportRows, filename }: { title: string; children: ReactNode; exportRows?: unknown[]; filename?: string }) {
+function ReportCard({
+  title,
+  children,
+  exportRows,
+  filename,
+}: {
+  title: string;
+  children: ReactNode;
+  exportRows?: unknown[];
+  filename?: string;
+}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
-        {exportRows && filename ? <ExportButtons rows={exportRows as Row[]} filename={filename} /> : null}
+        {exportRows && filename ? (
+          <ExportButtons rows={exportRows as Row[]} filename={filename} />
+        ) : null}
       </CardHeader>
       <CardContent className="p-0">{children}</CardContent>
     </Card>
@@ -142,10 +178,20 @@ function FinancialAnalytics() {
   const since = monthsAgoISO(11);
 
   const payments = useRows<Row[]>(["an-payments"], () =>
-    supabase.from("payments").select("amount, payment_date").is("deleted_at", null).gte("payment_date", since).limit(5000),
+    supabase
+      .from("payments")
+      .select("amount, payment_date")
+      .is("deleted_at", null)
+      .gte("payment_date", since)
+      .limit(5000),
   );
   const expenses = useRows<Row[]>(["an-expenses"], () =>
-    supabase.from("expenses").select("amount, expense_date").is("deleted_at", null).gte("expense_date", since).limit(5000),
+    supabase
+      .from("expenses")
+      .select("amount, expense_date")
+      .is("deleted_at", null)
+      .gte("expense_date", since)
+      .limit(5000),
   );
   const insurancePayments = useRows<Row[]>(["an-insurance-claims-paid"], () =>
     supabase
@@ -157,52 +203,113 @@ function FinancialAnalytics() {
       .limit(2000),
   );
   const receivables = useRows<Row[]>(["an-receivables"], () =>
-    supabase.from("v_patient_receivables").select("*").order("outstanding", { ascending: false }).limit(500),
+    supabase
+      .from("v_patient_receivables")
+      .select("*")
+      .order("outstanding", { ascending: false })
+      .limit(500),
   );
   const supplierDebt = useRows<Row[]>(["an-supplier-debt"], () =>
-    supabase.from("v_supplier_outstanding").select("*").order("outstanding", { ascending: false }).limit(500),
+    supabase
+      .from("v_supplier_outstanding")
+      .select("*")
+      .order("outstanding", { ascending: false })
+      .limit(500),
   );
 
-  const revenueTrend = useMemo(() => sumByMonth((payments.data ?? []) as Row[], "payment_date", "amount", 12), [payments.data]);
-  const expenseTrend = useMemo(() => sumByMonth((expenses.data ?? []) as Row[], "expense_date", "amount", 12), [expenses.data]);
+  const revenueTrend = useMemo(
+    () => sumByMonth((payments.data ?? []) as Row[], "payment_date", "amount", 12),
+    [payments.data],
+  );
+  const expenseTrend = useMemo(
+    () => sumByMonth((expenses.data ?? []) as Row[], "expense_date", "amount", 12),
+    [expenses.data],
+  );
   const insuranceTrend = useMemo(
     () => sumByMonth((insurancePayments.data ?? []) as Row[], "paid_at", "paid_amount", 12),
     [insurancePayments.data],
   );
 
-  const receivablesRows = ((receivables.data ?? []) as Row[]).filter((r) => n(r, "outstanding") > 0);
+  const receivablesRows = ((receivables.data ?? []) as Row[]).filter(
+    (r) => n(r, "outstanding") > 0,
+  );
   const supplierRows = ((supplierDebt.data ?? []) as Row[]).filter((r) => n(r, "outstanding") > 0);
   const totalReceivable = receivablesRows.reduce((sum, r) => sum + n(r, "outstanding"), 0);
   const totalSupplierDebt = supplierRows.reduce((sum, r) => sum + n(r, "outstanding"), 0);
   const totalRevenue12mo = revenueTrend.reduce((sum, r) => sum + r.total, 0);
   const totalExpense12mo = expenseTrend.reduce((sum, r) => sum + r.total, 0);
 
-  const anyLoading = payments.isLoading || expenses.isLoading || insurancePayments.isLoading || receivables.isLoading || supplierDebt.isLoading;
+  const anyLoading =
+    payments.isLoading ||
+    expenses.isLoading ||
+    insurancePayments.isLoading ||
+    receivables.isLoading ||
+    supplierDebt.isLoading;
   if (anyLoading) return <Loading />;
 
   return (
     <div className="grid gap-4">
-      <ErrorBox error={payments.error ?? expenses.error ?? insurancePayments.error ?? receivables.error ?? supplierDebt.error} />
+      <ErrorBox
+        error={
+          payments.error ??
+          expenses.error ??
+          insurancePayments.error ??
+          receivables.error ??
+          supplierDebt.error
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <StatCard label={t("revenue_12mo")} value={money(totalRevenue12mo, currency)} tone="success" />
-        <StatCard label={t("expenses_12mo")} value={money(totalExpense12mo, currency)} tone="destructive" />
-        <StatCard label={t("outstanding_balance")} value={money(totalReceivable, currency)} tone="warning" />
-        <StatCard label={t("supplier_debt")} value={money(totalSupplierDebt, currency)} tone="warning" />
+        <StatCard
+          label={t("revenue_12mo")}
+          value={money(totalRevenue12mo, currency)}
+          tone="success"
+        />
+        <StatCard
+          label={t("expenses_12mo")}
+          value={money(totalExpense12mo, currency)}
+          tone="destructive"
+        />
+        <StatCard
+          label={t("outstanding_balance")}
+          value={money(totalReceivable, currency)}
+          tone="warning"
+        />
+        <StatCard
+          label={t("supplier_debt")}
+          value={money(totalSupplierDebt, currency)}
+          tone="warning"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ReportCard title={t("revenue_trends")} exportRows={revenueTrend} filename="roshan-revenue-trends">
+        <ReportCard
+          title={t("revenue_trends")}
+          exportRows={revenueTrend}
+          filename="roshan-revenue-trends"
+        >
           <TrendTable rows={revenueTrend} currency={currency} lang={lang} />
         </ReportCard>
-        <ReportCard title={t("expense_trends")} exportRows={expenseTrend} filename="roshan-expense-trends">
+        <ReportCard
+          title={t("expense_trends")}
+          exportRows={expenseTrend}
+          filename="roshan-expense-trends"
+        >
           <TrendTable rows={expenseTrend} currency={currency} lang={lang} />
         </ReportCard>
-        <ReportCard title={t("insurance_revenue")} exportRows={insuranceTrend} filename="roshan-insurance-revenue">
+        <ReportCard
+          title={t("insurance_revenue")}
+          exportRows={insuranceTrend}
+          filename="roshan-insurance-revenue"
+        >
           <TrendTable rows={insuranceTrend} currency={currency} lang={lang} />
         </ReportCard>
 
-        <ReportCard title={t("outstanding_receivables")} exportRows={receivablesRows} filename="roshan-outstanding-receivables">
+        <ReportCard
+          title={t("outstanding_receivables")}
+          exportRows={receivablesRows}
+          filename="roshan-outstanding-receivables"
+        >
           {receivablesRows.length === 0 ? (
             <Empty />
           ) : (
@@ -217,7 +324,9 @@ function FinancialAnalytics() {
                 {receivablesRows.slice(0, 15).map((r) => (
                   <TableRow key={s(r, "invoice_id")}>
                     <TableCell className="font-medium">{s(r, "patient_name")}</TableCell>
-                    <TableCell className="text-destructive">{money(n(r, "outstanding"), currency)}</TableCell>
+                    <TableCell className="text-destructive">
+                      {money(n(r, "outstanding"), currency)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -225,7 +334,11 @@ function FinancialAnalytics() {
           )}
         </ReportCard>
 
-        <ReportCard title={t("supplier_debt_analysis")} exportRows={supplierRows} filename="roshan-supplier-debt-analysis">
+        <ReportCard
+          title={t("supplier_debt_analysis")}
+          exportRows={supplierRows}
+          filename="roshan-supplier-debt-analysis"
+        >
           {supplierRows.length === 0 ? (
             <Empty />
           ) : (
@@ -240,7 +353,9 @@ function FinancialAnalytics() {
                 {supplierRows.slice(0, 15).map((r) => (
                   <TableRow key={s(r, "supplier_id")}>
                     <TableCell className="font-medium">{s(r, "name")}</TableCell>
-                    <TableCell className="text-destructive">{money(n(r, "outstanding"), currency)}</TableCell>
+                    <TableCell className="text-destructive">
+                      {money(n(r, "outstanding"), currency)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -301,7 +416,9 @@ function PharmacyAnalytics() {
       cur.revenue += revenue;
       byMed.set(name, cur);
     }
-    return Array.from(byMed.values()).sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+    return Array.from(byMed.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 15);
   }, [dispenseMoves.data]);
 
   const waste = useMemo(() => {
@@ -313,7 +430,9 @@ function PharmacyAnalytics() {
       cur.qty += qty;
       byMed.set(name, cur);
     }
-    return Array.from(byMed.values()).sort((a, b) => b.qty - a.qty).slice(0, 15);
+    return Array.from(byMed.values())
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 15);
   }, [wasteMoves.data]);
 
   const forecast = useMemo(() => {
@@ -322,7 +441,10 @@ function PharmacyAnalytics() {
     for (const r of rows) {
       const key = monthKey(s(r, "expiry_date"));
       if (key === "—") continue;
-      buckets.set(key, (buckets.get(key) ?? 0) + n(r, "quantity_remaining") * n(r, "purchase_price"));
+      buckets.set(
+        key,
+        (buckets.get(key) ?? 0) + n(r, "quantity_remaining") * n(r, "purchase_price"),
+      );
     }
     const keys: string[] = [];
     for (let i = 0; i < 6; i++) {
@@ -345,11 +467,19 @@ function PharmacyAnalytics() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StatCard label={t("fefo_waste_units")} value={String(totalWasteQty)} tone="destructive" />
-        <StatCard label={t("expiry_forecast_value")} value={money(totalForecastValue, currency)} tone="warning" />
+        <StatCard
+          label={t("expiry_forecast_value")}
+          value={money(totalForecastValue, currency)}
+          tone="warning"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ReportCard title={t("pharmacy_performance")} exportRows={performance} filename="roshan-pharmacy-performance">
+        <ReportCard
+          title={t("pharmacy_performance")}
+          exportRows={performance}
+          filename="roshan-pharmacy-performance"
+        >
           {performance.length === 0 ? (
             <Empty />
           ) : (
@@ -374,7 +504,11 @@ function PharmacyAnalytics() {
           )}
         </ReportCard>
 
-        <ReportCard title={t("fefo_waste_tracking")} exportRows={waste} filename="roshan-fefo-waste">
+        <ReportCard
+          title={t("fefo_waste_tracking")}
+          exportRows={waste}
+          filename="roshan-fefo-waste"
+        >
           {waste.length === 0 ? (
             <Empty />
           ) : (
@@ -399,7 +533,11 @@ function PharmacyAnalytics() {
           )}
         </ReportCard>
 
-        <ReportCard title={t("expiry_forecasting")} exportRows={forecast} filename="roshan-expiry-forecast">
+        <ReportCard
+          title={t("expiry_forecasting")}
+          exportRows={forecast}
+          filename="roshan-expiry-forecast"
+        >
           <Table density="compact">
             <TableHeader>
               <TableRow>
@@ -437,7 +575,9 @@ function ClinicalAnalytics() {
   const visits = useRows<Row[]>(["an-visits"], () =>
     supabase
       .from("visits")
-      .select("visit_date, status, consultation_fee, doctor_id, department_id, users(full_name), departments(name, name_ar)")
+      .select(
+        "visit_date, status, consultation_fee, doctor_id, department_id, users(full_name), departments(name, name_ar)",
+      )
       .is("deleted_at", null)
       .gte("visit_date", since)
       .limit(5000),
@@ -478,7 +618,9 @@ function ClinicalAnalytics() {
       cur.revenue += n(r, "consultation_fee");
       byDoctor.set(name, cur);
     }
-    return Array.from(byDoctor.values()).sort((a, b) => b.count - a.count).slice(0, 15);
+    return Array.from(byDoctor.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 15);
   }, [visits.data, t]);
 
   const deptStats = useMemo(() => {
@@ -538,11 +680,19 @@ function ClinicalAnalytics() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label={t("visits_12mo")} value={String(totalVisits12mo)} />
         <StatCard label={t("appointments_12mo")} value={String(totalAppointments)} />
-        <StatCard label={t("lab_revenue_12mo")} value={money(totalLabRevenue, currency)} tone="success" />
+        <StatCard
+          label={t("lab_revenue_12mo")}
+          value={money(totalLabRevenue, currency)}
+          tone="success"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ReportCard title={t("visit_trends")} exportRows={visitTrend} filename="roshan-visit-trends">
+        <ReportCard
+          title={t("visit_trends")}
+          exportRows={visitTrend}
+          filename="roshan-visit-trends"
+        >
           <Table density="compact">
             <TableHeader>
               <TableRow>
@@ -561,7 +711,11 @@ function ClinicalAnalytics() {
           </Table>
         </ReportCard>
 
-        <ReportCard title={t("doctor_productivity")} exportRows={doctorStats} filename="roshan-doctor-productivity">
+        <ReportCard
+          title={t("doctor_productivity")}
+          exportRows={doctorStats}
+          filename="roshan-doctor-productivity"
+        >
           {doctorStats.length === 0 ? (
             <Empty />
           ) : (
@@ -586,7 +740,11 @@ function ClinicalAnalytics() {
           )}
         </ReportCard>
 
-        <ReportCard title={t("department_statistics")} exportRows={deptStats} filename="roshan-department-statistics">
+        <ReportCard
+          title={t("department_statistics")}
+          exportRows={deptStats}
+          filename="roshan-department-statistics"
+        >
           {deptStats.length === 0 ? (
             <Empty />
           ) : (
@@ -609,7 +767,11 @@ function ClinicalAnalytics() {
           )}
         </ReportCard>
 
-        <ReportCard title={t("appointment_analytics")} exportRows={appointmentStats} filename="roshan-appointment-analytics">
+        <ReportCard
+          title={t("appointment_analytics")}
+          exportRows={appointmentStats}
+          filename="roshan-appointment-analytics"
+        >
           {appointmentStats.length === 0 ? (
             <Empty />
           ) : (
@@ -632,7 +794,11 @@ function ClinicalAnalytics() {
           )}
         </ReportCard>
 
-        <ReportCard title={t("laboratory_analytics")} exportRows={labStats} filename="roshan-laboratory-analytics">
+        <ReportCard
+          title={t("laboratory_analytics")}
+          exportRows={labStats}
+          filename="roshan-laboratory-analytics"
+        >
           <Table density="compact">
             <TableHeader>
               <TableRow>

@@ -1,8 +1,8 @@
 import { PermissionGate } from "@/components/kit";
-import { createFileRoute } from '@tanstack/react-router';
-import { ConsultationPage } from '@/features/clinic/consultation/ConsultationPage';
+import { createFileRoute } from "@tanstack/react-router";
+import { ConsultationPage } from "@/features/clinic/consultation/ConsultationPage";
 
-export const Route = createFileRoute('/_authenticated/clinic_/$visitId')({
+export const Route = createFileRoute("/_authenticated/clinic_/$visitId")({
   component: ConsultationRouteComponent,
 });
 

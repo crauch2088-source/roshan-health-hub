@@ -2,7 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Phone, Plus, Search } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, Pager, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  Field,
+  Loading,
+  PageHeader,
+  Pager,
+  PermissionGate,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -93,7 +101,9 @@ function PatientsPageInner() {
 
       const term = sanitizeSearch(search);
       if (term) {
-        q = q.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%,mrn.ilike.%${term}%,national_id.ilike.%${term}%`);
+        q = q.or(
+          `full_name.ilike.%${term}%,phone.ilike.%${term}%,mrn.ilike.%${term}%,national_id.ilike.%${term}%`,
+        );
       }
 
       return q.order("created_at", { ascending: false }).range(from, to);
@@ -155,10 +165,17 @@ function PatientsPageInner() {
                   />
                 </Field>
                 <Field label={t("phone")}>
-                  <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <Input
+                    dir="ltr"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("gender")}>
-                  <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                  <Select
+                    value={form.gender}
+                    onValueChange={(v) => setForm({ ...form, gender: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -188,7 +205,10 @@ function PatientsPageInner() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button disabled={!form.full_name.trim() || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                <Button
+                  disabled={!form.full_name.trim() || create.isPending}
+                  onClick={() => create.mutate(undefined as never)}
+                >
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -217,7 +237,14 @@ function PatientsPageInner() {
           {list.isLoading ? (
             <Loading />
           ) : rows.length === 0 ? (
-            <Empty title={t("no_data")} description={lang === "ar" ? "لا يوجد مرضى مطابقون. أضف مريضاً جديداً أو غيّر البحث." : "No matching patients. Add a new patient or refine your search."} />
+            <Empty
+              title={t("no_data")}
+              description={
+                lang === "ar"
+                  ? "لا يوجد مرضى مطابقون. أضف مريضاً جديداً أو غيّر البحث."
+                  : "No matching patients. Add a new patient or refine your search."
+              }
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table density="compact">

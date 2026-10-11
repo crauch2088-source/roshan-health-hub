@@ -25,9 +25,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
   .validator(CreateStaffUserInput)
   .handler(async ({ data }): Promise<CreateStaffUserResult> => {
     const admin = getSupabaseAdmin();
-    const { data: callerAuth, error: callerAuthError } = await admin.auth.getUser(
-      data.accessToken,
-    );
+    const { data: callerAuth, error: callerAuthError } = await admin.auth.getUser(data.accessToken);
     if (callerAuthError || !callerAuth.user) {
       throw new Error("Your session has expired. Please sign in again.");
     }
@@ -55,13 +53,12 @@ export const createStaffUser = createServerFn({ method: "POST" })
       throw new Error("Your account is not permitted to create users.");
     }
 
-    const { data: created, error: createError } =
-      await admin.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        email_confirm: true,
-        user_metadata: { full_name: data.full_name },
-      });
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
     if (createError || !created.user) {
       throw new Error(createError?.message ?? "Could not create the account.");
     }

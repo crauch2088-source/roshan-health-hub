@@ -16,9 +16,15 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — ROSHAN Medical Center" },
-      { name: "description", content: "Staff sign-in for the ROSHAN Medical Center management system." },
+      {
+        name: "description",
+        content: "Staff sign-in for the ROSHAN Medical Center management system.",
+      },
       { property: "og:title", content: "Sign in — ROSHAN Medical Center" },
-      { property: "og:description", content: "Staff sign-in for the ROSHAN Medical Center management system." },
+      {
+        property: "og:description",
+        content: "Staff sign-in for the ROSHAN Medical Center management system.",
+      },
     ],
   }),
   component: AuthPage,
@@ -87,7 +93,11 @@ function AuthPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {mode === "signin" ? t("sign_in") : mode === "forgot" ? t("reset_password") : t("new_password")}
+              {mode === "signin"
+                ? t("sign_in")
+                : mode === "forgot"
+                  ? t("reset_password")
+                  : t("new_password")}
             </CardTitle>
             <CardDescription>{t("signup_disabled")}</CardDescription>
           </CardHeader>
@@ -149,7 +159,11 @@ function AuthPage() {
                   {t("back")}
                 </button>
               )}
-              <button type="button" className="text-muted-foreground hover:underline" onClick={toggle}>
+              <button
+                type="button"
+                className="text-muted-foreground hover:underline"
+                onClick={toggle}
+              >
                 {lang === "ar" ? "English" : "العربية"}
               </button>
             </div>

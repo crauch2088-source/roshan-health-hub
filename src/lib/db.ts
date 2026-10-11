@@ -20,7 +20,7 @@ export function useRows<T = Row[]>(
 ) {
   return useQuery({
     queryKey: key,
-    queryFn: async () => (await run<T>(build() as never)),
+    queryFn: async () => await run<T>(build() as never),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? false,
     retry: false,
@@ -153,5 +153,5 @@ export function b(row: Row | undefined | null, key: string): boolean {
 }
 export function rel(row: Row | undefined | null, key: string): Row | null {
   const v = row?.[key];
-  return Array.isArray(v) ? ((v[0] as Row) ?? null) : (v as Row) ?? null;
+  return Array.isArray(v) ? ((v[0] as Row) ?? null) : ((v as Row) ?? null);
 }

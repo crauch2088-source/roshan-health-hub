@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, Pager, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Loading,
+  PageHeader,
+  Pager,
+  PermissionGate,
+} from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,9 +29,15 @@ export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
     meta: [
       { title: "Audit Log — ROSHAN Medical Center" },
-      { name: "description", content: "Traceable record of system actions by user, table and time." },
+      {
+        name: "description",
+        content: "Traceable record of system actions by user, table and time.",
+      },
       { property: "og:title", content: "Audit Log — ROSHAN Medical Center" },
-      { property: "og:description", content: "Traceable record of system actions by user, table and time." },
+      {
+        property: "og:description",
+        content: "Traceable record of system actions by user, table and time.",
+      },
     ],
   }),
   component: AuditPage,
