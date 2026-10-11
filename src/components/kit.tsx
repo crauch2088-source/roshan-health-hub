@@ -1,4 +1,13 @@
-import { Loader2, AlertTriangle, Inbox, Printer, FileDown, ShieldOff, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Loader2,
+  AlertTriangle,
+  Inbox,
+  Printer,
+  FileDown,
+  ShieldOff,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
@@ -36,7 +45,11 @@ export function PageHeader({
 export function Loading() {
   const { t } = useLang();
   return (
-    <div className="flex min-h-24 items-center justify-center gap-2 p-6 text-sm text-muted-foreground" role="status" aria-live="polite">
+    <div
+      className="flex min-h-24 items-center justify-center gap-2 p-6 text-sm text-muted-foreground"
+      role="status"
+      aria-live="polite"
+    >
       <Loader2 className="size-4 animate-spin" /> {t("loading")}
     </div>
   );
@@ -85,7 +98,7 @@ export function Empty({
       role="status"
       aria-live="polite"
     >
-       <div className="flex size-11 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground">
+      <div className="flex size-11 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground">
         {icon ?? <Inbox className="size-5" aria-hidden />}
       </div>
       <div className="space-y-1">
@@ -111,9 +124,7 @@ export function Forbidden({ message }: { message?: string }) {
         <h2 className="text-lg font-semibold tracking-tight">
           {lang === "ar" ? "غير مصرح" : "Access denied"}
         </h2>
-        <p className="max-w-md text-sm text-muted-foreground">
-          {message ?? t("no_permission")}
-        </p>
+        <p className="max-w-md text-sm text-muted-foreground">{message ?? t("no_permission")}</p>
       </div>
       <Button asChild variant="outline" size="sm">
         <Link to="/dashboard">{lang === "ar" ? "العودة للرئيسية" : "Back to dashboard"}</Link>
@@ -154,10 +165,10 @@ export function PermissionGate({
 /** Lightweight page-level skeleton for first paint. */
 export function PageSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-     <div className="space-y-5 p-1" role="status" aria-busy="true">
+    <div className="space-y-5 p-1" role="status" aria-busy="true">
       <div className="space-y-2">
-         <div className="h-7 w-48 max-w-full animate-pulse rounded-md bg-muted/70" />
-         <div className="h-4 w-72 max-w-full animate-pulse rounded-md bg-muted/50" />
+        <div className="h-7 w-48 max-w-full animate-pulse rounded-md bg-muted/70" />
+        <div className="h-4 w-72 max-w-full animate-pulse rounded-md bg-muted/50" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -201,10 +212,14 @@ export function StatCard({
       <CardContent className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-bold tabular-nums leading-tight", tones[tone])}>{value}</p>
+          <p className={cn("mt-1 text-2xl font-bold tabular-nums leading-tight", tones[tone])}>
+            {value}
+          </p>
           {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
         </div>
-        {icon ? <div className={cn("shrink-0 rounded-lg p-2.5", iconTones[tone])}>{icon}</div> : null}
+        {icon ? (
+          <div className={cn("shrink-0 rounded-lg p-2.5", iconTones[tone])}>{icon}</div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -270,7 +285,10 @@ export function StatusBadge({ status }: { status: string }) {
   const { t } = useLang();
   const key = (status || "").toLowerCase();
   return (
-    <Badge variant="outline" className={cn("font-medium transition-colors", statusTones[key] ?? "")}>
+    <Badge
+      variant="outline"
+      className={cn("font-medium transition-colors", statusTones[key] ?? "")}
+    >
       {t(key) === key ? status || "—" : t(key)}
     </Badge>
   );
@@ -330,11 +348,25 @@ export function Pager({
           : `${t("page")} ${page}`}
       </span>
       <div className="flex items-center gap-2">
-         <Button variant="outline" size="sm" disabled={!hasPrev || isFetching} onClick={onPrev} aria-label={t("previous")}>
-           <ChevronLeft className="size-4 rtl:rotate-180" /> <span className="hidden sm:inline">{t("previous")}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!hasPrev || isFetching}
+          onClick={onPrev}
+          aria-label={t("previous")}
+        >
+          <ChevronLeft className="size-4 rtl:rotate-180" />{" "}
+          <span className="hidden sm:inline">{t("previous")}</span>
         </Button>
-         <Button variant="outline" size="sm" disabled={!hasNext || isFetching} onClick={onNext} aria-label={t("next")}>
-           <span className="hidden sm:inline">{t("next")}</span> <ChevronRight className="size-4 rtl:rotate-180" />
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!hasNext || isFetching}
+          onClick={onNext}
+          aria-label={t("next")}
+        >
+          <span className="hidden sm:inline">{t("next")}</span>{" "}
+          <ChevronRight className="size-4 rtl:rotate-180" />
         </Button>
       </div>
     </div>
@@ -342,9 +374,5 @@ export function Pager({
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="mb-3 text-xs font-semibold text-foreground/75">
-      {children}
-    </h2>
-  );
+  return <h2 className="mb-3 text-xs font-semibold text-foreground/75">{children}</h2>;
 }
