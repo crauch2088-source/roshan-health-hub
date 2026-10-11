@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Clock3, Play, Search, UserRound } from "lucide-react";
 import { useState } from "react";
 import {
@@ -51,6 +51,7 @@ function QueuePage() {
 function QueuePageInner() {
   const { lang, t } = useLang();
   const { can } = useAuth();
+  const navigate = useNavigate();
   const canUpdate = can("visits.update");
   const [date, setDate] = useState(todayISO());
   const [status, setStatus] = useState("all");
@@ -243,9 +244,13 @@ function QueuePageInner() {
                             {canUpdate && st === "called" && (
                               <Button
                                 size="sm"
-                                onClick={() =>
-                                  update.mutate({ id: s(ticket, "id"), status: "in_progress" })
-                                }
+                                onClick={() => {
+                                  update.mutate({ id: s(ticket, "id"), status: "in_progress" });
+                                  void navigate({
+                                    to: "/clinic/$visitId",
+                                    params: { visitId: s(visit, "id") },
+                                  });
+                                }}
                               >
                                 <Clock3 className="size-4" />
                                 {lang === "ar" ? "بدء" : "Start"}

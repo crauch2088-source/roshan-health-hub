@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Empty,
@@ -47,6 +47,12 @@ import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/billing")({
+  // ?patient=<id> — mirrors the same deep-link the Visits page and the
+  // patient chart's "New Invoice" action use, so billing staff arriving
+  // from a patient's chart don't have to search for the patient again.
+  validateSearch: (search: Record<string, unknown>): { patient?: string | undefined } => ({
+    patient: typeof search["patient"] === "string" ? (search["patient"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Billing — ROSHAN Medical Center" },
@@ -79,6 +85,7 @@ function BillingPageInner() {
   const { can } = useAuth();
   const { currency } = useSettings();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [date, setDate] = useState(todayISO());
   const [open, setOpen] = useState(false);
   const [patientId, setPatientId] = useState("");
@@ -103,6 +110,32 @@ function BillingPageInner() {
   const partners = useRows(["partners"], () =>
     supabase.from("partners").select("id, name, discount_percent").is("deleted_at", null),
   );
+
+  // Pre-select the patient when arriving from a Patient Profile's
+  // "New Invoice" action (?patient=<id>) and open the dialog straight away,
+  // the same pattern the Visits page uses for "New Visit".
+  useEffect(() => {
+    if (!search.patient || search.patient === selectedPatient?.id) return;
+    let cancelled = false;
+    supabase
+      .from("patients")
+      .select("id, full_name, mrn, phone")
+      .eq("id", search.patient)
+      .is("deleted_at", null)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const picked = data as unknown as PickedPatient;
+        setSelectedPatient(picked);
+        setPatientId(picked.id);
+        setOpen(true);
+        void navigate({ to: "/billing", search: {}, replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.patient]);
 
   const subtotal = lines.reduce(
     (sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0),

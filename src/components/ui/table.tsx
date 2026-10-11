@@ -3,14 +3,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 type TableProps = React.HTMLAttributes<HTMLTableElement> & {
-  /** When true, thead sticks to the top of the scroll container. */
-  stickyHeader?: boolean;
   /** compact = tighter row height for dense lists */
   density?: "comfortable" | "compact";
 };
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, stickyHeader, density = "comfortable", ...props }, ref) => (
+  ({ className, density = "comfortable", ...props }, ref) => (
     <div
       className={cn(
         "relative w-full overflow-auto",
@@ -18,12 +16,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
       )}
       data-density={density}
     >
-      <table
-        ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
-        data-sticky-header={stickyHeader ? "true" : undefined}
-        {...props}
-      />
+      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   ),
 );
@@ -36,7 +29,13 @@ const TableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      "sticky top-0 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
+      // top-14 (3.5rem), not top-0: the app shell's own header is a fixed
+      // 56px bar (h-14) sticky at top-0 with a higher z-index. Every table
+      // in the app scrolls under that same header, so a table thead stuck
+      // at top-0 was rendering directly behind the app header instead of
+      // just below it - on any list long enough to scroll, the column
+      // labels disappeared under the top bar instead of staying visible.
+      "sticky top-14 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
       className,
     )}
     {...props}
@@ -69,7 +68,13 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/8 data-[state=selected]:hover:bg-primary/12",
+        // Selected-row tint was 8% opacity - close to imperceptible next to
+        // the plain hover:bg-muted/50 state right above it in this same
+        // class list, so a "selected" row barely read differently from a
+        // merely-hovered one. Bumped the tint and added an inset ring so
+        // selection has its own unmistakable signal (Notion/Linear-style)
+        // instead of relying on a few percent of background opacity alone.
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/15 data-[state=selected]:hover:bg-primary/20 data-[state=selected]:ring-1 data-[state=selected]:ring-inset data-[state=selected]:ring-primary/30",
         className,
       )}
       {...props}
@@ -85,7 +90,13 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      // text-start, not text-left: the app is RTL in Arabic
+      // (document.documentElement.dir follows the language), but every
+      // table header in the app shares this component, and `text-left`
+      // doesn't respond to `dir` the way the logical `text-start` does.
+      // Column headers were staying left-aligned even on RTL screens,
+      // where they should read from the right like the rest of the row.
+      "h-10 px-2 text-start align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}
