@@ -447,11 +447,9 @@ function PatientChart() {
         <StatCard
           label={t("invoices")}
           value={invoicesCount}
-          hint={
-            outstandingBalance > 0
-              ? `${t("outstanding_balance")}: ${money(outstandingBalance, currency)}`
-              : undefined
-          }
+          {...(outstandingBalance > 0
+            ? { hint: `${t("outstanding_balance")}: ${money(outstandingBalance, currency)}` }
+            : {})}
           icon={<Receipt className="size-5" />}
           tone={outstandingBalance > 0 ? "warning" : "default"}
         />
