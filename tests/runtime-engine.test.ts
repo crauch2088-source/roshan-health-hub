@@ -15,5 +15,8 @@ test("package.json pins a Node runtime with native WebSocket (>= 22)", () => {
   assert.ok(range, "package.json must declare engines.node");
   const major = Number(/(\d+)/.exec(range)?.[1]);
   assert.ok(major >= 22, `engines.node must be >= 22 (got "${range}")`);
-  assert.ok(!/^[<>~^]?=?\s*\d+\s*\|\|/.test(range) && !/\b(18|20)\b/.test(range), `engines.node must not allow Node 18/20 (got "${range}")`);
+  assert.ok(
+    !/^[<>~^]?=?\s*\d+\s*\|\|/.test(range) && !/\b(18|20)\b/.test(range),
+    `engines.node must not allow Node 18/20 (got "${range}")`,
+  );
 });
