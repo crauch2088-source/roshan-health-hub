@@ -93,15 +93,13 @@ function CertificatesPageInner() {
             ? "لياقة طبية"
             : "Medical fitness";
       const diagnosis = [purpose, form.diagnosis.trim()].filter(Boolean).join(" — ");
-      const { error } = await supabase
-        .from("medical_certificates")
-        .insert({
-          patient_id: form.patient_id,
-          doctor_id: user?.id ?? null,
-          diagnosis,
-          start_date: form.start_date,
-          end_date: endDate,
-        });
+      const { error } = await supabase.from("medical_certificates").insert({
+        patient_id: form.patient_id,
+        doctor_id: user?.id ?? null,
+        diagnosis,
+        start_date: form.start_date,
+        end_date: endDate,
+      });
       if (error) throw new Error(error.message);
       return null;
     },

@@ -538,14 +538,12 @@ function Suppliers({
   const addSupplier = useSave(
     async () => {
       if (!name.trim()) throw new Error(t("required"));
-      const { error } = await supabase
-        .from("suppliers")
-        .insert({
-          name: name.trim(),
-          phone: phone || null,
-          address: address || null,
-          active: true,
-        });
+      const { error } = await supabase.from("suppliers").insert({
+        name: name.trim(),
+        phone: phone || null,
+        address: address || null,
+        active: true,
+      });
       if (error) throw error;
     },
     {
