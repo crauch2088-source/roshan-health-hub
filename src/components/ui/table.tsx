@@ -10,17 +10,17 @@ type TableProps = React.HTMLAttributes<HTMLTableElement> & {
 };
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, stickyHeader, density = "comfortable", ...props }, ref) => (
+  ({ className, stickyHeader = true, density = "compact", ...props }, ref) => (
     <div
       className={cn(
-        "relative w-full overflow-auto",
-        density === "compact" && "[&_th]:h-8 [&_th]:px-2 [&_td]:p-1.5 [&_td]:text-[13px]",
+        "relative w-full overflow-auto overscroll-x-contain",
+        density === "compact" && "[&_th]:h-9 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2 [&_td]:text-[13px]",
       )}
       data-density={density}
     >
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn("w-full caption-bottom text-sm tabular-nums", className)}
         data-sticky-header={stickyHeader ? "true" : undefined}
         {...props}
       />
@@ -36,9 +36,10 @@ const TableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      "sticky top-0 z-10 border-b bg-card/95 backdrop-blur-sm [&_tr]:border-b",
+      "border-b bg-muted/45 [&_tr]:border-b data-[sticky=true]:sticky data-[sticky=true]:top-0 data-[sticky=true]:z-10 data-[sticky=true]:bg-card/95 data-[sticky=true]:backdrop-blur-sm",
       className,
     )}
+    data-sticky={props["data-sticky"] ?? "true"}
     {...props}
   />
 ));
@@ -69,7 +70,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-primary/8 data-[state=selected]:hover:bg-primary/12",
+        "border-b border-border/60 transition-colors hover:bg-accent/45 data-[state=selected]:bg-primary/10 data-[state=selected]:hover:bg-primary/15",
         className,
       )}
       {...props}
@@ -85,7 +86,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-10 px-3 text-start align-middle text-[11px] font-semibold uppercase text-muted-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}
@@ -100,7 +101,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "px-3 py-2.5 align-middle [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}
