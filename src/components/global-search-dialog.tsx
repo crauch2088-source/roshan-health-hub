@@ -48,7 +48,15 @@ const CATEGORY_ICON = {
 } as const;
 
 /** Small star toggle reused by every pinnable row (pages + favorites). */
-function PinToggle({ pinned, onToggle, label }: { pinned: boolean; onToggle: () => void; label: string }) {
+function PinToggle({
+  pinned,
+  onToggle,
+  label,
+}: {
+  pinned: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
   return (
     <button
       type="button"
@@ -60,7 +68,9 @@ function PinToggle({ pinned, onToggle, label }: { pinned: boolean; onToggle: () 
       aria-label={label}
       className="ms-auto shrink-0 rounded p-0.5 opacity-60 hover:opacity-100"
     >
-      <Star className={cn("size-3.5", pinned ? "fill-current text-amber-500" : "text-muted-foreground")} />
+      <Star
+        className={cn("size-3.5", pinned ? "fill-current text-amber-500" : "text-muted-foreground")}
+      />
     </button>
   );
 }
@@ -85,7 +95,10 @@ export function GlobalSearchDialog({
   const [recentTerms, setRecentTerms] = useState<string[]>(() => getRecentSearchTerms());
   const [history, setHistory] = useState<SearchResultItem[]>(() => getSearchHistory());
 
-  const pages = useMemo(() => [HOME_ITEM, ...flatNavItems().filter((i) => i.to !== HOME_ITEM.to)], []);
+  const pages = useMemo(
+    () => [HOME_ITEM, ...flatNavItems().filter((i) => i.to !== HOME_ITEM.to)],
+    [],
+  );
 
   const visiblePages = useMemo(() => {
     const allowed = pages.filter((item) => can(item.perm));
@@ -183,10 +196,18 @@ export function GlobalSearchDialog({
                     {favoritePages.map((item) => {
                       const Icon = getNavIcon(item.icon);
                       return (
-                        <CommandItem key={`fav:${item.to}`} value={`fav-${item.to}`} onSelect={() => goTo(item.to)}>
+                        <CommandItem
+                          key={`fav:${item.to}`}
+                          value={`fav-${item.to}`}
+                          onSelect={() => goTo(item.to)}
+                        >
                           <Icon className="size-4" />
                           <span>{t(item.key)}</span>
-                          <PinToggle pinned onToggle={() => toggleFavorite(item.to)} label={t("unpin")} />
+                          <PinToggle
+                            pinned
+                            onToggle={() => toggleFavorite(item.to)}
+                            label={t("unpin")}
+                          />
                         </CommandItem>
                       );
                     })}
@@ -200,7 +221,11 @@ export function GlobalSearchDialog({
                       if (!item || !can(item.perm)) return null;
                       const Icon = getNavIcon(item.icon);
                       return (
-                        <CommandItem key={`recent:${item.to}`} value={`recent-${item.to}`} onSelect={() => goTo(item.to)}>
+                        <CommandItem
+                          key={`recent:${item.to}`}
+                          value={`recent-${item.to}`}
+                          onSelect={() => goTo(item.to)}
+                        >
                           <Clock className="size-4 text-muted-foreground" />
                           <span>{t(item.key)}</span>
                         </CommandItem>
@@ -242,7 +267,9 @@ export function GlobalSearchDialog({
                             <div className="flex min-w-0 flex-col">
                               <span className="truncate">{item.title}</span>
                               {item.subtitle && (
-                                <span className="truncate text-xs text-muted-foreground">{item.subtitle}</span>
+                                <span className="truncate text-xs text-muted-foreground">
+                                  {item.subtitle}
+                                </span>
                               )}
                             </div>
                             <Icon className="ms-auto size-3.5 shrink-0 text-muted-foreground" />
@@ -269,7 +296,11 @@ export function GlobalSearchDialog({
                     <CommandSeparator />
                     <CommandGroup heading={t("recent_searches")}>
                       {recentTerms.map((term) => (
-                        <CommandItem key={`term:${term}`} value={`term-${term}`} onSelect={() => rerunRecentTerm(term)}>
+                        <CommandItem
+                          key={`term:${term}`}
+                          value={`term-${term}`}
+                          onSelect={() => rerunRecentTerm(term)}
+                        >
                           <Search className="size-4 text-muted-foreground" />
                           <span>{term}</span>
                         </CommandItem>
@@ -299,7 +330,11 @@ export function GlobalSearchDialog({
                       const Icon = getNavIcon(item.icon);
                       const favoritable = item.favoritable !== false;
                       return (
-                        <CommandItem key={`page:${item.to}`} value={`page-${item.to}`} onSelect={() => goTo(item.to)}>
+                        <CommandItem
+                          key={`page:${item.to}`}
+                          value={`page-${item.to}`}
+                          onSelect={() => goTo(item.to)}
+                        >
                           <Icon className="size-4" />
                           <span>{t(item.key)}</span>
                           {favoritable && (
@@ -315,10 +350,30 @@ export function GlobalSearchDialog({
                   </CommandGroup>
                 )}
 
-                <ResultGroup heading={t("patient_result")} icon={CATEGORY_ICON.patient} items={results.patients} onSelect={selectResult} />
-                <ResultGroup heading={t("visit_result")} icon={CATEGORY_ICON.visit} items={results.visits} onSelect={selectResult} />
-                <ResultGroup heading={t("lab_result")} icon={CATEGORY_ICON.lab} items={results.lab} onSelect={selectResult} />
-                <ResultGroup heading={t("medicine_result")} icon={CATEGORY_ICON.medicine} items={results.medicines} onSelect={selectResult} />
+                <ResultGroup
+                  heading={t("patient_result")}
+                  icon={CATEGORY_ICON.patient}
+                  items={results.patients}
+                  onSelect={selectResult}
+                />
+                <ResultGroup
+                  heading={t("visit_result")}
+                  icon={CATEGORY_ICON.visit}
+                  items={results.visits}
+                  onSelect={selectResult}
+                />
+                <ResultGroup
+                  heading={t("lab_result")}
+                  icon={CATEGORY_ICON.lab}
+                  items={results.lab}
+                  onSelect={selectResult}
+                />
+                <ResultGroup
+                  heading={t("medicine_result")}
+                  icon={CATEGORY_ICON.medicine}
+                  items={results.medicines}
+                  onSelect={selectResult}
+                />
 
                 {noResults && <CommandEmpty>{t("no_results")}</CommandEmpty>}
               </>
@@ -358,9 +413,13 @@ function ResultGroup({
           <Icon className="size-4 text-muted-foreground" />
           <div className="flex min-w-0 flex-col">
             <span className="truncate">{item.title}</span>
-            {item.subtitle && <span className="truncate text-xs text-muted-foreground">{item.subtitle}</span>}
+            {item.subtitle && (
+              <span className="truncate text-xs text-muted-foreground">{item.subtitle}</span>
+            )}
           </div>
-          {item.meta && <span className={cn("ms-auto text-xs text-muted-foreground")}>{item.meta}</span>}
+          {item.meta && (
+            <span className={cn("ms-auto text-xs text-muted-foreground")}>{item.meta}</span>
+          )}
         </CommandItem>
       ))}
     </CommandGroup>

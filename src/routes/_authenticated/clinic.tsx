@@ -7,7 +7,9 @@ import {
   ExportButtons,
   Loading,
   PageHeader,
-  StatusBadge, PermissionGate } from "@/components/kit";
+  StatusBadge,
+  PermissionGate,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -63,18 +65,19 @@ function ClinicPageInner() {
   const [status, setStatus] = useState("all");
 
   const [date, setDate] = useState<string>(todayISO());
-  const [filterMyPatients, setFilterMyPatients] =
-    useState<boolean>(false);
+  const [filterMyPatients, setFilterMyPatients] = useState<boolean>(false);
 
-  const nextDate = (() => { const d = new Date(`${date}T00:00:00+02:00`); d.setDate(d.getDate()+1); return d.toISOString(); })();
+  const nextDate = (() => {
+    const d = new Date(`${date}T00:00:00+02:00`);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString();
+  })();
 
-  const visits = useRows(
-    ["clinic-visits", date, filterMyPatients, user?.id ?? ""],
-    () =>
-      supabase
-        .from("visits")
-        .select(
-          `
+  const visits = useRows(["clinic-visits", date, filterMyPatients, user?.id ?? ""], () =>
+    supabase
+      .from("visits")
+      .select(
+        `
             id,
             visit_number,
             status,
@@ -98,11 +101,11 @@ function ClinicPageInner() {
               full_name
             )
           `,
-        )
-        .gte("visit_date", new Date(`${date}T00:00:00+02:00`).toISOString())
-        .lt("visit_date", nextDate)
-        .is("deleted_at", null)
-        .order("visit_date", { ascending: true }),
+      )
+      .gte("visit_date", new Date(`${date}T00:00:00+02:00`).toISOString())
+      .lt("visit_date", nextDate)
+      .is("deleted_at", null)
+      .order("visit_date", { ascending: true }),
   );
 
   const rows = ((visits.data ?? []) as Row[]).filter((visit) => {
@@ -112,7 +115,9 @@ function ClinicPageInner() {
     if (!term) return true;
     const patient = rel(visit, "patients");
     const dept = rel(visit, "departments");
-    return `${s(patient, "full_name")} ${s(patient, "mrn")} ${s(patient, "phone")} ${s(visit, "visit_number")} ${s(dept, "name")} ${s(dept, "name_ar")}`.toLowerCase().includes(term);
+    return `${s(patient, "full_name")} ${s(patient, "mrn")} ${s(patient, "phone")} ${s(visit, "visit_number")} ${s(dept, "name")} ${s(dept, "name_ar")}`
+      .toLowerCase()
+      .includes(term);
   });
 
   if (visits.isLoading) {
@@ -121,20 +126,29 @@ function ClinicPageInner() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title={lang === "ar" ? "العيادة" : "Clinic"}
-        subtitle={formatDate(date)}
-      >
+      <PageHeader title={lang === "ar" ? "العيادة" : "Clinic"} subtitle={formatDate(date)}>
         <div className="flex flex-wrap items-center gap-2">
-          <Input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder={lang==="ar"?"ابحث عن المريض":"Search patient"} className="w-52"/>
-          <select className="rounded-md border bg-background px-3 py-2 text-sm" value={status} onChange={(e)=>setStatus(e.target.value)}><option value="all">{lang==="ar"?"كل الحالات":"All statuses"}</option><option value="waiting">Waiting</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={lang === "ar" ? "ابحث عن المريض" : "Search patient"}
+            className="w-52"
+          />
+          <select
+            className="rounded-md border bg-background px-3 py-2 text-sm"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            <option value="all">{lang === "ar" ? "كل الحالات" : "All statuses"}</option>
+            <option value="waiting">Waiting</option>
+            <option value="in_progress">In progress</option>
+            <option value="completed">Completed</option>
+          </select>
           <Button
             variant={filterMyPatients ? "default" : "outline"}
             size="sm"
             type="button"
-            onClick={() =>
-              setFilterMyPatients((current) => !current)
-            }
+            onClick={() => setFilterMyPatients((current) => !current)}
           >
             {lang === "ar" ? "مرضاي فقط" : "My Patients"}
           </Button>
@@ -147,10 +161,7 @@ function ClinicPageInner() {
             className="w-40"
           />
 
-          <ExportButtons
-            rows={rows}
-            filename={`roshan-clinic-${date}`}
-          />
+          <ExportButtons rows={rows} filename={`roshan-clinic-${date}`} />
         </div>
       </PageHeader>
 
@@ -164,41 +175,22 @@ function ClinicPageInner() {
             <Table density="compact">
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    {lang === "ar" ? "المريض" : "Patient"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "العمر / الجنس"
-                      : "Age / Gender"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "العمر / الجنس" : "Age / Gender"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar"
-                      ? "القسم"
-                      : "Department"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
 
-                  <TableHead>
-                    {lang === "ar" ? "الحالة" : "Status"}
-                  </TableHead>
+                  <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
 
-                  <TableHead className="text-end">
-                    {lang === "ar"
-                      ? "الإجراء"
-                      : "Action"}
-                  </TableHead>
+                  <TableHead className="text-end">{lang === "ar" ? "الإجراء" : "Action"}</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {rows.map((visit) => {
                   const patient = rel(visit, "patients");
-                  const department = rel(
-                    visit,
-                    "departments",
-                  );
+                  const department = rel(visit, "departments");
 
                   const patientId = s(patient, "id");
                   const visitId = s(visit, "id");
@@ -207,10 +199,7 @@ function ClinicPageInner() {
 
                   const ageVal = calcAge(dob);
 
-                  const ageStr =
-                    ageVal !== null
-                      ? `${ageVal} yrs`
-                      : "—";
+                  const ageStr = ageVal !== null ? `${ageVal} yrs` : "—";
 
                   /*
                    * IMPORTANT
@@ -231,25 +220,13 @@ function ClinicPageInner() {
                    */
 
                   return (
-                    <TableRow
-                      key={
-                        visitId ||
-                        `${patientId}-${s(
-                          visit,
-                          "created_at",
-                        )}`
-                      }
-                    >
+                    <TableRow key={visitId || `${patientId}-${s(visit, "created_at")}`}>
                       {/* PATIENT */}
                       <TableCell className="whitespace-nowrap font-medium">
-                        {s(patient, "full_name") ||
-                          "—"}
+                        {s(patient, "full_name") || "—"}
 
                         {s(patient, "mrn") ? (
-                          <span
-                            className="ms-2 text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
+                          <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
                             {s(patient, "mrn")}
                           </span>
                         ) : null}
@@ -259,40 +236,19 @@ function ClinicPageInner() {
                       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                         {ageStr}
 
-                        {s(patient, "gender")
-                          ? ` (${s(
-                              patient,
-                              "gender",
-                            )})`
-                          : ""}
+                        {s(patient, "gender") ? ` (${s(patient, "gender")})` : ""}
                       </TableCell>
 
                       {/* DEPARTMENT */}
                       <TableCell className="whitespace-nowrap">
                         {lang === "ar"
-                          ? s(
-                              department,
-                              "name_ar",
-                            ) ||
-                            s(
-                              department,
-                              "name",
-                            ) ||
-                            "—"
-                          : s(
-                              department,
-                              "name",
-                            ) || "—"}
+                          ? s(department, "name_ar") || s(department, "name") || "—"
+                          : s(department, "name") || "—"}
                       </TableCell>
 
                       {/* STATUS */}
                       <TableCell>
-                        <StatusBadge
-                          status={s(
-                            visit,
-                            "status",
-                          )}
-                        />
+                        <StatusBadge status={s(visit, "status")} />
                       </TableCell>
 
                       {/* ACTION — plain <Link>, not wrapped in
@@ -320,14 +276,10 @@ function ClinicPageInner() {
                             size="sm"
                             disabled
                             title={
-                              lang === "ar"
-                                ? "معرّف الزيارة غير موجود"
-                                : "Visit ID is missing"
+                              lang === "ar" ? "معرّف الزيارة غير موجود" : "Visit ID is missing"
                             }
                           >
-                            {lang === "ar"
-                              ? "فتح"
-                              : "Open"}
+                            {lang === "ar" ? "فتح" : "Open"}
                           </Button>
                         )}
                       </TableCell>

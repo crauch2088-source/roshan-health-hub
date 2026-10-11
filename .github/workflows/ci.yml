@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - fix/tanstack-start-security
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Install, audit, typecheck, lint, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Fails if package-lock.json is out of sync with package.json.
+      - name: Install from lockfile
+        run: npm ci
+
+      - name: Show resolved TanStack versions
+        run: npm ls @tanstack/react-start @tanstack/start-server-core @tanstack/react-router @tanstack/router-plugin
+
+      # Every resolved copy (direct or transitive) must be at or above the patched version.
+      - name: Enforce patched TanStack Start versions
+        run: |
+          node <<'NODE'
+          const lock = require("./package-lock.json");
+          const packages = lock.packages || {};
+
+          const versions = (name) =>
+            Object.entries(packages)
+              .filter(([path, info]) => info.version && path.endsWith(`node_modules/${name}`))
+              .map(([, info]) => info.version);
+
+          const parse = (v) =>
+            v.split(/[.-]/).slice(0, 3).map((x) => (/^\d+$/.test(x) ? Number(x) : 0));
+
+          const atLeast = (version, minimum) => {
+            const a = parse(version);
+            const b = parse(minimum);
+            for (let i = 0; i < 3; i++) {
+              if (a[i] > b[i]) return true;
+              if (a[i] < b[i]) return false;
+            }
+            return true;
+          };
+
+          const required = [
+            ["@tanstack/react-start", "1.168.60"],
+            ["@tanstack/start-server-core", "1.169.39"],
+          ];
+
+          let failed = false;
+          for (const [name, minimum] of required) {
+            const found = versions(name);
+            console.log(`${name}: ${found.join(", ") || "NOT FOUND"}`);
+            if (!found.length || !found.every((v) => atLeast(v, minimum))) {
+              console.error(`FAIL: every resolved ${name} must be >= ${minimum}`);
+              failed = true;
+            }
+          }
+          if (failed) process.exit(1);
+          NODE
+
+      - name: Security audit
+        run: npm audit
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      # The project defines no "test" script, so no test step is run here.
+      # Add one together with the script when tests are introduced.

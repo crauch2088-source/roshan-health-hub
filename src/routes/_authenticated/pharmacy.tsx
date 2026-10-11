@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, SectionTitle, StatusBadge, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Loading,
+  PageHeader,
+  SectionTitle,
+  StatusBadge,
+  PermissionGate,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,9 +40,15 @@ export const Route = createFileRoute("/_authenticated/pharmacy")({
   head: () => ({
     meta: [
       { title: "Pharmacy — ROSHAN Medical Center" },
-      { name: "description", content: "Dispense prescriptions using FEFO batch stock and bill medicines." },
+      {
+        name: "description",
+        content: "Dispense prescriptions using FEFO batch stock and bill medicines.",
+      },
       { property: "og:title", content: "Pharmacy — ROSHAN Medical Center" },
-      { property: "og:description", content: "Dispense prescriptions using FEFO batch stock and bill medicines." },
+      {
+        property: "og:description",
+        content: "Dispense prescriptions using FEFO batch stock and bill medicines.",
+      },
     ],
   }),
   component: PharmacyPage,
@@ -84,16 +99,33 @@ function PharmacyPageInner() {
       setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
       return result;
     },
-    { invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"], ["pharmacy-batches"]], successMessage: t("dispensed") },
+    {
+      invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"], ["pharmacy-batches"]],
+      successMessage: t("dispensed"),
+    },
   );
 
-  const rows = useMemo(() => { const q = search.trim().toLowerCase(); return ((list.data ?? []) as Row[]).filter((p) => { if (!q) return true; const patient = rel(p, "patients"); const items = (p["prescription_items"] as Row[]) ?? []; const meds = items.map((i) => s(rel(i, "medicines"), "name")).join(" "); return `${s(patient,"full_name")} ${s(patient,"mrn")} ${meds}`.toLowerCase().includes(q); }); }, [list.data, search]);
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ((list.data ?? []) as Row[]).filter((p) => {
+      if (!q) return true;
+      const patient = rel(p, "patients");
+      const items = (p["prescription_items"] as Row[]) ?? [];
+      const meds = items.map((i) => s(rel(i, "medicines"), "name")).join(" ");
+      return `${s(patient, "full_name")} ${s(patient, "mrn")} ${meds}`.toLowerCase().includes(q);
+    });
+  }, [list.data, search]);
   if (list.isLoading) return <Loading />;
 
   return (
     <div>
       <PageHeader title={t("pharmacy")} subtitle={t("dispense_queue")}>
-        <Input placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-56" />
+        <Input
+          placeholder={t("search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56"
+        />
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -112,7 +144,10 @@ function PharmacyPageInner() {
       <ErrorBox error={list.error} />
 
       {rows.length === 0 ? (
-        <Empty title={t("no_data")} description={lang === "ar" ? "لا وصفات مطابقة." : "No matching prescriptions."} />
+        <Empty
+          title={t("no_data")}
+          description={lang === "ar" ? "لا وصفات مطابقة." : "No matching prescriptions."}
+        />
       ) : (
         <div className="grid gap-4">
           {rows.map((p) => {
@@ -160,14 +195,23 @@ function PharmacyPageInner() {
                     <TableBody>
                       {items.map((i) => (
                         <TableRow key={s(i, "id")}>
-                          <TableCell className="font-medium">{s(rel(i, "medicines"), "name")}</TableCell>
+                          <TableCell className="font-medium">
+                            {s(rel(i, "medicines"), "name")}
+                          </TableCell>
                           <TableCell>
-                            {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")].filter(Boolean).join(" · ") || "—"}
+                            {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                              .filter(Boolean)
+                              .join(" · ") || "—"}
                           </TableCell>
                           <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
-                          <TableCell dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</TableCell>
+                          <TableCell dir="ltr">
+                            {n(rel(i, "medicines"), "stock_quantity")}
+                          </TableCell>
                           <TableCell>
-                            {money((n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"), currency)}
+                            {money(
+                              (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
+                              currency,
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -194,7 +238,9 @@ function PharmacyPageInner() {
                           {usedBatches.map((row, idx) => (
                             <TableRow key={`${row.item_id}-${row.batch_id ?? "legacy"}-${idx}`}>
                               <TableCell className="font-medium">{row.medicine_name}</TableCell>
-                              <TableCell dir="ltr">{row.batch_number ?? t("legacy_stock")}</TableCell>
+                              <TableCell dir="ltr">
+                                {row.batch_number ?? t("legacy_stock")}
+                              </TableCell>
                               <TableCell dir="ltr">{row.expiry_date ?? "—"}</TableCell>
                               <TableCell dir="ltr">{row.quantity_dispensed}</TableCell>
                               <TableCell dir="ltr">{row.batch_quantity_remaining ?? "—"}</TableCell>

@@ -97,11 +97,19 @@ export const QUICK_EXAM: QuickOption[] = [
 
 export const QUICK_ASSESSMENT: QuickOption[] = [
   { value: "viral_urti", label: "Viral URTI", labelAr: "عدوى فيروسية بالجهاز التنفسي العلوي" },
-  { value: "bacterial_urti", label: "Bacterial URTI", labelAr: "عدوى بكتيرية بالجهاز التنفسي العلوي" },
+  {
+    value: "bacterial_urti",
+    label: "Bacterial URTI",
+    labelAr: "عدوى بكتيرية بالجهاز التنفسي العلوي",
+  },
   { value: "acute_bronchitis", label: "Acute bronchitis", labelAr: "التهاب الشعب الهوائية الحاد" },
   { value: "pneumonia", label: "Pneumonia", labelAr: "التهاب رئوي" },
   { value: "asthma_exacerbation", label: "Asthma exacerbation", labelAr: "تفاقم الربو" },
-  { value: "gastroenteritis", label: "Acute gastroenteritis", labelAr: "التهاب المعدة والأمعاء الحاد" },
+  {
+    value: "gastroenteritis",
+    label: "Acute gastroenteritis",
+    labelAr: "التهاب المعدة والأمعاء الحاد",
+  },
   { value: "uti", label: "Urinary tract infection", labelAr: "التهاب المسالك البولية" },
   { value: "malaria_suspected", label: "Suspected malaria", labelAr: "اشتباه ملاريا" },
   { value: "malaria_confirmed", label: "Confirmed malaria", labelAr: "ملاريا مؤكدة" },
@@ -127,7 +135,11 @@ export const QUICK_PLAN: QuickOption[] = [
   { value: "follow_up", label: "Follow-up", labelAr: "متابعة" },
   { value: "referral", label: "Referral", labelAr: "تحويل" },
   { value: "emergency_referral", label: "Emergency referral", labelAr: "تحويل للطوارئ" },
-  { value: "return_if_worse", label: "Return if symptoms worsen", labelAr: "العودة عند تدهور الأعراض" },
+  {
+    value: "return_if_worse",
+    label: "Return if symptoms worsen",
+    labelAr: "العودة عند تدهور الأعراض",
+  },
   { value: "no_medication", label: "No medication required", labelAr: "لا حاجة لدواء" },
 ];
 

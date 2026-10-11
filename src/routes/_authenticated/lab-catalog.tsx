@@ -2,7 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Field,
+  Loading,
+  PageHeader,
+  PermissionGate,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -33,9 +41,15 @@ export const Route = createFileRoute("/_authenticated/lab-catalog")({
   head: () => ({
     meta: [
       { title: "Test catalogue — ROSHAN Medical Center" },
-      { name: "description", content: "Manage laboratory tests, prices, units and reference ranges." },
+      {
+        name: "description",
+        content: "Manage laboratory tests, prices, units and reference ranges.",
+      },
       { property: "og:title", content: "Test catalogue — ROSHAN Medical Center" },
-      { property: "og:description", content: "Manage laboratory tests, prices, units and reference ranges." },
+      {
+        property: "og:description",
+        content: "Manage laboratory tests, prices, units and reference ranges.",
+      },
     ],
   }),
   component: LabCatalogPage,
@@ -70,7 +84,11 @@ function LabCatalogPageInner() {
   const [search, setSearch] = useState("");
 
   const tests = useRows(["lab-catalog"], () =>
-    supabase.from("lab_tests").select("*").is("deleted_at", null).order("name", { ascending: true }),
+    supabase
+      .from("lab_tests")
+      .select("*")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
   );
 
   const create = useSave(
@@ -110,16 +128,19 @@ function LabCatalogPageInner() {
 
   const update = useSave<{ id: string }>(
     async ({ id }) => {
-      const { error } = await supabase.from("lab_tests").update({
-        name: form.name,
-        name_ar: form.name_ar || null,
-        category: form.category || null,
-        unit: form.unit || null,
-        price: Number(form.price) || 0,
-        normal_min: form.normal_min === "" ? null : Number(form.normal_min),
-        normal_max: form.normal_max === "" ? null : Number(form.normal_max),
-        reference_range: form.reference_range || null,
-      }).eq("id", id);
+      const { error } = await supabase
+        .from("lab_tests")
+        .update({
+          name: form.name,
+          name_ar: form.name_ar || null,
+          category: form.category || null,
+          unit: form.unit || null,
+          price: Number(form.price) || 0,
+          normal_min: form.normal_min === "" ? null : Number(form.normal_min),
+          normal_max: form.normal_max === "" ? null : Number(form.normal_max),
+          reference_range: form.reference_range || null,
+        })
+        .eq("id", id);
       if (error) throw new Error(error.message);
       return null;
     },
@@ -134,52 +155,82 @@ function LabCatalogPageInner() {
     },
   );
 
-  const rows = ((tests.data ?? []) as Row[]).filter(
-    (x) =>
-      `${s(x, "name")} ${s(x, "name_ar")} ${s(x, "code")} ${s(x, "category")}`.toLowerCase().includes(search.trim().toLowerCase()),
+  const rows = ((tests.data ?? []) as Row[]).filter((x) =>
+    `${s(x, "name")} ${s(x, "name_ar")} ${s(x, "code")} ${s(x, "category")}`
+      .toLowerCase()
+      .includes(search.trim().toLowerCase()),
   );
   if (tests.isLoading) return <Loading />;
 
   return (
     <div>
       <PageHeader title={t("lab_catalog")} subtitle={t("tests_and_prices")}>
-        <Input placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-48" />
+        <Input
+          placeholder={t("search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-48"
+        />
         <ExportButtons rows={rows} filename="roshan-lab-catalog" />
         {can("lab_admin.manage") ? (
-          <Dialog open={open} onOpenChange={(value) => {
-            setOpen(value);
-            if (!value) {
-              setEditingId(null);
-              setForm(blank);
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button size="sm" onClick={() => {
+          <Dialog
+            open={open}
+            onOpenChange={(value) => {
+              setOpen(value);
+              if (!value) {
                 setEditingId(null);
                 setForm(blank);
-              }}>
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm(blank);
+                }}
+              >
                 <Plus className="size-4" /> {t("add")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-               <DialogTitle>{editingId ? t("edit") : t("lab_catalog")}</DialogTitle>
+                <DialogTitle>{editingId ? t("edit") : t("lab_catalog")}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`${t("name")} (EN) *`}>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
                 </Field>
                 <Field label={`${t("name")} (AR)`}>
-                  <Input value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
+                  <Input
+                    value={form.name_ar}
+                    onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("category")}>
-                  <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                  <Input
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("unit")}>
-                  <Input dir="ltr" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
+                  <Input
+                    dir="ltr"
+                    value={form.unit}
+                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("price")}>
-                  <Input type="number" dir="ltr" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                  <Input
+                    type="number"
+                    dir="ltr"
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("reference_range")}>
                   <Input
@@ -209,11 +260,13 @@ function LabCatalogPageInner() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                 <Button
-                   disabled={!form.name || create.isPending || update.isPending}
-                   onClick={() => editingId ? update.mutate({ id: editingId }) : create.mutate(undefined as never)}
-                 >
-                   {(create.isPending || update.isPending) ? t("saving") : t("save")}
+                <Button
+                  disabled={!form.name || create.isPending || update.isPending}
+                  onClick={() =>
+                    editingId ? update.mutate({ id: editingId }) : create.mutate(undefined as never)
+                  }
+                >
+                  {create.isPending || update.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -236,8 +289,8 @@ function LabCatalogPageInner() {
                   <TableHead>{t("unit")}</TableHead>
                   <TableHead>{t("reference_range")}</TableHead>
                   <TableHead>{t("price")}</TableHead>
-                   <TableHead className="no-print">{t("active")}</TableHead>
-                   <TableHead className="no-print" />
+                  <TableHead className="no-print">{t("active")}</TableHead>
+                  <TableHead className="no-print" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -255,37 +308,37 @@ function LabCatalogPageInner() {
                           : "—")}
                     </TableCell>
                     <TableCell>{money(n(x, "price"), currency)}</TableCell>
-                     <TableCell className="no-print">
+                    <TableCell className="no-print">
                       <Switch
                         checked={b(x, "active")}
                         disabled={!can("lab_admin.manage")}
                         onCheckedChange={(v) => toggle.mutate({ id: s(x, "id"), active: v })}
                       />
                     </TableCell>
-                     <TableCell className="no-print text-end">
-                       {can("lab_admin.manage") ? (
-                         <Button
-                           variant="outline"
-                           size="sm"
-                           onClick={() => {
-                             setEditingId(s(x, "id"));
-                             setForm({
-                               name: s(x, "name"),
-                               name_ar: s(x, "name_ar"),
-                               category: s(x, "category"),
-                               unit: s(x, "unit"),
-                               price: s(x, "price") || "0",
-                               normal_min: s(x, "normal_min"),
-                               normal_max: s(x, "normal_max"),
-                               reference_range: s(x, "reference_range"),
-                             });
-                             setOpen(true);
-                           }}
-                         >
-                           <Pencil className="size-4" /> {t("edit")}
-                         </Button>
-                       ) : null}
-                     </TableCell>
+                    <TableCell className="no-print text-end">
+                      {can("lab_admin.manage") ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingId(s(x, "id"));
+                            setForm({
+                              name: s(x, "name"),
+                              name_ar: s(x, "name_ar"),
+                              category: s(x, "category"),
+                              unit: s(x, "unit"),
+                              price: s(x, "price") || "0",
+                              normal_min: s(x, "normal_min"),
+                              normal_max: s(x, "normal_max"),
+                              reference_range: s(x, "reference_range"),
+                            });
+                            setOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-4" /> {t("edit")}
+                        </Button>
+                      ) : null}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

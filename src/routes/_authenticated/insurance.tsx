@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, StatusBadge, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Field,
+  Loading,
+  PageHeader,
+  StatCard,
+  StatusBadge,
+  PermissionGate,
+} from "@/components/kit";
 import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +25,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -44,9 +60,15 @@ export const Route = createFileRoute("/_authenticated/insurance")({
   head: () => ({
     meta: [
       { title: "Insurance — ROSHAN Medical Center" },
-      { name: "description", content: "Insurance companies, plans, patient membership, and claims." },
+      {
+        name: "description",
+        content: "Insurance companies, plans, patient membership, and claims.",
+      },
       { property: "og:title", content: "Insurance — ROSHAN Medical Center" },
-      { property: "og:description", content: "Insurance companies, plans, patient membership, and claims." },
+      {
+        property: "og:description",
+        content: "Insurance companies, plans, patient membership, and claims.",
+      },
     ],
   }),
   component: InsurancePage,
@@ -133,7 +155,10 @@ function CompaniesTab() {
 
   const toggleActive = useSave(
     async (row: Row) => {
-      const { error } = await supabase.from("insurance_companies").update({ active: !row["active"] }).eq("id", s(row, "id"));
+      const { error } = await supabase
+        .from("insurance_companies")
+        .update({ active: !row["active"] })
+        .eq("id", s(row, "id"));
       if (error) throw new Error(error.message);
       return null;
     },
@@ -159,23 +184,40 @@ function CompaniesTab() {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={`${t("name")} *`}>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("contact_person")}>
-                  <Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} />
+                  <Input
+                    value={form.contact_person}
+                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("phone")}>
-                  <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <Input
+                    dir="ltr"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("email")}>
-                  <Input dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  <Input
+                    dir="ltr"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
                 </Field>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button disabled={!form.name || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                <Button
+                  disabled={!form.name || create.isPending}
+                  onClick={() => create.mutate(undefined as never)}
+                >
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -243,13 +285,20 @@ function PlansTab() {
   const [form, setForm] = useState({ company_id: "", name: "", default_coverage_percent: "70" });
 
   const companies = useRows<Row[]>(["insurance-companies-picker"], () =>
-    supabase.from("insurance_companies").select("id, name").is("deleted_at", null).eq("active", true).order("name", { ascending: true }),
+    supabase
+      .from("insurance_companies")
+      .select("id, name")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("name", { ascending: true }),
   );
 
   const list = useRows<Row[]>(["insurance-plans"], () =>
     supabase
       .from("insurance_plans")
-      .select("id, name, default_coverage_percent, requires_prior_auth, active, insurance_companies(name)")
+      .select(
+        "id, name, default_coverage_percent, requires_prior_auth, active, insurance_companies(name)",
+      )
       .is("deleted_at", null)
       .order("name", { ascending: true }),
   );
@@ -294,7 +343,10 @@ function PlansTab() {
               </DialogHeader>
               <div className="grid gap-4">
                 <Field label={`${t("insurance_companies")} *`}>
-                  <Select {...(form.company_id ? { value: form.company_id } : {})} onValueChange={(v) => setForm({ ...form, company_id: v })}>
+                  <Select
+                    {...(form.company_id ? { value: form.company_id } : {})}
+                    onValueChange={(v) => setForm({ ...form, company_id: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder={t("none")} />
                     </SelectTrigger>
@@ -308,7 +360,10 @@ function PlansTab() {
                   </Select>
                 </Field>
                 <Field label={`${t("name")} *`}>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("default_coverage_percent")}>
                   <Input
@@ -323,7 +378,10 @@ function PlansTab() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button disabled={!form.company_id || !form.name || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                <Button
+                  disabled={!form.company_id || !form.name || create.isPending}
+                  onClick={() => create.mutate(undefined as never)}
+                >
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -384,7 +442,12 @@ function MembershipTab() {
   const [expiryDate, setExpiryDate] = useState("");
 
   const companies = useRows<Row[]>(["insurance-companies-picker"], () =>
-    supabase.from("insurance_companies").select("id, name").is("deleted_at", null).eq("active", true).order("name", { ascending: true }),
+    supabase
+      .from("insurance_companies")
+      .select("id, name")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("name", { ascending: true }),
   );
   const plans = useRows<Row[]>(
     ["insurance-plans-picker", companyId],
@@ -412,7 +475,10 @@ function MembershipTab() {
 
   const create = useSave(
     async () => {
-      if (!patient || !companyId || !planId) throw new Error(lang === "ar" ? "اختر المريض والشركة والخطة" : "Select patient, company and plan");
+      if (!patient || !companyId || !planId)
+        throw new Error(
+          lang === "ar" ? "اختر المريض والشركة والخطة" : "Select patient, company and plan",
+        );
       const { error } = await supabase.from("patient_insurance").insert({
         patient_id: patient.id,
         company_id: companyId,
@@ -495,20 +561,36 @@ function MembershipTab() {
                   </Select>
                 </Field>
                 <Field label={t("policy_number")}>
-                  <Input dir="ltr" value={policyNumber} onChange={(e) => setPolicyNumber(e.target.value)} />
+                  <Input
+                    dir="ltr"
+                    value={policyNumber}
+                    onChange={(e) => setPolicyNumber(e.target.value)}
+                  />
                 </Field>
                 <Field label={t("member_number")}>
-                  <Input dir="ltr" value={memberNumber} onChange={(e) => setMemberNumber(e.target.value)} />
+                  <Input
+                    dir="ltr"
+                    value={memberNumber}
+                    onChange={(e) => setMemberNumber(e.target.value)}
+                  />
                 </Field>
                 <Field label={t("expiry_date")}>
-                  <Input type="date" dir="ltr" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
+                  <Input
+                    type="date"
+                    dir="ltr"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                  />
                 </Field>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button disabled={!patient || !companyId || !planId || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                <Button
+                  disabled={!patient || !companyId || !planId || create.isPending}
+                  onClick={() => create.mutate(undefined as never)}
+                >
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -547,7 +629,9 @@ function MembershipTab() {
                     <TableCell>{s(rel(r, "insurance_companies"), "name") || "—"}</TableCell>
                     <TableCell>{s(rel(r, "insurance_plans"), "name") || "—"}</TableCell>
                     <TableCell dir="ltr">{s(r, "policy_number") || "—"}</TableCell>
-                    <TableCell dir="ltr">{s(r, "expiry_date") ? formatDate(s(r, "expiry_date")) : "—"}</TableCell>
+                    <TableCell dir="ltr">
+                      {s(r, "expiry_date") ? formatDate(s(r, "expiry_date")) : "—"}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={s(r, "status")} />
                     </TableCell>
@@ -574,7 +658,11 @@ function ClaimsTab({ currency }: { currency: string }) {
   const [open, setOpen] = useState(false);
   const [patientInsuranceId, setPatientInsuranceId] = useState("");
   const [items, setItems] = useState<DraftItem[]>([]);
-  const [itemForm, setItemForm] = useState({ service_type: "consultation" as DraftItem["service_type"], description: "", gross_amount: "0" });
+  const [itemForm, setItemForm] = useState({
+    service_type: "consultation" as DraftItem["service_type"],
+    description: "",
+    gross_amount: "0",
+  });
   const [decision, setDecision] = useState<{ claim: Row; status: ClaimStatus } | null>(null);
   const [approvedAmount, setApprovedAmount] = useState("0");
   const [payTarget, setPayTarget] = useState<Row | null>(null);
@@ -626,7 +714,12 @@ function ClaimsTab({ currency }: { currency: string }) {
 
   const create = useSave(
     async () => {
-      if (!patientInsuranceId || items.length === 0) throw new Error(lang === "ar" ? "اختر تأمين المريض وأضف بنوداً" : "Select patient insurance and add line items");
+      if (!patientInsuranceId || items.length === 0)
+        throw new Error(
+          lang === "ar"
+            ? "اختر تأمين المريض وأضف بنوداً"
+            : "Select patient insurance and add line items",
+        );
       await createInsuranceClaim({ patientInsuranceId, invoiceId: null, items });
       return null;
     },
@@ -647,7 +740,9 @@ function ClaimsTab({ currency }: { currency: string }) {
       await updateInsuranceClaimStatus({
         claimId: s(decision.claim, "id"),
         newStatus: decision.status,
-        approvedAmount: ["approved", "partially_approved"].includes(decision.status) ? Number(approvedAmount) || 0 : null,
+        approvedAmount: ["approved", "partially_approved"].includes(decision.status)
+          ? Number(approvedAmount) || 0
+          : null,
       });
       return null;
     },
@@ -680,7 +775,9 @@ function ClaimsTab({ currency }: { currency: string }) {
   );
 
   const rows = (claims.data ?? []) as Row[];
-  const pendingCount = rows.filter((r) => ["submitted", "under_review"].includes(s(r, "status"))).length;
+  const pendingCount = rows.filter((r) =>
+    ["submitted", "under_review"].includes(s(r, "status")),
+  ).length;
   const outstandingApproved = rows.reduce((sum, r) => {
     if (!["approved", "partially_approved"].includes(s(r, "status"))) return sum;
     return sum + (n(r, "approved_amount") - n(r, "paid_amount"));
@@ -701,7 +798,11 @@ function ClaimsTab({ currency }: { currency: string }) {
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2">
         <StatCard label={t("pending_claims")} value={String(pendingCount)} tone="warning" />
-        <StatCard label={t("outstanding_insurance")} value={money(outstandingApproved, currency)} tone="warning" />
+        <StatCard
+          label={t("outstanding_insurance")}
+          value={money(outstandingApproved, currency)}
+          tone="warning"
+        />
       </div>
 
       <Card>
@@ -734,10 +835,16 @@ function ClaimsTab({ currency }: { currency: string }) {
                       <TableCell dir="ltr" className="font-mono text-xs">
                         {s(c, "claim_number")}
                       </TableCell>
-                      <TableCell className="font-medium">{s(rel(pi, "patients"), "full_name") || "—"}</TableCell>
+                      <TableCell className="font-medium">
+                        {s(rel(pi, "patients"), "full_name") || "—"}
+                      </TableCell>
                       <TableCell>{s(rel(pi, "insurance_companies"), "name") || "—"}</TableCell>
                       <TableCell>{money(n(c, "submitted_amount"), currency)}</TableCell>
-                      <TableCell>{c["approved_amount"] != null ? money(n(c, "approved_amount"), currency) : "—"}</TableCell>
+                      <TableCell>
+                        {c["approved_amount"] != null
+                          ? money(n(c, "approved_amount"), currency)
+                          : "—"}
+                      </TableCell>
                       <TableCell>
                         <StatusBadge status={status} />
                       </TableCell>
@@ -758,7 +865,10 @@ function ClaimsTab({ currency }: { currency: string }) {
                                 </Button>
                               ))
                             : null}
-                          {can("insurance.update") && status !== "paid" && ["approved", "partially_approved"].includes(status) && outstanding > 0 ? (
+                          {can("insurance.update") &&
+                          status !== "paid" &&
+                          ["approved", "partially_approved"].includes(status) &&
+                          outstanding > 0 ? (
                             <Button
                               size="sm"
                               onClick={() => {
@@ -788,14 +898,18 @@ function ClaimsTab({ currency }: { currency: string }) {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label={`${t("patient_insurance")} *`}>
-              <Select {...(patientInsuranceId ? { value: patientInsuranceId } : {})} onValueChange={setPatientInsuranceId}>
+              <Select
+                {...(patientInsuranceId ? { value: patientInsuranceId } : {})}
+                onValueChange={setPatientInsuranceId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("none")} />
                 </SelectTrigger>
                 <SelectContent>
                   {((membership.data ?? []) as Row[]).map((m) => (
                     <SelectItem key={s(m, "id")} value={s(m, "id")}>
-                      {s(rel(m, "patients"), "full_name")} — {s(rel(m, "insurance_companies"), "name")}
+                      {s(rel(m, "patients"), "full_name")} —{" "}
+                      {s(rel(m, "insurance_companies"), "name")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -803,11 +917,15 @@ function ClaimsTab({ currency }: { currency: string }) {
             </Field>
 
             <div className="rounded-lg border p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("add_item")}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("add_item")}
+              </p>
               <div className="grid gap-2 sm:grid-cols-4">
                 <Select
                   value={itemForm.service_type}
-                  onValueChange={(v) => setItemForm({ ...itemForm, service_type: v as DraftItem["service_type"] })}
+                  onValueChange={(v) =>
+                    setItemForm({ ...itemForm, service_type: v as DraftItem["service_type"] })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -836,7 +954,9 @@ function ClaimsTab({ currency }: { currency: string }) {
                 variant="outline"
                 size="sm"
                 className="mt-2"
-                disabled={!patientInsuranceId || !itemForm.description.trim() || !itemForm.gross_amount}
+                disabled={
+                  !patientInsuranceId || !itemForm.description.trim() || !itemForm.gross_amount
+                }
                 onClick={() => void addItem()}
               >
                 <Plus className="size-3.5" /> {t("add_item")}
@@ -870,7 +990,10 @@ function ClaimsTab({ currency }: { currency: string }) {
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t("cancel")}
             </Button>
-            <Button disabled={!patientInsuranceId || items.length === 0 || create.isPending} onClick={() => create.mutate(undefined as never)}>
+            <Button
+              disabled={!patientInsuranceId || items.length === 0 || create.isPending}
+              onClick={() => create.mutate(undefined as never)}
+            >
               {create.isPending ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
@@ -885,7 +1008,12 @@ function ClaimsTab({ currency }: { currency: string }) {
           </DialogHeader>
           {decision && ["approved", "partially_approved"].includes(decision.status) ? (
             <Field label={`${t("approved_amount")} *`}>
-              <Input type="number" dir="ltr" value={approvedAmount} onChange={(e) => setApprovedAmount(e.target.value)} />
+              <Input
+                type="number"
+                dir="ltr"
+                value={approvedAmount}
+                onChange={(e) => setApprovedAmount(e.target.value)}
+              />
             </Field>
           ) : (
             <p className="text-sm text-muted-foreground">{t("confirm_status_change")}</p>
@@ -894,7 +1022,10 @@ function ClaimsTab({ currency }: { currency: string }) {
             <Button variant="outline" onClick={() => setDecision(null)}>
               {t("cancel")}
             </Button>
-            <Button disabled={transition.isPending} onClick={() => transition.mutate(undefined as never)}>
+            <Button
+              disabled={transition.isPending}
+              onClick={() => transition.mutate(undefined as never)}
+            >
               {transition.isPending ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
@@ -908,7 +1039,12 @@ function ClaimsTab({ currency }: { currency: string }) {
             <DialogTitle>{t("record_payment")}</DialogTitle>
           </DialogHeader>
           <Field label={`${t("amount")} *`}>
-            <Input type="number" dir="ltr" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+            <Input
+              type="number"
+              dir="ltr"
+              value={payAmount}
+              onChange={(e) => setPayAmount(e.target.value)}
+            />
           </Field>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayTarget(null)}>

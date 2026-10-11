@@ -37,7 +37,9 @@ export function MobileBottomNav() {
   const primary = PRIMARY_MOBILE_ROUTES.map((to) => allItems.find((i) => i.to === to)).filter(
     (i): i is NonNullable<typeof i> => Boolean(i) && can(i!.perm),
   );
-  const availableActions = QUICK_ACTIONS.filter((a) => can(allItems.find((i) => i.to === a.to)?.perm ?? ""));
+  const availableActions = QUICK_ACTIONS.filter((a) =>
+    can(allItems.find((i) => i.to === a.to)?.perm ?? ""),
+  );
 
   return (
     <>
@@ -105,11 +107,12 @@ export function MobileBottomNav() {
               >
                 <Icon className="size-5" />
               </span>
-              <span className={active ? "text-primary" : "text-muted-foreground"}>{t(item.key)}</span>
+              <span className={active ? "text-primary" : "text-muted-foreground"}>
+                {t(item.key)}
+              </span>
             </Link>
           );
         })}
-
 
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger asChild>
@@ -123,7 +126,11 @@ export function MobileBottomNav() {
               {t("more")}
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[75vh] overflow-y-auto rounded-t-2xl" dir={direction}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[75vh] overflow-y-auto rounded-t-2xl"
+            dir={direction}
+          >
             <SheetTitle className="sr-only">{t("more")}</SheetTitle>
             <div className="space-y-5 pb-4 pt-2">
               {NAV_GROUPS.map((group) => {
@@ -160,7 +167,6 @@ export function MobileBottomNav() {
               })}
             </div>
           </SheetContent>
-
         </Sheet>
       </nav>
     </>
