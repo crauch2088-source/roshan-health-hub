@@ -2,7 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, Phone, Plus, Search, UserRound } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, Field, LoadingRows, PageHeader, Pager, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  Field,
+  LoadingRows,
+  PageHeader,
+  Pager,
+  PermissionGate,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -118,7 +126,10 @@ function PatientsPageInner() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("patients")} subtitle={list.count != null ? `${list.count} ${t("records")}` : t("register_patient")}>
+      <PageHeader
+        title={t("patients")}
+        subtitle={list.count != null ? `${list.count} ${t("records")}` : t("register_patient")}
+      >
         {can("patients.create") ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -140,10 +151,17 @@ function PatientsPageInner() {
                   />
                 </Field>
                 <Field label={t("phone")}>
-                  <Input dir="ltr" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <Input
+                    dir="ltr"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
                 </Field>
                 <Field label={t("gender")}>
-                  <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                  <Select
+                    value={form.gender}
+                    onValueChange={(v) => setForm({ ...form, gender: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -173,7 +191,10 @@ function PatientsPageInner() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button disabled={!form.full_name.trim() || create.isPending} onClick={() => create.mutate(undefined as never)}>
+                <Button
+                  disabled={!form.full_name.trim() || create.isPending}
+                  onClick={() => create.mutate(undefined as never)}
+                >
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
               </DialogFooter>
@@ -183,7 +204,10 @@ function PatientsPageInner() {
       </PageHeader>
 
       <div className="relative">
-        <Search aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           placeholder={t("search")}
           aria-label={t("search")}
@@ -203,70 +227,111 @@ function PatientsPageInner() {
           {list.isLoading ? (
             <LoadingRows count={6} />
           ) : rows.length === 0 ? (
-            <Empty title={t("no_data")} description={lang === "ar" ? "لا يوجد مرضى مطابقون. أضف مريضاً جديداً أو غيّر البحث." : "No matching patients. Add a new patient or refine your search."} />
+            <Empty
+              title={t("no_data")}
+              description={
+                lang === "ar"
+                  ? "لا يوجد مرضى مطابقون. أضف مريضاً جديداً أو غيّر البحث."
+                  : "No matching patients. Add a new patient or refine your search."
+              }
+            />
           ) : (
             <>
-            <div className="divide-y sm:hidden">
-              {rows.map((patient) => (
-                <div key={s(patient, "id")} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4">
-                  <Link to="/patients/$patientId" params={{ patientId: s(patient, "id") }} className="min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><UserRound className="size-5" /></span>
-                      <div className="min-w-0"><p className="truncate font-semibold">{s(patient, "full_name")}</p><p className="truncate text-xs text-muted-foreground" dir="ltr">{s(patient, "mrn") || "—"} · {s(patient, "phone") || "—"}</p><p className="mt-1 text-xs text-muted-foreground">{calcAge(s(patient, "date_of_birth")) ?? "—"} · {t(s(patient, "gender"))}</p></div>
-                    </div>
-                  </Link>
-                  {can("visits.create") ? <Button asChild size="icon" aria-label={t("new_visit")}><Link to="/visits" search={{ patient: s(patient, "id") }}><Plus /></Link></Button> : <ArrowUpRight className="size-4 text-muted-foreground" />}
-                </div>
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto sm:block">
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("mrn")}</TableHead>
-                    <TableHead>{t("full_name")}</TableHead>
-                    <TableHead>{t("phone")}</TableHead>
-                    <TableHead>{t("age")}</TableHead>
-                    <TableHead>{t("date")}</TableHead>
-                    <TableHead className="no-print" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((p) => (
-                    <TableRow key={s(p, "id")}>
-                      <TableCell dir="ltr" className="font-mono text-xs">
-                        {s(p, "mrn") || "—"}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/patients/$patientId"
-                          params={{ patientId: s(p, "id") }}
-                          className="hover:underline"
-                        >
-                          {s(p, "full_name")}
+              <div className="divide-y sm:hidden">
+                {rows.map((patient) => (
+                  <div
+                    key={s(patient, "id")}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4"
+                  >
+                    <Link
+                      to="/patients/$patientId"
+                      params={{ patientId: s(patient, "id") }}
+                      className="min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <UserRound className="size-5" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{s(patient, "full_name")}</p>
+                          <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                            {s(patient, "mrn") || "—"} · {s(patient, "phone") || "—"}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {calcAge(s(patient, "date_of_birth")) ?? "—"} ·{" "}
+                            {t(s(patient, "gender"))}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                    {can("visits.create") ? (
+                      <Button asChild size="icon" aria-label={t("new_visit")}>
+                        <Link to="/visits" search={{ patient: s(patient, "id") }}>
+                          <Plus />
                         </Link>
-                      </TableCell>
-                      <TableCell dir="ltr">
-                        {s(p, "phone") ? (
-                          <span className="flex items-center gap-1">
-                            <Phone className="size-3" /> {s(p, "phone")}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>{calcAge(s(p, "date_of_birth")) ?? "—"}</TableCell>
-                      <TableCell dir="ltr">{formatDate(s(p, "created_at"))}</TableCell>
-                      <TableCell className="no-print text-end">
-                        {can("visits.create") ? (
-                          <Button asChild size="sm"><Link to="/visits" search={{ patient: s(p, "id") }} title={t("new_visit")}><Plus className="size-3.5" /> {t("new_visit")}</Link></Button>
-                        ) : null}
-                      </TableCell>
+                      </Button>
+                    ) : (
+                      <ArrowUpRight className="size-4 text-muted-foreground" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto sm:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("mrn")}</TableHead>
+                      <TableHead>{t("full_name")}</TableHead>
+                      <TableHead>{t("phone")}</TableHead>
+                      <TableHead>{t("age")}</TableHead>
+                      <TableHead>{t("date")}</TableHead>
+                      <TableHead className="no-print" />
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((p) => (
+                      <TableRow key={s(p, "id")}>
+                        <TableCell dir="ltr" className="font-mono text-xs">
+                          {s(p, "mrn") || "—"}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <Link
+                            to="/patients/$patientId"
+                            params={{ patientId: s(p, "id") }}
+                            className="hover:underline"
+                          >
+                            {s(p, "full_name")}
+                          </Link>
+                        </TableCell>
+                        <TableCell dir="ltr">
+                          {s(p, "phone") ? (
+                            <span className="flex items-center gap-1">
+                              <Phone className="size-3" /> {s(p, "phone")}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>{calcAge(s(p, "date_of_birth")) ?? "—"}</TableCell>
+                        <TableCell dir="ltr">{formatDate(s(p, "created_at"))}</TableCell>
+                        <TableCell className="no-print text-end">
+                          {can("visits.create") ? (
+                            <Button asChild size="sm">
+                              <Link
+                                to="/visits"
+                                search={{ patient: s(p, "id") }}
+                                title={t("new_visit")}
+                              >
+                                <Plus className="size-3.5" /> {t("new_visit")}
+                              </Link>
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </>
           )}
           <Pager

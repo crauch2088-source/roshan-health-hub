@@ -87,7 +87,6 @@ function RailLink({
   );
 }
 
-
 export function NavRail({
   collapsed,
   onToggleCollapsed,
@@ -122,7 +121,8 @@ export function NavRail({
               <div
                 className={cn(
                   "space-y-0.5",
-                  !collapsed && "rounded-xl border border-sidebar-border/60 bg-sidebar-accent/25 p-1.5",
+                  !collapsed &&
+                    "rounded-xl border border-sidebar-border/60 bg-sidebar-accent/25 p-1.5",
                 )}
               >
                 {!collapsed ? (
@@ -161,7 +161,7 @@ export function NavRail({
                         <RailLink
                           item={item}
                           collapsed={collapsed}
-                           active={isNavItemActive(location.pathname, item.to)}
+                          active={isNavItemActive(location.pathname, item.to)}
                           onNavigate={onNavigate}
                           trailing={
                             item.favoritable !== false ? (
@@ -173,7 +173,7 @@ export function NavRail({
                                   toggleFavorite(item.to);
                                 }}
                                 className={cn(
-                                   "flex size-8 shrink-0 items-center justify-center rounded-md transition-[opacity,background-color] hover:bg-sidebar-accent",
+                                  "flex size-8 shrink-0 items-center justify-center rounded-md transition-[opacity,background-color] hover:bg-sidebar-accent",
                                   pinned
                                     ? "opacity-100 text-amber-400"
                                     : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 hover:!opacity-100",
@@ -204,10 +204,19 @@ export function NavRail({
             aria-label={collapsed ? t("expand_sidebar") : t("collapse_sidebar")}
           >
             {collapsed ? (
-              lang === "ar" ? <ChevronsLeft className="size-4" /> : <ChevronsRight className="size-4" />
+              lang === "ar" ? (
+                <ChevronsLeft className="size-4" />
+              ) : (
+                <ChevronsRight className="size-4" />
+              )
             ) : (
               <>
-                {lang === "ar" ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />} {t("collapse_sidebar")}
+                {lang === "ar" ? (
+                  <ChevronsRight className="size-4" />
+                ) : (
+                  <ChevronsLeft className="size-4" />
+                )}{" "}
+                {t("collapse_sidebar")}
               </>
             )}
           </Button>

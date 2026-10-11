@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Loading, PageHeader, PermissionGate, StatCard } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Loading,
+  PageHeader,
+  PermissionGate,
+  StatCard,
+} from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,9 +31,15 @@ export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
     meta: [
       { title: "Reports — ROSHAN Medical Center" },
-      { name: "description", content: "Operational reports: visits, diagnoses, laboratory volume and revenue." },
+      {
+        name: "description",
+        content: "Operational reports: visits, diagnoses, laboratory volume and revenue.",
+      },
       { property: "og:title", content: "Reports — ROSHAN Medical Center" },
-      { property: "og:description", content: "Operational reports: visits, diagnoses, laboratory volume and revenue." },
+      {
+        property: "og:description",
+        content: "Operational reports: visits, diagnoses, laboratory volume and revenue.",
+      },
     ],
   }),
   component: ReportsPage,
@@ -48,7 +62,9 @@ function ReportsPageInner() {
   const visits = useRows(["rep-visits", from, to], () =>
     supabase
       .from("visits")
-      .select("id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)")
+      .select(
+        "id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)",
+      )
       .gte("visit_date", from)
       .lte("visit_date", to)
       .is("deleted_at", null),
@@ -78,7 +94,8 @@ function ReportsPageInner() {
   const byDepartment: Record<string, number> = {};
   for (const v of visitRows) {
     const dep = rel(v, "departments");
-    const name = (lang === "ar" ? s(dep, "name_ar") || s(dep, "name") : s(dep, "name")) || t("none");
+    const name =
+      (lang === "ar" ? s(dep, "name_ar") || s(dep, "name") : s(dep, "name")) || t("none");
     byDepartment[name] = (byDepartment[name] ?? 0) + 1;
   }
 
@@ -115,8 +132,20 @@ function ReportsPageInner() {
   return (
     <div>
       <PageHeader title={t("reports")} subtitle={`${formatDate(from)} — ${formatDate(to)}`}>
-        <Input type="date" dir="ltr" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
-        <Input type="date" dir="ltr" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+        <Input
+          type="date"
+          dir="ltr"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className="w-40"
+        />
+        <Input
+          type="date"
+          dir="ltr"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className="w-40"
+        />
         <ExportButtons rows={visitRows} filename={`roshan-visits-${from}-${to}`} />
       </PageHeader>
 
@@ -185,7 +214,8 @@ function ReportsPageInner() {
 function PharmacyReports() {
   const { t } = useLang();
   const { currency, settings } = useSettings();
-  const thresholdDays = Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
+  const thresholdDays =
+    Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
 
   const medicines = useRows<Row[]>(["rep-medicines"], () =>
     supabase
@@ -254,12 +284,16 @@ function PharmacyReports() {
                   <TableBody>
                     {expiryRows.map((b) => (
                       <TableRow key={s(b, "id")}>
-                        <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                        <TableCell className="font-medium">
+                          {s(rel(b, "medicines"), "name") || "—"}
+                        </TableCell>
                         <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                         <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
                         <TableCell dir="ltr">{formatDate(s(b, "expiry_date"))}</TableCell>
                         <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
-                        <TableCell>{t(expiryStatus(s(b, "expiry_date") || null, thresholdDays))}</TableCell>
+                        <TableCell>
+                          {t(expiryStatus(s(b, "expiry_date") || null, thresholdDays))}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -333,10 +367,14 @@ function PharmacyReports() {
                   <TableBody>
                     {batchRows.map((b) => (
                       <TableRow key={s(b, "id")}>
-                        <TableCell className="font-medium">{s(rel(b, "medicines"), "name") || "—"}</TableCell>
+                        <TableCell className="font-medium">
+                          {s(rel(b, "medicines"), "name") || "—"}
+                        </TableCell>
                         <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                         <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
-                        <TableCell dir="ltr">{s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}</TableCell>
+                        <TableCell dir="ltr">
+                          {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}
+                        </TableCell>
                         <TableCell dir="ltr">{n(b, "quantity_received")}</TableCell>
                         <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                         <TableCell>{money(n(b, "purchase_price"), currency)}</TableCell>

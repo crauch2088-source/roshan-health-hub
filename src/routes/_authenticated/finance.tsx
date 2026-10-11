@@ -2,7 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Banknote, Plus, RotateCcw, Wallet } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, ExportButtons, Field, Loading, PageHeader, StatCard, PermissionGate } from "@/components/kit";
+import {
+  Empty,
+  ErrorBox,
+  ExportButtons,
+  Field,
+  Loading,
+  PageHeader,
+  StatCard,
+  PermissionGate,
+} from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +23,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -35,9 +50,15 @@ export const Route = createFileRoute("/_authenticated/finance")({
   head: () => ({
     meta: [
       { title: "Finance — ROSHAN Medical Center" },
-      { name: "description", content: "Cashbox, patient receivables, and supplier bills/payments." },
+      {
+        name: "description",
+        content: "Cashbox, patient receivables, and supplier bills/payments.",
+      },
       { property: "og:title", content: "Finance — ROSHAN Medical Center" },
-      { property: "og:description", content: "Cashbox, patient receivables, and supplier bills/payments." },
+      {
+        property: "og:description",
+        content: "Cashbox, patient receivables, and supplier bills/payments.",
+      },
     ],
   }),
   component: FinancePage,
@@ -96,11 +117,15 @@ function CashboxTab({ currency }: { currency: string }) {
   const [reverseTarget, setReverseTarget] = useState<Row | null>(null);
   const [reverseReason, setReverseReason] = useState("");
 
-  const balance = useRows<Row[]>(["cashbox-balance"], () => supabase.from("cashbox_balance").select("*"));
+  const balance = useRows<Row[]>(["cashbox-balance"], () =>
+    supabase.from("cashbox_balance").select("*"),
+  );
   const txns = useRows<Row[]>(["cashbox-transactions"], () =>
     supabase
       .from("cashbox_transactions")
-      .select("id, transaction_type, amount, payment_method, category, description, transaction_date, is_reversed, reversal_of")
+      .select(
+        "id, transaction_type, amount, payment_method, category, description, transaction_date, is_reversed, reversal_of",
+      )
       .is("deleted_at", null)
       .order("transaction_date", { ascending: false })
       .limit(200),
@@ -134,7 +159,10 @@ function CashboxTab({ currency }: { currency: string }) {
     async () => {
       if (!reverseTarget) return null;
       if (!reverseReason.trim()) throw new Error(t("reversal_reason_required"));
-      await rpc("reverse_cashbox_entry", { _transaction_id: s(reverseTarget, "id"), _reason: reverseReason.trim() });
+      await rpc("reverse_cashbox_entry", {
+        _transaction_id: s(reverseTarget, "id"),
+        _reason: reverseReason.trim(),
+      });
       return null;
     },
     {
@@ -168,13 +196,20 @@ function CashboxTab({ currency }: { currency: string }) {
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <StatCard label={t("cashbox_balance")} value={money(n(bal, "balance"), currency)} />
         <StatCard label={t("cash_in")} value={money(n(bal, "total_in"), currency)} tone="success" />
-        <StatCard label={t("cash_out")} value={money(n(bal, "total_out"), currency)} tone="destructive" />
+        <StatCard
+          label={t("cash_out")}
+          value={money(n(bal, "total_out"), currency)}
+          tone="destructive"
+        />
       </div>
 
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <Empty title={t("no_data")} description={lang === "ar" ? "لا حركات لعرضها." : "No transactions to show."} />
+            <Empty
+              title={t("no_data")}
+              description={lang === "ar" ? "لا حركات لعرضها." : "No transactions to show."}
+            />
           ) : (
             <Table density="compact">
               <TableHeader>
@@ -208,7 +243,12 @@ function CashboxTab({ currency }: { currency: string }) {
                           </Badge>
                         ) : null}
                       </TableCell>
-                      <TableCell dir="ltr" className={amt < 0 ? "font-semibold text-destructive" : "font-semibold text-success"}>
+                      <TableCell
+                        dir="ltr"
+                        className={
+                          amt < 0 ? "font-semibold text-destructive" : "font-semibold text-success"
+                        }
+                      >
                         {amt > 0 ? `+${money(amt, currency)}` : money(amt, currency)}
                       </TableCell>
                       <TableCell className="no-print text-end">
@@ -234,7 +274,10 @@ function CashboxTab({ currency }: { currency: string }) {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label={t("type")}>
-              <Select value={direction} onValueChange={(v) => setDirection(v as "deposit" | "withdrawal")}>
+              <Select
+                value={direction}
+                onValueChange={(v) => setDirection(v as "deposit" | "withdrawal")}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -245,7 +288,12 @@ function CashboxTab({ currency }: { currency: string }) {
               </Select>
             </Field>
             <Field label={`${t("amount")} *`}>
-              <Input type="number" dir="ltr" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Input
+                type="number"
+                dir="ltr"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
             </Field>
             <Field label={t("payment_method")}>
               <Select value={method} onValueChange={setMethod}>
@@ -259,7 +307,11 @@ function CashboxTab({ currency }: { currency: string }) {
               </Select>
             </Field>
             <Field label={t("description")}>
-              <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </Field>
           </div>
           <DialogFooter>
@@ -273,19 +325,29 @@ function CashboxTab({ currency }: { currency: string }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(reverseTarget)} onOpenChange={(o) => (o ? null : setReverseTarget(null))}>
+      <Dialog
+        open={Boolean(reverseTarget)}
+        onOpenChange={(o) => (o ? null : setReverseTarget(null))}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("reverse")}</DialogTitle>
           </DialogHeader>
           <Field label={`${t("reversal_reason")} *`}>
-            <Textarea rows={2} value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} />
+            <Textarea
+              rows={2}
+              value={reverseReason}
+              onChange={(e) => setReverseReason(e.target.value)}
+            />
           </Field>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReverseTarget(null)}>
               {t("cancel")}
             </Button>
-            <Button disabled={!reverseReason.trim() || reverse.isPending} onClick={() => reverse.mutate(undefined as never)}>
+            <Button
+              disabled={!reverseReason.trim() || reverse.isPending}
+              onClick={() => reverse.mutate(undefined as never)}
+            >
               {reverse.isPending ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
@@ -311,7 +373,11 @@ function ReceivablesTab({ currency }: { currency: string }) {
   const [reference, setReference] = useState("");
 
   const list = useRows<Row[]>(["patient-receivables"], () =>
-    supabase.from("v_patient_receivables").select("*").order("outstanding", { ascending: false }).limit(300),
+    supabase
+      .from("v_patient_receivables")
+      .select("*")
+      .order("outstanding", { ascending: false })
+      .limit(300),
   );
 
   const pay = useSave(
@@ -350,7 +416,11 @@ function ReceivablesTab({ currency }: { currency: string }) {
       </div>
       <ErrorBox error={list.error} />
       <div className="mb-4">
-        <StatCard label={t("outstanding_balance")} value={money(totalOutstanding, currency)} tone="warning" />
+        <StatCard
+          label={t("outstanding_balance")}
+          value={money(totalOutstanding, currency)}
+          tone="warning"
+        />
       </div>
       <Card>
         <CardContent className="p-0">
@@ -379,10 +449,14 @@ function ReceivablesTab({ currency }: { currency: string }) {
                       </span>
                     </TableCell>
                     <TableCell dir="ltr">{s(r, "invoice_number") || "—"}</TableCell>
-                    <TableCell dir="ltr">{s(r, "invoice_date") ? formatDate(s(r, "invoice_date")) : "—"}</TableCell>
+                    <TableCell dir="ltr">
+                      {s(r, "invoice_date") ? formatDate(s(r, "invoice_date")) : "—"}
+                    </TableCell>
                     <TableCell>{money(n(r, "net_amount"), currency)}</TableCell>
                     <TableCell>{money(n(r, "paid_amount"), currency)}</TableCell>
-                    <TableCell className="font-semibold text-destructive">{money(n(r, "outstanding"), currency)}</TableCell>
+                    <TableCell className="font-semibold text-destructive">
+                      {money(n(r, "outstanding"), currency)}
+                    </TableCell>
                     <TableCell className="no-print text-end">
                       {can("payments.create") || can("billing.create") ? (
                         <Button
@@ -411,7 +485,12 @@ function ReceivablesTab({ currency }: { currency: string }) {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label={`${t("amount")} *`}>
-              <Input type="number" dir="ltr" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Input
+                type="number"
+                dir="ltr"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
             </Field>
             <Field label={t("payment_method")}>
               <Select value={method} onValueChange={setMethod}>
@@ -465,13 +544,20 @@ function SupplierDebtTab({ currency }: { currency: string }) {
   );
 
   const suppliers = useRows<Row[]>(["suppliers-picker-finance"], () =>
-    supabase.from("suppliers").select("id, name").is("deleted_at", null).eq("active", true).order("name", { ascending: true }),
+    supabase
+      .from("suppliers")
+      .select("id, name")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("name", { ascending: true }),
   );
 
   const bills = useRows<Row[]>(["supplier-bills"], () =>
     supabase
       .from("supplier_bills")
-      .select("id, supplier_id, invoice_number, bill_date, total_amount, paid_amount, status, suppliers(name)")
+      .select(
+        "id, supplier_id, invoice_number, bill_date, total_amount, paid_amount, status, suppliers(name)",
+      )
       .is("deleted_at", null)
       .order("bill_date", { ascending: false })
       .limit(200),
@@ -510,11 +596,20 @@ function SupplierDebtTab({ currency }: { currency: string }) {
       if (!payTarget) return null;
       const amt = Number(amount);
       if (!amt || amt <= 0) throw new Error(t("invalid_quantity"));
-      await rpc("post_supplier_payment", { _bill_id: s(payTarget, "id"), _amount: amt, _method: method });
+      await rpc("post_supplier_payment", {
+        _bill_id: s(payTarget, "id"),
+        _amount: amt,
+        _method: method,
+      });
       return null;
     },
     {
-      invalidate: [["supplier-bills"], ["supplier-outstanding"], ["cashbox-balance"], ["cashbox-transactions"]],
+      invalidate: [
+        ["supplier-bills"],
+        ["supplier-outstanding"],
+        ["cashbox-balance"],
+        ["cashbox-transactions"],
+      ],
       successMessage: t("saved"),
       onDone: () => {
         setPayTarget(null);
@@ -543,7 +638,11 @@ function SupplierDebtTab({ currency }: { currency: string }) {
       <ErrorBox error={outstanding.error ?? bills.error} />
 
       <div className="mb-4">
-        <StatCard label={t("supplier_debt")} value={money(totalOutstanding, currency)} tone="warning" />
+        <StatCard
+          label={t("supplier_debt")}
+          value={money(totalOutstanding, currency)}
+          tone="warning"
+        />
       </div>
 
       <Card className="mb-4">
@@ -568,7 +667,11 @@ function SupplierDebtTab({ currency }: { currency: string }) {
                       <TableCell className="font-medium">{s(r, "name")}</TableCell>
                       <TableCell>{money(n(r, "total_billed"), currency)}</TableCell>
                       <TableCell>{money(n(r, "total_paid"), currency)}</TableCell>
-                      <TableCell className={n(r, "outstanding") > 0 ? "font-semibold text-destructive" : undefined}>
+                      <TableCell
+                        className={
+                          n(r, "outstanding") > 0 ? "font-semibold text-destructive" : undefined
+                        }
+                      >
                         {money(n(r, "outstanding"), currency)}
                       </TableCell>
                     </TableRow>
@@ -602,7 +705,9 @@ function SupplierDebtTab({ currency }: { currency: string }) {
                   return (
                     <TableRow key={s(b, "id")}>
                       <TableCell dir="ltr">{formatDate(s(b, "bill_date"))}</TableCell>
-                      <TableCell className="font-medium">{s(b, "suppliers") ? (b["suppliers"] as Row)["name"] as string : "—"}</TableCell>
+                      <TableCell className="font-medium">
+                        {s(b, "suppliers") ? ((b["suppliers"] as Row)["name"] as string) : "—"}
+                      </TableCell>
                       <TableCell dir="ltr">{s(b, "invoice_number") || "—"}</TableCell>
                       <TableCell>{money(n(b, "total_amount"), currency)}</TableCell>
                       <TableCell>{money(n(b, "paid_amount"), currency)}</TableCell>
@@ -651,20 +756,37 @@ function SupplierDebtTab({ currency }: { currency: string }) {
               </Select>
             </Field>
             <Field label={t("invoice_number")}>
-              <Input dir="ltr" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} />
+              <Input
+                dir="ltr"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+              />
             </Field>
             <Field label={`${t("subtotal")} *`}>
-              <Input type="number" dir="ltr" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} />
+              <Input
+                type="number"
+                dir="ltr"
+                value={subtotal}
+                onChange={(e) => setSubtotal(e.target.value)}
+              />
             </Field>
             <Field label={t("discount")}>
-              <Input type="number" dir="ltr" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+              <Input
+                type="number"
+                dir="ltr"
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+              />
             </Field>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBillOpen(false)}>
               {t("cancel")}
             </Button>
-            <Button disabled={!supplierId || !subtotal || createBill.isPending} onClick={() => createBill.mutate(undefined as never)}>
+            <Button
+              disabled={!supplierId || !subtotal || createBill.isPending}
+              onClick={() => createBill.mutate(undefined as never)}
+            >
               {createBill.isPending ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
@@ -678,7 +800,12 @@ function SupplierDebtTab({ currency }: { currency: string }) {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label={`${t("amount")} *`}>
-              <Input type="number" dir="ltr" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Input
+                type="number"
+                dir="ltr"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
             </Field>
             <Field label={t("payment_method")}>
               <Select value={method} onValueChange={setMethod}>
