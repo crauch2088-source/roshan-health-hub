@@ -351,50 +351,94 @@ function MedicinesTab() {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("name")}</TableHead>
-                  <TableHead>{t("unit")}</TableHead>
-                  <TableHead>{t("stock")}</TableHead>
-                  <TableHead>{t("selling_price")}</TableHead>
-                  <TableHead>{t("expiry_date")}</TableHead>
-                  <TableHead className="no-print" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("medicines")}>
                 {rows.map((m) => {
                   const low = n(m, "stock_quantity") <= n(m, "reorder_level");
                   return (
-                    <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
-                      <TableCell className="font-medium">{s(m, "name")}</TableCell>
-                      <TableCell>{s(m, "unit") || "—"}</TableCell>
-                      <TableCell
-                        dir="ltr"
-                        className={low ? "font-semibold text-destructive" : undefined}
-                      >
-                        {n(m, "stock_quantity")}
-                      </TableCell>
-                      <TableCell>{money(n(m, "selling_price"), currency)}</TableCell>
-                      <TableCell dir="ltr">
-                        {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
-                      </TableCell>
-                      <TableCell className="no-print text-end">
-                        {can("pharmacy.create") ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
-                          >
-                            {t("receive_stock")}
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
+                    <li
+                      key={s(m, "id")}
+                      className={cn("space-y-1.5 p-3", low && "bg-destructive/5")}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium">{s(m, "name")}</p>
+                          <p className="text-xs text-muted-foreground">{s(m, "unit") || "—"}</p>
+                        </div>
+                        <span
+                          dir="ltr"
+                          className={cn("shrink-0 font-semibold", low && "text-destructive")}
+                        >
+                          {n(m, "stock_quantity")}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span>{money(n(m, "selling_price"), currency)}</span>
+                        <span dir="ltr">
+                          {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
+                        </span>
+                      </div>
+                      {can("pharmacy.create") ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                        >
+                          {t("receive_stock")}
+                        </Button>
+                      ) : null}
+                    </li>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t("unit")}</TableHead>
+                      <TableHead>{t("stock")}</TableHead>
+                      <TableHead>{t("selling_price")}</TableHead>
+                      <TableHead>{t("expiry_date")}</TableHead>
+                      <TableHead className="no-print" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((m) => {
+                      const low = n(m, "stock_quantity") <= n(m, "reorder_level");
+                      return (
+                        <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
+                          <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                          <TableCell>{s(m, "unit") || "—"}</TableCell>
+                          <TableCell
+                            dir="ltr"
+                            className={low ? "font-semibold text-destructive" : undefined}
+                          >
+                            {n(m, "stock_quantity")}
+                          </TableCell>
+                          <TableCell>{money(n(m, "selling_price"), currency)}</TableCell>
+                          <TableCell dir="ltr">
+                            {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
+                          </TableCell>
+                          <TableCell className="no-print text-end">
+                            {can("pharmacy.create") ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                              >
+                                {t("receive_stock")}
+                              </Button>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           <Pager
             page={list.page}

@@ -216,38 +216,69 @@ function UsersPageInner() {
           {rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("full_name")}</TableHead>
-                  <TableHead>{t("email")}</TableHead>
-                  <TableHead>{t("phone")}</TableHead>
-                  <TableHead>{t("role")}</TableHead>
-                  <TableHead className="no-print">{t("active")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("users")}>
                 {rows.map((u) => (
-                  <TableRow key={s(u, "id")}>
-                    <TableCell className="font-medium">{s(u, "full_name")}</TableCell>
-                    <TableCell dir="ltr">{s(u, "email")}</TableCell>
-                    <TableCell dir="ltr">{s(u, "phone") || "—"}</TableCell>
-                    <TableCell>
-                      {lang === "ar"
-                        ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
-                        : s(rel(u, "roles"), "name")}
-                    </TableCell>
-                    <TableCell className="no-print">
+                  <li key={s(u, "id")} className="space-y-1.5 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{s(u, "full_name")}</p>
+                        <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                          {s(u, "email")}
+                        </p>
+                      </div>
                       <Switch
                         checked={b(u, "active")}
                         disabled={!can("users.update")}
+                        aria-label={t("active")}
                         onCheckedChange={(v) => toggle.mutate({ id: s(u, "id"), active: v })}
                       />
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {lang === "ar"
+                        ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
+                        : s(rel(u, "roles"), "name")}
+                      {" · "}
+                      <span dir="ltr">{s(u, "phone") || "—"}</span>
+                    </p>
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("full_name")}</TableHead>
+                      <TableHead>{t("email")}</TableHead>
+                      <TableHead>{t("phone")}</TableHead>
+                      <TableHead>{t("role")}</TableHead>
+                      <TableHead className="no-print">{t("active")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((u) => (
+                      <TableRow key={s(u, "id")}>
+                        <TableCell className="font-medium">{s(u, "full_name")}</TableCell>
+                        <TableCell dir="ltr">{s(u, "email")}</TableCell>
+                        <TableCell dir="ltr">{s(u, "phone") || "—"}</TableCell>
+                        <TableCell>
+                          {lang === "ar"
+                            ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
+                            : s(rel(u, "roles"), "name")}
+                        </TableCell>
+                        <TableCell className="no-print">
+                          <Switch
+                            checked={b(u, "active")}
+                            disabled={!can("users.update")}
+                            onCheckedChange={(v) => toggle.mutate({ id: s(u, "id"), active: v })}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

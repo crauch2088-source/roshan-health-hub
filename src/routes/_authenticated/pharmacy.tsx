@@ -182,41 +182,71 @@ function PharmacyPageInner() {
                     </div>
                   </div>
                   <SectionTitle>{t("medicines")}</SectionTitle>
-                  <Table density="compact">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("medicines")}</TableHead>
-                        <TableHead>{t("dosage")}</TableHead>
-                        <TableHead>{t("quantity")}</TableHead>
-                        <TableHead>{t("stock")}</TableHead>
-                        <TableHead>{t("total")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((i) => (
-                        <TableRow key={s(i, "id")}>
-                          <TableCell className="font-medium">
-                            {s(rel(i, "medicines"), "name")}
-                          </TableCell>
-                          <TableCell>
+                  <ul className="divide-y rounded-md border md:hidden">
+                    {items.map((i) => (
+                      <li
+                        key={s(i, "id")}
+                        className="flex items-start justify-between gap-3 p-2.5 text-sm"
+                      >
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="font-medium">{s(rel(i, "medicines"), "name")}</p>
+                          <p className="text-xs text-muted-foreground">
                             {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
                               .filter(Boolean)
                               .join(" · ") || "—"}
-                          </TableCell>
-                          <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
-                          <TableCell dir="ltr">
-                            {n(rel(i, "medicines"), "stock_quantity")}
-                          </TableCell>
-                          <TableCell>
-                            {money(
-                              (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-                              currency,
-                            )}
-                          </TableCell>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("quantity")} <span dir="ltr">{n(i, "quantity") || 1}</span> ·{" "}
+                            {t("stock")}{" "}
+                            <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
+                          </p>
+                        </div>
+                        <span className="shrink-0 font-semibold">
+                          {money(
+                            (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
+                            currency,
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden md:block">
+                    <Table density="compact">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("medicines")}</TableHead>
+                          <TableHead>{t("dosage")}</TableHead>
+                          <TableHead>{t("quantity")}</TableHead>
+                          <TableHead>{t("stock")}</TableHead>
+                          <TableHead>{t("total")}</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((i) => (
+                          <TableRow key={s(i, "id")}>
+                            <TableCell className="font-medium">
+                              {s(rel(i, "medicines"), "name")}
+                            </TableCell>
+                            <TableCell>
+                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                                .filter(Boolean)
+                                .join(" · ") || "—"}
+                            </TableCell>
+                            <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
+                            <TableCell dir="ltr">
+                              {n(rel(i, "medicines"), "stock_quantity")}
+                            </TableCell>
+                            <TableCell>
+                              {money(
+                                (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
+                                currency,
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                   <p className="mt-2 text-end text-sm font-semibold">
                     {t("total")}: {money(total, currency)}
                   </p>

@@ -44,6 +44,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -211,58 +212,124 @@ function CashboxTab({ currency }: { currency: string }) {
               description={lang === "ar" ? "لا حركات لعرضها." : "No transactions to show."}
             />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead>{t("type")}</TableHead>
-                  <TableHead>{t("category")}</TableHead>
-                  <TableHead>{t("description")}</TableHead>
-                  <TableHead>{t("amount")}</TableHead>
-                  <TableHead className="no-print" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("cashbox")}>
                 {rows.map((tx) => {
                   const amt = n(tx, "amount");
                   return (
-                    <TableRow key={s(tx, "id")}>
-                      <TableCell dir="ltr">{formatDateTime(s(tx, "transaction_date"))}</TableCell>
-                      <TableCell>{t(s(tx, "transaction_type"))}</TableCell>
-                      <TableCell>{s(tx, "category") || "—"}</TableCell>
-                      <TableCell className="max-w-64 truncate">
-                        {s(tx, "description") || "—"}
+                    <li key={s(tx, "id")} className="space-y-1.5 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">
+                            {t(s(tx, "transaction_type"))}
+                            {s(tx, "category") ? ` · ${s(tx, "category")}` : ""}
+                          </p>
+                          <p className="text-xs text-muted-foreground" dir="ltr">
+                            {formatDateTime(s(tx, "transaction_date"))}
+                          </p>
+                        </div>
+                        <span
+                          dir="ltr"
+                          className={cn(
+                            "shrink-0 font-semibold",
+                            amt < 0 ? "text-destructive" : "text-success",
+                          )}
+                        >
+                          {amt > 0 ? `+${money(amt, currency)}` : money(amt, currency)}
+                        </span>
+                      </div>
+                      {s(tx, "description") ? (
+                        <p className="text-sm text-muted-foreground">{s(tx, "description")}</p>
+                      ) : null}
+                      <div className="flex flex-wrap items-center gap-2">
                         {tx["is_reversed"] ? (
-                          <Badge variant="outline" className="ms-2 text-[10px]">
+                          <Badge variant="outline" className="text-[10px]">
                             {t("reversed")}
                           </Badge>
                         ) : null}
                         {tx["reversal_of"] ? (
-                          <Badge variant="outline" className="ms-2 text-[10px]">
+                          <Badge variant="outline" className="text-[10px]">
                             {t("reversal")}
                           </Badge>
                         ) : null}
-                      </TableCell>
-                      <TableCell
-                        dir="ltr"
-                        className={
-                          amt < 0 ? "font-semibold text-destructive" : "font-semibold text-success"
-                        }
-                      >
-                        {amt > 0 ? `+${money(amt, currency)}` : money(amt, currency)}
-                      </TableCell>
-                      <TableCell className="no-print text-end">
                         {can("cashbox.update") && !tx["is_reversed"] && !tx["reversal_of"] ? (
-                          <Button variant="ghost" size="sm" onClick={() => setReverseTarget(tx)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ms-auto"
+                            onClick={() => setReverseTarget(tx)}
+                          >
                             <RotateCcw className="size-3.5" /> {t("reverse")}
                           </Button>
                         ) : null}
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </li>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("date")}</TableHead>
+                      <TableHead>{t("type")}</TableHead>
+                      <TableHead>{t("category")}</TableHead>
+                      <TableHead>{t("description")}</TableHead>
+                      <TableHead>{t("amount")}</TableHead>
+                      <TableHead className="no-print" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((tx) => {
+                      const amt = n(tx, "amount");
+                      return (
+                        <TableRow key={s(tx, "id")}>
+                          <TableCell dir="ltr">
+                            {formatDateTime(s(tx, "transaction_date"))}
+                          </TableCell>
+                          <TableCell>{t(s(tx, "transaction_type"))}</TableCell>
+                          <TableCell>{s(tx, "category") || "—"}</TableCell>
+                          <TableCell className="max-w-64 truncate">
+                            {s(tx, "description") || "—"}
+                            {tx["is_reversed"] ? (
+                              <Badge variant="outline" className="ms-2 text-[10px]">
+                                {t("reversed")}
+                              </Badge>
+                            ) : null}
+                            {tx["reversal_of"] ? (
+                              <Badge variant="outline" className="ms-2 text-[10px]">
+                                {t("reversal")}
+                              </Badge>
+                            ) : null}
+                          </TableCell>
+                          <TableCell
+                            dir="ltr"
+                            className={
+                              amt < 0
+                                ? "font-semibold text-destructive"
+                                : "font-semibold text-success"
+                            }
+                          >
+                            {amt > 0 ? `+${money(amt, currency)}` : money(amt, currency)}
+                          </TableCell>
+                          <TableCell className="no-print text-end">
+                            {can("cashbox.update") && !tx["is_reversed"] && !tx["reversal_of"] ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setReverseTarget(tx)}
+                              >
+                                <RotateCcw className="size-3.5" /> {t("reverse")}
+                              </Button>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
