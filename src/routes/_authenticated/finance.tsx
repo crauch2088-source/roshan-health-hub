@@ -494,53 +494,100 @@ function ReceivablesTab({ currency }: { currency: string }) {
           {rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("patient")}</TableHead>
-                  <TableHead>{t("invoice_number")}</TableHead>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead>{t("net")}</TableHead>
-                  <TableHead>{t("paid_amount")}</TableHead>
-                  <TableHead>{t("outstanding_balance")}</TableHead>
-                  <TableHead className="no-print" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("receivables")}>
                 {rows.map((r) => (
-                  <TableRow key={s(r, "invoice_id")}>
-                    <TableCell className="font-medium">
-                      {s(r, "patient_name")}
-                      <span className="ms-1 text-xs text-muted-foreground" dir="ltr">
-                        ({s(r, "mrn")})
+                  <li key={s(r, "invoice_id")} className="space-y-1 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 break-words font-medium">
+                        {s(r, "patient_name")}
+                        <span className="ms-1 text-xs text-muted-foreground" dir="ltr">
+                          ({s(r, "mrn")})
+                        </span>
                       </span>
-                    </TableCell>
-                    <TableCell dir="ltr">{s(r, "invoice_number") || "—"}</TableCell>
-                    <TableCell dir="ltr">
-                      {s(r, "invoice_date") ? formatDate(s(r, "invoice_date")) : "—"}
-                    </TableCell>
-                    <TableCell>{money(n(r, "net_amount"), currency)}</TableCell>
-                    <TableCell>{money(n(r, "paid_amount"), currency)}</TableCell>
-                    <TableCell className="font-semibold text-destructive">
-                      {money(n(r, "outstanding"), currency)}
-                    </TableCell>
-                    <TableCell className="no-print text-end">
-                      {can("payments.create") || can("billing.create") ? (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setPayTarget(r);
-                            setAmount(String(n(r, "outstanding")));
-                          }}
-                        >
-                          {t("record_payment")}
-                        </Button>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
+                      <span className="shrink-0 font-semibold text-destructive">
+                        {money(n(r, "outstanding"), currency)}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      <span dir="ltr">{s(r, "invoice_number") || "—"}</span>
+                      <span dir="ltr">
+                        {s(r, "invoice_date") ? formatDate(s(r, "invoice_date")) : "—"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span>
+                        {t("net")}: {money(n(r, "net_amount"), currency)}
+                      </span>
+                      <span>
+                        {t("paid_amount")}: {money(n(r, "paid_amount"), currency)}
+                      </span>
+                    </div>
+                    {can("payments.create") || can("billing.create") ? (
+                      <Button
+                        size="sm"
+                        className="no-print w-full"
+                        onClick={() => {
+                          setPayTarget(r);
+                          setAmount(String(n(r, "outstanding")));
+                        }}
+                      >
+                        {t("record_payment")}
+                      </Button>
+                    ) : null}
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("patient")}</TableHead>
+                      <TableHead>{t("invoice_number")}</TableHead>
+                      <TableHead>{t("date")}</TableHead>
+                      <TableHead>{t("net")}</TableHead>
+                      <TableHead>{t("paid_amount")}</TableHead>
+                      <TableHead>{t("outstanding_balance")}</TableHead>
+                      <TableHead className="no-print" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((r) => (
+                      <TableRow key={s(r, "invoice_id")}>
+                        <TableCell className="font-medium">
+                          {s(r, "patient_name")}
+                          <span className="ms-1 text-xs text-muted-foreground" dir="ltr">
+                            ({s(r, "mrn")})
+                          </span>
+                        </TableCell>
+                        <TableCell dir="ltr">{s(r, "invoice_number") || "—"}</TableCell>
+                        <TableCell dir="ltr">
+                          {s(r, "invoice_date") ? formatDate(s(r, "invoice_date")) : "—"}
+                        </TableCell>
+                        <TableCell>{money(n(r, "net_amount"), currency)}</TableCell>
+                        <TableCell>{money(n(r, "paid_amount"), currency)}</TableCell>
+                        <TableCell className="font-semibold text-destructive">
+                          {money(n(r, "outstanding"), currency)}
+                        </TableCell>
+                        <TableCell className="no-print text-end">
+                          {can("payments.create") || can("billing.create") ? (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setPayTarget(r);
+                                setAmount(String(n(r, "outstanding")));
+                              }}
+                            >
+                              {t("record_payment")}
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -717,34 +764,63 @@ function SupplierDebtTab({ currency }: { currency: string }) {
           {outstandingRows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("supplier")}</TableHead>
-                  <TableHead>{t("total_billed")}</TableHead>
-                  <TableHead>{t("total_paid")}</TableHead>
-                  <TableHead>{t("outstanding_balance")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("outstanding_balance")}>
                 {outstandingRows
                   .filter((r) => n(r, "bills_count") > 0)
                   .map((r) => (
-                    <TableRow key={s(r, "supplier_id")}>
-                      <TableCell className="font-medium">{s(r, "name")}</TableCell>
-                      <TableCell>{money(n(r, "total_billed"), currency)}</TableCell>
-                      <TableCell>{money(n(r, "total_paid"), currency)}</TableCell>
-                      <TableCell
-                        className={
-                          n(r, "outstanding") > 0 ? "font-semibold text-destructive" : undefined
-                        }
+                    <li key={s(r, "supplier_id")} className="space-y-1 px-4 py-3">
+                      <div className="break-words font-medium">{s(r, "name")}</div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span>
+                          {t("total_billed")}: {money(n(r, "total_billed"), currency)}
+                        </span>
+                        <span>
+                          {t("total_paid")}: {money(n(r, "total_paid"), currency)}
+                        </span>
+                      </div>
+                      <div
+                        className={cn(
+                          "text-sm",
+                          n(r, "outstanding") > 0 && "font-semibold text-destructive",
+                        )}
                       >
-                        {money(n(r, "outstanding"), currency)}
-                      </TableCell>
-                    </TableRow>
+                        {t("outstanding_balance")}: {money(n(r, "outstanding"), currency)}
+                      </div>
+                    </li>
                   ))}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("supplier")}</TableHead>
+                      <TableHead>{t("total_billed")}</TableHead>
+                      <TableHead>{t("total_paid")}</TableHead>
+                      <TableHead>{t("outstanding_balance")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {outstandingRows
+                      .filter((r) => n(r, "bills_count") > 0)
+                      .map((r) => (
+                        <TableRow key={s(r, "supplier_id")}>
+                          <TableCell className="font-medium">{s(r, "name")}</TableCell>
+                          <TableCell>{money(n(r, "total_billed"), currency)}</TableCell>
+                          <TableCell>{money(n(r, "total_paid"), currency)}</TableCell>
+                          <TableCell
+                            className={
+                              n(r, "outstanding") > 0 ? "font-semibold text-destructive" : undefined
+                            }
+                          >
+                            {money(n(r, "outstanding"), currency)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -754,50 +830,97 @@ function SupplierDebtTab({ currency }: { currency: string }) {
           {billRows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead>{t("supplier")}</TableHead>
-                  <TableHead>{t("invoice_number")}</TableHead>
-                  <TableHead>{t("net")}</TableHead>
-                  <TableHead>{t("paid_amount")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead className="no-print" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("supplier")}>
                 {billRows.map((b) => {
                   const outstandingAmt = n(b, "total_amount") - n(b, "paid_amount");
                   return (
-                    <TableRow key={s(b, "id")}>
-                      <TableCell dir="ltr">{formatDate(s(b, "bill_date"))}</TableCell>
-                      <TableCell className="font-medium">
-                        {s(b, "suppliers") ? ((b["suppliers"] as Row)["name"] as string) : "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">{s(b, "invoice_number") || "—"}</TableCell>
-                      <TableCell>{money(n(b, "total_amount"), currency)}</TableCell>
-                      <TableCell>{money(n(b, "paid_amount"), currency)}</TableCell>
-                      <TableCell>{t(s(b, "status"))}</TableCell>
-                      <TableCell className="no-print text-end">
-                        {(can("debts.create") || can("accounting.create")) && outstandingAmt > 0 ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPayTarget(b);
-                              setAmount(String(outstandingAmt));
-                            }}
-                          >
-                            {t("record_payment")}
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
+                    <li key={s(b, "id")} className="space-y-1 px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 break-words font-medium">
+                          {s(b, "suppliers") ? ((b["suppliers"] as Row)["name"] as string) : "—"}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {t(s(b, "status"))}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span dir="ltr">{formatDate(s(b, "bill_date"))}</span>
+                        <span dir="ltr">{s(b, "invoice_number") || "—"}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span>
+                          {t("net")}: {money(n(b, "total_amount"), currency)}
+                        </span>
+                        <span>
+                          {t("paid_amount")}: {money(n(b, "paid_amount"), currency)}
+                        </span>
+                      </div>
+                      {(can("debts.create") || can("accounting.create")) && outstandingAmt > 0 ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="no-print w-full"
+                          onClick={() => {
+                            setPayTarget(b);
+                            setAmount(String(outstandingAmt));
+                          }}
+                        >
+                          {t("record_payment")}
+                        </Button>
+                      ) : null}
+                    </li>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("date")}</TableHead>
+                      <TableHead>{t("supplier")}</TableHead>
+                      <TableHead>{t("invoice_number")}</TableHead>
+                      <TableHead>{t("net")}</TableHead>
+                      <TableHead>{t("paid_amount")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                      <TableHead className="no-print" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {billRows.map((b) => {
+                      const outstandingAmt = n(b, "total_amount") - n(b, "paid_amount");
+                      return (
+                        <TableRow key={s(b, "id")}>
+                          <TableCell dir="ltr">{formatDate(s(b, "bill_date"))}</TableCell>
+                          <TableCell className="font-medium">
+                            {s(b, "suppliers") ? ((b["suppliers"] as Row)["name"] as string) : "—"}
+                          </TableCell>
+                          <TableCell dir="ltr">{s(b, "invoice_number") || "—"}</TableCell>
+                          <TableCell>{money(n(b, "total_amount"), currency)}</TableCell>
+                          <TableCell>{money(n(b, "paid_amount"), currency)}</TableCell>
+                          <TableCell>{t(s(b, "status"))}</TableCell>
+                          <TableCell className="no-print text-end">
+                            {(can("debts.create") || can("accounting.create")) &&
+                            outstandingAmt > 0 ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setPayTarget(b);
+                                  setAmount(String(outstandingAmt));
+                                }}
+                              >
+                                {t("record_payment")}
+                              </Button>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
