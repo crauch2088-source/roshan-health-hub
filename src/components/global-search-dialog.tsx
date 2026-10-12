@@ -32,6 +32,7 @@ import { getNavIcon } from "@/lib/nav-icons";
 import {
   clearRecentSearchTerms,
   clearSearchHistory,
+  filterByScope,
   getRecentSearchTerms,
   getSearchHistory,
   pushRecentSearchTerm,
@@ -105,7 +106,8 @@ export function GlobalSearchDialog({
   );
   const { results, isSearching } = useGlobalSearch(query, scope);
   const [recentTerms, setRecentTerms] = useState<string[]>(() => getRecentSearchTerms());
-  const [history, setHistory] = useState<SearchResultItem[]>(() => getSearchHistory());
+  const [storedHistory, setHistory] = useState<SearchResultItem[]>(() => getSearchHistory());
+  const history = useMemo(() => filterByScope(storedHistory, scope), [storedHistory, scope]);
 
   const pages = useMemo(
     () => [HOME_ITEM, ...flatNavItems().filter((i) => i.to !== HOME_ITEM.to)],

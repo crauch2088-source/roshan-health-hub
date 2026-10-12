@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { HOME_ITEM, NAV_GROUPS } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { bottomBarColumns } from "@/lib/nav-layout";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavItemActive } from "@/lib/nav-active";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
@@ -96,7 +97,7 @@ export function MobileBottomNav() {
         aria-label={t("navigation")}
         // One column per visible destination plus More, so hidden-by-permission
         // items never leave empty cells and the bar stays balanced.
-        style={{ gridTemplateColumns: `repeat(${primary.length + 1}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: bottomBarColumns(primary.length) }}
       >
         {primary.map((item) => {
           const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);

@@ -1,56 +1,15 @@
 import { patientEmbeddedFilter, patientPickerQuery, sanitizeTerm } from "./search";
+import { createSearchAll, unwrapRows, type SearchResultItem } from "./search-core";
 import { supabase } from "./supabase";
 
-export type SearchCategory = "patient" | "visit" | "lab" | "medicine";
+export type { SearchCategory, SearchResultItem, SearchResults, SearchScope } from "./search-core";
+export { FULL_SCOPE, filterByScope } from "./search-core";
 
-export type SearchResultItem = {
-  key: string;
-  title: string;
-  subtitle?: string | undefined;
-  meta?: string | undefined;
-  to: string;
-  category: SearchCategory;
-};
-
-export type SearchResults = {
-  patients: SearchResultItem[];
-  visits: SearchResultItem[];
-  lab: SearchResultItem[];
-  medicines: SearchResultItem[];
-  /** true when at least one category query failed (results are then partial). */
-  failed?: boolean;
-};
-
-/** Which categories the signed-in user may search (mirrors route permissions). */
-export type SearchScope = Record<"patients" | "visits" | "lab" | "medicines", boolean>;
-
-export const FULL_SCOPE: SearchScope = { patients: true, visits: true, lab: true, medicines: true };
-
-const EMPTY_RESULTS: SearchResults = { patients: [], visits: [], lab: [], medicines: [] };
 const RECENT_TERMS_KEY = "roshan:search:recent-terms";
 const HISTORY_KEY = "roshan:search:history";
 const MAX_RECENT_TERMS = 8;
 const MAX_HISTORY = 10;
 const PER_CATEGORY_LIMIT = 6;
-const CACHE_TTL_MS = 30_000;
-
-// ---------------------------------------------------------------------------
-// Short in-memory cache — the same term typed twice in a session (e.g. the
-// user reopens Ctrl+K) shouldn't re-hit the database. Not persisted; a page
-// refresh clears it, which is fine, this is purely a debounce-adjacent
-// optimization, not a data source of truth.
-// ---------------------------------------------------------------------------
-const cache = new Map<string, { at: number; results: SearchResults }>();
-
-function readCache(term: string): SearchResults | null {
-  const hit = cache.get(term);
-  if (!hit) return null;
-  if (Date.now() - hit.at > CACHE_TTL_MS) {
-    cache.delete(term);
-    return null;
-  }
-  return hit.results;
-}
 
 // ---------------------------------------------------------------------------
 // Per-category search — each is a small, indexed, server-side query, never
@@ -58,8 +17,8 @@ function readCache(term: string): SearchResults | null {
 // ---------------------------------------------------------------------------
 
 async function searchPatients(term: string): Promise<SearchResultItem[]> {
-  const { data } = await patientPickerQuery(term, PER_CATEGORY_LIMIT);
-  return ((data ?? []) as Record<string, unknown>[]).map((p) => ({
+  const rows = unwrapRows(await patientPickerQuery(term, PER_CATEGORY_LIMIT), "patients");
+  return rows.map((p) => ({
     key: `patient:${p["id"]}`,
     title: String(p["full_name"] ?? ""),
     subtitle: [p["mrn"], p["phone"]].filter(Boolean).join(" · "),
@@ -81,9 +40,9 @@ async function searchVisits(term: string): Promise<SearchResultItem[]> {
     .limit(PER_CATEGORY_LIMIT);
 
   const filtered = clean ? patientEmbeddedFilter(byPatient, clean) : byPatient;
-  const { data } = await filtered;
+  const rows = unwrapRows(await filtered, "visits");
 
-  return ((data ?? []) as Record<string, unknown>[]).map((v) => {
+  return rows.map((v) => {
     const patient = (v["patients"] as Record<string, unknown> | null) ?? {};
     return {
       key: `visit:${v["id"]}`,
@@ -99,7 +58,7 @@ async function searchVisits(term: string): Promise<SearchResultItem[]> {
 async function searchLab(term: string): Promise<SearchResultItem[]> {
   const clean = sanitizeTerm(term);
   if (!clean) return [];
-  const { data } = await supabase
+  const response = await supabase
     .from("lab_orders")
     .select(
       "id, status, created_at, patients!lab_orders_patient_id_fkey(full_name, mrn), lab_order_items(lab_tests(name))",
@@ -109,7 +68,7 @@ async function searchLab(term: string): Promise<SearchResultItem[]> {
     .order("created_at", { ascending: false })
     .limit(PER_CATEGORY_LIMIT);
 
-  return ((data ?? []) as Record<string, unknown>[]).map((o) => {
+  return unwrapRows(response, "lab").map((o) => {
     const patient = (o["patients"] as Record<string, unknown> | null) ?? {};
     const items = (o["lab_order_items"] as { lab_tests: { name: string } | null }[] | null) ?? [];
     const testNames = items.map((i) => i.lab_tests?.name).filter(Boolean);
@@ -127,7 +86,7 @@ async function searchLab(term: string): Promise<SearchResultItem[]> {
 async function searchMedicines(term: string): Promise<SearchResultItem[]> {
   const clean = sanitizeTerm(term);
   if (!clean) return [];
-  const { data } = await supabase
+  const response = await supabase
     .from("medicines")
     .select("id, name, unit, stock_quantity, selling_price, barcode")
     .is("deleted_at", null)
@@ -135,7 +94,7 @@ async function searchMedicines(term: string): Promise<SearchResultItem[]> {
     .order("name", { ascending: true })
     .limit(PER_CATEGORY_LIMIT);
 
-  return ((data ?? []) as Record<string, unknown>[]).map((m) => ({
+  return unwrapRows(response, "medicines").map((m) => ({
     key: `medicine:${m["id"]}`,
     title: String(m["name"] ?? ""),
     subtitle: m["unit"] ? String(m["unit"]) : undefined,
@@ -146,42 +105,15 @@ async function searchMedicines(term: string): Promise<SearchResultItem[]> {
 }
 
 /**
- * Runs every permitted category in parallel and returns as soon as all settle.
- * Categories outside `scope` are never queried. A failing category yields an
- * empty list and flags the result as `failed` (and is not cached), so the UI
- * can say the search was incomplete instead of claiming "no results".
+ * Runs every permitted category in parallel (see search-core.ts for the failure and
+ * caching rules). Categories outside `scope` are never queried.
  */
-export async function searchAll(
-  rawTerm: string,
-  scope: SearchScope = FULL_SCOPE,
-): Promise<SearchResults> {
-  const term = rawTerm.trim();
-  if (term.length < 2) return EMPTY_RESULTS;
-
-  const cacheKey = `${term}|${Number(scope.patients)}${Number(scope.visits)}${Number(scope.lab)}${Number(scope.medicines)}`;
-  const cached = readCache(cacheKey);
-  if (cached) return cached;
-
-  let failed = false;
-  const run = (enabled: boolean, query: () => Promise<SearchResultItem[]>) =>
-    enabled
-      ? query().catch(() => {
-          failed = true;
-          return [] as SearchResultItem[];
-        })
-      : Promise.resolve([] as SearchResultItem[]);
-
-  const [patients, visits, lab, medicines] = await Promise.all([
-    run(scope.patients, () => searchPatients(term)),
-    run(scope.visits, () => searchVisits(term)),
-    run(scope.lab, () => searchLab(term)),
-    run(scope.medicines, () => searchMedicines(term)),
-  ]);
-
-  const results: SearchResults = { patients, visits, lab, medicines, failed };
-  if (!failed) cache.set(cacheKey, { at: Date.now(), results });
-  return results;
-}
+export const searchAll = createSearchAll({
+  patients: searchPatients,
+  visits: searchVisits,
+  lab: searchLab,
+  medicines: searchMedicines,
+});
 
 // ---------------------------------------------------------------------------
 // Recent search terms (what was typed) — separate from history (what was

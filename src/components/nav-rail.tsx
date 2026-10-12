@@ -9,6 +9,7 @@ import { HOME_ITEM, NAV_GROUPS, type NavConfigItem } from "@/config/nav";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { railTooltipSide } from "@/lib/nav-layout";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavItemActive } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
@@ -73,11 +74,7 @@ function RailLink({
   const body = collapsed ? (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent
-        side={lang === "ar" ? "left" : "right"}
-        sideOffset={8}
-        className="font-medium"
-      >
+      <TooltipContent side={railTooltipSide(lang)} sideOffset={8} className="font-medium">
         {t(item.key)}
       </TooltipContent>
     </Tooltip>
