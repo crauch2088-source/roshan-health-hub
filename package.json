@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test:guard": "node --test --experimental-strip-types tests/role-guard.test.ts tests/runtime-engine.test.ts"
+    "test:guard": "node --test --experimental-strip-types tests/role-guard.test.ts tests/runtime-engine.test.ts tests/ssr-log-redaction.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
