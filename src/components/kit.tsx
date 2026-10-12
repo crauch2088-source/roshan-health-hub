@@ -8,13 +8,15 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { csvExport, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
@@ -238,11 +240,42 @@ export function Field({
   hint?: string;
   className?: string;
 }) {
+  const uid = useId();
+  const labelId = `${uid}-label`;
+  const hintId = `${uid}-hint`;
+
+  // Plain text inputs and textareas get a real label association (click-to-focus,
+  // accessible name) and their hint as a description. Composite controls such as
+  // Select keep working as before; the labelled group below still names them.
+  type ControlProps = { id?: string; "aria-describedby"?: string };
+  const control =
+    isValidElement(children) && (children.type === Input || children.type === Textarea)
+      ? (children as ReactElement<ControlProps>)
+      : null;
+  const controlId = control ? (control.props.id ?? `${uid}-control`) : null;
+  const rendered =
+    control && controlId
+      ? cloneElement(control, {
+          id: controlId,
+          ...(hint && !control.props["aria-describedby"] ? { "aria-describedby": hintId } : {}),
+        })
+      : children;
+
   return (
-    <div className={cn("space-y-1.5", className)} role="group" aria-label={label}>
-      <Label className="text-xs font-semibold text-foreground/80">{label}</Label>
-      {children}
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    <div className={cn("space-y-1.5", className)} role="group" aria-labelledby={labelId}>
+      <Label
+        id={labelId}
+        {...(controlId ? { htmlFor: controlId } : {})}
+        className="text-xs font-semibold text-foreground/80"
+      >
+        {label}
+      </Label>
+      {rendered}
+      {hint ? (
+        <p id={hintId} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }

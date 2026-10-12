@@ -227,30 +227,16 @@ function DashboardPageInner() {
       <SectionTitle>{t("executive_summary")}</SectionTitle>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label={t("patients_today")}
-          value={((patientsToday.data ?? []) as Row[]).length}
-          icon={<UserRound className="size-5" />}
-          tone="primary"
-        />
-        <StatCard
           label={t("visits_today")}
           value={visitRows.length}
           hint={`${t("waiting_patients")}: ${waiting}`}
           icon={<Users className="size-5" />}
         />
         <StatCard
-          label={t("revenue_today")}
-          value={money(revenueToday, currency)}
-          hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
-          icon={<Banknote className="size-5" />}
-          tone="success"
-        />
-        <StatCard
-          label={t("expenses_today")}
-          value={money(expensesToday, currency)}
-          hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
-          icon={<Wallet className="size-5" />}
-          tone="warning"
+          label={t("patients_today")}
+          value={((patientsToday.data ?? []) as Row[]).length}
+          icon={<UserRound className="size-5" />}
+          tone="primary"
         />
         <StatCard
           label={t("appointments_today")}
@@ -267,6 +253,20 @@ function DashboardPageInner() {
           label={t("pending_pharmacy")}
           value={((rxPending.data ?? []) as Row[]).length}
           icon={<Pill className="size-5" />}
+          tone="warning"
+        />
+        <StatCard
+          label={t("revenue_today")}
+          value={money(revenueToday, currency)}
+          hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
+          icon={<Banknote className="size-5" />}
+          tone="success"
+        />
+        <StatCard
+          label={t("expenses_today")}
+          value={money(expensesToday, currency)}
+          hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
+          icon={<Wallet className="size-5" />}
           tone="warning"
         />
         <StatCard
