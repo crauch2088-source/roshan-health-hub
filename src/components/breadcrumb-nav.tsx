@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { flatNavItems, HOME_ITEM } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
-import { isNavItemActive } from "@/lib/nav-active";
+import { matchNavItem, normalizePath } from "@/lib/nav-active";
 
 /**
  * A single-level trail (Home / Current section) rather than a full path
@@ -24,37 +24,39 @@ export function BreadcrumbNav() {
   if (location.pathname === HOME_ITEM.to) return null;
 
   const items = flatNavItems().filter((item) => can(item.perm));
-  const current =
-    items.find((item) => location.pathname === item.to) ??
-    items.find((item) => isNavItemActive(location.pathname, item.to));
+  const current = matchNavItem(location.pathname, items);
 
   if (!current) return null;
 
-  const onSection = location.pathname === current.to;
+  const onSection = normalizePath(location.pathname) === normalizePath(current.to);
 
   return (
     <nav
-      className="no-print flex min-w-0 items-center gap-1 text-sm text-muted-foreground"
-      aria-label={t("navigation")}
+      className="no-print flex min-w-0 items-center text-sm text-muted-foreground"
+      aria-label={t("breadcrumb")}
     >
-      {can(HOME_ITEM.perm) ? (
-        <>
+      <ol className="flex min-w-0 items-center gap-1">
+        {can(HOME_ITEM.perm) ? (
+          <li className="hidden items-center gap-1 sm:flex">
+            <Link
+              to={HOME_ITEM.to}
+              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {t(HOME_ITEM.key)}
+            </Link>
+            <Chevron className="size-3.5 shrink-0" aria-hidden />
+          </li>
+        ) : null}
+        <li className="min-w-0">
           <Link
-            to={HOME_ITEM.to}
-            className="hidden rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline"
+            to={current.to}
+            aria-current={onSection ? "page" : undefined}
+            className="block truncate rounded-sm font-medium text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {t(HOME_ITEM.key)}
+            {t(current.key)}
           </Link>
-          <Chevron className="hidden size-3.5 shrink-0 sm:inline" aria-hidden />
-        </>
-      ) : null}
-      <Link
-        to={current.to}
-        aria-current={onSection ? "page" : undefined}
-        className="truncate rounded-sm font-medium text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {t(current.key)}
-      </Link>
+        </li>
+      </ol>
     </nav>
   );
 }

@@ -3,6 +3,7 @@ import {
   Clock,
   FlaskConical,
   History,
+  Loader2,
   Pill,
   Search,
   Sparkles,
@@ -91,7 +92,18 @@ export function GlobalSearchDialog({
   const trimmed = query.trim();
   const hasQuery = trimmed.length >= 2;
 
-  const { results, isSearching } = useGlobalSearch(query);
+  // Only query (and show) the categories the user may open; the destination
+  // routes and RLS still enforce access, this just avoids offering dead links.
+  const scope = useMemo(
+    () => ({
+      patients: can("patients.read"),
+      visits: can("visits.read"),
+      lab: can("lab.read"),
+      medicines: can("pharmacy.read"),
+    }),
+    [can],
+  );
+  const { results, isSearching } = useGlobalSearch(query, scope);
   const [recentTerms, setRecentTerms] = useState<string[]>(() => getRecentSearchTerms());
   const [history, setHistory] = useState<SearchResultItem[]>(() => getSearchHistory());
 
@@ -110,6 +122,15 @@ export function GlobalSearchDialog({
   const favoritePages = useMemo(
     () => pages.filter((item) => can(item.perm) && favorites.includes(item.to)),
     [pages, can, favorites],
+  );
+
+  const availableActions = useMemo(
+    () =>
+      QUICK_ACTIONS.filter((action) => {
+        const destination = pages.find((item) => item.to === action.to);
+        return destination ? can(destination.perm) : false;
+      }),
+    [pages, can],
   );
 
   function reset() {
@@ -177,6 +198,10 @@ export function GlobalSearchDialog({
             <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
             <input
               autoFocus
+              type="search"
+              aria-label={t("search_everywhere")}
+              enterKeyHint="search"
+              autoComplete="off"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("search_placeholder")}
@@ -241,7 +266,7 @@ export function GlobalSearchDialog({
                 )}
 
                 <CommandGroup heading={t("quick_actions")}>
-                  {QUICK_ACTIONS.map((action) => {
+                  {availableActions.map((action) => {
                     const Icon = getNavIcon(action.icon);
                     return (
                       <CommandItem
@@ -381,7 +406,24 @@ export function GlobalSearchDialog({
                   onSelect={selectResult}
                 />
 
-                {noResults && <CommandEmpty>{t("no_results")}</CommandEmpty>}
+                {isSearching && (
+                  <div
+                    role="status"
+                    className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground"
+                  >
+                    <Loader2
+                      className="size-4 animate-spin motion-reduce:animate-none"
+                      aria-hidden
+                    />
+                    {t("searching")}
+                  </div>
+                )}
+                {results.failed && !isSearching && (
+                  <div role="alert" className="px-3 py-3 text-sm text-destructive">
+                    {t("search_failed")}
+                  </div>
+                )}
+                {noResults && !results.failed && <CommandEmpty>{t("no_results")}</CommandEmpty>}
               </>
             )}
           </CommandList>

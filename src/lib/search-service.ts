@@ -17,7 +17,14 @@ export type SearchResults = {
   visits: SearchResultItem[];
   lab: SearchResultItem[];
   medicines: SearchResultItem[];
+  /** true when at least one category query failed (results are then partial). */
+  failed?: boolean;
 };
+
+/** Which categories the signed-in user may search (mirrors route permissions). */
+export type SearchScope = Record<"patients" | "visits" | "lab" | "medicines", boolean>;
+
+export const FULL_SCOPE: SearchScope = { patients: true, visits: true, lab: true, medicines: true };
 
 const EMPTY_RESULTS: SearchResults = { patients: [], visits: [], lab: [], medicines: [] };
 const RECENT_TERMS_KEY = "roshan:search:recent-terms";
@@ -138,23 +145,41 @@ async function searchMedicines(term: string): Promise<SearchResultItem[]> {
   }));
 }
 
-/** Runs every category in parallel and returns as soon as all settle. */
-export async function searchAll(rawTerm: string): Promise<SearchResults> {
+/**
+ * Runs every permitted category in parallel and returns as soon as all settle.
+ * Categories outside `scope` are never queried. A failing category yields an
+ * empty list and flags the result as `failed` (and is not cached), so the UI
+ * can say the search was incomplete instead of claiming "no results".
+ */
+export async function searchAll(
+  rawTerm: string,
+  scope: SearchScope = FULL_SCOPE,
+): Promise<SearchResults> {
   const term = rawTerm.trim();
   if (term.length < 2) return EMPTY_RESULTS;
 
-  const cached = readCache(term);
+  const cacheKey = `${term}|${Number(scope.patients)}${Number(scope.visits)}${Number(scope.lab)}${Number(scope.medicines)}`;
+  const cached = readCache(cacheKey);
   if (cached) return cached;
 
+  let failed = false;
+  const run = (enabled: boolean, query: () => Promise<SearchResultItem[]>) =>
+    enabled
+      ? query().catch(() => {
+          failed = true;
+          return [] as SearchResultItem[];
+        })
+      : Promise.resolve([] as SearchResultItem[]);
+
   const [patients, visits, lab, medicines] = await Promise.all([
-    searchPatients(term).catch(() => []),
-    searchVisits(term).catch(() => []),
-    searchLab(term).catch(() => []),
-    searchMedicines(term).catch(() => []),
+    run(scope.patients, () => searchPatients(term)),
+    run(scope.visits, () => searchVisits(term)),
+    run(scope.lab, () => searchLab(term)),
+    run(scope.medicines, () => searchMedicines(term)),
   ]);
 
-  const results: SearchResults = { patients, visits, lab, medicines };
-  cache.set(term, { at: Date.now(), results });
+  const results: SearchResults = { patients, visits, lab, medicines, failed };
+  if (!failed) cache.set(cacheKey, { at: Date.now(), results });
   return results;
 }
 
