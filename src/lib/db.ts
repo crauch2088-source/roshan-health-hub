@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { dbError, supabase } from "./supabase";
 
@@ -16,10 +22,11 @@ export type Row = Record<string, unknown>;
 export function useRows<T = Row[]>(
   key: QueryKey,
   build: () => PromiseLike<{ data: unknown; error: unknown }>,
-  options?: { enabled?: boolean; refetchInterval?: number },
+  options?: { enabled?: boolean; refetchInterval?: number; keepPrevious?: boolean },
 ) {
   return useQuery({
     queryKey: key,
+    ...(options?.keepPrevious ? { placeholderData: keepPreviousData } : {}),
     queryFn: async () => await run<T>(build() as never),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? false,

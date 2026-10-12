@@ -30,13 +30,15 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="no-print mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:mb-6">
+    <header className="no-print mb-5 grid grid-cols-1 items-end gap-3 sm:mb-6 sm:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0 space-y-1">
         <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl">{title}</h1>
         {subtitle ? <p className="max-w-2xl text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
       {children ? (
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{children}</div>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end [&>*]:max-w-full">
+          {children}
+        </div>
       ) : null}
     </header>
   );

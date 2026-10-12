@@ -90,7 +90,7 @@ function PharmacyPageInner() {
       if (status !== "all") q = q.eq("status", status);
       return q;
     },
-    { refetchInterval: 20000 },
+    { refetchInterval: 20000, keepPrevious: true },
   );
 
   const dispense = useSave<{ prescriptionId: string }>(
@@ -124,10 +124,10 @@ function PharmacyPageInner() {
           placeholder={t("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-56"
+          className="w-full sm:w-56"
         />
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

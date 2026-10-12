@@ -245,7 +245,7 @@ function MedicinesTab() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-48"
+          className="w-full sm:w-48"
         />
         <ExportButtons rows={rows} filename="roshan-inventory" />
         {can("pharmacy.create") ? (
@@ -613,13 +613,13 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           placeholder={t("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-52"
+          className="w-full sm:w-52"
         />
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as "all" | ExpiryStatus)}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
