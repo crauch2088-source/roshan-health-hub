@@ -12,7 +12,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Command,
@@ -29,16 +29,7 @@ import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
-import {
-  clearRecentSearchTerms,
-  clearSearchHistory,
-  filterByScope,
-  getRecentSearchTerms,
-  getSearchHistory,
-  pushRecentSearchTerm,
-  pushSearchHistoryItem,
-  type SearchResultItem,
-} from "@/lib/search-service";
+import { filterByScope, getSearchMemory, type SearchResultItem } from "@/lib/search-service";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
@@ -85,7 +76,7 @@ export function GlobalSearchDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const navigate = useNavigate();
   const { favorites, recents, toggleFavorite } = useNavPreferences();
 
@@ -105,8 +96,14 @@ export function GlobalSearchDialog({
     [can],
   );
   const { results, isSearching } = useGlobalSearch(query, scope);
-  const [recentTerms, setRecentTerms] = useState<string[]>(() => getRecentSearchTerms());
-  const [storedHistory, setHistory] = useState<SearchResultItem[]>(() => getSearchHistory());
+  // Recent terms and history can contain patient names, so they are stored per user.
+  const memory = useMemo(() => getSearchMemory(user?.id), [user?.id]);
+  const [recentTerms, setRecentTerms] = useState<string[]>(() => memory.getRecentTerms());
+  const [storedHistory, setHistory] = useState<SearchResultItem[]>(() => memory.getHistory());
+  useEffect(() => {
+    setRecentTerms(memory.getRecentTerms());
+    setHistory(memory.getHistory());
+  }, [memory]);
   const history = useMemo(() => filterByScope(storedHistory, scope), [storedHistory, scope]);
 
   const pages = useMemo(
@@ -150,10 +147,10 @@ export function GlobalSearchDialog({
   }
 
   function selectResult(item: SearchResultItem) {
-    pushSearchHistoryItem(item);
-    if (trimmed) pushRecentSearchTerm(trimmed);
-    setRecentTerms(getRecentSearchTerms());
-    setHistory(getSearchHistory());
+    memory.pushHistoryItem(item);
+    if (trimmed) memory.pushRecentTerm(trimmed);
+    setRecentTerms(memory.getRecentTerms());
+    setHistory(memory.getHistory());
     goTo(item.to);
   }
 
@@ -312,7 +309,7 @@ export function GlobalSearchDialog({
                       <CommandItem
                         value="clear-history"
                         onSelect={() => {
-                          clearSearchHistory();
+                          memory.clearHistory();
                           setHistory([]);
                         }}
                         className="text-muted-foreground"
@@ -341,7 +338,7 @@ export function GlobalSearchDialog({
                       <CommandItem
                         value="clear-recent-terms"
                         onSelect={() => {
-                          clearRecentSearchTerms();
+                          memory.clearRecentTerms();
                           setRecentTerms([]);
                         }}
                         className="text-muted-foreground"

@@ -1,14 +1,11 @@
 import { patientEmbeddedFilter, patientPickerQuery, sanitizeTerm } from "./search";
 import { createSearchAll, unwrapRows, type SearchResultItem } from "./search-core";
+import { createSearchMemory, type StorageLike } from "./search-memory";
 import { supabase } from "./supabase";
 
 export type { SearchCategory, SearchResultItem, SearchResults, SearchScope } from "./search-core";
 export { FULL_SCOPE, filterByScope } from "./search-core";
 
-const RECENT_TERMS_KEY = "roshan:search:recent-terms";
-const HISTORY_KEY = "roshan:search:history";
-const MAX_RECENT_TERMS = 8;
-const MAX_HISTORY = 10;
 const PER_CATEGORY_LIMIT = 6;
 
 // ---------------------------------------------------------------------------
@@ -116,57 +113,17 @@ export const searchAll = createSearchAll({
 });
 
 // ---------------------------------------------------------------------------
-// Recent search terms (what was typed) — separate from history (what was
-// opened). Both localStorage-backed, per browser, nothing clinical stored.
+// Recent search terms and history are per signed-in user (see search-memory.ts).
 // ---------------------------------------------------------------------------
 
-function readList<T>(key: string): T[] {
+function browserStorage(): StorageLike | null {
   try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T[]) : [];
+    return typeof window === "undefined" ? null : window.localStorage;
   } catch {
-    return [];
+    return null;
   }
 }
 
-function writeList<T>(key: string, list: T[]) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(list));
-  } catch {
-    // Non-fatal — recents are a convenience, not a source of truth.
-  }
-}
-
-export function getRecentSearchTerms(): string[] {
-  return readList<string>(RECENT_TERMS_KEY);
-}
-
-export function pushRecentSearchTerm(term: string): void {
-  const clean = term.trim();
-  if (!clean) return;
-  const next = [
-    clean,
-    ...getRecentSearchTerms().filter((t) => t.toLowerCase() !== clean.toLowerCase()),
-  ].slice(0, MAX_RECENT_TERMS);
-  writeList(RECENT_TERMS_KEY, next);
-}
-
-export function clearRecentSearchTerms(): void {
-  writeList(RECENT_TERMS_KEY, []);
-}
-
-export function getSearchHistory(): SearchResultItem[] {
-  return readList<SearchResultItem>(HISTORY_KEY);
-}
-
-export function pushSearchHistoryItem(item: SearchResultItem): void {
-  const next = [item, ...getSearchHistory().filter((h) => h.key !== item.key)].slice(
-    0,
-    MAX_HISTORY,
-  );
-  writeList(HISTORY_KEY, next);
-}
-
-export function clearSearchHistory(): void {
-  writeList(HISTORY_KEY, []);
+export function getSearchMemory(ownerId: string | null | undefined) {
+  return createSearchMemory(browserStorage(), ownerId);
 }
