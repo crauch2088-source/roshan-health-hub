@@ -245,7 +245,7 @@ function MedicinesTab() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-48"
+          className="w-full sm:w-48"
         />
         <ExportButtons rows={rows} filename="roshan-inventory" />
         {can("pharmacy.create") ? (
@@ -351,50 +351,94 @@ function MedicinesTab() {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("name")}</TableHead>
-                  <TableHead>{t("unit")}</TableHead>
-                  <TableHead>{t("stock")}</TableHead>
-                  <TableHead>{t("selling_price")}</TableHead>
-                  <TableHead>{t("expiry_date")}</TableHead>
-                  <TableHead className="no-print" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("medicines")}>
                 {rows.map((m) => {
                   const low = n(m, "stock_quantity") <= n(m, "reorder_level");
                   return (
-                    <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
-                      <TableCell className="font-medium">{s(m, "name")}</TableCell>
-                      <TableCell>{s(m, "unit") || "—"}</TableCell>
-                      <TableCell
-                        dir="ltr"
-                        className={low ? "font-semibold text-destructive" : undefined}
-                      >
-                        {n(m, "stock_quantity")}
-                      </TableCell>
-                      <TableCell>{money(n(m, "selling_price"), currency)}</TableCell>
-                      <TableCell dir="ltr">
-                        {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
-                      </TableCell>
-                      <TableCell className="no-print text-end">
-                        {can("pharmacy.create") ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
-                          >
-                            {t("receive_stock")}
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
+                    <li
+                      key={s(m, "id")}
+                      className={cn("space-y-1.5 p-3", low && "bg-destructive/5")}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium">{s(m, "name")}</p>
+                          <p className="text-xs text-muted-foreground">{s(m, "unit") || "—"}</p>
+                        </div>
+                        <span
+                          dir="ltr"
+                          className={cn("shrink-0 font-semibold", low && "text-destructive")}
+                        >
+                          {n(m, "stock_quantity")}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span>{money(n(m, "selling_price"), currency)}</span>
+                        <span dir="ltr">
+                          {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
+                        </span>
+                      </div>
+                      {can("pharmacy.create") ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                        >
+                          {t("receive_stock")}
+                        </Button>
+                      ) : null}
+                    </li>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t("unit")}</TableHead>
+                      <TableHead>{t("stock")}</TableHead>
+                      <TableHead>{t("selling_price")}</TableHead>
+                      <TableHead>{t("expiry_date")}</TableHead>
+                      <TableHead className="no-print" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((m) => {
+                      const low = n(m, "stock_quantity") <= n(m, "reorder_level");
+                      return (
+                        <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
+                          <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                          <TableCell>{s(m, "unit") || "—"}</TableCell>
+                          <TableCell
+                            dir="ltr"
+                            className={low ? "font-semibold text-destructive" : undefined}
+                          >
+                            {n(m, "stock_quantity")}
+                          </TableCell>
+                          <TableCell>{money(n(m, "selling_price"), currency)}</TableCell>
+                          <TableCell dir="ltr">
+                            {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
+                          </TableCell>
+                          <TableCell className="no-print text-end">
+                            {can("pharmacy.create") ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                              >
+                                {t("receive_stock")}
+                              </Button>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           <Pager
             page={list.page}
@@ -613,13 +657,13 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           placeholder={t("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-52"
+          className="w-full sm:w-52"
         />
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as "all" | ExpiryStatus)}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -652,56 +696,105 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("medicines")}</TableHead>
-                  <TableHead>{t("batch_number")}</TableHead>
-                  <TableHead>{t("supplier")}</TableHead>
-                  <TableHead>{t("expiry_date")}</TableHead>
-                  <TableHead>{t("purchase_price")}</TableHead>
-                  <TableHead>{t("selling_price")}</TableHead>
-                  <TableHead>{t("remaining_quantity")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("batches")}>
                 {rows.map((b) => {
                   const status = expiryStatus(s(b, "expiry_date") || null, thresholdDays);
                   return (
-                    <TableRow
-                      key={s(b, "id")}
-                      className="cursor-pointer hover:bg-accent/40"
-                      onClick={() => setDetail(b)}
-                    >
-                      <TableCell className="font-medium">
-                        {s(rel(b, "medicines"), "name") || "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
-                      <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
-                      <TableCell dir="ltr">
-                        {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}
-                      </TableCell>
-                      <TableCell>{money(n(b, "purchase_price"), currency)}</TableCell>
-                      <TableCell>{money(n(b, "selling_price"), currency)}</TableCell>
-                      <TableCell
-                        dir="ltr"
-                        className={
-                          n(b, "quantity_remaining") <= 10
-                            ? "font-semibold text-destructive"
-                            : undefined
-                        }
+                    <li key={s(b, "id")}>
+                      <button
+                        type="button"
+                        className="block w-full space-y-1 px-4 py-3 text-start hover:bg-accent/40"
+                        onClick={() => setDetail(b)}
                       >
-                        {n(b, "quantity_remaining")}
-                      </TableCell>
-                      <TableCell>
-                        <ExpiryBadge status={status} />
-                      </TableCell>
-                    </TableRow>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="min-w-0 break-words font-medium">
+                            {s(rel(b, "medicines"), "name") || "—"}
+                          </span>
+                          <ExpiryBadge status={status} />
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                          <span dir="ltr">{s(b, "batch_number") || "—"}</span>
+                          <span>{s(rel(b, "suppliers"), "name") || "—"}</span>
+                          <span dir="ltr">
+                            {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                          <span>
+                            {t("purchase_price")}: {money(n(b, "purchase_price"), currency)}
+                          </span>
+                          <span>
+                            {t("selling_price")}: {money(n(b, "selling_price"), currency)}
+                          </span>
+                        </div>
+                        <div
+                          className={cn(
+                            "text-sm",
+                            n(b, "quantity_remaining") <= 10 && "font-semibold text-destructive",
+                          )}
+                        >
+                          {t("remaining_quantity")}:{" "}
+                          <span dir="ltr">{n(b, "quantity_remaining")}</span>
+                        </div>
+                      </button>
+                    </li>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("medicines")}</TableHead>
+                      <TableHead>{t("batch_number")}</TableHead>
+                      <TableHead>{t("supplier")}</TableHead>
+                      <TableHead>{t("expiry_date")}</TableHead>
+                      <TableHead>{t("purchase_price")}</TableHead>
+                      <TableHead>{t("selling_price")}</TableHead>
+                      <TableHead>{t("remaining_quantity")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((b) => {
+                      const status = expiryStatus(s(b, "expiry_date") || null, thresholdDays);
+                      return (
+                        <TableRow
+                          key={s(b, "id")}
+                          className="cursor-pointer hover:bg-accent/40"
+                          onClick={() => setDetail(b)}
+                        >
+                          <TableCell className="font-medium">
+                            {s(rel(b, "medicines"), "name") || "—"}
+                          </TableCell>
+                          <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
+                          <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
+                          <TableCell dir="ltr">
+                            {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : "—"}
+                          </TableCell>
+                          <TableCell>{money(n(b, "purchase_price"), currency)}</TableCell>
+                          <TableCell>{money(n(b, "selling_price"), currency)}</TableCell>
+                          <TableCell
+                            dir="ltr"
+                            className={
+                              n(b, "quantity_remaining") <= 10
+                                ? "font-semibold text-destructive"
+                                : undefined
+                            }
+                          >
+                            {n(b, "quantity_remaining")}
+                          </TableCell>
+                          <TableCell>
+                            <ExpiryBadge status={status} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -1035,34 +1128,61 @@ function SuppliersTab({ currency }: { currency: string }) {
           ) : rows.length === 0 ? (
             <Empty />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("name")}</TableHead>
-                  <TableHead>{t("phone")}</TableHead>
-                  <TableHead>{t("address")}</TableHead>
-                  <TableHead className="no-print" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("suppliers")}>
                 {rows.map((sp) => (
-                  <TableRow key={s(sp, "id")}>
-                    <TableCell className="font-medium">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Truck className="size-3.5 text-muted-foreground" /> {s(sp, "name")}
-                      </span>
-                    </TableCell>
-                    <TableCell dir="ltr">{s(sp, "phone") || "—"}</TableCell>
-                    <TableCell>{s(sp, "address") || "—"}</TableCell>
-                    <TableCell className="no-print text-end">
-                      <Button variant="outline" size="sm" onClick={() => setHistory(sp)}>
-                        <Package className="size-3.5" /> {t("purchase_history")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <li key={s(sp, "id")} className="space-y-1 px-4 py-3">
+                    <div className="inline-flex items-center gap-1.5 font-medium">
+                      <Truck className="size-3.5 text-muted-foreground" /> {s(sp, "name")}
+                    </div>
+                    <div className="text-sm text-muted-foreground" dir="ltr">
+                      {s(sp, "phone") || "—"}
+                    </div>
+                    <div className="break-words text-sm text-muted-foreground">
+                      {s(sp, "address") || "—"}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="no-print w-full"
+                      onClick={() => setHistory(sp)}
+                    >
+                      <Package className="size-3.5" /> {t("purchase_history")}
+                    </Button>
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t("phone")}</TableHead>
+                      <TableHead>{t("address")}</TableHead>
+                      <TableHead className="no-print" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((sp) => (
+                      <TableRow key={s(sp, "id")}>
+                        <TableCell className="font-medium">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Truck className="size-3.5 text-muted-foreground" /> {s(sp, "name")}
+                          </span>
+                        </TableCell>
+                        <TableCell dir="ltr">{s(sp, "phone") || "—"}</TableCell>
+                        <TableCell>{s(sp, "address") || "—"}</TableCell>
+                        <TableCell className="no-print text-end">
+                          <Button variant="outline" size="sm" onClick={() => setHistory(sp)}>
+                            <Package className="size-3.5" /> {t("purchase_history")}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

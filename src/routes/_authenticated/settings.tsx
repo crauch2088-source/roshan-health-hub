@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { ErrorBox, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
+import { ErrorBox, Field, Forbidden, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -80,11 +80,13 @@ function SettingsPageInner() {
 
   if (!can("settings.read")) {
     return (
-      <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-        {lang === "ar"
-          ? "ليس لديك صلاحية للوصول إلى الإعدادات."
-          : "You are not authorized to access settings."}
-      </div>
+      <Forbidden
+        message={
+          lang === "ar"
+            ? "ليس لديك صلاحية للوصول إلى الإعدادات."
+            : "You are not authorized to access settings."
+        }
+      />
     );
   }
 
@@ -154,6 +156,7 @@ function SettingsPageInner() {
 
       <div className="mt-4">
         <Button
+          className="w-full sm:w-auto"
           disabled={!can("settings.update") || save.isPending}
           onClick={() => save.mutate(undefined as never)}
         >

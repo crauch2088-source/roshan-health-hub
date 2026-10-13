@@ -169,7 +169,7 @@ function LabCatalogPageInner() {
           placeholder={t("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-48"
+          className="w-full sm:w-48"
         />
         <ExportButtons rows={rows} filename="roshan-lab-catalog" />
         {can("lab_admin.manage") ? (
