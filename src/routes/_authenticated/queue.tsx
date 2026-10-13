@@ -184,99 +184,183 @@ function QueuePageInner() {
               description={lang === "ar" ? "الطابور فارغ حالياً." : "The queue is empty right now."}
             />
           ) : (
-            <div className="overflow-x-auto">
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>{t("patient")}</TableHead>
-                    <TableHead>{t("department")}</TableHead>
-                    <TableHead>{t("doctor")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead className="text-end">{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((ticket) => {
-                    const visit = rel(ticket, "visits");
-                    const patient = rel(visit, "patients");
-                    const dept = rel(visit, "departments");
-                    const doctor = rel(visit, "users");
-                    const st = s(ticket, "status");
-                    return (
-                      <TableRow key={s(ticket, "id")}>
-                        <TableCell dir="ltr" className="font-mono font-bold">
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("queue")}>
+                {rows.map((ticket) => {
+                  const visit = rel(ticket, "visits");
+                  const patient = rel(visit, "patients");
+                  const dept = rel(visit, "departments");
+                  const doctor = rel(visit, "users");
+                  const st = s(ticket, "status");
+                  return (
+                    <li key={s(ticket, "id")} className="space-y-2 px-4 py-3">
+                      <div className="flex items-start gap-3">
+                        <span className="min-w-10 font-mono text-lg font-bold" dir="ltr">
                           {s(ticket, "queue_number")}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <UserRound className="size-4 text-muted-foreground" />
-                            <div>
-                              <div className="font-medium">{s(patient, "full_name")}</div>
-                              <div className="text-xs text-muted-foreground" dir="ltr">
-                                {s(patient, "mrn")}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="break-words font-semibold">{s(patient, "full_name")}</p>
+                          <p className="text-xs text-muted-foreground" dir="ltr">
+                            {s(patient, "mrn")}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {lang === "ar"
+                              ? s(dept, "name_ar") || s(dept, "name")
+                              : s(dept, "name")}
+                            {" · "}
+                            {s(doctor, "full_name") || "—"}
+                          </p>
+                        </div>
+                        <StatusBadge status={st} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {canUpdate && st === "waiting" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="min-h-10 flex-1"
+                            onClick={() => update.mutate({ id: s(ticket, "id"), status: "called" })}
+                          >
+                            <Play className="size-4" />
+                            {lang === "ar" ? "نداء" : "Call"}
+                          </Button>
+                        )}
+                        {canUpdate && st === "called" && (
+                          <Button
+                            size="sm"
+                            className="min-h-10 flex-1"
+                            onClick={() =>
+                              update.mutate({ id: s(ticket, "id"), status: "in_progress" })
+                            }
+                          >
+                            <Clock3 className="size-4" />
+                            {lang === "ar" ? "بدء" : "Start"}
+                          </Button>
+                        )}
+                        {canUpdate && st === "in_progress" && (
+                          <Button
+                            size="sm"
+                            className="min-h-10 flex-1"
+                            onClick={() =>
+                              update.mutate({ id: s(ticket, "id"), status: "completed" })
+                            }
+                          >
+                            <Check className="size-4" />
+                            {lang === "ar" ? "إنهاء" : "Complete"}
+                          </Button>
+                        )}
+                        <Link
+                          to="/clinic/$visitId"
+                          params={{ visitId: s(visit, "id") }}
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                            className: "min-h-10 flex-1",
+                          })}
+                        >
+                          {t("clinic")}
+                        </Link>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden overflow-x-auto md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>{t("patient")}</TableHead>
+                      <TableHead>{t("department")}</TableHead>
+                      <TableHead>{t("doctor")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                      <TableHead className="text-end">{t("actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((ticket) => {
+                      const visit = rel(ticket, "visits");
+                      const patient = rel(visit, "patients");
+                      const dept = rel(visit, "departments");
+                      const doctor = rel(visit, "users");
+                      const st = s(ticket, "status");
+                      return (
+                        <TableRow key={s(ticket, "id")}>
+                          <TableCell dir="ltr" className="font-mono font-bold">
+                            {s(ticket, "queue_number")}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <UserRound className="size-4 text-muted-foreground" />
+                              <div>
+                                <div className="font-medium">{s(patient, "full_name")}</div>
+                                <div className="text-xs text-muted-foreground" dir="ltr">
+                                  {s(patient, "mrn")}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {lang === "ar" ? s(dept, "name_ar") || s(dept, "name") : s(dept, "name")}
-                        </TableCell>
-                        <TableCell>{s(doctor, "full_name") || "—"}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={st} />
-                        </TableCell>
-                        <TableCell className="text-end">
-                          <div className="flex justify-end gap-1">
-                            {canUpdate && st === "waiting" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  update.mutate({ id: s(ticket, "id"), status: "called" })
-                                }
+                          </TableCell>
+                          <TableCell>
+                            {lang === "ar"
+                              ? s(dept, "name_ar") || s(dept, "name")
+                              : s(dept, "name")}
+                          </TableCell>
+                          <TableCell>{s(doctor, "full_name") || "—"}</TableCell>
+                          <TableCell>
+                            <StatusBadge status={st} />
+                          </TableCell>
+                          <TableCell className="text-end">
+                            <div className="flex justify-end gap-1">
+                              {canUpdate && st === "waiting" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    update.mutate({ id: s(ticket, "id"), status: "called" })
+                                  }
+                                >
+                                  <Play className="size-4" />
+                                  {lang === "ar" ? "نداء" : "Call"}
+                                </Button>
+                              )}
+                              {canUpdate && st === "called" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    update.mutate({ id: s(ticket, "id"), status: "in_progress" })
+                                  }
+                                >
+                                  <Clock3 className="size-4" />
+                                  {lang === "ar" ? "بدء" : "Start"}
+                                </Button>
+                              )}
+                              {canUpdate && st === "in_progress" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    update.mutate({ id: s(ticket, "id"), status: "completed" })
+                                  }
+                                >
+                                  <Check className="size-4" />
+                                  {lang === "ar" ? "إنهاء" : "Complete"}
+                                </Button>
+                              )}
+                              <Link
+                                to="/clinic/$visitId"
+                                params={{ visitId: s(visit, "id") }}
+                                className={buttonVariants({ variant: "ghost", size: "sm" })}
                               >
-                                <Play className="size-4" />
-                                {lang === "ar" ? "نداء" : "Call"}
-                              </Button>
-                            )}
-                            {canUpdate && st === "called" && (
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  update.mutate({ id: s(ticket, "id"), status: "in_progress" })
-                                }
-                              >
-                                <Clock3 className="size-4" />
-                                {lang === "ar" ? "بدء" : "Start"}
-                              </Button>
-                            )}
-                            {canUpdate && st === "in_progress" && (
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  update.mutate({ id: s(ticket, "id"), status: "completed" })
-                                }
-                              >
-                                <Check className="size-4" />
-                                {lang === "ar" ? "إنهاء" : "Complete"}
-                              </Button>
-                            )}
-                            <Link
-                              to="/clinic/$visitId"
-                              params={{ visitId: s(visit, "id") }}
-                              className={buttonVariants({ variant: "ghost", size: "sm" })}
-                            >
-                              {t("clinic")}
-                            </Link>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                                {t("clinic")}
+                              </Link>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

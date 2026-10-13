@@ -3,6 +3,7 @@ import {
   Clock,
   FlaskConical,
   History,
+  Loader2,
   Pill,
   Search,
   Sparkles,
@@ -11,7 +12,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Command,
@@ -28,15 +29,7 @@ import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
-import {
-  clearRecentSearchTerms,
-  clearSearchHistory,
-  getRecentSearchTerms,
-  getSearchHistory,
-  pushRecentSearchTerm,
-  pushSearchHistoryItem,
-  type SearchResultItem,
-} from "@/lib/search-service";
+import { filterByScope, getSearchMemory, type SearchResultItem } from "@/lib/search-service";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +76,7 @@ export function GlobalSearchDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const navigate = useNavigate();
   const { favorites, recents, toggleFavorite } = useNavPreferences();
 
@@ -91,9 +84,27 @@ export function GlobalSearchDialog({
   const trimmed = query.trim();
   const hasQuery = trimmed.length >= 2;
 
-  const { results, isSearching } = useGlobalSearch(query);
-  const [recentTerms, setRecentTerms] = useState<string[]>(() => getRecentSearchTerms());
-  const [history, setHistory] = useState<SearchResultItem[]>(() => getSearchHistory());
+  // Only query (and show) the categories the user may open; the destination
+  // routes and RLS still enforce access, this just avoids offering dead links.
+  const scope = useMemo(
+    () => ({
+      patients: can("patients.read"),
+      visits: can("visits.read"),
+      lab: can("lab.read"),
+      medicines: can("pharmacy.read"),
+    }),
+    [can],
+  );
+  const { results, isSearching } = useGlobalSearch(query, scope);
+  // Recent terms and history can contain patient names, so they are stored per user.
+  const memory = useMemo(() => getSearchMemory(user?.id), [user?.id]);
+  const [recentTerms, setRecentTerms] = useState<string[]>(() => memory.getRecentTerms());
+  const [storedHistory, setHistory] = useState<SearchResultItem[]>(() => memory.getHistory());
+  useEffect(() => {
+    setRecentTerms(memory.getRecentTerms());
+    setHistory(memory.getHistory());
+  }, [memory]);
+  const history = useMemo(() => filterByScope(storedHistory, scope), [storedHistory, scope]);
 
   const pages = useMemo(
     () => [HOME_ITEM, ...flatNavItems().filter((i) => i.to !== HOME_ITEM.to)],
@@ -112,6 +123,15 @@ export function GlobalSearchDialog({
     [pages, can, favorites],
   );
 
+  const availableActions = useMemo(
+    () =>
+      QUICK_ACTIONS.filter((action) => {
+        const destination = pages.find((item) => item.to === action.to);
+        return destination ? can(destination.perm) : false;
+      }),
+    [pages, can],
+  );
+
   function reset() {
     setQuery("");
   }
@@ -127,10 +147,10 @@ export function GlobalSearchDialog({
   }
 
   function selectResult(item: SearchResultItem) {
-    pushSearchHistoryItem(item);
-    if (trimmed) pushRecentSearchTerm(trimmed);
-    setRecentTerms(getRecentSearchTerms());
-    setHistory(getSearchHistory());
+    memory.pushHistoryItem(item);
+    if (trimmed) memory.pushRecentTerm(trimmed);
+    setRecentTerms(memory.getRecentTerms());
+    setHistory(memory.getHistory());
     goTo(item.to);
   }
 
@@ -177,6 +197,10 @@ export function GlobalSearchDialog({
             <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
             <input
               autoFocus
+              type="search"
+              aria-label={t("search_everywhere")}
+              enterKeyHint="search"
+              autoComplete="off"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("search_placeholder")}
@@ -241,7 +265,7 @@ export function GlobalSearchDialog({
                 )}
 
                 <CommandGroup heading={t("quick_actions")}>
-                  {QUICK_ACTIONS.map((action) => {
+                  {availableActions.map((action) => {
                     const Icon = getNavIcon(action.icon);
                     return (
                       <CommandItem
@@ -285,7 +309,7 @@ export function GlobalSearchDialog({
                       <CommandItem
                         value="clear-history"
                         onSelect={() => {
-                          clearSearchHistory();
+                          memory.clearHistory();
                           setHistory([]);
                         }}
                         className="text-muted-foreground"
@@ -314,7 +338,7 @@ export function GlobalSearchDialog({
                       <CommandItem
                         value="clear-recent-terms"
                         onSelect={() => {
-                          clearRecentSearchTerms();
+                          memory.clearRecentTerms();
                           setRecentTerms([]);
                         }}
                         className="text-muted-foreground"
@@ -381,7 +405,24 @@ export function GlobalSearchDialog({
                   onSelect={selectResult}
                 />
 
-                {noResults && <CommandEmpty>{t("no_results")}</CommandEmpty>}
+                {isSearching && (
+                  <div
+                    role="status"
+                    className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground"
+                  >
+                    <Loader2
+                      className="size-4 animate-spin motion-reduce:animate-none"
+                      aria-hidden
+                    />
+                    {t("searching")}
+                  </div>
+                )}
+                {results.failed && !isSearching && (
+                  <div role="alert" className="px-3 py-3 text-sm text-destructive">
+                    {t("search_failed")}
+                  </div>
+                )}
+                {noResults && !results.failed && <CommandEmpty>{t("no_results")}</CommandEmpty>}
               </>
             )}
           </CommandList>

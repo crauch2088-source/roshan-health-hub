@@ -38,6 +38,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (e.isComposing || e.repeat) return;
       const target = e.target as HTMLElement | null;
       const typing =
         target &&

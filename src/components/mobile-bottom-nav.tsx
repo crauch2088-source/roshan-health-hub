@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { HOME_ITEM, NAV_GROUPS } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { bottomBarColumns } from "@/lib/nav-layout";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavItemActive } from "@/lib/nav-active";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
@@ -66,14 +67,14 @@ export function MobileBottomNav() {
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-2xl" dir={direction}>
               <SheetTitle className="mb-2">{t("quick_actions")}</SheetTitle>
-              <div className="grid grid-cols-2 gap-2 pb-4">
+              <div className="grid grid-cols-2 gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 {availableActions.map((action) => {
                   const Icon = getNavIcon(action.icon);
                   return (
                     <button
                       key={action.key}
                       type="button"
-                      className="flex min-h-14 items-center gap-2.5 rounded-lg border border-border/70 p-3 text-start text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98]"
+                      className="flex min-h-14 items-center gap-2.5 rounded-lg border border-border/70 p-3 text-start text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.98]"
                       onClick={() => {
                         armQuickAction(action.key);
                         setFabOpen(false);
@@ -92,8 +93,11 @@ export function MobileBottomNav() {
       ) : null}
 
       <nav
-        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-5 items-center border-t border-border/70 bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_var(--foreground)] backdrop-blur-xl lg:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 items-center border-t border-border/70 bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_var(--foreground)] backdrop-blur-xl lg:hidden"
         aria-label={t("navigation")}
+        // One column per visible destination plus More, so hidden-by-permission
+        // items never leave empty cells and the bar stays balanced.
+        style={{ gridTemplateColumns: bottomBarColumns(primary.length) }}
       >
         {primary.map((item) => {
           const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
@@ -129,7 +133,7 @@ export function MobileBottomNav() {
           <SheetTrigger asChild>
             <button
               type="button"
-              aria-current={moreActive ? "page" : undefined}
+              data-active={moreActive ? "true" : undefined}
               className={cn(
                 "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 moreActive ? "text-primary" : "text-muted-foreground",
@@ -148,17 +152,17 @@ export function MobileBottomNav() {
           </SheetTrigger>
           <SheetContent
             side="bottom"
-            className="max-h-[75vh] overflow-y-auto rounded-t-2xl"
+            className="max-h-[80dvh] overflow-y-auto rounded-t-2xl"
             dir={direction}
           >
             <SheetTitle className="sr-only">{t("more")}</SheetTitle>
-            <div className="space-y-5 pb-4 pt-2">
+            <div className="space-y-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
               {NAV_GROUPS.map((group) => {
                 const items = group.items.filter((i) => can(i.perm));
                 if (items.length === 0) return null;
                 return (
                   <div key={group.group}>
-                    <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground rtl:text-xs rtl:normal-case rtl:tracking-normal">
                       {t(group.group)}
                     </p>
                     <div className="grid grid-cols-4 gap-2">
@@ -172,8 +176,10 @@ export function MobileBottomNav() {
                             onClick={() => setMoreOpen(false)}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                              "flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border border-border/70 p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent active:scale-[0.98]",
-                              active && "border-primary/40 bg-primary/10 text-primary",
+                              "flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border border-border/70 p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.98]",
+                              // Border weight + bold text, not colour alone, mark the current page.
+                              active &&
+                                "border-2 border-primary bg-primary/10 font-bold text-primary",
                             )}
                           >
                             <Icon className="size-5" />

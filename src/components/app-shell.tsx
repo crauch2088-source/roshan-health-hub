@@ -43,12 +43,31 @@ function SearchTrigger() {
       size="sm"
       className="hidden min-w-40 justify-between gap-2 border-border/70 bg-background/70 text-muted-foreground shadow-xs sm:flex"
       onClick={() => setOpen(true)}
+      aria-label={t("search_everywhere")}
     >
-      <Search className="size-4" />
+      <Search className="size-4" aria-hidden />
       <span className="hidden md:inline">{t("search_everywhere")}</span>
       <kbd className="ms-auto hidden rounded border border-border/70 bg-muted/70 px-1.5 py-0.5 font-mono text-[10px] md:inline">
         Ctrl K
       </kbd>
+    </Button>
+  );
+}
+
+function MobileSearchButton() {
+  const { t } = useLang();
+  const { setOpen } = useCommandPalette();
+  // The desktop trigger is hidden below `sm` and phones have no Ctrl+K, so
+  // without this there is no way to open global search on a phone.
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="size-9 shrink-0 p-0 sm:hidden"
+      onClick={() => setOpen(true)}
+      aria-label={t("search_everywhere")}
+    >
+      <Search className="size-5" />
     </Button>
   );
 }
@@ -94,7 +113,7 @@ function Shell({ children }: { children: ReactNode }) {
       >
         {t("skip_to_content")}
       </a>
-      <aside className={cnRail(collapsed)} aria-label={t("navigation")}>
+      <aside className={cnRail(collapsed)}>
         <Brand collapsed={collapsed} />
         <div className="min-h-0 flex-1">
           <NavRail collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
@@ -129,18 +148,20 @@ function Shell({ children }: { children: ReactNode }) {
             size="sm"
             className={collapsed ? "mt-0 w-full justify-center px-0" : "mt-2 w-full"}
             onClick={handleSignOut}
+            aria-label={t("sign_out")}
           >
             <LogOut className="size-4" /> {!collapsed ? t("sign_out") : null}
           </Button>
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <div className="flex min-w-0 flex-1 flex-col pb-[calc(7.5rem+env(safe-area-inset-bottom))] lg:pb-0">
         <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border/70 bg-background/90 px-3 backdrop-blur-xl sm:gap-3 sm:px-5">
           <img src="/roshan-logo.png" alt="" className="size-8 shrink-0 object-contain lg:hidden" />
           <BreadcrumbNav />
           <div className="min-w-0 flex-1" />
           <SearchTrigger />
+          <MobileSearchButton />
           <Button
             variant="outline"
             size="sm"

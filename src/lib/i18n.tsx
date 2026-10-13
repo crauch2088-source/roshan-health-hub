@@ -27,6 +27,13 @@ const dict: Record<string, { ar: string; en: string }> = {
   // nav
   dashboard: { ar: "الرئيسية", en: "Dashboard" },
   navigation: { ar: "التنقل", en: "Navigation" },
+  main_navigation: { ar: "القائمة الرئيسية", en: "Main navigation" },
+  breadcrumb: { ar: "مسار الصفحة", en: "Breadcrumb" },
+  search_failed: {
+    ar: "تعذّر إكمال البحث في بعض الأقسام. حاول مرة أخرى.",
+    en: "Search could not be completed for some sections. Try again.",
+  },
+  searching: { ar: "جارٍ البحث…", en: "Searching…" },
   skip_to_content: { ar: "الانتقال إلى المحتوى", en: "Skip to content" },
 
   patients: { ar: "المرضى", en: "Patients" },

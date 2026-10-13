@@ -9,6 +9,7 @@ import { HOME_ITEM, NAV_GROUPS, type NavConfigItem } from "@/config/nav";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { railTooltipSide } from "@/lib/nav-layout";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavItemActive } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
@@ -19,14 +20,17 @@ function RailLink({
   active,
   onNavigate,
   trailing,
+  markCurrent = true,
 }: {
   item: NavConfigItem;
   collapsed: boolean;
   active: boolean;
   onNavigate?: (() => void) | undefined;
   trailing?: ReactNode | undefined;
+  /** false for the Favorites shortcuts, so a page is announced as current once. */
+  markCurrent?: boolean;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const Icon = getNavIcon(item.icon);
   const hasTrailing = Boolean(trailing) && !collapsed;
 
@@ -34,7 +38,10 @@ function RailLink({
     <Link
       to={item.to}
       onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
+      aria-current={active && markCurrent ? "page" : undefined}
+      // Collapsed links are icon-only: without this they have no accessible name
+      // (the tooltip only describes the link while it is open).
+      aria-label={collapsed ? t(item.key) : undefined}
       className={cn(
         "group/link relative flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium outline-none transition-[background-color,color,transform] duration-150 active:translate-y-px",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
@@ -67,7 +74,7 @@ function RailLink({
   const body = collapsed ? (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right" sideOffset={8} className="font-medium">
+      <TooltipContent side={railTooltipSide(lang)} sideOffset={8} className="font-medium">
         {t(item.key)}
       </TooltipContent>
     </Tooltip>
@@ -109,7 +116,7 @@ export function NavRail({
     <TooltipProvider delayDuration={150}>
       <div className="flex h-full flex-col">
         <ScrollArea className="flex-1">
-          <nav className="space-y-5 p-2.5" aria-label="Main">
+          <nav className="space-y-5 p-2.5" aria-label={t("main_navigation")}>
             <RailLink
               item={HOME_ITEM}
               collapsed={collapsed}
@@ -126,7 +133,7 @@ export function NavRail({
                 )}
               >
                 {!collapsed ? (
-                  <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">
+                  <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45 rtl:text-[11px] rtl:normal-case rtl:tracking-normal">
                     {t("favorites")}
                   </p>
                 ) : null}
@@ -137,6 +144,7 @@ export function NavRail({
                     collapsed={collapsed}
                     active={isNavItemActive(location.pathname, item.to)}
                     onNavigate={onNavigate}
+                    markCurrent={false}
                   />
                 ))}
               </div>
@@ -148,7 +156,7 @@ export function NavRail({
               return (
                 <div key={group.group} className="space-y-0.5">
                   {!collapsed ? (
-                    <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">
+                    <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45 rtl:text-[11px] rtl:normal-case rtl:tracking-normal">
                       {t(group.group)}
                     </p>
                   ) : (
@@ -173,10 +181,10 @@ export function NavRail({
                                   toggleFavorite(item.to);
                                 }}
                                 className={cn(
-                                  "flex size-8 shrink-0 items-center justify-center rounded-md transition-[opacity,background-color] hover:bg-sidebar-accent",
+                                  "flex size-8 shrink-0 items-center justify-center rounded-md transition-[opacity,background-color] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                                   pinned
                                     ? "opacity-100 text-amber-400"
-                                    : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 hover:!opacity-100",
+                                    : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 group-focus-within:opacity-70 hover:!opacity-100 focus-visible:!opacity-100 [@media(hover:none)]:opacity-70",
                                 )}
                                 aria-label={pinned ? t("unpin") : t("pin")}
                                 aria-pressed={pinned}

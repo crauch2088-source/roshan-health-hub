@@ -540,79 +540,52 @@ function VisitsPageInner() {
               }
             />
           ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("patient")}</TableHead>
-
-                  <TableHead>{t("queue_number")}</TableHead>
-
-                  <TableHead>{t("department")}</TableHead>
-
-                  <TableHead>{t("doctor")}</TableHead>
-
-                  <TableHead>{t("consultation_fee")}</TableHead>
-
-                  <TableHead>{t("status")}</TableHead>
-
-                  <TableHead className="text-end">{t("actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
+            <>
+              <ul className="divide-y md:hidden" aria-label={t("visits")}>
                 {rows.map((visit) => {
                   const queueNumber = n(visit, "queue_number");
-
                   return (
-                    <TableRow key={s(visit, "id")}>
-                      <TableCell className="whitespace-nowrap font-medium">
-                        {s(rel(visit, "patients"), "full_name")}
-
-                        <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
-                          {s(rel(visit, "patients"), "mrn")}
+                    <li key={s(visit, "id")} className="space-y-2 px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="break-words font-semibold">
+                            {s(rel(visit, "patients"), "full_name")}
+                          </p>
+                          <p className="text-xs text-muted-foreground" dir="ltr">
+                            {s(rel(visit, "patients"), "mrn") || "—"}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <StatusBadge status={s(visit, "status")} />
+                          {queueNumber > 0 ? (
+                            <span className="font-mono text-xs font-semibold" dir="ltr">
+                              {`Q${queueNumber}`}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span>
+                          {lang === "ar"
+                            ? s(rel(visit, "departments"), "name_ar") ||
+                              s(rel(visit, "departments"), "name")
+                            : s(rel(visit, "departments"), "name")}
                         </span>
-                      </TableCell>
-
-                      <TableCell dir="ltr" className="font-mono text-xs font-semibold">
-                        {queueNumber > 0 ? `Q${queueNumber}` : "—"}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {lang === "ar"
-                          ? s(rel(visit, "departments"), "name_ar") ||
-                            s(rel(visit, "departments"), "name")
-                          : s(rel(visit, "departments"), "name")}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {s(rel(visit, "users"), "full_name") || "—"}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {money(n(visit, "consultation_fee"), currency)}
-                      </TableCell>
-
-                      <TableCell>
-                        <StatusBadge status={s(visit, "status")} />
-                      </TableCell>
-
-                      <TableCell className="space-x-1 space-x-reverse whitespace-nowrap text-end">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link
-                            to="/clinic/$visitId"
-                            params={{
-                              visitId: s(visit, "id"),
-                            }}
-                          >
+                        <span>{s(rel(visit, "users"), "full_name") || "—"}</span>
+                        <span>{money(n(visit, "consultation_fee"), currency)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm" className="min-h-10 flex-1">
+                          <Link to="/clinic/$visitId" params={{ visitId: s(visit, "id") }}>
                             {t("clinic")}
                           </Link>
                         </Button>
-
                         {canDelete && (
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
+                            className="min-h-10 text-destructive hover:text-destructive"
+                            aria-label={t("delete")}
                             disabled={deleteVisit.isPending}
                             onClick={() => {
                               if (confirm(t("are_you_sure"))) {
@@ -623,12 +596,103 @@ function VisitsPageInner() {
                             <Trash2 className="size-4" />
                           </Button>
                         )}
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </li>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </ul>
+              <div className="hidden md:block">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("patient")}</TableHead>
+
+                      <TableHead>{t("queue_number")}</TableHead>
+
+                      <TableHead>{t("department")}</TableHead>
+
+                      <TableHead>{t("doctor")}</TableHead>
+
+                      <TableHead>{t("consultation_fee")}</TableHead>
+
+                      <TableHead>{t("status")}</TableHead>
+
+                      <TableHead className="text-end">{t("actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {rows.map((visit) => {
+                      const queueNumber = n(visit, "queue_number");
+
+                      return (
+                        <TableRow key={s(visit, "id")}>
+                          <TableCell className="whitespace-nowrap font-medium">
+                            {s(rel(visit, "patients"), "full_name")}
+
+                            <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
+                              {s(rel(visit, "patients"), "mrn")}
+                            </span>
+                          </TableCell>
+
+                          <TableCell dir="ltr" className="font-mono text-xs font-semibold">
+                            {queueNumber > 0 ? `Q${queueNumber}` : "—"}
+                          </TableCell>
+
+                          <TableCell className="whitespace-nowrap">
+                            {lang === "ar"
+                              ? s(rel(visit, "departments"), "name_ar") ||
+                                s(rel(visit, "departments"), "name")
+                              : s(rel(visit, "departments"), "name")}
+                          </TableCell>
+
+                          <TableCell className="whitespace-nowrap">
+                            {s(rel(visit, "users"), "full_name") || "—"}
+                          </TableCell>
+
+                          <TableCell className="whitespace-nowrap">
+                            {money(n(visit, "consultation_fee"), currency)}
+                          </TableCell>
+
+                          <TableCell>
+                            <StatusBadge status={s(visit, "status")} />
+                          </TableCell>
+
+                          <TableCell className="space-x-1 space-x-reverse whitespace-nowrap text-end">
+                            <Button asChild variant="ghost" size="sm">
+                              <Link
+                                to="/clinic/$visitId"
+                                params={{
+                                  visitId: s(visit, "id"),
+                                }}
+                              >
+                                {t("clinic")}
+                              </Link>
+                            </Button>
+
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                disabled={deleteVisit.isPending}
+                                onClick={() => {
+                                  if (confirm(t("are_you_sure"))) {
+                                    deleteVisit.mutate(s(visit, "id"));
+                                  }
+                                }}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
