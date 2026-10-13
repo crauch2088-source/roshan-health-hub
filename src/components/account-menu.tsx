@@ -18,7 +18,7 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
   const initial = (user?.full_name ?? "").trim().charAt(0).toUpperCase() || "•";
 
   return (
-    <DropdownMenu>
+    <DropdownMenu dir={lang === "ar" ? "rtl" : "ltr"}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -28,7 +28,7 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
           {initial}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" dir={lang === "ar" ? "rtl" : "ltr"} className="w-56">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="space-y-0.5">
           <p className="truncate text-sm font-semibold">{user?.full_name ?? "—"}</p>
           <p className="truncate text-xs font-normal text-muted-foreground">
