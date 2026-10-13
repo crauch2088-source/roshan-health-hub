@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   Banknote,
   FlaskConical,
   Pill,
@@ -11,17 +13,18 @@ import {
 } from "lucide-react";
 
 import {
+  DataPanel,
   Empty,
   ErrorBox,
-  Loading,
+  Metric,
+  MetricStrip,
   PageHeader,
+  PageSkeleton,
   SectionTitle,
-  StatCard,
   StatusBadge,
   PermissionGate,
 } from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -55,6 +58,25 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   }),
   component: DashboardPage,
 });
+
+type ViewAllTarget =
+  "/visits" | "/appointments" | "/lab" | "/followups" | "/inventory" | "/insurance" | "/pharmacy";
+
+/** "View all" link in a panel header; hidden when the user may not open the destination. */
+function ViewAll({ to, perm }: { to: ViewAllTarget; perm: string }) {
+  const { t, lang } = useLang();
+  const { can } = useAuth();
+  if (!can(perm)) return null;
+  const Chevron = lang === "ar" ? ChevronLeft : ChevronRight;
+  return (
+    <Link
+      to={to}
+      className="inline-flex min-h-9 items-center gap-0.5 rounded-md px-1.5 text-xs font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {t("view_all")} <Chevron className="size-3.5" aria-hidden />
+    </Link>
+  );
+}
 
 function DashboardPage() {
   return (
@@ -214,368 +236,345 @@ function DashboardPageInner() {
     .filter((b) => expiryStatus(s(b, "expiry_date") || null, thresholdDays) === "expired")
     .slice(0, 8);
 
-  if (visits.isLoading) return <Loading />;
+  if (visits.isLoading) return <PageSkeleton />;
 
   return (
     <div>
       <PageHeader
-        title={`${t("dashboard")} — ${t("app_name")}`}
+        eyebrow={t("app_name")}
+        title={t("dashboard")}
         subtitle={`${user?.full_name ?? ""} · ${user?.role_name ?? ""} · ${formatDate(today)}`}
       />
       <ErrorBox error={anyError} />
 
       <SectionTitle>{t("executive_summary")}</SectionTitle>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label={t("visits_today")}
-          value={visitRows.length}
-          hint={`${t("waiting_patients")}: ${waiting}`}
-          icon={<Users className="size-5" />}
-        />
-        <StatCard
-          label={t("patients_today")}
-          value={((patientsToday.data ?? []) as Row[]).length}
-          icon={<UserRound className="size-5" />}
-          tone="primary"
-        />
-        <StatCard
-          label={t("appointments_today")}
-          value={((appointments.data ?? []) as Row[]).length}
-          icon={<Receipt className="size-5" />}
-        />
-        <StatCard
-          label={t("pending_lab")}
-          value={((labPending.data ?? []) as Row[]).length}
-          icon={<FlaskConical className="size-5" />}
-          tone="warning"
-        />
-        <StatCard
-          label={t("pending_pharmacy")}
-          value={((rxPending.data ?? []) as Row[]).length}
-          icon={<Pill className="size-5" />}
-          tone="warning"
-        />
-        <StatCard
-          label={t("revenue_today")}
-          value={money(revenueToday, currency)}
-          hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
-          icon={<Banknote className="size-5" />}
-          tone="success"
-        />
-        <StatCard
-          label={t("expenses_today")}
-          value={money(expensesToday, currency)}
-          hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
-          icon={<Wallet className="size-5" />}
-          tone="warning"
-        />
-        <StatCard
-          label={t("net_profit")}
-          value={money(revenueMonth - expensesMonth, currency)}
-          hint={t("monthly_revenue")}
-          tone={revenueMonth - expensesMonth >= 0 ? "success" : "destructive"}
-        />
+      <div className="space-y-3">
+        <MetricStrip label={t("clinical_summary")} cols="sm:grid-cols-3 xl:grid-cols-5">
+          <Metric
+            label={t("visits_today")}
+            value={visitRows.length}
+            hint={`${t("waiting_patients")}: ${waiting}`}
+            icon={<Users />}
+          />
+          <Metric
+            label={t("patients_today")}
+            value={((patientsToday.data ?? []) as Row[]).length}
+            icon={<UserRound />}
+            tone="primary"
+          />
+          <Metric
+            label={t("appointments_today")}
+            value={((appointments.data ?? []) as Row[]).length}
+            icon={<Receipt />}
+          />
+          <Metric
+            label={t("pending_lab")}
+            value={((labPending.data ?? []) as Row[]).length}
+            icon={<FlaskConical />}
+            tone="warning"
+          />
+          <Metric
+            label={t("pending_pharmacy")}
+            value={((rxPending.data ?? []) as Row[]).length}
+            icon={<Pill />}
+            tone="warning"
+          />
+        </MetricStrip>
+        <MetricStrip label={t("revenue_today")} cols="sm:grid-cols-3">
+          <Metric
+            label={t("revenue_today")}
+            value={money(revenueToday, currency)}
+            hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
+            icon={<Banknote />}
+            tone="success"
+          />
+          <Metric
+            label={t("expenses_today")}
+            value={money(expensesToday, currency)}
+            hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
+            icon={<Wallet />}
+            tone="warning"
+          />
+          <Metric
+            label={t("net_profit")}
+            value={money(revenueMonth - expensesMonth, currency)}
+            hint={t("monthly_revenue")}
+            tone={revenueMonth - expensesMonth >= 0 ? "success" : "destructive"}
+          />
+        </MetricStrip>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <div className="col-span-full">
           <SectionTitle>{t("clinical_summary")}</SectionTitle>
         </div>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("visits_today")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {visitRows.length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("patient")}</TableHead>
-                    <TableHead>{t("department")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
+        <DataPanel title={t("visits_today")} action={<ViewAll to="/visits" perm="visits.read" />}>
+          {visitRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("patient")}</TableHead>
+                  <TableHead>{t("department")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visitRows.slice(0, 8).map((v) => (
+                  <TableRow key={s(v, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(v, "patients"), "full_name") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {lang === "ar"
+                        ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
+                        : s(rel(v, "departments"), "name")}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={s(v, "status")} />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visitRows.slice(0, 8).map((v) => (
-                    <TableRow key={s(v, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(v, "patients"), "full_name") || "—"}
-                      </TableCell>
-                      <TableCell>
-                        {lang === "ar"
-                          ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
-                          : s(rel(v, "departments"), "name")}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={s(v, "status")} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("upcoming_appointments")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {((appointments.data ?? []) as Row[]).length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("patient")}</TableHead>
-                    <TableHead>{t("date")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
+        <DataPanel
+          title={t("upcoming_appointments")}
+          action={<ViewAll to="/appointments" perm="appointments.read" />}
+        >
+          {((appointments.data ?? []) as Row[]).length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("patient")}</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {((appointments.data ?? []) as Row[]).slice(0, 8).map((a) => (
+                  <TableRow key={s(a, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(a, "patients"), "full_name") || "—"}
+                    </TableCell>
+                    <TableCell dir="ltr">{s(a, "appointment_time").slice(0, 5) || "—"}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={s(a, "status")} />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {((appointments.data ?? []) as Row[]).slice(0, 8).map((a) => (
-                    <TableRow key={s(a, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(a, "patients"), "full_name") || "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">{s(a, "appointment_time").slice(0, 5) || "—"}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={s(a, "status")} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
         <div className="col-span-full">
           <SectionTitle>{t("pending_tasks")}</SectionTitle>
         </div>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("pending_lab")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {((labPending.data ?? []) as Row[]).length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("patient")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
+        <DataPanel title={t("pending_lab")} action={<ViewAll to="/lab" perm="lab.read" />}>
+          {((labPending.data ?? []) as Row[]).length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("patient")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {((labPending.data ?? []) as Row[]).map((o) => (
+                  <TableRow key={s(o, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(o, "patients"), "full_name") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={s(o, "status")} />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {((labPending.data ?? []) as Row[]).map((o) => (
-                    <TableRow key={s(o, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(o, "patients"), "full_name") || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={s(o, "status")} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("upcoming_followups")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {((followups.data ?? []) as Row[]).length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("patient")}</TableHead>
-                    <TableHead>{t("due_date")}</TableHead>
-                    <TableHead>{t("reason")}</TableHead>
+        <DataPanel
+          title={t("upcoming_followups")}
+          action={<ViewAll to="/followups" perm="followups.read" />}
+        >
+          {((followups.data ?? []) as Row[]).length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("patient")}</TableHead>
+                  <TableHead>{t("due_date")}</TableHead>
+                  <TableHead>{t("reason")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {((followups.data ?? []) as Row[]).map((f) => (
+                  <TableRow key={s(f, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(f, "patients"), "full_name") || "—"}
+                    </TableCell>
+                    <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
+                    <TableCell className="max-w-40 truncate">{s(f, "reason") || "—"}</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {((followups.data ?? []) as Row[]).map((f) => (
-                    <TableRow key={s(f, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(f, "patients"), "full_name") || "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">{formatDate(s(f, "followup_date"))}</TableCell>
-                      <TableCell className="max-w-40 truncate">{s(f, "reason") || "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
         <div className="col-span-full">
           <SectionTitle>{t("pharmacy_summary")}</SectionTitle>
         </div>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-warning" /> {t("low_stock_medicines")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {lowStockRows.length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("medicines")}</TableHead>
-                    <TableHead>{t("stock")}</TableHead>
-                    <TableHead>{t("reorder_level")}</TableHead>
+        <DataPanel
+          title={t("low_stock_medicines")}
+          icon={<AlertTriangle className="text-warning" aria-hidden />}
+          action={<ViewAll to="/inventory" perm="pharmacy.read" />}
+        >
+          {lowStockRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("medicines")}</TableHead>
+                  <TableHead>{t("stock")}</TableHead>
+                  <TableHead>{t("reorder_level")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lowStockRows.map((m) => (
+                  <TableRow key={s(m, "id")}>
+                    <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                    <TableCell dir="ltr" className="font-semibold text-destructive">
+                      {n(m, "stock_quantity")}
+                    </TableCell>
+                    <TableCell dir="ltr">{n(m, "reorder_level")}</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lowStockRows.map((m) => (
-                    <TableRow key={s(m, "id")}>
-                      <TableCell className="font-medium">{s(m, "name")}</TableCell>
-                      <TableCell dir="ltr" className="font-semibold text-destructive">
-                        {n(m, "stock_quantity")}
-                      </TableCell>
-                      <TableCell dir="ltr">{n(m, "reorder_level")}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-warning" /> {t("expiring_medicines")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {expiringRows.length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("medicines")}</TableHead>
-                    <TableHead>{t("expiry_date")}</TableHead>
-                    <TableHead>{t("remaining_quantity")}</TableHead>
+        <DataPanel
+          title={t("expiring_medicines")}
+          icon={<AlertTriangle className="text-warning" aria-hidden />}
+        >
+          {expiringRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("medicines")}</TableHead>
+                  <TableHead>{t("expiry_date")}</TableHead>
+                  <TableHead>{t("remaining_quantity")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expiringRows.map((b) => (
+                  <TableRow key={s(b, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(b, "medicines"), "name") || "—"}
+                    </TableCell>
+                    <TableCell dir="ltr">
+                      <Badge
+                        variant="outline"
+                        className={cn("font-medium", EXPIRY_TONE.expiring_soon)}
+                      >
+                        {formatDate(s(b, "expiry_date"))}
+                      </Badge>
+                    </TableCell>
+                    <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expiringRows.map((b) => (
-                    <TableRow key={s(b, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(b, "medicines"), "name") || "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">
-                        <Badge
-                          variant="outline"
-                          className={cn("font-medium", EXPIRY_TONE.expiring_soon)}
-                        >
-                          {formatDate(s(b, "expiry_date"))}
-                        </Badge>
-                      </TableCell>
-                      <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-destructive" /> {t("expired_medicines")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {expiredRows.length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("medicines")}</TableHead>
-                    <TableHead>{t("expiry_date")}</TableHead>
-                    <TableHead>{t("remaining_quantity")}</TableHead>
+        <DataPanel
+          title={t("expired_medicines")}
+          icon={<AlertTriangle className="text-destructive" aria-hidden />}
+        >
+          {expiredRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("medicines")}</TableHead>
+                  <TableHead>{t("expiry_date")}</TableHead>
+                  <TableHead>{t("remaining_quantity")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expiredRows.map((b) => (
+                  <TableRow key={s(b, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(b, "medicines"), "name") || "—"}
+                    </TableCell>
+                    <TableCell dir="ltr">
+                      <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.expired)}>
+                        {formatDate(s(b, "expiry_date"))}
+                      </Badge>
+                    </TableCell>
+                    <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expiredRows.map((b) => (
-                    <TableRow key={s(b, "id")}>
-                      <TableCell className="font-medium">
-                        {s(rel(b, "medicines"), "name") || "—"}
-                      </TableCell>
-                      <TableCell dir="ltr">
-                        <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.expired)}>
-                          {formatDate(s(b, "expiry_date"))}
-                        </Badge>
-                      </TableCell>
-                      <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
 
         <div className="col-span-full">
           <SectionTitle>{t("insurance_summary")}</SectionTitle>
         </div>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Receipt className="size-4 text-warning" /> {t("insurance_claims")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {insurance.isLoading ? (
-              <Loading />
-            ) : insurancePendingRows.length === 0 ? (
-              <Empty />
-            ) : (
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("claim_number")}</TableHead>
-                    <TableHead>{t("net")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
+        <DataPanel
+          title={t("insurance_claims")}
+          icon={<Receipt className="text-warning" aria-hidden />}
+          action={<ViewAll to="/insurance" perm="insurance.read" />}
+        >
+          {insurance.isLoading ? (
+            <Loading />
+          ) : insurancePendingRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("claim_number")}</TableHead>
+                  <TableHead>{t("net")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {insurancePendingRows.map((c) => (
+                  <TableRow key={s(c, "id")}>
+                    <TableCell dir="ltr" className="font-mono text-xs">
+                      {s(c, "claim_number")}
+                    </TableCell>
+                    <TableCell>{money(n(c, "submitted_amount"), currency)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={s(c, "status")} />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {insurancePendingRows.map((c) => (
-                    <TableRow key={s(c, "id")}>
-                      <TableCell dir="ltr" className="font-mono text-xs">
-                        {s(c, "claim_number")}
-                      </TableCell>
-                      <TableCell>{money(n(c, "submitted_amount"), currency)}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={s(c, "status")} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
       </div>
     </div>
   );
