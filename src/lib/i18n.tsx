@@ -206,6 +206,8 @@ const dict: Record<string, { ar: string; en: string }> = {
   lab_result: { ar: "تحليل", en: "Lab test" },
   medicine_result: { ar: "دواء", en: "Medicine" },
   more: { ar: "المزيد", en: "More" },
+  details: { ar: "التفاصيل", en: "Details" },
+  account: { ar: "الحساب", en: "Account" },
 
   // common
   save: { ar: "حفظ", en: "Save" },

@@ -91,16 +91,16 @@
   --chart-3: oklch(0.7 0.13 165);
   --chart-4: oklch(0.75 0.15 75);
   --chart-5: oklch(0.6 0.15 25);
-  --sidebar: oklch(0.29 0.062 255);
-  --sidebar-foreground: oklch(0.96 0.01 200);
-  --sidebar-primary: oklch(0.62 0.1 194);
+  /* Roshan rail: quiet paper surface with ink text and a single teal accent. */
+  --sidebar: oklch(0.975 0.008 205);
+  --sidebar-foreground: oklch(0.32 0.05 255);
+  --sidebar-primary: oklch(0.5 0.095 194);
   --sidebar-primary-foreground: oklch(0.99 0.005 200);
-  --sidebar-accent: oklch(0.36 0.06 255);
-  --sidebar-accent-foreground: oklch(0.98 0.005 200);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.62 0.1 194);
+  --sidebar-accent: oklch(0.93 0.03 195);
+  --sidebar-accent-foreground: oklch(0.26 0.055 255);
+  --sidebar-border: oklch(0.9 0.015 210);
+  --sidebar-ring: oklch(0.5 0.095 194);
 }
-
 
 .dark {
   --background: oklch(0.19 0.035 255);
@@ -203,15 +203,13 @@
   }
 }
 
-
-
-
 /* Phase 10 — print polish for clinical documents */
 @media print {
   @page {
     margin: 12mm;
   }
-  html, body {
+  html,
+  body {
     background: #fff !important;
     color: #000 !important;
     -webkit-print-color-adjust: exact;
@@ -225,14 +223,17 @@
     border: 0 !important;
   }
   /* Avoid awkward breaks inside table rows and cards */
-  tr, .print-keep {
+  tr,
+  .print-keep {
     break-inside: avoid;
     page-break-inside: avoid;
   }
   thead {
     display: table-header-group;
   }
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     break-after: avoid;
     page-break-after: avoid;
   }

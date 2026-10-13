@@ -32,9 +32,11 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="no-print mb-5 grid grid-cols-1 items-end gap-3 sm:mb-6 sm:grid-cols-[minmax(0,1fr)_auto]">
+    <header className="no-print mb-5 grid grid-cols-1 items-end gap-3 border-b border-border pb-4 sm:mb-6 sm:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0 space-y-1">
-        <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl">{title}</h1>
+        <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground rtl:tracking-normal sm:text-2xl">
+          {title}
+        </h1>
         {subtitle ? <p className="max-w-2xl text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
       {children ? (
