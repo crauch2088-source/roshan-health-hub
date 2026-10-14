@@ -65,6 +65,43 @@ function LabPageInner() {
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
 
+  const orderCounts = useRows<{
+    ordered: number;
+    sampleCollected: number;
+    inProgress: number;
+    completed: number;
+  }>(
+    ["lab-orders", "metrics"],
+    async () => {
+      const countQuery = () =>
+        supabase
+          .from("lab_orders")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null);
+      const [ordered, sampleCollected, inProgress, completed] = await Promise.all([
+        countQuery().eq("status", "ordered"),
+        countQuery().eq("status", "sample_collected"),
+        countQuery().eq("status", "in_progress"),
+        countQuery().in("status", ["completed", "verified"]),
+      ]);
+      const failed = [ordered, sampleCollected, inProgress, completed].find(
+        (result) => result.error,
+      );
+      return {
+        data: failed
+          ? null
+          : {
+              ordered: ordered.count ?? 0,
+              sampleCollected: sampleCollected.count ?? 0,
+              inProgress: inProgress.count ?? 0,
+              completed: completed.count ?? 0,
+            },
+        error: failed?.error ?? null,
+      };
+    },
+    { refetchInterval: 15000 },
+  );
+
   const orders = useRows<Row[]>(
     ["lab-orders", status],
     () => {
@@ -82,9 +119,8 @@ function LabPageInner() {
     { refetchInterval: 15000, keepPrevious: true },
   );
 
-  if (orders.isLoading) return <PageSkeleton />;
+  if (orders.isLoading || orderCounts.isLoading) return <PageSkeleton />;
   const all = (orders.data ?? []) as Row[];
-  const countOf = (...st: string[]) => all.filter((o) => st.includes(s(o, "status"))).length;
   const filtered = search.trim() !== "" || status !== "all";
   const rows = all.filter((o) => {
     const p = rel(o, "patients");
@@ -111,13 +147,18 @@ function LabPageInner() {
       >
         <ExportButtons rows={rows} filename="roshan-lab-orders" />
       </PageHeader>
-      <ErrorBox error={orders.error} />
+      <ErrorBox error={orders.error ?? orderCounts.error} />
       <MetricStrip label={t("laboratory")} cols="sm:grid-cols-4">
-        <Metric label={t("ordered")} value={countOf("ordered")} tone="warning" />
-        <Metric label={t("sample_collected")} value={countOf("sample_collected")} />
-        <Metric label={t("in_progress")} value={countOf("in_progress")} tone="primary" />
-        <Metric label={t("completed")} value={countOf("completed", "verified")} tone="success" />
+        <Metric label={t("ordered")} value={orderCounts.data?.ordered ?? "—"} tone="warning" />
+        <Metric label={t("sample_collected")} value={orderCounts.data?.sampleCollected ?? "—"} />
+        <Metric label={t("in_progress")} value={orderCounts.data?.inProgress ?? "—"} tone="primary" />
+        <Metric label={t("completed")} value={orderCounts.data?.completed ?? "—"} tone="success" />
       </MetricStrip>
+      <p className="text-xs text-muted-foreground">
+        {lang === "ar"
+          ? "الأعداد دقيقة لجميع الطلبات غير المحذوفة المتاحة لحسابك؛ والقائمة تعرض أحدث 300 طلب كحد أقصى."
+          : "Counts cover all non-deleted orders accessible to your account; the list shows up to 300 newest matches."}
+      </p>
       <Toolbar>
         <SearchField
           value={search}

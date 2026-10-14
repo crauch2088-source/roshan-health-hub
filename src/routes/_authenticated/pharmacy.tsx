@@ -98,6 +98,7 @@ function PharmacyPageInner() {
 
   const dispense = useSave<{ prescriptionId: string }>(
     async ({ prescriptionId }) => {
+      if (!can("pharmacy.update")) throw new Error("Not authorized");
       const result = await dispensePrescriptionFefo(prescriptionId);
       setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
       return result;

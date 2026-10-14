@@ -62,6 +62,42 @@ function QueuePageInner() {
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
 
+  const queueMetrics = useRows<{
+    total: number;
+    waiting: number;
+    active: number;
+    completed: number;
+  }>(
+    ["queue", date, "metrics"],
+    async () => {
+      const countQuery = () =>
+        supabase
+          .from("queue_tickets")
+          .select("id", { count: "exact", head: true })
+          .eq("visit_date", date)
+          .is("deleted_at", null);
+      const [total, waiting, active, completed] = await Promise.all([
+        countQuery(),
+        countQuery().eq("status", "waiting"),
+        countQuery().in("status", ["called", "in_progress"]),
+        countQuery().eq("status", "completed"),
+      ]);
+      const failed = [total, waiting, active, completed].find((result) => result.error);
+      return {
+        data: failed
+          ? null
+          : {
+              total: total.count ?? 0,
+              waiting: waiting.count ?? 0,
+              active: active.count ?? 0,
+              completed: completed.count ?? 0,
+            },
+        error: failed?.error ?? null,
+      };
+    },
+    { refetchInterval: 10000 },
+  );
+
   const queue = useRows<Row[]>(
     ["queue", date, status],
     () => {
@@ -104,14 +140,14 @@ function QueuePageInner() {
     },
     {
       invalidate: [
-        ["queue", date, status],
+        ["queue", date],
         ["visits", date],
       ],
       successMessage: t("saved"),
     },
   );
 
-  if (queue.isLoading) return <PageSkeleton />;
+  if (queue.isLoading || queueMetrics.isLoading) return <PageSkeleton />;
   const rows = ((queue.data ?? []) as Row[]).filter((ticket) => {
     const patient = rel(rel(ticket, "visits"), "patients");
     const q = search.trim().toLowerCase();
@@ -121,11 +157,10 @@ function QueuePageInner() {
     );
   });
 
-  const all = (queue.data ?? []) as Row[];
-  const countOf = (...st: string[]) => all.filter((r) => st.includes(s(r, "status"))).length;
-  const waiting = countOf("waiting");
-  const active = countOf("called", "in_progress");
-  const done = countOf("completed");
+  const waiting = queueMetrics.data?.waiting ?? "—";
+  const active = queueMetrics.data?.active ?? "—";
+  const done = queueMetrics.data?.completed ?? "—";
+  const total = queueMetrics.data?.total ?? "—";
   const filtered = search.trim() !== "" || status !== "all";
 
   return (
@@ -147,7 +182,7 @@ function QueuePageInner() {
           onChange={(e) => setDate(e.target.value)}
         />
       </PageHeader>
-      <ErrorBox error={queue.error} />
+      <ErrorBox error={queue.error ?? queueMetrics.error} />
       <MetricStrip label={lang === "ar" ? "ملخص الطابور" : "Queue summary"} cols="sm:grid-cols-4">
         <Metric
           label={lang === "ar" ? "بانتظار النداء" : "Waiting"}
@@ -156,7 +191,7 @@ function QueuePageInner() {
         />
         <Metric label={lang === "ar" ? "نشط" : "Active"} value={active} tone="primary" />
         <Metric label={t("completed")} value={done} tone="success" />
-        <Metric label={lang === "ar" ? "الإجمالي" : "Total"} value={all.length} />
+        <Metric label={lang === "ar" ? "الإجمالي" : "Total"} value={total} />
       </MetricStrip>
       <Toolbar>
         <SearchField
