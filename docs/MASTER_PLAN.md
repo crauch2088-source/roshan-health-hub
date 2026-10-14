@@ -115,6 +115,8 @@
 
 - 2026-10-15: Added draft PR #14 for atomic pharmacy batch receiving. The batch-receipt UI now calls a single RPC instead of separate client-side inserts/updates; the SQL validates `pharmacy.create`, configured branch, positive whole-unit quantity, non-negative prices, and date ordering, locks the medicine row, then writes batch, aggregate stock, and movement in one transaction. Added static regression guards to `test:guard`. SQL remains under `db/` (not applied), because migration-history parity is still unresolved. CI run #38656903437 was still in progress at the time of this entry; no database changes, merges, or production deployments were made.
 
+- 2026-10-15: Confirmed both connected Supabase accounts expose only the same project, `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, ACTIVE_HEALTHY); no separate staging project is available. Do not create a production-derived database branch for tests until its data-copy semantics and PostgreSQL engine compatibility are confirmed. PR #14 CI first failed only on one Prettier formatting error in the new test; that line was fixed in commit `17ed43a18f34ddb7db9cc5866f6d78aea8580ad8`. Latest CI run #38657039335 had passed security audit, guard tests, typecheck, and lint; build was still running at the last check. No database writes or deployments.
+
 ## Change log
 - 2026-10-15: Initialized from connected-tool inspection. No database writes, destructive changes, merges, or deployments performed.
 - 2026-10-15: Vercel consolidation completed via Composio: deleted duplicate `roshan-health-hub-hjfy`, verified only `roshan-health-hub` remains, and retained canonical domain `roshan-health-hub.vercel.app`.
