@@ -151,7 +151,11 @@ function LabPageInner() {
       <MetricStrip label={t("laboratory")} cols="sm:grid-cols-4">
         <Metric label={t("ordered")} value={orderCounts.data?.ordered ?? "—"} tone="warning" />
         <Metric label={t("sample_collected")} value={orderCounts.data?.sampleCollected ?? "—"} />
-        <Metric label={t("in_progress")} value={orderCounts.data?.inProgress ?? "—"} tone="primary" />
+        <Metric
+          label={t("in_progress")}
+          value={orderCounts.data?.inProgress ?? "—"}
+          tone="primary"
+        />
         <Metric label={t("completed")} value={orderCounts.data?.completed ?? "—"} tone="success" />
       </MetricStrip>
       <p className="text-xs text-muted-foreground">
