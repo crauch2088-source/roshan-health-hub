@@ -34,6 +34,26 @@ export function useRows<T = Row[]>(
   });
 }
 
+/** Exact count helper for dashboard metrics; does not transfer matching rows. */
+export function useCount(
+  key: QueryKey,
+  build: () => PromiseLike<{ count: number | null; error: unknown }>,
+  options?: { enabled?: boolean; refetchInterval?: number },
+) {
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      const { count, error } = await build();
+      if (error) throw new Error(dbError(error));
+      if (count == null) throw new Error("The database did not return an exact count.");
+      return count;
+    },
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval ?? false,
+    retry: false,
+  });
+}
+
 /**
  * Read helper for large/growing tables: pages results at the database
  * level using PostgREST's `.range()` + an exact count, instead of
