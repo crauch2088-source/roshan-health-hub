@@ -187,7 +187,7 @@ function QueuePageInner() {
         <Metric
           label={lang === "ar" ? "بانتظار النداء" : "Waiting"}
           value={waiting}
-          tone={waiting > 0 ? "warning" : "default"}
+          tone={typeof waiting === "number" && waiting > 0 ? "warning" : "default"}
         />
         <Metric label={lang === "ar" ? "نشط" : "Active"} value={active} tone="primary" />
         <Metric label={t("completed")} value={done} tone="success" />
