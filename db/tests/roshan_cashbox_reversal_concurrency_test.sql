@@ -123,7 +123,7 @@ begin
       branch_id, transaction_type, amount, payment_method, category,
       description, source_type, transaction_date, created_by, reversal_of, reversal_reason
     )
-    select f.branch_id, 'reversal', -10.00, 'cash', 'test',
+    select f.branch_id, 'adjustment', -10.00, 'cash', 'test',
            'duplicate reversal constraint test', 'reversal', now(), f.super_profile,
            v_original_id, 'duplicate attempt'
       from _cashbox_test_fixture f
