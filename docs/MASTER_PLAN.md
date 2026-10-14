@@ -13,41 +13,43 @@
 ## Verified starting point
 - Recent repository commits indicate PR #10 (SSR log redaction) and #11 (cashbox reversal concurrency) merged; merge commits include `533dcb5` and `4ae13ef`.
 - PR #8 (shell redesign, page patterns, dashboard data accuracy) subsequently merged at `a64f804679aeaae7299b034176f2265ac1806db0`. Merge conflict resolution in `3667bafd` combined `test:guard` lists.
-- Open PR search surfaced #9 (audit-plan docs) and #5 (SSR logging/redaction); refresh their true state, head SHA, checks, and review threads before action.
+- PR #9 remains OPEN + DRAFT on `audit/roshan-health-hub-hardening-plan`, head `29a07b4b6327452a4f1eb24e7859cb3d42e402b0`; its CI passed, but its base SHA is stale (`209f5a0`) and it should remain a review-only plan PR until refreshed. PR #5 was CLOSED as superseded: current `main` already contains SSR redaction in `src/lib/redact.ts`, `src/lib/error-capture.ts`, and `tests/ssr-log-redaction.test.ts`.
 - Branches seen: `main`, `audit/roshan-health-hub-hardening-plan`, `feat/nav-consistency-ux-pass`, `feat/responsive-shell-lab-ui`, `feat/shell-redesign`, `fix/cashbox-reversal-concurrency`, `fix/ssr-error-logging-redaction`, `fix/ssr-log-object-redaction`, `fix/vercel-node22-runtime`, `pr8-visual-artifacts`.
 - Main `package.json` declares Node `22.x` and has `test:guard`, `typecheck`, `lint`, and `build` scripts.
-- Vercel team `roshan45` has two linked projects, `roshan-health-hub` and `roshan-health-hub-hjfy`, both linked to the same repo. Prior audit found Vercel Node 24.x vs package.json Node 22.x; identify canonical domain/project and align runtime.
+- Vercel is now consolidated to one project: `roshan-health-hub` (`prj_DXhmP7InMjEeoZaIBnw3UhEGaUxk`), linked to `crauch2088-source/roshan-health-hub`, canonical verified domain `roshan-health-hub.vercel.app`, Node `22.x`. Duplicate project `roshan-health-hub-hjfy` was deleted via the connected Vercel account and verified absent; its project-specific `*.vercel.app` domain is retired. The retained production deployment is READY on `main` SHA `a64f804679aeaae7299b034176f2265ac1806db0`; a newer docs-branch deployment is preview-only and is not production.
 - Connected Supabase project `jewzonxplxhogqrnhosl` is named “Project Name: Roshan Production”, ACTIVE_HEALTHY, PostgreSQL 17.6, region eu-west-1. Migrations extend through `20261014164131_roshan_cashbox_reversal_concurrency`.
-- Supabase security advisor reports `pg_trgm` in `public` and 15 SECURITY DEFINER functions executable by `authenticated`. Review each function’s ACL, internal authorization, branch isolation, input validation, and fixed search_path; do not blanket-revoke intended RPCs.
-- Performance advisor reports many unused indexes; do not drop based on this signal alone. Schema inventory includes both `medicines` and `medicines_2`; verify usage before changing. No database writes/deployments were performed during this inspection.
+- Supabase security advisor reports `pg_trgm` in `public` and 15 SECURITY DEFINER functions executable by `authenticated`. Read-only review found all 56 public tables have RLS enabled; no table grants `anon` SELECT/INSERT in the sampled inventory; no `anon` EXECUTE privilege on public SECURITY DEFINER functions; the 15 callable authenticated functions each contain an app permission check and have `search_path` set to empty. Branch checks are present in the branch-sensitive RPCs inspected. The two `stock_movements` policies target `public` but both enforce app permission and branch access, and neither is unconditional. This is a positive initial review, not yet a full adversarial authorization test.
+- Supabase reports 79 applied migrations through `20261014164131_roshan_cashbox_reversal_concurrency`. The repository currently has a small set of legacy `db/*.sql` scripts and no timestamped `supabase/migrations` directory in the `main` tree; full migration-history parity is unresolved and is a significant reproducibility risk. Performance advisor reports 131 unused-index findings; do not drop indexes based on this signal alone. Schema inventory includes both `medicines` and `medicines_2`; verify usage before changing. No database writes or production deployments were performed during this inspection.
 - GitHub native file update returned 403 “Resource not accessible by integration”; use the active Composio GitHub connection for repo writes.
 
 ## Phases and exit criteria
 
-### 0. Baseline and ownership — CURRENT
-- [ ] Refresh main SHA, PR states/heads/reviews/CI, branches, and changed files.
-- [ ] Identify canonical Vercel project, production domain, Git branch mapping, current deployment SHA, build logs, and runtime health.
-- [ ] Verify PostHog connection/project; if unavailable, record it and continue without assuming telemetry exists.
-- [ ] Record Supabase migration head, RLS/policy inventory, advisor findings, and confirm environment before writes.
-**Exit:** dated baseline with canonical repo/branch/database/deployment and explicit unknowns.
+### 0. Baseline and ownership — IN PROGRESS
+- [x] Confirmed `main` SHA `a64f804679aeaae7299b034176f2265ac1806db0` and successful GitHub Actions CI run #38649354331: install/lockfile, dependency security audit, patched TanStack versions, guard tests, typecheck, lint, and build passed.
+- [x] Confirmed PR #5 was superseded by redaction code already present in `main`; closed it without merging. PR #9 remains a draft/open plan PR; its CI passed, but its base is stale.
+- [x] Consolidated Vercel to the single project `roshan-health-hub`; removed duplicate `roshan-health-hub-hjfy`; verified only one matching project remains. Both projects’ Node setting had been aligned to `22.x` before deletion. Canonical verified domain is `roshan-health-hub.vercel.app`.
+- [ ] Perform authenticated live smoke tests for login, role gates, patient lookup, queue, and server-rendered routes. No interactive authenticated browser session was available in this pass.
+- [x] Verified PostHog `Default project` is connected but has no events; privacy configuration needs review before any clinic telemetry is enabled.
+- [x] Confirmed Supabase target `jewzonxplxhogqrnhosl` is `Roshan Production`, `ACTIVE_HEALTHY`, PostgreSQL 17.6, region `eu-west-1`, migration head `20261014164131_roshan_cashbox_reversal_concurrency`; 56/56 public tables have RLS enabled. [ ] Reconcile 79 applied migrations with repository SQL artifacts; do not write to production while parity is unresolved.
+**Exit:** pending authenticated runtime smoke tests, privacy review, and migration-history parity.
 
 ### 1. Security, privacy, and repository hygiene
 - [ ] Audit current files/history for exposed credentials; report paths/types, never values. Rotate/revoke any real exposed credential before history rewriting.
 - [ ] Verify secret scanning, dependency alerts, and code scanning availability.
-- [ ] Review every callable SECURITY DEFINER RPC for least privilege, branch context, fixed search_path, validation, and safe errors.
+- [x] Initial read-only review of all 15 authenticated-callable SECURITY DEFINER RPCs: no anon EXECUTE, empty `search_path`, and internal permission checks observed. [ ] Finish function-by-function adversarial tests for cross-branch IDs, invalid financial inputs, and branchless super-admin inventory/cashbox paths.
 - [ ] Review RLS policies/grants for identity, patient, clinical, lab, pharmacy, inventory, finance, and insurance tables.
 - [ ] Add automated unauthenticated, wrong-role, cross-branch, and forbidden-write tests.
 **Exit:** no unresolved critical/high-risk access-control issue; repeatable checks and evidence.
 
 ### 2. Runtime and CI reproducibility
-- [ ] Align Node version in package.json, CI, lockfile, and Vercel.
+- [x] Align Node version in package.json, CI, lockfile, and the retained Vercel project at `22.x`.
 - [ ] Run guard tests, typecheck, lint, production build, and dependency/security checks on a frozen candidate SHA.
 - [ ] Verify SSR log redaction with synthetic tokens, cookies, UUIDs, emails, and query strings.
 - [ ] Resolve lint/format debt narrowly; avoid unrelated sweeping rewrites.
 **Exit:** reproducible green checks and documented deployment target.
 
 ### 3. Database and migrations
-- [ ] Compare repo migrations to deployed migration history; investigate schema drift and compatibility columns.
+- [ ] Compare the 79 applied database migrations to repo `db/*.sql` artifacts; there is no timestamped `supabase/migrations` directory on `main`, so migration replay/parity is not yet reproducible.
 - [ ] Determine whether `medicines` / `medicines_2` are active/legacy before any change.
 - [ ] Verify FK/unique constraints, soft-delete behavior, audit relationships, pagination, and indexes.
 - [ ] Test candidate migrations on a confirmed disposable dev branch/database; demonstrate backup/restore and rollback.
@@ -101,12 +103,15 @@
 **Exit:** stable service and agreed maintenance cadence.
 
 ## Immediate next actions
-1. Refresh PR #9 and #5 status/checks and inspect current main CI.
-2. Verify merged PRs #8/#10/#11 against current main SHA and run checks.
-3. Resolve Vercel canonical project/domain and Node 22/24 mismatch.
-4. Review the 15 SECURITY DEFINER findings individually; do not blanket-revoke.
-5. Audit secret history safely and determine whether credential rotation is required.
-6. Update this plan with evidence/checkmarks as work completes.
+1. Run authenticated runtime smoke tests on `https://roshan-health-hub.vercel.app` and confirm role/branch gates.
+2. Reconcile the 79 applied Supabase migrations against repository artifacts; establish a canonical migration workflow before any DDL changes.
+3. Complete adversarial tests for the 15 authenticated-callable SECURITY DEFINER RPCs, especially invalid inputs and cross-branch resource IDs.
+4. Safely scan Git history for credentials without printing values; determine whether rotation is required.
+5. Review PostHog privacy settings before enabling any telemetry.
+6. Refresh PR #9 against current `main` and keep it draft until its contents and CI are current.
 
 ## Change log
 - 2026-10-15: Initialized from connected-tool inspection. No database writes, destructive changes, merges, or deployments performed.
+- 2026-10-15: Vercel consolidation completed via Composio: deleted duplicate `roshan-health-hub-hjfy`, verified only `roshan-health-hub` remains, and retained canonical domain `roshan-health-hub.vercel.app`.
+- 2026-10-15: Closed PR #5 as superseded after confirming the redaction implementation and tests are already in `main`; no merge occurred.
+- 2026-10-15: Read-only Supabase audit: 56/56 public tables have RLS enabled; no anon SELECT/INSERT grants in the reviewed inventory and no anon EXECUTE on public SECURITY DEFINER functions. All 15 authenticated-callable SECURITY DEFINER functions inspected have empty `search_path` and app-level permission checks. Migration head is `20261014164131_roshan_cashbox_reversal_concurrency` (79 migrations); repository migration parity remains unresolved. No Supabase writes.
