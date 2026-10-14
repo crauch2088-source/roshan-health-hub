@@ -68,7 +68,6 @@ test("breadcrumb trail: detail step only on nested routes, home only when permit
   );
 });
 
-
 // Supabase environment compatibility: current and legacy Vercel key names.
 import { resolveSupabaseKey } from "../src/lib/supabase-key.ts";
 
