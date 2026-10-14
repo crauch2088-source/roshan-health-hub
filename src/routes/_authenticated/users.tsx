@@ -2,9 +2,22 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import { Empty, ErrorBox, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
+import {
+  DataPanel,
+  Empty,
+  ErrorBox,
+  Field,
+  InitialAvatar,
+  Metric,
+  MetricStrip,
+  NoResults,
+  PageHeader,
+  PageSkeleton,
+  PermissionGate,
+  SearchField,
+  Toolbar,
+} from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +74,7 @@ function UsersPageInner() {
   const { t, lang } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -121,11 +135,18 @@ function UsersPageInner() {
     { invalidate: [["users"]] },
   );
 
-  const rows = (list.data ?? []) as Row[];
-  if (list.isLoading) return <Loading />;
+  const all = (list.data ?? []) as Row[];
+  if (list.isLoading) return <PageSkeleton />;
+  const term = search.trim().toLowerCase();
+  const rows = term
+    ? all.filter((u) =>
+        `${s(u, "full_name")} ${s(u, "email")} ${s(u, "phone")}`.toLowerCase().includes(term),
+      )
+    : all;
+  const activeCount = all.filter((u) => b(u, "active")).length;
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader title={t("users")} subtitle={t("staff_accounts")}>
         {can("users.create") ? (
           <Dialog open={open} onOpenChange={setOpen}>
@@ -209,79 +230,98 @@ function UsersPageInner() {
         ) : null}
       </PageHeader>
 
-      <ErrorBox error={list.error} />
+      <MetricStrip label={t("users")} cols="sm:grid-cols-3">
+        <Metric label={t("users")} value={all.length} />
+        <Metric label={t("active")} value={activeCount} tone="success" />
+        <Metric
+          label={lang === "ar" ? "غير نشط" : "Inactive"}
+          value={all.length - activeCount}
+          tone={all.length - activeCount > 0 ? "warning" : "default"}
+        />
+      </MetricStrip>
 
-      <Card>
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <Empty />
-          ) : (
-            <>
-              <ul className="divide-y md:hidden" aria-label={t("users")}>
-                {rows.map((u) => (
-                  <li key={s(u, "id")} className="space-y-1.5 p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{s(u, "full_name")}</p>
-                        <p className="truncate text-xs text-muted-foreground" dir="ltr">
-                          {s(u, "email")}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={b(u, "active")}
-                        disabled={!can("users.update")}
-                        aria-label={t("active")}
-                        onCheckedChange={(v) => toggle.mutate({ id: s(u, "id"), active: v })}
-                      />
+      <Toolbar>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder={lang === "ar" ? "الاسم أو البريد أو الهاتف" : "Name, email or phone"}
+        />
+      </Toolbar>
+
+      <ErrorBox error={list.error} onRetry={() => void list.refetch()} />
+
+      <DataPanel>
+        {rows.length === 0 && term ? (
+          <NoResults onClear={() => setSearch("")} />
+        ) : rows.length === 0 ? (
+          <Empty />
+        ) : (
+          <>
+            <ul className="divide-y md:hidden" aria-label={t("users")}>
+              {rows.map((u) => (
+                <li key={s(u, "id")} className="space-y-1.5 px-4 py-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <InitialAvatar name={s(u, "full_name")} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{s(u, "full_name")}</p>
+                      <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                        {s(u, "email")}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {lang === "ar"
-                        ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
-                        : s(rel(u, "roles"), "name")}
-                      {" · "}
-                      <span dir="ltr">{s(u, "phone") || "—"}</span>
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <div className="hidden md:block">
-                <Table density="compact">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("full_name")}</TableHead>
-                      <TableHead>{t("email")}</TableHead>
-                      <TableHead>{t("phone")}</TableHead>
-                      <TableHead>{t("role")}</TableHead>
-                      <TableHead className="no-print">{t("active")}</TableHead>
+                    <Switch
+                      checked={b(u, "active")}
+                      disabled={!can("users.update")}
+                      aria-label={t("active")}
+                      onCheckedChange={(v) => toggle.mutate({ id: s(u, "id"), active: v })}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
+                      : s(rel(u, "roles"), "name")}
+                    {" · "}
+                    <span dir="ltr">{s(u, "phone") || "—"}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden md:block">
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("full_name")}</TableHead>
+                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>{t("phone")}</TableHead>
+                    <TableHead>{t("role")}</TableHead>
+                    <TableHead className="no-print">{t("active")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((u) => (
+                    <TableRow key={s(u, "id")}>
+                      <TableCell className="font-medium">{s(u, "full_name")}</TableCell>
+                      <TableCell dir="ltr">{s(u, "email")}</TableCell>
+                      <TableCell dir="ltr">{s(u, "phone") || "—"}</TableCell>
+                      <TableCell>
+                        {lang === "ar"
+                          ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
+                          : s(rel(u, "roles"), "name")}
+                      </TableCell>
+                      <TableCell className="no-print">
+                        <Switch
+                          checked={b(u, "active")}
+                          disabled={!can("users.update")}
+                          onCheckedChange={(v) => toggle.mutate({ id: s(u, "id"), active: v })}
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((u) => (
-                      <TableRow key={s(u, "id")}>
-                        <TableCell className="font-medium">{s(u, "full_name")}</TableCell>
-                        <TableCell dir="ltr">{s(u, "email")}</TableCell>
-                        <TableCell dir="ltr">{s(u, "phone") || "—"}</TableCell>
-                        <TableCell>
-                          {lang === "ar"
-                            ? s(rel(u, "roles"), "name_ar") || s(rel(u, "roles"), "name")
-                            : s(rel(u, "roles"), "name")}
-                        </TableCell>
-                        <TableCell className="no-print">
-                          <Switch
-                            checked={b(u, "active")}
-                            disabled={!can("users.update")}
-                            onCheckedChange={(v) => toggle.mutate({ id: s(u, "id"), active: v })}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </DataPanel>
     </div>
   );
 }
