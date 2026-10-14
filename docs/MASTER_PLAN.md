@@ -113,6 +113,8 @@
 7. Review PostHog privacy settings before enabling any telemetry.
 8. Refresh PR #9 against current `main` and keep it draft until its contents and CI are current.
 
+- 2026-10-15: Added draft PR #14 for atomic pharmacy batch receiving. The batch-receipt UI now calls a single RPC instead of separate client-side inserts/updates; the SQL validates `pharmacy.create`, configured branch, positive whole-unit quantity, non-negative prices, and date ordering, locks the medicine row, then writes batch, aggregate stock, and movement in one transaction. Added static regression guards to `test:guard`. SQL remains under `db/` (not applied), because migration-history parity is still unresolved. CI run #38656903437 was still in progress at the time of this entry; no database changes, merges, or production deployments were made.
+
 ## Change log
 - 2026-10-15: Initialized from connected-tool inspection. No database writes, destructive changes, merges, or deployments performed.
 - 2026-10-15: Vercel consolidation completed via Composio: deleted duplicate `roshan-health-hub-hjfy`, verified only `roshan-health-hub` remains, and retained canonical domain `roshan-health-hub.vercel.app`.
