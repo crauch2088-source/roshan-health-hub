@@ -2,18 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import {
+  DataPanel,
   Empty,
   ErrorBox,
   ExportButtons,
-  Loading,
+  InitialAvatar,
+  NoResults,
   PageHeader,
+  PageSkeleton,
+  PermissionGate,
+  SearchField,
   SectionTitle,
   StatusBadge,
-  PermissionGate,
+  Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -115,19 +118,24 @@ function PharmacyPageInner() {
       return `${s(patient, "full_name")} ${s(patient, "mrn")} ${meds}`.toLowerCase().includes(q);
     });
   }, [list.data, search]);
-  if (list.isLoading) return <Loading />;
+  if (list.isLoading) return <PageSkeleton />;
+  const filtered = search.trim() !== "" || status !== "pending";
 
   return (
     <div>
       <PageHeader title={t("pharmacy")} subtitle={t("dispense_queue")}>
-        <Input
-          placeholder={t("search")}
+        <ExportButtons rows={rows} filename="roshan-prescriptions" />
+      </PageHeader>
+
+      <Toolbar className="mb-4">
+        <SearchField
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-56"
+          onChange={setSearch}
+          placeholder={t("search")}
+          label={t("search")}
         />
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-full sm:w-40">
+          <SelectTrigger className="h-11 w-full sm:w-44" aria-label={t("status")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -138,12 +146,18 @@ function PharmacyPageInner() {
             ))}
           </SelectContent>
         </Select>
-        <ExportButtons rows={rows} filename="roshan-prescriptions" />
-      </PageHeader>
+      </Toolbar>
 
       <ErrorBox error={list.error} />
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && filtered ? (
+        <NoResults
+          onClear={() => {
+            setSearch("");
+            setStatus("pending");
+          }}
+        />
+      ) : rows.length === 0 ? (
         <Empty
           title={t("no_data")}
           description={lang === "ar" ? "لا وصفات مطابقة." : "No matching prescriptions."}
@@ -158,21 +172,25 @@ function PharmacyPageInner() {
             );
             const usedBatches = dispenseDetail[s(p, "id")];
             return (
-              <Card key={s(p, "id")}>
-                <CardContent className="p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-semibold">{s(rel(p, "patients"), "full_name")}</p>
-                      <p className="text-xs text-muted-foreground" dir="ltr">
-                        {s(rel(p, "patients"), "mrn")} · {formatDateTime(s(p, "created_at"))} ·{" "}
-                        {s(rel(p, "users"), "full_name")}
-                      </p>
+              <DataPanel key={s(p, "id")}>
+                <div className="p-4">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <InitialAvatar name={s(rel(p, "patients"), "full_name")} />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">
+                          {s(rel(p, "patients"), "full_name")}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                          {s(rel(p, "patients"), "mrn")} · {formatDateTime(s(p, "created_at"))} ·{" "}
+                          {s(rel(p, "users"), "full_name")}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                       <StatusBadge status={s(p, "status")} />
                       {can("pharmacy.update") && s(p, "status") === "pending" ? (
                         <Button
-                          size="sm"
                           disabled={dispense.isPending}
                           onClick={() => dispense.mutate({ prescriptionId: s(p, "id") })}
                         >
@@ -280,8 +298,8 @@ function PharmacyPageInner() {
                       </Table>
                     </div>
                   ) : null}
-                </CardContent>
-              </Card>
+                </div>
+              </DataPanel>
             );
           })}
         </div>
