@@ -67,7 +67,7 @@ begin
     branch_id, transaction_type, amount, payment_method, category, description,
     source_type, transaction_date, created_by, reversal_of, reversal_reason
   ) values (
-    orig.branch_id, 'reversal', -orig.amount, orig.payment_method, orig.category,
+    orig.branch_id, 'adjustment', -orig.amount, orig.payment_method, orig.category,
     coalesce(orig.description, '') || ' — reversal: ' || _reason,
     'reversal', now(), uid, orig.id, _reason
   ) returning id into new_id;
