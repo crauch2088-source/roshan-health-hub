@@ -181,7 +181,7 @@ function PharmacyPageInner() {
                         <p className="truncate font-semibold">
                           {s(rel(p, "patients"), "full_name")}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                        <p className="break-words text-xs text-muted-foreground">
                           {s(rel(p, "patients"), "mrn")} · {formatDateTime(s(p, "created_at"))} ·{" "}
                           {s(rel(p, "users"), "full_name")}
                         </p>

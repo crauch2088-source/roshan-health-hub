@@ -242,7 +242,7 @@ type MetricProps = {
 /** One figure inside a MetricStrip: hairline-separated, no card chrome of its own. */
 export function Metric({ label, value, hint, tone = "default", icon }: MetricProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-1 border-s border-t border-border p-3.5 sm:p-4">
+    <div className="flex min-w-0 flex-col gap-1 border-s border-t border-border p-3.5 max-sm:[&:nth-child(odd):last-child]:col-span-2 sm:p-4">
       <div className="flex items-center justify-between gap-2 text-muted-foreground">
         <p className="truncate text-xs font-medium">{label}</p>
         {icon ? <span className="shrink-0 [&_svg]:size-4">{icon}</span> : null}

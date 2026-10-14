@@ -248,9 +248,11 @@ function ClinicPageInner() {
                             <p className="truncate font-semibold">
                               {s(patient, "full_name") || "—"}
                             </p>
-                            <p className="truncate text-xs text-muted-foreground">
+                            <p className="break-words text-xs text-muted-foreground">
                               <span dir="ltr">{s(patient, "mrn") || "—"}</span> · {deptName(visit)}
-                              {ageVal !== null ? ` · ${ageVal} yrs` : ""}
+                              {ageVal !== null
+                                ? ` · ${ageVal} ${lang === "ar" ? "سنة" : "yrs"}`
+                                : ""}
                             </p>
                             <div className="mt-1.5">
                               <StatusBadge status={s(visit, "status")} />
