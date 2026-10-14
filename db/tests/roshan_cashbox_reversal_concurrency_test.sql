@@ -110,6 +110,8 @@ reset role;
 do $$
 declare
   v_original_id uuid;
+  v_function_definition text;
+  v_function_config text[];
 begin
   select f.original_id into v_original_id
     from _cashbox_test_fixture f
@@ -135,10 +137,24 @@ begin
     raise exception 'FAIL: expected exactly one reversal row';
   end if;
 
-  if position('FOR UPDATE' in upper(pg_get_functiondef('public.reverse_cashbox_entry(uuid,text)'::regprocedure))) = 0 then
+  select pg_get_functiondef(p.oid), p.proconfig
+    into v_function_definition, v_function_config
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+     and p.proname = 'reverse_cashbox_entry'
+     and pg_get_function_identity_arguments(p.oid) = '_transaction_id uuid, _reason text';
+
+  if position('FOR UPDATE' in upper(v_function_definition)) = 0 then
     raise exception 'FAIL: reverse_cashbox_entry does not lock the original row';
   end if;
-  raise notice 'PASS: function definition locks original row';
+  if position('cross-branch cashbox access denied' in v_function_definition) = 0 then
+    raise exception 'FAIL: reverse_cashbox_entry is missing its branch-isolation guard';
+  end if;
+  if not coalesce(v_function_config, array[]::text[]) @> array['search_path=""'] then
+    raise exception 'FAIL: reverse_cashbox_entry must use an empty search_path';
+  end if;
+  raise notice 'PASS: row lock, branch isolation, and empty search_path are present';
 end $$;
 
 rollback;
