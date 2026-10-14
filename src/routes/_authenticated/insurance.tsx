@@ -683,14 +683,16 @@ function ClaimsTab({ currency }: { currency: string }) {
     (m) => s(m, "id") === patientInsuranceId,
   );
   const selectedPatientId = selectedMembership ? s(selectedMembership, "patient_id") : "";
-  const invoices = useRows<Row[]>(["insurance-claim-invoices", selectedPatientId], () =>
-    supabase
-      .from("invoices")
-      .select("id, invoice_number, net_amount, total_amount, paid_amount, created_at")
-      .eq("patient_id", selectedPatientId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(100),
+  const invoices = useRows<Row[]>(
+    ["insurance-claim-invoices", selectedPatientId],
+    () =>
+      supabase
+        .from("invoices")
+        .select("id, invoice_number, net_amount, total_amount, paid_amount, created_at")
+        .eq("patient_id", selectedPatientId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(100),
     { enabled: Boolean(selectedPatientId) },
   );
 
@@ -998,7 +1000,10 @@ function ClaimsTab({ currency }: { currency: string }) {
                 size="sm"
                 className="mt-2"
                 disabled={
-                  !patientInsuranceId || !invoiceId || !itemForm.description.trim() || !itemForm.gross_amount
+                  !patientInsuranceId ||
+                  !invoiceId ||
+                  !itemForm.description.trim() ||
+                  !itemForm.gross_amount
                 }
                 onClick={() => void addItem()}
               >
