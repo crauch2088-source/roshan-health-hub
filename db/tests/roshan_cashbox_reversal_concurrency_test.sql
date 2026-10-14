@@ -1,7 +1,7 @@
 -- Regression test for db/roshan_phase4_cashbox_reversal_concurrency.sql
 -- STATUS: written but NOT YET EXECUTED. Run only on a disposable/staging Supabase database.
 -- The transaction rolls back all fixture data. A true two-session concurrency test is still
--- required before production rollout; this test checks function guard + unique-index defense.
+-- required before production rollout; this test checks the function guard + unique-index defense.
 begin;
 
 create temp table _cashbox_test_fixture (
@@ -19,9 +19,9 @@ do $$
 declare
   t record;
   profile_id uuid;
-  original_id uuid;
+  v_original_id uuid;
 begin
-  select * into t from _cashbox_test_fixture;
+  select * into t from _cashbox_test_fixture limit 1;
 
   if t.branch_id is null then
     raise exception 'Test requires at least one branch';
@@ -47,36 +47,54 @@ begin
   ) values (
     t.branch_id, 'deposit', 10.00, 'cash', 'test',
     'cashbox reversal regression fixture', 'manual', now(), profile_id
-  ) returning id into original_id;
+  ) returning id into v_original_id;
 
-  update _cashbox_test_fixture
-     set super_profile = profile_id, original_id = original_id;
+  update _cashbox_test_fixture f
+     set super_profile = profile_id, original_id = v_original_id
+   where f.super_auth = t.super_auth;
 end $$;
 
-grant select, insert on _cashbox_test_fixture to authenticated;
+grant select, insert, update on _cashbox_test_fixture to authenticated;
 
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
   json_build_object(
-    'sub', (select super_auth from _cashbox_test_fixture),
+    'sub', (select super_auth from _cashbox_test_fixture limit 1),
     'role', 'authenticated'
   )::text,
   true
 );
 
-insert into _cashbox_test_fixture (reversal_id)
-select public.reverse_cashbox_entry(original_id, 'automated regression test')
-from _cashbox_test_fixture;
+do $$
+declare
+  v_original_id uuid;
+  v_reversal_id uuid;
+begin
+  select f.original_id into v_original_id
+    from _cashbox_test_fixture f
+   where f.original_id is not null
+   limit 1;
+
+  v_reversal_id := public.reverse_cashbox_entry(v_original_id, 'automated regression test');
+
+  update _cashbox_test_fixture f
+     set reversal_id = v_reversal_id
+   where f.original_id = v_original_id;
+end $$;
 
 do $$
 declare
-  original_id uuid;
+  v_original_id uuid;
   error_message text;
 begin
-  select f.original_id into original_id from _cashbox_test_fixture f;
+  select f.original_id into v_original_id
+    from _cashbox_test_fixture f
+   where f.original_id is not null
+   limit 1;
+
   begin
-    perform public.reverse_cashbox_entry(original_id, 'second reversal must fail');
+    perform public.reverse_cashbox_entry(v_original_id, 'second reversal must fail');
     raise exception 'FAIL: second reversal call unexpectedly succeeded';
   exception when others then
     get stacked diagnostics error_message = message_text;
@@ -91,26 +109,29 @@ reset role;
 
 do $$
 declare
-  original_id uuid;
-  error_message text;
+  v_original_id uuid;
 begin
-  select f.original_id into original_id from _cashbox_test_fixture f;
+  select f.original_id into v_original_id
+    from _cashbox_test_fixture f
+   where f.original_id is not null
+   limit 1;
 
   begin
     insert into public.cashbox_transactions (
       branch_id, transaction_type, amount, payment_method, category,
       description, source_type, transaction_date, created_by, reversal_of, reversal_reason
     )
-    select branch_id, 'reversal', -10.00, 'cash', 'test',
-           'duplicate reversal constraint test', 'reversal', now(), super_profile,
-           original_id, 'duplicate attempt'
-      from _cashbox_test_fixture;
+    select f.branch_id, 'reversal', -10.00, 'cash', 'test',
+           'duplicate reversal constraint test', 'reversal', now(), f.super_profile,
+           v_original_id, 'duplicate attempt'
+      from _cashbox_test_fixture f
+     where f.original_id = v_original_id;
     raise exception 'FAIL: unique reversal index allowed a duplicate';
   exception when unique_violation then
     raise notice 'PASS: unique index prevents a second reversal row';
   end;
 
-  if (select count(*) from public.cashbox_transactions where reversal_of = original_id) <> 1 then
+  if (select count(*) from public.cashbox_transactions where reversal_of = v_original_id) <> 1 then
     raise exception 'FAIL: expected exactly one reversal row';
   end if;
 
