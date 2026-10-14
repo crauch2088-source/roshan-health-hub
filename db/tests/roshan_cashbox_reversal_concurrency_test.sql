@@ -137,6 +137,13 @@ begin
     raise exception 'FAIL: expected exactly one reversal row';
   end if;
 
+  if (select count(*) from public.cashbox_transactions
+       where reversal_of = v_original_id
+         and transaction_type = 'adjustment'
+         and amount = -10.00) <> 1 then
+    raise exception 'FAIL: reversal must preserve the established adjustment type and negate the original amount';
+  end if;
+
   select pg_get_functiondef(p.oid), p.proconfig
     into v_function_definition, v_function_config
     from pg_proc p
