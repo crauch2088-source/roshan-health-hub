@@ -117,6 +117,8 @@
 
 - 2026-10-15: Confirmed both connected Supabase accounts expose only the same project, `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, ACTIVE_HEALTHY); no separate staging project is available. Do not create a production-derived database branch for tests until its data-copy semantics and PostgreSQL engine compatibility are confirmed. PR #14 CI first failed only on one Prettier formatting error in the new test; that line was fixed in commit `17ed43a18f34ddb7db9cc5866f6d78aea8580ad8`. Latest CI run #38657039335 had passed security audit, guard tests, typecheck, and lint; build was still running at the last check. No database writes or deployments.
 
+- 2026-10-15: PR #14 CI is now green on `17ed43a18f34ddb7db9cc5866f6d78aea8580ad8`: install, dependency/security audit, guard tests (including the new atomic-receipt contract checks), TypeScript typecheck, ESLint, and production build all succeeded. Vercel preview deployment `roshan-health-9vidoqg8x-roshan45.vercel.app` is READY; HTTP GET of its root and `/inventory` returned 200. These are unauthenticated route/reachability checks only; the RPC is not installed in any database and authenticated receiving has not been behaviorally tested. PR #14 remains draft and must not be merged/deployed until a compatible isolated database is available and the SQL is tested.
+
 ## Change log
 - 2026-10-15: Initialized from connected-tool inspection. No database writes, destructive changes, merges, or deployments performed.
 - 2026-10-15: Vercel consolidation completed via Composio: deleted duplicate `roshan-health-hub-hjfy`, verified only `roshan-health-hub` remains, and retained canonical domain `roshan-health-hub.vercel.app`.
