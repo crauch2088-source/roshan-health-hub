@@ -24,11 +24,12 @@ create or replace function public.reverse_cashbox_entry(
   _transaction_id uuid,
   _reason text
 ) returns uuid
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = '' as $$
 declare
   orig public.cashbox_transactions;
   new_id uuid;
   uid uuid;
+  bid uuid;
 begin
   if not public.app_has_perm('cashbox.update') and not public.is_super_admin() then
     raise exception 'not authorised to reverse cashbox entries';
@@ -55,6 +56,12 @@ begin
   end if;
 
   uid := public.current_app_user_id();
+  select branch_id into bid from public.users where id = uid;
+
+  -- Preserve the existing tenant/branch boundary from the production function.
+  if not public.is_super_admin() and (bid is null or orig.branch_id is distinct from bid) then
+    raise exception 'cross-branch cashbox access denied';
+  end if;
 
   insert into public.cashbox_transactions (
     branch_id, transaction_type, amount, payment_method, category, description,
@@ -65,11 +72,11 @@ begin
     'reversal', now(), uid, orig.id, _reason
   ) returning id into new_id;
 
-  perform set_config('roshan.cashbox_write', 'on', true);
+  perform pg_catalog.set_config('roshan.cashbox_write', 'on', true);
   update public.cashbox_transactions
      set is_reversed = true, reversal_reason = _reason
    where id = orig.id;
-  perform set_config('roshan.cashbox_write', 'off', true);
+  perform pg_catalog.set_config('roshan.cashbox_write', 'off', true);
 
   return new_id;
 end $$;
