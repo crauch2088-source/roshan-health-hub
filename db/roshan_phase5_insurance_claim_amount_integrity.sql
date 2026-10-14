@@ -30,7 +30,11 @@ BEGIN
     RAISE EXCEPTION 'not authorised to create insurance claims';
   END IF;
 
-  IF _items IS NULL OR jsonb_typeof(_items) <> 'array' OR jsonb_array_length(_items) = 0 THEN
+  IF _items IS NULL OR jsonb_typeof(_items) <> 'array' THEN
+    RAISE EXCEPTION 'claim items must be a JSON array';
+  END IF;
+
+  IF jsonb_array_length(_items) = 0 THEN
     RAISE EXCEPTION 'a claim needs at least one item';
   END IF;
 
