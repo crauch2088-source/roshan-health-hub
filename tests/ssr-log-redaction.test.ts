@@ -77,3 +77,4 @@ test("request target excludes query strings and masks UUIDs", () => {
     "GET /patients/[UUID]",
   );
 });
+
