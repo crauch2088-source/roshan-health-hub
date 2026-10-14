@@ -25,7 +25,10 @@ test("atomic stock receipt RPC validates quantity, permission, and branch", () =
 });
 
 test("batch receiving uses one RPC instead of separate client-side writes", () => {
-  const start = inventory.indexOf("const receive = useSave(", inventory.indexOf("function PharmacyBatchesTab"));
+  const start = inventory.indexOf(
+    "const receive = useSave(",
+    inventory.indexOf("function PharmacyBatchesTab"),
+  );
   const end = inventory.indexOf("\n\n  return (\n    <div>", start);
   assert.ok(start >= 0 && end > start, "batch receive handler must exist");
   const handler = inventory.slice(start, end);
