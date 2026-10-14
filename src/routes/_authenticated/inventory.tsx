@@ -588,56 +588,25 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
   const receive = useSave(
     async () => {
       if (!form.medicine_id) throw new Error(t("select_medicine"));
-      const qty = Number(form.quantity_received) || 0;
-      if (qty <= 0) throw new Error(t("invalid_quantity"));
+      const qty = Number(form.quantity_received);
+      if (!Number.isInteger(qty) || qty <= 0) {
+        throw new Error(t("invalid_quantity"));
+      }
 
-      const { data: batch, error } = await supabase
-        .from("pharmacy_inventory")
-        .insert({
-          medicine_id: form.medicine_id,
-          supplier_id: form.supplier_id || null,
-          batch_number: form.batch_number || null,
-          quantity_received: qty,
-          quantity_remaining: qty,
-          purchase_price: Number(form.purchase_price) || 0,
-          selling_price: Number(form.selling_price) || 0,
-          manufacture_date: form.manufacture_date || null,
-          expiry_date: form.expiry_date || null,
-          invoice_reference: form.invoice_reference || null,
-          branch_id: (user as Record<string, unknown> | null)?.["branch_id"] ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-
-      // Always read the current stock_quantity fresh right before
-      // incrementing it — the medicine picker above only selects
-      // id/name/unit, so anything cached there would silently overwrite
-      // the real on-hand total instead of adding to it.
-      const { data: current, error: readErr } = await supabase
-        .from("medicines")
-        .select("stock_quantity")
-        .eq("id", form.medicine_id)
-        .single();
-      if (readErr) throw new Error(readErr.message);
-
-      const { error: medErr } = await supabase
-        .from("medicines")
-        .update({ stock_quantity: n(current as Row, "stock_quantity") + qty })
-        .eq("id", form.medicine_id);
-      if (medErr) throw new Error(medErr.message);
-
-      const { error: movErr } = await supabase.from("stock_movements").insert({
-        medicine_id: form.medicine_id,
-        batch_id: batch?.id ?? null,
-        movement_type: "purchase",
-        quantity: qty,
-        reference_id: batch?.id ?? null,
-        reference_table: "pharmacy_inventory",
-        created_by: user?.id ?? null,
+      // One database transaction creates the batch, increments aggregate stock,
+      // and records its movement. The RPC also enforces permission and branch gates.
+      const { error } = await supabase.rpc("receive_pharmacy_stock", {
+        p_medicine_id: form.medicine_id,
+        p_quantity: qty,
+        p_supplier_id: form.supplier_id || null,
+        p_batch_number: form.batch_number || null,
+        p_purchase_price: Number(form.purchase_price) || 0,
+        p_selling_price: Number(form.selling_price) || 0,
+        p_manufacture_date: form.manufacture_date || null,
+        p_expiry_date: form.expiry_date || null,
+        p_invoice_reference: form.invoice_reference || null,
       });
-      if (movErr) throw new Error(movErr.message);
-
+      if (error) throw new Error(error.message);
       return null;
     },
     {
