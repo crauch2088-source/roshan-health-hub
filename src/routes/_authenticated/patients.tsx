@@ -1,18 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, Phone, Plus, Search, UserRound } from "lucide-react";
+import { ArrowUpRight, Phone, Plus } from "lucide-react";
 import { useState } from "react";
 
 import {
+  DataPanel,
   Empty,
   ErrorBox,
   Field,
+  InitialAvatar,
   LoadingRows,
+  NoResults,
   PageHeader,
   Pager,
   PermissionGate,
+  RecordRow,
+  SearchField,
+  Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -127,6 +132,7 @@ function PatientsPageInner() {
   return (
     <div className="space-y-4">
       <PageHeader
+        eyebrow={t("clinical")}
         title={t("patients")}
         subtitle={list.count != null ? `${list.count} ${t("records")}` : t("register_patient")}
       >
@@ -203,29 +209,30 @@ function PatientsPageInner() {
         ) : null}
       </PageHeader>
 
-      <div className="relative">
-        <Search
-          aria-hidden
-          className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          placeholder={t("search")}
-          aria-label={t("search")}
+      <Toolbar>
+        <SearchField
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+          onChange={(value) => {
+            setSearch(value);
             setPage(1);
           }}
-          className="h-12 rounded-lg border-border/80 bg-card ps-12 text-base shadow-xs md:h-12 md:text-base"
+          placeholder={t("search")}
         />
-      </div>
+      </Toolbar>
 
       <ErrorBox error={list.error} />
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
+      <DataPanel>
+        <div>
           {list.isLoading ? (
             <LoadingRows count={6} />
+          ) : rows.length === 0 && debouncedSearch ? (
+            <NoResults
+              onClear={() => {
+                setSearch("");
+                setPage(1);
+              }}
+            />
           ) : rows.length === 0 ? (
             <Empty
               title={t("no_data")}
@@ -237,43 +244,43 @@ function PatientsPageInner() {
             />
           ) : (
             <>
-              <div className="divide-y sm:hidden">
+              <div className="divide-y divide-border sm:hidden">
                 {rows.map((patient) => (
-                  <div
+                  <RecordRow
                     key={s(patient, "id")}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4"
-                  >
-                    <Link
-                      to="/patients/$patientId"
-                      params={{ patientId: s(patient, "id") }}
-                      className="min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <UserRound className="size-5" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{s(patient, "full_name")}</p>
-                          <p className="truncate text-xs text-muted-foreground" dir="ltr">
-                            {s(patient, "mrn") || "—"} · {s(patient, "phone") || "—"}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {calcAge(s(patient, "date_of_birth")) ?? "—"} ·{" "}
-                            {t(s(patient, "gender"))}
-                          </p>
+                    main={
+                      <Link
+                        to="/patients/$patientId"
+                        params={{ patientId: s(patient, "id") }}
+                        className="block min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <InitialAvatar name={s(patient, "full_name")} />
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">{s(patient, "full_name")}</p>
+                            <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                              {s(patient, "mrn") || "—"} · {s(patient, "phone") || "—"}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {calcAge(s(patient, "date_of_birth")) ?? "—"} ·{" "}
+                              {t(s(patient, "gender"))}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                    {can("visits.create") ? (
-                      <Button asChild size="icon" aria-label={t("new_visit")}>
-                        <Link to="/visits" search={{ patient: s(patient, "id") }}>
-                          <Plus />
-                        </Link>
-                      </Button>
-                    ) : (
-                      <ArrowUpRight className="size-4 text-muted-foreground" />
-                    )}
-                  </div>
+                      </Link>
+                    }
+                    trailing={
+                      can("visits.create") ? (
+                        <Button asChild size="icon" aria-label={t("new_visit")}>
+                          <Link to="/visits" search={{ patient: s(patient, "id") }}>
+                            <Plus />
+                          </Link>
+                        </Button>
+                      ) : (
+                        <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
+                      )
+                    }
+                  />
                 ))}
               </div>
               <div className="hidden overflow-x-auto sm:block">
@@ -345,8 +352,8 @@ function PatientsPageInner() {
             onPrev={() => setPage((p) => Math.max(1, p - 1))}
             onNext={() => setPage((p) => p + 1)}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </DataPanel>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   type QueryKey,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { fetchAllPages, type AllPagesResult, type PageResult } from "./paging";
 import { dbError, supabase } from "./supabase";
 
 /** Runs a PostgREST builder and throws a readable error. */
@@ -30,6 +31,50 @@ export function useRows<T = Row[]>(
     queryFn: async () => await run<T>(build() as never),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? false,
+    retry: false,
+  });
+}
+
+/** Exact count helper for dashboard metrics; does not transfer matching rows. */
+export function useCount(
+  key: QueryKey,
+  build: () => PromiseLike<{ count: number | null; error: unknown }>,
+  options?: { enabled?: boolean; refetchInterval?: number },
+) {
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      const { count, error } = await build();
+      if (error) throw new Error(dbError(error));
+      if (count == null) throw new Error("The database did not return an exact count.");
+      return count;
+    },
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval ?? false,
+    retry: false,
+  });
+}
+
+/**
+ * Reads EVERY row of a query by walking `.range()` pages (see `fetchAllPages`).
+ * The builder must select with `{ count: "exact" }` and use a stable, unique
+ * ordering (e.g. `.order("id")`) so pages neither overlap nor skip rows.
+ * `data.exact` is false if the rows received do not match the server count;
+ * callers must not present sums from an inexact read as totals.
+ */
+export function useAllRows<T = Row>(
+  key: QueryKey,
+  build: (range: { from: number; to: number }) => PromiseLike<PageResult>,
+  options?: { enabled?: boolean; pageSize?: number },
+) {
+  return useQuery({
+    queryKey: [...key, "all-pages"],
+    queryFn: async (): Promise<AllPagesResult<T>> =>
+      fetchAllPages<T>((from, to) => build({ from, to }), {
+        ...(options?.pageSize ? { pageSize: options.pageSize } : {}),
+        toError: (error) => new Error(dbError(error)),
+      }),
+    enabled: options?.enabled ?? true,
     retry: false,
   });
 }

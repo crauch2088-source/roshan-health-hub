@@ -48,14 +48,14 @@ function RailLink({
         collapsed && "justify-center px-2",
         hasTrailing && "pe-9",
         active
-          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-xs"
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-sidebar-primary transition-opacity duration-150",
+          "absolute inset-y-2 -start-2.5 w-[3px] rounded-full bg-sidebar-primary transition-opacity duration-150",
           active ? "opacity-100" : "opacity-0",
         )}
       />
@@ -129,11 +129,11 @@ export function NavRail({
                 className={cn(
                   "space-y-0.5",
                   !collapsed &&
-                    "rounded-xl border border-sidebar-border/60 bg-sidebar-accent/25 p-1.5",
+                    "rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-1.5",
                 )}
               >
                 {!collapsed ? (
-                  <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45 rtl:text-[11px] rtl:normal-case rtl:tracking-normal">
+                  <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/60 rtl:text-[11px] rtl:normal-case rtl:tracking-normal">
                     {t("favorites")}
                   </p>
                 ) : null}
@@ -156,7 +156,7 @@ export function NavRail({
               return (
                 <div key={group.group} className="space-y-0.5">
                   {!collapsed ? (
-                    <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45 rtl:text-[11px] rtl:normal-case rtl:tracking-normal">
+                    <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/60 rtl:text-[11px] rtl:normal-case rtl:tracking-normal">
                       {t(group.group)}
                     </p>
                   ) : (
@@ -183,7 +183,7 @@ export function NavRail({
                                 className={cn(
                                   "flex size-8 shrink-0 items-center justify-center rounded-md transition-[opacity,background-color] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                                   pinned
-                                    ? "opacity-100 text-amber-400"
+                                    ? "opacity-100 text-amber-500"
                                     : "opacity-0 text-sidebar-foreground/50 group-hover:opacity-70 group-focus-within:opacity-70 hover:!opacity-100 focus-visible:!opacity-100 [@media(hover:none)]:opacity-70",
                                 )}
                                 aria-label={pinned ? t("unpin") : t("pin")}

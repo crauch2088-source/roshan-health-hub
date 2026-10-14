@@ -2,17 +2,31 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import {
+  DataPanel,
   Empty,
   ErrorBox,
   ExportButtons,
-  Loading,
+  InitialAvatar,
+  Metric,
+  MetricStrip,
+  NoResults,
   PageHeader,
-  StatusBadge,
+  PageSkeleton,
   PermissionGate,
+  RecordRow,
+  SearchField,
+  StatusBadge,
+  Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -121,176 +135,218 @@ function ClinicPageInner() {
   });
 
   if (visits.isLoading) {
-    return <Loading />;
+    return <PageSkeleton />;
   }
+
+  const dayRows = (visits.data ?? []) as Row[];
+  const countOf = (st: string) => dayRows.filter((v) => s(v, "status") === st).length;
+  const filtered = search.trim() !== "" || status !== "all" || filterMyPatients;
+  const clearFilters = () => {
+    setSearch("");
+    setStatus("all");
+    setFilterMyPatients(false);
+  };
+  const deptName = (visit: Row) => {
+    const department = rel(visit, "departments");
+    return lang === "ar"
+      ? s(department, "name_ar") || s(department, "name") || "—"
+      : s(department, "name") || "—";
+  };
+  const openLabel = lang === "ar" ? "فتح" : "Open";
+  const openTitle = (visit: Row) =>
+    lang === "ar"
+      ? `فتح زيارة ${s(visit, "visit_number")}`
+      : `Open visit ${s(visit, "visit_number")}`;
 
   return (
     <div className="space-y-4">
       <PageHeader title={lang === "ar" ? "العيادة" : "Clinic"} subtitle={formatDate(date)}>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "ar" ? "ابحث عن المريض" : "Search patient"}
-            className="w-52"
-          />
-          <select
-            className="rounded-md border bg-background px-3 py-2 text-sm"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="all">{lang === "ar" ? "كل الحالات" : "All statuses"}</option>
-            <option value="waiting">Waiting</option>
-            <option value="in_progress">In progress</option>
-            <option value="completed">Completed</option>
-          </select>
-          <Button
-            variant={filterMyPatients ? "default" : "outline"}
-            size="sm"
-            type="button"
-            onClick={() => setFilterMyPatients((current) => !current)}
-          >
-            {lang === "ar" ? "مرضاي فقط" : "My Patients"}
-          </Button>
-
-          <Input
-            type="date"
-            dir="ltr"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-40"
-          />
-
-          <ExportButtons rows={rows} filename={`roshan-clinic-${date}`} />
-        </div>
+        <Input
+          type="date"
+          dir="ltr"
+          aria-label={lang === "ar" ? "التاريخ" : "Date"}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="h-11 w-full sm:w-40"
+        />
+        <ExportButtons rows={rows} filename={`roshan-clinic-${date}`} />
       </PageHeader>
 
-      <ErrorBox error={visits.error} />
+      <MetricStrip label={lang === "ar" ? "ملخص اليوم" : "Day summary"} cols="sm:grid-cols-4">
+        <Metric label={lang === "ar" ? "الزيارات" : "Visits"} value={dayRows.length} />
+        <Metric
+          label={lang === "ar" ? "بانتظار" : "Waiting"}
+          value={countOf("waiting")}
+          tone={countOf("waiting") > 0 ? "warning" : "default"}
+        />
+        <Metric
+          label={lang === "ar" ? "قيد المعالجة" : "In progress"}
+          value={countOf("in_progress")}
+          tone="primary"
+        />
+        <Metric
+          label={lang === "ar" ? "مكتملة" : "Completed"}
+          value={countOf("completed")}
+          tone="success"
+        />
+      </MetricStrip>
 
-      <Card>
-        <CardContent className="overflow-x-auto p-0">
-          {rows.length === 0 ? (
-            <Empty />
-          ) : (
-            <Table density="compact">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
+      <Toolbar>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder={lang === "ar" ? "ابحث عن المريض" : "Search patient"}
+        />
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger
+            className="h-11 w-full sm:w-44"
+            aria-label={lang === "ar" ? "الحالة" : "Status"}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{lang === "ar" ? "كل الحالات" : "All statuses"}</SelectItem>
+            <SelectItem value="waiting">{lang === "ar" ? "بانتظار" : "Waiting"}</SelectItem>
+            <SelectItem value="in_progress">
+              {lang === "ar" ? "قيد المعالجة" : "In progress"}
+            </SelectItem>
+            <SelectItem value="completed">{lang === "ar" ? "مكتملة" : "Completed"}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant={filterMyPatients ? "default" : "outline"}
+          className="h-11"
+          type="button"
+          aria-pressed={filterMyPatients}
+          onClick={() => setFilterMyPatients((current) => !current)}
+        >
+          {lang === "ar" ? "مرضاي فقط" : "My Patients"}
+        </Button>
+      </Toolbar>
 
-                  <TableHead>{lang === "ar" ? "العمر / الجنس" : "Age / Gender"}</TableHead>
+      <ErrorBox error={visits.error} onRetry={() => void visits.refetch()} />
 
-                  <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
-
-                  <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-
-                  <TableHead className="text-end">{lang === "ar" ? "الإجراء" : "Action"}</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {rows.map((visit) => {
-                  const patient = rel(visit, "patients");
-                  const department = rel(visit, "departments");
-
-                  const patientId = s(patient, "id");
-                  const visitId = s(visit, "id");
-
-                  const dob = s(patient, "date_of_birth");
-
-                  const ageVal = calcAge(dob);
-
-                  const ageStr = ageVal !== null ? `${ageVal} yrs` : "—";
-
-                  /*
-                   * IMPORTANT
-                   * =========
-                   *
-                   * We deliberately use a normal HTML <a>
-                   * instead of:
-                   *
-                   * <Button asChild>
-                   *   <Link ... />
-                   * </Button>
-                   *
-                   * This completely avoids Radix Slot /
-                   * pointer-events / nested component issues.
-                   *
-                   * The target route is:
-                   * /clinic/{visitId}
-                   */
-
-                  return (
-                    <TableRow key={visitId || `${patientId}-${s(visit, "created_at")}`}>
-                      {/* PATIENT */}
-                      <TableCell className="whitespace-nowrap font-medium">
-                        {s(patient, "full_name") || "—"}
-
-                        {s(patient, "mrn") ? (
-                          <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
-                            {s(patient, "mrn")}
-                          </span>
-                        ) : null}
-                      </TableCell>
-
-                      {/* AGE / GENDER */}
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {ageStr}
-
-                        {s(patient, "gender") ? ` (${s(patient, "gender")})` : ""}
-                      </TableCell>
-
-                      {/* DEPARTMENT */}
-                      <TableCell className="whitespace-nowrap">
-                        {lang === "ar"
-                          ? s(department, "name_ar") || s(department, "name") || "—"
-                          : s(department, "name") || "—"}
-                      </TableCell>
-
-                      {/* STATUS */}
-                      <TableCell>
-                        <StatusBadge status={s(visit, "status")} />
-                      </TableCell>
-
-                      {/* ACTION — plain <Link>, not wrapped in
-                          Button asChild, so this gets real SPA
-                          navigation without the Radix Slot /
-                          pointer-events composition issue the
-                          previous <a href> was written to avoid. */}
-                      <TableCell className="whitespace-nowrap text-end">
-                        {visitId ? (
+      <DataPanel>
+        {rows.length === 0 && filtered ? (
+          <NoResults onClear={clearFilters} />
+        ) : rows.length === 0 ? (
+          <Empty />
+        ) : (
+          <>
+            <ul className="divide-y divide-border md:hidden">
+              {rows.map((visit) => {
+                const patient = rel(visit, "patients");
+                const visitId = s(visit, "id");
+                const ageVal = calcAge(s(patient, "date_of_birth"));
+                return (
+                  <li key={visitId || `${s(patient, "id")}-${s(visit, "created_at")}`}>
+                    <RecordRow
+                      main={
+                        <div className="flex min-w-0 items-center gap-3">
+                          <InitialAvatar name={s(patient, "full_name")} />
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">
+                              {s(patient, "full_name") || "—"}
+                            </p>
+                            <p className="break-words text-xs text-muted-foreground">
+                              <span dir="ltr">{s(patient, "mrn") || "—"}</span> · {deptName(visit)}
+                              {ageVal !== null
+                                ? ` · ${ageVal} ${lang === "ar" ? "سنة" : "yrs"}`
+                                : ""}
+                            </p>
+                            <div className="mt-1.5">
+                              <StatusBadge status={s(visit, "status")} />
+                            </div>
+                          </div>
+                        </div>
+                      }
+                      trailing={
+                        visitId ? (
                           <Link
                             to="/clinic/$visitId"
                             params={{ visitId }}
-                            className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            title={
-                              lang === "ar"
-                                ? `فتح زيارة ${s(visit, "visit_number")}`
-                                : `Open visit ${s(visit, "visit_number")}`
-                            }
+                            title={openTitle(visit)}
+                            className="inline-flex h-11 min-w-16 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
-                            {lang === "ar" ? "فتح" : "Open"}
+                            {openLabel}
                           </Link>
-                        ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled
-                            title={
-                              lang === "ar" ? "معرّف الزيارة غير موجود" : "Visit ID is missing"
-                            }
-                          >
-                            {lang === "ar" ? "فتح" : "Open"}
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                        ) : null
+                      }
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
+                    <TableHead>{lang === "ar" ? "العمر / الجنس" : "Age / Gender"}</TableHead>
+                    <TableHead>{lang === "ar" ? "القسم" : "Department"}</TableHead>
+                    <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
+                    <TableHead className="text-end">
+                      {lang === "ar" ? "الإجراء" : "Action"}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((visit) => {
+                    const patient = rel(visit, "patients");
+                    const patientId = s(patient, "id");
+                    const visitId = s(visit, "id");
+                    const ageVal = calcAge(s(patient, "date_of_birth"));
+                    const ageStr = ageVal !== null ? `${ageVal} yrs` : "—";
+                    return (
+                      <TableRow key={visitId || `${patientId}-${s(visit, "created_at")}`}>
+                        <TableCell className="whitespace-nowrap font-medium">
+                          {s(patient, "full_name") || "—"}
+                          {s(patient, "mrn") ? (
+                            <span className="ms-2 text-xs text-muted-foreground" dir="ltr">
+                              {s(patient, "mrn")}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                          {ageStr}
+                          {s(patient, "gender") ? ` (${s(patient, "gender")})` : ""}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{deptName(visit)}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={s(visit, "status")} />
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-end">
+                          {visitId ? (
+                            <Link
+                              to="/clinic/$visitId"
+                              params={{ visitId }}
+                              className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              title={openTitle(visit)}
+                            >
+                              {openLabel}
+                            </Link>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled
+                              title={
+                                lang === "ar" ? "معرّف الزيارة غير موجود" : "Visit ID is missing"
+                              }
+                            >
+                              {openLabel}
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </DataPanel>
     </div>
   );
 }

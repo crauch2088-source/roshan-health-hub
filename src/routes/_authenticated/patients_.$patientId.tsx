@@ -12,17 +12,17 @@ import {
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
+  DataPanel,
+  DetailHeader,
   Empty,
   ErrorBox,
   Field,
   Loading,
-  PageHeader,
   SectionTitle,
   StatusBadge,
   PermissionGate,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -329,23 +329,33 @@ function PatientChart() {
 
   return (
     <div>
-      <PageHeader
-        title={s(record, "full_name")}
-        subtitle={`${t("mrn")}: ${s(record, "mrn")} · ${t("age")}: ${calcAge(s(record, "date_of_birth")) ?? "—"} · ${t(s(record, "gender"))}`}
-      >
-        <Button asChild variant="outline" size="sm">
-          <Link to="/patients">
-            <ArrowLeft className="size-4" /> {t("back")}
-          </Link>
-        </Button>
-        {can("visits.create") ? (
-          <Button asChild size="sm">
-            <Link to="/visits" search={{ patient: s(record, "id") }}>
-              <Plus className="size-4" /> {t("new_visit")}
-            </Link>
-          </Button>
-        ) : null}
-      </PageHeader>
+      <DetailHeader
+        eyebrow={t("patients")}
+        name={s(record, "full_name")}
+        facts={[
+          { label: t("mrn"), value: <span dir="ltr">{s(record, "mrn") || "—"}</span> },
+          { label: t("age"), value: calcAge(s(record, "date_of_birth")) ?? "—" },
+          { label: t("gender"), value: s(record, "gender") ? t(s(record, "gender")) : "—" },
+          { label: t("phone"), value: <span dir="ltr">{s(record, "phone") || "—"}</span> },
+          { label: t("blood_group"), value: s(record, "blood_group") || "—" },
+        ]}
+        actions={
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/patients">
+                <ArrowLeft className="size-4 rtl:rotate-180" /> {t("back")}
+              </Link>
+            </Button>
+            {can("visits.create") ? (
+              <Button asChild size="sm">
+                <Link to="/visits" search={{ patient: s(record, "id") }}>
+                  <Plus className="size-4" /> {t("new_visit")}
+                </Link>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <ErrorBox error={patient.error} />
 
@@ -360,77 +370,75 @@ function PatientChart() {
         </TabsList>
 
         <TabsContent value="timeline">
-          <Card>
-            <CardContent className="p-0">
-              {timeline.length === 0 ? (
-                <Empty
-                  title={lang === "ar" ? "لا أحداث بعد" : "No events yet"}
-                  description={
-                    lang === "ar"
-                      ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير."
-                      : "Visits, appointments, labs and invoices will appear here."
-                  }
-                />
-              ) : (
-                <ul className="divide-y">
-                  {timeline.map((item) => {
-                    const Icon =
-                      item.kind === "visit"
-                        ? ClipboardList
-                        : item.kind === "appointment"
-                          ? CalendarDays
-                          : item.kind === "followup"
-                            ? Stethoscope
-                            : item.kind === "lab"
-                              ? FlaskConical
-                              : item.kind === "claim"
-                                ? ShieldCheck
-                                : Receipt;
-                    const body = (
-                      <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
-                        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                          <Icon className="size-4" aria-hidden />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium text-foreground">{item.title}</span>
-                            {item.status ? <StatusBadge status={item.status} /> : null}
-                          </div>
-                          {item.subtitle ? (
-                            <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                              {item.subtitle}
-                            </p>
-                          ) : null}
-                        </div>
-                        <time
-                          className="shrink-0 text-xs tabular-nums text-muted-foreground"
-                          dir="ltr"
-                        >
-                          {item.date ? formatDate(item.date) : "—"}
-                        </time>
+          <DataPanel>
+            {timeline.length === 0 ? (
+              <Empty
+                title={lang === "ar" ? "لا أحداث بعد" : "No events yet"}
+                description={
+                  lang === "ar"
+                    ? "ستظهر هنا الزيارات والمواعيد والتحاليل والفواتير."
+                    : "Visits, appointments, labs and invoices will appear here."
+                }
+              />
+            ) : (
+              <ul className="divide-y">
+                {timeline.map((item) => {
+                  const Icon =
+                    item.kind === "visit"
+                      ? ClipboardList
+                      : item.kind === "appointment"
+                        ? CalendarDays
+                        : item.kind === "followup"
+                          ? Stethoscope
+                          : item.kind === "lab"
+                            ? FlaskConical
+                            : item.kind === "claim"
+                              ? ShieldCheck
+                              : Receipt;
+                  const body = (
+                    <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
+                      <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <Icon className="size-4" aria-hidden />
                       </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-foreground">{item.title}</span>
+                          {item.status ? <StatusBadge status={item.status} /> : null}
+                        </div>
+                        {item.subtitle ? (
+                          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                            {item.subtitle}
+                          </p>
+                        ) : null}
+                      </div>
+                      <time
+                        className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                        dir="ltr"
+                      >
+                        {item.date ? formatDate(item.date) : "—"}
+                      </time>
+                    </div>
+                  );
+                  if (item.href) {
+                    // Use plain <a> for dynamic path segments to avoid router type friction
+                    return (
+                      <li key={item.id}>
+                        <a href={item.href} className="block">
+                          {body}
+                        </a>
+                      </li>
                     );
-                    if (item.href) {
-                      // Use plain <a> for dynamic path segments to avoid router type friction
-                      return (
-                        <li key={item.id}>
-                          <a href={item.href} className="block">
-                            {body}
-                          </a>
-                        </li>
-                      );
-                    }
-                    return <li key={item.id}>{body}</li>;
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+                  }
+                  return <li key={item.id}>{body}</li>;
+                })}
+              </ul>
+            )}
+          </DataPanel>
         </TabsContent>
 
         <TabsContent value="profile">
-          <Card>
-            <CardContent className="p-4">
+          <DataPanel>
+            <div className="p-4">
               <SectionTitle>{t("patient")}</SectionTitle>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Field label={t("full_name")}>
@@ -536,192 +544,179 @@ function PatientChart() {
                   </Button>
                 </div>
               ) : null}
-            </CardContent>
-          </Card>
+            </div>
+          </DataPanel>
         </TabsContent>
 
         <TabsContent value="visits">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t("visits")}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {((visits.data ?? []) as Row[]).length === 0 ? (
-                <Empty />
-              ) : (
-                <Table density="compact">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("date")}</TableHead>
-                      <TableHead>{t("department")}</TableHead>
-                      <TableHead>{t("doctor")}</TableHead>
-                      <TableHead>{t("status")}</TableHead>
-                      <TableHead className="no-print" />
+          <DataPanel title={t("visits")}>
+            {((visits.data ?? []) as Row[]).length === 0 ? (
+              <Empty />
+            ) : (
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("department")}</TableHead>
+                    <TableHead>{t("doctor")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="no-print" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {((visits.data ?? []) as Row[]).map((v) => (
+                    <TableRow key={s(v, "id")}>
+                      <TableCell dir="ltr">{formatDate(s(v, "visit_date"))}</TableCell>
+                      <TableCell>
+                        {lang === "ar"
+                          ? s(rel(v, "departments"), "name_ar") || s(rel(v, "departments"), "name")
+                          : s(rel(v, "departments"), "name")}
+                      </TableCell>
+                      <TableCell>{s(rel(v, "users"), "full_name") || "—"}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(v, "status")} />
+                      </TableCell>
+                      <TableCell className="no-print text-end">
+                        {can("emr.read") ? (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to="/clinic/$visitId" params={{ visitId: s(v, "id") }}>
+                              {t("clinical_notes")}
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {((visits.data ?? []) as Row[]).map((v) => (
-                      <TableRow key={s(v, "id")}>
-                        <TableCell dir="ltr">{formatDate(s(v, "visit_date"))}</TableCell>
-                        <TableCell>
-                          {lang === "ar"
-                            ? s(rel(v, "departments"), "name_ar") ||
-                              s(rel(v, "departments"), "name")
-                            : s(rel(v, "departments"), "name")}
-                        </TableCell>
-                        <TableCell>{s(rel(v, "users"), "full_name") || "—"}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={s(v, "status")} />
-                        </TableCell>
-                        <TableCell className="no-print text-end">
-                          {can("emr.read") ? (
-                            <Button asChild variant="ghost" size="sm">
-                              <Link to="/clinic/$visitId" params={{ visitId: s(v, "id") }}>
-                                {t("clinical_notes")}
-                              </Link>
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DataPanel>
         </TabsContent>
 
         <TabsContent value="labs">
-          <Card>
-            <CardContent className="p-0">
-              {((labs.data ?? []) as Row[]).length === 0 ? (
-                <Empty />
-              ) : (
-                <Table density="compact">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("date")}</TableHead>
-                      <TableHead>{t("test")}</TableHead>
-                      <TableHead>{t("status")}</TableHead>
-                      <TableHead className="no-print" />
+          <DataPanel>
+            {((labs.data ?? []) as Row[]).length === 0 ? (
+              <Empty />
+            ) : (
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("test")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="no-print" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {((labs.data ?? []) as Row[]).map((o) => (
+                    <TableRow key={s(o, "id")}>
+                      <TableCell dir="ltr">{formatDateTime(s(o, "created_at"))}</TableCell>
+                      <TableCell>
+                        {((o["lab_order_items"] as Row[]) ?? [])
+                          .map((i) =>
+                            lang === "ar"
+                              ? s(rel(i, "lab_tests"), "name_ar") || s(rel(i, "lab_tests"), "name")
+                              : s(rel(i, "lab_tests"), "name"),
+                          )
+                          .join(", ") || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(o, "status")} />
+                      </TableCell>
+                      <TableCell className="no-print text-end">
+                        {can("lab.read") ? (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to="/lab/$orderId" params={{ orderId: s(o, "id") }}>
+                              {t("result")}
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {((labs.data ?? []) as Row[]).map((o) => (
-                      <TableRow key={s(o, "id")}>
-                        <TableCell dir="ltr">{formatDateTime(s(o, "created_at"))}</TableCell>
-                        <TableCell>
-                          {((o["lab_order_items"] as Row[]) ?? [])
-                            .map((i) =>
-                              lang === "ar"
-                                ? s(rel(i, "lab_tests"), "name_ar") ||
-                                  s(rel(i, "lab_tests"), "name")
-                                : s(rel(i, "lab_tests"), "name"),
-                            )
-                            .join(", ") || "—"}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={s(o, "status")} />
-                        </TableCell>
-                        <TableCell className="no-print text-end">
-                          {can("lab.read") ? (
-                            <Button asChild variant="ghost" size="sm">
-                              <Link to="/lab/$orderId" params={{ orderId: s(o, "id") }}>
-                                {t("result")}
-                              </Link>
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DataPanel>
         </TabsContent>
 
         <TabsContent value="rx">
-          <Card>
-            <CardContent className="p-0">
-              {((prescriptions.data ?? []) as Row[]).length === 0 ? (
-                <Empty />
-              ) : (
-                <Table density="compact">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("date")}</TableHead>
-                      <TableHead>{t("medicines")}</TableHead>
-                      <TableHead>{t("status")}</TableHead>
+          <DataPanel>
+            {((prescriptions.data ?? []) as Row[]).length === 0 ? (
+              <Empty />
+            ) : (
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("medicines")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {((prescriptions.data ?? []) as Row[]).map((p) => (
+                    <TableRow key={s(p, "id")}>
+                      <TableCell dir="ltr">{formatDateTime(s(p, "created_at"))}</TableCell>
+                      <TableCell>
+                        {((p["prescription_items"] as Row[]) ?? [])
+                          .map((i) => s(rel(i, "medicines"), "name"))
+                          .filter(Boolean)
+                          .join(", ") || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(p, "status")} />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {((prescriptions.data ?? []) as Row[]).map((p) => (
-                      <TableRow key={s(p, "id")}>
-                        <TableCell dir="ltr">{formatDateTime(s(p, "created_at"))}</TableCell>
-                        <TableCell>
-                          {((p["prescription_items"] as Row[]) ?? [])
-                            .map((i) => s(rel(i, "medicines"), "name"))
-                            .filter(Boolean)
-                            .join(", ") || "—"}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={s(p, "status")} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DataPanel>
         </TabsContent>
 
         <TabsContent value="invoices">
-          <Card>
-            <CardContent className="p-0">
-              {((invoices.data ?? []) as Row[]).length === 0 ? (
-                <Empty />
-              ) : (
-                <Table density="compact">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("invoice_number")}</TableHead>
-                      <TableHead>{t("date")}</TableHead>
-                      <TableHead>{t("net")}</TableHead>
-                      <TableHead>{t("paid")}</TableHead>
-                      <TableHead>{t("status")}</TableHead>
-                      <TableHead className="no-print" />
+          <DataPanel>
+            {((invoices.data ?? []) as Row[]).length === 0 ? (
+              <Empty />
+            ) : (
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("invoice_number")}</TableHead>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("net")}</TableHead>
+                    <TableHead>{t("paid")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="no-print" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {((invoices.data ?? []) as Row[]).map((inv) => (
+                    <TableRow key={s(inv, "id")}>
+                      <TableCell dir="ltr" className="font-mono text-xs">
+                        {s(inv, "invoice_number")}
+                      </TableCell>
+                      <TableCell dir="ltr">{formatDate(s(inv, "invoice_date"))}</TableCell>
+                      <TableCell>{money(n(inv, "net_amount"), currency)}</TableCell>
+                      <TableCell>{money(n(inv, "paid_amount"), currency)}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={s(inv, "status")} />
+                      </TableCell>
+                      <TableCell className="no-print text-end">
+                        {can("billing.read") ? (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to="/billing/$invoiceId" params={{ invoiceId: s(inv, "id") }}>
+                              {t("invoice")}
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {((invoices.data ?? []) as Row[]).map((inv) => (
-                      <TableRow key={s(inv, "id")}>
-                        <TableCell dir="ltr" className="font-mono text-xs">
-                          {s(inv, "invoice_number")}
-                        </TableCell>
-                        <TableCell dir="ltr">{formatDate(s(inv, "invoice_date"))}</TableCell>
-                        <TableCell>{money(n(inv, "net_amount"), currency)}</TableCell>
-                        <TableCell>{money(n(inv, "paid_amount"), currency)}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={s(inv, "status")} />
-                        </TableCell>
-                        <TableCell className="no-print text-end">
-                          {can("billing.read") ? (
-                            <Button asChild variant="ghost" size="sm">
-                              <Link to="/billing/$invoiceId" params={{ invoiceId: s(inv, "id") }}>
-                                {t("invoice")}
-                              </Link>
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DataPanel>
         </TabsContent>
       </Tabs>
     </div>

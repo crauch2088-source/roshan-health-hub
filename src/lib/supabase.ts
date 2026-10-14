@@ -1,15 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
+import { resolveSupabaseKey } from "@/lib/supabase-key";
+
 /**
  * Roshan Medical Center — existing Supabase project.
- * The publishable (anon) key is safe in client code; every table is protected
- * by RLS policies (see db/roshan_phase1_migration.sql).
+ * The publishable/anon key is safe in client code; database access is still
+ * protected by RLS policies (see db/roshan_phase1_migration.sql).
  */
 export const SUPABASE_URL = "https://jewzonxplxhogqrnhosl.supabase.co";
-export const SUPABASE_PUBLISHABLE_KEY = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+export const SUPABASE_PUBLISHABLE_KEY = resolveSupabaseKey({
+  VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
+  VITE_SUPABASE_ANON_KEY: import.meta.env["VITE_SUPABASE_ANON_KEY"],
+});
 
 if (!SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error("Missing VITE_SUPABASE_PUBLISHABLE_KEY environment variable.");
+  throw new Error(
+    "Missing VITE_SUPABASE_PUBLISHABLE_KEY (or legacy VITE_SUPABASE_ANON_KEY) environment variable.",
+  );
 }
 
 const isBrowser = typeof window !== "undefined";

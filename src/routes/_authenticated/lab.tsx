@@ -1,17 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search } from "lucide-react";
 import { useState } from "react";
 import {
+  DataPanel,
   Empty,
   ErrorBox,
   ExportButtons,
-  Loading,
+  Metric,
+  MetricStrip,
+  NoResults,
   PageHeader,
-  StatusBadge,
+  PageSkeleton,
   PermissionGate,
+  SearchField,
+  StatusBadge,
+  Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -61,6 +65,43 @@ function LabPageInner() {
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
 
+  const orderCounts = useRows<{
+    ordered: number;
+    sampleCollected: number;
+    inProgress: number;
+    completed: number;
+  }>(
+    ["lab-orders", "metrics"],
+    async () => {
+      const countQuery = () =>
+        supabase
+          .from("lab_orders")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null);
+      const [ordered, sampleCollected, inProgress, completed] = await Promise.all([
+        countQuery().eq("status", "ordered"),
+        countQuery().eq("status", "sample_collected"),
+        countQuery().eq("status", "in_progress"),
+        countQuery().in("status", ["completed", "verified"]),
+      ]);
+      const failed = [ordered, sampleCollected, inProgress, completed].find(
+        (result) => result.error,
+      );
+      return {
+        data: failed
+          ? null
+          : {
+              ordered: ordered.count ?? 0,
+              sampleCollected: sampleCollected.count ?? 0,
+              inProgress: inProgress.count ?? 0,
+              completed: completed.count ?? 0,
+            },
+        error: failed?.error ?? null,
+      };
+    },
+    { refetchInterval: 15000 },
+  );
+
   const orders = useRows<Row[]>(
     ["lab-orders", status],
     () => {
@@ -78,8 +119,9 @@ function LabPageInner() {
     { refetchInterval: 15000, keepPrevious: true },
   );
 
-  if (orders.isLoading) return <Loading />;
+  if (orders.isLoading || orderCounts.isLoading) return <PageSkeleton />;
   const all = (orders.data ?? []) as Row[];
+  const filtered = search.trim() !== "" || status !== "all";
   const rows = all.filter((o) => {
     const p = rel(o, "patients");
     const term = search.trim().toLowerCase();
@@ -103,17 +145,32 @@ function LabPageInner() {
           lang === "ar" ? "قائمة المختبر وإدخال النتائج" : "Laboratory worklist and result entry"
         }
       >
-        <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="ps-9"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "ar" ? "المريض أو الفحص" : "Patient or test"}
-          />
-        </div>
+        <ExportButtons rows={rows} filename="roshan-lab-orders" />
+      </PageHeader>
+      <ErrorBox error={orders.error ?? orderCounts.error} />
+      <MetricStrip label={t("laboratory")} cols="sm:grid-cols-4">
+        <Metric label={t("ordered")} value={orderCounts.data?.ordered ?? "—"} tone="warning" />
+        <Metric label={t("sample_collected")} value={orderCounts.data?.sampleCollected ?? "—"} />
+        <Metric
+          label={t("in_progress")}
+          value={orderCounts.data?.inProgress ?? "—"}
+          tone="primary"
+        />
+        <Metric label={t("completed")} value={orderCounts.data?.completed ?? "—"} tone="success" />
+      </MetricStrip>
+      <p className="text-xs text-muted-foreground">
+        {lang === "ar"
+          ? "الأعداد دقيقة لجميع الطلبات غير المحذوفة المتاحة لحسابك؛ والقائمة تعرض أحدث 300 طلب كحد أقصى."
+          : "Counts cover all non-deleted orders accessible to your account; the list shows up to 300 newest matches."}
+      </p>
+      <Toolbar>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder={lang === "ar" ? "المريض أو الفحص" : "Patient or test"}
+        />
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className="h-11 w-full sm:w-48" aria-label={t("status")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -124,93 +181,96 @@ function LabPageInner() {
             ))}
           </SelectContent>
         </Select>
-        <ExportButtons rows={rows} filename="roshan-lab-orders" />
-      </PageHeader>
-      <ErrorBox error={orders.error} />
-      <Card>
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <Empty
-              title={t("no_data")}
-              description={lang === "ar" ? "لا طلبات تحاليل مطابقة." : "No matching lab orders."}
-            />
-          ) : (
-            <>
-              <ul className="divide-y md:hidden" aria-label={t("laboratory")}>
-                {rows.map((o) => {
-                  const p = rel(o, "patients");
-                  return (
-                    <li key={s(o, "id")}>
-                      <Link
-                        to="/lab/$orderId"
-                        params={{ orderId: s(o, "id") }}
-                        className="block space-y-1.5 p-3 outline-none hover:bg-muted/50 focus-visible:bg-muted/50 active:bg-muted"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">{s(p, "full_name")}</p>
-                            <p className="text-xs text-muted-foreground" dir="ltr">
-                              {s(p, "mrn")}
-                            </p>
+      </Toolbar>
+      <DataPanel>
+        {rows.length === 0 && filtered ? (
+          <NoResults
+            onClear={() => {
+              setSearch("");
+              setStatus("all");
+            }}
+          />
+        ) : rows.length === 0 ? (
+          <Empty
+            title={t("no_data")}
+            description={lang === "ar" ? "لا طلبات تحاليل مطابقة." : "No matching lab orders."}
+          />
+        ) : (
+          <>
+            <ul className="divide-y md:hidden" aria-label={t("laboratory")}>
+              {rows.map((o) => {
+                const p = rel(o, "patients");
+                return (
+                  <li key={s(o, "id")}>
+                    <Link
+                      to="/lab/$orderId"
+                      params={{ orderId: s(o, "id") }}
+                      className="block space-y-1.5 p-3 outline-none hover:bg-muted/50 focus-visible:bg-muted/50 active:bg-muted"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{s(p, "full_name")}</p>
+                          <p className="text-xs text-muted-foreground" dir="ltr">
+                            {s(p, "mrn")}
+                          </p>
+                        </div>
+                        <StatusBadge status={s(o, "status")} />
+                      </div>
+                      <p className="line-clamp-2 text-sm">{testNames(o)}</p>
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span dir="ltr">{formatDateTime(s(o, "created_at"))}</span>
+                        <span>{labelOf(s(o, "priority") || "normal")}</span>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
+              <Table density="compact">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("patient")}</TableHead>
+                    <TableHead>{t("test")}</TableHead>
+                    <TableHead>{t("priority")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="text-end" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((o) => {
+                    const p = rel(o, "patients");
+                    return (
+                      <TableRow key={s(o, "id")}>
+                        <TableCell dir="ltr">{formatDateTime(s(o, "created_at"))}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{s(p, "full_name")}</div>
+                          <div className="text-xs text-muted-foreground" dir="ltr">
+                            {s(p, "mrn")}
                           </div>
+                        </TableCell>
+                        <TableCell className="max-w-[24rem]">{testNames(o)}</TableCell>
+                        <TableCell>{labelOf(s(o, "priority") || "normal")}</TableCell>
+                        <TableCell>
                           <StatusBadge status={s(o, "status")} />
-                        </div>
-                        <p className="line-clamp-2 text-sm">{testNames(o)}</p>
-                        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                          <span dir="ltr">{formatDateTime(s(o, "created_at"))}</span>
-                          <span>{labelOf(s(o, "priority") || "normal")}</span>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="hidden overflow-x-auto md:block">
-                <Table density="compact">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("date")}</TableHead>
-                      <TableHead>{t("patient")}</TableHead>
-                      <TableHead>{t("test")}</TableHead>
-                      <TableHead>{t("priority")}</TableHead>
-                      <TableHead>{t("status")}</TableHead>
-                      <TableHead className="text-end" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((o) => {
-                      const p = rel(o, "patients");
-                      return (
-                        <TableRow key={s(o, "id")}>
-                          <TableCell dir="ltr">{formatDateTime(s(o, "created_at"))}</TableCell>
-                          <TableCell>
-                            <div className="font-medium">{s(p, "full_name")}</div>
-                            <div className="text-xs text-muted-foreground" dir="ltr">
-                              {s(p, "mrn")}
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-[24rem]">{testNames(o)}</TableCell>
-                          <TableCell>{labelOf(s(o, "priority") || "normal")}</TableCell>
-                          <TableCell>
-                            <StatusBadge status={s(o, "status")} />
-                          </TableCell>
-                          <TableCell className="text-end">
-                            <Button asChild size="sm">
-                              <Link to="/lab/$orderId" params={{ orderId: s(o, "id") }}>
-                                {t("open")}
-                              </Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                        </TableCell>
+                        <TableCell className="text-end">
+                          <Button asChild size="sm">
+                            <Link to="/lab/$orderId" params={{ orderId: s(o, "id") }}>
+                              {t("open")}
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </DataPanel>
     </div>
   );
 }

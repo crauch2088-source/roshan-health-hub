@@ -206,6 +206,10 @@ const dict: Record<string, { ar: string; en: string }> = {
   lab_result: { ar: "تحليل", en: "Lab test" },
   medicine_result: { ar: "دواء", en: "Medicine" },
   more: { ar: "المزيد", en: "More" },
+  details: { ar: "التفاصيل", en: "Details" },
+  retry: { ar: "إعادة المحاولة", en: "Retry" },
+  view_all: { ar: "عرض الكل", en: "View all" },
+  account: { ar: "الحساب", en: "Account" },
 
   // common
   save: { ar: "حفظ", en: "Save" },
@@ -280,6 +284,16 @@ const dict: Record<string, { ar: string; en: string }> = {
   doctor: { ar: "الطبيب", en: "Doctor" },
   consultation_fee: { ar: "قيمة الاستشارة", en: "Consultation fee" },
   waiting: { ar: "في الانتظار", en: "Waiting" },
+  called: { ar: "تم النداء", en: "Called" },
+  dispense_queue: { ar: "قائمة الصرف", en: "Dispense queue" },
+  urgent: { ar: "عاجل", en: "Urgent" },
+  normal: { ar: "عادي", en: "Normal" },
+  external: { ar: "خارجي", en: "External" },
+  totals_unverified: {
+    ar: "تعذّر التحقق من اكتمال الأرقام المالية، لذلك أُخفيت المجاميع بدل عرض رقم قد يكون ناقصاً.",
+    en: "Financial totals could not be verified as complete, so they are hidden instead of showing a possibly incomplete figure.",
+  },
+  staff_accounts: { ar: "حسابات الموظفين", en: "Staff accounts" },
   in_progress: { ar: "قيد المعالجة", en: "In progress" },
   ordered: { ar: "تم الطلب", en: "Ordered" },
   sample_collected: { ar: "تم أخذ العينة", en: "Sample collected" },

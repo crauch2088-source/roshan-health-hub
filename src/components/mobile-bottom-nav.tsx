@@ -1,26 +1,30 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Grid2x2, ListOrdered, Pill, Plus, UserRound } from "lucide-react";
+import { Grid2x2, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HOME_ITEM, NAV_GROUPS } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
-import { bottomBarColumns } from "@/lib/nav-layout";
+import { bottomBarColumns, pickPrimaryRoutes } from "@/lib/nav-layout";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavItemActive } from "@/lib/nav-active";
 import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
-// The four destinations reception/clinical staff reach for constantly.
-// Everything else — settings, reports, suppliers, etc. — lives in More.
-const PRIMARY_MOBILE_ROUTES = ["/dashboard", "/patients", "/visits", "/pharmacy"];
-const PRIMARY_ICONS: Record<string, typeof UserRound> = {
-  "/dashboard": Grid2x2,
-  "/patients": UserRound,
-  "/visits": ListOrdered,
-  "/pharmacy": Pill,
-};
+// Preferred bar destinations, in order. The bar shows the first four the signed-in
+// user may open, so lab and pharmacy staff get their own module on it instead of an
+// almost empty bar. Everything else lives in More.
+const PRIMARY_PRIORITY = [
+  "/dashboard",
+  "/patients",
+  "/visits",
+  "/pharmacy",
+  "/lab",
+  "/queue",
+  "/billing",
+  "/appointments",
+];
 
 export function MobileBottomNav() {
   const { t, lang } = useLang();
@@ -32,9 +36,11 @@ export function MobileBottomNav() {
   const direction = lang === "ar" ? "rtl" : "ltr";
 
   const allItems = [HOME_ITEM, ...NAV_GROUPS.flatMap((g) => g.items)];
-  const primary = PRIMARY_MOBILE_ROUTES.map((to) => allItems.find((i) => i.to === to)).filter(
-    (item): item is (typeof allItems)[number] => Boolean(item && can(item.perm)),
-  );
+  const primaryRoutes = pickPrimaryRoutes(PRIMARY_PRIORITY, (to) => {
+    const item = allItems.find((i) => i.to === to);
+    return Boolean(item && can(item.perm));
+  });
+  const primary = primaryRoutes.flatMap((to) => allItems.filter((i) => i.to === to));
   const availableActions = QUICK_ACTIONS.filter((action) => {
     const destination = allItems.find((item) => item.to === action.to);
     return destination ? can(destination.perm) : false;
@@ -42,7 +48,7 @@ export function MobileBottomNav() {
   const moreActive = NAV_GROUPS.some((group) =>
     group.items.some(
       (item) =>
-        !PRIMARY_MOBILE_ROUTES.includes(item.to) &&
+        !primaryRoutes.includes(item.to) &&
         can(item.perm) &&
         isNavItemActive(location.pathname, item.to),
     ),
@@ -60,7 +66,7 @@ export function MobileBottomNav() {
               <button
                 type="button"
                 aria-label={t("quick_actions")}
-                className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 active:scale-95"
+                className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 active:scale-95"
               >
                 <Plus className="size-6" />
               </button>
@@ -93,26 +99,33 @@ export function MobileBottomNav() {
       ) : null}
 
       <nav
-        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 items-center border-t border-border/70 bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_var(--foreground)] backdrop-blur-xl lg:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 items-center border-t border-border bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
         aria-label={t("navigation")}
         // One column per visible destination plus More, so hidden-by-permission
         // items never leave empty cells and the bar stays balanced.
         style={{ gridTemplateColumns: bottomBarColumns(primary.length) }}
       >
         {primary.map((item) => {
-          const Icon = PRIMARY_ICONS[item.to] ?? getNavIcon(item.icon);
+          const Icon = getNavIcon(item.icon);
           const active = isNavItemActive(location.pathname, item.to);
           return (
             <Link
               key={item.to}
               to={item.to}
               aria-current={active ? "page" : undefined}
-              className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[11px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span
+                aria-hidden
                 className={cn(
-                  "flex h-7 w-10 items-center justify-center rounded-full transition-colors",
-                  active ? "bg-primary/12 text-primary" : "text-muted-foreground",
+                  "absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-primary transition-opacity",
+                  active ? "opacity-100" : "opacity-0",
+                )}
+              />
+              <span
+                className={cn(
+                  "flex h-7 w-10 items-center justify-center",
+                  active ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 <Icon className="size-5" />
@@ -135,16 +148,18 @@ export function MobileBottomNav() {
               type="button"
               data-active={moreActive ? "true" : undefined}
               className={cn(
-                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                "relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[11px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 moreActive ? "text-primary" : "text-muted-foreground",
               )}
             >
               <span
+                aria-hidden
                 className={cn(
-                  "flex h-7 w-10 items-center justify-center rounded-full",
-                  moreActive && "bg-primary/12",
+                  "absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-primary transition-opacity",
+                  moreActive ? "opacity-100" : "opacity-0",
                 )}
-              >
+              />
+              <span className="flex h-7 w-10 items-center justify-center">
                 <Grid2x2 className="size-5" />
               </span>
               {t("more")}
