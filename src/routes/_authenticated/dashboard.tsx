@@ -35,7 +35,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, s, useRows, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useAllRows, useCount, useRows, useSettings, type Row } from "@/lib/db";
+import { PENDING_LAB_STATUSES, sumAmounts } from "@/lib/dashboard-metrics";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { DEFAULT_EXPIRY_THRESHOLD_DAYS, EXPIRY_TONE, expiryStatus } from "@/lib/pharmacy";
@@ -105,11 +106,50 @@ function DashboardPageInner() {
       .order("created_at", { ascending: false }),
   );
 
-  const patientsToday = useRows(["dash-patients", today], () =>
+  // Exact database counts: the metric cards never depend on how many rows
+  // the list queries below happen to load (or on `.limit()` / `max-rows`).
+  const visitsCount = useCount(["dash-visits-count", today], () =>
+    supabase
+      .from("visits")
+      .select("id", { count: "exact", head: true })
+      .eq("visit_date", today)
+      .is("deleted_at", null),
+  );
+  const waitingCount = useCount(["dash-visits-waiting-count", today], () =>
+    supabase
+      .from("visits")
+      .select("id", { count: "exact", head: true })
+      .eq("visit_date", today)
+      .eq("status", "waiting")
+      .is("deleted_at", null),
+  );
+  const patientsCount = useCount(["dash-patients-count", today], () =>
     supabase
       .from("patients")
-      .select("id")
+      .select("id", { count: "exact", head: true })
       .gte("created_at", `${today}T00:00:00`)
+      .is("deleted_at", null),
+  );
+  const appointmentsCount = useCount(["dash-appts-count", today], () =>
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("appointment_date", today)
+      .is("deleted_at", null),
+  );
+  const labCount = useCount(["dash-lab-count"], () =>
+    supabase
+      .from("lab_orders")
+      .select("id", { count: "exact", head: true })
+      .in("status", PENDING_LAB_STATUSES)
+      .is("deleted_at", null),
+  );
+  const rxCount = useCount(["dash-rx-count"], () =>
+    supabase
+      .from("prescriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending")
+      .eq("is_external", false)
       .is("deleted_at", null),
   );
 
@@ -122,27 +162,36 @@ function DashboardPageInner() {
       .order("appointment_time", { ascending: true }),
   );
 
-  const payments = useRows(["dash-payments", monthStart], () =>
+  // Revenue and expenses are summed in the browser (no aggregate view/RPC
+  // exists for them), so every page is read and the totals are only shown if
+  // the rows received match the server's exact count (see `financeVerified`).
+  const payments = useAllRows<Row>(["dash-payments", monthStart], ({ from, to }) =>
     supabase
       .from("payments")
-      .select("amount, payment_date, method")
+      .select("id, amount, payment_date, method", { count: "exact" })
       .gte("payment_date", monthStart)
-      .is("deleted_at", null),
+      .is("deleted_at", null)
+      .order("payment_date", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
   );
 
-  const expenses = useRows(["dash-expenses", monthStart], () =>
+  const expenses = useAllRows<Row>(["dash-expenses", monthStart], ({ from, to }) =>
     supabase
       .from("expenses")
-      .select("amount, expense_date, category")
+      .select("id, amount, expense_date, category", { count: "exact" })
       .gte("expense_date", monthStart)
-      .is("deleted_at", null),
+      .is("deleted_at", null)
+      .order("expense_date", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
   );
 
   const labPending = useRows(["dash-lab"], () =>
     supabase
       .from("lab_orders")
       .select("id, status, created_at, patients(full_name)")
-      .in("status", ["pending", "collected", "in_progress"])
+      .in("status", PENDING_LAB_STATUSES)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(10),
@@ -177,23 +226,27 @@ function DashboardPageInner() {
   const thresholdDays =
     Number(settings["pharmacy_expiry_threshold_days"]) || DEFAULT_EXPIRY_THRESHOLD_DAYS;
 
-  const lowStockMeds = useRows(["dash-low-stock"], () =>
+  // Both alert sources are read completely (all pages): a fixed `.limit()`
+  // would silently drop low-stock medicines or expiring batches that sort late.
+  const lowStockMeds = useAllRows<Row>(["dash-low-stock"], ({ from, to }) =>
     supabase
       .from("medicines")
-      .select("id, name, stock_quantity, reorder_level")
+      .select("id, name, stock_quantity, reorder_level", { count: "exact" })
       .is("deleted_at", null)
       .order("stock_quantity", { ascending: true })
-      .limit(200),
+      .order("id", { ascending: true })
+      .range(from, to),
   );
 
-  const batchesForAlerts = useRows(["dash-batches"], () =>
+  const batchesForAlerts = useAllRows<Row>(["dash-batches"], ({ from, to }) =>
     supabase
       .from("pharmacy_inventory")
-      .select("id, expiry_date, quantity_remaining, medicines(name)")
+      .select("id, expiry_date, quantity_remaining, medicines(name)", { count: "exact" })
       .is("deleted_at", null)
       .gt("quantity_remaining", 0)
       .order("expiry_date", { ascending: true, nullsFirst: false })
-      .limit(300),
+      .order("id", { ascending: true })
+      .range(from, to),
   );
 
   // Phase 6 dashboard addition — reuses insurance_claims (Phase 5), no new
@@ -210,26 +263,41 @@ function DashboardPageInner() {
   const insurancePendingRows = (insurance.data ?? []) as Row[];
 
   const anyError =
-    visits.error ?? payments.error ?? expenses.error ?? labPending.error ?? rxPending.error;
+    visits.error ??
+    visitsCount.error ??
+    waitingCount.error ??
+    patientsCount.error ??
+    appointments.error ??
+    appointmentsCount.error ??
+    payments.error ??
+    expenses.error ??
+    labPending.error ??
+    labCount.error ??
+    rxPending.error ??
+    rxCount.error ??
+    followups.error ??
+    lowStockMeds.error ??
+    batchesForAlerts.error ??
+    insurance.error;
 
   const visitRows = (visits.data ?? []) as Row[];
-  const paymentRows = (payments.data ?? []) as Row[];
-  const expenseRows = (expenses.data ?? []) as Row[];
+  const paymentRows = payments.data?.rows ?? [];
+  const expenseRows = expenses.data?.rows ?? [];
+  const financeVerified = Boolean(payments.data?.exact && expenses.data?.exact);
 
-  const revenueToday = paymentRows
-    .filter((p) => s(p, "payment_date").startsWith(today))
-    .reduce((sum, p) => sum + n(p, "amount"), 0);
-  const revenueMonth = paymentRows.reduce((sum, p) => sum + n(p, "amount"), 0);
-  const expensesToday = expenseRows
-    .filter((p) => s(p, "expense_date").startsWith(today))
-    .reduce((sum, p) => sum + n(p, "amount"), 0);
-  const expensesMonth = expenseRows.reduce((sum, p) => sum + n(p, "amount"), 0);
-  const waiting = visitRows.filter((v) => s(v, "status") === "waiting").length;
+  const revenueToday = sumAmounts(paymentRows, (p) => s(p, "payment_date").startsWith(today));
+  const revenueMonth = sumAmounts(paymentRows);
+  const expensesToday = sumAmounts(expenseRows, (p) => s(p, "expense_date").startsWith(today));
+  const expensesMonth = sumAmounts(expenseRows);
+  const netMonth = revenueMonth - expensesMonth;
+  /** Money cards show a dash rather than a number that might be truncated. */
+  const fin = (value: number) => (financeVerified ? money(value, currency) : "—");
+  const countValue = (q: { data: number | undefined }) => q.data ?? "—";
 
-  const lowStockRows = ((lowStockMeds.data ?? []) as Row[])
+  const lowStockRows = (lowStockMeds.data?.rows ?? [])
     .filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level"))
     .slice(0, 8);
-  const batchRows = (batchesForAlerts.data ?? []) as Row[];
+  const batchRows = batchesForAlerts.data?.rows ?? [];
   const expiringRows = batchRows
     .filter((b) => expiryStatus(s(b, "expiry_date") || null, thresholdDays) === "expiring_soon")
     .slice(0, 8);
@@ -247,36 +315,48 @@ function DashboardPageInner() {
         subtitle={`${user?.full_name ?? ""} · ${user?.role_name ?? ""} · ${formatDate(today)}`}
       />
       <ErrorBox error={anyError} />
+      {!payments.isLoading &&
+      !expenses.isLoading &&
+      !payments.error &&
+      !expenses.error &&
+      !financeVerified ? (
+        <p
+          role="alert"
+          className="mb-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
+        >
+          {t("totals_unverified")}
+        </p>
+      ) : null}
 
       <SectionTitle>{t("executive_summary")}</SectionTitle>
       <div className="space-y-3">
         <MetricStrip label={t("clinical_summary")} cols="sm:grid-cols-3 xl:grid-cols-5">
           <Metric
             label={t("visits_today")}
-            value={visitRows.length}
-            hint={`${t("waiting_patients")}: ${waiting}`}
+            value={countValue(visitsCount)}
+            hint={`${t("waiting_patients")}: ${countValue(waitingCount)}`}
             icon={<Users />}
           />
           <Metric
             label={t("patients_today")}
-            value={((patientsToday.data ?? []) as Row[]).length}
+            value={countValue(patientsCount)}
             icon={<UserRound />}
             tone="primary"
           />
           <Metric
             label={t("appointments_today")}
-            value={((appointments.data ?? []) as Row[]).length}
+            value={countValue(appointmentsCount)}
             icon={<Receipt />}
           />
           <Metric
             label={t("pending_lab")}
-            value={((labPending.data ?? []) as Row[]).length}
+            value={countValue(labCount)}
             icon={<FlaskConical />}
             tone="warning"
           />
           <Metric
             label={t("pending_pharmacy")}
-            value={((rxPending.data ?? []) as Row[]).length}
+            value={countValue(rxCount)}
             icon={<Pill />}
             tone="warning"
           />
@@ -284,23 +364,23 @@ function DashboardPageInner() {
         <MetricStrip label={t("revenue_today")} cols="sm:grid-cols-3">
           <Metric
             label={t("revenue_today")}
-            value={money(revenueToday, currency)}
-            hint={`${t("monthly_revenue")}: ${money(revenueMonth, currency)}`}
+            value={fin(revenueToday)}
+            hint={`${t("monthly_revenue")}: ${fin(revenueMonth)}`}
             icon={<Banknote />}
             tone="success"
           />
           <Metric
             label={t("expenses_today")}
-            value={money(expensesToday, currency)}
-            hint={`${t("net_profit")}: ${money(revenueMonth - expensesMonth, currency)}`}
+            value={fin(expensesToday)}
+            hint={`${t("net_profit")}: ${fin(netMonth)}`}
             icon={<Wallet />}
             tone="warning"
           />
           <Metric
             label={t("net_profit")}
-            value={money(revenueMonth - expensesMonth, currency)}
+            value={fin(netMonth)}
             hint={t("monthly_revenue")}
-            tone={revenueMonth - expensesMonth >= 0 ? "success" : "destructive"}
+            tone={!financeVerified || netMonth >= 0 ? "success" : "destructive"}
           />
         </MetricStrip>
       </div>

@@ -289,6 +289,10 @@ const dict: Record<string, { ar: string; en: string }> = {
   urgent: { ar: "عاجل", en: "Urgent" },
   normal: { ar: "عادي", en: "Normal" },
   external: { ar: "خارجي", en: "External" },
+  totals_unverified: {
+    ar: "تعذّر التحقق من اكتمال الأرقام المالية، لذلك أُخفيت المجاميع بدل عرض رقم قد يكون ناقصاً.",
+    en: "Financial totals could not be verified as complete, so they are hidden instead of showing a possibly incomplete figure.",
+  },
   staff_accounts: { ar: "حسابات الموظفين", en: "Staff accounts" },
   in_progress: { ar: "قيد المعالجة", en: "In progress" },
   ordered: { ar: "تم الطلب", en: "Ordered" },

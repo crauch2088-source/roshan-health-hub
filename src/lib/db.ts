@@ -7,6 +7,7 @@ import {
   type QueryKey,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { fetchAllPages, type AllPagesResult, type PageResult } from "./paging";
 import { dbError, supabase } from "./supabase";
 
 /** Runs a PostgREST builder and throws a readable error. */
@@ -50,6 +51,30 @@ export function useCount(
     },
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? false,
+    retry: false,
+  });
+}
+
+/**
+ * Reads EVERY row of a query by walking `.range()` pages (see `fetchAllPages`).
+ * The builder must select with `{ count: "exact" }` and use a stable, unique
+ * ordering (e.g. `.order("id")`) so pages neither overlap nor skip rows.
+ * `data.exact` is false if the rows received do not match the server count;
+ * callers must not present sums from an inexact read as totals.
+ */
+export function useAllRows<T = Row>(
+  key: QueryKey,
+  build: (range: { from: number; to: number }) => PromiseLike<PageResult>,
+  options?: { enabled?: boolean; pageSize?: number },
+) {
+  return useQuery({
+    queryKey: [...key, "all-pages"],
+    queryFn: async (): Promise<AllPagesResult<T>> =>
+      fetchAllPages<T>((from, to) => build({ from, to }), {
+        ...(options?.pageSize ? { pageSize: options.pageSize } : {}),
+        toError: (error) => new Error(dbError(error)),
+      }),
+    enabled: options?.enabled ?? true,
     retry: false,
   });
 }
