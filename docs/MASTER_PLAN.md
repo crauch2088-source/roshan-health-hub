@@ -65,6 +65,7 @@
 ### 5. Pharmacy, inventory, and finance
 - [ ] Test receiving batches, expiry, FEFO dispensing, stock movements/returns, and expired/negative stock prevention.
 - [ ] Test concurrency/idempotency for dispensing, invoices, payments, cashbox entries/reversals, supplier bills/payments, and expenses.
+- [ ] Insurance claims UI/RPC mismatch found and patched in draft PR #12: UI previously sent `invoiceId: null` while the database RPC requires a valid invoice. The draft now requires an invoice belonging to the selected patient, resets stale claim items when the insurance/invoice selection changes, and validates required fields before RPC. CI is green on head `a2cd2dd752d5577506674284db239865d1fc5459`; Vercel preview is READY. Still needs human review and an authenticated smoke test; not merged/deployed.
 - [ ] Reconcile ledger totals and stock movement history; test branch isolation and audit trail.
 - [ ] Verify exact dashboard counts and pagination for large datasets.
 **Exit:** no unexplained stock or ledger discrepancy across end-to-end and concurrency tests.
@@ -103,15 +104,17 @@
 **Exit:** stable service and agreed maintenance cadence.
 
 ## Immediate next actions
-1. Run authenticated runtime smoke tests on `https://roshan-health-hub.vercel.app` and confirm role/branch gates.
-2. Reconcile the 79 applied Supabase migrations against repository artifacts; establish a canonical migration workflow before any DDL changes.
-3. Complete adversarial tests for the 15 authenticated-callable SECURITY DEFINER RPCs, especially invalid inputs and cross-branch resource IDs.
-4. Safely scan Git history for credentials without printing values; determine whether rotation is required.
-5. Review PostHog privacy settings before enabling any telemetry.
-6. Refresh PR #9 against current `main` and keep it draft until its contents and CI are current.
+1. Review PR #12 (insurance claim invoice-link fix), run an authenticated smoke test on its preview, and merge only after review.
+2. Run authenticated runtime smoke tests on `https://roshan-health-hub.vercel.app` and confirm role/branch gates.
+3. Reconcile the 79 applied Supabase migrations against repository artifacts; establish a canonical migration workflow before any DDL changes.
+4. Complete adversarial tests for the 15 authenticated-callable SECURITY DEFINER RPCs, especially invalid inputs and cross-branch resource IDs.
+5. Safely scan Git history for credentials without printing values; determine whether rotation is required.
+6. Review PostHog privacy settings before enabling any telemetry.
+7. Refresh PR #9 against current `main` and keep it draft until its contents and CI are current.
 
 ## Change log
 - 2026-10-15: Initialized from connected-tool inspection. No database writes, destructive changes, merges, or deployments performed.
 - 2026-10-15: Vercel consolidation completed via Composio: deleted duplicate `roshan-health-hub-hjfy`, verified only `roshan-health-hub` remains, and retained canonical domain `roshan-health-hub.vercel.app`.
 - 2026-10-15: Closed PR #5 as superseded after confirming the redaction implementation and tests are already in `main`; no merge occurred.
 - 2026-10-15: Read-only Supabase audit: 56/56 public tables have RLS enabled; no anon SELECT/INSERT grants in the reviewed inventory and no anon EXECUTE on public SECURITY DEFINER functions. All 15 authenticated-callable SECURITY DEFINER functions inspected have empty `search_path` and app-level permission checks. Migration head is `20261014164131_roshan_cashbox_reversal_concurrency` (79 migrations); repository migration parity remains unresolved. No Supabase writes.
+- 2026-10-15: Confirmed insurance claim UI sent `invoiceId: null` despite the database RPC requiring an invoice. Added regression tests first (red on missing helper), then implemented invoice picker + validation in PR #12. CI run #38655085321 passed install, security audit, guard tests, typecheck, lint, and build on `a2cd2dd752d5577506674284db239865d1fc5459`; Vercel preview is READY. PR remains draft/open; no merge, production deploy, or database write.
