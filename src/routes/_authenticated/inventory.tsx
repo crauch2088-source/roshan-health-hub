@@ -427,7 +427,14 @@ function MedicinesTab() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                                onClick={() => setReceive({
+                                  id: s(m, "id"),
+                                  qty: "0",
+                                  batch_number: "",
+                                  expiry_date: s(m, "expiry_date"),
+                                  manufacture_date: "",
+                                  purchase_price: String(n(m, "cost_price")),
+                                })}
                               >
                                 {t("receive_stock")}
                               </Button>
