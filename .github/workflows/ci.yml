@@ -41,7 +41,9 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/insurance_claim_rpc_fixture.sql \
             -f db/roshan_phase5_insurance_claim_amount_integrity.sql \
-            -f db/tests/insurance_claim_rpc_integration.sql
+            -f db/roshan_phase5_insurance_coverage_validity.sql \
+            -f db/tests/insurance_claim_rpc_integration.sql \
+            -f db/tests/insurance_coverage_validity.sql
 
   verify:
     name: Install, audit, typecheck, lint, build
