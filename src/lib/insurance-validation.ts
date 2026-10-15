@@ -13,9 +13,9 @@ export function isInsuranceClaimReadyToSubmit(args: {
 }): boolean {
   return Boolean(
     args.patientInsuranceId.trim() &&
-    args.invoiceId?.trim() &&
-    args.itemCount > 0 &&
-    !args.isSaving,
+      args.invoiceId?.trim() &&
+      args.itemCount > 0 &&
+      !args.isSaving,
   );
 }
 
@@ -34,17 +34,27 @@ export function validateInsuranceClaimDraft(args: {
     throw new Error("Add at least one claim item.");
   }
   if (
-    args.items.some(
-      (item) =>
-        !item.description.trim() ||
-        !Number.isFinite(item.gross_amount) ||
-        item.gross_amount <= 0 ||
-        !Number.isFinite(item.covered_amount) ||
-        item.covered_amount < 0 ||
-        !Number.isFinite(item.patient_amount) ||
-        item.patient_amount < 0,
-    )
+    args.items.some((item) => {
+      const amountsAreValid =
+        Number.isFinite(item.gross_amount) &&
+        item.gross_amount > 0 &&
+        Number.isFinite(item.covered_amount) &&
+        item.covered_amount >= 0 &&
+        Number.isFinite(item.patient_amount) &&
+        item.patient_amount >= 0;
+      if (!amountsAreValid || !item.description.trim()) return true;
+
+      // Money is stored to two decimal places; compare rounded cents to avoid
+      // rejecting valid amounts because of floating-point representation.
+      const grossCents = Math.round(item.gross_amount * 100);
+      const splitCents =
+        Math.round(item.covered_amount * 100) +
+        Math.round(item.patient_amount * 100);
+      return splitCents !== grossCents;
+    })
   ) {
-    throw new Error("Claim item amounts must be valid and non-negative.");
+    throw new Error(
+      "Claim item amounts must be valid and covered plus patient amounts must equal the gross amount.",
+    );
   }
 }
