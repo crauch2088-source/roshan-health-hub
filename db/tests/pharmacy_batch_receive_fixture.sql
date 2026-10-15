@@ -1,3 +1,5 @@
+CREATE ROLE anon;
+CREATE ROLE authenticated;
 CREATE TABLE public.users (
   id uuid PRIMARY KEY,
   branch_id uuid,
