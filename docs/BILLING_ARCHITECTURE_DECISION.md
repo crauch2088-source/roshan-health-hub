@@ -1,0 +1,31 @@
+# Roshan Health Hub — Billing Architecture Decision
+
+**Status:** Owner-approved product rule; implementation and rollout still pending review.
+**Date:** 2026-10-15
+**Repository:** crauch2088-source/roshan-health-hub
+
+## Decision
+One detailed, itemized invoice per visit is the default. The invoice consolidates all billable services associated with the visit: consultation, each laboratory test, procedures, dispensed medicines, and other charges. Every line records description/type, quantity, unit price, and line total. The invoice shows subtotal, discount, net total, payments, and outstanding balance so reception and accounting can calculate and review the visit in one place.
+
+Separate invoices are allowed only when explicitly requested/selected or required by a reviewed operational rule. A new lab order must not automatically create a second invoice merely because its workflow ran later than the consultation.
+
+## Financial and data invariants
+1. Invoice header and line changes are transactional; failure rolls back the whole invoice operation.
+2. Server-side logic validates amounts and derives totals from line items. Client totals are display/preflight only.
+3. Existing payments and audit history are preserved. Adding a new charge must never silently overwrite payment data or reduce net total below amount already paid.
+4. A finalized/paid invoice is not silently changed. The workflow must either use an explicitly separate invoice or a separately authorized correction/adjustment path.
+5. Primary and intentional secondary invoices must be distinguishable in the data model. The existing uq_invoices_visit_id partial unique index is live; its replacement requires a separate reviewed migration and validation against current data.
+6. Authorization must be workflow-specific (visit, laboratory, pharmacy, or billing) and enforce active patient/visit and branch boundaries inside the RPC. Do not grant broad billing.create to clinical roles as a shortcut.
+7. Existing legacy invoices remain readable and reconcilable; migration must not rewrite historic invoice or payment records.
+
+## Required integration scenarios
+- Create a visit with a consultation fee, then add one and several laboratory tests: all lines appear on the same primary invoice.
+- Add charges to unpaid and partially paid invoices; preserve payments and recalculate outstanding balance correctly.
+- Attempt to append to a paid/finalized invoice: reject or require an explicit separate invoice/correction path.
+- Explicitly create a secondary invoice for a visit and verify it does not replace or duplicate the primary invoice.
+- Concurrent lab orders do not create duplicate primary invoices or lose line items.
+- Cross-branch and unauthorized requests fail; malformed precision/quantities fail; injected item-write failures roll back.
+- Every UI workflow uses a server-side atomic RPC instead of direct invoice-header/item writes.
+
+## Rollout constraints
+The atomic invoice RPC in draft PR #23 is a starting point, not complete workflow coverage. visits.tsx, ConsultationPage.tsx, and LaboratoryTab.tsx still require migration to the role-safe workflow. SQL must remain unapplied until migration-history reconciliation, PostgreSQL integration tests, staging validation, and authenticated smoke tests pass. No merge or production rollout is authorized by this decision alone.
