@@ -25,6 +25,9 @@ DECLARE
   v_plan_id uuid;
   v_policy_company_id uuid;
   v_patient_id uuid;
+  v_policy_status text;
+  v_policy_start date;
+  v_policy_expiry date;
   v_patient_branch uuid;
   v_user_branch uuid;
   v_plan_company_id uuid;
@@ -50,8 +53,8 @@ BEGIN
   END IF;
 
   -- A policy is usable only during its validity window and while active.
-  SELECT pi.plan_id, pi.company_id, pi.patient_id
-    INTO v_plan_id, v_policy_company_id, v_patient_id
+  SELECT pi.plan_id, pi.company_id, pi.patient_id, pi.status, pi.start_date, pi.expiry_date
+    INTO v_plan_id, v_policy_company_id, v_patient_id, v_policy_status, v_policy_start, v_policy_expiry
     FROM public.patient_insurance pi
    WHERE pi.id = _patient_insurance_id
      AND pi.deleted_at IS NULL;
@@ -89,9 +92,9 @@ BEGIN
     END IF;
   END IF;
 
-  IF (SELECT pi.status FROM public.patient_insurance pi WHERE pi.id = _patient_insurance_id) <> 'active'
-     OR (SELECT pi.start_date FROM public.patient_insurance pi WHERE pi.id = _patient_insurance_id) > CURRENT_DATE
-     OR (SELECT pi.expiry_date FROM public.patient_insurance pi WHERE pi.id = _patient_insurance_id) < CURRENT_DATE THEN
+  IF v_policy_status IS DISTINCT FROM 'active'
+     OR v_policy_start > CURRENT_DATE
+     OR (v_policy_expiry IS NOT NULL AND v_policy_expiry < CURRENT_DATE) THEN
     covered_amount := 0;
     patient_amount := _gross_amount;
     requires_prior_auth := false;
