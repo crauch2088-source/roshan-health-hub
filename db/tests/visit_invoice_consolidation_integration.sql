@@ -23,6 +23,15 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.invoices WHERE id=v_invoice AND is_primary IS TRUE AND visit_id='50000000-0000-0000-0000-000000000001' AND subtotal=30 AND net_amount=30) THEN
    RAISE EXCEPTION 'primary consultation invoice not created correctly';
  END IF;
+ PERFORM public.create_visit_consultation_invoice_atomic(
+  '50000000-0000-0000-0000-000000000001', CURRENT_DATE
+ );
+ IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=v_invoice AND item_type='consultation' AND deleted_at IS NULL) <> 1 THEN
+   RAISE EXCEPTION 'retry duplicated the consultation charge';
+ END IF;
+ IF NOT EXISTS (SELECT 1 FROM public.invoices WHERE id=v_invoice AND subtotal=30 AND net_amount=30) THEN
+   RAISE EXCEPTION 'consultation retry changed invoice totals';
+ END IF;
 END;
 $$;
 

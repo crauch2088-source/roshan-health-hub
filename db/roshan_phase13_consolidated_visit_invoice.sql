@@ -165,6 +165,15 @@ BEGIN
     IF p_discount <> 0 THEN
       RAISE EXCEPTION 'discount cannot be changed while appending invoice items';
     END IF;
+    -- Consultation creation can be retried after a network timeout; do not double-charge it.
+    IF v_has_consultation AND v_type_count = 1 AND EXISTS (
+      SELECT 1 FROM public.invoice_items AS ii
+       WHERE ii.invoice_id = v_invoice_id
+         AND ii.item_type = 'consultation'
+         AND ii.deleted_at IS NULL
+    ) THEN
+      RETURN v_invoice_id;
+    END IF;
     IF v_existing_status IN ('paid','closed','finalized')
        OR v_existing_payment_status = 'paid'
        OR (v_existing_net > 0 AND v_paid >= v_existing_net) THEN
