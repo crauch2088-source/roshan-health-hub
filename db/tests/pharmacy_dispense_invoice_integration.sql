@@ -113,7 +113,7 @@ BEGIN
    RAISE EXCEPTION 'aggregate stock guard created invoice lines';
  END IF;
 END;
-$;
+$$;
 
 -- Paid primary invoice: default append must roll back stock; deliberate secondary invoice may proceed.
 UPDATE public.invoices SET paid_amount=45,status='paid',payment_status='paid'
