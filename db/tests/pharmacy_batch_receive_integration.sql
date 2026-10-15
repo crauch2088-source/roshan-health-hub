@@ -81,6 +81,20 @@ BEGIN
 
   v_rejected := false;
   BEGIN
+    PERFORM public.fn_receive_pharmacy_batch('30000000-0000-0000-0000-000000000001',1,NULL,CURRENT_DATE-1,NULL,0);
+  EXCEPTION WHEN OTHERS THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'expired batch accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch('30000000-0000-0000-0000-000000000001',1,NULL,NULL,CURRENT_DATE+1,0);
+  EXCEPTION WHEN OTHERS THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'future manufacture date accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
     PERFORM public.fn_receive_pharmacy_batch('30000000-0000-0000-0000-000000000002',1);
   EXCEPTION WHEN OTHERS THEN v_rejected := true;
   END;
