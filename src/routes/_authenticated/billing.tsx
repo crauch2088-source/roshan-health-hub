@@ -225,7 +225,13 @@ function BillingPageInner() {
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label={lang === "ar" ? "الزيارة / سياق الفاتورة *" : "Visit / invoice context *"}>
+                  <Field
+                    label={
+                      lang === "ar"
+                        ? "الزيارة / سياق الفاتورة *"
+                        : "Visit / invoice context *"
+                    }
+                  >
                     <Select
                       value={standaloneInvoice ? "standalone" : visitId || "choose"}
                       onValueChange={(value) => {
@@ -245,7 +251,13 @@ function BillingPageInner() {
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={lang === "ar" ? "اختر الزيارة أو فاتورة مستقلة" : "Choose a visit or standalone invoice"} />
+                        <SelectValue
+                          placeholder={
+                            lang === "ar"
+                              ? "اختر الزيارة أو فاتورة مستقلة"
+                              : "Choose a visit or standalone invoice"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="choose" disabled>
@@ -257,7 +269,9 @@ function BillingPageInner() {
                           </SelectItem>
                         ))}
                         <SelectItem value="standalone">
-                          {lang === "ar" ? "فاتورة مستقلة (بدون زيارة)" : "Standalone invoice (no visit)"}
+                          {lang === "ar"
+                            ? "فاتورة مستقلة (بدون زيارة)"
+                            : "Standalone invoice (no visit)"}
                         </SelectItem>
                       </SelectContent>
                     </Select>

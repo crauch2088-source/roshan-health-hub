@@ -16,10 +16,7 @@ const integration = readFileSync(
 );
 
 test("manual billing uses the visit invoice wrapper and cannot bypass it", () => {
-  assert.match(
-    migration,
-    /CREATE OR REPLACE FUNCTION public\.create_billing_invoice_atomic/,
-  );
+  assert.match(migration, /CREATE OR REPLACE FUNCTION public\.create_billing_invoice_atomic/);
   assert.match(
     migration,
     /REVOKE ALL ON FUNCTION public\.create_invoice_atomic\(uuid,uuid,date,numeric,jsonb\) FROM PUBLIC, anon, authenticated/,
