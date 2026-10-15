@@ -47,7 +47,7 @@ END;
 $$;
 
 -- Invalid numeric special values and expired batches must be rejected.
-DO $
+DO $$
 BEGIN
   BEGIN
     PERFORM public.receive_pharmacy_stock(
@@ -81,10 +81,10 @@ BEGIN
     RAISE EXCEPTION 'invalid price or expired batch left a batch row';
   END IF;
 END;
-$;
+$$;
 
 -- Fractional quantities must be rejected without changing any stock rows.
-DO $
+DO $$
 BEGIN
   BEGIN
     PERFORM public.receive_pharmacy_stock(
