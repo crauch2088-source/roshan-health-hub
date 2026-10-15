@@ -200,6 +200,8 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 - [ ] Map each role's real end-to-end tasks and permissions: reception, GP, dentist, specialist, lab, pharmacy, admin, super admin.
 - [ ] Trace workflow transitions and invariants for registration/duplicate detection, queue, visit, consultation, lab orders/results, prescriptions, dispensing, invoices, payments, insurance claims, cashbox, and closeout.
 - [ ] Reconcile `next_invoice_number()`'s internal `billing.create` permission with every remaining UI call site; migrate visits, consultation, and lab billing to role-safe atomic RPCs before calling invoice creation end-to-end atomic.
+- [ ] Reconstruct the final visit/queue allocator from the recovered migration sequence and verify date-keyed concurrency, unique constraints, soft-delete/hard-delete behavior, timezone/date normalization, and whether any UI reserves a queue number in a separate RPC before inserting the visit.
+- [ ] Compare effective RLS policies table by table after all applied migrations, accounting for PostgreSQL's permissive policy OR behavior; specifically reconcile `queue.create` client INSERT policy with trigger-generated queue-ticket ownership.
 - [ ] Resolve the one-active-invoice-per-visit invariant against laboratory billing: decide whether a visit has one invoice with appended items or may have multiple invoice documents, then test the consultation-fee + lab-order sequence.
 - [ ] Identify duplicated calculations or client-trusted fields; keep authoritative financial, stock, and permission decisions server-side where appropriate.
 - [ ] Specify behavior for retries, double-submit, concurrent edits, stale selections, partial network failure, inactive/deleted records, and recoverable rollback.
