@@ -69,8 +69,8 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260911134639` | `grant_next_invoice_number_authenticated` | 76 | `689073830d971ea3797b9134cf742e54` | Not yet mapped | Not yet checked |
 | `20260911135036` | `grant_stock_movements_authenticated_access` | 74 | `1f8872b32f0155a028f92f6fe7abf63a` | Not yet mapped | Not yet checked |
 | `20260911135318` | `fix_dispense_prescription_nullable_join_lock` | 4530 | `f19b9e9be96dd1576bcea4a5905466f6` | Not yet mapped | Not yet checked |
-| `20260911135417` | `fix_dispense_prescription_branch_resolution` | 4942 | `245bb5f291ab0d66a3b50a1cf67d384f` | Not yet mapped | Not yet checked |
-| `20260911135547` | `fix_dispense_batch_number_ambiguity` | 4514 | `b97b78aebc298b59968f5b61ed4f0fc5` | Not yet mapped | Not yet checked |
+| `20260911135417` | `fix_dispense_prescription_branch_resolution` | 4942 | `245bb5f291ab0d66a3b50a1cf67d384f` | No matching checked-in function source found in likely candidates | High-priority pharmacy mapping: final dispense RPC resolves branch from visit and guards stock movements; see semantic review section |
+| `20260911135547` | `fix_dispense_batch_number_ambiguity` | 4514 | `b97b78aebc298b59968f5b61ed4f0fc5` | Same recovered `fn_dispense_prescription` evolution; no matching checked-in function source found | Follow-up fix qualifies batch inventory aliases to avoid output-column ambiguity; combine with branch/search_path hardening in canonical source |
 | `20260911135644` | `add_medicines_updated_at_column` | 202 | `fe9d4a0aeab1f2d43387afe8fc75ee42` | Not yet mapped | Not yet checked |
 | `20260911135738` | `add_prescription_items_updated_at` | 209 | `6ec0de79ef268dde821bc900141f4d5a` | Not yet mapped | Not yet checked |
 | `20260911135858` | `add_prescriptions_updated_at` | 199 | `7ef79eb4301246c5d8ccd11e0c98f36c` | Not yet mapped | Not yet checked |
