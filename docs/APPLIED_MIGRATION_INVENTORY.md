@@ -17,13 +17,13 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260818194457` | `consolidate_queue_triggers` | 3157 | `d6755cb678b0566deed766ad3a482ed4` | Not yet mapped | Not yet checked |
 | `20260818195753` | `fix_visit_queue_numbering` | 2292 | `89d78b1689ad934b4f4484a500bd5656` | Not yet mapped | Not yet checked |
 | `20260818195811` | `sync_existing_queue_tickets` | 285 | `116e6960f69905e86691f47e58ff25e0` | Not yet mapped | Not yet checked |
-| `20260818200206` | `fix_queue_numbering_authoritative` | 2689 | `1788f1c5c07c56f1524639c40c408687` | Not yet mapped | Not yet checked |
-| `20260818200246` | `harden_visit_queue_rls_and_cleanup` | 2096 | `2723798f30e0c66149f9dece79c4ffc6` | Not yet mapped | Not yet checked |
-| `20260818200336` | `finalize_non_recycling_queue_allocator` | 1368 | `08d337b9dc9add2d77091e79c2d087b2` | Not yet mapped | Not yet checked |
+| `20260818200206` | `fix_queue_numbering_authoritative` | 2689 | `1788f1c5c07c56f1524639c40c408687` | Recovered function evolution; no matching canonical source in 12 checked-in db SQL files | Intermediate allocator uses queue_tickets history and advisory lock; later migration changes authority to visits; compare final behavior and no-recycling guarantee |
+| `20260818200246` | `harden_visit_queue_rls_and_cleanup` | 2096 | `2723798f30e0c66149f9dece79c4ffc6` | No matching canonical policy source in checked-in db SQL set | Replaces visit/queue RLS; queue-ticket INSERT remains granted by queue.create despite trigger-centric comment; verify app write path and effective policy union |
+| `20260818200336` | `finalize_non_recycling_queue_allocator` | 1368 | `08d337b9dc9add2d77091e79c2d087b2` | No matching canonical function source in checked-in db SQL set | Final allocator uses max(visits.queue_number)+1 under date advisory lock; no-recycling guarantee depends on retaining historical visit rows; standalone allocator does not reserve across later insert transaction |
 | `20260818202356` | `fix_appointments_rls_auth_and_audit` | 828 | `bf439a86b9fd31c5282a61361ad96f7a` | Not yet mapped | Not yet checked |
 | `20260818232848` | `harden_core_indexes_and_legacy_compatibility_v2` | 7636 | `e8813fabc4451694071ab43f76e8ae7a` | Not yet mapped | Not yet checked |
 | `20260818233558` | `harden_security_definer_helpers_and_duplicate_index_v2` | 5656 | `2a5cd75eac385055a01dd3db53cfdf05` | db/roshan_security_hardening.sql (candidate; name differs) | Mismatch; semantic diff pending |
-| `20260818234039` | `harden_rls_permissions_and_public_grants_v1` | 29681 | `7a20a1b456d5ac28b7939264cd85fb0c` | Not yet mapped | Not yet checked |
+| `20260818234039` | `harden_rls_permissions_and_public_grants_v1` | 29681 | `7a20a1b456d5ac28b7939264cd85fb0c` | No matching canonical policy source in checked-in db SQL set | Revokes anon table access and browser-role TRUNCATE; replaces broad policies on many tables while preserving selected app-specific policies; must compare effective permissive policy union table by table |
 | `20260818234050` | `harden_services_rls_v1` | 676 | `0736405983339e302a4363ae83b7aa43` | Not yet mapped | Not yet checked |
 | `20260818234146` | `repair_roshan_rbac_role_links_v1` | 2174 | `33a9375f8f84f73b213b256d52257840` | Not yet mapped | Not yet checked |
 | `20260819000003` | `harden_public_defaults_and_sync_user_roles` | 1739 | `83601720d0bd6443dc85b3c463b39794` | Not yet mapped | Not yet checked |
