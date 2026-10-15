@@ -42,6 +42,7 @@ DECLARE
   v_paid numeric := 0;
   v_existing_status text;
   v_existing_payment_status text;
+  v_existing_net numeric := 0;
   v_type_count integer := 0;
   v_has_consultation boolean := false;
   v_has_lab boolean := false;
@@ -100,7 +101,7 @@ BEGIN
     v_item_name := btrim(COALESCE(v_item->>'item_name',''));
     v_item_type := CASE WHEN v_item->>'item_type' = 'laboratory' THEN 'lab' ELSE v_item->>'item_type' END;
     IF v_item_name = '' THEN RAISE EXCEPTION 'invoice item description is required'; END IF;
-    IF v_item_type NOT IN ('consultation','lab','pharmacy','procedure','other') THEN
+    IF v_item_type IS NULL OR v_item_type NOT IN ('consultation','lab','pharmacy','procedure','other') THEN
       RAISE EXCEPTION 'unsupported invoice item type';
     END IF;
     IF jsonb_typeof(v_item->'quantity') IS DISTINCT FROM 'number'
@@ -151,8 +152,8 @@ BEGIN
 
   IF NOT p_separate_invoice THEN
     SELECT i.id, COALESCE(i.discount_amount,0), COALESCE(i.paid_amount,0),
-           i.status, i.payment_status
-      INTO v_invoice_id, v_discount, v_paid, v_existing_status, v_existing_payment_status
+           i.status, i.payment_status, COALESCE(i.net_amount,0)
+      INTO v_invoice_id, v_discount, v_paid, v_existing_status, v_existing_payment_status, v_existing_net
       FROM public.invoices AS i
      WHERE i.visit_id = p_visit_id AND i.is_primary IS TRUE AND i.deleted_at IS NULL
      FOR UPDATE;
@@ -164,7 +165,8 @@ BEGIN
       RAISE EXCEPTION 'discount cannot be changed while appending invoice items';
     END IF;
     IF v_existing_status IN ('paid','closed','finalized')
-       OR v_existing_payment_status = 'paid' THEN
+       OR v_existing_payment_status = 'paid'
+       OR (v_existing_net > 0 AND v_paid >= v_existing_net) THEN
       RAISE EXCEPTION 'invoice is finalized; choose a separate invoice';
     END IF;
     IF v_paid < 0 THEN RAISE EXCEPTION 'invalid existing paid amount'; END IF;
@@ -270,11 +272,11 @@ BEGIN
   IF v_uid IS NULL OR NOT public.app_has_perm('lab.create') THEN
     RAISE EXCEPTION 'laboratory order permission denied' USING ERRCODE = '42501';
   END IF;
-  IF p_priority NOT IN ('normal','urgent','stat') THEN RAISE EXCEPTION 'invalid laboratory priority'; END IF;
+  IF p_priority IS NULL OR p_priority NOT IN ('normal','urgent','stat') THEN RAISE EXCEPTION 'invalid laboratory priority'; END IF;
   IF p_test_ids IS NULL OR cardinality(p_test_ids) = 0 THEN
     RAISE EXCEPTION 'at least one laboratory test is required';
   END IF;
-  IF cardinality(p_test_ids) <> (SELECT count(DISTINCT x) FROM unnest(p_test_ids) AS x) THEN
+  IF cardinality(p_test_ids) <> (SELECT count(DISTINCT test_id) FROM unnest(p_test_ids) AS ids(test_id)) THEN
     RAISE EXCEPTION 'duplicate laboratory test ids are not allowed';
   END IF;
   SELECT v.patient_id INTO v_patient_id
@@ -323,7 +325,7 @@ BEGIN
     JOIN public.lab_tests AS t ON t.id = x.test_id;
 
   PERFORM public.create_or_append_visit_invoice_atomic(
-    p_visit_id, pg_catalog.current_date, 0, v_invoice_items, p_separate_invoice
+    p_visit_id, CURRENT_DATE, 0, v_invoice_items, p_separate_invoice
   );
   RETURN v_order_id;
 END;

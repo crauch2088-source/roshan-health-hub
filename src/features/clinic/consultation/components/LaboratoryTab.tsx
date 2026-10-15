@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
 import { s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -62,11 +63,13 @@ function normalizeCategory(value: string) {
 
 export function LaboratoryTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
+  const { can } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<Row[]>([]);
   const [priority, setPriority] = useState("normal");
   const [notes, setNotes] = useState("");
+  const [separateInvoice, setSeparateInvoice] = useState(false);
 
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
@@ -168,11 +171,12 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         p_priority: priority,
         p_notes: notes || null,
         p_test_ids: selected.map((test) => s(test, "id")),
-        p_separate_invoice: false,
+        p_separate_invoice: separateInvoice,
       });
       if (error) throw new Error(error.message);
       setSelected([]);
       setNotes("");
+      setSeparateInvoice(false);
       return orderId as string;
     },
     {
@@ -184,8 +188,8 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
       ],
       successMessage:
         lang === "ar"
-          ? "تم إرسال طلب المختبر وإضافته إلى فاتورة الزيارة"
-          : "Lab order created and added to the visit invoice",
+          ? separateInvoice ? "تم إرسال طلب المختبر وإنشاء فاتورة منفصلة" : "تم إرسال طلب المختبر وإضافته إلى فاتورة الزيارة"
+          : separateInvoice ? "Lab order created with a separate invoice" : "Lab order created and added to the visit invoice",
     },
   );
 
@@ -342,7 +346,17 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
             />
           </label>
         </div>
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          {can("billing.create") ? (
+            <Button
+              type="button"
+              variant={separateInvoice ? "default" : "outline"}
+              onClick={() => setSeparateInvoice((current) => !current)}
+              aria-pressed={separateInvoice}
+            >
+              {lang === "ar" ? "إنشاء فاتورة منفصلة" : "Create separate invoice"}
+            </Button>
+          ) : null}
           <Button
             disabled={create.isPending || !selected.length}
             onClick={() => create.mutate(undefined as never)}

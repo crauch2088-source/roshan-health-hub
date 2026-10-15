@@ -7,7 +7,8 @@ INSERT INTO public.patients (id,branch_id) VALUES
  ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002');
 INSERT INTO public.visits (id,patient_id) VALUES
  ('50000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001'),
- ('50000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002');
+ ('50000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002'),
+ ('50000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000001');
 INSERT INTO public.lab_tests (id,name,price,active) VALUES
  ('60000000-0000-0000-0000-000000000001','CBC',20,true),
  ('60000000-0000-0000-0000-000000000002','Glucose',5,true),
@@ -88,7 +89,7 @@ BEGIN
 END;
 $$;
 
--- A paid primary invoice must not be mutated; a failed lab+invoice transaction must roll back its order.
+-- A paid primary invoice must not be mutated; the failed lab order is rolled back.
 UPDATE public.invoices SET paid_amount=net_amount,status='paid',payment_status='paid'
  WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE;
 SELECT set_config('test.perms','lab.create',false);
@@ -99,7 +100,7 @@ BEGIN
 END;
 $$;
 CREATE TRIGGER test_fail_invoice_item BEFORE INSERT ON public.invoice_items FOR EACH ROW EXECUTE FUNCTION public.test_fail_invoice_item();
-SELECT set_config('test.fail_invoice_item','true',false);
+
 DO $$
 DECLARE v_before integer;
 BEGIN
@@ -114,7 +115,33 @@ BEGIN
   IF SQLERRM='test failed: paid invoice append should fail' THEN RAISE; END IF;
  END;
  IF (SELECT count(*) FROM public.lab_orders) <> v_before THEN
-   RAISE EXCEPTION 'lab order was not rolled back after invoice failure';
+   RAISE EXCEPTION 'lab order was not rolled back after paid invoice rejection';
+ END IF;
+END;
+$$;
+
+-- An injected invoice-item failure also rolls back the new lab order and invoice header.
+SELECT set_config('test.fail_invoice_item','true',false);
+DO $$
+DECLARE v_orders integer; v_invoices integer;
+BEGIN
+ SELECT count(*) INTO v_orders FROM public.lab_orders;
+ SELECT count(*) INTO v_invoices FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000003';
+ BEGIN
+  PERFORM public.create_lab_order_with_invoice_atomic(
+   '50000000-0000-0000-0000-000000000003','normal',NULL,
+   ARRAY['60000000-0000-0000-0000-000000000003'::uuid],false
+  );
+  RAISE EXCEPTION 'test failed: injected invoice item failure not raised';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='test failed: injected invoice item failure not raised' THEN RAISE; END IF;
+  IF SQLERRM <> 'injected invoice item failure' THEN RAISE; END IF;
+ END;
+ IF (SELECT count(*) FROM public.lab_orders) <> v_orders THEN
+   RAISE EXCEPTION 'lab order remained after invoice item failure';
+ END IF;
+ IF (SELECT count(*) FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000003') <> v_invoices THEN
+   RAISE EXCEPTION 'invoice header remained after invoice item failure';
  END IF;
 END;
 $$;
