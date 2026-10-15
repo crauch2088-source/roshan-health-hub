@@ -68,3 +68,21 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 
 
 - 2026-10-15 follow-up: a static operation scan of the 79 recovered SQL bodies found no `DROP TABLE`, `DELETE FROM`, or `ALTER TABLE ... DROP COLUMN` statements. The only `TRUNCATE` keyword is in migration `20260818234039_harden_rls_permissions_and_public_grants_v1`, where the SQL revokes the `TRUNCATE` privilege from `anon` and `authenticated`; it does not execute a truncate. Multiple `UPDATE`, `INSERT`, `DROP POLICY`, and `DROP FUNCTION` statements remain and require ordered semantic review before replay. This is a lexical scan, not proof of non-destructiveness.
+
+
+## Semantic comparison log — 2026-10-15 (initial verified case)
+
+Scope: first comparison of the recovered applied migration `20260820150215_roshan_phase2_clinical_workflow.sql` against legacy candidate `db/roshan_phase2_clinical_workflow.sql`, both read from the pinned audit/archive refs.
+
+Finding: **partial match with a material difference**. The recovered archive contains five index statements:
+- `uq_lab_results_order_parameter`
+- `idx_lab_parameters_test_active`
+- `idx_lab_orders_patient_visit`
+- `idx_invoices_visit_date`
+- `idx_payments_invoice_date`
+
+The legacy candidate contains those same five index statements, plus an `INSERT ... SELECT` that creates a default `lab_parameters` row for active/non-deleted lab tests that have no active/non-deleted parameter. That insert is not present in the recovered migration text. Therefore the two files are **not semantically equivalent as complete migration bodies**; do not label them an exact match or substitute one for the other.
+
+Classification: **2. partial match with identified difference**.
+Evidence: recovered file blob `28e159deff22737f5f35d3d0fb0b3f308c99ccab`; legacy candidate blob `99cfc05e896f2817a92211afb9eb76fbfa9bad6f`; archived manifest entry version `20260820150215`.
+Safety note: this is a source comparison only. No SQL was executed. The difference does not establish which behavior was intended or whether the insert was applied elsewhere in another migration; further ordered, schema-aware review is required.
