@@ -377,14 +377,16 @@ function MedicinesTab() {
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={() => setReceive({
-                            id: s(m, "id"),
-                            qty: "0",
-                            batch_number: "",
-                            expiry_date: s(m, "expiry_date"),
-                            manufacture_date: "",
-                            purchase_price: String(n(m, "cost_price")),
-                          })}
+                          onClick={() =>
+                            setReceive({
+                              id: s(m, "id"),
+                              qty: "0",
+                              batch_number: "",
+                              expiry_date: s(m, "expiry_date"),
+                              manufacture_date: "",
+                              purchase_price: String(n(m, "cost_price")),
+                            })
+                          }
                         >
                           {t("receive_stock")}
                         </Button>
@@ -427,14 +429,16 @@ function MedicinesTab() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setReceive({
-                                  id: s(m, "id"),
-                                  qty: "0",
-                                  batch_number: "",
-                                  expiry_date: s(m, "expiry_date"),
-                                  manufacture_date: "",
-                                  purchase_price: String(n(m, "cost_price")),
-                                })}
+                                onClick={() =>
+                                  setReceive({
+                                    id: s(m, "id"),
+                                    qty: "0",
+                                    batch_number: "",
+                                    expiry_date: s(m, "expiry_date"),
+                                    manufacture_date: "",
+                                    purchase_price: String(n(m, "cost_price")),
+                                  })
+                                }
                               >
                                 {t("receive_stock")}
                               </Button>
@@ -479,7 +483,11 @@ function MedicinesTab() {
             <Input
               dir="ltr"
               value={receive?.batch_number ?? ""}
-              onChange={(e) => setReceive(receive ? { ...receive, batch_number: e.target.value } : receive)}
+              onChange={(e) =>
+                setReceive(
+                  receive ? { ...receive, batch_number: e.target.value } : receive,
+                )
+              }
             />
           </Field>
           <Field label={t("purchase_price")}>
@@ -489,7 +497,11 @@ function MedicinesTab() {
               step="0.01"
               dir="ltr"
               value={receive?.purchase_price ?? ""}
-              onChange={(e) => setReceive(receive ? { ...receive, purchase_price: e.target.value } : receive)}
+              onChange={(e) =>
+                setReceive(
+                  receive ? { ...receive, purchase_price: e.target.value } : receive,
+                )
+              }
             />
           </Field>
           <Field label={t("manufacture_date")}>
@@ -497,7 +509,11 @@ function MedicinesTab() {
               type="date"
               dir="ltr"
               value={receive?.manufacture_date ?? ""}
-              onChange={(e) => setReceive(receive ? { ...receive, manufacture_date: e.target.value } : receive)}
+              onChange={(e) =>
+                setReceive(
+                  receive ? { ...receive, manufacture_date: e.target.value } : receive,
+                )
+              }
             />
           </Field>
           <Field label={t("expiry_date")}>
@@ -505,7 +521,11 @@ function MedicinesTab() {
               type="date"
               dir="ltr"
               value={receive?.expiry_date ?? ""}
-              onChange={(e) => setReceive(receive ? { ...receive, expiry_date: e.target.value } : receive)}
+              onChange={(e) =>
+                setReceive(
+                  receive ? { ...receive, expiry_date: e.target.value } : receive,
+                )
+              }
             />
           </Field>
           <DialogFooter>
