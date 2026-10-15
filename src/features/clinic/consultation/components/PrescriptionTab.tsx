@@ -45,6 +45,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   );
   const patient = s(rel((visitQ.data ?? [])[0], "patients"), "id");
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const debouncedSearch = useDebounced(search, 300);
   const searchFilter = buildMedicineSearchFilter(debouncedSearch);
   const medsQ = useRows<Row[]>(
@@ -77,12 +78,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       }),
     );
     setSearch(s(m, "name") || s(m, "generic_name"));
+    setSearchOpen(false);
   };
   const add = () => {
     if (!form.name.trim() && !form.medicine_id) return;
     setItems((current) => [...current, { ...form }]);
     setForm(createEmptyPrescriptionEntry());
     setSearch("");
+    setSearchOpen(false);
   };
 
   const save = useSave(
@@ -160,14 +163,17 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         <div className="relative">
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSearchOpen(true);
+            }}
             placeholder={
               lang === "ar"
                 ? "ابحث باسم الدواء أو المادة أو القوة"
                 : "Search medicine, generic or strength"
             }
           />
-          {search.trim() && (
+          {searchOpen && search.trim() && (
             <div
               className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border bg-popover p-1 shadow-lg"
               role="listbox"
@@ -177,7 +183,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 <p className="px-3 py-3 text-sm text-muted-foreground">
                   {lang === "ar" ? "اكتب حرفين على الأقل للبحث" : "Type at least 2 characters to search"}
                 </p>
-              ) : medsQ.isFetching ? (
+              ) : search.trim() !== debouncedSearch.trim() || medsQ.isFetching ? (
                 <p className="px-3 py-3 text-sm text-muted-foreground">
                   {lang === "ar" ? "جارٍ البحث..." : "Searching..."}
                 </p>
