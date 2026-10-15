@@ -44,3 +44,11 @@ export function createPrescriptionDraftForMedicine(medicine: {
     route,
   };
 }
+
+/** A manual name edit detaches a catalog medicine and clears its old regimen. */
+export function editPrescriptionName(draft: PrescriptionDraft, name: string): PrescriptionDraft {
+  if (draft.medicine_id && name.trim() !== draft.name.trim()) {
+    return { ...createEmptyPrescriptionDraft(), name };
+  }
+  return { ...draft, name };
+}
