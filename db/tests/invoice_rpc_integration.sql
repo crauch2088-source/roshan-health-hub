@@ -91,7 +91,7 @@ END;
 $$;
 SELECT set_config('test.fail_item','false',false);
 SELECT set_config('test.super_admin','true',false);
-DO $
+DO $branch$
 DECLARE v_invoice uuid;
 BEGIN
  v_invoice := public.create_invoice_atomic(
@@ -107,5 +107,5 @@ BEGIN
    RAISE EXCEPTION 'super-admin invoice was not assigned to the patient branch';
  END IF;
 END;
-$;
+$branch$;
 SELECT 'atomic invoice integration tests passed' AS result;
