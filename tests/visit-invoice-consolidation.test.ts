@@ -6,7 +6,10 @@ const sql = readFileSync(
   new URL("../db/roshan_phase13_consolidated_visit_invoice.sql", import.meta.url),
   "utf8",
 );
-const visits = readFileSync(new URL("../src/routes/_authenticated/visits.tsx", import.meta.url), "utf8");
+const visits = readFileSync(
+  new URL("../src/routes/_authenticated/visits.tsx", import.meta.url),
+  "utf8",
+);
 const consultation = readFileSync(
   new URL("../src/features/clinic/consultation/ConsultationPage.tsx", import.meta.url),
   "utf8",
