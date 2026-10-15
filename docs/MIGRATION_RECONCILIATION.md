@@ -116,3 +116,10 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - **Classification: no exact repository source match found; effective-policy parity remains unresolved.** The likely `db/roshan_security_hardening.sql` candidate does not contain this helper or dynamic policy loop, and repository search found no exact `app_has_branch_access` occurrence. Other files may encode equivalent per-table conditions, so do not conclude every branch guard is absent without reviewing the effective policy set.
 - This is a high-priority reconciliation gate because missing branch isolation can expose cross-branch patient and financial data. Verify current policies on a disposable/staging schema against each listed table before any release; do not run the recovered SQL on production as a shortcut.
 - No SQL was executed; production was read-only.
+
+
+### Applied RPC hardening migration `20260911131456_deep_audit_branch_isolation_rpc_hardening`
+- Compared the recovered `public.post_invoice_payment` and `public.post_supplier_payment` definitions with their counterparts in `db/roshan_phase4_finance.sql`; both function bodies differ materially after normalization. The recovered definitions add branch authorization checks and outstanding-balance/overpayment guards (and preserve invoice-payment idempotency handling).
+- The recovered migration also replaces `public.fn_dispense_prescription` with branch-aware, batch-aware dispensing logic, but no matching definition was found in the likely checked-in SQL candidates (`db/roshan_phase1_migration.sql`, finance, security hardening, and role-guard files).
+- **Classification: high-priority partial mapping.** Verify the final deployed function definitions and locate or reconstruct the canonical source for dispensing before declaring pharmacy and finance hardening reconciled. Do not replay this patch on production as a shortcut.
+- No SQL was executed; production was read-only.
