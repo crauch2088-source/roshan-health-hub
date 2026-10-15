@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/lib/auth";
 import { s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -28,7 +27,6 @@ type Med = {
 };
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
-  const { user } = useAuth();
   const { lang } = useLang();
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
@@ -103,44 +101,23 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       if (!patient) throw new Error(lang === "ar" ? "المريض غير موجود" : "Patient not found");
       if (!items.length)
         throw new Error(lang === "ar" ? "أضف دواءً واحداً على الأقل" : "Add at least one medicine");
-      const { data: rx, error } = await supabase
-        .from("prescriptions")
-        .insert({
-          patient_id: patient,
-          visit_id: visitId,
-          prescribed_by: user?.id ?? null,
-          doctor_id: user?.id ?? null,
-          prescription_type: external ? "external" : "internal",
-          is_external: external,
-          status: "pending",
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      const rows = items.map((i) => ({
-        prescription_id: rx.id,
-        medicine_id: i.medicine_id || null,
-        medication_name: i.name,
-        dose: i.dose || null,
-        dosage: i.dose || null,
-        frequency: i.frequency || null,
-        duration: i.duration || null,
-        dosage_form: i.dosage_form || null,
-        route: i.route || null,
-        quantity: Number(i.quantity) || 1,
-        instructions: i.instructions || null,
-        unit_price: i.medicine_id
-          ? Number(
-              ((medsQ.data ?? []) as Row[]).find((m) => s(m, "id") === i.medicine_id)?.[
-                "selling_price"
-              ],
-            ) || 0
-          : 0,
-        created_by: user?.id ?? null,
+      const payload = items.map((item) => ({
+        medicine_id: item.medicine_id || null,
+        medication_name: item.name.trim(),
+        dose: item.dose,
+        frequency: item.frequency,
+        duration: item.duration,
+        quantity: Number(item.quantity),
+        instructions: item.instructions,
+        dosage_form: item.dosage_form,
+        route: item.route,
       }));
-      const { error: e } = await supabase.from("prescription_items").insert(rows);
-      if (e) throw new Error(e.message);
+      const { error } = await supabase.rpc("create_prescription_atomic", {
+        p_visit_id: visitId,
+        p_is_external: external,
+        p_items: payload,
+      });
+      if (error) throw new Error(error.message);
       return null;
     },
     {
