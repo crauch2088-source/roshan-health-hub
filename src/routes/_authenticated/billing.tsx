@@ -44,6 +44,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
+import { validateInvoiceDraft } from "@/lib/invoice-validation";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/billing")({
@@ -112,6 +113,7 @@ function BillingPageInner() {
 
   const create = useSave(
     async () => {
+      const validated = validateInvoiceDraft(lines, discount);
       const invoiceNumber = await rpc<string>("next_invoice_number");
       const { data: inv, error } = await supabase
         .from("invoices")
@@ -120,25 +122,23 @@ function BillingPageInner() {
           patient_id: patientId,
           partner_id: partnerId || null,
           invoice_date: date,
-          total_amount: subtotal,
-          discount_amount: Number(discount) || 0,
-          net_amount: net,
+          total_amount: validated.subtotal,
+          discount_amount: validated.discount,
+          net_amount: validated.net,
           paid_amount: 0,
           status: "unpaid",
         })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      const items = lines
-        .filter((l) => l.description)
-        .map((l) => ({
-          invoice_id: inv.id,
-          item_name: l.description,
-          item_type: l.item_type,
-          quantity: Number(l.quantity) || 1,
-          unit_price: Number(l.unit_price) || 0,
-          total_price: (Number(l.quantity) || 1) * (Number(l.unit_price) || 0),
-        }));
+      const items = validated.lines.map((line) => ({
+        invoice_id: inv.id,
+        item_name: line.description,
+        item_type: line.item_type,
+        quantity: line.quantity,
+        unit_price: line.unit_price,
+        total_price: line.quantity * line.unit_price,
+      }));
       if (items.length) {
         const { error: iErr } = await supabase.from("invoice_items").insert(items);
         if (iErr) throw new Error(iErr.message);
