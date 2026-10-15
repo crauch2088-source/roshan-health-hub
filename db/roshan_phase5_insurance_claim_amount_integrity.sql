@@ -42,13 +42,22 @@ BEGIN
 
   uid := public.current_app_user_id();
 
-  SELECT patient_id INTO pi_patient_id
-  FROM public.patient_insurance
-  WHERE id = _patient_insurance_id
-    AND deleted_at IS NULL
-    AND status = 'active'
-    AND start_date <= CURRENT_DATE
-    AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE);
+  SELECT pi.patient_id INTO pi_patient_id
+  FROM public.patient_insurance pi
+  JOIN public.insurance_plans p
+    ON p.id = pi.plan_id
+   AND p.company_id = pi.company_id
+   AND p.active IS TRUE
+   AND p.deleted_at IS NULL
+  JOIN public.insurance_companies c
+    ON c.id = pi.company_id
+   AND c.active IS TRUE
+   AND c.deleted_at IS NULL
+  WHERE pi.id = _patient_insurance_id
+    AND pi.deleted_at IS NULL
+    AND pi.status = 'active'
+    AND pi.start_date <= CURRENT_DATE
+    AND (pi.expiry_date IS NULL OR pi.expiry_date >= CURRENT_DATE);
 
   IF pi_patient_id IS NULL THEN
     RAISE EXCEPTION 'active patient insurance not found';
