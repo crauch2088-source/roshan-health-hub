@@ -105,3 +105,10 @@ test("editing a selected medicine name detaches its catalog id and price", () =>
   assert.equal(edited.unit_price, 0);
   assert.equal(edited.dosage_form, "tablet");
 });
+
+test("medicine search treats SQL LIKE wildcards as literal-safe text", () => {
+  assert.equal(
+    buildMedicineSearchFilter("amox%_cillin"),
+    "name.ilike.%amox  cillin%,generic_name.ilike.%amox  cillin%,brand_name.ilike.%amox  cillin%,strength.ilike.%amox  cillin%",
+  );
+});
