@@ -165,10 +165,10 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             !medsQ.isLoading &&
             !medsQ.error &&
             filtered.length === 0 && (
-            <p role="status" className="mt-1 text-xs text-muted-foreground">
-              {lang === "ar" ? "لا توجد أدوية مطابقة" : "No matching medicines"}
-            </p>
-          )}
+              <p role="status" className="mt-1 text-xs text-muted-foreground">
+                {lang === "ar" ? "لا توجد أدوية مطابقة" : "No matching medicines"}
+              </p>
+            )}
           {search.trim() && search !== form.name && filtered.length > 0 && (
             <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border bg-popover p-1 shadow-lg">
               {filtered.map((m) => (
