@@ -35,8 +35,10 @@ BEGIN
   IF p_patient_id IS NULL OR p_invoice_date IS NULL THEN
     RAISE EXCEPTION 'patient and invoice date are required';
   END IF;
-  IF p_items IS NULL OR jsonb_typeof(p_items) IS DISTINCT FROM 'array'
-     OR jsonb_array_length(p_items) = 0 THEN
+  IF p_items IS NULL OR jsonb_typeof(p_items) IS DISTINCT FROM 'array' THEN
+    RAISE EXCEPTION 'invoice items must be a JSON array';
+  END IF;
+  IF jsonb_array_length(p_items) = 0 THEN
     RAISE EXCEPTION 'invoice must contain at least one item';
   END IF;
   IF p_discount IS NULL OR p_discount::text IN ('NaN','Infinity','-Infinity')
