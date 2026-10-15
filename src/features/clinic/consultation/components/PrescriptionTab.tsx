@@ -26,6 +26,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       .limit(1),
   );
   const patient = s(rel((visitQ.data ?? [])[0], "patients"), "id");
+  const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
   const medsQ = useRows<Row[]>(
@@ -48,9 +49,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     { enabled: cleanSearch.length !== 1 },
   );
   const [form, setForm] = useState<PrescriptionDraft>(createEmptyPrescriptionDraft);
-  const [items, setItems] = useState<Med[]>([]);
+  const [items, setItems] = useState<PrescriptionDraft[]>([]);
   const [external, setExternal] = useState(false);
-  const [search, setSearch] = useState("");
   const medicines = (medsQ.data ?? []) as Row[];
   const filtered = medicines;
   const chooseMedicine = (id: string) => {
