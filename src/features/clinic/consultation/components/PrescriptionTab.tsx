@@ -181,7 +181,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             >
               {search.trim().length < 2 ? (
                 <p className="px-3 py-3 text-sm text-muted-foreground">
-                  {lang === "ar" ? "اكتب حرفين على الأقل للبحث" : "Type at least 2 characters to search"}
+                  {lang === "ar"
+                    ? "اكتب حرفين على الأقل للبحث"
+                    : "Type at least 2 characters to search"}
                 </p>
               ) : search.trim() !== debouncedSearch.trim() || medsQ.isFetching ? (
                 <p className="px-3 py-3 text-sm text-muted-foreground">
@@ -189,7 +191,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 </p>
               ) : medsQ.error ? (
                 <p className="px-3 py-3 text-sm text-destructive">
-                  {lang === "ar" ? "تعذر تحميل الأدوية. تحقق من الاتصال ثم أعد البحث." : "Could not load medicines. Check the connection and try again."}
+                  {lang === "ar"
+                    ? "تعذر تحميل الأدوية. تحقق من الاتصال ثم أعد البحث."
+                    : "Could not load medicines. Check the connection and try again."}
                 </p>
               ) : filtered.length === 0 ? (
                 <p className="px-3 py-3 text-sm text-muted-foreground">
@@ -208,10 +212,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                     <span className="min-w-0">
                       <span className="font-medium">{s(m, "name") || s(m, "generic_name")}</span>
                       {s(m, "strength") && (
-                        <span className="ms-2 text-xs text-muted-foreground">{s(m, "strength")}</span>
+                        <span className="ms-2 text-xs text-muted-foreground">
+                          {s(m, "strength")}
+                        </span>
                       )}
                       {s(m, "brand_name") && (
-                        <span className="ms-2 text-xs text-muted-foreground">{s(m, "brand_name")}</span>
+                        <span className="ms-2 text-xs text-muted-foreground">
+                          {s(m, "brand_name")}
+                        </span>
                       )}
                     </span>
                     <span className="ms-3 shrink-0 text-xs text-muted-foreground">

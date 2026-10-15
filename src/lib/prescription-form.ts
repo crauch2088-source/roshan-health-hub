@@ -38,9 +38,20 @@ export function preparePrescriptionEntryForMedicine(
 ): PrescriptionEntry {
   const dosageForm = (medicine.dosage_form ?? "").trim().toLowerCase();
   const supportedForms = new Set([
-    "tablet", "capsule", "syrup", "suspension", "drops", "injection",
-    "cream", "ointment", "gel", "lotion", "suppository", "inhaler",
-    "solution", "sachet",
+    "tablet",
+    "capsule",
+    "syrup",
+    "suspension",
+    "drops",
+    "injection",
+    "cream",
+    "ointment",
+    "gel",
+    "lotion",
+    "suppository",
+    "inhaler",
+    "solution",
+    "sachet",
   ]);
   const canonicalForm = supportedForms.has(dosageForm) ? dosageForm : "";
   const oralForms = new Set(["tablet", "capsule", "syrup", "suspension"]);
