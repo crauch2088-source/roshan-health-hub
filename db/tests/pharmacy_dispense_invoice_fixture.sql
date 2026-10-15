@@ -4,6 +4,8 @@ ALTER TABLE public.visits ADD COLUMN branch_id uuid;
 CREATE TABLE public.medicines (
   id uuid PRIMARY KEY,
   name text NOT NULL,
+  brand_name text,
+  generic_name text,
   selling_price numeric,
   stock_quantity integer NOT NULL DEFAULT 0,
   active boolean DEFAULT true,

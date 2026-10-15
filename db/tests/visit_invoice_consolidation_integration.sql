@@ -61,37 +61,6 @@ $$;
 -- Appending to a partially paid invoice preserves the payment and recomputes the balance.
 UPDATE public.invoices SET paid_amount=10,status='partial',payment_status='partial'
  WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE;
--- Dispensing a prescription appends the actual dispensed quantity and price to the same invoice.
-INSERT INTO public.medicines (id,name,selling_price,stock_quantity) VALUES
- ('70000000-0000-0000-0000-000000000001','Amoxicillin 500 mg',12.50,10);
-INSERT INTO public.prescriptions (id,patient_id,visit_id,status) VALUES
- ('80000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending');
-INSERT INTO public.prescription_items (id,prescription_id,medicine_id,quantity,unit_price,is_dispensed) VALUES
- ('90000000-0000-0000-0000-000000000001','80000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001',2,NULL,false);
-SELECT set_config('test.perms','pharmacy.update,billing.create',false);
-DO $
-DECLARE v_count integer;
-BEGIN
- SELECT count(*) INTO v_count FROM public.fn_dispense_prescription_with_invoice(
-  '80000000-0000-0000-0000-000000000001', false
- );
- IF v_count <> 1 THEN RAISE EXCEPTION 'dispense result was not returned'; END IF;
- IF NOT EXISTS (
-  SELECT 1 FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001'
-   AND is_primary IS TRUE AND subtotal=90 AND net_amount=90 AND paid_amount=10 AND payment_status='partial'
- ) THEN RAISE EXCEPTION 'dispensed medicine was not appended to the primary invoice'; END IF;
- IF NOT EXISTS (
-  SELECT 1 FROM public.invoice_items WHERE invoice_id=(
-   SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE
-  ) AND item_type='pharmacy' AND item_id='70000000-0000-0000-0000-000000000001'
-    AND quantity=2 AND unit_price=12.50 AND total_price=25
- ) THEN RAISE EXCEPTION 'pharmacy invoice line does not match the dispensed quantity/price'; END IF;
- IF (SELECT stock_quantity FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000001') <> 8 THEN
-  RAISE EXCEPTION 'medicine stock was not reduced by the dispensed quantity';
- END IF;
-END;
-$;
-
 SELECT set_config('test.perms','lab.create',false);
 DO $$
 DECLARE v_order uuid;
@@ -129,43 +98,9 @@ END;
 $$;
 
 -- A paid primary invoice must not be mutated; the failed lab order is rolled back.
+-- A paid primary invoice must not be mutated; the failed lab order is rolled back.
 UPDATE public.invoices SET paid_amount=net_amount,status='paid',payment_status='paid'
  WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE;
-INSERT INTO public.prescriptions (id,patient_id,visit_id,status) VALUES
- ('80000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending');
-INSERT INTO public.prescription_items (id,prescription_id,medicine_id,quantity,unit_price,is_dispensed) VALUES
- ('90000000-0000-0000-0000-000000000002','80000000-0000-0000-0000-000000000002','70000000-0000-0000-0000-000000000001',1,NULL,false);
-SELECT set_config('test.perms','pharmacy.update,billing.create',false);
-DO $
-DECLARE v_before integer;
-BEGIN
- SELECT stock_quantity INTO v_before FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000001';
- BEGIN
-  PERFORM * FROM public.fn_dispense_prescription_with_invoice('80000000-0000-0000-0000-000000000002',false);
-  RAISE EXCEPTION 'test failed: dispensing into paid primary invoice should fail';
- EXCEPTION WHEN OTHERS THEN
-  IF SQLERRM='test failed: dispensing into paid primary invoice should fail' THEN RAISE; END IF;
- END;
- IF (SELECT stock_quantity FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000001') <> v_before THEN
-  RAISE EXCEPTION 'stock changed after paid-invoice rejection';
- END IF;
- IF (SELECT status FROM public.prescriptions WHERE id='80000000-0000-0000-0000-000000000002') <> 'pending' THEN
-  RAISE EXCEPTION 'prescription state changed after paid-invoice rejection';
- END IF;
-END;
-$;
-DO $
-BEGIN
- PERFORM * FROM public.fn_dispense_prescription_with_invoice('80000000-0000-0000-0000-000000000002',true);
- IF NOT EXISTS (
-  SELECT 1 FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001'
-   AND is_primary IS FALSE AND deleted_at IS NULL AND net_amount=12.50
- ) THEN RAISE EXCEPTION 'explicit secondary pharmacy invoice not created'; END IF;
- IF (SELECT stock_quantity FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000001') <> 7 THEN
-  RAISE EXCEPTION 'stock was not reduced after separate invoice dispensing';
- END IF;
-END;
-$;
 SELECT set_config('test.perms','lab.create',false);
 CREATE FUNCTION public.test_fail_invoice_item() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
