@@ -24,6 +24,9 @@ AS $function$
 DECLARE
   v_plan_id uuid;
   v_policy_company_id uuid;
+  v_patient_id uuid;
+  v_patient_branch uuid;
+  v_user_branch uuid;
   v_plan_company_id uuid;
   v_plan_default numeric := 0;
   v_plan_requires_prior_auth boolean := false;
@@ -36,6 +39,10 @@ DECLARE
   v_requires_prior_auth boolean := false;
   v_excluded boolean := false;
 BEGIN
+  IF NOT COALESCE(private.app_has_perm('insurance.read'), false) THEN
+    RAISE EXCEPTION 'Permission denied' USING ERRCODE = '42501';
+  END IF;
+
   IF _gross_amount IS NULL
      OR _gross_amount::text IN ('NaN', 'Infinity', '-Infinity')
      OR _gross_amount < 0 THEN
@@ -43,16 +50,48 @@ BEGIN
   END IF;
 
   -- A policy is usable only during its validity window and while active.
-  SELECT pi.plan_id, pi.company_id
-    INTO v_plan_id, v_policy_company_id
+  SELECT pi.plan_id, pi.company_id, pi.patient_id
+    INTO v_plan_id, v_policy_company_id, v_patient_id
     FROM public.patient_insurance pi
    WHERE pi.id = _patient_insurance_id
-     AND pi.deleted_at IS NULL
-     AND pi.status = 'active'
-     AND pi.start_date <= CURRENT_DATE
-     AND (pi.expiry_date IS NULL OR pi.expiry_date >= CURRENT_DATE);
+     AND pi.deleted_at IS NULL;
 
   IF NOT FOUND THEN
+    covered_amount := 0;
+    patient_amount := _gross_amount;
+    requires_prior_auth := false;
+    excluded := false;
+    coverage_rule_id := NULL;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  IF NOT COALESCE(private.is_super_admin(), false) THEN
+    SELECT p.branch_id
+      INTO v_patient_branch
+      FROM public.patients p
+     WHERE p.id = v_patient_id
+       AND p.deleted_at IS NULL;
+
+    SELECT u.branch_id
+      INTO v_user_branch
+      FROM public.users u
+     WHERE u.auth_user_id = auth.uid()
+       AND COALESCE(u.active, true) = true
+       AND u.deleted_at IS NULL
+     LIMIT 1;
+
+    IF v_patient_branch IS NULL
+       OR v_user_branch IS NULL
+       OR v_patient_branch IS DISTINCT FROM v_user_branch THEN
+      RAISE EXCEPTION 'cross-branch insurance coverage access denied'
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+
+  IF (SELECT pi.status FROM public.patient_insurance pi WHERE pi.id = _patient_insurance_id) <> 'active'
+     OR (SELECT pi.start_date FROM public.patient_insurance pi WHERE pi.id = _patient_insurance_id) > CURRENT_DATE
+     OR (SELECT pi.expiry_date FROM public.patient_insurance pi WHERE pi.id = _patient_insurance_id) < CURRENT_DATE THEN
     covered_amount := 0;
     patient_amount := _gross_amount;
     requires_prior_auth := false;
