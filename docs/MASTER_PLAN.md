@@ -147,3 +147,9 @@
 - Figma account check indicates the connected seat is **View**; editable Figma work may require an Editor seat. No Figma file was created or changed. Repository planning and research proceeded without assuming write access.
 - Next: recover/match the 79 migration SQL sources as already documented, while beginning a code-backed audit of the P0 surfaces (patient identity/context, consultation/prescribing, lab results, pharmacy/inventory, permissions and dialog behavior). No production data or schema was changed by this planning work.
 
+## First code-backed P0 UX/workflow review — 2026-10-15
+- Added [`docs/UX_AUDIT_FINDINGS_P0.md`](UX_AUDIT_FINDINGS_P0.md) with source-backed findings from patient chart, patient picker, visits, pharmacy dispensing, lab result handling, and shared dialogs.
+- Initial confirmed risk areas: lab result writes/status transitions are split across client requests and some status-update errors are not checked; visit + invoice + invoice-item creation is split across client requests; patient chart history sections have inconsistent explicit limits; pharmacy queue is capped at 200 and periodically refreshes.
+- Important positive foundations were also recorded: pharmacy dispensing calls an atomic FEFO-aware database RPC; the patient picker includes MRN/phone disambiguation and a duplicate-patient hint; the shared dialog uses Radix primitives and responsive sizing. Findings explicitly separate confirmed code behavior from risks needing runtime/schema verification.
+- Updated the audit register to `Mapped` for the six source surfaces reviewed so far; this does not mean the screens have passed runtime, accessibility, or user-task validation.
+

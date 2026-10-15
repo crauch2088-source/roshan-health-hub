@@ -17,16 +17,16 @@ This is a work register, not a claim that the listed surfaces have already been 
 | UX-007 | Queue | `src/routes/_authenticated/queue.tsx` | Check-in, waiting, priority, open encounter | P1 | Not started |
 | UX-008 | Appointments | `src/routes/_authenticated/appointments.tsx` | Schedule, booking, check-in, reschedule | P1 | Not started |
 | UX-009 | Patient list | `src/routes/_authenticated/patients.tsx` | Search, deduplication, registration | P0 | Not started |
-| UX-010 | Patient chart | `src/routes/_authenticated/patients_.$patientId.tsx` | Longitudinal chart and patient context | P0 | Not started |
-| UX-011 | Visits | `src/routes/_authenticated/visits.tsx` | Visit lifecycle and encounter worklist | P1 | Not started |
+| UX-010 | Patient chart | `src/routes/_authenticated/patients_.$patientId.tsx` | Longitudinal chart and patient context | P0 | Mapped |
+| UX-011 | Visits | `src/routes/_authenticated/visits.tsx` | Visit lifecycle and encounter worklist | P1 | Mapped |
 | UX-012 | Clinic consultation | `src/routes/_authenticated/clinic.tsx` | Clinical note, diagnosis, orders, prescription | P0 | Not started |
 | UX-013 | Visit detail | `src/routes/_authenticated/clinic_.$visitId.tsx` | Resume/review a specific encounter | P0 | Not started |
 | UX-014 | Follow-ups | `src/routes/_authenticated/followups.tsx` | Due follow-up and closure loop | P2 | Not started |
 | UX-015 | Certificates | `src/routes/_authenticated/certificates.tsx` | Certificate/referral document workflow | P2 | Not started |
 | UX-016 | Lab orders | `src/routes/_authenticated/lab.tsx` | Order, collect, process, track result | P0 | Not started |
-| UX-017 | Lab order detail | `src/routes/_authenticated/lab_.$orderId.tsx` | Result entry, review, correction, escalation | P0 | Not started |
+| UX-017 | Lab order detail | `src/routes/_authenticated/lab_.$orderId.tsx` | Result entry, review, correction, escalation | P0 | Mapped |
 | UX-018 | Lab catalog | `src/routes/_authenticated/lab-catalog.tsx` | Test catalog, price, specimen/reference settings | P2 | Not started |
-| UX-019 | Pharmacy | `src/routes/_authenticated/pharmacy.tsx` | Prescription validation, dispensing, counseling | P0 | Not started |
+| UX-019 | Pharmacy | `src/routes/_authenticated/pharmacy.tsx` | Prescription validation, dispensing, counseling | P0 | Mapped |
 | UX-020 | Inventory | `src/routes/_authenticated/inventory.tsx` | Batches, receipts, FEFO, stock movements | P0 | Not started |
 | UX-021 | Billing | `src/routes/_authenticated/billing.tsx` | Invoice creation, payment, balance | P0 | Not started |
 | UX-022 | Invoice detail | `src/routes/_authenticated/billing_.$invoiceId.tsx` | Invoice lifecycle, receipt, corrections | P1 | Not started |
@@ -41,11 +41,11 @@ This is a work register, not a claim that the listed surfaces have already been 
 | UX-031 | Settings | `src/routes/_authenticated/settings.tsx` | Configuration, branch and system settings | P1 | Not started |
 | UX-032 | Audit log | `src/routes/_authenticated/audit.tsx` | Searchable audit evidence and access review | P1 | Not started |
 | UX-033 | Global search dialog | `src/components/global-search-dialog.tsx` | Search patients/tasks and keyboard/touch use | P1 | Not started |
-| UX-034 | Patient picker | `src/components/patient-picker.tsx` | Patient selection, disambiguation, context safety | P0 | Not started |
+| UX-034 | Patient picker | `src/components/patient-picker.tsx` | Patient selection, disambiguation, context safety | P0 | Mapped |
 | UX-035 | Desktop nav rail | `src/components/nav-rail.tsx` | Information architecture and role-aware nav | P1 | Not started |
 | UX-036 | Mobile bottom nav | `src/components/mobile-bottom-nav.tsx` | Mobile navigation and reachability | P1 | Not started |
 | UX-037 | Breadcrumb nav | `src/components/breadcrumb-nav.tsx` | Back/return paths and context preservation | P2 | Not started |
-| UX-038 | Dialog primitive | `src/components/ui/dialog.tsx` | Focus, escape, scroll, unsaved changes | P0 | Not started |
+| UX-038 | Dialog primitive | `src/components/ui/dialog.tsx` | Focus, escape, scroll, unsaved changes | P0 | Mapped |
 | UX-039 | Alert dialog primitive | `src/components/ui/alert-dialog.tsx` | Consequential/destructive confirmation | P0 | Not started |
 | UX-040 | Drawer primitive | `src/components/ui/drawer.tsx` | Contextual secondary tasks and mobile behavior | P1 | Not started |
 | UX-041 | Sidebar primitive | `src/components/ui/sidebar.tsx` | Navigation states, responsive layout | P1 | Not started |
