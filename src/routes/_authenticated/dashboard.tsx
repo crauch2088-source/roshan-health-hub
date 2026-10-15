@@ -390,7 +390,9 @@ function DashboardPageInner() {
           <SectionTitle>{t("clinical_summary")}</SectionTitle>
         </div>
         <DataPanel title={t("visits_today")} action={<ViewAll to="/visits" perm="visits.read" />}>
-          {visitRows.length === 0 ? (
+          {visits.error ? (
+            <ErrorBox error={visits.error} />
+          ) : visitRows.length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -426,7 +428,9 @@ function DashboardPageInner() {
           title={t("upcoming_appointments")}
           action={<ViewAll to="/appointments" perm="appointments.read" />}
         >
-          {((appointments.data ?? []) as Row[]).length === 0 ? (
+          {appointments.error ? (
+            <ErrorBox error={appointments.error} />
+          ) : ((appointments.data ?? []) as Row[]).length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -458,7 +462,9 @@ function DashboardPageInner() {
           <SectionTitle>{t("pending_tasks")}</SectionTitle>
         </div>
         <DataPanel title={t("pending_lab")} action={<ViewAll to="/lab" perm="lab.read" />}>
-          {((labPending.data ?? []) as Row[]).length === 0 ? (
+          {labPending.error ? (
+            <ErrorBox error={labPending.error} />
+          ) : ((labPending.data ?? []) as Row[]).length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -488,7 +494,9 @@ function DashboardPageInner() {
           title={t("upcoming_followups")}
           action={<ViewAll to="/followups" perm="followups.read" />}
         >
-          {((followups.data ?? []) as Row[]).length === 0 ? (
+          {followups.error ? (
+            <ErrorBox error={followups.error} />
+          ) : ((followups.data ?? []) as Row[]).length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -522,7 +530,9 @@ function DashboardPageInner() {
           icon={<AlertTriangle className="text-warning" aria-hidden />}
           action={<ViewAll to="/inventory" perm="pharmacy.read" />}
         >
-          {lowStockRows.length === 0 ? (
+          {lowStockMeds.error ? (
+            <ErrorBox error={lowStockMeds.error} />
+          ) : lowStockRows.length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -552,7 +562,9 @@ function DashboardPageInner() {
           title={t("expiring_medicines")}
           icon={<AlertTriangle className="text-warning" aria-hidden />}
         >
-          {expiringRows.length === 0 ? (
+          {batchesForAlerts.error ? (
+            <ErrorBox error={batchesForAlerts.error} />
+          ) : expiringRows.length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -589,7 +601,9 @@ function DashboardPageInner() {
           title={t("expired_medicines")}
           icon={<AlertTriangle className="text-destructive" aria-hidden />}
         >
-          {expiredRows.length === 0 ? (
+          {batchesForAlerts.error ? (
+            <ErrorBox error={batchesForAlerts.error} />
+          ) : expiredRows.length === 0 ? (
             <Empty />
           ) : (
             <Table density="compact">
@@ -629,6 +643,8 @@ function DashboardPageInner() {
         >
           {insurance.isLoading ? (
             <Loading />
+          ) : insurance.error ? (
+            <ErrorBox error={insurance.error} />
           ) : insurancePendingRows.length === 0 ? (
             <Empty />
           ) : (
