@@ -123,3 +123,10 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - The recovered migration also replaces `public.fn_dispense_prescription` with branch-aware, batch-aware dispensing logic, but no matching definition was found in the likely checked-in SQL candidates (`db/roshan_phase1_migration.sql`, finance, security hardening, and role-guard files).
 - **Classification: high-priority partial mapping.** Verify the final deployed function definitions and locate or reconstruct the canonical source for dispensing before declaring pharmacy and finance hardening reconciled. Do not replay this patch on production as a shortcut.
 - No SQL was executed; production was read-only.
+
+
+### Applied privilege migration `20260911130812_restrict_security_definer_api_execution_20260911`
+- The recovered migration dynamically revokes `EXECUTE` from `PUBLIC`, `anon`, and `authenticated` on every `SECURITY DEFINER` function in `public`, then grants `authenticated` execution to a specific allowlist of 14 application RPCs.
+- The likely repository candidates do not contain this same global revoke-and-allowlist loop. `db/roshan_security_hardening.sql` grants a smaller set of helpers and hardens audit-log access; `db/roshan_security_privileged_role_guard.sql` is a different feature (triggers guarding the super-admin role), not a source equivalent for this privilege migration. Grants may be distributed across other SQL files, so effective privileges cannot be inferred from one file.
+- **Classification: high-priority unresolved privilege mapping.** Build a signature-by-signature allowlist comparison against the current deployed catalog before changing canonical SQL; blindly replaying the broad revoke could break required RPC access, while missing the intended restrictions could expose privileged functions.
+- No SQL was executed; production was read-only.
