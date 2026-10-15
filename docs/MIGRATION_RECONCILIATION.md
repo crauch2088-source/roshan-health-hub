@@ -109,3 +109,10 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - **Classification: confirmed function-level mismatch.** The recovered `next_mrn()` and `next_invoice_number()` take transaction-scoped advisory locks and compute the next numeric suffix using `MAX(...)`; the repository baseline uses `COUNT(*) + 1` and has no advisory lock. Under concurrent requests, the baseline can produce the same proposed number for multiple transactions and then fail against the unique constraints rather than allocating a number safely.
 - The recovered function patch does not itself prove the live unique constraints are present; reconcile both the function bodies and the deployed `patients.mrn` / `invoices.invoice_number` uniqueness before replaying or editing the canonical baseline.
 - No SQL was executed; production was read-only.
+
+
+### Applied branch-isolation migration `20260911133255_enforce_branch_isolation_rls`
+- Inspected the recovered body and searched the repository for `private.app_has_branch_access`. The recovered migration creates this `SECURITY DEFINER` helper with an empty `search_path`, then dynamically augments existing RLS policy `USING` and/or `WITH CHECK` expressions across 13 branch-scoped tables.
+- **Classification: no exact repository source match found; effective-policy parity remains unresolved.** The likely `db/roshan_security_hardening.sql` candidate does not contain this helper or dynamic policy loop, and repository search found no exact `app_has_branch_access` occurrence. Other files may encode equivalent per-table conditions, so do not conclude every branch guard is absent without reviewing the effective policy set.
+- This is a high-priority reconciliation gate because missing branch isolation can expose cross-branch patient and financial data. Verify current policies on a disposable/staging schema against each listed table before any release; do not run the recovered SQL on production as a shortcut.
+- No SQL was executed; production was read-only.
