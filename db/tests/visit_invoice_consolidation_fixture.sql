@@ -4,7 +4,7 @@ CREATE SCHEMA private;
 CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.partners (id uuid PRIMARY KEY, active boolean, deleted_at timestamptz);
-CREATE TABLE public.visits (id uuid PRIMARY KEY, patient_id uuid NOT NULL, deleted_at timestamptz);
+CREATE TABLE public.visits (id uuid PRIMARY KEY, patient_id uuid NOT NULL, consultation_fee numeric DEFAULT 0, deleted_at timestamptz);
 CREATE TABLE public.lab_tests (id uuid PRIMARY KEY, name text NOT NULL, price numeric NOT NULL, active boolean DEFAULT true, deleted_at timestamptz);
 CREATE TABLE public.lab_orders (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), patient_id uuid NOT NULL, visit_id uuid NOT NULL,

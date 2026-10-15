@@ -5,10 +5,10 @@ INSERT INTO public.users (id,branch_id) VALUES ('10000000-0000-0000-0000-0000000
 INSERT INTO public.patients (id,branch_id) VALUES
  ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001'),
  ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002');
-INSERT INTO public.visits (id,patient_id) VALUES
- ('50000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001'),
- ('50000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002'),
- ('50000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000001');
+INSERT INTO public.visits (id,patient_id,consultation_fee) VALUES
+ ('50000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',30),
+ ('50000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002',30),
+ ('50000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000001',30);
 INSERT INTO public.lab_tests (id,name,price,active) VALUES
  ('60000000-0000-0000-0000-000000000001','CBC',20,true),
  ('60000000-0000-0000-0000-000000000002','Glucose',5,true),
@@ -17,9 +17,8 @@ INSERT INTO public.lab_tests (id,name,price,active) VALUES
 DO $$
 DECLARE v_invoice uuid;
 BEGIN
- v_invoice := private.create_or_append_visit_invoice_atomic(
-  '50000000-0000-0000-0000-000000000001', CURRENT_DATE, 0,
-  '[{"item_name":"Consultation","item_type":"consultation","quantity":1,"unit_price":30}]'::jsonb, false
+ v_invoice := public.create_visit_consultation_invoice_atomic(
+  '50000000-0000-0000-0000-000000000001', CURRENT_DATE
  );
  IF NOT EXISTS (SELECT 1 FROM public.invoices WHERE id=v_invoice AND is_primary IS TRUE AND visit_id='50000000-0000-0000-0000-000000000001' AND subtotal=30 AND net_amount=30) THEN
    RAISE EXCEPTION 'primary consultation invoice not created correctly';
@@ -164,8 +163,10 @@ $$;
 
 DO $$
 BEGIN
- IF NOT has_function_privilege('authenticated','public.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN RAISE EXCEPTION 'authenticated cannot execute visit invoice RPC'; END IF;
- IF has_function_privilege('anon','public.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute visit invoice RPC'; END IF;
+ IF has_function_privilege('authenticated','private.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN RAISE EXCEPTION 'authenticated can execute private invoice helper'; END IF;
+ IF has_function_privilege('anon','private.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute private invoice helper'; END IF;
+ IF NOT has_function_privilege('authenticated','public.create_visit_consultation_invoice_atomic(uuid,date)','EXECUTE') THEN RAISE EXCEPTION 'authenticated cannot execute consultation invoice RPC'; END IF;
+ IF has_function_privilege('anon','public.create_visit_consultation_invoice_atomic(uuid,date)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute consultation invoice RPC'; END IF;
  IF NOT has_function_privilege('authenticated','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean)','EXECUTE') THEN RAISE EXCEPTION 'authenticated cannot execute lab invoice RPC'; END IF;
  IF has_function_privilege('anon','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute lab invoice RPC'; END IF;
 END;
