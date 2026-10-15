@@ -84,7 +84,7 @@ export function updatePrescriptionEntryName(
 /** Build a safe PostgREST OR filter from user-entered catalog text. */
 export function buildMedicineSearchFilter(term: string): string | null {
   const clean = term
-    .replace(/[(),*\\'"]/g, " ")
+    .replace(/[(),*%_\\'"]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   if (clean.length < 2) return null;
