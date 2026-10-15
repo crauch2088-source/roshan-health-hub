@@ -25,6 +25,8 @@ DECLARE
   item_gross numeric;
   item_covered numeric;
   item_patient numeric;
+  item_service_type text;
+  item_description text;
 BEGIN
   IF NOT public.app_has_perm('insurance.create') THEN
     RAISE EXCEPTION 'not authorised to create insurance claims';
@@ -42,10 +44,14 @@ BEGIN
 
   SELECT patient_id INTO pi_patient_id
   FROM public.patient_insurance
-  WHERE id = _patient_insurance_id AND deleted_at IS NULL;
+  WHERE id = _patient_insurance_id
+    AND deleted_at IS NULL
+    AND status = 'active'
+    AND start_date <= CURRENT_DATE
+    AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE);
 
   IF pi_patient_id IS NULL THEN
-    RAISE EXCEPTION 'patient insurance not found';
+    RAISE EXCEPTION 'active patient insurance not found';
   END IF;
 
   SELECT patient_id, branch_id INTO invoice_patient_id, invoice_branch
@@ -73,23 +79,59 @@ BEGIN
   -- atomic, but validating first makes the intended financial invariant explicit.
   FOR item IN SELECT value FROM jsonb_array_elements(_items) AS x(value)
   LOOP
+    IF jsonb_typeof(item) IS DISTINCT FROM 'object' THEN
+      RAISE EXCEPTION 'each claim item must be a JSON object';
+    END IF;
+
+    IF jsonb_typeof(item->'gross_amount') IS DISTINCT FROM 'number'
+       OR jsonb_typeof(item->'covered_amount') IS DISTINCT FROM 'number'
+       OR jsonb_typeof(item->'patient_amount') IS DISTINCT FROM 'number' THEN
+      RAISE EXCEPTION 'claim item amounts must be JSON numbers';
+    END IF;
+
+    item_service_type := item->>'service_type';
+    item_description := btrim(COALESCE(item->>'description', ''));
+
+    IF item_service_type IS NULL
+       OR item_service_type NOT IN ('consultation', 'lab', 'medicine') THEN
+      RAISE EXCEPTION 'unsupported insurance claim service type';
+    END IF;
+
+    IF item_description = '' THEN
+      RAISE EXCEPTION 'claim item description is required';
+    END IF;
+
     BEGIN
-      item_gross := COALESCE((item->>'gross_amount')::numeric, 0);
-      item_covered := COALESCE((item->>'covered_amount')::numeric, 0);
-      item_patient := COALESCE((item->>'patient_amount')::numeric, 0);
+      item_gross := (item->>'gross_amount')::numeric;
+      item_covered := (item->>'covered_amount')::numeric;
+      item_patient := (item->>'patient_amount')::numeric;
     EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range THEN
       RAISE EXCEPTION 'invalid claim item amount';
     END;
 
-    IF item_gross < 0 OR item_covered < 0 OR item_patient < 0 THEN
-      RAISE EXCEPTION 'claim item amounts cannot be negative';
+    -- Reject special numeric values and precision that would be silently
+    -- rounded when persisted as monetary amounts.
+    IF item_gross::text IN ('NaN', 'Infinity', '-Infinity')
+       OR item_covered::text IN ('NaN', 'Infinity', '-Infinity')
+       OR item_patient::text IN ('NaN', 'Infinity', '-Infinity') THEN
+      RAISE EXCEPTION 'claim item amounts must be finite';
+    END IF;
+
+    IF item_gross <= 0 OR item_covered < 0 OR item_patient < 0 THEN
+      RAISE EXCEPTION 'claim gross amount must be positive and split amounts non-negative';
+    END IF;
+
+    IF item_gross <> round(item_gross, 2)
+       OR item_covered <> round(item_covered, 2)
+       OR item_patient <> round(item_patient, 2) THEN
+      RAISE EXCEPTION 'claim item amounts must have at most two decimal places';
     END IF;
 
     IF item_covered > item_gross OR item_patient > item_gross THEN
       RAISE EXCEPTION 'claim covered and patient amounts cannot exceed gross amount';
     END IF;
 
-    IF abs((item_covered + item_patient) - item_gross) > 0.01 THEN
+    IF item_covered + item_patient <> item_gross THEN
       RAISE EXCEPTION 'claim item covered and patient amounts must equal gross amount';
     END IF;
 
@@ -112,10 +154,10 @@ BEGIN
       claim_id,
       item->>'service_type',
       NULLIF(item->>'reference_id', '')::uuid,
-      COALESCE(item->>'description', ''),
-      COALESCE((item->>'gross_amount')::numeric, 0),
-      COALESCE((item->>'covered_amount')::numeric, 0),
-      COALESCE((item->>'patient_amount')::numeric, 0),
+      btrim(COALESCE(item->>'description', '')),
+      (item->>'gross_amount')::numeric,
+      (item->>'covered_amount')::numeric,
+      (item->>'patient_amount')::numeric,
       NULLIF(item->>'coverage_rule_id', '')::uuid
     );
   END LOOP;

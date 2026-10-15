@@ -1,6 +1,6 @@
 -- Contract regression test for db/roshan_phase5_insurance_claim_amount_integrity.sql
 -- Run only against a disposable/staging database after applying the migration.
--- This test verifies the deployed RPC definition and security posture; behavioral
+-- This verifies the deployed RPC definition and security posture; behavioral
 -- input tests should additionally be exercised in staging with authenticated fixtures.
 DO $$
 DECLARE
@@ -22,10 +22,22 @@ BEGIN
     RAISE EXCEPTION 'FAIL: create_insurance_claim(uuid, uuid, jsonb, text) not found';
   END IF;
   IF position('claim item covered and patient amounts must equal gross amount' IN v_definition) = 0 THEN
-    RAISE EXCEPTION 'FAIL: amount-split invariant missing';
+    RAISE EXCEPTION 'FAIL: exact amount-split invariant missing';
   END IF;
   IF position('claim covered and patient amounts cannot exceed gross amount' IN v_definition) = 0 THEN
     RAISE EXCEPTION 'FAIL: per-component upper bound missing';
+  END IF;
+  IF position('claim gross amount must be positive and split amounts non-negative' IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'FAIL: positive gross amount invariant missing';
+  END IF;
+  IF position('unsupported insurance claim service type' IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'FAIL: service type validation missing';
+  END IF;
+  IF position('active patient insurance not found' IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'FAIL: active insurance validation missing';
+  END IF;
+  IF position('patient insurance does not belong to invoice patient' IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'FAIL: invoice/patient association guard missing';
   END IF;
   IF position('cross-branch insurance claim access denied' IN v_definition) = 0 THEN
     RAISE EXCEPTION 'FAIL: branch-isolation guard missing';
@@ -37,5 +49,5 @@ BEGIN
     RAISE EXCEPTION 'FAIL: anon must not execute create_insurance_claim';
   END IF;
 
-  RAISE NOTICE 'PASS: claim amount invariants, branch guard, empty search_path, and anon execute restriction verified';
+  RAISE NOTICE 'PASS: amount invariants, insurance status, invoice association, service type, branch guard, empty search_path, and anon execute restriction verified';
 END $$;
