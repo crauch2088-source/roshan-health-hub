@@ -153,3 +153,6 @@
 - Important positive foundations were also recorded: pharmacy dispensing calls an atomic FEFO-aware database RPC; the patient picker includes MRN/phone disambiguation and a duplicate-patient hint; the shared dialog uses Radix primitives and responsive sizing. Findings explicitly separate confirmed code behavior from risks needing runtime/schema verification.
 - Updated the audit register to `Mapped` for the six source surfaces reviewed so far; this does not mean the screens have passed runtime, accessibility, or user-task validation.
 
+- Extended [`docs/UX_AUDIT_FINDINGS_P0.md`](UX_AUDIT_FINDINGS_P0.md) with F-009, a source-backed review of prescription authoring: generic global dose/frequency/duration choices, unitless dose options, missing patient-specific safety context in the tab, a 500-item catalog cap, and separate prescription-header/item writes.
+- Added prescription authoring as a distinct P0 audit item in the register. This is a confirmed UI-design gap, not authorization to inject unreviewed dosing rules; clinical regimens require an approved source and named reviewer.
+

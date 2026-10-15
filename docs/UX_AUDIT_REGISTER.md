@@ -49,6 +49,7 @@ This is a work register, not a claim that the listed surfaces have already been 
 | UX-039 | Alert dialog primitive | `src/components/ui/alert-dialog.tsx` | Consequential/destructive confirmation | P0 | Not started |
 | UX-040 | Drawer primitive | `src/components/ui/drawer.tsx` | Contextual secondary tasks and mobile behavior | P1 | Not started |
 | UX-041 | Sidebar primitive | `src/components/ui/sidebar.tsx` | Navigation states, responsive layout | P1 | Not started |
+| UX-042 | Prescription authoring | `src/features/clinic/consultation/components/PrescriptionTab.tsx` | Medicine-specific regimen, patient context, units, catalog search, atomic save | P0 | Mapped |
 
 ## Required audit record for every item
 
