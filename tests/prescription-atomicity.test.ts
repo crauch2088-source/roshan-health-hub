@@ -102,7 +102,13 @@ test("editing a selected medicine name clears its catalog link and old regimen",
     dosage_form: "Capsule",
   });
   const edited = editPrescriptionName(
-    { ...selected, dose: "500 mg", frequency: "twice daily", duration: "5 days", instructions: "after food" },
+    {
+      ...selected,
+      dose: "500 mg",
+      frequency: "twice daily",
+      duration: "5 days",
+      instructions: "after food",
+    },
     "Custom medicine",
   );
   assert.equal(edited.medicine_id, "");
