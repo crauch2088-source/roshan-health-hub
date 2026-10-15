@@ -264,3 +264,14 @@ Regex-based object inventory refined the triage without executing SQL:
 - Phase-2 clinical workflow pair: both contain the same five named indexes; only the legacy file contains the lab-parameter seed insert. The seed could exist in a separate ledger migration, but that coverage has not been established.
 
 These inventories are static pattern matches and may miss dynamic SQL, altered existing objects, statement ordering, or semantics. They are evidence for targeted manual comparison, not a substitute for SQL parsing or isolated replay.
+## Work-session checkpoint — 2026-10-15
+
+### Open engineering PR verification (read-only snapshot)
+
+- PR #13 insurance claim integrity: still open/draft, head `e1ef268c519398e97e78c8beec96dc613e141340`; CI run `38789219521` completed successfully. This is test evidence for its candidate branch only; insurance migrations/functions remain unapplied to production.
+- PR #19 patient picker balance integrity: still open/draft, head `2e1b99ab3f2b5c4508befc6b00bda1c5499c556d`; CI run `38771066048` completed successfully. The pure balance helper returns unknown rather than a fabricated total when an amount is untrustworthy; it clamps per-invoice overpayment at zero. This does not replace the UI's full-pagination/error-state review.
+- PR #22 atomic prescription creation: still open/draft, head `46eb12b0523e87c4a9fc70f7226f4056984c46d8`; CI run `38787425415` completed successfully. Includes the additional consultation UX hardening: debounced server-side medicine search (30-row cap) and regimen reset on medicine changes.
+- PR #23 atomic invoice creation: still open/draft, head `e17da703cc8ffbe5f88828ccf504f3a17505aee6`; CI run `38785156394` completed successfully. Includes a super-admin cross-branch test asserting invoices are assigned to the patient's branch.
+- PR #26 migration recovery archive: still open/draft, head `7c3286d4843f656cc73ba028be494ab3a932747a`; previously reported CI passed. Archive remains quarantine-only; it is not the canonical migration directory.
+
+These are draft-branch CI results, not release approvals. No PR was merged, no production SQL was executed, and no deployment was initiated in this work session.
