@@ -65,8 +65,8 @@ BEGIN
       RAISE EXCEPTION 'prescription quantity must be a JSON number';
     END IF;
     v_quantity := (v_item->>'quantity')::numeric;
-    IF v_quantity::text IN ('NaN', 'Infinity', '-Infinity') OR v_quantity <= 0 THEN
-      RAISE EXCEPTION 'prescription quantity must be finite and positive';
+    IF v_quantity::text IN ('NaN', 'Infinity', '-Infinity') OR v_quantity <= 0 OR v_quantity <> trunc(v_quantity) THEN
+      RAISE EXCEPTION 'prescription quantity must be a finite positive whole number';
     END IF;
     IF btrim(COALESCE(v_item->>'medication_name', '')) = '' THEN
       RAISE EXCEPTION 'medication name is required';

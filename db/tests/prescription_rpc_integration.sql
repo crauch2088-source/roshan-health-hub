@@ -32,6 +32,10 @@ BEGIN
   RAISE EXCEPTION 'test failed: zero quantity accepted';
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: zero quantity accepted' THEN RAISE; END IF; END;
  BEGIN
+  PERFORM public.create_prescription_atomic('30000000-0000-0000-0000-000000000001',false,'[{"medication_name":"fractional quantity","quantity":1.5}]'::jsonb);
+  RAISE EXCEPTION 'test failed: fractional quantity accepted';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: fractional quantity accepted' THEN RAISE; END IF; END;
+ BEGIN
   PERFORM public.create_prescription_atomic('30000000-0000-0000-0000-000000000001',false,'[{"medicine_id":"50000000-0000-0000-0000-000000000099","medication_name":"missing","quantity":1}]'::jsonb);
   RAISE EXCEPTION 'test failed: missing medicine accepted';
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: missing medicine accepted' THEN RAISE; END IF; END;
