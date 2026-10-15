@@ -122,6 +122,10 @@ BEGIN
 END;
 $function$;
 
+-- Stock ledger writes must go through atomic SECURITY DEFINER workflows.
+DROP POLICY IF EXISTS stock_movements_insert ON public.stock_movements;
+REVOKE INSERT ON TABLE public.stock_movements FROM PUBLIC, anon, authenticated;
+
 REVOKE ALL ON FUNCTION public.fn_receive_pharmacy_batch(uuid, numeric, text, date, date, numeric, numeric, uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.fn_receive_pharmacy_batch(uuid, numeric, text, date, date, numeric, numeric, uuid, text) FROM anon;
 GRANT EXECUTE ON FUNCTION public.fn_receive_pharmacy_batch(uuid, numeric, text, date, date, numeric, numeric, uuid, text) TO authenticated;
