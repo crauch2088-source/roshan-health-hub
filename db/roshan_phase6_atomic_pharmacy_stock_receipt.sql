@@ -25,12 +25,27 @@ BEGIN
     RAISE EXCEPTION 'not authorised to receive pharmacy stock' USING ERRCODE = '42501';
   END IF;
 
-  IF p_medicine_id IS NULL OR p_quantity IS NULL OR p_quantity <= 0 OR p_quantity <> trunc(p_quantity) THEN
-    RAISE EXCEPTION 'quantity must be a positive whole number';
+  IF p_medicine_id IS NULL OR p_quantity IS NULL
+     OR p_quantity::text IN ('NaN', 'Infinity', '-Infinity')
+     OR p_quantity <= 0 OR p_quantity <> trunc(p_quantity)
+     OR p_quantity > 2147483647 THEN
+    RAISE EXCEPTION 'quantity must be a positive whole number within supported stock range';
   END IF;
-  IF (p_purchase_price IS NOT NULL AND p_purchase_price < 0)
-     OR (p_selling_price IS NOT NULL AND p_selling_price < 0) THEN
-    RAISE EXCEPTION 'prices must not be negative';
+
+  IF (p_purchase_price IS NOT NULL AND (
+        p_purchase_price::text IN ('NaN', 'Infinity', '-Infinity') OR p_purchase_price < 0
+      ))
+     OR (p_selling_price IS NOT NULL AND (
+        p_selling_price::text IN ('NaN', 'Infinity', '-Infinity') OR p_selling_price < 0
+      )) THEN
+    RAISE EXCEPTION 'prices must be finite numbers and must not be negative';
+  END IF;
+
+  IF p_manufacture_date IS NOT NULL AND p_manufacture_date > CURRENT_DATE THEN
+    RAISE EXCEPTION 'manufacture date cannot be in the future';
+  END IF;
+  IF p_expiry_date IS NOT NULL AND p_expiry_date < CURRENT_DATE THEN
+    RAISE EXCEPTION 'expired batches cannot be received into available stock';
   END IF;
   IF p_manufacture_date IS NOT NULL AND p_expiry_date IS NOT NULL
      AND p_expiry_date < p_manufacture_date THEN
