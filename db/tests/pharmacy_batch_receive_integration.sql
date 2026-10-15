@@ -40,6 +40,12 @@ BEGIN
     WHERE batch_id=v_batch AND movement_type='purchase' AND quantity=10
       AND branch_id='20000000-0000-0000-0000-000000000001'
   ) THEN RAISE EXCEPTION 'purchase stock movement missing'; END IF;
+  IF has_table_privilege('authenticated','public.stock_movements','INSERT') THEN
+    RAISE EXCEPTION 'authenticated can still write stock movements directly';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='stock_movements' AND policyname='stock_movements_insert') THEN
+    RAISE EXCEPTION 'direct stock movement insert policy still exists';
+  END IF;
 
   FOREACH v_qty IN ARRAY ARRAY['NaN'::numeric,'Infinity'::numeric,1.5::numeric,0::numeric,(-1)::numeric] LOOP
     v_rejected := false;
