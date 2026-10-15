@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { validateInsuranceClaimDraft } from "../src/lib/insurance-validation.ts";
+import {
+  isInsuranceClaimReadyToSubmit,
+  validateInsuranceClaimDraft,
+} from "../src/lib/insurance-validation.ts";
 
 const validItem = {
   service_type: "consultation",
@@ -12,6 +15,45 @@ const validItem = {
   patient_amount: 20,
   coverage_rule_id: null,
 };
+
+test("save readiness requires patient insurance, invoice, items, and no active save", () => {
+  assert.equal(
+    isInsuranceClaimReadyToSubmit({
+      patientInsuranceId: "insurance-1",
+      invoiceId: "invoice-1",
+      itemCount: 1,
+      isSaving: false,
+    }),
+    true,
+  );
+  assert.equal(
+    isInsuranceClaimReadyToSubmit({
+      patientInsuranceId: "insurance-1",
+      invoiceId: "",
+      itemCount: 1,
+      isSaving: false,
+    }),
+    false,
+  );
+  assert.equal(
+    isInsuranceClaimReadyToSubmit({
+      patientInsuranceId: "insurance-1",
+      invoiceId: "invoice-1",
+      itemCount: 0,
+      isSaving: false,
+    }),
+    false,
+  );
+  assert.equal(
+    isInsuranceClaimReadyToSubmit({
+      patientInsuranceId: "insurance-1",
+      invoiceId: "invoice-1",
+      itemCount: 1,
+      isSaving: true,
+    }),
+    false,
+  );
+});
 
 test("rejects a claim without an invoice before calling the RPC", () => {
   assert.throws(
