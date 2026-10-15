@@ -5,6 +5,20 @@ export type InsuranceClaimDraftItem = {
   patient_amount: number;
 };
 
+export function isInsuranceClaimReadyToSubmit(args: {
+  patientInsuranceId: string;
+  invoiceId: string | null | undefined;
+  itemCount: number;
+  isSaving: boolean;
+}): boolean {
+  return Boolean(
+    args.patientInsuranceId.trim() &&
+      args.invoiceId?.trim() &&
+      args.itemCount > 0 &&
+      !args.isSaving,
+  );
+}
+
 export function validateInsuranceClaimDraft(args: {
   patientInsuranceId: string;
   invoiceId: string | null | undefined;

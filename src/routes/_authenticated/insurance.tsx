@@ -52,6 +52,7 @@ import {
   type ClaimItemInput,
   type ClaimStatus,
 } from "@/lib/insurance";
+import { isInsuranceClaimReadyToSubmit } from "@/lib/insurance-validation";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -1039,7 +1040,14 @@ function ClaimsTab({ currency }: { currency: string }) {
               {t("cancel")}
             </Button>
             <Button
-              disabled={!patientInsuranceId || items.length === 0 || create.isPending}
+              disabled={
+                !isInsuranceClaimReadyToSubmit({
+                  patientInsuranceId,
+                  invoiceId,
+                  itemCount: items.length,
+                  isSaving: create.isPending,
+                })
+              }
               onClick={() => create.mutate(undefined as never)}
             >
               {create.isPending ? t("saving") : t("save")}
