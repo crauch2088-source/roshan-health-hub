@@ -74,3 +74,17 @@ test("medicine search removes PostgREST filter grammar characters", () => {
     "name.ilike.%amox status.eq.active brand%,generic_name.ilike.%amox status.eq.active brand%,brand_name.ilike.%amox status.eq.active brand%,strength.ilike.%amox status.eq.active brand%",
   );
 });
+
+test("selected medicine keeps its price after later searches change the result set", () => {
+  const entry = preparePrescriptionEntryForMedicine(
+    createEmptyPrescriptionEntry(),
+    {
+      id: "priced-medicine",
+      name: "Priced medicine",
+      dosage_form: "tablet",
+      selling_price: 12.5,
+    },
+  );
+
+  assert.equal(entry.unit_price, 12.5);
+});
