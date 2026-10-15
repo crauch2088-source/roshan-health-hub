@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { createEmptyPrescriptionDraft, createPrescriptionDraftForMedicine, type PrescriptionDraft } from "@/lib/prescription-draft";
+import { sanitizeTerm, useDebounced } from "@/lib/search";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,18 +16,6 @@ import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
-type Med = {
-  medicine_id: string;
-  name: string;
-  dose: string;
-  frequency: string;
-  duration: string;
-  quantity: string;
-  instructions: string;
-  dosage_form: string;
-  route: string;
-};
-
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
@@ -36,64 +26,49 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       .limit(1),
   );
   const patient = s(rel((visitQ.data ?? [])[0], "patients"), "id");
-  const medsQ = useRows<Row[]>(["medicines-search"], () =>
-    supabase
-      .from("medicines")
-      .select("id,name,generic_name,brand_name,strength,dosage_form,selling_price,stock_quantity")
-      .eq("active", true)
-      .is("deleted_at", null)
-      .order("name")
-      .limit(500),
+  const debouncedSearch = useDebounced(search, 300);
+  const cleanSearch = sanitizeTerm(debouncedSearch);
+  const medsQ = useRows<Row[]>(
+    ["medicines-search", cleanSearch],
+    () => {
+      let query = supabase
+        .from("medicines")
+        .select("id,name,generic_name,brand_name,strength,dosage_form,selling_price,stock_quantity")
+        .eq("active", true)
+        .is("deleted_at", null)
+        .order("name")
+        .limit(30);
+      if (cleanSearch.length >= 2) {
+        query = query.or(
+          `name.ilike.%${cleanSearch}%,generic_name.ilike.%${cleanSearch}%,brand_name.ilike.%${cleanSearch}%,strength.ilike.%${cleanSearch}%`,
+        );
+      }
+      return query;
+    },
+    { enabled: cleanSearch.length !== 1 },
   );
-  const [form, setForm] = useState<Med>({
-    medicine_id: "",
-    name: "",
-    dose: "",
-    frequency: "",
-    duration: "",
-    quantity: "1",
-    instructions: "",
-    dosage_form: "",
-    route: "",
-  });
+  const [form, setForm] = useState<PrescriptionDraft>(createEmptyPrescriptionDraft);
   const [items, setItems] = useState<Med[]>([]);
   const [external, setExternal] = useState(false);
   const [search, setSearch] = useState("");
-  const medicines = useMemo(() => (medsQ.data ?? []) as Row[], [medsQ.data]);
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return medicines.slice(0, 30);
-    return medicines
-      .filter((m) =>
-        `${s(m, "name")} ${s(m, "generic_name")} ${s(m, "brand_name")} ${s(m, "strength")}`
-          .toLowerCase()
-          .includes(q),
-      )
-      .slice(0, 30);
-  }, [medicines, search]);
+  const medicines = (medsQ.data ?? []) as Row[];
+  const filtered = medicines;
   const chooseMedicine = (id: string) => {
     const m = medicines.find((x) => s(x, "id") === id);
-    const formName = m ? s(m, "name") || s(m, "generic_name") : "";
-    const dosageForm = m ? s(m, "dosage_form") : "";
-    const defaultRoute =
-      dosageForm.toLowerCase().includes("tablet") ||
-      dosageForm.toLowerCase().includes("capsule") ||
-      dosageForm.toLowerCase().includes("syrup")
-        ? "Oral"
-        : "";
-    setForm((p) => ({
-      ...p,
-      medicine_id: id,
-      name: formName,
-      dosage_form: dosageForm,
-      route: defaultRoute,
-    }));
-    setSearch(formName);
+    if (!m) return;
+    const next = createPrescriptionDraftForMedicine({
+      id,
+      name: s(m, "name"),
+      generic_name: s(m, "generic_name"),
+      dosage_form: s(m, "dosage_form"),
+    });
+    setForm(next);
+    setSearch(next.name);
   };
   const add = () => {
     if (!form.name.trim() && !form.medicine_id) return;
     setItems((current) => [...current, { ...form }]);
-    setForm({ ...form, medicine_id: "", name: "", quantity: "1", instructions: "" });
+    setForm(createEmptyPrescriptionDraft());
     setSearch("");
   };
   const save = useSave(
@@ -157,7 +132,27 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Search medicine, generic or strength"
             }
           />
-          {search && filtered.length > 0 && (
+          {search.trim().length === 1 && (
+            <p role="status" className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar" ? "اكتب حرفين على الأقل للبحث" : "Type at least 2 characters to search"}
+            </p>
+          )}
+          {medsQ.isLoading && cleanSearch.length >= 2 && (
+            <p role="status" className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar" ? "جارٍ البحث عن الأدوية..." : "Searching medicines..."}
+            </p>
+          )}
+          {medsQ.error && (
+            <p role="alert" className="mt-1 text-xs text-destructive">
+              {lang === "ar" ? "تعذر تحميل نتائج الأدوية. حاول مجدداً." : "Could not load medicines. Please try again."}
+            </p>
+          )}
+          {search.trim().length >= 2 && !medsQ.isLoading && !medsQ.error && filtered.length === 0 && (
+            <p role="status" className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar" ? "لا توجد أدوية مطابقة" : "No matching medicines"}
+            </p>
+          )}
+          {search.trim() && search !== form.name && filtered.length > 0 && (
             <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border bg-popover p-1 shadow-lg">
               {filtered.map((m) => (
                 <button
