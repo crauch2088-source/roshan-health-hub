@@ -86,3 +86,24 @@ The legacy candidate contains those same five index statements, plus an `INSERT 
 Classification: **2. partial match with identified difference**.
 Evidence: recovered file blob `28e159deff22737f5f35d3d0fb0b3f308c99ccab`; legacy candidate blob `99cfc05e896f2817a92211afb9eb76fbfa9bad6f`; archived manifest entry version `20260820150215`.
 Safety note: this is a source comparison only. No SQL was executed. The difference does not establish which behavior was intended or whether the insert was applied elsewhere in another migration; further ordered, schema-aware review is required.
+
+
+## Semantic comparison log — 2026-10-15 (expanded verified cases)
+
+### Applied ledger migration `20260819100756_roshan_phase1_pagination_and_settings`
+- Compared the quarantined recovered ledger body with `db/roshan_phase1_pagination_and_settings.sql` after stripping SQL comments and normalizing whitespace.
+- **Classification: partial match with material omissions in the repository candidate.** The recovered ledger body includes three standalone indexes not present in the candidate: `patients_mrn_idx`, `patients_phone_idx`, and `patients_national_id_idx`. The public-settings backfill is otherwise the same executable statement after whitespace normalization; the candidate has richer comments and a different statement layout.
+- Do not treat the candidate as a complete replacement for the applied ledger body until the index difference is resolved against the live schema and earlier/later migrations.
+- No SQL was executed; production was read-only.
+
+### Applied ledger insurance migrations `20260909110657`, `20260909110735`, and `20260909110753`
+- Compared the concatenated recovered statement sets (insurance schema, functions, and permissions/RLS) with `db/roshan_phase5_insurance.sql` after stripping comments and normalizing whitespace.
+- **Classification: executable statement sets match under this normalization.** All normalized statements in each side had a counterpart on the other side; the repository artifact consolidates three timestamped ledger entries into one file and includes a transaction wrapper. This establishes statement-level source correspondence under the stated normalization, not safe replayability or approval to execute the bundle as a migration.
+- Preserve the three original ledger versions as separate historical events; do not infer that the consolidated repository file should be replayed over the already-applied database.
+- No SQL was executed; production was read-only.
+
+### Applied ledger migration `20261014164131_roshan_cashbox_reversal_concurrency`
+- Compared the recovered body with `db/roshan_phase4_cashbox_reversal_concurrency.sql`. After removing comments and normalizing whitespace, the executable statements match; the repository candidate additionally wraps the statements in `BEGIN`/`COMMIT` and has expanded formatting/comments.
+- **Classification: executable-content match under comment/whitespace normalization, with a transaction-wrapper difference.** This does not establish safe replay against an existing database; the migration checks for duplicate `reversal_of` values and replaces a security-definer function, so schema/function state and execution context still require isolated validation.
+- No SQL was executed; production was read-only.
+
