@@ -231,6 +231,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   actions: { ar: "إجراءات", en: "Actions" },
   notes: { ar: "ملاحظات", en: "Notes" },
   date: { ar: "التاريخ", en: "Date" },
+  time: { ar: "الوقت", en: "Time" },
   amount: { ar: "المبلغ", en: "Amount" },
   quantity: { ar: "الكمية", en: "Quantity" },
   price: { ar: "السعر", en: "Price" },
