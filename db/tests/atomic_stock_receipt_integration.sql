@@ -46,8 +46,45 @@ BEGIN
 END;
 $$;
 
+-- Invalid numeric special values and expired batches must be rejected.
+DO $
+BEGIN
+  BEGIN
+    PERFORM public.receive_pharmacy_stock(
+      '30000000-0000-0000-0000-000000000001', 1,
+      NULL, 'BATCH-NAN-PRICE', 'NaN'::numeric, 3.00,
+      DATE '2026-01-01', DATE '2027-01-01', NULL
+    );
+    RAISE EXCEPTION 'test failed: NaN purchase price was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM = 'test failed: NaN purchase price was accepted' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE '%price%' THEN RAISE; END IF;
+  END;
+
+  BEGIN
+    PERFORM public.receive_pharmacy_stock(
+      '30000000-0000-0000-0000-000000000001', 1,
+      NULL, 'BATCH-EXPIRED', 1.00, 3.00,
+      DATE '2024-01-01', CURRENT_DATE - 1, NULL
+    );
+    RAISE EXCEPTION 'test failed: expired batch was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM = 'test failed: expired batch was accepted' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE '%expired%' THEN RAISE; END IF;
+  END;
+
+  IF (SELECT stock_quantity FROM public.medicines
+      WHERE id = '30000000-0000-0000-0000-000000000001') <> 15 THEN
+    RAISE EXCEPTION 'invalid price or expired batch changed aggregate stock';
+  END IF;
+  IF (SELECT count(*) FROM public.pharmacy_inventory) <> 1 THEN
+    RAISE EXCEPTION 'invalid price or expired batch left a batch row';
+  END IF;
+END;
+$;
+
 -- Fractional quantities must be rejected without changing any stock rows.
-DO $$
+DO $
 BEGIN
   BEGIN
     PERFORM public.receive_pharmacy_stock(
