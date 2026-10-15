@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { s, useRows, useSave, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
@@ -188,8 +188,12 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
       ],
       successMessage:
         lang === "ar"
-          ? separateInvoice ? "تم إرسال طلب المختبر وإنشاء فاتورة منفصلة" : "تم إرسال طلب المختبر وإضافته إلى فاتورة الزيارة"
-          : separateInvoice ? "Lab order created with a separate invoice" : "Lab order created and added to the visit invoice",
+          ? separateInvoice
+            ? "تم إرسال طلب المختبر وإنشاء فاتورة منفصلة"
+            : "تم إرسال طلب المختبر وإضافته إلى فاتورة الزيارة"
+          : separateInvoice
+            ? "Lab order created with a separate invoice"
+            : "Lab order created and added to the visit invoice",
     },
   );
 
