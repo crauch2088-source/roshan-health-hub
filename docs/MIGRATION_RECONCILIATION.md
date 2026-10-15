@@ -48,4 +48,8 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 
 - 2026-10-15 follow-up: added a read-only byte-length and MD5 inventory for all 79 ledger `statements` values in `docs/APPLIED_MIGRATION_INVENTORY.md`. The checksum is over the stored JSON representation, not normalized SQL. This improves source-recovery verification but does not establish repository parity, safety, or replayability. No SQL bodies were exported or committed and no database writes were performed.
 
+
+
+- 2026-10-15 follow-up: Supabase branch inventory confirms only the production `main` branch exists; no disposable development branch is currently available. Supabase's current branch estimate for this organization is **US$0.01344/hour** (about **US$9.81/month** if left running continuously). Do not create the branch until the user explicitly confirms this cost. Until then, SQL integration tests remain a hard release gate and production stays unchanged.
+
 - 2026-10-15 follow-up: a read-only pattern scan across all 79 stored SQL statement arrays found no matches for the checked credential-token patterns; the `service_role` hits were role identifiers in SQL, not evidence of a credential. One migration (`20260818191254_fix_patients_rls_and_admin_link`) contains an environment-specific admin email and UUID literal plus a one-time `users.auth_user_id` update. Several entries contain data-changing SQL. Do not publish or replay recovered SQL until each migration is individually reviewed for environment-bound values, data mutations, and replay safety. Exact-source recovery must not imply the original SQL is safe for a fresh environment. No source bodies were exported, committed, or executed.
