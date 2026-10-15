@@ -291,13 +291,15 @@ export function PatientSnapshotStrip({
           </span>
         </>
       )}
-      {snap.invoicesError || !snap.invoicesExact ? (
+      {snap.invoicesError ||
+      !snap.invoicesExact ||
+      snap.outstandingBalance == null ? (
         <span className="text-destructive">
           {lang === "ar"
             ? "تعذر التحقق من الرصيد المستحق بالكامل"
             : "Outstanding balance could not be verified completely"}
         </span>
-      ) : snap.outstandingBalance != null && snap.outstandingBalance > 0 ? (
+      ) : snap.outstandingBalance > 0 ? (
         <span>
           <span className="text-muted-foreground">{t("outstanding_balance")}: </span>
           <span className="font-semibold text-destructive" dir="ltr">
