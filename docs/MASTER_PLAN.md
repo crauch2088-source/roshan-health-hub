@@ -195,3 +195,39 @@
 ## Audit progress update — 2026-10-15
 
 A first evidence-based semantic comparison is recorded in `docs/MIGRATION_RECONCILIATION.md`: recovered migration `20260820150215` and `db/roshan_phase2_clinical_workflow.sql` are a **partial match, not equivalent**. The legacy file includes an additional insert that seeds a default result parameter for lab tests lacking one; the recovered ledger body contains only the five index statements. The comparison was source-only; no SQL was executed and production was not modified. Continue comparing migration bodies in order and keep the recovered archive quarantined.
+
+
+## Product logic, interface, and navigation improvement track — 2026-10-15
+
+This track makes the existing clinical, finance, and mobile UX phases explicit. It is a product-quality workstream, not merely visual polish, and must be delivered through isolated reviewed PRs.
+
+### A. Business and workflow logic
+- [ ] Map each role's real end-to-end tasks and permissions: reception, GP, dentist, specialist, lab, pharmacy, admin, super admin.
+- [ ] Trace workflow state transitions and invariants for registration/duplicate detection, queue, visit, consultation, lab orders/results, prescriptions, dispensing, invoices, payments, insurance claims, cashbox, and closeout.
+- [ ] Identify inconsistent duplicated calculations or client-trusted fields; make authoritative financial/stock/permission decisions server-side where appropriate.
+- [ ] Specify behavior for retries, double-submit, concurrent edits, stale selections, partial network failure, deleted/inactive records, and recoverable rollback.
+- [ ] Define empty/loading/error/partial-data states so unknown or failed reads never appear as zero, success, or an empty clinical history.
+- [ ] Validate business rules with synthetic fixtures and regression tests; do not use production patient records.
+
+### B. Information architecture and navigation
+- [ ] Audit all registered routes against navigation entries, permissions, page titles, breadcrumbs, back behavior, and direct-link access.
+- [ ] Ensure each role sees a focused, consistent navigation model; hidden navigation is not an authorization control.
+- [ ] Standardize active-route highlighting, nested-route behavior, module breadcrumbs, global search/command palette, and sensible return-to-context after saving or cancelling.
+- [ ] Reduce unnecessary clicks in common tasks (patient lookup → queue/visit; visit → diagnosis/prescription/lab; invoice → payment/receipt) without bypassing validation or permissions.
+- [ ] Check for dead ends, duplicate destinations, missing links, ambiguous labels, accidental loss of unsaved forms, and routes that render an app shell without a usable page.
+
+### C. Interface and mobile usability
+- [ ] Review reception and clinician dashboards for accurate, actionable metrics and clear next actions; no misleading counts or unbounded reads.
+- [ ] Standardize tables, filters, search, pagination, forms, validation messages, dialogs, confirmations, and success/error feedback.
+- [ ] Test Arabic RTL and English LTR, 320–430px phone widths, tablet/desktop layouts, touch target sizes, keyboard navigation/focus, and safe-area/virtual-keyboard behavior.
+- [ ] Make patient identity, branch, visit status, and financial totals clear at the point of action; prevent stale patient/branch context from leaking across workflows.
+- [ ] Ensure critical actions are explicit and reversible where possible; use confirmation for destructive/irreversible actions and preserve form data after recoverable errors.
+
+### D. Acceptance and release discipline
+- [ ] Build a role × route × workflow × language × viewport acceptance matrix using synthetic users and records.
+- [ ] Record each finding with severity, reproduction steps, expected behavior, actual behavior, affected role/route, and regression coverage.
+- [ ] Separate behavior fixes from visual refactors; each PR must have a focused diff and pass relevant tests, typecheck, lint, build, and review.
+- [ ] Run authenticated preview tests for real auth/RLS/branch behavior when a safe test account and isolated environment are available.
+- [ ] Do not merge or deploy this track without explicit approval; do not relax database security to make a UI flow appear to work.
+
+Current baseline: PR #8 shell redesign has already merged into main and includes the shell/navigation redesign, breadcrumbs, role-aware mobile bottom navigation, command palette, and account menu. That is a starting point, not sign-off for the full information architecture or workflow UX. Existing phase 4 (clinical workflows), phase 5 (pharmacy/finance), and phase 6 (mobile UI/bilingual UX) remain the authoritative related phases; this section adds explicit product-logic and navigation acceptance criteria without claiming they have passed.
