@@ -20,8 +20,7 @@ export function calculateOutstandingBalance(rows: readonly InvoiceBalanceRow[]):
   let total = 0;
 
   for (const invoice of rows) {
-    const netAmount =
-      finiteMoney(invoice.net_amount) ?? finiteMoney(invoice.total_amount);
+    const netAmount = finiteMoney(invoice.net_amount) ?? finiteMoney(invoice.total_amount);
     const paidAmount = finiteMoney(invoice.paid_amount);
 
     if (netAmount === null || paidAmount === null) return null;
