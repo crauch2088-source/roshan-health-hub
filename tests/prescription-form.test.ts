@@ -79,15 +79,12 @@ test("medicine search removes PostgREST filter grammar characters", () => {
 });
 
 test("selected medicine keeps its price after later searches change the result set", () => {
-  const entry = preparePrescriptionEntryForMedicine(
-    createEmptyPrescriptionEntry(),
-    {
-      id: "priced-medicine",
-      name: "Priced medicine",
-      dosage_form: "tablet",
-      selling_price: 12.5,
-    },
-  );
+  const entry = preparePrescriptionEntryForMedicine(createEmptyPrescriptionEntry(), {
+    id: "priced-medicine",
+    name: "Priced medicine",
+    dosage_form: "tablet",
+    selling_price: 12.5,
+  });
 
   assert.equal(entry.unit_price, 12.5);
 });
