@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
+  editPrescriptionName,
   type PrescriptionDraft,
 } from "@/lib/prescription-draft";
 import { sanitizeTerm, useDebounced } from "@/lib/search";
@@ -196,7 +197,10 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => {
+              setForm((current) => editPrescriptionName(current, e.target.value));
+              setSearch("");
+            }}
             placeholder={lang === "ar" ? "اسم الدواء" : "Medication name"}
           />
           <Select
