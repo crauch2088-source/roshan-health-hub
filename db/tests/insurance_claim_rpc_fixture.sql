@@ -3,7 +3,21 @@ CREATE ROLE authenticated;
 CREATE SCHEMA private;
 CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.patient_insurance (
- id uuid PRIMARY KEY, patient_id uuid NOT NULL, status text, start_date date, expiry_date date, deleted_at timestamptz
+ id uuid PRIMARY KEY, patient_id uuid NOT NULL, company_id uuid, plan_id uuid,
+ status text, start_date date, expiry_date date, deleted_at timestamptz
+);
+CREATE TABLE public.insurance_companies (
+ id uuid PRIMARY KEY, active boolean DEFAULT true, deleted_at timestamptz
+);
+CREATE TABLE public.insurance_plans (
+ id uuid PRIMARY KEY, company_id uuid NOT NULL, default_coverage_percent numeric DEFAULT 0,
+ requires_prior_auth boolean DEFAULT false, active boolean DEFAULT true, deleted_at timestamptz
+);
+CREATE TABLE public.insurance_coverage_rules (
+ id uuid PRIMARY KEY, plan_id uuid NOT NULL, service_type text NOT NULL, reference_id uuid,
+ generic_name text, coverage_percent numeric, fixed_amount numeric,
+ requires_prior_auth boolean DEFAULT false, excluded boolean DEFAULT false, created_at timestamptz DEFAULT now(),
+ deleted_at timestamptz
 );
 CREATE TABLE public.invoices (id uuid PRIMARY KEY, patient_id uuid, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.insurance_claims (
