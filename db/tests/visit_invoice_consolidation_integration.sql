@@ -75,7 +75,7 @@ DO $$
 DECLARE v_secondary uuid; v_primary uuid;
 BEGIN
  SELECT id INTO v_primary FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE;
- v_secondary := public.create_or_append_visit_invoice_atomic(
+ v_secondary := private.create_or_append_visit_invoice_atomic(
   '50000000-0000-0000-0000-000000000001', CURRENT_DATE, 0,
   '[{"item_name":"Separate approved service","item_type":"other","quantity":1,"unit_price":7}]'::jsonb, true
  );
