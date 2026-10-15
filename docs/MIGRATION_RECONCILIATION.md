@@ -153,3 +153,19 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - This later migration replaces `public.post_supplier_bill` again. It preserves the active-supplier check, positive subtotal, discount bounds, empty `search_path`, and branch assignment from the earlier hardening migration, while allowing `branch_id = NULL` for a super-admin whose own branch is unconfigured. Non-super-admins still require a configured branch.
 - **Classification: final behavior is a two-step evolution, not the earlier migration alone.** The checked-in `db/roshan_phase4_finance.sql` baseline still differs materially: it omits branch assignment, supplier validation, and discount-range validation, and uses `search_path = public`. The canonical source should represent the final post-compatibility function, not the intermediate branch-required version.
 - No SQL was executed; production was read-only.
+
+
+### Applied numbering RPC permissions migration `20261011074344_harden_patient_invoice_number_rpc_permissions`
+- The recovered migration replaces `next_invoice_number()` and `next_mrn()` with permission checks (`billing.create` and `patients.create` respectively), an empty `search_path`, explicit `pg_catalog` calls, and advisory-lock/max-suffix allocation.
+- This is a later evolution of `20260911133229`: the final function definitions must preserve both concurrency safety and per-RPC permission checks. The repository baseline in `db/roshan_phase1_migration.sql` uses `COUNT(*) + 1`, has no advisory locks, and has no corresponding permission gate.
+- No SQL was executed; production was read-only.
+
+### Applied insurance coverage RPC permissions migration `20261011074437_harden_insurance_coverage_rpc_permissions`
+- The recovered function requires `private.app_has_perm('insurance.read')` and, for non-super-admins, checks the policy patient's branch against the active user's branch before returning a coverage estimate.
+- The repository's likely baseline coverage function does not include these permission/branch checks. The proposed validity patch in PR #13 now preserves these guards while adding start-date, active plan/company, and policy-plan/company consistency checks; CI must remain green after the combined change.
+- No SQL was executed; production was read-only.
+
+### Applied pharmacy batch branch-isolation migration `20261011075101_harden_pharmacy_batch_branch_isolation`
+- The recovered `fn_receive_pharmacy_batch` enforces `pharmacy.update`, positive integer quantities, non-negative purchase price, valid manufacture/expiry ordering, branch context, a locked medicine row, and synchronized batch/stock-movement updates.
+- No matching function definition was found in the likely checked-in SQL candidates reviewed so far. Treat the pharmacy receiving RPC as an unresolved source/effective-behavior mapping item until the canonical source and deployed function are compared.
+- No SQL was executed; production was read-only.
