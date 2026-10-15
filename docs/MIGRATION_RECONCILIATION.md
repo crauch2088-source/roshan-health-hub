@@ -177,3 +177,9 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - A second interaction: `db/roshan_phase12_invoice_visit_unique.sql` enforces one active invoice per non-null `visit_id`, while the lab tab creates a separate invoice with the same `visit_id` that the visit/consultation flow may already have invoiced. This can conflict when a consultation invoice already exists. Do not remove the unique index or drop the visit link without deciding the intended billing model (one invoice per visit with appended items vs multiple invoice documents per visit).
 - Invoice headers/items in the remaining direct-write flows are also separate requests, so partial invoices remain possible there. PR #23 currently hardens the generic billing page only; these clinical workflow paths need dedicated, permission-safe RPCs and regression tests before the entire billing workflow can be called atomic.
 - No SQL was executed; production was read-only.
+
+
+### Applied dispensing-function revisions `20260911135417_fix_dispense_prescription_branch_resolution` and `20260911135547_fix_dispense_batch_number_ambiguity`
+- Both migrations replace `public.fn_dispense_prescription(uuid)`. The first resolves branch from the prescription's linked visit, enforces branch isolation, and records the effective branch on stock movements; the second consistently qualifies inventory aliases (`inv`) in batch selection/update to avoid ambiguity with `RETURNS TABLE` output columns such as `batch_number`.
+- These revisions follow the earlier recovered dispense RPC hardening and precede the later empty-search-path migration. No matching checked-in SQL source was found in the likely candidates, so the final canonical function must combine branch resolution, FEFO batch selection, stock synchronization, unambiguous aliases, and the later empty `search_path` hardening.
+- No SQL was executed; production was read-only.
