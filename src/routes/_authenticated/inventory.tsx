@@ -501,7 +501,6 @@ function MedicinesTab() {
               onChange={(e) => setReceive(receive ? { ...receive, expiry_date: e.target.value } : receive)}
             />
           </Field>
-          <p className="text-xs text-muted-foreground">{t("legacy_receive_hint")}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReceive(null)}>
               {t("cancel")}
@@ -543,7 +542,7 @@ const EMPTY_BATCH_FORM: BatchFormState = {
   batch_number: "",
   quantity_received: "0",
   purchase_price: "0",
-  selling_price: "0",
+  selling_price: "",
   manufacture_date: "",
   expiry_date: "",
   invoice_reference: "",
