@@ -44,7 +44,7 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260820000725` | `add_medicines_expiry_date` | 75 | `34caa91bdc2b6b1051202d380336d4ca` | Not yet mapped | Not yet checked |
 | `20260820005417` | `fix_followups_user_relationship` | 507 | `75d47f32e8627e2d587990284791fa63` | Not yet mapped | Not yet checked |
 | `20260820010030` | `fix_medicines_batch_number` | 190 | `857c21fd0dff64de9f3a8c5cb6555e8b` | Not yet mapped | Not yet checked |
-| `20260820150215` | `roshan_phase2_clinical_workflow` | 640 | `3b13a90d96e8d878c97be72b8c21c905` | db/roshan_phase2_clinical_workflow.sql (name match) | Mismatch; semantic diff pending |
+| `20260820150215` | `roshan_phase2_clinical_workflow` | 640 | `3b13a90d96e8d878c97be72b8c21c905` | db/roshan_phase2_clinical_workflow.sql (candidate) | Ledger SQL appears as a normalized subset of file; extra statements mean full parity is not established |
 | `20260822094358` | `roshan_workflow_performance_20260822` | 2230 | `a47d2b6af7e90cf6c9375af0308ae32f` | Not yet mapped | Not yet checked |
 | `20260822094405` | `roshan_drop_duplicate_prescription_index_20260822` | 64 | `013b6f046a1cc5d09636d142232ce8b1` | Not yet mapped | Not yet checked |
 | `20260906142737` | `roshan_phase3_allow_pharmacy_setting_public` | 1199 | `2c21995b7a241df642b44c06d8202eb9` | Not yet mapped | Not yet checked |
@@ -56,7 +56,7 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260909110657` | `roshan_phase5_insurance` | 7616 | `0270b37760a90ace769c63cee95d7bfa` | db/roshan_phase5_insurance.sql (name match) | Mismatch; semantic diff pending |
 | `20260909110735` | `roshan_phase5_insurance_functions` | 10859 | `20fa5cff06280170d2d4a2cb85e63e0b` | Not yet mapped | Not yet checked |
 | `20260909110753` | `roshan_phase5_insurance_permissions_rls` | 4922 | `0eacc16749f50f8401dfdeb48699c486` | Not yet mapped | Not yet checked |
-| `20260911120231` | `roshan_phase12_invoice_visit_unique` | 425 | `5182147d2ed12b1a7df402b763c5a1c5` | db/roshan_phase12_invoice_visit_unique.sql (name match) | Mismatch; semantic diff pending |
+| `20260911120231` | `roshan_phase12_invoice_visit_unique` | 425 | `5182147d2ed12b1a7df402b763c5a1c5` | db/roshan_phase12_invoice_visit_unique.sql | Verified: executable SQL matches after comment/whitespace normalization; comments differ |
 | `20260911130749` | `harden_security_and_fk_indexes_20260911` | 7111 | `2cbc5a3b8a370baae854dc1883604aa2` | db/roshan_security_hardening.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260911130812` | `restrict_security_definer_api_execution_20260911` | 2164 | `52b0166fba689c66bf81454aa91b200c` | db/roshan_security_privileged_role_guard.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260911131456` | `deep_audit_branch_isolation_rpc_hardening` | 8077 | `2e229e263b04b6144047fcabbbd87d94` | Not yet mapped | Not yet checked |
