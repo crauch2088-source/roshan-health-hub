@@ -13,9 +13,9 @@ export function isInsuranceClaimReadyToSubmit(args: {
 }): boolean {
   return Boolean(
     args.patientInsuranceId.trim() &&
-      args.invoiceId?.trim() &&
-      args.itemCount > 0 &&
-      !args.isSaving,
+    args.invoiceId?.trim() &&
+    args.itemCount > 0 &&
+    !args.isSaving,
   );
 }
 
