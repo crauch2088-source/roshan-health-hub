@@ -19,18 +19,18 @@ const integration = readFileSync(
 test("pharmacy dispense and billing are one server-side transaction", () => {
   assert.match(
     migration,
-    /CREATE OR REPLACE FUNCTION public\\.fn_dispense_prescription_with_invoice/,
+    /CREATE OR REPLACE FUNCTION public\.fn_dispense_prescription_with_invoice/,
   );
   assert.match(migration, /private\.create_or_append_visit_invoice_atomic/);
   assert.match(migration, /public\.create_invoice_atomic/);
   assert.match(migration, /m\.selling_price/);
   assert.match(
     migration,
-    /REVOKE ALL ON FUNCTION public\\.fn_dispense_prescription\\(uuid\\) FROM PUBLIC, anon, authenticated/,
+    /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription\(uuid\) FROM PUBLIC, anon, authenticated/,
   );
   assert.match(
     migration,
-    /GRANT EXECUTE ON FUNCTION public\\.fn_dispense_prescription_with_invoice\\(uuid, boolean\\) TO authenticated/,
+    /GRANT EXECUTE ON FUNCTION public\.fn_dispense_prescription_with_invoice\(uuid, boolean\) TO authenticated/,
   );
 });
 

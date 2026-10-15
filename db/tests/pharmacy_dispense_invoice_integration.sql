@@ -116,7 +116,7 @@ $$;
 -- Cross-branch dispense is denied and leaves stock and invoice state unchanged.
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
 SELECT set_config('test.perms','pharmacy.update,billing.create',false);
-DO $
+DO $$
 DECLARE v_stock numeric;
 BEGIN
  SELECT quantity_remaining INTO v_stock FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001';
