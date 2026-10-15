@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { createEmptyPrescriptionDraft, createPrescriptionDraftForMedicine } from "../src/lib/prescription-draft.ts";
+
 const sql = readFileSync(
   new URL("../db/roshan_phase7_atomic_prescription.sql", import.meta.url),
   "utf8",
@@ -34,4 +36,50 @@ test("prescription save uses a single atomic RPC", () => {
 
 test("prescription regression test is included in the guard suite", () => {
   assert.match(pkg.scripts?.["test:guard"] ?? "", /prescription-atomicity\.test\.ts/);
+});
+
+test("new medicine selection starts with a clean regimen", () => {
+  assert.deepEqual(
+    createPrescriptionDraftForMedicine({
+      id: "medicine-1",
+      name: "",
+      generic_name: "Amoxicillin",
+      dosage_form: "Capsule",
+    }),
+    {
+      medicine_id: "medicine-1",
+      name: "Amoxicillin",
+      dose: "",
+      frequency: "",
+      duration: "",
+      quantity: "1",
+      instructions: "",
+      dosage_form: "Capsule",
+      route: "Oral",
+    },
+  );
+});
+
+test("adding an item can reset every regimen field for the next medicine", () => {
+  assert.deepEqual(createEmptyPrescriptionDraft(), {
+    medicine_id: "",
+    name: "",
+    dose: "",
+    frequency: "",
+    duration: "",
+    quantity: "1",
+    instructions: "",
+    dosage_form: "",
+    route: "",
+  });
+});
+
+test("prescription medicine lookup is debounced, sanitized, and server-side", () => {
+  assert.match(ui, /useDebounced\(search, 300\)/);
+  assert.match(ui, /sanitizeTerm\(debouncedSearch\)/);
+  assert.match(ui, /\.limit\(30\)/);
+  assert.doesNotMatch(ui, /\.limit\(500\)/);
+  assert.match(ui, /brand_name\.ilike/);
+  assert.match(ui, /Could not load medicines/);
+  assert.match(ui, /No matching medicines/);
 });
