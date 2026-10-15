@@ -79,7 +79,8 @@ BEGIN
         FROM public.medicines m
        WHERE m.id = v_medicine_id
          AND m.deleted_at IS NULL
-         AND m.active IS TRUE;
+         AND m.active IS TRUE
+       FOR SHARE;
       IF NOT FOUND THEN
         RAISE EXCEPTION 'active catalog medicine not found';
       END IF;
