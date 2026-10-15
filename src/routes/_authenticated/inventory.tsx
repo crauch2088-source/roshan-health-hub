@@ -550,7 +550,7 @@ const EMPTY_BATCH_FORM: BatchFormState = {
 };
 
 function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; currency: string }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ExpiryStatus>("all");
