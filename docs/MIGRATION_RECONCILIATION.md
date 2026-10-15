@@ -130,3 +130,20 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - The likely repository candidates do not contain this same global revoke-and-allowlist loop. `db/roshan_security_hardening.sql` grants a smaller set of helpers and hardens audit-log access; `db/roshan_security_privileged_role_guard.sql` is a different feature (triggers guarding the super-admin role), not a source equivalent for this privilege migration. Grants may be distributed across other SQL files, so effective privileges cannot be inferred from one file.
 - **Classification: high-priority unresolved privilege mapping.** Build a signature-by-signature allowlist comparison against the current deployed catalog before changing canonical SQL; blindly replaying the broad revoke could break required RPC access, while missing the intended restrictions could expose privileged functions.
 - No SQL was executed; production was read-only.
+
+
+### Applied supplier-bill RPC migration `20261011080253_harden_supplier_bill_rpc_branch_and_search_path`
+- Compared recovered `public.post_supplier_bill` with `db/roshan_phase4_finance.sql`.
+- **Classification: confirmed material function mismatch.** The recovered body uses an empty `search_path`, validates positive subtotal and discount bounds, requires an active non-deleted supplier, resolves an active user's branch, and writes `branch_id`. The repository candidate uses `search_path = public`, does not validate the supplier or discount range (it clamps net amount to zero), and omits `branch_id` from the insert.
+- Preserve the recovered validation and branch assignment in the canonical source. Before any rollout, reconcile the later compatibility migration `20261011080524` so the intended super-admin branch-context behavior is not accidentally removed.
+- No SQL was executed; production was read-only.
+
+### Applied finance/pharmacy search-path migration `20261011080319_harden_finance_pharmacy_rpc_search_paths`
+- The recovered migration sets `search_path = ''` on ten `SECURITY DEFINER` functions, including payment, claim, dispensing, cashbox, and expense RPCs.
+- The repository finance candidate defines `post_invoice_payment` and `post_supplier_payment` with `search_path = public`, and no matching `fn_dispense_prescription` source was found in the likely candidates. This is a confirmed source mismatch; verify all ten deployed function signatures and preserve the empty-path hardening when updating canonical SQL.
+- No SQL was executed; production was read-only.
+
+### Applied clinical-child branch isolation migration `20261011080434_enforce_branch_isolation_on_clinical_child_tables`
+- The recovered migration adds private helpers for visit, lab-result-item, and attachment branch access, then creates/updates RLS policies for `clinical_notes`, `diagnoses`, `vitals`, `lab_results`, and `attachments` based on their parent visit/order/patient branch.
+- **Classification: no exact repository helper/policy source match found in the likely checked-in SQL candidates.** Equivalent direct predicates may exist elsewhere; compare the effective policies for all five tables before treating this as absent or reconciled.
+- This remains a high-priority clinical privacy gate. No SQL was executed; production was read-only.
