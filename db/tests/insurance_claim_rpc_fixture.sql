@@ -1,7 +1,9 @@
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+CREATE SCHEMA auth;
 CREATE SCHEMA private;
-CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
+CREATE TABLE public.users (id uuid PRIMARY KEY, auth_user_id uuid, branch_id uuid, active boolean DEFAULT true, deleted_at timestamptz);
+CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.patient_insurance (
  id uuid PRIMARY KEY, patient_id uuid NOT NULL, company_id uuid, plan_id uuid,
  status text, start_date date, expiry_date date, deleted_at timestamptz
@@ -33,6 +35,12 @@ AS $$ SELECT NULLIF(current_setting('test.user_id', true), '')::uuid $$;
 CREATE FUNCTION public.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
 AS $$ SELECT COALESCE(current_setting('test.has_perm', true) = 'true', false) $$;
 CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE
-AS $$ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $$;
+AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
+AS $ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $;
+CREATE FUNCTION private.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
+AS $ SELECT COALESCE(current_setting('test.has_perm', true) = 'true', false) $;
+CREATE FUNCTION private.is_super_admin() RETURNS boolean LANGUAGE sql STABLE
+AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT SELECT, INSERT ON public.insurance_claims, public.insurance_claim_items TO authenticated;
