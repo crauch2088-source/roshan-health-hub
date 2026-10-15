@@ -69,7 +69,9 @@ jobs:
             -f db/tests/visit_invoice_consolidation_fixture.sql \
             -f db/roshan_phase8_atomic_invoice.sql \
             -f db/roshan_phase13_consolidated_visit_invoice.sql \
-            -f db/tests/visit_invoice_consolidation_integration.sql
+            -f db/roshan_phase15_manual_invoice_consolidation.sql \\
+            -f db/tests/visit_invoice_consolidation_integration.sql \\
+            -f db/tests/manual_billing_consolidation_integration.sql
 
 
   sql-pharmacy-dispense-invoice:

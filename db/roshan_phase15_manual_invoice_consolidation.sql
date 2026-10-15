@@ -1,0 +1,2 @@
+-- Proposed migration: route manual billing through the visit's primary invoice by default.
+-- Keep unapplied until applied-migration reconciliation and isolated validation are complete.
