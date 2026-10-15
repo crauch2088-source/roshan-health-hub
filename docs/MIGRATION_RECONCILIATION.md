@@ -135,7 +135,7 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 ### Applied supplier-bill RPC migration `20261011080253_harden_supplier_bill_rpc_branch_and_search_path`
 - Compared recovered `public.post_supplier_bill` with `db/roshan_phase4_finance.sql`.
 - **Classification: confirmed material function mismatch.** The recovered body uses an empty `search_path`, validates positive subtotal and discount bounds, requires an active non-deleted supplier, resolves an active user's branch, and writes `branch_id`. The repository candidate uses `search_path = public`, does not validate the supplier or discount range (it clamps net amount to zero), and omits `branch_id` from the insert.
-- Preserve the recovered validation and branch assignment in the canonical source. Before any rollout, reconcile the later compatibility migration `20261011080524` so the intended super-admin branch-context behavior is not accidentally removed.
+- **Important chronology:** this version requires a branch for super-admin too, but the later migration `20261011080524_preserve_super_admin_supplier_bill_compatibility` explicitly restores the ability for super-admin to create an unassigned bill when their branch is null. The final expected behavior must preserve all validation above while allowing `user_branch IS NULL` only for super-admin; the next section records that superseding behavior.
 - No SQL was executed; production was read-only.
 
 ### Applied finance/pharmacy search-path migration `20261011080319_harden_finance_pharmacy_rpc_search_paths`
@@ -147,3 +147,9 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - The recovered migration adds private helpers for visit, lab-result-item, and attachment branch access, then creates/updates RLS policies for `clinical_notes`, `diagnoses`, `vitals`, `lab_results`, and `attachments` based on their parent visit/order/patient branch.
 - **Classification: no exact repository helper/policy source match found in the likely checked-in SQL candidates.** Equivalent direct predicates may exist elsewhere; compare the effective policies for all five tables before treating this as absent or reconciled.
 - This remains a high-priority clinical privacy gate. No SQL was executed; production was read-only.
+
+
+### Applied compatibility migration `20261011080524_preserve_super_admin_supplier_bill_compatibility`
+- This later migration replaces `public.post_supplier_bill` again. It preserves the active-supplier check, positive subtotal, discount bounds, empty `search_path`, and branch assignment from the earlier hardening migration, while allowing `branch_id = NULL` for a super-admin whose own branch is unconfigured. Non-super-admins still require a configured branch.
+- **Classification: final behavior is a two-step evolution, not the earlier migration alone.** The checked-in `db/roshan_phase4_finance.sql` baseline still differs materially: it omits branch assignment, supplier validation, and discount-range validation, and uses `search_path = public`. The canonical source should represent the final post-compatibility function, not the intermediate branch-required version.
+- No SQL was executed; production was read-only.
