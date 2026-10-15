@@ -35,11 +35,11 @@ AS $$ SELECT NULLIF(current_setting('test.user_id', true), '')::uuid $$;
 CREATE FUNCTION public.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
 AS $$ SELECT COALESCE(current_setting('test.has_perm', true) = 'true', false) $$;
 CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE
-AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
+AS $public_admin$ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $public_admin$;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
-AS $ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $;
+AS $authuid$ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $authuid$;
 CREATE FUNCTION private.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
-AS $ SELECT COALESCE(current_setting('test.has_perm', true) = 'true', false) $;
+AS $privateperm$ SELECT COALESCE(current_setting('test.has_perm', true) = 'true', false) $privateperm$;
 CREATE FUNCTION private.is_super_admin() RETURNS boolean LANGUAGE sql STABLE
 AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
 GRANT USAGE ON SCHEMA public TO authenticated;
