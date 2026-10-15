@@ -156,3 +156,10 @@
 - Extended [`docs/UX_AUDIT_FINDINGS_P0.md`](UX_AUDIT_FINDINGS_P0.md) with F-009, a source-backed review of prescription authoring: generic global dose/frequency/duration choices, unitless dose options, missing patient-specific safety context in the tab, a 500-item catalog cap, and separate prescription-header/item writes.
 - Added prescription authoring as a distinct P0 audit item in the register. This is a confirmed UI-design gap, not authorization to inject unreviewed dosing rules; clinical regimens require an approved source and named reviewer.
 
+## First implemented prescription UX fix — 2026-10-15
+- Draft [PR #15](https://github.com/crauch2088-source/roshan-health-hub/pull/15) is open on `fix/prescription-search-and-reset`.
+- It replaces the fixed 500-row medicine catalog fetch with debounced server-side search over medicine name, generic name, brand, and strength; caps each response at 30 matches; adds searching/no-results/error states; closes results after selection; and clears dose/frequency/duration/instructions when switching medicine or adding an item.
+- It normalizes recognized dosage-form values and the `oral` route token. This is a focused usability/safety improvement, **not** a clinical dosing engine and not a replacement for patient-specific, source-versioned prescribing support.
+- Regression tests were added first for entry reset, regimen reset, search filter construction, short queries, and filter-grammar sanitization; the helper and UI implementation followed. CI run `38659955607` is still in progress at the latest check. PR remains draft, unmerged, and not deployed to production.
+- Remaining known concerns in the same workflow: patient-specific age/weight/allergy context and medication-specific dosing rules are not yet integrated; prescription header and items are saved in separate requests; full authenticated smoke testing is pending.
+
