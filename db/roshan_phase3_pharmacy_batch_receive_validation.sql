@@ -53,6 +53,12 @@ BEGIN
      AND p_manufacture_date > p_expiry_date THEN
     RAISE EXCEPTION 'manufacture_after_expiry';
   END IF;
+  IF p_expiry_date IS NOT NULL AND p_expiry_date < CURRENT_DATE THEN
+    RAISE EXCEPTION 'expired_batch';
+  END IF;
+  IF p_manufacture_date IS NOT NULL AND p_manufacture_date > CURRENT_DATE THEN
+    RAISE EXCEPTION 'future_manufacture_date';
+  END IF;
 
   SELECT u.branch_id INTO v_branch
     FROM public.users AS u
