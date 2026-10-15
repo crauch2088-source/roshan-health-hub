@@ -88,3 +88,10 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - Compared the recovered body with `db/roshan_phase4_cashbox_reversal_concurrency.sql`. After removing comments and normalizing whitespace, the executable statements match; the repository candidate additionally wraps the statements in `BEGIN`/`COMMIT` and has expanded formatting/comments.
 - **Classification: executable-content match under comment/whitespace normalization, with a transaction-wrapper difference.** This does not establish safe replay against an existing database; the migration checks for duplicate `reversal_of` values and replaces a security-definer function, so schema/function state and execution context still require isolated validation.
 - No SQL was executed; production was read-only.
+
+
+### Applied finance migration `20260908210824_roshan_phase4_finance_v2`
+- Compared function definitions by name between the recovered ledger body and `db/roshan_phase4_finance.sql`, stripping comments and normalizing whitespace/punctuation.
+- All 14 functions defined in the recovered finance-v2 body are also present in the repository candidate. Thirteen function bodies match after normalization. The remaining difference is in `public.fn_ledger_post`: the recovered body specifies `ON CONFLICT (source_type, source_id) WHERE source_type IS NOT NULL AND source_id IS NOT NULL`, while the repository body specifies `WHERE source_id IS NOT NULL`.
+- The repository's `uq_cashbox_source` partial unique index uses `WHERE source_id IS NOT NULL`. Under ordinary PostgreSQL unique-index NULL semantics, this predicate difference may not alter conflicts for rows with null `source_type`, but it is a real source-text difference and must not be silently classified as an exact function match. Confirm the deployed index predicate and intended null behavior before canonicalizing the history.
+- The repository file also includes schema/table setup and additional statements beyond this single ledger entry, so this is function-level mapping, not whole-file equivalence. No SQL was executed; production was read-only.
