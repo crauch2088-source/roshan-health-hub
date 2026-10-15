@@ -72,6 +72,15 @@ export function preparePrescriptionEntryForMedicine(
   };
 }
 
+/** Detach a manually edited name from the catalog medicine and its price. */
+export function updatePrescriptionEntryName(
+  previous: PrescriptionEntry,
+  name: string,
+): PrescriptionEntry {
+  if (name === previous.name) return previous;
+  return { ...previous, name, medicine_id: "", unit_price: 0 };
+}
+
 /** Build a safe PostgREST OR filter from user-entered catalog text. */
 export function buildMedicineSearchFilter(term: string): string | null {
   const clean = term

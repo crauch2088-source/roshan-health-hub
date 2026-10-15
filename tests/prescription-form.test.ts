@@ -5,6 +5,7 @@ import {
   buildMedicineSearchFilter,
   createEmptyPrescriptionEntry,
   preparePrescriptionEntryForMedicine,
+  updatePrescriptionEntryName,
 } from "../src/lib/prescription-form.ts";
 
 test("empty prescription entry has no inherited regimen and starts at quantity one", () => {
@@ -87,4 +88,20 @@ test("selected medicine keeps its price after later searches change the result s
   });
 
   assert.equal(entry.unit_price, 12.5);
+});
+
+test("editing a selected medicine name detaches its catalog id and price", () => {
+  const selected = preparePrescriptionEntryForMedicine(createEmptyPrescriptionEntry(), {
+    id: "catalog-medicine",
+    name: "Catalog medicine",
+    dosage_form: "tablet",
+    selling_price: 24,
+  });
+
+  const edited = updatePrescriptionEntryName(selected, "Custom medicine");
+
+  assert.equal(edited.name, "Custom medicine");
+  assert.equal(edited.medicine_id, "");
+  assert.equal(edited.unit_price, 0);
+  assert.equal(edited.dosage_form, "tablet");
 });

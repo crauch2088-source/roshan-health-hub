@@ -18,6 +18,7 @@ import {
   buildMedicineSearchFilter,
   createEmptyPrescriptionEntry,
   preparePrescriptionEntryForMedicine,
+  updatePrescriptionEntryName,
 } from "@/lib/prescription-form";
 import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
@@ -230,7 +231,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) =>
+              setForm((previous) => updatePrescriptionEntryName(previous, e.target.value))
+            }
             placeholder={lang === "ar" ? "اسم الدواء" : "Medication name"}
           />
           <Select
