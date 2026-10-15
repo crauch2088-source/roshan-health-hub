@@ -60,7 +60,7 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260911130749` | `harden_security_and_fk_indexes_20260911` | 7111 | `2cbc5a3b8a370baae854dc1883604aa2` | db/roshan_security_hardening.sql plus finance/role-guard candidates | Partial mapping only: dynamic SECURITY DEFINER search-path loop, policy resets, and FK index set are not statement-equivalent; see semantic review section |
 | `20260911130812` | `restrict_security_definer_api_execution_20260911` | 2164 | `52b0166fba689c66bf81454aa91b200c` | db/roshan_security_privileged_role_guard.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260911131456` | `deep_audit_branch_isolation_rpc_hardening` | 8077 | `2e229e263b04b6144047fcabbbd87d94` | Not yet mapped | Not yet checked |
-| `20260911133229` | `harden_mrn_invoice_number_concurrency` | 1009 | `0fd7b0b1afb1ef6cb390a0b6657de5d2` | Not yet mapped | Not yet checked |
+| `20260911133229` | `harden_mrn_invoice_number_concurrency` | 1009 | `0fd7b0b1afb1ef6cb390a0b6657de5d2` | `db/roshan_phase1_migration.sql` (baseline candidate) | Confirmed function-level mismatch: recovered MRN/invoice number functions use advisory locks and max suffix; baseline uses count+1 without locks; see semantic review section |
 | `20260911133255` | `enforce_branch_isolation_rls` | 1566 | `7cb965a4218bb2772115ac51c62ade30` | Not yet mapped | Not yet checked |
 | `20260911133312` | `harden_insurance_branch_isolation` | 10214 | `807b9c4f3b44051dfcce405d9134ea91` | Not yet mapped | Not yet checked |
 | `20260911133319` | `harden_insurance_coverage_rpc_branch` | 3256 | `729d5bcf5413cd22f9e55cf567339536` | Not yet mapped | Not yet checked |
