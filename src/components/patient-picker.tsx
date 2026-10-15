@@ -291,9 +291,7 @@ export function PatientSnapshotStrip({
           </span>
         </>
       )}
-      {snap.invoicesError ||
-      !snap.invoicesExact ||
-      snap.outstandingBalance == null ? (
+      {snap.invoicesError || !snap.invoicesExact || snap.outstandingBalance == null ? (
         <span className="text-destructive">
           {lang === "ar"
             ? "تعذر التحقق من الرصيد المستحق بالكامل"
