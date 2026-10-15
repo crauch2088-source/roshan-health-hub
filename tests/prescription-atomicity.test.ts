@@ -10,9 +10,7 @@ const ui = readFileSync(
   new URL("../src/features/clinic/consultation/components/PrescriptionTab.tsx", import.meta.url),
   "utf8",
 );
-const pkg = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as {
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   scripts?: Record<string, string>;
 };
 
