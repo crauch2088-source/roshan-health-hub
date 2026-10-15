@@ -484,9 +484,7 @@ function MedicinesTab() {
               dir="ltr"
               value={receive?.batch_number ?? ""}
               onChange={(e) =>
-                setReceive(
-                  receive ? { ...receive, batch_number: e.target.value } : receive,
-                )
+                setReceive(receive ? { ...receive, batch_number: e.target.value } : receive)
               }
             />
           </Field>
@@ -498,9 +496,7 @@ function MedicinesTab() {
               dir="ltr"
               value={receive?.purchase_price ?? ""}
               onChange={(e) =>
-                setReceive(
-                  receive ? { ...receive, purchase_price: e.target.value } : receive,
-                )
+                setReceive(receive ? { ...receive, purchase_price: e.target.value } : receive)
               }
             />
           </Field>
@@ -510,9 +506,7 @@ function MedicinesTab() {
               dir="ltr"
               value={receive?.manufacture_date ?? ""}
               onChange={(e) =>
-                setReceive(
-                  receive ? { ...receive, manufacture_date: e.target.value } : receive,
-                )
+                setReceive(receive ? { ...receive, manufacture_date: e.target.value } : receive)
               }
             />
           </Field>
@@ -522,9 +516,7 @@ function MedicinesTab() {
               dir="ltr"
               value={receive?.expiry_date ?? ""}
               onChange={(e) =>
-                setReceive(
-                  receive ? { ...receive, expiry_date: e.target.value } : receive,
-                )
+                setReceive(receive ? { ...receive, expiry_date: e.target.value } : receive)
               }
             />
           </Field>
