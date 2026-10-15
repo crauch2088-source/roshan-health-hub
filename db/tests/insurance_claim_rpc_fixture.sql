@@ -41,6 +41,6 @@ AS $authuid$ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $au
 CREATE FUNCTION private.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
 AS $privateperm$ SELECT COALESCE(current_setting('test.has_perm', true) = 'true', false) $privateperm$;
 CREATE FUNCTION private.is_super_admin() RETURNS boolean LANGUAGE sql STABLE
-AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
+AS $private_admin$ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $private_admin$;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT SELECT, INSERT ON public.insurance_claims, public.insurance_claim_items TO authenticated;
