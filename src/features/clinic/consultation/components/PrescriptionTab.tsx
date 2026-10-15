@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { createEmptyPrescriptionDraft, createPrescriptionDraftForMedicine, type PrescriptionDraft } from "@/lib/prescription-draft";
+import {
+  createEmptyPrescriptionDraft,
+  createPrescriptionDraftForMedicine,
+  type PrescriptionDraft,
+} from "@/lib/prescription-draft";
 import { sanitizeTerm, useDebounced } from "@/lib/search";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,7 +144,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           />
           {search.trim().length === 1 && (
             <p role="status" className="mt-1 text-xs text-muted-foreground">
-              {lang === "ar" ? "اكتب حرفين على الأقل للبحث" : "Type at least 2 characters to search"}
+              {lang === "ar"
+                ? "اكتب حرفين على الأقل للبحث"
+                : "Type at least 2 characters to search"}
             </p>
           )}
           {medsQ.isLoading && cleanSearch.length >= 2 && (
@@ -150,10 +156,15 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           )}
           {medsQ.error && (
             <p role="alert" className="mt-1 text-xs text-destructive">
-              {lang === "ar" ? "تعذر تحميل نتائج الأدوية. حاول مجدداً." : "Could not load medicines. Please try again."}
+              {lang === "ar"
+                ? "تعذر تحميل نتائج الأدوية. حاول مجدداً."
+                : "Could not load medicines. Please try again."}
             </p>
           )}
-          {search.trim().length >= 2 && !medsQ.isLoading && !medsQ.error && filtered.length === 0 && (
+          {search.trim().length >= 2 &&
+            !medsQ.isLoading &&
+            !medsQ.error &&
+            filtered.length === 0 && (
             <p role="status" className="mt-1 text-xs text-muted-foreground">
               {lang === "ar" ? "لا توجد أدوية مطابقة" : "No matching medicines"}
             </p>
