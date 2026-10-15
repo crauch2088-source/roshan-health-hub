@@ -121,7 +121,7 @@ BEGIN
   VALUES (
     v_invoice_number, p_patient_id, p_partner_id, p_invoice_date, v_subtotal,
     v_subtotal, p_discount, v_net, 0, 'unpaid',
-    'unpaid', v_user_branch, v_uid, v_uid
+    'unpaid', v_patient_branch, v_uid, v_uid
   )
   RETURNING id INTO v_invoice_id;
 
