@@ -86,7 +86,7 @@ END;
 $$;
 
 -- Duplicate lines for the same medicine must be checked as a combined quantity.
-DO $
+DO $$
 DECLARE v_batch numeric; v_stock integer; v_item_count integer;
 BEGIN
  SELECT quantity_remaining INTO v_batch FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001';
