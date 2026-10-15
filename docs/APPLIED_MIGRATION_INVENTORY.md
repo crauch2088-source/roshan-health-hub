@@ -4,7 +4,7 @@ Snapshot date: 2026-10-15
 Project: `jewzonxplxhogqrnhosl` (Roshan Production)  
 Source: live Supabase migration ledger, read-only.
 
-This table records the exact version/name pairs returned by Supabase. It is an inventory scaffold, **not a claim that the repository lacks every corresponding SQL change**. GitHub commit history contains no commits for `supabase/migrations` or `supabase/config.toml`; `main` and the checked historical branches also have no `supabase/` directory. The existing `db/*.sql` files must be content-compared before deciding which ledger entries they cover.
+This table records the exact version/name pairs returned by Supabase. A read-only query confirmed that all 79 ledger rows retain non-empty SQL in `statements` (one statement per row; ~247,724 characters total), so the applied SQL is recoverable from the production ledger without running it. This inventory is still not a claim of repository parity: Git history contains no `supabase/migrations` or `supabase/config.toml`, and the existing `db/*.sql` files must be content-compared before deciding which ledger entries they cover. No SQL was written back to the repository in this step.
 
 | Version | Applied migration name | Repository SQL mapping | Content parity |
 |---|---|---|---|
@@ -93,6 +93,9 @@ This table records the exact version/name pairs returned by Supabase. It is an i
 - Ledger entries: 79
 - Latest entry: `20261014164131_roshan_cashbox_reversal_concurrency`
 - Timestamped migration files in current repository: 0
+- Exact applied SQL: present in ledger for all 79 entries; one SQL statement per entry
+- Total retained SQL length: approximately 247,724 characters
+- SQL exported into repository: no (pending safety/source review)
 - SQL source mapping: not yet performed
 - Production changes performed during inventory: none
 

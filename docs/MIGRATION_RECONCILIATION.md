@@ -5,7 +5,7 @@ Production project ref: `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, eu-west-1)
 
 ## Verified facts
 
-- Supabase's migration ledger reports **79 applied migrations**. The newest entry is `20261014164131_roshan_cashbox_reversal_concurrency`.
+- Supabase's migration ledger reports **79 applied migrations**. The newest entry is `20261014164131_roshan_cashbox_reversal_concurrency`. Read-only inspection confirms every row has a non-empty `statements` array (one SQL statement per row), no missing migration names/statements, and approximately **247,724 characters of SQL** are recoverable directly from the live ledger. This is a viable exact-source recovery path, but does not by itself prove the recovered files replay cleanly or match the current schema.
 - The `main` repository tree has **no `supabase/` directory** and therefore no canonical `supabase/migrations/*.sql` history.
 - The committed `db/` directory instead contains a small set of phase/patch SQL files, including:
   - `roshan_phase1_migration.sql`
@@ -29,7 +29,7 @@ The current state is operational but not yet reproducible from the repository al
 ## Safe reconciliation plan
 
 1. **Freeze production DDL.** Do not apply PR #13 or PR #14 SQL to production until the canonical workflow is established. The PR #14 inventory UI depends on the new `receive_pharmacy_stock` RPC; deploying only one side would break stock receiving.
-2. **Capture source history.** Retrieve all 79 migration SQL files from the original migration source/CI artifacts/available Git history, and associate each ledger version with its exact SQL and checksum. Do not fabricate historical SQL from migration names.
+2. **Capture source history.** Export the exact `statements` array for each of the 79 ledger entries (confirmed present in the live ledger), associate each version with its SQL and checksum, and inspect it for unsafe hard-coded data or environment assumptions before committing recovered files. Do not fabricate historical SQL from migration names.
 3. **Compare, do not replay.** Compare historical migration files with the current schema, functions, policies, grants, triggers, constraints, and extensions. Record any missing source, drift, or superseded definitions. Treat function bodies and RLS policies as security-sensitive.
 4. **Choose a baseline strategy after the comparison.**
    - Preferred: restore the original timestamped migration files in their original order, verifying they recreate a clean disposable database and that the final schema matches production.
@@ -40,8 +40,8 @@ The current state is operational but not yet reproducible from the repository al
 
 ## Immediate next engineering task
 
-Retrieve and inventory the actual 79 migration SQL sources. Build a reconciliation table with columns:
+The SQL source is recoverable from the live ledger, so the next step is to export it into a quarantined review artifact, scan it, and compare it with the current schema and `db/*.sql` content before deciding whether to commit timestamped files. Build a reconciliation table with columns:
 
 `version | migration_name | source_available | source_path | checksum | covered_by_repo_artifact | schema/function diff reviewed | clean replay status | notes`
 
-Do not mark a row as covered based only on similar filenames. The migration count/name ledger is verified; full SQL parity is not yet verified.
+Do not mark a row as covered based only on similar filenames. The migration count/name ledger is verified; exact SQL statements are present in the live ledger, but repository mapping, safety review, replayability, and schema parity are not yet verified.
