@@ -29,3 +29,7 @@ Separate invoices are allowed only when explicitly requested/selected or require
 
 ## Rollout constraints
 The atomic invoice RPC in draft PR #23 is a starting point, not complete workflow coverage. visits.tsx, ConsultationPage.tsx, and LaboratoryTab.tsx still require migration to the role-safe workflow. SQL must remain unapplied until migration-history reconciliation, PostgreSQL integration tests, staging validation, and authenticated smoke tests pass. No merge or production rollout is authorized by this decision alone.
+
+
+## Verified permission constraint (read-only production inspection)
+The deployed permission catalog currently assigns `billing.create` to admin, pharmacist, receptionist, and super_admin; `visits.create` includes doctor/receptionist; `lab.create` includes doctor/lab_tech. The deployed `invoices` table has `visit_id` but no primary/secondary discriminator, and the existing unique index is live. Accordingly, workflow-specific RPCs must validate `visits.create`, `lab.create`, `pharmacy.create`, or `billing.create` according to the line-item source. Do not weaken authorization or let clinical callers bypass the guarded invoice-number RPC by calling it directly. This was a read-only catalog/schema inspection; no production data or schema was changed.
