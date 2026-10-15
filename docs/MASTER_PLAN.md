@@ -37,6 +37,7 @@
 - [ ] Audit current files/history for exposed credentials; report paths/types, never values. Rotate/revoke any real exposed credential before history rewriting.
 - [ ] Verify secret scanning, dependency alerts, and code scanning availability.
 - [x] Initial read-only review of all 15 authenticated-callable SECURITY DEFINER RPCs: no anon EXECUTE, empty `search_path`, and internal permission checks observed. [ ] Finish function-by-function adversarial tests for cross-branch IDs, invalid financial inputs, and branchless super-admin inventory/cashbox paths.
+- [ ] Insurance RPC gap from source review: `create_insurance_claim` does not currently enforce invoice-to-insured-patient matching or full item amount reconciliation server-side. Tracked in [Issue #16](https://github.com/crauch2088-source/roshan-health-hub/issues/16). PR #12 client-side validation is defense-in-depth only; database-side remediation must be tested in disposable/staging Supabase before production.
 - [ ] Review RLS policies/grants for identity, patient, clinical, lab, pharmacy, inventory, finance, and insurance tables.
 - [ ] Add automated unauthenticated, wrong-role, cross-branch, and forbidden-write tests.
 **Exit:** no unresolved critical/high-risk access-control issue; repeatable checks and evidence.
