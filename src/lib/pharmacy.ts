@@ -122,7 +122,7 @@ export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
 
 /**
  * Dispenses every item on a pending prescription First-Expire-First-Out.
- * Runs entirely inside one Postgres function (fn_dispense_prescription) so
+ * Runs entirely inside one Postgres function (fn_dispense_prescription_with_invoice) so
  * it's atomic under concurrent dispensing, and returns one row per batch
  * (or legacy-stock) consumption for display.
  */

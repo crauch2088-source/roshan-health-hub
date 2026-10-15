@@ -7,6 +7,7 @@ CREATE TABLE public.medicines (
   selling_price numeric,
   stock_quantity integer NOT NULL DEFAULT 0,
   active boolean DEFAULT true,
+  is_active boolean DEFAULT true,
   deleted_at timestamptz,
   updated_at timestamptz DEFAULT now(),
   updated_by uuid
@@ -71,3 +72,15 @@ CREATE TABLE public.stock_movements (
 
 GRANT SELECT, INSERT, UPDATE ON public.medicines, public.prescriptions,
   public.prescription_items, public.pharmacy_inventory, public.stock_movements TO authenticated;
+
+-- The deployed legacy RPC is deliberately present so the migration must close its bypass.
+CREATE FUNCTION public.fn_dispense_prescription(p_prescription_id uuid)
+RETURNS TABLE(item_id uuid, medicine_id uuid, medicine_name text, batch_id uuid,
+  batch_number text, expiry_date date, quantity_dispensed numeric,
+  batch_quantity_remaining numeric, source text)
+LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'legacy dispense RPC should be revoked';
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription(uuid) TO authenticated;
