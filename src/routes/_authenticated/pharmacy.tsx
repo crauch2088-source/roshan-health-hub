@@ -78,6 +78,7 @@ function PharmacyPageInner() {
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
   const [dispenseDetail, setDispenseDetail] = useState<Record<string, DispenseResultRow[]>>({});
+  const [separateInvoiceFor, setSeparateInvoiceFor] = useState<Record<string, boolean>>({});
 
   const list = useRows(
     ["pharmacy-queue", status],
@@ -96,15 +97,15 @@ function PharmacyPageInner() {
     { refetchInterval: 20000, keepPrevious: true },
   );
 
-  const dispense = useSave<{ prescriptionId: string }>(
-    async ({ prescriptionId }) => {
+  const dispense = useSave<{ prescriptionId: string; separateInvoice: boolean }>(
+    async ({ prescriptionId, separateInvoice }) => {
       if (!can("pharmacy.update")) throw new Error("Not authorized");
-      const result = await dispensePrescriptionFefo(prescriptionId);
+      const result = await dispensePrescriptionFefo(prescriptionId, separateInvoice);
       setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
       return result;
     },
     {
-      invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"], ["pharmacy-batches"]],
+      invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"], ["pharmacy-batches"], ["invoices"]],
       successMessage: t("dispensed"),
     },
   );
@@ -191,12 +192,41 @@ function PharmacyPageInner() {
                     <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                       <StatusBadge status={s(p, "status")} />
                       {can("pharmacy.update") && s(p, "status") === "pending" ? (
-                        <Button
-                          disabled={dispense.isPending}
-                          onClick={() => dispense.mutate({ prescriptionId: s(p, "id") })}
-                        >
-                          {t("dispense")}
-                        </Button>
+                        <>
+                          {can("billing.create") ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={separateInvoiceFor[s(p, "id")] ? "secondary" : "outline"}
+                              aria-pressed={Boolean(separateInvoiceFor[s(p, "id")])}
+                              onClick={() =>
+                                setSeparateInvoiceFor((current) => ({
+                                  ...current,
+                                  [s(p, "id")]: !current[s(p, "id")],
+                                }))
+                              }
+                            >
+                              {separateInvoiceFor[s(p, "id")]
+                                ? lang === "ar"
+                                  ? "فاتورة منفصلة"
+                                  : "Separate invoice"
+                                : lang === "ar"
+                                  ? "فاتورة الزيارة"
+                                  : "Visit invoice"}
+                            </Button>
+                          ) : null}
+                          <Button
+                            disabled={dispense.isPending}
+                            onClick={() =>
+                              dispense.mutate({
+                                prescriptionId: s(p, "id"),
+                                separateInvoice: Boolean(separateInvoiceFor[s(p, "id")]),
+                              })
+                            }
+                          >
+                            {t("dispense")}
+                          </Button>
+                        </>
                       ) : null}
                     </div>
                   </div>

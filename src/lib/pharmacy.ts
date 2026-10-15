@@ -128,9 +128,11 @@ export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
  */
 export async function dispensePrescriptionFefo(
   prescriptionId: string,
+  separateInvoice = false,
 ): Promise<DispenseResultRow[]> {
-  return rpc<DispenseResultRow[]>("fn_dispense_prescription", {
+  return rpc<DispenseResultRow[]>("fn_dispense_prescription_with_invoice", {
     p_prescription_id: prescriptionId,
+    p_separate_invoice: separateInvoice,
   });
 }
 

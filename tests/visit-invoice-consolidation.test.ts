@@ -46,3 +46,12 @@ test("laboratory order and its invoice items share one transaction", () => {
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_visit_consultation_invoice_atomic/);
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_lab_order_with_invoice_atomic/);
 });
+
+test("pharmacy dispense routes through atomic dispense-and-invoice RPC", () => {
+  const pharmacyLib = readFileSync(new URL("../src/lib/pharmacy.ts", import.meta.url), "utf8");
+  const pharmacyRoute = readFileSync(new URL("../src/routes/_authenticated/pharmacy.tsx", import.meta.url), "utf8");
+  assert.match(pharmacyLib, /fn_dispense_prescription_with_invoice/);
+  assert.match(pharmacyRoute, /separateInvoiceFor/);
+  assert.match(pharmacyRoute, /p_separate_invoice|separateInvoice/);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\\.fn_dispense_prescription_with_invoice/);
+});

@@ -387,3 +387,83 @@ $function$;
 REVOKE ALL ON FUNCTION public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean) FROM anon;
 GRANT EXECUTE ON FUNCTION public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean) TO authenticated;
+
+
+-- Dispense and invoice are one transaction. The existing FEFO function remains the
+-- stock authority; if invoice creation fails, PostgreSQL rolls back its stock writes too.
+CREATE OR REPLACE FUNCTION public.fn_dispense_prescription_with_invoice(
+  p_prescription_id uuid,
+  p_separate_invoice boolean DEFAULT false
+)
+RETURNS TABLE(
+  item_id uuid,
+  medicine_id uuid,
+  medicine_name text,
+  batch_id uuid,
+  batch_number text,
+  expiry_date date,
+  quantity_dispensed numeric,
+  batch_quantity_remaining numeric,
+  source text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+DECLARE
+  v_uid uuid := public.current_app_user_id();
+  v_patient_id uuid;
+  v_visit_id uuid;
+  v_items jsonb;
+BEGIN
+  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+    RAISE EXCEPTION 'pharmacy dispense permission denied' USING ERRCODE = '42501';
+  END IF;
+  IF p_separate_invoice IS NULL THEN
+    RAISE EXCEPTION 'separate-invoice choice must be explicit';
+  END IF;
+  IF p_separate_invoice AND NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'separate invoices require billing.create' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT p.patient_id, p.visit_id INTO v_patient_id, v_visit_id
+    FROM public.prescriptions AS p
+   WHERE p.id = p_prescription_id AND p.deleted_at IS NULL AND p.status = 'pending'
+   FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'prescription_not_pending'; END IF;
+
+  -- RETURN QUERY accumulates the existing FEFO dispense result; any later exception
+  -- aborts this statement and rolls back the underlying stock/prescription changes.
+  RETURN QUERY SELECT * FROM public.fn_dispense_prescription(p_prescription_id);
+
+  SELECT jsonb_agg(jsonb_build_object(
+    'item_name', m.name,
+    'item_type', 'pharmacy',
+    'quantity', COALESCE(pi.dispensed_quantity, pi.quantity, 1),
+    'unit_price', COALESCE(pi.unit_price, m.selling_price, 0),
+    'item_id', m.id
+  ) ORDER BY pi.id)
+    INTO v_items
+    FROM public.prescription_items AS pi
+    JOIN public.medicines AS m ON m.id = pi.medicine_id
+   WHERE pi.prescription_id = p_prescription_id
+     AND pi.deleted_at IS NULL
+     AND pi.is_dispensed IS TRUE
+     AND pi.medicine_id IS NOT NULL;
+
+  IF v_items IS NOT NULL THEN
+    IF v_visit_id IS NULL THEN
+      -- External/non-visit prescriptions use a standalone patient invoice.
+      PERFORM public.create_invoice_atomic(v_patient_id, NULL, CURRENT_DATE, 0, v_items);
+    ELSE
+      PERFORM private.create_or_append_visit_invoice_atomic(
+        v_visit_id, CURRENT_DATE, 0, v_items, p_separate_invoice
+      );
+    END IF;
+  END IF;
+  RETURN;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.fn_dispense_prescription_with_invoice(uuid,boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription_with_invoice(uuid,boolean) TO authenticated;
