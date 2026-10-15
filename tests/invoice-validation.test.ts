@@ -23,7 +23,11 @@ test("calculates a valid invoice draft from line items", () => {
 test("rejects an invoice with no usable line items", () => {
   assert.throws(() => validateInvoiceDraft([], "0"), /at least one item/i);
   assert.throws(
-    () => validateInvoiceDraft([{ description: "   ", quantity: "1", unit_price: "10", item_type: "other" }], "0"),
+    () =>
+      validateInvoiceDraft(
+        [{ description: "   ", quantity: "1", unit_price: "10", item_type: "other" }],
+        "0",
+      ),
     /description/i,
   );
 });
@@ -31,7 +35,11 @@ test("rejects an invoice with no usable line items", () => {
 test("rejects fractional, zero, negative, or non-finite quantities", () => {
   for (const quantity of ["1.5", "0", "-1", "Infinity", "not-a-number"]) {
     assert.throws(
-      () => validateInvoiceDraft([{ description: "Service", quantity, unit_price: "10", item_type: "other" }], "0"),
+      () =>
+        validateInvoiceDraft(
+          [{ description: "Service", quantity, unit_price: "10", item_type: "other" }],
+          "0",
+        ),
       /quantity/i,
     );
   }
@@ -40,7 +48,11 @@ test("rejects fractional, zero, negative, or non-finite quantities", () => {
 test("rejects negative or non-finite prices and discounts", () => {
   for (const unit_price of ["-1", "Infinity", "not-money"]) {
     assert.throws(
-      () => validateInvoiceDraft([{ description: "Service", quantity: "1", unit_price, item_type: "other" }], "0"),
+      () =>
+        validateInvoiceDraft(
+          [{ description: "Service", quantity: "1", unit_price, item_type: "other" }],
+          "0",
+        ),
       /price/i,
     );
   }
