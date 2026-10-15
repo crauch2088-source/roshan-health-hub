@@ -199,6 +199,8 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 ### A. Business and workflow logic
 - [ ] Map each role's real end-to-end tasks and permissions: reception, GP, dentist, specialist, lab, pharmacy, admin, super admin.
 - [ ] Trace workflow transitions and invariants for registration/duplicate detection, queue, visit, consultation, lab orders/results, prescriptions, dispensing, invoices, payments, insurance claims, cashbox, and closeout.
+- [ ] Reconcile the `next_invoice_number()` privilege allowlist with every remaining UI call site; migrate visits, consultation, and lab billing to role-safe atomic RPCs before calling invoice creation end-to-end atomic.
+- [ ] Resolve the one-active-invoice-per-visit invariant against laboratory billing: decide whether a visit has one invoice with appended items or may have multiple invoice documents, then test the consultation-fee + lab-order sequence.
 - [ ] Identify duplicated calculations or client-trusted fields; keep authoritative financial, stock, and permission decisions server-side where appropriate.
 - [ ] Specify behavior for retries, double-submit, concurrent edits, stale selections, partial network failure, inactive/deleted records, and recoverable rollback.
 - [ ] Ensure failed or partial reads never look like zero, success, or an empty clinical history.
