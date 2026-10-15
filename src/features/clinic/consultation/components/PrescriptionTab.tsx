@@ -101,6 +101,12 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         ["prescriptions", visitId],
       ],
       successMessage: lang === "ar" ? "تم حفظ الوصفة" : "Prescription saved",
+      onDone: () => {
+        setItems([]);
+        setForm(createEmptyPrescriptionDraft());
+        setSearch("");
+        setExternal(false);
+      },
     },
   );
 
