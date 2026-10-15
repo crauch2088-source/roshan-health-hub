@@ -26,7 +26,7 @@ BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'authenticated application user is required' USING ERRCODE = '42501';
   END IF;
-  IF NOT public.app_has_perm('pharmacy.update') THEN
+  IF NOT COALESCE(public.app_has_perm('pharmacy.update'), false) THEN
     RAISE EXCEPTION 'insufficient_permission' USING ERRCODE = '42501';
   END IF;
   IF p_quantity IS NULL
@@ -61,7 +61,7 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'active_application_user_not_found' USING ERRCODE = '42501';
   END IF;
-  IF NOT public.is_super_admin() AND v_branch IS NULL THEN
+  IF NOT COALESCE(public.is_super_admin(), false) AND v_branch IS NULL THEN
     RAISE EXCEPTION 'user_branch_not_configured' USING ERRCODE = '42501';
   END IF;
 
