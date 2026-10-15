@@ -396,8 +396,8 @@ const dict: Record<string, { ar: string; en: string }> = {
   select_medicine: { ar: "اختر الدواء", en: "Select medicine" },
   invalid_quantity: { ar: "كمية غير صحيحة", en: "Invalid quantity" },
   legacy_receive_hint: {
-    ar: 'لتتبع كامل للتشغيلة وتاريخ الانتهاء، استخدم تبويب "التشغيلات" بدلاً من ذلك.',
-    en: "For full batch and expiry tracking, use the Batches tab instead.",
+    ar: 'لإضافة المورد ورقم فاتورته، استخدم تبويب "التشغيلات".',
+    en: "Use the Batches tab to record supplier and invoice details.",
   },
   all: { ar: "الكل", en: "All" },
   healthy: { ar: "سليم", en: "Healthy" },
