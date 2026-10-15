@@ -97,3 +97,46 @@ test("accepts a complete invoice-linked claim draft", () => {
     }),
   );
 });
+
+test("rejects claim items whose covered and patient amounts exceed gross amount", () => {
+  assert.throws(
+    () =>
+      validateInsuranceClaimDraft({
+        patientInsuranceId: "insurance-1",
+        invoiceId: "invoice-1",
+        items: [{ ...validItem, covered_amount: 90, patient_amount: 20 }],
+      }),
+    /amounts|gross|match/i,
+  );
+});
+
+test("rejects claim items whose covered and patient amounts do not reconcile to gross", () => {
+  assert.throws(
+    () =>
+      validateInsuranceClaimDraft({
+        patientInsuranceId: "insurance-1",
+        invoiceId: "invoice-1",
+        items: [{ ...validItem, covered_amount: 70, patient_amount: 20 }],
+      }),
+    /amounts|gross|match/i,
+  );
+});
+
+test("rejects negative, non-finite, and non-positive claim amounts", () => {
+  for (const item of [
+    { ...validItem, gross_amount: 0 },
+    { ...validItem, gross_amount: Number.NaN },
+    { ...validItem, covered_amount: -1, patient_amount: 101 },
+    { ...validItem, patient_amount: Number.POSITIVE_INFINITY },
+  ]) {
+    assert.throws(
+      () =>
+        validateInsuranceClaimDraft({
+          patientInsuranceId: "insurance-1",
+          invoiceId: "invoice-1",
+          items: [item],
+        }),
+      /amounts|gross|match/i,
+    );
+  }
+});
