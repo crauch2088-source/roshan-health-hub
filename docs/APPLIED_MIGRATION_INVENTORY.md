@@ -87,3 +87,18 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20261011080434` | `enforce_branch_isolation_on_clinical_child_tables` | 6804 | `78010a0852d06cdae5d19c7743387478` | Not yet mapped | Not yet checked |
 | `20261011080524` | `preserve_super_admin_supplier_bill_compatibility` | 2439 | `f057895df5f103ba2dd6740e5dbc8152` | Not yet mapped | Not yet checked |
 | `20261014164131` | `roshan_cashbox_reversal_concurrency` | 2217 | `ae4f73ae273554f14fc0f5cf8052f9ef` | db/roshan_phase4_cashbox_reversal_concurrency.sql (name match) | Mismatch; semantic diff pending |
+
+
+## Source mapping results (semantic review update — 2026-10-15)
+
+These results supplement the 79-row source inventory. “Executable-content match” means statement text matched after comments/whitespace normalization; it is not authorization to replay a migration.
+
+| Applied ledger version(s) | Repository candidate | Result | Remaining caution |
+|---|---|---|---|
+| `20260819100756` `roshan_phase1_pagination_and_settings` | `db/roshan_phase1_pagination_and_settings.sql` | Partial match: recovered ledger body contains additional indexes `patients_mrn_idx`, `patients_phone_idx`, and `patients_national_id_idx` absent from the candidate. | Verify whether indexes exist from another applied migration and reconcile the candidate before claiming parity. |
+| `20260820150215` `roshan_phase2_clinical_workflow` | `db/roshan_phase2_clinical_workflow.sql` | Partial match: candidate adds a default lab-result-parameter `INSERT ... SELECT` absent from the recovered body. | Do not substitute one file for the other; determine where/when the seeding behavior was applied. |
+| `20260909110657`, `20260909110735`, `20260909110753` (insurance foundation/functions/permissions) | `db/roshan_phase5_insurance.sql` | Combined recovered statement sets match the candidate after comments/whitespace normalization. | One repository file consolidates three historical ledger entries and adds a transaction wrapper; do not replay it merely because the statements correspond. |
+| `20260911120231` `roshan_phase12_invoice_visit_unique` | `db/roshan_phase12_invoice_visit_unique.sql` | Executable SQL match after comment removal and whitespace normalization. | Formatting/comments differ; replayability remains a separate gate. |
+| `20261014164131` `roshan_cashbox_reversal_concurrency` | `db/roshan_phase4_cashbox_reversal_concurrency.sql` | Executable-content match after comment/whitespace normalization. | Candidate adds `BEGIN`/`COMMIT`; duplicate-reversal precondition and function security/runtime state still require isolated validation. |
+
+All comparisons above were source-only. No SQL was executed and no production schema or data was changed. Recovered SQL remains quarantined under `docs/recovered-migrations/sql/`.
