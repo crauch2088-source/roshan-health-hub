@@ -105,7 +105,14 @@ function PharmacyPageInner() {
       return result;
     },
     {
-      invalidate: [["pharmacy-queue"], ["medicines"], ["inventory"], ["pharmacy-batches"], ["invoices"]],
+      invalidate: [
+        ["pharmacy-queue"],
+        ["medicines"],
+        ["inventory"],
+        ["pharmacy-batches"],
+        ["invoices"],
+        ["consultation-invoice"],
+      ],
       successMessage: t("dispensed"),
     },
   );

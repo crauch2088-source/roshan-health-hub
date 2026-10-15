@@ -33,7 +33,10 @@ test("pharmacy UI exposes a deliberate separate-invoice option only to billing-a
 });
 
 test("integration contract covers itemized medicine charges, rollback, retry, and explicit secondary invoice", () => {
-  assert.match(integration, /consultation and each dispensed medicine must be separate invoice lines/);
+  assert.match(
+    integration,
+    /consultation and each dispensed medicine must be separate invoice lines/,
+  );
   assert.match(integration, /failed invoice append did not roll back stock/);
   assert.match(integration, /duplicate dispense created duplicate charges/);
   assert.match(integration, /explicit separate pharmacy invoice was not created/);
