@@ -10,9 +10,7 @@ const ui = readFileSync(
   new URL("../src/routes/_authenticated/billing.tsx", import.meta.url),
   "utf8",
 );
-const pkg = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as {
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   scripts?: Record<string, string>;
 };
 
