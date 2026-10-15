@@ -433,7 +433,7 @@ function DashboardPageInner() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("patient")}</TableHead>
-                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("time")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
                 </TableRow>
               </TableHeader>
