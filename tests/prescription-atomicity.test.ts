@@ -5,6 +5,7 @@ import { test } from "node:test";
 import {
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
+  editPrescriptionName,
 } from "../src/lib/prescription-draft.ts";
 
 const sql = readFileSync(
@@ -92,4 +93,22 @@ test("successful prescription save clears the draft to prevent accidental duplic
     ui,
     /onDone:\s*\(\)\s*=>\s*\{[\s\S]*?setItems\(\[\]\)[\s\S]*?setForm\(createEmptyPrescriptionDraft\(\)\)[\s\S]*?setSearch\(""\)/,
   );
+});
+
+test("editing a selected medicine name clears its catalog link and old regimen", () => {
+  const selected = createPrescriptionDraftForMedicine({
+    id: "medicine-1",
+    name: "Amoxicillin",
+    dosage_form: "Capsule",
+  });
+  const edited = editPrescriptionName(
+    { ...selected, dose: "500 mg", frequency: "twice daily", duration: "5 days", instructions: "after food" },
+    "Custom medicine",
+  );
+  assert.equal(edited.medicine_id, "");
+  assert.equal(edited.name, "Custom medicine");
+  assert.equal(edited.dose, "");
+  assert.equal(edited.frequency, "");
+  assert.equal(edited.duration, "");
+  assert.equal(edited.instructions, "");
 });
