@@ -48,6 +48,8 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 
 - 2026-10-15 follow-up: added a read-only byte-length and MD5 inventory for all 79 ledger `statements` values in `docs/APPLIED_MIGRATION_INVENTORY.md`. The checksum is over the stored JSON representation, not normalized SQL. This improves source-recovery verification but does not establish repository parity, safety, or replayability. No SQL bodies were exported or committed and no database writes were performed.
 
+- 2026-10-15 follow-up: performed a read-only exact-text comparison between 7 ledger migration bodies and same-name/likely `db/*.sql` artifacts, plus 4 additional name-related candidates. None of the 11 candidate pairs matched byte-for-byte after newline normalization. The candidate files may bundle multiple historical changes or differ in comments/formatting/content; this result is a proven exact-content mismatch, not yet a semantic equivalence judgment. Updated `docs/APPLIED_MIGRATION_INVENTORY.md` to record candidate paths and keep semantic diff/replay status unresolved. No historical SQL bodies were exported, committed, or executed.
+
 
 
 - 2026-10-15 follow-up: Supabase branch inventory confirms only the production `main` branch exists; no disposable development branch is currently available. Supabase's current branch estimate for this organization is **US$0.01344/hour** (about **US$9.81/month** if left running continuously). Do not create the branch until the user explicitly confirms this cost. Until then, SQL integration tests remain a hard release gate and production stays unchanged.

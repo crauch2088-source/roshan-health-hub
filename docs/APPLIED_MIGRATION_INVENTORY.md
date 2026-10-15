@@ -22,13 +22,13 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260818200336` | `finalize_non_recycling_queue_allocator` | 1368 | `08d337b9dc9add2d77091e79c2d087b2` | Not yet mapped | Not yet checked |
 | `20260818202356` | `fix_appointments_rls_auth_and_audit` | 828 | `bf439a86b9fd31c5282a61361ad96f7a` | Not yet mapped | Not yet checked |
 | `20260818232848` | `harden_core_indexes_and_legacy_compatibility_v2` | 7636 | `e8813fabc4451694071ab43f76e8ae7a` | Not yet mapped | Not yet checked |
-| `20260818233558` | `harden_security_definer_helpers_and_duplicate_index_v2` | 5656 | `2a5cd75eac385055a01dd3db53cfdf05` | Not yet mapped | Not yet checked |
+| `20260818233558` | `harden_security_definer_helpers_and_duplicate_index_v2` | 5656 | `2a5cd75eac385055a01dd3db53cfdf05` | db/roshan_security_hardening.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260818234039` | `harden_rls_permissions_and_public_grants_v1` | 29681 | `7a20a1b456d5ac28b7939264cd85fb0c` | Not yet mapped | Not yet checked |
 | `20260818234050` | `harden_services_rls_v1` | 676 | `0736405983339e302a4363ae83b7aa43` | Not yet mapped | Not yet checked |
 | `20260818234146` | `repair_roshan_rbac_role_links_v1` | 2174 | `33a9375f8f84f73b213b256d52257840` | Not yet mapped | Not yet checked |
 | `20260819000003` | `harden_public_defaults_and_sync_user_roles` | 1739 | `83601720d0bd6443dc85b3c463b39794` | Not yet mapped | Not yet checked |
 | `20260819000016` | `tighten_public_default_privileges` | 389 | `c7abfd29bad141caa28cf0d901438c7c` | Not yet mapped | Not yet checked |
-| `20260819100756` | `roshan_phase1_pagination_and_settings` | 1129 | `33e550dacd27b9007897dbaa1fd42bd4` | Not yet mapped | Not yet checked |
+| `20260819100756` | `roshan_phase1_pagination_and_settings` | 1129 | `33e550dacd27b9007897dbaa1fd42bd4` | db/roshan_phase1_pagination_and_settings.sql (name match) | Mismatch; semantic diff pending |
 | `20260819105146` | `roshan_settings_public_enforcement` | 942 | `5fc9082104fc8cdf9b65776478895a36` | Not yet mapped | Not yet checked |
 | `20260819123920` | `grant_authenticated_execute_next_mrn` | 65 | `8997024e51ab6ffc93be3ffb4aef3032` | Not yet mapped | Not yet checked |
 | `20260819124045` | `fix_next_mrn_rpc_access` | 494 | `3febc123265bfaf81d777533064f65f9` | Not yet mapped | Not yet checked |
@@ -44,21 +44,21 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260820000725` | `add_medicines_expiry_date` | 75 | `34caa91bdc2b6b1051202d380336d4ca` | Not yet mapped | Not yet checked |
 | `20260820005417` | `fix_followups_user_relationship` | 507 | `75d47f32e8627e2d587990284791fa63` | Not yet mapped | Not yet checked |
 | `20260820010030` | `fix_medicines_batch_number` | 190 | `857c21fd0dff64de9f3a8c5cb6555e8b` | Not yet mapped | Not yet checked |
-| `20260820150215` | `roshan_phase2_clinical_workflow` | 640 | `3b13a90d96e8d878c97be72b8c21c905` | Not yet mapped | Not yet checked |
+| `20260820150215` | `roshan_phase2_clinical_workflow` | 640 | `3b13a90d96e8d878c97be72b8c21c905` | db/roshan_phase2_clinical_workflow.sql (name match) | Mismatch; semantic diff pending |
 | `20260822094358` | `roshan_workflow_performance_20260822` | 2230 | `a47d2b6af7e90cf6c9375af0308ae32f` | Not yet mapped | Not yet checked |
 | `20260822094405` | `roshan_drop_duplicate_prescription_index_20260822` | 64 | `013b6f046a1cc5d09636d142232ce8b1` | Not yet mapped | Not yet checked |
 | `20260906142737` | `roshan_phase3_allow_pharmacy_setting_public` | 1199 | `2c21995b7a241df642b44c06d8202eb9` | Not yet mapped | Not yet checked |
 | `20260906142803` | `roshan_phase3_pharmacy_batches` | 9097 | `5af0b31a2ae1998a57a4dd3e8f510759` | Not yet mapped | Not yet checked |
-| `20260906144008` | `roshan_phase4_finance_cashbox_debts` | 14679 | `bc611918fa30c7aa33622350d63c4f1e` | Not yet mapped | Not yet checked |
-| `20260906161023` | `roshan_phase4_finance_security_verification_patch` | 3589 | `49626f4e7b252184c147402f4639f3ba` | Not yet mapped | Not yet checked |
+| `20260906144008` | `roshan_phase4_finance_cashbox_debts` | 14679 | `bc611918fa30c7aa33622350d63c4f1e` | db/roshan_phase4_finance.sql (candidate; name differs) | Mismatch; semantic diff pending |
+| `20260906161023` | `roshan_phase4_finance_security_verification_patch` | 3589 | `49626f4e7b252184c147402f4639f3ba` | db/roshan_phase4_finance.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260906203143` | `roshan_phase3_pharmacy_runtime_hardening` | 6980 | `a7a95cc25eb5e395af595ab2192c9d34` | Not yet mapped | Not yet checked |
-| `20260908210824` | `roshan_phase4_finance_v2` | 24052 | `4be9232e7e06b03ff5827ae9af046ec0` | Not yet mapped | Not yet checked |
-| `20260909110657` | `roshan_phase5_insurance` | 7616 | `0270b37760a90ace769c63cee95d7bfa` | Not yet mapped | Not yet checked |
+| `20260908210824` | `roshan_phase4_finance_v2` | 24052 | `4be9232e7e06b03ff5827ae9af046ec0` | db/roshan_phase4_finance.sql (candidate; name differs) | Mismatch; semantic diff pending |
+| `20260909110657` | `roshan_phase5_insurance` | 7616 | `0270b37760a90ace769c63cee95d7bfa` | db/roshan_phase5_insurance.sql (name match) | Mismatch; semantic diff pending |
 | `20260909110735` | `roshan_phase5_insurance_functions` | 10859 | `20fa5cff06280170d2d4a2cb85e63e0b` | Not yet mapped | Not yet checked |
 | `20260909110753` | `roshan_phase5_insurance_permissions_rls` | 4922 | `0eacc16749f50f8401dfdeb48699c486` | Not yet mapped | Not yet checked |
-| `20260911120231` | `roshan_phase12_invoice_visit_unique` | 425 | `5182147d2ed12b1a7df402b763c5a1c5` | Not yet mapped | Not yet checked |
-| `20260911130749` | `harden_security_and_fk_indexes_20260911` | 7111 | `2cbc5a3b8a370baae854dc1883604aa2` | Not yet mapped | Not yet checked |
-| `20260911130812` | `restrict_security_definer_api_execution_20260911` | 2164 | `52b0166fba689c66bf81454aa91b200c` | Not yet mapped | Not yet checked |
+| `20260911120231` | `roshan_phase12_invoice_visit_unique` | 425 | `5182147d2ed12b1a7df402b763c5a1c5` | db/roshan_phase12_invoice_visit_unique.sql (name match) | Mismatch; semantic diff pending |
+| `20260911130749` | `harden_security_and_fk_indexes_20260911` | 7111 | `2cbc5a3b8a370baae854dc1883604aa2` | db/roshan_security_hardening.sql (candidate; name differs) | Mismatch; semantic diff pending |
+| `20260911130812` | `restrict_security_definer_api_execution_20260911` | 2164 | `52b0166fba689c66bf81454aa91b200c` | db/roshan_security_privileged_role_guard.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260911131456` | `deep_audit_branch_isolation_rpc_hardening` | 8077 | `2e229e263b04b6144047fcabbbd87d94` | Not yet mapped | Not yet checked |
 | `20260911133229` | `harden_mrn_invoice_number_concurrency` | 1009 | `0fd7b0b1afb1ef6cb390a0b6657de5d2` | Not yet mapped | Not yet checked |
 | `20260911133255` | `enforce_branch_isolation_rls` | 1566 | `7cb965a4218bb2772115ac51c62ade30` | Not yet mapped | Not yet checked |
@@ -86,4 +86,4 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20261011080319` | `harden_finance_pharmacy_rpc_search_paths` | 971 | `c03361836985e996c05206b78f0b5127` | Not yet mapped | Not yet checked |
 | `20261011080434` | `enforce_branch_isolation_on_clinical_child_tables` | 6804 | `78010a0852d06cdae5d19c7743387478` | Not yet mapped | Not yet checked |
 | `20261011080524` | `preserve_super_admin_supplier_bill_compatibility` | 2439 | `f057895df5f103ba2dd6740e5dbc8152` | Not yet mapped | Not yet checked |
-| `20261014164131` | `roshan_cashbox_reversal_concurrency` | 2217 | `ae4f73ae273554f14fc0f5cf8052f9ef` | Not yet mapped | Not yet checked |
+| `20261014164131` | `roshan_cashbox_reversal_concurrency` | 2217 | `ae4f73ae273554f14fc0f5cf8052f9ef` | db/roshan_phase4_cashbox_reversal_concurrency.sql (name match) | Mismatch; semantic diff pending |
