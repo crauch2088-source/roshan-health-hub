@@ -27,8 +27,13 @@ Separate invoices are allowed only when explicitly requested/selected or require
 - Cross-branch and unauthorized requests fail; malformed precision/quantities fail; injected item-write failures roll back.
 - Every UI workflow uses a server-side atomic RPC instead of direct invoice-header/item writes.
 
-## Rollout constraints
-The atomic invoice RPC in draft PR #23 is a starting point, not complete workflow coverage. visits.tsx, ConsultationPage.tsx, and LaboratoryTab.tsx still require migration to the role-safe workflow. SQL must remain unapplied until migration-history reconciliation, PostgreSQL integration tests, staging validation, and authenticated smoke tests pass. No merge or production rollout is authorized by this decision alone.
+## Implementation status — 2026-10-15
+Draft PR #23 now routes visit creation and the consultation fallback through a server-derived consultation invoice RPC; the lab-order workflow creates the order, order items, and catalog-priced invoice lines in one transaction. The internal invoice helper is private and revoked from authenticated/anon; the public consultation wrapper does not accept client-supplied prices. Repeated consultation-invoice requests are idempotent. An explicit separate-invoice toggle is available to billing-authorized users in the lab workflow. PostgreSQL 17 integration, security audit, guard tests, typecheck, lint, and build passed on head `57ddfad38f1fe609c50487fa4d63548d231d931b` in [run #38811740570](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38811740570).
+
+Pharmacy dispensing has not yet been wired to invoice lines; the generic private helper intentionally does not permit `pharmacy.create` to submit arbitrary medicine/price data. A dedicated dispense-and-invoice RPC must validate actual dispensed batch/quantity/price before pharmacy lines can be added.
+
+# Rollout constraints
+The implementation remains a draft proposal. SQL must remain unapplied until migration-history reconciliation, isolated Supabase branch validation, and authenticated smoke tests pass. Vercel preview is currently blocked by the account build-rate limit. No merge or production rollout is authorized by this decision alone.
 
 
 ## Verified permission constraint (read-only production inspection)
