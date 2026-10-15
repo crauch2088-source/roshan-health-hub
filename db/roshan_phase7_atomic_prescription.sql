@@ -115,7 +115,8 @@ BEGIN
         FROM public.medicines m
        WHERE m.id = v_medicine_id
          AND m.deleted_at IS NULL
-         AND m.active IS TRUE;
+         AND m.active IS TRUE
+       FOR SHARE;
     ELSE
       v_medicine_name := btrim(v_item->>'medication_name');
     END IF;
