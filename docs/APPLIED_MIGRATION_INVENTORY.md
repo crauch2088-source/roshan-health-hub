@@ -82,9 +82,9 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20261011074344` | `harden_patient_invoice_number_rpc_permissions` | 1369 | `fa85bc51d4fe743b5a5762718e46e736` | Not yet mapped | Not yet checked |
 | `20261011074437` | `harden_insurance_coverage_rpc_permissions` | 3835 | `8504c98d1e4d3cee48826e41e5d69408` | Not yet mapped | Not yet checked |
 | `20261011075101` | `harden_pharmacy_batch_branch_isolation` | 2639 | `2e632526be6a5021352adcb533d20b09` | Not yet mapped | Not yet checked |
-| `20261011080253` | `harden_supplier_bill_rpc_branch_and_search_path` | 2418 | `5d6254563c77eba7445c7cd441761598` | Not yet mapped | Not yet checked |
-| `20261011080319` | `harden_finance_pharmacy_rpc_search_paths` | 971 | `c03361836985e996c05206b78f0b5127` | Not yet mapped | Not yet checked |
-| `20261011080434` | `enforce_branch_isolation_on_clinical_child_tables` | 6804 | `78010a0852d06cdae5d19c7743387478` | Not yet mapped | Not yet checked |
+| `20261011080253` | `harden_supplier_bill_rpc_branch_and_search_path` | 2418 | `5d6254563c77eba7445c7cd441761598` | `db/roshan_phase4_finance.sql` | Confirmed material mismatch: recovered function validates active supplier/discount/branch and sets empty search_path; baseline omits these controls and branch_id; see semantic review section |
+| `20261011080319` | `harden_finance_pharmacy_rpc_search_paths` | 971 | `c03361836985e996c05206b78f0b5127` | `db/roshan_phase4_finance.sql` plus dispensing candidate search | Confirmed source mismatch: recovered hardens search_path on ten SECURITY DEFINER functions; finance candidate still uses `search_path=public` for payment RPCs and no dispensing source was found; see semantic review section |
+| `20261011080434` | `enforce_branch_isolation_on_clinical_child_tables` | 6804 | `78010a0852d06cdae5d19c7743387478` | No exact helper/policy source match found in likely candidates | High-priority unresolved RLS mapping for clinical_notes, diagnoses, vitals, lab_results, and attachments; see semantic review section |
 | `20261011080524` | `preserve_super_admin_supplier_bill_compatibility` | 2439 | `f057895df5f103ba2dd6740e5dbc8152` | Not yet mapped | Not yet checked |
 | `20261014164131` | `roshan_cashbox_reversal_concurrency` | 2217 | `ae4f73ae273554f14fc0f5cf8052f9ef` | db/roshan_phase4_cashbox_reversal_concurrency.sql (name match) | Executable-content match after comment/whitespace normalization; repo candidate adds transaction wrapper; see semantic review section |
 
