@@ -44,6 +44,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
+import { validateInvoiceDraft } from "@/lib/invoice-validation";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/billing")({
@@ -112,38 +113,24 @@ function BillingPageInner() {
 
   const create = useSave(
     async () => {
-      const invoiceNumber = await rpc<string>("next_invoice_number");
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_number: invoiceNumber,
-          patient_id: patientId,
-          partner_id: partnerId || null,
-          invoice_date: date,
-          total_amount: subtotal,
-          discount_amount: Number(discount) || 0,
-          net_amount: net,
-          paid_amount: 0,
-          status: "unpaid",
-        })
-        .select("id")
-        .single();
+      const validated = validateInvoiceDraft(lines, discount);
+      const { data: invoiceId, error } = await supabase.rpc("create_invoice_atomic", {
+        p_patient_id: patientId,
+        p_partner_id: partnerId || null,
+        p_invoice_date: date,
+        p_discount: validated.discount,
+        p_items: validated.lines.map((line) => ({
+          item_name: line.description,
+          item_type: line.item_type,
+          quantity: line.quantity,
+          unit_price: line.unit_price,
+        })),
+      });
       if (error) throw new Error(error.message);
-      const items = lines
-        .filter((l) => l.description)
-        .map((l) => ({
-          invoice_id: inv.id,
-          item_name: l.description,
-          item_type: l.item_type,
-          quantity: Number(l.quantity) || 1,
-          unit_price: Number(l.unit_price) || 0,
-          total_price: (Number(l.quantity) || 1) * (Number(l.unit_price) || 0),
-        }));
-      if (items.length) {
-        const { error: iErr } = await supabase.from("invoice_items").insert(items);
-        if (iErr) throw new Error(iErr.message);
+      if (typeof invoiceId !== "string" || !invoiceId) {
+        throw new Error("The database did not return the created invoice ID.");
       }
-      return inv.id as string;
+      return invoiceId;
     },
     {
       invalidate: [["invoices", date]],
