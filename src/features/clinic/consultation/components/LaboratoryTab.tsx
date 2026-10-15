@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/lib/auth";
-import { n, rpc, s, useRows, useSave, type Row } from "@/lib/db";
+import { s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
@@ -62,7 +61,6 @@ function normalizeCategory(value: string) {
 }
 
 export function LaboratoryTab({ visitId }: { visitId: string }) {
-  const { user } = useAuth();
   const { lang } = useLang();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -165,66 +163,17 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         throw new Error(lang === "ar" ? "المريض غير موجود" : "Patient not found");
       if (!selected.length)
         throw new Error(lang === "ar" ? "اختر فحصاً واحداً على الأقل" : "Select at least one test");
-      const { data: order, error } = await supabase
-        .from("lab_orders")
-        .insert({
-          patient_id: s(patient, "id"),
-          visit_id: visitId,
-          ordered_by: user?.id ?? null,
-          status: "ordered",
-          priority,
-          notes: notes || null,
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
+      const { data: orderId, error } = await supabase.rpc("create_lab_order_with_invoice_atomic", {
+        p_visit_id: visitId,
+        p_priority: priority,
+        p_notes: notes || null,
+        p_test_ids: selected.map((test) => s(test, "id")),
+        p_separate_invoice: false,
+      });
       if (error) throw new Error(error.message);
-      const items = selected.map((t) => ({
-        order_id: order.id,
-        test_id: s(t, "id"),
-        price: n(t, "price"),
-        created_by: user?.id ?? null,
-      }));
-      const { error: itemError } = await supabase.from("lab_order_items").insert(items);
-      if (itemError) throw new Error(itemError.message);
-      const total = selected.reduce((sum, t) => sum + n(t, "price"), 0);
-      if (total > 0) {
-        const invoiceNumber = await rpc<string>("next_invoice_number");
-        const { data: inv, error: invError } = await supabase
-          .from("invoices")
-          .insert({
-            invoice_number: invoiceNumber,
-            patient_id: s(patient, "id"),
-            visit_id: visitId,
-            invoice_date: new Date().toISOString().slice(0, 10),
-            total_amount: total,
-            subtotal: total,
-            discount_amount: 0,
-            net_amount: total,
-            paid_amount: 0,
-            status: "unpaid",
-            payment_status: "unpaid",
-            created_by: user?.id ?? null,
-          })
-          .select("id")
-          .single();
-        if (invError) throw new Error(invError.message);
-        const rows = selected.map((t) => ({
-          invoice_id: inv.id,
-          item_type: "laboratory",
-          item_name: s(t, "name"),
-          quantity: 1,
-          unit_price: n(t, "price"),
-          total_price: n(t, "price"),
-          item_id: s(t, "id"),
-          created_by: user?.id ?? null,
-        }));
-        const { error: invoiceItemsError } = await supabase.from("invoice_items").insert(rows);
-        if (invoiceItemsError) throw new Error(invoiceItemsError.message);
-      }
       setSelected([]);
       setNotes("");
-      return order.id;
+      return orderId as string;
     },
     {
       invalidate: [
@@ -235,8 +184,8 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
       ],
       successMessage:
         lang === "ar"
-          ? "تم إرسال طلب المختبر وإنشاء الفاتورة"
-          : "Lab order created and invoice generated",
+          ? "تم إرسال طلب المختبر وإضافته إلى فاتورة الزيارة"
+          : "Lab order created and added to the visit invoice",
     },
   );
 

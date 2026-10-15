@@ -5,7 +5,7 @@ import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loading, StatusBadge } from "@/components/kit";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -93,35 +93,21 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
             ? "رسوم الاستشارة غير محددة أو صفر"
             : "Consultation fee is not set or is zero",
         );
-      const invoiceNumber = await rpc<string>("next_invoice_number");
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_number: invoiceNumber,
-          patient_id: s(visit, "patient_id"),
-          visit_id: visitId,
-          invoice_date: new Date().toISOString().slice(0, 10),
-          total_amount: fee,
-          subtotal: fee,
-          discount_amount: 0,
-          net_amount: fee,
-          paid_amount: 0,
-          status: "unpaid",
-          payment_status: "unpaid",
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      const { error: itemError } = await supabase.from("invoice_items").insert({
-        invoice_id: inv.id,
-        item_type: "consultation",
-        item_name: "Consultation",
-        quantity: 1,
-        unit_price: fee,
-        total_price: fee,
+      const { error } = await supabase.rpc("create_or_append_visit_invoice_atomic", {
+        p_visit_id: visitId,
+        p_invoice_date: new Date().toISOString().slice(0, 10),
+        p_discount: 0,
+        p_items: [
+          {
+            item_name: "Consultation",
+            item_type: "consultation",
+            quantity: 1,
+            unit_price: fee,
+          },
+        ],
+        p_separate_invoice: false,
       });
-      if (itemError) throw new Error(itemError.message);
+      if (error) throw new Error(error.message);
       return null;
     },
     {
