@@ -137,4 +137,4 @@
 - This is a verified mismatch in repository organization, **not proof that every migration's SQL is missing**. Exact source recovery and content-level parity comparison are still required.
 - Production DDL remains frozen for PR #13 and PR #14 until canonical migration history or a reviewed schema-baseline strategy is validated in isolation. No production database writes, resets, merges, or production deploys occurred in this step.
 - Next action: retrieve the exact SQL source for all 79 applied migration versions, record source/checksum/parity status, and test the resulting canonical sequence against a disposable PostgreSQL 17 environment plus isolated Supabase behavior before any production change.
-
+- Added [`docs/APPLIED_MIGRATION_INVENTORY.md`](APPLIED_MIGRATION_INVENTORY.md) with all 79 exact version/name pairs read from the live ledger. Repository-source mapping and content parity remain explicitly unverified; no production writes were made.
