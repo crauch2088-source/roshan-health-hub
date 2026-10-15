@@ -8,6 +8,7 @@ export type PrescriptionEntry = {
   instructions: string;
   dosage_form: string;
   route: string;
+  unit_price: number;
 };
 
 export type MedicineSearchOption = {
@@ -15,6 +16,7 @@ export type MedicineSearchOption = {
   name?: string | null;
   generic_name?: string | null;
   dosage_form?: string | null;
+  selling_price?: number | string | null;
 };
 
 export function createEmptyPrescriptionEntry(): PrescriptionEntry {
@@ -28,6 +30,7 @@ export function createEmptyPrescriptionEntry(): PrescriptionEntry {
     instructions: "",
     dosage_form: "",
     route: "",
+    unit_price: 0,
   };
 }
 
@@ -65,6 +68,7 @@ export function preparePrescriptionEntryForMedicine(
     name: medicine.name?.trim() || medicine.generic_name?.trim() || "",
     dosage_form: canonicalForm,
     route: oralForms.has(canonicalForm) ? "oral" : "",
+    unit_price: Number(medicine.selling_price) || 0,
   };
 }
 

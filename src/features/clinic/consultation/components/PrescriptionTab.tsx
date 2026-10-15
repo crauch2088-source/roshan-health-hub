@@ -31,6 +31,7 @@ type Med = {
   instructions: string;
   dosage_form: string;
   route: string;
+  unit_price: number;
 };
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
@@ -75,6 +76,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         name: s(m, "name"),
         generic_name: s(m, "generic_name"),
         dosage_form: s(m, "dosage_form"),
+        selling_price: s(m, "selling_price"),
       }),
     );
     setSearch(s(m, "name") || s(m, "generic_name"));
@@ -120,13 +122,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         route: i.route || null,
         quantity: Number(i.quantity) || 1,
         instructions: i.instructions || null,
-        unit_price: i.medicine_id
-          ? Number(
-              ((medsQ.data ?? []) as Row[]).find((m) => s(m, "id") === i.medicine_id)?.[
-                "selling_price"
-              ],
-            ) || 0
-          : 0,
+        unit_price: i.unit_price,
         created_by: user?.id ?? null,
       }));
       const { error: e } = await supabase.from("prescription_items").insert(rows);

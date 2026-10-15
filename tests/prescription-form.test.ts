@@ -18,6 +18,7 @@ test("empty prescription entry has no inherited regimen and starts at quantity o
     instructions: "",
     dosage_form: "",
     route: "",
+    unit_price: 0,
   });
 });
 
@@ -33,6 +34,7 @@ test("choosing a new medicine clears the previous medicine-specific regimen", ()
       instructions: "after meals",
       dosage_form: "tablet",
       route: "oral",
+      unit_price: 45,
     },
     {
       id: "new",
@@ -52,6 +54,7 @@ test("choosing a new medicine clears the previous medicine-specific regimen", ()
     instructions: "",
     dosage_form: "capsule",
     route: "oral",
+    unit_price: 0,
   });
 });
 
