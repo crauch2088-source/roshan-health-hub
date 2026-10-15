@@ -24,12 +24,29 @@ test("does not count an overpayment as a negative outstanding debt", () => {
   );
 });
 
-test("treats missing or invalid money fields as zero rather than producing NaN", () => {
+test("refuses to calculate a total when no valid invoice amount exists", () => {
   assert.equal(
     calculateOutstandingBalance([
-      { net_amount: null, total_amount: null, paid_amount: null },
-      { net_amount: "not-money", total_amount: 25, paid_amount: "invalid" },
+      { net_amount: null, total_amount: null, paid_amount: 0 },
     ]),
-    25,
+    null,
+  );
+});
+
+test("refuses to present a balance when paid amount is invalid", () => {
+  assert.equal(
+    calculateOutstandingBalance([
+      { net_amount: 25, total_amount: 25, paid_amount: "invalid" },
+    ]),
+    null,
+  );
+});
+
+test("falls back to total amount when net amount is invalid", () => {
+  assert.equal(
+    calculateOutstandingBalance([
+      { net_amount: "not-money", total_amount: 25, paid_amount: 5 },
+    ]),
+    20,
   );
 });
