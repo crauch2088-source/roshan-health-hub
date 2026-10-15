@@ -220,6 +220,10 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 - [ ] Keep patient identity, branch, visit status, and financial totals clear at the point of action; prevent stale context crossing workflows.
 - [ ] Preserve form data after recoverable errors and confirm destructive/irreversible actions.
 
+### Owner decisions required before final billing integration
+- **Invoice model:** when a visit has a consultation-fee invoice and later receives lab orders, should Roshan keep one invoice per visit and append new line items, or allow multiple invoices per visit? The current unique index enforces one active invoice per visit, while the lab workflow creates another invoice. Do not alter this index until the business rule is decided.
+- **Permission model:** should clinicians/reception be allowed to create consultation/lab invoices using their workflow permissions, or must all invoice creation require `billing.create`? The current numbering RPC checks `billing.create`, the recovered privilege migration does not regrant its EXECUTE privilege, and several clinical UI paths still call it directly. Use role-specific RPCs and server-side validation rather than weakening RLS.
+
 ### D. Acceptance and release discipline
 - [ ] Build a role × route × workflow × language × viewport acceptance matrix with synthetic users and records.
 - [ ] Record each finding with severity, reproduction steps, expected/actual behavior, affected role/route, and regression coverage.
