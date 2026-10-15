@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Enforce policy/plan validity when calculating coverage estimates.
 -- Apply only after reviewing the reconciled insurance migration history.
 CREATE OR REPLACE FUNCTION public.fn_calculate_insurance_coverage(
@@ -162,3 +164,5 @@ $function$;
 REVOKE ALL ON FUNCTION public.fn_calculate_insurance_coverage(uuid, text, uuid, text, numeric) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.fn_calculate_insurance_coverage(uuid, text, uuid, text, numeric) FROM anon;
 GRANT EXECUTE ON FUNCTION public.fn_calculate_insurance_coverage(uuid, text, uuid, text, numeric) TO authenticated;
+
+COMMIT;
