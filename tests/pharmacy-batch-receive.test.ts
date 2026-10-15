@@ -23,7 +23,7 @@ test("server RPC validates numeric bounds, supplier, active medicine, branch, an
   assert.match(rpcSql, /active_supplier_not_found/);
   assert.match(rpcSql, /m\.active IS TRUE/);
   assert.match(rpcSql, /stock_quantity_overflow/);
-  assert.match(rpcSql, /REVOKE INSERT ON TABLE public\\.stock_movements FROM PUBLIC, anon, authenticated/);
+  assert.match(rpcSql, /REVOKE INSERT ON TABLE public\.stock_movements FROM PUBLIC, anon, authenticated/);
   assert.match(rpcSql, /DROP POLICY IF EXISTS stock_movements_insert/);
   assert.match(rpcSql, /SECURITY DEFINER[\s\S]*SET search_path TO ''/);
 });
