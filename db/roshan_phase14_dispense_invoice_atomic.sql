@@ -93,7 +93,8 @@ BEGIN
        AND pi.deleted_at IS NULL
        AND pi.medicine_id IS NOT NULL
        AND (m.id IS NULL OR m.deleted_at IS NOT NULL
-         OR COALESCE(m.active,m.is_active,true) IS NOT TRUE)
+         OR COALESCE(m.active,true) IS NOT TRUE
+         OR COALESCE(m.is_active,true) IS NOT TRUE)
   ) THEN
     RAISE EXCEPTION 'prescription contains an inactive or missing catalog medicine';
   END IF;
@@ -103,14 +104,15 @@ BEGIN
   FOR v_item IN
     SELECT pi.id, pi.medicine_id, COALESCE(pi.quantity,1) AS qty,
            COALESCE(NULLIF(btrim(m.name),''),NULLIF(btrim(m.brand_name),''),NULLIF(btrim(m.generic_name),'')) AS name,
-           m.selling_price
+           m.selling_price, m.stock_quantity
       FROM public.prescription_items AS pi
       JOIN public.medicines AS m ON m.id = pi.medicine_id
      WHERE pi.prescription_id = p_prescription_id
        AND pi.deleted_at IS NULL
        AND pi.medicine_id IS NOT NULL
        AND m.deleted_at IS NULL
-       AND COALESCE(m.active,m.is_active,true) IS TRUE
+       AND COALESCE(m.active,true) IS TRUE
+       AND COALESCE(m.is_active,true) IS TRUE
      ORDER BY pi.id
      FOR UPDATE OF pi, m
   LOOP
@@ -120,6 +122,9 @@ BEGIN
       RAISE EXCEPTION 'prescription quantity must be a finite positive whole number';
     END IF;
     IF v_item.name IS NULL THEN RAISE EXCEPTION 'medicine catalog name is required'; END IF;
+    IF COALESCE(v_item.stock_quantity,0) < v_item.qty THEN
+      RAISE EXCEPTION 'medicine aggregate stock is insufficient or inconsistent';
+    END IF;
     IF v_item.selling_price IS NULL
        OR v_item.selling_price::text IN ('NaN','Infinity','-Infinity')
        OR v_item.selling_price < 0
@@ -151,7 +156,8 @@ BEGIN
        AND pi.deleted_at IS NULL
        AND pi.medicine_id IS NOT NULL
        AND m.deleted_at IS NULL
-       AND COALESCE(m.active,m.is_active,true) IS TRUE
+       AND COALESCE(m.active,true) IS TRUE
+       AND COALESCE(m.is_active,true) IS TRUE
      ORDER BY pi.id
      FOR UPDATE OF pi, m
   LOOP

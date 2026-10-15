@@ -38,6 +38,7 @@ test("integration contract covers itemized medicine charges, rollback, retry, an
     /consultation and each dispensed medicine must be separate invoice lines/,
   );
   assert.match(integration, /failed invoice append did not roll back stock/);
+  assert.match(integration, /aggregate stock guard did not rollback stock/);
   assert.match(integration, /duplicate dispense created duplicate charges/);
   assert.match(integration, /explicit separate pharmacy invoice was not created/);
   assert.match(integration, /cross-branch denial changed stock/);
