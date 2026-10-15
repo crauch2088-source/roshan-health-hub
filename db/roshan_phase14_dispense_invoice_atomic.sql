@@ -1,0 +1,3 @@
+-- Proposed follow-up migration: bill only the medicines actually dispensed.
+-- Keep this file under db/ until migration-history reconciliation and isolated Supabase validation.
+-- The first test-only commit intentionally leaves the implementation pending.

@@ -71,6 +71,37 @@ jobs:
             -f db/roshan_phase13_consolidated_visit_invoice.sql \
             -f db/tests/visit_invoice_consolidation_integration.sql
 
+
+  sql-pharmacy-dispense-invoice:
+    name: Atomic pharmacy dispense and invoice integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute atomic pharmacy dispense and invoice tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/visit_invoice_consolidation_fixture.sql \
+            -f db/roshan_phase8_atomic_invoice.sql \
+            -f db/roshan_phase13_consolidated_visit_invoice.sql \
+            -f db/tests/pharmacy_dispense_invoice_fixture.sql \
+            -f db/roshan_phase14_dispense_invoice_atomic.sql \
+            -f db/tests/pharmacy_dispense_invoice_integration.sql
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest
