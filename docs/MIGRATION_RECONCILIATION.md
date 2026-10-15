@@ -102,3 +102,10 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - **Classification: partial mapping; statement-level equivalence is not established.** The recovered body contains a dynamic loop that changes `search_path` for public `SECURITY DEFINER` functions, explicit `ALTER FUNCTION` clauses for four named functions, cashbox/supplier policy cleanup and recreation, and a set of foreign-key indexes. The combined candidate files do not reproduce the same normalized statement set; some policies may be represented by later/consolidated definitions, so this is not proof that every unmatched statement is absent from the repository as a whole.
 - Do not replay this ledger entry or declare it reconciled until the effective final policy definitions, function search paths, and index set are mapped across all later migrations and current repository artifacts.
 - No SQL was executed; production was read-only.
+
+
+### Applied concurrency migration `20260911133229_harden_mrn_invoice_number_concurrency`
+- Compared both recovered function definitions with the baseline implementations in `db/roshan_phase1_migration.sql`.
+- **Classification: confirmed function-level mismatch.** The recovered `next_mrn()` and `next_invoice_number()` take transaction-scoped advisory locks and compute the next numeric suffix using `MAX(...)`; the repository baseline uses `COUNT(*) + 1` and has no advisory lock. Under concurrent requests, the baseline can produce the same proposed number for multiple transactions and then fail against the unique constraints rather than allocating a number safely.
+- The recovered function patch does not itself prove the live unique constraints are present; reconcile both the function bodies and the deployed `patients.mrn` / `invoices.invoice_number` uniqueness before replaying or editing the canonical baseline.
+- No SQL was executed; production was read-only.
