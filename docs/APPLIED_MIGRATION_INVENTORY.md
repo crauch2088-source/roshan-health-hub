@@ -61,7 +61,7 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260911130812` | `restrict_security_definer_api_execution_20260911` | 2164 | `52b0166fba689c66bf81454aa91b200c` | db/roshan_security_privileged_role_guard.sql (candidate; name differs) | Mismatch; semantic diff pending |
 | `20260911131456` | `deep_audit_branch_isolation_rpc_hardening` | 8077 | `2e229e263b04b6144047fcabbbd87d94` | Not yet mapped | Not yet checked |
 | `20260911133229` | `harden_mrn_invoice_number_concurrency` | 1009 | `0fd7b0b1afb1ef6cb390a0b6657de5d2` | `db/roshan_phase1_migration.sql` (baseline candidate) | Confirmed function-level mismatch: recovered MRN/invoice number functions use advisory locks and max suffix; baseline uses count+1 without locks; see semantic review section |
-| `20260911133255` | `enforce_branch_isolation_rls` | 1566 | `7cb965a4218bb2772115ac51c62ade30` | Not yet mapped | Not yet checked |
+| `20260911133255` | `enforce_branch_isolation_rls` | 1566 | `7cb965a4218bb2772115ac51c62ade30` | No exact match found in likely security candidates | High-priority unresolved mapping: recovered helper dynamically augments RLS policies on 13 tables; verify effective per-table branch isolation; see semantic review section |
 | `20260911133312` | `harden_insurance_branch_isolation` | 10214 | `807b9c4f3b44051dfcce405d9134ea91` | Not yet mapped | Not yet checked |
 | `20260911133319` | `harden_insurance_coverage_rpc_branch` | 3256 | `729d5bcf5413cd22f9e55cf567339536` | Not yet mapped | Not yet checked |
 | `20260911133334` | `harden_finance_branch_context` | 5439 | `a71cfe441881bc3b5c446d278004f141` | Not yet mapped | Not yet checked |
