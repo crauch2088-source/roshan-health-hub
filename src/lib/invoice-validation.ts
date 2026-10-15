@@ -48,7 +48,7 @@ export function validateInvoiceDraft(
     if (unitPrice === null || unitPrice < 0) {
       throw new Error("Invoice unit price must be a finite non-negative amount.");
     }
-    if (!/^\\d+(?:\\.\\d{1,2})?$/.test(String(line.unit_price).trim())) {
+    if (!/^\d+(?:\.\d{1,2})?$/.test(String(line.unit_price).trim())) {
       throw new Error("Invoice unit price must have at most two decimal places.");
     }
 
@@ -64,7 +64,7 @@ export function validateInvoiceDraft(
   if (discount === null || discount < 0 || discount > subtotal) {
     throw new Error("Invoice discount must be finite and between zero and the subtotal.");
   }
-  if (!/^\\d+(?:\\.\\d{1,2})?$/.test(String(discountInput).trim())) {
+  if (!/^\d+(?:\.\d{1,2})?$/.test(String(discountInput).trim())) {
     throw new Error("Invoice discount must have at most two decimal places.");
   }
 
