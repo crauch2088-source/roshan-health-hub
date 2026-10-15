@@ -89,4 +89,23 @@ BEGIN
  IF has_function_privilege('anon','public.create_invoice_atomic(uuid,uuid,date,numeric,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute'; END IF;
 END;
 $$;
+SELECT set_config('test.fail_item','false',false);
+SELECT set_config('test.super_admin','true',false);
+DO $
+DECLARE v_invoice uuid;
+BEGIN
+ v_invoice := public.create_invoice_atomic(
+  '30000000-0000-0000-0000-000000000002',NULL,CURRENT_DATE,0,
+  '[{"item_name":"Super-admin branch check","item_type":"other","quantity":1,"unit_price":10}]'::jsonb
+ );
+ IF NOT EXISTS (
+   SELECT 1 FROM public.invoices
+    WHERE id = v_invoice
+      AND patient_id = '30000000-0000-0000-0000-000000000002'
+      AND branch_id = '20000000-0000-0000-0000-000000000002'
+ ) THEN
+   RAISE EXCEPTION 'super-admin invoice was not assigned to the patient branch';
+ END IF;
+END;
+$;
 SELECT 'atomic invoice integration tests passed' AS result;
