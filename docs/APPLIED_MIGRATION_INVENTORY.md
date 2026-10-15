@@ -101,4 +101,7 @@ These results supplement the 79-row source inventory. “Executable-content matc
 | `20260911120231` `roshan_phase12_invoice_visit_unique` | `db/roshan_phase12_invoice_visit_unique.sql` | Executable SQL match after comment removal and whitespace normalization. | Formatting/comments differ; replayability remains a separate gate. |
 | `20261014164131` `roshan_cashbox_reversal_concurrency` | `db/roshan_phase4_cashbox_reversal_concurrency.sql` | Executable-content match after comment/whitespace normalization. | Candidate adds `BEGIN`/`COMMIT`; duplicate-reversal precondition and function security/runtime state still require isolated validation. |
 
+
+| `20260908210824` `roshan_phase4_finance_v2` (function-level comparison) | `db/roshan_phase4_finance.sql` | All 14 recovered function names exist in the candidate; 13 function bodies match after normalization. `fn_ledger_post` differs in the partial-index predicate of its `ON CONFLICT` clause. | Confirm the deployed unique index predicate and intended NULL semantics; this is function-level mapping only because the candidate includes additional schema/setup SQL. |
+
 All comparisons above were source-only. No SQL was executed and no production schema or data was changed. Recovered SQL remains quarantined under `docs/recovered-migrations/sql/`.
