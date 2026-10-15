@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { createEmptyPrescriptionDraft, createPrescriptionDraftForMedicine } from "../src/lib/prescription-draft.ts";
+import {
+  createEmptyPrescriptionDraft,
+  createPrescriptionDraftForMedicine,
+} from "../src/lib/prescription-draft.ts";
 
 const sql = readFileSync(
   new URL("../db/roshan_phase7_atomic_prescription.sql", import.meta.url),
