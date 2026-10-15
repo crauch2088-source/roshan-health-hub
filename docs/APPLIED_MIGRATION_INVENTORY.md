@@ -29,9 +29,9 @@ This table records the exact version/name pairs returned by Supabase. A read-onl
 | `20260819000003` | `harden_public_defaults_and_sync_user_roles` | 1739 | `83601720d0bd6443dc85b3c463b39794` | Not yet mapped | Not yet checked |
 | `20260819000016` | `tighten_public_default_privileges` | 389 | `c7abfd29bad141caa28cf0d901438c7c` | Not yet mapped | Not yet checked |
 | `20260819100756` | `roshan_phase1_pagination_and_settings` | 1129 | `33e550dacd27b9007897dbaa1fd42bd4` | db/roshan_phase1_pagination_and_settings.sql (name match) | Partial match: three patient indexes in recovered body are absent from candidate; see semantic review section |
-| `20260819105146` | `roshan_settings_public_enforcement` | 942 | `5fc9082104fc8cdf9b65776478895a36` | Not yet mapped | Not yet checked |
-| `20260819123920` | `grant_authenticated_execute_next_mrn` | 65 | `8997024e51ab6ffc93be3ffb4aef3032` | Not yet mapped | Not yet checked |
-| `20260819124045` | `fix_next_mrn_rpc_access` | 494 | `3febc123265bfaf81d777533064f65f9` | Not yet mapped | Not yet checked |
+| `20260819105146` | `roshan_settings_public_enforcement` | 942 | `5fc9082104fc8cdf9b65776478895a36` | No matching trigger/function source in checked-in db SQL set | Adds trigger enforcing an allowlist of public system-setting keys; review source recovery and trigger enablement/ownership in canonical schema |
+| `20260819123920` | `grant_authenticated_execute_next_mrn` | 65 | `8997024e51ab6ffc93be3ffb4aef3032` | `db/roshan_phase1_migration.sql` | Exact GRANT statement match; later access-fix migration adds service_role and function search_path configuration |
+| `20260819124045` | `fix_next_mrn_rpc_access` | 494 | `3febc123265bfaf81d777533064f65f9` | `db/roshan_phase1_migration.sql` (partial baseline) | GRANT authenticated matches; recovered migration also grants service_role, changes function search_path to public, pg_temp, and reloads PostgREST schema cache; baseline still uses count+1 without concurrency protection |
 | `20260819125755` | `add_missing_audit_relationships` | 1052 | `c409776a912a1f55c4fd961d5325e65e` | Not yet mapped | Not yet checked |
 | `20260819125807` | `add_followups_users_computed_relationship` | 455 | `388272b5e71cb49ac177945f32384edd` | Not yet mapped | Not yet checked |
 | `20260819130039` | `compat_patients_patient_number` | 254 | `652a89bec1fe269fbafc5e7ac936fb68` | Not yet mapped | Not yet checked |
