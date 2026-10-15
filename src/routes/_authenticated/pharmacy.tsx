@@ -78,7 +78,6 @@ function PharmacyPageInner() {
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
   const [dispenseDetail, setDispenseDetail] = useState<Record<string, DispenseResultRow[]>>({});
-  const [separateInvoice, setSeparateInvoice] = useState(false);
   const [separateInvoiceFor, setSeparateInvoiceFor] = useState<Record<string, boolean>>({});
 
   const list = useRows(
@@ -149,27 +148,7 @@ function PharmacyPageInner() {
             ))}
           </SelectContent>
         </Select>
-        {can("billing.create") ? (
-          <label className="flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={separateInvoice}
-              onChange={(event) => setSeparateInvoice(event.target.checked)}
-            />
-            <span>
-              {lang === "ar" ? "إنشاء فاتورة منفصلة عمدًا" : "Create a separate invoice intentionally"}
-            </span>
-          </label>
-        ) : null}
       </Toolbar>
-      {separateInvoice ? (
-        <p className="mb-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
-          {lang === "ar"
-            ? "سيُنشئ الصرف فاتورة منفصلة بدلًا من إضافة الأدوية إلى فاتورة الزيارة الأساسية."
-            : "Dispensing will create a separate invoice instead of appending medicines to the primary visit invoice."}
-        </p>
-      ) : null}
 
       <ErrorBox error={list.error} />
 

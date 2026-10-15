@@ -85,6 +85,19 @@ BEGIN
     RAISE EXCEPTION 'cross_branch_access_denied' USING ERRCODE = '42501';
   END IF;
 
+  IF EXISTS (
+    SELECT 1
+      FROM public.prescription_items AS pi
+      LEFT JOIN public.medicines AS m ON m.id = pi.medicine_id
+     WHERE pi.prescription_id = p_prescription_id
+       AND pi.deleted_at IS NULL
+       AND pi.medicine_id IS NOT NULL
+       AND (m.id IS NULL OR m.deleted_at IS NOT NULL
+         OR COALESCE(m.active,m.is_active,true) IS NOT TRUE)
+  ) THEN
+    RAISE EXCEPTION 'prescription contains an inactive or missing catalog medicine';
+  END IF;
+
   -- Build invoice lines from the active medicine catalog before any stock mutation.
   -- Only catalog-linked items that will actually be dispensed can be billed.
   FOR v_item IN
