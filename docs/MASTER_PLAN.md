@@ -199,7 +199,7 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 ### A. Business and workflow logic
 - [ ] Map each role's real end-to-end tasks and permissions: reception, GP, dentist, specialist, lab, pharmacy, admin, super admin.
 - [ ] Trace workflow transitions and invariants for registration/duplicate detection, queue, visit, consultation, lab orders/results, prescriptions, dispensing, invoices, payments, insurance claims, cashbox, and closeout.
-- [ ] Reconcile the `next_invoice_number()` privilege allowlist with every remaining UI call site; migrate visits, consultation, and lab billing to role-safe atomic RPCs before calling invoice creation end-to-end atomic.
+- [ ] Reconcile `next_invoice_number()`'s internal `billing.create` permission with every remaining UI call site; migrate visits, consultation, and lab billing to role-safe atomic RPCs before calling invoice creation end-to-end atomic.
 - [ ] Resolve the one-active-invoice-per-visit invariant against laboratory billing: decide whether a visit has one invoice with appended items or may have multiple invoice documents, then test the consultation-fee + lab-order sequence.
 - [ ] Identify duplicated calculations or client-trusted fields; keep authoritative financial, stock, and permission decisions server-side where appropriate.
 - [ ] Specify behavior for retries, double-submit, concurrent edits, stale selections, partial network failure, inactive/deleted records, and recoverable rollback.
@@ -222,7 +222,7 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 
 ### Owner decisions required before final billing integration
 - **Invoice model:** when a visit has a consultation-fee invoice and later receives lab orders, should Roshan keep one invoice per visit and append new line items, or allow multiple invoices per visit? The current unique index enforces one active invoice per visit, while the lab workflow creates another invoice. Do not alter this index until the business rule is decided.
-- **Permission model:** should clinicians/reception be allowed to create consultation/lab invoices using their workflow permissions, or must all invoice creation require `billing.create`? The current numbering RPC checks `billing.create`, the recovered privilege migration does not regrant its EXECUTE privilege, and several clinical UI paths still call it directly. Use role-specific RPCs and server-side validation rather than weakening RLS.
+- **Permission model:** should clinicians/reception be allowed to create consultation/lab invoices using their workflow permissions, or must all invoice creation require `billing.create`? The recovered migration sequence does restore `EXECUTE` to `authenticated`, but the numbering RPC itself checks `billing.create` and several clinical UI paths still call it directly. Confirm role grants and use role-specific RPCs and server-side validation rather than weakening RLS.
 
 ### D. Acceptance and release discipline
 - [ ] Build a role × route × workflow × language × viewport acceptance matrix with synthetic users and records.
