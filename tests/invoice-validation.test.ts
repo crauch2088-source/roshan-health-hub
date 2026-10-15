@@ -4,8 +4,8 @@ import { test } from "node:test";
 import { validateInvoiceDraft } from "../src/lib/invoice-validation.ts";
 
 const validLines = [
-  { description: "Consultation", quantity: "2", unit_price: "15", item_type: "consultation" },
-  { description: "CBC", quantity: "1", unit_price: "20", item_type: "lab" },
+  { description: "Ultrasound", quantity: "2", unit_price: "15", item_type: "procedure" },
+  { description: "Dressing", quantity: "1", unit_price: "20", item_type: "other" },
 ];
 
 test("calculates a valid invoice draft from line items", () => {
@@ -14,8 +14,8 @@ test("calculates a valid invoice draft from line items", () => {
     discount: 5,
     net: 45,
     lines: [
-      { description: "Consultation", quantity: 2, unit_price: 15, item_type: "consultation" },
-      { description: "CBC", quantity: 1, unit_price: 20, item_type: "lab" },
+      { description: "Ultrasound", quantity: 2, unit_price: 15, item_type: "procedure" },
+      { description: "Dressing", quantity: 1, unit_price: 20, item_type: "other" },
     ],
   });
 });
@@ -60,4 +60,17 @@ test("rejects invalid discounts", () => {
   assert.throws(() => validateInvoiceDraft(validLines, "Infinity"), /discount/i);
   assert.throws(() => validateInvoiceDraft(validLines, "100"), /discount/i);
   assert.throws(() => validateInvoiceDraft(validLines, "0.001"), /decimal places/i);
+});
+
+test("manual billing rejects workflow-managed consultation, lab, and pharmacy lines", () => {
+  for (const item_type of ["consultation", "lab", "pharmacy"]) {
+    assert.throws(
+      () =>
+        validateInvoiceDraft(
+          [{ description: "Managed service", quantity: "1", unit_price: "10", item_type }],
+          "0",
+        ),
+      /type is not supported/i,
+    );
+  }
 });

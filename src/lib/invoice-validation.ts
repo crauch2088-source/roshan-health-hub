@@ -33,7 +33,7 @@ export function validateInvoiceDraft(
 ): ValidatedInvoiceDraft {
   if (draftLines.length === 0) throw new Error("An invoice must contain at least one item.");
 
-  const allowedTypes = new Set(["consultation", "lab", "pharmacy", "procedure", "other"]);
+  const allowedTypes = new Set(["procedure", "other"]);
   const lines = draftLines.map((line) => {
     const description = line.description.trim();
     if (!description) throw new Error("Every invoice item needs a description.");
