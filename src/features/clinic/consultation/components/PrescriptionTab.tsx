@@ -149,12 +149,12 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Type at least 2 characters to search"}
             </p>
           )}
-          {medsQ.isLoading && cleanSearch.length >= 2 && (
+          {medsQ.isLoading && cleanSearch.length >= 2 && search !== form.name && (
             <p role="status" className="mt-1 text-xs text-muted-foreground">
               {lang === "ar" ? "جارٍ البحث عن الأدوية..." : "Searching medicines..."}
             </p>
           )}
-          {medsQ.error && (
+          {medsQ.error && search !== form.name && (
             <p role="alert" className="mt-1 text-xs text-destructive">
               {lang === "ar"
                 ? "تعذر تحميل نتائج الأدوية. حاول مجدداً."
@@ -162,6 +162,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             </p>
           )}
           {search.trim().length >= 2 &&
+            search !== form.name &&
             !medsQ.isLoading &&
             !medsQ.error &&
             filtered.length === 0 && (
