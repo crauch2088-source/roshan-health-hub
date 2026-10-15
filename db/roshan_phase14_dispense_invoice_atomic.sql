@@ -145,6 +145,25 @@ BEGIN
     RAISE EXCEPTION 'prescription has no active catalog-linked medicines to dispense';
   END IF;
 
+  -- Aggregate duplicate prescription lines by medicine before changing any stock.
+  -- A per-line check alone could allow two individually valid lines to drive the
+  -- shared medicine stock_quantity below zero.
+  IF EXISTS (
+    SELECT 1
+      FROM (
+        SELECT pi.medicine_id, SUM(COALESCE(pi.quantity,1)) AS required_qty
+          FROM public.prescription_items AS pi
+         WHERE pi.prescription_id = p_prescription_id
+           AND pi.deleted_at IS NULL
+           AND pi.medicine_id IS NOT NULL
+         GROUP BY pi.medicine_id
+      ) AS required
+      JOIN public.medicines AS m ON m.id = required.medicine_id
+     WHERE required.required_qty > m.stock_quantity
+  ) THEN
+    RAISE EXCEPTION 'medicine aggregate stock is insufficient or inconsistent';
+  END IF;
+
   -- Consume batches in FEFO order, then the legacy stock balance, preserving the
   -- existing movement/audit behavior. Any invoice failure rolls all of this back.
   FOR v_item IN
