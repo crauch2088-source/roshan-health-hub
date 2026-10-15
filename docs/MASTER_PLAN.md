@@ -190,3 +190,42 @@
 - 2026-10-15: Read-only repository security review found secret scanning, push protection, and secret validity checks reported disabled in repository metadata. Current `main` has `.env.example` only, and the exact `.env` path has no GitHub path-history entries despite a cleanup note in a historical commit message. Opened [Issue #25](https://github.com/crauch2088-source/roshan-health-hub/issues/25) to verify history and enable protections where available; no secrets were reproduced and no settings changed. The available connected GitHub actions do not expose a supported setting-change operation for these repository protections, so the issue remains open rather than implying the settings were changed.
 - 2026-10-15: Opened draft [PR #19](https://github.com/crauch2088-source/roshan-health-hub/pull/19) for Issue #18. It now uses the existing exact-count paginated read helper with stable invoice-ID ordering, falls back from missing/invalid `net_amount` to `total_amount`, clamps per-invoice overpayment at zero, and renders explicit unavailable/incomplete states instead of presenting query failures as zero. After fixing a missing locale binding found by CI, [run #38762569934](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38762569934) passed security audit, 59 guard tests, typecheck, lint, and build. Vercel Preview is pending verification on the latest commit; authenticated smoke test and human review remain outstanding. No production data was changed.
 - 2026-10-15: Read-only migration-ledger integrity step completed. Queried all 79 production ledger rows for version/name, stored statement byte length, and MD5 checksum; validated all 79 version/name pairs against `docs/APPLIED_MIGRATION_INVENTORY.md`, then recorded the checksums in commit [`547e3a6`](https://github.com/crauch2088-source/roshan-health-hub/commit/547e3a65fafe83a76f70701d0f40a3087ebf31bb). These hashes cover the JSON representation of each stored `statements` value, not normalized SQL. This is a source-integrity baseline only: SQL bodies were not exported or executed, repository parity remains unverified, and production was read-only.
+
+
+## Product logic, interface, and navigation improvement track — 2026-10-15
+
+This is an explicit product-quality workstream, not merely visual polish. Deliver behavior changes through isolated reviewed PRs; preserve authorization and clinical/financial invariants.
+
+### A. Business and workflow logic
+- [ ] Map each role's real end-to-end tasks and permissions: reception, GP, dentist, specialist, lab, pharmacy, admin, super admin.
+- [ ] Trace workflow transitions and invariants for registration/duplicate detection, queue, visit, consultation, lab orders/results, prescriptions, dispensing, invoices, payments, insurance claims, cashbox, and closeout.
+- [ ] Identify duplicated calculations or client-trusted fields; keep authoritative financial, stock, and permission decisions server-side where appropriate.
+- [ ] Specify behavior for retries, double-submit, concurrent edits, stale selections, partial network failure, inactive/deleted records, and recoverable rollback.
+- [ ] Ensure failed or partial reads never look like zero, success, or an empty clinical history.
+- [ ] Validate rules with synthetic fixtures and regression tests; do not use production patient records.
+
+### B. Information architecture and navigation
+- [ ] Audit all registered routes against navigation entries, route permissions, titles, breadcrumbs, back behavior, and direct-link access.
+- [ ] Keep role-focused navigation consistent; hidden navigation is not an authorization control.
+- [ ] Standardize active-route highlighting, nested-route behavior, breadcrumbs, global search/command palette, and return-to-context after save/cancel.
+- [ ] Reduce unnecessary clicks in common tasks (patient lookup → queue/visit; visit → diagnosis/prescription/lab; invoice → payment/receipt) without bypassing validation.
+- [ ] Check for dead ends, duplicate destinations, missing links, ambiguous labels, unsaved-form loss, and shell-only pages.
+
+### C. Interface and mobile usability
+- [ ] Review dashboards for accurate metrics, actionable next steps, and bounded/verified reads.
+- [ ] Standardize tables, filters, search, pagination, forms, validation, dialogs, confirmations, and feedback.
+- [ ] Test Arabic RTL and English LTR, 320–430px phone widths, tablet/desktop layouts, touch targets, keyboard focus, safe areas, and virtual keyboard behavior.
+- [ ] Keep patient identity, branch, visit status, and financial totals clear at the point of action; prevent stale context crossing workflows.
+- [ ] Preserve form data after recoverable errors and confirm destructive/irreversible actions.
+
+### D. Acceptance and release discipline
+- [ ] Build a role × route × workflow × language × viewport acceptance matrix with synthetic users and records.
+- [ ] Record each finding with severity, reproduction steps, expected/actual behavior, affected role/route, and regression coverage.
+- [ ] Keep behavior fixes separate from visual refactors; run relevant tests, typecheck, lint, build, and review for each PR.
+- [ ] Run authenticated preview tests for auth/RLS/branch behavior when a safe test account and isolated environment are available.
+- [ ] Do not merge or deploy without explicit approval; do not relax database security to make a UI flow appear to work.
+
+### Initial evidence collected — 2026-10-15
+- Read-only review of `src/config/nav.ts`, `src/lib/nav-active.ts`, `src/lib/nav-layout.ts`, `tests/nav-active.test.ts`, `tests/nav-permissions.test.ts`, `src/routes/_authenticated/route.tsx`, and the dashboard found a central navigation source, shared active-route matching, and tests that assert nav permissions equal route gates. These are useful guardrails, not proof of full role-by-role UX acceptance.
+- Found a concrete dashboard label mismatch: the upcoming-appointments table displayed `appointment_time` while its column header said “Date”. A focused fix was committed on `fix/dashboard-appointment-time-label` (bilingual “Time/الوقت” label); PR and CI verification are pending. No production data changed.
+- The existing shell/navigation redesign (breadcrumbs, role-aware mobile navigation, command palette, account menu) remains a baseline only. Full role × route × workflow × language × viewport acceptance is still open.
