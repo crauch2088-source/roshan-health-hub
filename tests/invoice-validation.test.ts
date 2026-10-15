@@ -43,7 +43,7 @@ test("rejects invalid quantities and prices", () => {
       /quantity/i,
     );
   }
-  for (const unit_price of ["-1", "Infinity", "not-money"]) {
+  for (const unit_price of ["-1", "Infinity", "not-money", "1.234"]) {
     assert.throws(
       () =>
         validateInvoiceDraft(
@@ -59,4 +59,5 @@ test("rejects invalid discounts", () => {
   assert.throws(() => validateInvoiceDraft(validLines, "-1"), /discount/i);
   assert.throws(() => validateInvoiceDraft(validLines, "Infinity"), /discount/i);
   assert.throws(() => validateInvoiceDraft(validLines, "100"), /discount/i);
+  assert.throws(() => validateInvoiceDraft(validLines, "0.001"), /decimal places/i);
 });
