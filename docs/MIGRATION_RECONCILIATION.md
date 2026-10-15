@@ -118,3 +118,14 @@ Compared four additional recovered entries with likely legacy artifacts:
 - `20260911120231_roshan_phase12_invoice_visit_unique.sql` vs `db/roshan_phase12_invoice_visit_unique.sql`: 416 vs 553 characters; both concern invoice/visit uniqueness, but the repository file contains a duplicate-preflight query not present in the recovered body. Verify index definition and data assumptions before mapping.
 
 Together with the earlier phase-2 finding, this shows that filenames and broad subject matter are insufficient for parity. These comparisons are triage only, not semantic sign-off. No SQL was executed and no production state was changed.
+### Object inventory follow-up (read-only)
+
+Object-name extraction clarified several likely mappings:
+
+- Pagination/settings: the recovered entry and legacy candidate share three index names and a settings policy/update, but the legacy file also includes MRN, phone, and national-ID indexes and a concurrent index operation. Additional index coverage remains unmapped.
+- Security hardening: the legacy file defines six public helpers and an audit-log policy/trigger. The recovered entry creates a private helper schema, private helper functions, public wrappers, additional setup/queue functions, and a distinct grant/revoke model. Treat as different security designs pending live-definition and call-site comparison.
+- Finance: the legacy file creates four tables and eight indexes; the recovered v2 entry does not. Both contain the same 14 finance function names and seven trigger names; recovered v2 includes one additional role-permission insert. This points to possible coverage spread across earlier/later ledger entries, not equivalence of the individual pair.
+- Invoice uniqueness: both define `uq_invoices_visit_id`; the legacy file includes a duplicate preflight query absent from the recovered migration body.
+- Phase 2: both define the same five named indexes; only the legacy candidate contains the lab-parameter seed insert.
+
+Method limitation: names were extracted using static regular expressions. Dynamic SQL, ordering, function-body semantics, existing-object replacement, and grants may not be fully represented. All pairs remain semantically unresolved pending statement-level review and isolated replay.
