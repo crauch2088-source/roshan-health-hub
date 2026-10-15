@@ -222,7 +222,7 @@ function MedicinesTab() {
         throw new Error(t("invalid_quantity"));
       }
       if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
-        throw new Error(t("invalid_price"));
+        throw new Error(lang === "ar" ? "سعر غير صحيح" : "Invalid price");
       }
       const { error } = await supabase.rpc("fn_receive_pharmacy_batch", {
         p_medicine_id: receive.id,
@@ -629,10 +629,10 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
         throw new Error(t("invalid_quantity"));
       }
       if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
-        throw new Error(t("invalid_price"));
+        throw new Error(lang === "ar" ? "سعر غير صحيح" : "Invalid price");
       }
       if (sellingPrice !== null && (!Number.isFinite(sellingPrice) || sellingPrice < 0)) {
-        throw new Error(t("invalid_price"));
+        throw new Error(lang === "ar" ? "سعر غير صحيح" : "Invalid price");
       }
       const { error } = await supabase.rpc("fn_receive_pharmacy_batch", {
         p_medicine_id: form.medicine_id,
@@ -1079,7 +1079,7 @@ function SuppliersTab({ currency }: { currency: string }) {
     <div>
       <div className="no-print mb-4 flex flex-wrap items-center justify-end gap-2">
         <ExportButtons rows={rows} filename="roshan-suppliers" />
-        {can("pharmacy.update") ? (
+        {can("pharmacy.create") ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
