@@ -22,14 +22,17 @@ INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VAL
  ('90000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false),
  ('90000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false),
  ('90000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002','50000000-0000-0000-0000-000000000002','pending',false),
- ('90000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
+ ('90000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false),
+ ('90000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
 INSERT INTO public.prescription_items
  (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
  ('91000000-0000-0000-0000-000000000001','90000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001','Amoxicillin',2,'500 mg','BID','5 days'),
  ('91000000-0000-0000-0000-000000000002','90000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000002','Paracetamol',3,'500 mg','TID','3 days'),
  ('91000000-0000-0000-0000-000000000003','90000000-0000-0000-0000-000000000002','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days'),
  ('91000000-0000-0000-0000-000000000004','90000000-0000-0000-0000-000000000003','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days'),
- ('91000000-0000-0000-0000-000000000005','90000000-0000-0000-0000-000000000004','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days');
+ ('91000000-0000-0000-0000-000000000005','90000000-0000-0000-0000-000000000004','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days'),
+ ('91000000-0000-0000-0000-000000000006','90000000-0000-0000-0000-000000000005','70000000-0000-0000-0000-000000000001','Amoxicillin',5,'500 mg','BID','5 days'),
+ ('91000000-0000-0000-0000-000000000007','90000000-0000-0000-0000-000000000005','70000000-0000-0000-0000-000000000001','Amoxicillin',5,'500 mg','BID','5 days');
 
 DO $$
 DECLARE v_invoice uuid;
@@ -81,6 +84,36 @@ BEGIN
  END IF;
 END;
 $$;
+
+-- Duplicate lines for the same medicine must be checked as a combined quantity.
+DO $
+DECLARE v_batch numeric; v_stock integer; v_item_count integer;
+BEGIN
+ SELECT quantity_remaining INTO v_batch FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001';
+ SELECT stock_quantity INTO v_stock FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000001';
+ SELECT count(*) INTO v_item_count FROM public.invoice_items WHERE invoice_id=(
+   SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE
+ ) AND deleted_at IS NULL;
+ BEGIN
+   PERFORM * FROM public.fn_dispense_prescription_with_invoice('90000000-0000-0000-0000-000000000005',false);
+   RAISE EXCEPTION 'test failed: duplicate medicine lines exceeded aggregate stock';
+ EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM='test failed: duplicate medicine lines exceeded aggregate stock' THEN RAISE; END IF;
+ END;
+ IF (SELECT quantity_remaining FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001') <> v_batch
+   OR (SELECT stock_quantity FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000001') <> v_stock THEN
+   RAISE EXCEPTION 'aggregate stock guard did not rollback stock';
+ END IF;
+ IF (SELECT status FROM public.prescriptions WHERE id='90000000-0000-0000-0000-000000000005') <> 'pending' THEN
+   RAISE EXCEPTION 'aggregate stock guard changed prescription status';
+ END IF;
+ IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=(
+   SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE
+ ) AND deleted_at IS NULL) <> v_item_count THEN
+   RAISE EXCEPTION 'aggregate stock guard created invoice lines';
+ END IF;
+END;
+$;
 
 -- Paid primary invoice: default append must roll back stock; deliberate secondary invoice may proceed.
 UPDATE public.invoices SET paid_amount=45,status='paid',payment_status='paid'
