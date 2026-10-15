@@ -37,6 +37,14 @@ BEGIN
   RAISE EXCEPTION 'test failed: zero quantity accepted';
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: zero quantity accepted' THEN RAISE; END IF; END;
  BEGIN
+  PERFORM public.create_invoice_atomic('30000000-0000-0000-0000-000000000001',NULL,CURRENT_DATE,0,'[{"item_name":"service","item_type":"other","quantity":1,"unit_price":1.234}]'::jsonb);
+  RAISE EXCEPTION 'test failed: over-precision unit price accepted';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: over-precision unit price accepted' THEN RAISE; END IF; END;
+ BEGIN
+  PERFORM public.create_invoice_atomic('30000000-0000-0000-0000-000000000001',NULL,CURRENT_DATE,0,'[{"item_name":"service","item_type":"unknown","quantity":1,"unit_price":10}]'::jsonb);
+  RAISE EXCEPTION 'test failed: unsupported item type accepted';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: unsupported item type accepted' THEN RAISE; END IF; END;
+ BEGIN
   PERFORM public.create_invoice_atomic('30000000-0000-0000-0000-000000000002',NULL,CURRENT_DATE,0,'[{"item_name":"cross branch","item_type":"other","quantity":1,"unit_price":10}]'::jsonb);
   RAISE EXCEPTION 'test failed: cross-branch patient accepted';
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='test failed: cross-branch patient accepted' THEN RAISE; END IF; END;
