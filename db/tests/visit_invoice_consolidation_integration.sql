@@ -17,7 +17,7 @@ INSERT INTO public.lab_tests (id,name,price,active) VALUES
 DO $$
 DECLARE v_invoice uuid;
 BEGIN
- v_invoice := public.create_or_append_visit_invoice_atomic(
+ v_invoice := private.create_or_append_visit_invoice_atomic(
   '50000000-0000-0000-0000-000000000001', CURRENT_DATE, 0,
   '[{"item_name":"Consultation","item_type":"consultation","quantity":1,"unit_price":30}]'::jsonb, false
  );

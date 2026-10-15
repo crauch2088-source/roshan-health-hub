@@ -241,20 +241,10 @@ function VisitsPageInner() {
       const fee = Number(form.consultation_fee) || 0;
       if (fee > 0) {
         const { error: invoiceError } = await supabase.rpc(
-          "create_or_append_visit_invoice_atomic",
+          "create_visit_consultation_invoice_atomic",
           {
             p_visit_id: createdVisit.id,
             p_invoice_date: date,
-            p_discount: 0,
-            p_items: [
-              {
-                item_name: "Consultation",
-                item_type: "consultation",
-                quantity: 1,
-                unit_price: fee,
-              },
-            ],
-            p_separate_invoice: false,
           },
         );
         if (invoiceError) throw new Error(invoiceError.message);

@@ -30,8 +30,8 @@ test("visit invoice consolidation has explicit primary/secondary model and least
 });
 
 test("visit and consultation invoice flows use atomic visit invoice RPC", () => {
-  assert.match(visits, /rpc\(\s*"create_or_append_visit_invoice_atomic"/);
-  assert.match(consultation, /rpc\(\s*"create_or_append_visit_invoice_atomic"/);
+  assert.match(visits, /rpc\(\s*"create_visit_consultation_invoice_atomic"/);
+  assert.match(consultation, /rpc\(\s*"create_visit_consultation_invoice_atomic"/);
   assert.doesNotMatch(visits, /\.from\("invoices"\)\s*\n\s*\.insert/);
   assert.doesNotMatch(visits, /\.from\("invoice_items"\)\.insert/);
   assert.doesNotMatch(consultation, /\.from\("invoices"\)\s*\n\s*\.insert/);
@@ -42,5 +42,7 @@ test("laboratory order and its invoice items share one transaction", () => {
   assert.match(laboratory, /rpc\(\s*"create_lab_order_with_invoice_atomic"/);
   assert.doesNotMatch(laboratory, /\.from\("invoices"\)\s*\n\s*\.insert/);
   assert.doesNotMatch(laboratory, /\.from\("invoice_items"\)\.insert/);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION private\.create_or_append_visit_invoice_atomic/);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_visit_consultation_invoice_atomic/);
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_lab_order_with_invoice_atomic/);
 });

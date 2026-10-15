@@ -1,6 +1,7 @@
 -- Proposed follow-up migration. Do not apply until migration-history reconciliation,
 -- isolated Supabase validation, and authenticated smoke tests are complete.
 -- Preserve legacy invoices as primary by default; intentional secondary invoices are explicit.
+CREATE SCHEMA IF NOT EXISTS private;
 ALTER TABLE public.invoices
   ADD COLUMN IF NOT EXISTS is_primary boolean NOT NULL DEFAULT true;
 
@@ -9,7 +10,7 @@ CREATE UNIQUE INDEX uq_invoices_visit_id
   ON public.invoices (visit_id)
   WHERE visit_id IS NOT NULL AND deleted_at IS NULL AND is_primary IS TRUE;
 
-CREATE OR REPLACE FUNCTION public.create_or_append_visit_invoice_atomic(
+CREATE OR REPLACE FUNCTION private.create_or_append_visit_invoice_atomic(
   p_visit_id uuid,
   p_invoice_date date,
   p_discount numeric,
@@ -140,8 +141,8 @@ BEGIN
     RAISE EXCEPTION 'consultation invoice permission denied' USING ERRCODE = '42501';
   ELSIF v_has_lab AND NOT (public.app_has_perm('lab.create') OR public.app_has_perm('billing.create')) THEN
     RAISE EXCEPTION 'laboratory invoice permission denied' USING ERRCODE = '42501';
-  ELSIF v_has_pharmacy AND NOT (public.app_has_perm('pharmacy.create') OR public.app_has_perm('billing.create')) THEN
-    RAISE EXCEPTION 'pharmacy invoice permission denied' USING ERRCODE = '42501';
+  ELSIF v_has_pharmacy AND NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'pharmacy line items require the billing workflow RPC' USING ERRCODE = '42501';
   ELSIF v_has_other AND NOT public.app_has_perm('billing.create') THEN
     RAISE EXCEPTION 'billing permission denied' USING ERRCODE = '42501';
   END IF;
@@ -245,9 +246,52 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean) FROM anon;
-GRANT EXECUTE ON FUNCTION public.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean) TO authenticated;
+REVOKE ALL ON FUNCTION private.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.create_visit_consultation_invoice_atomic(
+  p_visit_id uuid,
+  p_invoice_date date
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+DECLARE
+  v_uid uuid := public.current_app_user_id();
+  v_fee numeric;
+BEGIN
+  IF v_uid IS NULL OR NOT (
+    public.app_has_perm('visits.create') OR public.app_has_perm('billing.create')
+  ) THEN
+    RAISE EXCEPTION 'consultation invoice permission denied' USING ERRCODE = '42501';
+  END IF;
+  IF p_visit_id IS NULL OR p_invoice_date IS NULL THEN
+    RAISE EXCEPTION 'visit and invoice date are required';
+  END IF;
+  SELECT v.consultation_fee INTO v_fee
+    FROM public.visits AS v
+   WHERE v.id = p_visit_id AND v.deleted_at IS NULL
+   FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'active visit not found'; END IF;
+  IF v_fee IS NULL OR v_fee::text IN ('NaN','Infinity','-Infinity')
+     OR v_fee < 0 OR v_fee <> round(v_fee, 2) THEN
+    RAISE EXCEPTION 'visit consultation fee is invalid';
+  END IF;
+  IF v_fee = 0 THEN RAISE EXCEPTION 'consultation fee is zero'; END IF;
+
+  RETURN private.create_or_append_visit_invoice_atomic(
+    p_visit_id, p_invoice_date, 0,
+    jsonb_build_array(jsonb_build_object(
+      'item_name','Consultation','item_type','consultation','quantity',1,'unit_price',v_fee
+    )),
+    false
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.create_visit_consultation_invoice_atomic(uuid,date) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_visit_consultation_invoice_atomic(uuid,date) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.create_lab_order_with_invoice_atomic(
   p_visit_id uuid,
@@ -324,7 +368,7 @@ BEGIN
     FROM unnest(p_test_ids) WITH ORDINALITY AS x(test_id, ordinality)
     JOIN public.lab_tests AS t ON t.id = x.test_id;
 
-  PERFORM public.create_or_append_visit_invoice_atomic(
+  PERFORM private.create_or_append_visit_invoice_atomic(
     p_visit_id, CURRENT_DATE, 0, v_invoice_items, p_separate_invoice
   );
   RETURN v_order_id;

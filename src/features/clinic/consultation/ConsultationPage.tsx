@@ -93,19 +93,9 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
             ? "رسوم الاستشارة غير محددة أو صفر"
             : "Consultation fee is not set or is zero",
         );
-      const { error } = await supabase.rpc("create_or_append_visit_invoice_atomic", {
+      const { error } = await supabase.rpc("create_visit_consultation_invoice_atomic", {
         p_visit_id: visitId,
         p_invoice_date: new Date().toISOString().slice(0, 10),
-        p_discount: 0,
-        p_items: [
-          {
-            item_name: "Consultation",
-            item_type: "consultation",
-            quantity: 1,
-            unit_price: fee,
-          },
-        ],
-        p_separate_invoice: false,
       });
       if (error) throw new Error(error.message);
       return null;
