@@ -51,6 +51,11 @@ CREATE TABLE public.stock_movements (
   branch_id uuid,
   created_by uuid
 );
+ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY stock_movements_insert ON public.stock_movements
+  FOR INSERT TO authenticated WITH CHECK (true);
+GRANT SELECT, INSERT ON TABLE public.stock_movements TO authenticated;
+
 CREATE FUNCTION public.current_app_user_id() RETURNS uuid LANGUAGE sql STABLE
 AS $$ SELECT NULLIF(current_setting('test.user_id', true), '')::uuid $$;
 CREATE FUNCTION public.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
