@@ -45,3 +45,5 @@ The SQL source is recoverable from the live ledger, so the next step is to expor
 `version | migration_name | source_available | source_path | checksum | covered_by_repo_artifact | schema/function diff reviewed | clean replay status | notes`
 
 Do not mark a row as covered based only on similar filenames. The migration count/name ledger is verified; exact SQL statements are present in the live ledger, but repository mapping, safety review, replayability, and schema parity are not yet verified.
+
+- 2026-10-15 follow-up: added a read-only byte-length and MD5 inventory for all 79 ledger `statements` values in `docs/APPLIED_MIGRATION_INVENTORY.md`. The checksum is over the stored JSON representation, not normalized SQL. This improves source-recovery verification but does not establish repository parity, safety, or replayability. No SQL bodies were exported or committed and no database writes were performed.
