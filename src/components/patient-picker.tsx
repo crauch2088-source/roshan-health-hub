@@ -263,7 +263,7 @@ export function PatientSnapshotStrip({
   patientId: string;
   currency: string;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const snap = usePatientSnapshot(patientId);
 
   if (snap.isLoading)
