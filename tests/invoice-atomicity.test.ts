@@ -22,7 +22,8 @@ test("invoice RPC enforces permission, branch scope, atomicity, and least privil
   assert.match(sql, /GRANT EXECUTE ON FUNCTION[\s\S]*TO authenticated/);
 });
 test("billing UI uses the atomic invoice RPC", () => {
-  assert.match(ui, /rpc\("create_invoice_atomic"/);
+  assert.match(ui, /rpc\("create_billing_invoice_atomic"/);
+  assert.doesNotMatch(ui, /rpc\("create_invoice_atomic"/);
   assert.doesNotMatch(ui, /\.from\("invoices"\)\s*\n\s*\.insert/);
   assert.doesNotMatch(ui, /\.from\("invoice_items"\)\.insert/);
 });

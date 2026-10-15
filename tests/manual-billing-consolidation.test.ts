@@ -22,7 +22,7 @@ test("manual billing uses the visit invoice wrapper and cannot bypass it", () =>
   );
   assert.match(
     migration,
-    /REVOKE ALL ON FUNCTION public\.create_invoice_atomic\(uuid, uuid, date, numeric, jsonb\) FROM PUBLIC, anon, authenticated/,
+    /REVOKE ALL ON FUNCTION public\.create_invoice_atomic\(uuid,uuid,date,numeric,jsonb\) FROM PUBLIC, anon, authenticated/,
   );
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_billing_invoice_atomic/);
   assert.match(billingRoute, /rpc\("create_billing_invoice_atomic"/);
