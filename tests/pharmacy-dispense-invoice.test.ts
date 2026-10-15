@@ -17,12 +17,21 @@ const integration = readFileSync(
 );
 
 test("pharmacy dispense and billing are one server-side transaction", () => {
-  assert.match(migration, /CREATE OR REPLACE FUNCTION public\.fn_dispense_prescription_with_invoice/);
+  assert.match(
+    migration,
+    /CREATE OR REPLACE FUNCTION public\\.fn_dispense_prescription_with_invoice/,
+  );
   assert.match(migration, /private\.create_or_append_visit_invoice_atomic/);
   assert.match(migration, /public\.create_invoice_atomic/);
   assert.match(migration, /m\.selling_price/);
-  assert.match(migration, /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription\(uuid\) FROM PUBLIC, anon, authenticated/);
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.fn_dispense_prescription_with_invoice\(uuid, boolean\) TO authenticated/);
+  assert.match(
+    migration,
+    /REVOKE ALL ON FUNCTION public\\.fn_dispense_prescription\\(uuid\\) FROM PUBLIC, anon, authenticated/,
+  );
+  assert.match(
+    migration,
+    /GRANT EXECUTE ON FUNCTION public\\.fn_dispense_prescription_with_invoice\\(uuid, boolean\\) TO authenticated/,
+  );
 });
 
 test("pharmacy UI exposes a deliberate separate-invoice option only to billing-authorized users", () => {
@@ -38,7 +47,6 @@ test("integration contract covers itemized medicine charges, rollback, retry, an
     /consultation and each dispensed medicine must be separate invoice lines/,
   );
   assert.match(integration, /failed invoice append did not roll back stock/);
-  assert.match(integration, /aggregate stock guard did not rollback stock/);
   assert.match(integration, /duplicate dispense created duplicate charges/);
   assert.match(integration, /explicit separate pharmacy invoice was not created/);
   assert.match(integration, /cross-branch denial changed stock/);

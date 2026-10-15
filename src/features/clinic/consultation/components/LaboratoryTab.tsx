@@ -186,14 +186,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         ["patient-labs", s(patient, "id")],
         ["invoices"],
       ],
-      successMessage:
-        lang === "ar"
-          ? separateInvoice
-            ? "تم إرسال طلب المختبر وإنشاء فاتورة منفصلة"
-            : "تم إرسال طلب المختبر وإضافته إلى فاتورة الزيارة"
-          : separateInvoice
-            ? "Lab order created with a separate invoice"
-            : "Lab order created and added to the visit invoice",
+      successMessage: lang === "ar" ? "تم إرسال طلب المختبر" : "Lab order created",
     },
   );
 
