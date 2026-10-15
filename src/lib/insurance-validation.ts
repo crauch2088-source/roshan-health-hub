@@ -13,9 +13,9 @@ export function isInsuranceClaimReadyToSubmit(args: {
 }): boolean {
   return Boolean(
     args.patientInsuranceId.trim() &&
-      args.invoiceId?.trim() &&
-      args.itemCount > 0 &&
-      !args.isSaving,
+    args.invoiceId?.trim() &&
+    args.itemCount > 0 &&
+    !args.isSaving,
   );
 }
 
@@ -48,8 +48,7 @@ export function validateInsuranceClaimDraft(args: {
       // rejecting valid amounts because of floating-point representation.
       const grossCents = Math.round(item.gross_amount * 100);
       const splitCents =
-        Math.round(item.covered_amount * 100) +
-        Math.round(item.patient_amount * 100);
+        Math.round(item.covered_amount * 100) + Math.round(item.patient_amount * 100);
       return splitCents !== grossCents;
     })
   ) {
