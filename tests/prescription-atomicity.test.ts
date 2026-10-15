@@ -83,3 +83,10 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
   assert.match(ui, /Could not load medicines/);
   assert.match(ui, /No matching medicines/);
 });
+
+test("successful prescription save clears the draft to prevent accidental duplicate submission", () => {
+  assert.match(
+    ui,
+    /onDone:\s*\(\)\s*=>\s*\{[\s\S]*?setItems\(\[\]\)[\s\S]*?setForm\(createEmptyPrescriptionDraft\(\)\)[\s\S]*?setSearch\(" "\)/,
+  );
+});
