@@ -107,3 +107,14 @@ Safety note: this is a source comparison only. No SQL was executed. The differen
 - **Classification: executable-content match under comment/whitespace normalization, with a transaction-wrapper difference.** This does not establish safe replay against an existing database; the migration checks for duplicate `reversal_of` values and replaces a security-definer function, so schema/function state and execution context still require isolated validation.
 - No SQL was executed; production was read-only.
 
+
+## 2026-10-15 follow-up — second-pass semantic triage
+
+Compared four additional recovered entries with likely legacy artifacts:
+
+- `20260819100756_roshan_phase1_pagination_and_settings.sql` vs `db/roshan_phase1_pagination_and_settings.sql`: 1,125 vs 4,328 characters; not text-equivalent. The larger candidate includes indexes and settings/backfill material not present in this recovered entry.
+- `20260818233558_harden_security_definer_helpers_and_duplicate_index_v2.sql` vs `db/roshan_security_hardening.sql`: 5,652 vs 9,523 characters; not text-equivalent. Must compare helper bodies, SECURITY DEFINER search paths, grants, and permission semantics individually.
+- `20260908210824_roshan_phase4_finance_v2.sql` vs `db/roshan_phase4_finance.sql`: 24,043 vs 30,998 characters; substantial lexical overlap but unequal content. Token overlap cannot distinguish comments from behavior; statement-level review remains required.
+- `20260911120231_roshan_phase12_invoice_visit_unique.sql` vs `db/roshan_phase12_invoice_visit_unique.sql`: 416 vs 553 characters; both concern invoice/visit uniqueness, but the repository file contains a duplicate-preflight query not present in the recovered body. Verify index definition and data assumptions before mapping.
+
+Together with the earlier phase-2 finding, this shows that filenames and broad subject matter are insufficient for parity. These comparisons are triage only, not semantic sign-off. No SQL was executed and no production state was changed.

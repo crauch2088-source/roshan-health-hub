@@ -231,3 +231,25 @@ This track makes the existing clinical, finance, and mobile UX phases explicit. 
 - [ ] Do not merge or deploy this track without explicit approval; do not relax database security to make a UI flow appear to work.
 
 Current baseline: PR #8 shell redesign has already merged into main and includes the shell/navigation redesign, breadcrumbs, role-aware mobile bottom navigation, command palette, and account menu. That is a starting point, not sign-off for the full information architecture or workflow UX. Existing phase 4 (clinical workflows), phase 5 (pharmacy/finance), and phase 6 (mobile UI/bilingual UX) remain the authoritative related phases; this section adds explicit product-logic and navigation acceptance criteria without claiming they have passed.
+
+## Follow-up evidence — migration semantic triage and navigation source review (2026-10-15)
+
+### Migration comparison results (triage, not semantic sign-off)
+
+The following recovered ledger entries were compared against likely legacy db/*.sql candidates. Text lengths differ materially in every pair. Token overlap is only a navigation aid and is **not** proof of semantic equivalence; each pair remains unresolved until statements, functions, policies, grants, indexes, triggers, constraints, and data-dependent effects are compared individually.
+
+| Recovered ledger entry | Candidate repository artifact | Result | Next action |
+|---|---|---|---|
+| `20260819100756_roshan_phase1_pagination_and_settings.sql` (1,125 chars) | `db/roshan_phase1_pagination_and_settings.sql` (4,328 chars) | Non-equivalent text; candidate is substantially broader and includes content absent from the recovered entry. | Split candidate into individual statements and map each to ledger entries; inspect all added settings/backfill and index behavior. |
+| `20260818233558_harden_security_definer_helpers_and_duplicate_index_v2.sql` (5,652 chars) | `db/roshan_security_hardening.sql` (9,523 chars) | Non-equivalent text; recovered entry contains distinct helper/function and privilege work not established by filename similarity. | Compare every SECURITY DEFINER body, search_path, EXECUTE grants, and role/permission constraint before claiming coverage. |
+| `20260908210824_roshan_phase4_finance_v2.sql` (24,043 chars) | `db/roshan_phase4_finance.sql` (30,998 chars) | Broad lexical overlap, but unequal bodies; one token set contains pharmacist not present in the other. This may be comments or behavior and is not yet classified. | Diff statement-by-statement, especially RPCs, financial totals, RLS policies, triggers, and grants. |
+| `20260911120231_roshan_phase12_invoice_visit_unique.sql` (416 chars) | `db/roshan_phase12_invoice_visit_unique.sql` (553 chars) | Both concern the invoice/visit uniqueness index, but text differs; the repository candidate includes a preflight duplicate-check query. | Verify index definition and whether preflight query is documentation-only or operationally required; compare existing index and duplicate-data assumptions. |
+| `20260820150215_roshan_phase2_clinical_workflow.sql` | `db/roshan_phase2_clinical_workflow.sql` | Previously inspected: recovered file has five indexes; legacy file also seeds missing active lab parameters for existing active tests. | Keep marked partial/unresolved; verify whether seed behavior exists in a different ledger migration and whether it is idempotent. |
+
+**Safety:** comparisons were read-only. No migration was executed, no database changed, and no recovered SQL was moved into a canonical migration directory. A clean replay and Supabase-specific auth/RLS validation remain release gates.
+
+### Navigation / UI source review
+
+Read-only inspection of the current main components confirmed the app shell wires NavRail, MobileBottomNav, BreadcrumbNav, and CommandPaletteProvider. The mobile bar filters destinations by permission, puts remaining routes in More, provides permission-filtered quick actions, and accounts for the device safe-area inset. Breadcrumbs filter out destinations the current user cannot access and simplify the trail on narrow screens. The command palette guards route shortcuts by the shared navigation permission configuration and ignores navigation shortcuts while typing in form fields.
+
+This confirms the intended navigation architecture exists; it does **not** establish that all routes, role combinations, Arabic/English layouts, and real authenticated workflows are correct. Remaining work is a route registry audit, role × route coverage, mobile viewport verification, and authenticated smoke tests. Avoid asserting UX completion until these gates have evidence.
