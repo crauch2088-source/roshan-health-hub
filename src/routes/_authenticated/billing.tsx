@@ -41,7 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { validateInvoiceDraft } from "@/lib/invoice-validation";
