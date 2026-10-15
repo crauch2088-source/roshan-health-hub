@@ -382,7 +382,7 @@ function MedicinesTab() {
                               id: s(m, "id"),
                               qty: "0",
                               batch_number: "",
-                              expiry_date: s(m, "expiry_date"),
+                              expiry_date: "",
                               manufacture_date: "",
                               purchase_price: String(n(m, "cost_price")),
                             })
@@ -434,7 +434,7 @@ function MedicinesTab() {
                                     id: s(m, "id"),
                                     qty: "0",
                                     batch_number: "",
-                                    expiry_date: s(m, "expiry_date"),
+                                    expiry_date: "",
                                     manufacture_date: "",
                                     purchase_price: String(n(m, "cost_price")),
                                   })
