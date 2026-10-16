@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **15 checked / 92 total (~16% of listed checkbox items marked complete)**.
+- Current unweighted checkbox count after this audit: **17 checked / 98 total (~17% of listed checkbox items marked complete)**.
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
