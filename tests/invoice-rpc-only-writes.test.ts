@@ -31,7 +31,7 @@ test("billing, visit, consultation, and lab workflows do not write invoice table
   }
 
   assert.match(billing, /rpc\(["']create_billing_invoice_atomic["']/);
-  assert.match(visits, /rpc\(["']create_visit_consultation_invoice_atomic["']/);
+  assert.match(visits, /rpc\(\s*["']create_visit_consultation_invoice_atomic["']/);
   assert.match(lab, /rpc\(["']create_lab_order_with_invoice_atomic["']/);
 });
 
