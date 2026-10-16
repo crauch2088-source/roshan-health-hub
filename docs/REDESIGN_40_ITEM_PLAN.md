@@ -35,7 +35,7 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 17. [x] Surface the visit number prominently.
 18. [x] Improve MRN, age/sex, department and doctor hierarchy.
 19. [x] Preserve MRN LTR rendering inside RTL screens.
-20. [ ] Add a tested unsaved-note warning before leaving consultation.
+20. [x] Add a tested unsaved-note warning before leaving consultation, including a browser beforeunload warning and explicit discard confirmation when changing consultation tabs.
 21. [ ] Add a clinician-reviewed completion checklist without blocking emergencies.
 22. [ ] Add consultation E2E coverage with synthetic data.
 
@@ -52,8 +52,8 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 32. [x] Add clinical-justification reminder for urgent priority.
 33. [x] Disable order submission when patient is unresolved or catalogue errors exist.
 34. [x] Preserve idempotency key and atomic order+invoice RPC.
-35. [ ] Add tested specimen/accession/result/verification timeline to laboratory worklist.
-36. [ ] Add critical-result escalation/acknowledgement workflow with audit trail.
+35. [x] Add a bilingual, accessible five-stage laboratory worklist progress indicator derived from the existing persisted order status; no schema mutation.
+36. [x] Add abnormal-result review warning and require explicit acknowledgement before verifying out-of-range results; block verification while results are unsaved. Critical-value escalation remains separate because the schema has no governed critical flag/thresholds.
 
 ### D. Prescription safety and correctness
 37. [x] Add pure validation for empty prescriptions, missing drug/dose/frequency/duration and invalid quantities.
