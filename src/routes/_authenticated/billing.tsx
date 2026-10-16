@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   Empty,
@@ -41,9 +41,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
+import { validateInvoiceDraft } from "@/lib/invoice-validation";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/billing")({
@@ -80,13 +81,17 @@ function BillingPageInner() {
   const { currency } = useSettings();
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
+  const pendingInvoiceRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const [open, setOpen] = useState(false);
   const [patientId, setPatientId] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
+  const [visitId, setVisitId] = useState("");
+  const [standaloneInvoice, setStandaloneInvoice] = useState(false);
+  const [separateInvoice, setSeparateInvoice] = useState(false);
   const [partnerId, setPartnerId] = useState("");
   const [discount, setDiscount] = useState("0");
   const [lines, setLines] = useState<Line[]>([
-    { description: "", quantity: "1", unit_price: "0", item_type: "consultation" },
+    { description: "", quantity: "1", unit_price: "0", item_type: "other" },
   ]);
 
   const invoices = useRows(["invoices", date], () =>
@@ -104,6 +109,16 @@ function BillingPageInner() {
     supabase.from("partners").select("id, name, discount_percent").is("deleted_at", null),
   );
 
+  const visits = useRows(["billing-patient-visits", patientId], () =>
+    supabase
+      .from("visits")
+      .select("id, created_at, status")
+      .eq("patient_id", patientId || "00000000-0000-0000-0000-000000000000")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  );
+
   const subtotal = lines.reduce(
     (sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0),
     0,
@@ -112,47 +127,59 @@ function BillingPageInner() {
 
   const create = useSave(
     async () => {
-      const invoiceNumber = await rpc<string>("next_invoice_number");
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_number: invoiceNumber,
-          patient_id: patientId,
-          partner_id: partnerId || null,
-          invoice_date: date,
-          total_amount: subtotal,
-          discount_amount: Number(discount) || 0,
-          net_amount: net,
-          paid_amount: 0,
-          status: "unpaid",
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      const items = lines
-        .filter((l) => l.description)
-        .map((l) => ({
-          invoice_id: inv.id,
-          item_name: l.description,
-          item_type: l.item_type,
-          quantity: Number(l.quantity) || 1,
-          unit_price: Number(l.unit_price) || 0,
-          total_price: (Number(l.quantity) || 1) * (Number(l.unit_price) || 0),
-        }));
-      if (items.length) {
-        const { error: iErr } = await supabase.from("invoice_items").insert(items);
-        if (iErr) throw new Error(iErr.message);
+      if (!patientId) throw new Error("Select a patient.");
+      if (!visitId && !standaloneInvoice) {
+        throw new Error("Choose a visit or explicitly select a standalone invoice.");
       }
-      return inv.id as string;
+      const validated = validateInvoiceDraft(lines, discount);
+      const items = validated.lines.map((line) => ({
+        item_name: line.description,
+        item_type: line.item_type,
+        quantity: line.quantity,
+        unit_price: line.unit_price,
+      }));
+      const separate = standaloneInvoice || separateInvoice;
+      const fingerprint = JSON.stringify({
+        patientId,
+        visitId: visitId || null,
+        partnerId: partnerId || null,
+        date,
+        discount: validated.discount,
+        items,
+        separate,
+      });
+      if (pendingInvoiceRequestRef.current?.fingerprint !== fingerprint) {
+        pendingInvoiceRequestRef.current = { fingerprint, id: crypto.randomUUID() };
+      }
+      const requestId = pendingInvoiceRequestRef.current.id;
+      const { data: invoiceId, error } = await supabase.rpc("create_billing_invoice_atomic", {
+        p_patient_id: patientId,
+        p_visit_id: visitId || null,
+        p_partner_id: partnerId || null,
+        p_invoice_date: date,
+        p_discount: validated.discount,
+        p_items: items,
+        p_separate_invoice: separate,
+        p_request_id: requestId,
+      });
+      if (error) throw new Error(error.message);
+      if (typeof invoiceId !== "string" || !invoiceId) {
+        throw new Error("The database did not return the created invoice ID.");
+      }
+      pendingInvoiceRequestRef.current = null;
+      return invoiceId;
     },
     {
-      invalidate: [["invoices", date]],
+      invalidate: [["invoices", date], ["consultation-invoice"]],
       successMessage: t("saved"),
       onDone: (id) => {
         setOpen(false);
         setSelectedPatient(null);
         setPatientId("");
-        setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "consultation" }]);
+        setVisitId("");
+        setStandaloneInvoice(false);
+        setSeparateInvoice(false);
+        setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "other" }]);
         setDiscount("0");
         if (typeof id === "string")
           void navigate({ to: "/billing/$invoiceId", params: { invoiceId: id } });
@@ -196,6 +223,9 @@ function BillingPageInner() {
                       onSelect={(p) => {
                         setSelectedPatient(p);
                         setPatientId(p?.id ?? "");
+                        setVisitId("");
+                        setStandaloneInvoice(false);
+                        setSeparateInvoice(false);
                       }}
                     />
                   </Field>
@@ -213,7 +243,78 @@ function BillingPageInner() {
                       </SelectContent>
                     </Select>
                   </Field>
+                  <Field
+                    label={
+                      lang === "ar" ? "الزيارة / سياق الفاتورة *" : "Visit / invoice context *"
+                    }
+                  >
+                    <Select
+                      value={standaloneInvoice ? "standalone" : visitId || "choose"}
+                      onValueChange={(value) => {
+                        if (value === "standalone") {
+                          setStandaloneInvoice(true);
+                          setVisitId("");
+                          setSeparateInvoice(false);
+                        } else if (value === "choose") {
+                          setStandaloneInvoice(false);
+                          setVisitId("");
+                          setSeparateInvoice(false);
+                        } else {
+                          setStandaloneInvoice(false);
+                          setVisitId(value);
+                          setSeparateInvoice(false);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            lang === "ar"
+                              ? "اختر الزيارة أو فاتورة مستقلة"
+                              : "Choose a visit or standalone invoice"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="choose" disabled>
+                          {lang === "ar" ? "اختر الزيارة" : "Choose a visit"}
+                        </SelectItem>
+                        {((visits.data ?? []) as Row[]).map((visit) => (
+                          <SelectItem key={s(visit, "id")} value={s(visit, "id")}>
+                            {formatDate(s(visit, "created_at"))} · {s(visit, "status")}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="standalone">
+                          {lang === "ar"
+                            ? "فاتورة مستقلة (بدون زيارة)"
+                            : "Standalone invoice (no visit)"}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </div>
+                {visitId ? (
+                  <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={separateInvoice}
+                      onChange={(event) => setSeparateInvoice(event.target.checked)}
+                    />
+                    <span>
+                      {lang === "ar"
+                        ? "إنشاء فاتورة منفصلة بدل الإضافة إلى فاتورة الزيارة الأساسية"
+                        : "Create a separate invoice instead of appending to the primary visit invoice"}
+                    </span>
+                  </label>
+                ) : null}
+                {visitId && !separateInvoice ? (
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "عند الإضافة إلى فاتورة زيارة موجودة، اترك الخصم صفراً؛ تغيير خصم الفاتورة يتطلب فاتورة منفصلة."
+                      : "When appending to an existing visit invoice, leave discount at zero. Changing the invoice-level discount requires a separate invoice."}
+                  </p>
+                ) : null}
 
                 <div className="space-y-2">
                   {lines.map((l, idx) => (
@@ -240,9 +341,6 @@ function BillingPageInner() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="consultation">{t("consultation_fee")}</SelectItem>
-                          <SelectItem value="lab">{t("laboratory")}</SelectItem>
-                          <SelectItem value="pharmacy">{t("pharmacy")}</SelectItem>
                           <SelectItem value="procedure">{t("procedure")}</SelectItem>
                           <SelectItem value="other">{t("other")}</SelectItem>
                         </SelectContent>
@@ -323,7 +421,7 @@ function BillingPageInner() {
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!patientId || create.isPending}
+                  disabled={!patientId || (!visitId && !standaloneInvoice) || create.isPending}
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}

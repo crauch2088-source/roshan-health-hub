@@ -5,7 +5,7 @@ import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loading, StatusBadge } from "@/components/kit";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -67,9 +67,9 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   // Visit -> Billing integration. visits.tsx already auto-creates an invoice
   // (linked via invoices.visit_id) at the moment the visit is created, IF a
   // consultation fee was set then. This just surfaces that link here, and —
-  // only if no invoice exists yet for this visit_id — offers a safe way to
-  // create one, using the exact same insert shape visits.tsx uses. Checking
-  // for an existing row first is what prevents a duplicate invoice.
+  // only if no primary invoice exists yet for this visit_id — offers a safe way to
+  // create one. Secondary invoices are intentional exceptions and must never hide
+  // the visit’s consolidated primary invoice.
   const invoiceQ = useRows<Row[]>(
     ["consultation-invoice", visitId],
     () =>
@@ -77,6 +77,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         .from("invoices")
         .select("id,invoice_number,net_amount,paid_amount,status")
         .eq("visit_id", visitId)
+        .eq("is_primary", true)
         .is("deleted_at", null)
         .limit(1),
     { enabled: Boolean(visitId) },
@@ -93,35 +94,11 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
             ? "رسوم الاستشارة غير محددة أو صفر"
             : "Consultation fee is not set or is zero",
         );
-      const invoiceNumber = await rpc<string>("next_invoice_number");
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_number: invoiceNumber,
-          patient_id: s(visit, "patient_id"),
-          visit_id: visitId,
-          invoice_date: new Date().toISOString().slice(0, 10),
-          total_amount: fee,
-          subtotal: fee,
-          discount_amount: 0,
-          net_amount: fee,
-          paid_amount: 0,
-          status: "unpaid",
-          payment_status: "unpaid",
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      const { error: itemError } = await supabase.from("invoice_items").insert({
-        invoice_id: inv.id,
-        item_type: "consultation",
-        item_name: "Consultation",
-        quantity: 1,
-        unit_price: fee,
-        total_price: fee,
+      const { error } = await supabase.rpc("create_visit_consultation_invoice_atomic", {
+        p_visit_id: visitId,
+        p_invoice_date: new Date().toISOString().slice(0, 10),
       });
-      if (itemError) throw new Error(itemError.message);
+      if (error) throw new Error(error.message);
       return null;
     },
     {

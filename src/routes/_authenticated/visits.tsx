@@ -46,7 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, type Row, useRows, useSave, useSettings } from "@/lib/db";
+import { n, rel, s, type Row, useRows, useSave, useSettings } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -106,7 +106,7 @@ function VisitsPage() {
 
 function VisitsPageInner() {
   const { t, lang } = useLang();
-  const { can, user } = useAuth();
+  const { can } = useAuth();
   const { currency } = useSettings();
   const search = Route.useSearch();
 
@@ -236,39 +236,18 @@ function VisitsPageInner() {
         throw new Error(error.message);
       }
 
-      // A consultation fee is a billable service. Create the invoice immediately;
-      // reception then records the actual payment, which is what Accounting counts as revenue.
+      // The visit's consultation charge is written through the same atomic visit-invoice RPC
+      // used by the clinical workflow. A later lab order appends its own item to this invoice.
       const fee = Number(form.consultation_fee) || 0;
       if (fee > 0) {
-        const invoiceNumber = await rpc<string>("next_invoice_number");
-        const { data: invoice, error: invoiceError } = await supabase
-          .from("invoices")
-          .insert({
-            invoice_number: invoiceNumber,
-            patient_id: form.patient_id,
-            visit_id: createdVisit?.id ?? null,
-            invoice_date: date,
-            total_amount: fee,
-            subtotal: fee,
-            discount_amount: 0,
-            net_amount: fee,
-            paid_amount: 0,
-            status: "unpaid",
-            payment_status: "unpaid",
-            created_by: user?.id ?? null,
-          })
-          .select("id")
-          .single();
+        const { error: invoiceError } = await supabase.rpc(
+          "create_visit_consultation_invoice_atomic",
+          {
+            p_visit_id: createdVisit.id,
+            p_invoice_date: date,
+          },
+        );
         if (invoiceError) throw new Error(invoiceError.message);
-        const { error: itemError } = await supabase.from("invoice_items").insert({
-          invoice_id: invoice.id,
-          item_type: "consultation",
-          item_name: "Consultation",
-          quantity: 1,
-          unit_price: fee,
-          total_price: fee,
-        });
-        if (itemError) throw new Error(itemError.message);
       }
     },
     {

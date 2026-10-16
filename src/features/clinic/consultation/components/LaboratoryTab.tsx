@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { n, rpc, s, useRows, useSave, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
@@ -62,13 +62,15 @@ function normalizeCategory(value: string) {
 }
 
 export function LaboratoryTab({ visitId }: { visitId: string }) {
-  const { user } = useAuth();
   const { lang } = useLang();
+  const { can } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<Row[]>([]);
   const [priority, setPriority] = useState("normal");
   const [notes, setNotes] = useState("");
+  const [separateInvoice, setSeparateInvoice] = useState(false);
+  const pendingRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
 
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
@@ -165,66 +167,32 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         throw new Error(lang === "ar" ? "المريض غير موجود" : "Patient not found");
       if (!selected.length)
         throw new Error(lang === "ar" ? "اختر فحصاً واحداً على الأقل" : "Select at least one test");
-      const { data: order, error } = await supabase
-        .from("lab_orders")
-        .insert({
-          patient_id: s(patient, "id"),
-          visit_id: visitId,
-          ordered_by: user?.id ?? null,
-          status: "ordered",
-          priority,
-          notes: notes || null,
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      const items = selected.map((t) => ({
-        order_id: order.id,
-        test_id: s(t, "id"),
-        price: n(t, "price"),
-        created_by: user?.id ?? null,
-      }));
-      const { error: itemError } = await supabase.from("lab_order_items").insert(items);
-      if (itemError) throw new Error(itemError.message);
-      const total = selected.reduce((sum, t) => sum + n(t, "price"), 0);
-      if (total > 0) {
-        const invoiceNumber = await rpc<string>("next_invoice_number");
-        const { data: inv, error: invError } = await supabase
-          .from("invoices")
-          .insert({
-            invoice_number: invoiceNumber,
-            patient_id: s(patient, "id"),
-            visit_id: visitId,
-            invoice_date: new Date().toISOString().slice(0, 10),
-            total_amount: total,
-            subtotal: total,
-            discount_amount: 0,
-            net_amount: total,
-            paid_amount: 0,
-            status: "unpaid",
-            payment_status: "unpaid",
-            created_by: user?.id ?? null,
-          })
-          .select("id")
-          .single();
-        if (invError) throw new Error(invError.message);
-        const rows = selected.map((t) => ({
-          invoice_id: inv.id,
-          item_type: "laboratory",
-          item_name: s(t, "name"),
-          quantity: 1,
-          unit_price: n(t, "price"),
-          total_price: n(t, "price"),
-          item_id: s(t, "id"),
-          created_by: user?.id ?? null,
-        }));
-        const { error: invoiceItemsError } = await supabase.from("invoice_items").insert(rows);
-        if (invoiceItemsError) throw new Error(invoiceItemsError.message);
+      const testIds = selected.map((test) => s(test, "id"));
+      const fingerprint = JSON.stringify({
+        visitId,
+        priority,
+        notes: notes || null,
+        testIds,
+        separateInvoice,
+      });
+      if (pendingRequestRef.current?.fingerprint !== fingerprint) {
+        pendingRequestRef.current = { fingerprint, id: crypto.randomUUID() };
       }
+      const requestId = pendingRequestRef.current.id;
+      const { data: orderId, error } = await supabase.rpc("create_lab_order_with_invoice_atomic", {
+        p_visit_id: visitId,
+        p_priority: priority,
+        p_notes: notes || null,
+        p_test_ids: testIds,
+        p_separate_invoice: separateInvoice,
+        p_request_id: requestId,
+      });
+      if (error) throw new Error(error.message);
+      pendingRequestRef.current = null;
       setSelected([]);
       setNotes("");
-      return order.id;
+      setSeparateInvoice(false);
+      return orderId as string;
     },
     {
       invalidate: [
@@ -233,10 +201,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         ["patient-labs", s(patient, "id")],
         ["invoices"],
       ],
-      successMessage:
-        lang === "ar"
-          ? "تم إرسال طلب المختبر وإنشاء الفاتورة"
-          : "Lab order created and invoice generated",
+      successMessage: lang === "ar" ? "تم إرسال طلب المختبر" : "Lab order created",
     },
   );
 
@@ -393,7 +358,17 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
             />
           </label>
         </div>
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          {can("billing.create") ? (
+            <Button
+              type="button"
+              variant={separateInvoice ? "default" : "outline"}
+              onClick={() => setSeparateInvoice((current) => !current)}
+              aria-pressed={separateInvoice}
+            >
+              {lang === "ar" ? "إنشاء فاتورة منفصلة" : "Create separate invoice"}
+            </Button>
+          ) : null}
           <Button
             disabled={create.isPending || !selected.length}
             onClick={() => create.mutate(undefined as never)}
