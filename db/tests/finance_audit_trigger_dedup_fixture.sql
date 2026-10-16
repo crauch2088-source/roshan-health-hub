@@ -90,8 +90,6 @@ BEGIN
       table_name
     );
   END LOOP;
-  CREATE TRIGGER trg_audit_patients
-    AFTER INSERT OR UPDATE OR DELETE ON public.patients
-    FOR EACH ROW EXECUTE FUNCTION public.audit_row_change();
+  EXECUTE 'CREATE TRIGGER trg_audit_patients AFTER INSERT OR UPDATE OR DELETE ON public.patients FOR EACH ROW EXECUTE FUNCTION public.audit_row_change()';
 END;
 $setup$;
