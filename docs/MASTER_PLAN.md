@@ -5,9 +5,10 @@
 ## Operating rules
 - Execute work directly with connected tools. Request any missing integration/permission explicitly.
 - If a specific step repeatedly fails despite reasonable diagnosis, stop looping, ask the user to use Claude for that step, then resume the remaining plan.
-- User authorizes changes to disposable test data/schemas; nevertheless verify environment and scope before destructive actions.
-- Never expose or commit secrets, credentials, tokens, or real patient data.
-- Production database changes, merges, and deployments require reviewed changes, tests, rollback readiness, and explicit release approval.
+- Standing user authorization (2026-10-16): maximize concrete progress using Composio and any available connected tools; search current web guidance when useful; continue across multiple independent workstreams and batches; merge any PR whose dependencies, code, CI, and risk gates are satisfied; execute SQL needed for the project without asking for separate permission each time. The user states current stored patient/financial data is disposable test data and may be deleted if a specific task requires it.
+- This authorization removes the need to ask again for routine in-scope merges or SQL, but does not justify unbounded deletion, unnecessary data loss, exposing secrets, or bypassing correctness checks. Verify the exact project/environment and affected objects; prefer tracked migrations, isolated validation, idempotent SQL, least privilege, and rollback plans. If production is the only connected database, use narrow, reversible changes and verify immediately afterward.
+- Never expose or commit secrets, credentials, tokens, or patient-identifying data.
+- Do not stop at reporting a blocker: continue useful independent workstreams while diagnosing it, and report verified results, blocked gates, and the checklist-based completion percentage. Do not count audits as implementation completion.
 - Treat security advisor warnings as leads, not proof of exploitability. Preserve indexes unless workload evidence supports removal.
 
 ## Verified starting point
@@ -568,3 +569,16 @@ These checks are repository/metadata verification, not application feature compl
 - The production database still does not contain the atomic patient-registration RPC. No SQL, grants, patient data, or other database state was changed in this batch.
 - Migration-history parity remains unresolved. Do not merge or apply the candidate migration until the repository migration sequence, isolated PostgreSQL/Supabase integration tests, rollback, and branch authorization behavior are reviewed.
 - The master-plan checklist percentage remains **40.4%** (63/156). This batch contains substantial audit and test-preparation work, but those tasks are deliberately not reclassified as completed production features.
+
+
+## Updated execution authorization and working mode — 2026-10-16
+
+The user explicitly authorizes direct project execution using Composio, GitHub, Supabase, Vercel, and other available connected tools; current web research where useful; applying SQL required by the project; and merging any change judged ready. The user states the stored patient/financial data is test-only and disposable, including permission to delete it if a specific task requires it. Do not ask again for routine in-scope merge/SQL approval.
+
+Execution rules: maximize concrete, verifiable progress in batches; use parallel workstreams for independent tasks; keep this file as the single source of truth; record each material code/SQL/doc change, CI evidence, deployment state, and updated checklist percentage. Continue other useful work when a task is blocked. Do not inflate completion based on audits. Do not perform broad destructive operations merely because test data is disposable: first establish the exact target and necessity, prefer tracked/reversible migrations, and verify postconditions. For database changes, use the best available isolated validation; if unavailable, choose narrow idempotent changes and capture a rollback. Merges remain authorized when the relevant code, dependencies, CI, and data/schema assumptions are checked.
+
+## External guidance consulted — 2026-10-16
+- Supabase database migrations: https://supabase.com/docs/guides/deployment/database-migrations — keep schema changes in versioned migration files; avoid direct remote schema edits that bypass migration history.
+- Supabase branching: https://supabase.com/docs/guides/deployment/branching — branches are isolated; Git-connected branches apply repository migrations while dashboard branches derive from project migration history.
+- PostgreSQL 17 CREATE FUNCTION security: https://www.postgresql.org/docs/17/sql-createfunction.html — SECURITY DEFINER routines require a trusted search_path and selective EXECUTE grants.
+
