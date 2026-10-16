@@ -18,8 +18,11 @@ test("patient registration uses one atomic server-side RPC", () => {
 });
 
 test("patient registration regression test is part of the guard suite", () => {
-  const pkg = JSON.parse(
-    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-  ) as { scripts?: Record<string, string> };
-  assert.match(pkg.scripts?.["test:guard"] ?? "", /patient-registration-atomicity\.test\.ts/);
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    scripts?: Record<string, string>;
+  };
+  assert.match(
+    pkg.scripts?.["test:guard"] ?? "",
+    /patient-registration-atomicity\.test\.ts/,
+  );
 });
