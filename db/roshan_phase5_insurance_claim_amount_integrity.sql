@@ -174,3 +174,10 @@ BEGIN
   RETURN claim_id;
 END;
 $function$;
+
+-- CREATE OR REPLACE preserves the ACL of an existing function, but a fresh
+-- installation grants EXECUTE to PUBLIC by default. State the intended ACL
+-- explicitly so the function is safe in both cases.
+REVOKE ALL ON FUNCTION public.create_insurance_claim(uuid, uuid, jsonb, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.create_insurance_claim(uuid, uuid, jsonb, text) FROM anon;
+GRANT EXECUTE ON FUNCTION public.create_insurance_claim(uuid, uuid, jsonb, text) TO authenticated;
