@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **20 checked / 104 total (~19% of listed checkbox items marked complete)**.
+- Current unweighted checkbox count after this audit: **22 checked / 107 total (~21% of listed checkbox items marked complete)**.
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -322,4 +322,10 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [ ] Keep all three PRs draft/unmerged until migration-source reconciliation, isolated database validation, and authenticated role/branch smoke tests are completed.
 - [ ] Do not reconcile the legacy stock discrepancy by copying totals or inventing batches. Establish provenance and branch ownership first, then run a documented adjustment process with an auditable ledger.
 - [ ] Insurance claim gross amounts still need an agreed linkage model to invoice/service lines. Current UI permits free-form descriptions and null reference IDs; do not infer the intended split-override policy. Define reference semantics and permitted manual adjustments before changing the RPC contract.
+
+## Migration inventory artifact — 2026-10-16
+
+- [x] Created [`docs/DB_MIGRATION_RECONCILIATION.md`](https://github.com/crauch2088-source/roshan-health-hub/blob/audit/roshan-health-hub-hardening-plan-v2/docs/DB_MIGRATION_RECONCILIATION.md) with all 79 live version/name rows and the exact SQL filenames present under `db/` on `main`.
+- [x] Confirmed that `main` contains only 10 top-level SQL files in `db/` and no `supabase/` migration directory. The new inventory identifies 4 exact basename matches; an earlier broader reconciliation note recorded 5 exact source matches, so the discrepancy in matching criteria must itself be reconciled rather than silently treating a filename similarity as proof.
+- [ ] Use the inventory to recover exact source mappings for the remaining entries. Do not label a row fully recovered based only on a similar name; preserve the difference between exact basename match, content-confirmed match, partial candidate, and unrecovered source.
 
