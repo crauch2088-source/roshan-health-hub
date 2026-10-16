@@ -1,7 +1,8 @@
 # Progress batch F — Roshan Health Hub
 
 **Date:** 2026-10-16 (late UTC)  
-**Main after merge:** `5229ef8b8d0bec35c495a171ab367774ec8e4986`  
+**Main code merge:** `5229ef8b8d0bec35c495a171ab367774ec8e4986`  
+**Latest documentation main:** `c5487a4e16fbdde4808421e24538504b54ef3f9c`  
 **Checklist:** 65/156 = **41.7%**  
 **Production deployment:** blocked by Vercel API quota; no bypass attempted.
 
@@ -16,8 +17,8 @@
 - The RPC remains unused by production UI because PR #22 is still draft/unmerged. It is additive and has a documented rollback: `DROP FUNCTION IF EXISTS public.create_prescription_atomic(uuid, boolean, jsonb);`.
 
 ## Clinical branch readiness
-- Refreshed PR #22 and PR #34 onto current main. All checks passed on [PR #22 head `044c890`](https://github.com/crauch2088-source/roshan-health-hub/commit/044c8906469336720d993857e967533ef7302818) and [PR #34 head `59a32be`](https://github.com/crauch2088-source/roshan-health-hub/commit/59a32be78ae0e44b0f644b2ffbf637053936a2b4).
-- Live aggregate-only snapshot: 2 active branches; 5/6 active users branchless; 36/36 visits branchless; 9/10 patients branchless. The branch named `ROSHAN Main Branch` has one assigned active user and one patient but no visits; the Arabic `الفرع الرئيسي` branch has no assigned users, patients, or visits. Five branchless visits have a creator with a branch assignment, but creator linkage alone is not authoritative.
+- Refreshed PR #22 and PR #34 onto current main. After the final documentation-only main refresh, all checks passed again on [PR #22 head `7e009d9`](https://github.com/crauch2088-source/roshan-health-hub/commit/7e009d98e0fb7463bc95ace1fed3a6c2b5a2c7e8) and [PR #34 head `8e7756d`](https://github.com/crauch2088-source/roshan-health-hub/commit/8e7756db333d788fa706e942454745f967b05d98). Both remain draft due the live branch-data release gate.
+- Live aggregate-only snapshot: 2 active branches; 5/6 active users branchless; 36/36 visits branchless; 9/10 patients branchless. The branch named `ROSHAN Main Branch` has one assigned active user and one patient but no visits; the Arabic `الفرع الرئيسي` branch has no assigned users, patients, or visits. 31 branchless visits have no creator recorded; the other 5 have assigned creators, but none matches the creator's branch to the linked patient's or invoice's branch. Creator linkage is not a safe assignment source.
 - No records were changed. PR #22 and #34 remain draft because the branchless data must be reconciled before a branch-aware UI/RLS rollout. Full details and the safe reconciliation sequence are in [`docs/BRANCH_DATA_READINESS_2026-10-16.md`](BRANCH_DATA_READINESS_2026-10-16.md).
 
 ## Deployment quota
