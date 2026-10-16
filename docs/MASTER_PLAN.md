@@ -658,7 +658,7 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 
 ### Non-insurance implementation path
 - Rechecked the atomic prescription UI/RPC candidate, PR #22, at head 6eb0d63f92465ee4bec2084daef217cc2fd3ec1b; latest CI reports 9 check runs, including successful finance-audit, cashbox-concurrency, PostgreSQL integration, security, typecheck, lint, and build jobs. PR #22 was moved from draft to ready-for-review.
-- The production RPC is already installed under Supabase migration ledger version 20261016172209; the source PR has not been merged or deployed. Its PR body still contains stale wording about SQL being unapplied and must be reconciled.
+- The production RPC is already installed under Supabase migration ledger version 20261016172209; the source PR has not been merged or deployed. Its PR body was corrected to reflect that the RPC is already installed; the PR is still not merged or deployed.
 - PR #34 remains deferred: it covers branch-aware RLS for clinical child tables but also includes an insurance-prior-authorization policy. Do not merge/apply it while insurance work is paused and migration/live-schema review remains open.
 - Current security advisor snapshot: 17 authenticated-callable SECURITY DEFINER notices (review each RPC individually; these are warnings, not proof of vulnerability), plus pg_trgm in public. Performance advisor reports 123 unused-index notices; no indexes were dropped.
 - The checklist remains based on implemented/verified plan items only. The data reset and audit work do not count as feature completion. Recount after this batch and keep the numerator unchanged unless an existing checklist item now genuinely meets its exit criteria.
@@ -672,3 +672,10 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 
 ### Checklist accounting after batch F
 The current checklist is 65/156 = 41.7%. The data reset and audit work do not count as feature completion. Keep the numerator unchanged unless an existing checklist item genuinely meets its exit criteria.
+
+
+### Follow-up verification — prescription RPC smoke test — 2026-10-16
+- Exercised public.create_prescription_atomic inside one PostgreSQL DO statement using an assigned doctor account and transaction-local authenticated JWT claims.
+- The smoke test inserted a synthetic patient and visit, called the live RPC with one active catalog medicine, and asserted one prescription item was created with the server-derived catalog price.
+- The same statement cleaned up the generated prescription, queue ticket, visit, patient, and audit rows before completing. Final independent counts confirmed zero patients, visits, queue tickets, prescriptions, prescription items, and audit logs; all six auth users and all six public user rows remain.
+- The initial fixture was corrected after two setup/cleanup issues (MRN column length and a queue-ticket FK); those failures were atomic and left no records. The final run passed. This is simulated-auth database-level validation only; authenticated browser/UI testing remains pending.
