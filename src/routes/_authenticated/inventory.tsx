@@ -134,8 +134,8 @@ function InventoryPageInner() {
 // =============================================================================
 
 function MedicinesTab() {
-  const { t } = useLang();
-  const { can, user } = useAuth();
+  const { t, lang } = useLang();
+  const { can } = useAuth();
   const { currency } = useSettings();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -145,12 +145,16 @@ function MedicinesTab() {
     unit: "",
     cost_price: "0",
     selling_price: "0",
-    stock_quantity: "0",
     reorder_level: "10",
-    expiry_date: "",
-    batch_number: "",
   });
-  const [receive, setReceive] = useState<{ id: string; qty: string } | null>(null);
+  const [receive, setReceive] = useState<{
+    id: string;
+    qty: string;
+    batch_number: string;
+    expiry_date: string;
+    manufacture_date: string;
+    purchase_price: string;
+  } | null>(null);
 
   const list = usePagedRows<Row[]>(
     ["inventory", search],
@@ -192,10 +196,11 @@ function MedicinesTab() {
         unit: form.unit || null,
         cost_price: Number(form.cost_price) || 0,
         selling_price: Number(form.selling_price) || 0,
-        stock_quantity: Number(form.stock_quantity) || 0,
+        // Stock is received through a batch RPC, never as an untracked medicine total.
+        stock_quantity: 0,
         reorder_level: Number(form.reorder_level) || 0,
-        expiry_date: form.expiry_date || null,
-        batch_number: form.batch_number || null,
+        expiry_date: null,
+        batch_number: null,
       });
       if (error) throw new Error(error.message);
       return null;
@@ -211,19 +216,26 @@ function MedicinesTab() {
     async () => {
       if (!receive) return null;
       const row = list.rows.find((m) => s(m, "id") === receive.id);
-      const qty = Number(receive.qty) || 0;
-      const { error } = await supabase
-        .from("medicines")
-        .update({ stock_quantity: n(row, "stock_quantity") + qty })
-        .eq("id", receive.id);
-      if (error) throw new Error(error.message);
-      const { error: mErr } = await supabase.from("stock_movements").insert({
-        medicine_id: receive.id,
-        movement_type: "purchase",
-        quantity: qty,
-        created_by: user?.id ?? null,
+      const qty = Number(receive.qty);
+      const purchasePrice = Number(receive.purchase_price);
+      if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) {
+        throw new Error(t("invalid_quantity"));
+      }
+      if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
+        throw new Error(lang === "ar" ? "سعر غير صحيح" : "Invalid price");
+      }
+      const { error } = await supabase.rpc("fn_receive_pharmacy_batch", {
+        p_medicine_id: receive.id,
+        p_quantity: qty,
+        p_batch_number: receive.batch_number || null,
+        p_expiry_date: receive.expiry_date || null,
+        p_manufacture_date: receive.manufacture_date || null,
+        p_purchase_price: purchasePrice,
+        p_selling_price: row ? n(row, "selling_price") : null,
+        p_supplier_id: null,
+        p_invoice_reference: null,
       });
-      if (mErr) throw new Error(mErr.message);
+      if (error) throw new Error(error.message);
       return null;
     },
     {
@@ -259,6 +271,11 @@ function MedicinesTab() {
               <DialogHeader>
                 <DialogTitle>{t("medicines")}</DialogTitle>
               </DialogHeader>
+              <p className="mb-3 text-sm text-muted-foreground">
+                {lang === "ar"
+                  ? "أضف تعريف الدواء أولاً، ثم سجّل الكمية ورقم التشغيلة والصلاحية من تبويب الدفعات حتى يبقى المخزون قابلاً للتتبع."
+                  : "Add the medicine first, then receive its quantity, batch number and expiry from Batches so stock remains traceable."}
+              </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`${t("name")} *`} className="sm:col-span-2">
                   <Input
@@ -270,13 +287,6 @@ function MedicinesTab() {
                   <Input
                     value={form.unit}
                     onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("batch_number")}>
-                  <Input
-                    dir="ltr"
-                    value={form.batch_number}
-                    onChange={(e) => setForm({ ...form, batch_number: e.target.value })}
                   />
                 </Field>
                 <Field label={t("cost_price")}>
@@ -295,28 +305,12 @@ function MedicinesTab() {
                     onChange={(e) => setForm({ ...form, selling_price: e.target.value })}
                   />
                 </Field>
-                <Field label={t("stock")}>
-                  <Input
-                    type="number"
-                    dir="ltr"
-                    value={form.stock_quantity}
-                    onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
-                  />
-                </Field>
                 <Field label={t("reorder_level")}>
                   <Input
                     type="number"
                     dir="ltr"
                     value={form.reorder_level}
                     onChange={(e) => setForm({ ...form, reorder_level: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("expiry_date")}>
-                  <Input
-                    type="date"
-                    dir="ltr"
-                    value={form.expiry_date}
-                    onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
                   />
                 </Field>
               </div>
@@ -378,12 +372,21 @@ function MedicinesTab() {
                           {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
                         </span>
                       </div>
-                      {can("pharmacy.create") ? (
+                      {can("pharmacy.update") ? (
                         <Button
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                          onClick={() =>
+                            setReceive({
+                              id: s(m, "id"),
+                              qty: "0",
+                              batch_number: "",
+                              expiry_date: "",
+                              manufacture_date: "",
+                              purchase_price: String(n(m, "cost_price")),
+                            })
+                          }
                         >
                           {t("receive_stock")}
                         </Button>
@@ -422,11 +425,20 @@ function MedicinesTab() {
                             {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
                           </TableCell>
                           <TableCell className="no-print text-end">
-                            {can("pharmacy.create") ? (
+                            {can("pharmacy.update") ? (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setReceive({ id: s(m, "id"), qty: "0" })}
+                                onClick={() =>
+                                  setReceive({
+                                    id: s(m, "id"),
+                                    qty: "0",
+                                    batch_number: "",
+                                    expiry_date: "",
+                                    manufacture_date: "",
+                                    purchase_price: String(n(m, "cost_price")),
+                                  })
+                                }
                               >
                                 {t("receive_stock")}
                               </Button>
@@ -467,7 +479,47 @@ function MedicinesTab() {
               onChange={(e) => setReceive(receive ? { ...receive, qty: e.target.value } : receive)}
             />
           </Field>
-          <p className="text-xs text-muted-foreground">{t("legacy_receive_hint")}</p>
+          <Field label={t("batch_number")}>
+            <Input
+              dir="ltr"
+              value={receive?.batch_number ?? ""}
+              onChange={(e) =>
+                setReceive(receive ? { ...receive, batch_number: e.target.value } : receive)
+              }
+            />
+          </Field>
+          <Field label={t("purchase_price")}>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              dir="ltr"
+              value={receive?.purchase_price ?? ""}
+              onChange={(e) =>
+                setReceive(receive ? { ...receive, purchase_price: e.target.value } : receive)
+              }
+            />
+          </Field>
+          <Field label={t("manufacture_date")}>
+            <Input
+              type="date"
+              dir="ltr"
+              value={receive?.manufacture_date ?? ""}
+              onChange={(e) =>
+                setReceive(receive ? { ...receive, manufacture_date: e.target.value } : receive)
+              }
+            />
+          </Field>
+          <Field label={t("expiry_date")}>
+            <Input
+              type="date"
+              dir="ltr"
+              value={receive?.expiry_date ?? ""}
+              onChange={(e) =>
+                setReceive(receive ? { ...receive, expiry_date: e.target.value } : receive)
+              }
+            />
+          </Field>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReceive(null)}>
               {t("cancel")}
@@ -509,15 +561,15 @@ const EMPTY_BATCH_FORM: BatchFormState = {
   batch_number: "",
   quantity_received: "0",
   purchase_price: "0",
-  selling_price: "0",
+  selling_price: "",
   manufacture_date: "",
   expiry_date: "",
   invoice_reference: "",
 };
 
 function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; currency: string }) {
-  const { t } = useLang();
-  const { can, user } = useAuth();
+  const { t, lang } = useLang();
+  const { can } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ExpiryStatus>("all");
   const [receiveOpen, setReceiveOpen] = useState(false);
@@ -588,56 +640,30 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
   const receive = useSave(
     async () => {
       if (!form.medicine_id) throw new Error(t("select_medicine"));
-      const qty = Number(form.quantity_received) || 0;
-      if (qty <= 0) throw new Error(t("invalid_quantity"));
-
-      const { data: batch, error } = await supabase
-        .from("pharmacy_inventory")
-        .insert({
-          medicine_id: form.medicine_id,
-          supplier_id: form.supplier_id || null,
-          batch_number: form.batch_number || null,
-          quantity_received: qty,
-          quantity_remaining: qty,
-          purchase_price: Number(form.purchase_price) || 0,
-          selling_price: Number(form.selling_price) || 0,
-          manufacture_date: form.manufacture_date || null,
-          expiry_date: form.expiry_date || null,
-          invoice_reference: form.invoice_reference || null,
-          branch_id: (user as Record<string, unknown> | null)?.["branch_id"] ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-
-      // Always read the current stock_quantity fresh right before
-      // incrementing it — the medicine picker above only selects
-      // id/name/unit, so anything cached there would silently overwrite
-      // the real on-hand total instead of adding to it.
-      const { data: current, error: readErr } = await supabase
-        .from("medicines")
-        .select("stock_quantity")
-        .eq("id", form.medicine_id)
-        .single();
-      if (readErr) throw new Error(readErr.message);
-
-      const { error: medErr } = await supabase
-        .from("medicines")
-        .update({ stock_quantity: n(current as Row, "stock_quantity") + qty })
-        .eq("id", form.medicine_id);
-      if (medErr) throw new Error(medErr.message);
-
-      const { error: movErr } = await supabase.from("stock_movements").insert({
-        medicine_id: form.medicine_id,
-        batch_id: batch?.id ?? null,
-        movement_type: "purchase",
-        quantity: qty,
-        reference_id: batch?.id ?? null,
-        reference_table: "pharmacy_inventory",
-        created_by: user?.id ?? null,
+      const qty = Number(form.quantity_received);
+      const purchasePrice = Number(form.purchase_price);
+      const sellingPrice = form.selling_price.trim() === "" ? null : Number(form.selling_price);
+      if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) {
+        throw new Error(t("invalid_quantity"));
+      }
+      if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
+        throw new Error(lang === "ar" ? "سعر غير صحيح" : "Invalid price");
+      }
+      if (sellingPrice !== null && (!Number.isFinite(sellingPrice) || sellingPrice < 0)) {
+        throw new Error(lang === "ar" ? "سعر غير صحيح" : "Invalid price");
+      }
+      const { error } = await supabase.rpc("fn_receive_pharmacy_batch", {
+        p_medicine_id: form.medicine_id,
+        p_quantity: qty,
+        p_batch_number: form.batch_number || null,
+        p_expiry_date: form.expiry_date || null,
+        p_manufacture_date: form.manufacture_date || null,
+        p_purchase_price: purchasePrice,
+        p_selling_price: sellingPrice,
+        p_supplier_id: form.supplier_id || null,
+        p_invoice_reference: form.invoice_reference || null,
       });
-      if (movErr) throw new Error(movErr.message);
-
+      if (error) throw new Error(error.message);
       return null;
     },
     {
@@ -674,7 +700,7 @@ function BatchesTab({ thresholdDays, currency }: { thresholdDays: number; curren
           </SelectContent>
         </Select>
         <ExportButtons rows={rows} filename="roshan-batches" />
-        {can("pharmacy.create") ? (
+        {can("pharmacy.update") ? (
           <Button size="sm" onClick={() => setReceiveOpen(true)}>
             <Plus className="size-4" /> {t("receive_stock")}
           </Button>
