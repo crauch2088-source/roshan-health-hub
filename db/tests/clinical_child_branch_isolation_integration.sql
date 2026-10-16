@@ -12,6 +12,10 @@ INSERT INTO public.patients(id,branch_id) VALUES
 INSERT INTO public.visits(id,patient_id,branch_id) VALUES
  ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001'),
  ('40000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002');
+INSERT INTO public.patients(id,branch_id)
+VALUES ('30000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001');
+INSERT INTO public.visits(id,patient_id,branch_id)
+VALUES ('40000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001');
 INSERT INTO public.prescriptions(id,patient_id,visit_id,notes) VALUES
  ('50000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','branch A'),
  ('50000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','branch B');
@@ -51,6 +55,37 @@ BEGIN
   IF (SELECT count(*) FROM public.lab_order_items) <> 1 THEN
     RAISE EXCEPTION 'lab_order_items SELECT leaked or hid a branch-local row';
   END IF;
+  -- A same-branch lab order is valid.
+  INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id)
+  VALUES ('60000000-0000-0000-0000-000000000003',
+          '30000000-0000-0000-0000-000000000001',
+          '40000000-0000-0000-0000-000000000001',
+          '20000000-0000-0000-0000-000000000001');
+
+  -- The caller's branch matches branch_id, but the patient/visit belong to another branch.
+  -- This must be denied rather than trusting the client-supplied order branch alone.
+  BEGIN
+    INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id)
+    VALUES ('60000000-0000-0000-0000-000000000004',
+            '30000000-0000-0000-0000-000000000002',
+            '40000000-0000-0000-0000-000000000002',
+            '20000000-0000-0000-0000-000000000001');
+    RAISE EXCEPTION 'cross-branch lab order parent INSERT was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  -- Both records are in the same branch, but the visit belongs to a different patient.
+  -- Branch equality alone is not enough to preserve clinical linkage integrity.
+  BEGIN
+    INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id)
+    VALUES ('60000000-0000-0000-0000-000000000005',
+            '30000000-0000-0000-0000-000000000001',
+            '40000000-0000-0000-0000-000000000003',
+            '20000000-0000-0000-0000-000000000001');
+    RAISE EXCEPTION 'mismatched patient/visit lab order INSERT was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
   IF (SELECT count(*) FROM public.medical_certificates) <> 1 THEN
     RAISE EXCEPTION 'medical_certificates SELECT leaked or hid a branch-local row';
   END IF;

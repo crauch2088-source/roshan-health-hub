@@ -124,6 +124,7 @@ GRANT EXECUTE ON FUNCTION private.app_has_attachment_branch_access(uuid,uuid) TO
 
 ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prescription_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lab_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lab_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.medical_certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.patient_discounts ENABLE ROW LEVEL SECURITY;
@@ -149,6 +150,16 @@ CREATE POLICY prescription_items_update ON public.prescription_items FOR UPDATE 
 CREATE POLICY prescription_items_delete ON public.prescription_items FOR DELETE TO authenticated
   USING ((SELECT public.app_has_perm('pharmacy.delete')) OR (SELECT public.app_has_perm('emr.delete')));
 
+CREATE POLICY lab_orders_select ON public.lab_orders FOR SELECT TO authenticated
+  USING ((SELECT public.app_has_perm('lab.read')) AND (SELECT private.app_has_branch_access(lab_orders.branch_id)));
+CREATE POLICY lab_orders_insert ON public.lab_orders FOR INSERT TO authenticated
+  WITH CHECK ((SELECT public.app_has_perm('lab.create')) AND (SELECT private.app_has_branch_access(lab_orders.branch_id)));
+CREATE POLICY lab_orders_update ON public.lab_orders FOR UPDATE TO authenticated
+  USING ((SELECT public.app_has_perm('lab.update')) AND (SELECT private.app_has_branch_access(lab_orders.branch_id)))
+  WITH CHECK ((SELECT public.app_has_perm('lab.update')) AND (SELECT private.app_has_branch_access(lab_orders.branch_id)));
+CREATE POLICY lab_orders_delete ON public.lab_orders FOR DELETE TO authenticated
+  USING ((SELECT public.app_has_perm('lab.delete')) AND (SELECT private.app_has_branch_access(lab_orders.branch_id)));
+
 CREATE POLICY lab_order_items_select ON public.lab_order_items FOR SELECT TO authenticated
   USING ((SELECT public.app_has_perm('lab.read')));
 CREATE POLICY lab_order_items_insert ON public.lab_order_items FOR INSERT TO authenticated
@@ -173,7 +184,7 @@ CREATE POLICY insurance_prior_authorizations_sel ON public.insurance_prior_autho
 CREATE POLICY insurance_prior_authorizations_ins ON public.insurance_prior_authorizations FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY insurance_prior_authorizations_upd ON public.insurance_prior_authorizations FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.prescriptions, public.prescription_items, public.lab_order_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.prescriptions, public.prescription_items, public.lab_orders, public.lab_order_items TO authenticated;
 
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
