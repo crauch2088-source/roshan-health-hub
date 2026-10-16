@@ -26,10 +26,27 @@ SQL
 
 # Launch two independent database sessions against the same original transaction.
 set +e
-psql -v ON_ERROR_STOP=1 -c "SELECT public.reverse_cashbox_entry('30000000-0000-0000-0000-000000000001','race A');" >/tmp/cashbox-reversal-a.log 2>&1 &
+PGAPPNAME=cashbox-reversal-a psql -v ON_ERROR_STOP=1 -c "SELECT public.reverse_cashbox_entry('30000000-0000-0000-0000-000000000001','race A');" >/tmp/cashbox-reversal-a.log 2>&1 &
 pid_a=$!
-sleep 0.15
-psql -v ON_ERROR_STOP=1 -c "SELECT public.reverse_cashbox_entry('30000000-0000-0000-0000-000000000001','race B');" >/tmp/cashbox-reversal-b.log 2>&1 &
+
+# Wait until session A is visibly inside the fixture-only pg_sleep trigger;
+# this proves it already holds the original-row lock before session B starts.
+started=0
+for _ in $(seq 1 50); do
+  waiting=$(psql -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_stat_activity WHERE application_name='cashbox-reversal-a' AND state='active' AND wait_event='PgSleep';")
+  if [ "$waiting" -ge 1 ]; then
+    started=1
+    break
+  fi
+  sleep 0.05
+done
+if [ "$started" -ne 1 ]; then
+  echo "FAIL: session A never entered the controlled insert delay"
+  cat /tmp/cashbox-reversal-a.log
+  exit 1
+fi
+
+PGAPPNAME=cashbox-reversal-b psql -v ON_ERROR_STOP=1 -c "SELECT public.reverse_cashbox_entry('30000000-0000-0000-0000-000000000001','race B');" >/tmp/cashbox-reversal-b.log 2>&1 &
 pid_b=$!
 wait "$pid_a"; status_a=$?
 wait "$pid_b"; status_b=$?
