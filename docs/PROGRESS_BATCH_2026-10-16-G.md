@@ -46,3 +46,10 @@ Supabase project: jewzonxplxhogqrnhosl
 - Main commit: a4e53787bed97f9f2d34038641a2a839b12c01ba; 7/7 main CI jobs passed; Vercel production deployment READY.
 - Phase17 legacy dispense RPC revoke is intentionally deferred until authenticated browser smoke tests pass.
 - Insurance work remains paused. Checklist: 65/156 = 41.7%.
+
+
+## Plan consistency refresh — 2026-10-16
+- PR #22 and PR #23 are merged; five billing migrations are installed; Vercel deployment for main merge SHA a4e53787bed97f9f2d34038641a2a839b12c01ba is READY.
+- Live ledger is 88 entries (79 historical plus 9 later tracked migrations). Phase17 legacy-dispense revocation remains deferred until authenticated browser smoke tests pass.
+- All test data, transactional rows, idempotency rows, and application/auth audit logs are zero; six auth users and six app users remain.
+- Current checklist recount is 74/156 = 47.4%; browser/UI smoke, historical migration replayability, PR #33 direct-write/RLS work, and insurance-specific work remain open/deferred.
