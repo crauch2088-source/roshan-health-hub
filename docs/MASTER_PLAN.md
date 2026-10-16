@@ -664,7 +664,7 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 - The checklist remains based on implemented/verified plan items only. The data reset and audit work do not count as feature completion. Recount after this batch and keep the numerator unchanged unless an existing checklist item now genuinely meets its exit criteria.
 
 ### Remaining gates
-1. Reconcile the live 82-entry Supabase migration ledger with repository SQL artifacts and establish a repeatable migration source of truth.
+1. Reconcile the live 83-entry Supabase migration ledger with repository SQL artifacts and establish a repeatable migration source of truth.
 2. Correct PR #22 description to reflect the already-installed RPC, complete source review, then merge when the migration/release gates are satisfied.
 3. After Vercel's deployment quota resets, deploy the intended main SHA and run authenticated registration/consultation/prescription smoke tests.
 4. Continue non-insurance security review and patient/invoice atomicity work; keep insurance implementation paused until the user resumes it.
