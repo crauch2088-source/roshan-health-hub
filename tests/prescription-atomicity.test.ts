@@ -94,7 +94,6 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
   assert.match(ui, /No matching medicines/);
 });
 
-
 test("medicine search removes SQL LIKE wildcards and PostgREST filter grammar", () => {
   assert.equal(
     buildMedicineSearchFilter("amox%_cillin"),
