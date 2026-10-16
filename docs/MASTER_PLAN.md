@@ -308,3 +308,9 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [ ] Do not assume that insurer/patient split overrides are allowed or forbidden. Define whether coverage must always be recomputed server-side from the plan/rules or whether authorized manual overrides are allowed with reason/audit trail. Regardless of that choice, enforce that each claim item references a real eligible charge and cannot inflate the invoice-derived gross amount.
 - [ ] Add tests for mismatched invoice line IDs, over-claimed gross amount, duplicate claim item references, coverage-rule mismatch, invalid override actor/reason (if overrides are permitted), and cross-branch attempts.
 
+## Branch ownership risk in legacy pharmacy stock — 2026-10-16
+
+- [x] Added a high-risk review note to [PR #23](https://github.com/crauch2088-source/roshan-health-hub/pull/23#issuecomment-6211071309): its draft dispense RPC can consume unbatched legacy `medicines.stock_quantity` and record the movement against the current branch, but the live `medicines` table has no `branch_id`. The live `pharmacy_inventory` batches are branch-scoped. The aggregate mismatch means ownership of the legacy quantity cannot be inferred safely.
+- [ ] Before enabling this workflow, choose and test one safe path: (a) dispense only from batches assigned to the same branch, rejecting insufficient branch stock, or (b) create a reviewed allocation/reconciliation mechanism for legacy stock with explicit branch ownership and audit history. Do not decrement the global legacy balance as if it were branch-specific.
+- [ ] Add a PostgreSQL integration case where stock exists only as unallocated legacy quantity and a different branch attempts to dispense it; expected outcome must be a denial with no stock/invoice/prescription changes.
+
