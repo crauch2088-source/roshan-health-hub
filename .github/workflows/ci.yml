@@ -299,4 +299,5 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/clinic_local_queue_date_fixture.sql \
             -f db/roshan_phase22_clinic_local_queue_date.sql \
+            -f db/roshan_phase23_legacy_queue_allocator_20261016.sql \
             -f db/tests/clinic_local_queue_date_integration.sql
