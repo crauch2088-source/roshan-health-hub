@@ -59,9 +59,9 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 37. [x] Add pure validation for empty prescriptions, missing drug/dose/frequency/duration and invalid quantities.
 38. [x] Enforce prescription completeness before existing atomic RPC.
 39. [x] Add bilingual safety text: no automatic dosing; clinician verifies age, weight, allergies, renal function and guidance.
-40. [x] Add a pediatric age/weight safety warning, including a specific warning when current visit weight is absent; do not calculate or infer doses. Medicine-specific dose libraries remain blocked on clinical governance.
+40. [x] Add pediatric age/weight safety warnings with distinct messages for missing versus unverifiable current weight; do not calculate or infer doses. Medicine-specific dose libraries remain blocked on clinical governance.
 
 ## Verification status
-- Automated source/pure-logic regression file is included in test:guard; GitHub Actions must prove it passes before the branch is ready.
+- Automated source/pure-logic regression file is included in test:guard. CI run 38982298600 passed all 10 jobs on commit a46d0a3; the current final commit must pass the latest CI run before the branch is ready.
 - CI, mobile/RTL/LTR browser matrix, screen-reader review, and E2E clinical/lab workflows remain release gates.
 - Feature branch only: no database migration, production SQL mutation, merge, or deployment.
