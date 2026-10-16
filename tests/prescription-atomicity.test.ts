@@ -21,9 +21,10 @@ const prescriptionDraft = readFileSync(
   new URL("../src/lib/prescription-draft.ts", import.meta.url),
   "utf8",
 );
-const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
-  scripts?: Record<string, string>;
-};
+const workflow = readFileSync(
+  new URL("../.github/workflows/ci-prescription-atomicity.yml", import.meta.url),
+  "utf8",
+);
 
 test("prescription RPC contains permission, branch, and least-privilege guards", () => {
   assert.match(sql, /app_has_perm\('pharmacy\.create'\)[\s\S]*app_has_perm\('emr\.create'\)/);
@@ -44,8 +45,9 @@ test("prescription save uses a single atomic RPC", () => {
   assert.doesNotMatch(handler, /\.from\("prescription_items"\)\.insert/);
 });
 
-test("prescription regression test is included in the guard suite", () => {
-  assert.match(pkg.scripts?.["test:guard"] ?? "", /prescription-atomicity\.test\.ts/);
+test("prescription regression test is run by its dedicated CI workflow", () => {
+  assert.match(workflow, /tests\/prescription-atomicity\.test\.ts/);
+  assert.match(workflow, /db\/roshan_phase7_atomic_prescription\.sql/);
 });
 
 test("new medicine selection starts with a clean regimen", () => {
