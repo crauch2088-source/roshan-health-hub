@@ -7,6 +7,7 @@ import {
   createPrescriptionDraftForMedicine,
   editPrescriptionName,
 } from "../src/lib/prescription-draft.ts";
+import { sanitizeTerm } from "../src/lib/search.ts";
 
 const sql = readFileSync(
   new URL("../db/roshan_phase7_atomic_prescription.sql", import.meta.url),
@@ -59,8 +60,8 @@ test("new medicine selection starts with a clean regimen", () => {
       duration: "",
       quantity: "1",
       instructions: "",
-      dosage_form: "Capsule",
-      route: "Oral",
+      dosage_form: "capsule",
+      route: "oral",
     },
   );
 });
@@ -87,6 +88,32 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
   assert.match(ui, /brand_name\.ilike/);
   assert.match(ui, /Could not load medicines/);
   assert.match(ui, /No matching medicines/);
+});
+
+
+test("medicine search removes SQL LIKE underscore wildcards", () => {
+  assert.equal(sanitizeTerm("amox_i%llin"), "amox i llin");
+});
+
+test("unknown catalog dosage forms do not masquerade as a supported form", () => {
+  assert.deepEqual(
+    createPrescriptionDraftForMedicine({
+      id: "medicine-2",
+      name: "Custom liquid",
+      dosage_form: "Oral solution 100 mL",
+    }),
+    {
+      medicine_id: "medicine-2",
+      name: "Custom liquid",
+      dose: "",
+      frequency: "",
+      duration: "",
+      quantity: "1",
+      instructions: "",
+      dosage_form: "",
+      route: "",
+    },
+  );
 });
 
 test("successful prescription save clears the draft to prevent accidental duplicate submission", () => {
