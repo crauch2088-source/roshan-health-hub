@@ -144,7 +144,8 @@ AS $$ SELECT public.is_super_admin() $$;
 -- Representative pre-migration direct grants, as observed in the live project.
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
   ON TABLE public.cashbox_transactions, public.expenses, public.payments,
-           public.supplier_bills, public.supplier_payments
+           public.supplier_bills, public.supplier_payments, public.insurance_claims,
+           public.insurance_claim_items, public.insurance_claim_payments
   TO authenticated, anon;
 
 CREATE FUNCTION public.post_expense(
