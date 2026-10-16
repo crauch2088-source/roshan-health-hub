@@ -16,6 +16,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cashbox-reversal-two-session:
+    name: Cashbox reversal two-session concurrency integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Create isolated schema and apply reversal function
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/cashbox_reversal_concurrency_fixture.sql -f db/roshan_phase4_cashbox_reversal_concurrency.sql
+      - name: Run two-session reversal race
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/cashbox_reversal_concurrency_two_session.sh
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest
