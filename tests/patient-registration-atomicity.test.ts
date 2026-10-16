@@ -12,8 +12,8 @@ test("patient registration uses one atomic server-side RPC", () => {
   const end = ui.indexOf("\n\n  const rows", start);
   assert.ok(start >= 0 && end > start, "patient create handler must exist");
   const handler = ui.slice(start, end);
-  assert.match(handler, /rpc\(["']create_patient_atomic["']/);
-  assert.doesNotMatch(handler, /rpc\(["']next_mrn["']/);
+  assert.match(handler, /rpc(?:<[^>]+>)?\(["']create_patient_atomic["']/);
+  assert.doesNotMatch(handler, /rpc(?:<[^>]+>)?\(["']next_mrn["']/);
   assert.doesNotMatch(handler, /\.from\(["']patients["']\)\.insert/);
 });
 
