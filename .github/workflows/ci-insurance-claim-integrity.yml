@@ -29,11 +29,6 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Run focused regression test
-        run: node --test --experimental-strip-types tests/insurance-claim-integrity.test.ts
       - name: Run SQL integration tests
         env:
           PGPASSWORD: postgres
@@ -43,4 +38,5 @@ jobs:
             -f db/roshan_phase5_insurance_claim_amount_integrity.sql \
             -f db/roshan_phase5_insurance_coverage_validity.sql \
             -f db/tests/insurance_claim_rpc_integration.sql \
-            -f db/tests/insurance_coverage_validity.sql
+            -f db/tests/insurance_coverage_validity.sql \
+            -f db/tests/roshan_insurance_claim_amount_integrity_test.sql
