@@ -370,3 +370,15 @@ Read-only production checks and draft PR #39 review. No production data or privi
 - Read-only ACL recheck found effective anon EXECUTE for five SECURITY DEFINER helpers in `private`, while anon has no USAGE on that schema. This is a least-privilege hardening lead, not proof of direct API reachability. Map RLS policy and trigger dependencies before any targeted revocation; do not blanket-revoke.
 
 No production SQL, grants, data, merge, or deployment was changed in this batch.
+
+
+## Private helper dependency map — read-only — 2026-10-16
+
+Catalog dependency counts:
+- `private.app_has_branch_access(uuid)`: 50 RLS policies across 13 tables (patients, visits, appointments, invoices, payments, cashbox, pharmacy inventory, stock movements, supplier bills/payments, users, and related operational tables).
+- `private.app_has_claim_branch(uuid)`: 4 policies across `insurance_claim_items` and `insurance_claim_payments`.
+- `private.app_has_invoice_branch(uuid)`: 3 policies on `insurance_claims`.
+- `private.app_has_patient_branch(uuid)`: 3 policies on `patient_insurance`.
+- `private.sync_user_role_text()`: one trigger dependency, no RLS policy dependency in this query.
+
+These dependencies show why broad permission changes would be unsafe without context-specific tests. Any targeted change needs isolated-schema validation for affected policies/triggers. This was catalog-only inspection; no privileges or application data were changed.
