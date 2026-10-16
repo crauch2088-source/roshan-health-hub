@@ -301,7 +301,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **46 checked / 139 total (~33% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **47 checked / 140 total (~34% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -417,5 +417,11 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ### Patient registration and private helper privileges — 2026-10-16
 - PR #39's latest CI run `38903131578` passed the full verification job and PostgreSQL atomic/MRN concurrency tests after fixing the regression test's typed-RPC pattern and Prettier formatting. PR remains draft/unmerged; no production migration applied.
-- PR #34 now adds an explicit least-privilege grant boundary for `private.app_has_branch_access(uuid)` plus an integration assertion. The latest CI run was pending at the time of this note.
+- PR #34 now adds an explicit least-privilege grant boundary for `private.app_has_branch_access(uuid)` plus an integration assertion. The latest CI run `38903566507` passed both general verification and clinical child branch-isolation integration.
 - Read-only ACL review also identified four other private helpers with anon EXECUTE ACLs, while anon has no schema USAGE. Schedule a separate dependency-aware sweep rather than treating them as externally reachable or revoking them without checking policy/trigger callers.
+
+
+### Stacked PR sequencing and current CI evidence — 2026-10-16
+- PR #23 must precede PR #33 because #33 removes direct invoice/invoice-item mutation privileges after the atomic invoice UI/RPC paths are in place. PR #30 must precede PR #31 because #31 revokes direct finance-table writes and #30 routes the Expenses screen through `post_expense`. Do not promote #31/#33 independently of their client-path dependencies.
+- PR #32 audit-trigger dedup has green general + PostgreSQL behavior CI, but remains unmerged and its SQL is not applied. PR #34 has green general + branch-isolation integration CI on head `f5e7db64d947ff1bd5d71e509ce38b2e283c812f`. PR #39 has green general + atomic patient registration/two-session MRN concurrency CI on head `8fa3ae58ffc8964ce5e4397e4a34a3c2618b3a1a`. All remain draft/unmerged.
+- Vercel's build-rate-limit status is separate from GitHub Actions test results. No deployment is inferred from green GitHub Actions; no production migration has been applied during this work.
