@@ -184,7 +184,7 @@ END;
 $$;
 
 SELECT set_config('test.perms','lab.create',false);
-DO $
+DO $$
 DECLARE a uuid; b uuid; n integer; m integer;
 BEGIN
  a := public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','normal','retry default',ARRAY['60000000-0000-0000-0000-000000000002'::uuid],false,'70000000-0000-0000-0000-000000000001'::uuid);
@@ -195,9 +195,9 @@ BEGIN
  IF (SELECT count(*) FROM public.lab_orders WHERE visit_id='50000000-0000-0000-0000-000000000003')<>n THEN RAISE EXCEPTION 'default retry duplicated lab order'; END IF;
  IF (SELECT count(*) FROM public.invoice_items ii JOIN public.invoices i ON i.id=ii.invoice_id WHERE i.visit_id='50000000-0000-0000-0000-000000000003' AND ii.deleted_at IS NULL)<>m THEN RAISE EXCEPTION 'default retry duplicated invoice lines'; END IF;
 END;
-$;
+$$;
 SELECT set_config('test.perms','lab.create,billing.create',false);
-DO $
+DO $$
 DECLARE a uuid; b uuid; n integer;
 BEGIN
  a := public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','normal','retry secondary',ARRAY['60000000-0000-0000-0000-000000000003'::uuid],true,'70000000-0000-0000-0000-000000000002'::uuid);
@@ -206,5 +206,5 @@ BEGIN
  IF a IS DISTINCT FROM b THEN RAISE EXCEPTION 'secondary retry returned a different order'; END IF;
  IF (SELECT count(*) FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000003' AND is_primary IS FALSE AND deleted_at IS NULL)<>n THEN RAISE EXCEPTION 'secondary retry duplicated invoice'; END IF;
 END;
-$;
+$$;
 SELECT 'consolidated visit invoice integration tests passed' AS result;
