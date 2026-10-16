@@ -159,6 +159,7 @@ $anon$;
 RESET ROLE;
 
 -- Trusted migration context is allowed to maintain protected rows.
+SELECT set_config('test.auth_role', '', false);
 SELECT set_config('test.auth_uid', '', false);
 SELECT set_config('test.super_admin', 'false', false);
 UPDATE public.roles SET name='Trusted context verified'
