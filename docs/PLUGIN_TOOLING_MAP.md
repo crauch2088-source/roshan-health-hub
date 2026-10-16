@@ -98,3 +98,9 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Issues #17 (atomic prescription writes) and #20 (atomic invoice writes + amount validation) were closed after confirming their fixes are on main with DB/integration/CI evidence. Obsolete Composio test issue #1 was also closed.
 - Keep issue #18 open until tests explicitly cover >1,000 invoices and query failure, despite the current exact-pagination, amount fallback, and unavailable-state implementation.
 - Continue visit/queue validation in a new, bounded attempt only after diagnosing the prior TinyFish run failure; never assume a failed browser run did not mutate data—inspect and clean only exact synthetic IDs first.
+
+
+## Final issue triage correction — 2026-10-16
+- Issue #18 is now closed after verifying exact paginated invoice retrieval, completeness gating, fallback amount handling, explicit query-error states, and regression tests for >1,000 rows, failures, inexact counts, and invalid amounts.
+- CI run #38964357807 passed the tooling-map documentation update. Documentation CI is not evidence of a new production deployment.
+- Reception→visit→queue browser flow remains incomplete after a TinyFish failure during New Visit navigation; exact synthetic patient/audit cleanup completed and all relevant table counts returned to zero. Diagnose the automation failure before a new bounded attempt.
