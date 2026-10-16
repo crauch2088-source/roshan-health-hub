@@ -64,12 +64,13 @@ END $$;
 CREATE TABLE public.payments (id uuid PRIMARY KEY, value text);
 CREATE TABLE public.expenses (id uuid PRIMARY KEY, value text);
 CREATE TABLE public.supplier_payments (id uuid PRIMARY KEY, value text);
+CREATE TABLE public.supplier_bills (id uuid PRIMARY KEY, value text);
 CREATE TABLE public.cashbox_transactions (id uuid PRIMARY KEY, value text);
 
 DO $fixture$
 DECLARE tbl text;
 BEGIN
-  FOREACH tbl IN ARRAY ARRAY['payments','expenses','supplier_payments','cashbox_transactions'] LOOP
+  FOREACH tbl IN ARRAY ARRAY['payments','expenses','supplier_payments','supplier_bills','cashbox_transactions'] LOOP
     EXECUTE format(
       'CREATE TRIGGER %I AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.audit_row_change()',
       'trg_audit_' || tbl, tbl
