@@ -72,3 +72,11 @@ test("laboratory workflow timeline follows persisted states and treats unknown s
   assert.match(ui, /Laboratory workflow stage/);
   assert.match(ui, /مرحلة سير المختبر/);
 });
+
+test("lab result verification blocks unsaved edits and asks for review of abnormal values", () => {
+  const ui = read("../src/routes/_authenticated/lab_.$orderId.tsx");
+  assert.match(ui, /hasUnsavedResultEdits/);
+  assert.match(ui, /Save result changes before verification/);
+  assert.match(ui, /outside the reference range/);
+  assert.match(ui, /not a critical-value classifier/);
+});
