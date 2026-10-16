@@ -81,6 +81,43 @@ CREATE TABLE public.supplier_payments (
   deleted_at timestamptz
 );
 
+CREATE TABLE public.insurance_claims (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_insurance_id uuid,
+  invoice_id uuid,
+  claim_number text,
+  status text,
+  submitted_amount numeric,
+  approved_amount numeric,
+  paid_amount numeric,
+  paid_at timestamptz,
+  notes text,
+  created_by uuid,
+  updated_by uuid,
+  updated_at timestamptz,
+  deleted_at timestamptz
+);
+CREATE TABLE public.insurance_claim_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  claim_id uuid,
+  service_type text,
+  reference_id uuid,
+  description text,
+  gross_amount numeric,
+  covered_amount numeric,
+  patient_amount numeric,
+  coverage_rule_id uuid
+);
+CREATE TABLE public.insurance_claim_payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  claim_id uuid,
+  amount numeric,
+  payment_method text,
+  reference text,
+  created_by uuid,
+  deleted_at timestamptz
+);
+
 CREATE FUNCTION public.app_has_perm(p_permission text)
 RETURNS boolean LANGUAGE sql STABLE
 AS $$
@@ -178,6 +215,57 @@ BEGIN
   RETURNING id INTO new_id;
   RETURN new_id;
 END $$;
+
+CREATE FUNCTION public.create_insurance_claim(
+  _patient_insurance_id uuid, _invoice_id uuid, _items jsonb, _notes text DEFAULT NULL
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+DECLARE claim_id uuid; uid uuid; item jsonb; total numeric := 0;
+BEGIN
+  IF NOT public.app_has_perm('insurance.create') THEN
+    RAISE EXCEPTION 'not authorised to create insurance claims' USING ERRCODE = '42501';
+  END IF;
+  uid := public.current_app_user_id();
+  SELECT COALESCE(sum((x->>'gross_amount')::numeric),0) INTO total FROM jsonb_array_elements(_items) x;
+  INSERT INTO public.insurance_claims(patient_insurance_id,invoice_id,status,submitted_amount,notes,created_by)
+  VALUES(_patient_insurance_id,_invoice_id,'draft',total,_notes,uid) RETURNING id INTO claim_id;
+  FOR item IN SELECT * FROM jsonb_array_elements(_items) LOOP
+    INSERT INTO public.insurance_claim_items(claim_id,service_type,description,gross_amount,covered_amount,patient_amount)
+    VALUES(claim_id,item->>'service_type',coalesce(item->>'description',''),
+      coalesce((item->>'gross_amount')::numeric,0),coalesce((item->>'covered_amount')::numeric,0),
+      coalesce((item->>'patient_amount')::numeric,0));
+  END LOOP;
+  RETURN claim_id;
+END $;
+
+CREATE FUNCTION public.update_insurance_claim_status(
+  _claim_id uuid, _new_status text, _approved_amount numeric DEFAULT NULL, _notes text DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+BEGIN
+  IF NOT public.app_has_perm('insurance.update') THEN
+    RAISE EXCEPTION 'not authorised to update insurance claims' USING ERRCODE = '42501';
+  END IF;
+  UPDATE public.insurance_claims
+  SET status=_new_status, approved_amount=_approved_amount, notes=coalesce(_notes,notes)
+  WHERE id=_claim_id;
+END $;
+
+CREATE FUNCTION public.post_insurance_claim_payment(
+  _claim_id uuid, _amount numeric, _method text DEFAULT 'bank', _reference text DEFAULT NULL
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+DECLARE uid uuid; new_id uuid;
+BEGIN
+  IF NOT public.app_has_perm('insurance.update') THEN
+    RAISE EXCEPTION 'not authorised to record insurance payments' USING ERRCODE = '42501';
+  END IF;
+  uid:=public.current_app_user_id();
+  INSERT INTO public.insurance_claim_payments(claim_id,amount,payment_method,reference,created_by)
+  VALUES(_claim_id,_amount,coalesce(_method,'bank'),_reference,uid) RETURNING id INTO new_id;
+  UPDATE public.insurance_claims SET paid_amount=coalesce(paid_amount,0)+_amount WHERE id=_claim_id;
+  RETURN new_id;
+END $;
 
 GRANT EXECUTE ON FUNCTION public.post_expense(text,numeric,text,date,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.post_invoice_payment(uuid,numeric,text,text,text) TO authenticated;
