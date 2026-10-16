@@ -77,13 +77,13 @@ BEGIN
 END;
 $inactive_flag_test$;
 
-DO $
+DO $prescription_count_test$
 BEGIN
   IF (SELECT count(*) FROM public.prescriptions) <> 1 THEN
     RAISE EXCEPTION 'invalid request created header';
   END IF;
 END;
-$$;
+$prescription_count_test$;
 
 SELECT set_config('test.has_perm','false',false);
 DO $$
