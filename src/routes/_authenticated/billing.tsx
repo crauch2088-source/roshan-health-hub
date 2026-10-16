@@ -227,9 +227,7 @@ function BillingPageInner() {
                   </Field>
                   <Field
                     label={
-                      lang === "ar"
-                        ? "الزيارة / سياق الفاتورة *"
-                        : "Visit / invoice context *"
+                      lang === "ar" ? "الزيارة / سياق الفاتورة *" : "Visit / invoice context *"
                     }
                   >
                     <Select
