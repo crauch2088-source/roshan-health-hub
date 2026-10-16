@@ -384,22 +384,20 @@ Catalog dependency counts:
 These dependencies show why broad permission changes would be unsafe without context-specific tests. Any targeted change needs isolated-schema validation for affected policies/triggers. This was catalog-only inspection; no privileges or application data were changed.
 
 
-## Current live-ledger status after 2026-10-16 billing rollout
+## Current live-ledger status after Phase 21 privileges and Phases 22–25 rollout
 
-The earlier 79-row inventory above is historical. A fresh Supabase migration-list query after the billing rollout returned **88 applied entries**, from `20260818162003` through `20261016183152`. The 79 earlier rows remain the historical source-reconciliation set; nine later tracked migrations have since been applied:
+A fresh read-only query of `supabase_migrations.schema_migrations` now returns **93 applied entries**, from `20260818162003` through `20261016222009`. The earlier 79-row inventory remains a historical source-reconciliation baseline; the nine tracked billing/security migrations previously raised the total to 88, and five later tracked migrations raised it to 93.
 
-| Version | Live migration name | Repository SQL source |
-|---|---|---|
-| 20261016161923 | roshan_phase18_dedupe_finance_audit_triggers_20261016 | Existing finance audit-trigger deduplication SQL in db |
-| 20261016162410 | roshan_phase21_patient_registration_atomicity_20261016 | Existing patient-registration atomicity SQL in db |
-| 20261016170816 | roshan_security_privileged_role_guard_20261016 | Existing privileged-role guard SQL in db |
-| 20261016172209 | roshan_phase7_atomic_prescription_20261016 | db/roshan_phase7_atomic_prescription.sql |
-| 20261016183123 | roshan_phase8_atomic_invoice | db/roshan_phase8_atomic_invoice.sql |
-| 20261016183130 | roshan_phase13_consolidated_visit_invoice | db/roshan_phase13_consolidated_visit_invoice.sql |
-| 20261016183136 | roshan_phase14_dispense_invoice_atomic_compat | db/roshan_phase14_dispense_invoice_atomic.sql |
-| 20261016183145 | roshan_phase15_manual_invoice_consolidation | db/roshan_phase15_manual_invoice_consolidation.sql |
-| 20261016183152 | roshan_phase16_billing_idempotency | db/roshan_phase16_billing_idempotency.sql |
+| Version | Live migration name | Repository SQL source | Verification status |
+|---|---|---|---|
+| 20261016204859 | `roshan_phase21_patient_registration_privileges_20261016` | `db/roshan_phase21_patient_registration_privileges.sql` | Applied and included in the green patient-registration CI suite; historical full-ledger parity remains open |
+| 20261016211342 | `roshan_phase22_clinic_local_queue_date_20261016` | `db/roshan_phase22_clinic_local_queue_date.sql` | Applied; clinic-local date regression passed in CI and browser smoke |
+| 20261016215806 | `roshan_phase23_legacy_queue_allocator_20261016` | `db/roshan_phase23_legacy_queue_allocator_20261016.sql` | Applied; legacy collision regression passed in PostgreSQL 17 and synthetic browser test |
+| 20261016221553 | `roshan_phase24_visit_form_options_20261016` | `db/roshan_phase24_visit_form_options.sql` | PR #47 merged; CI passed; simulated authenticated receptionist received 11 departments and one same-branch doctor; anon EXECUTE denied |
+| 20261016222009 | `roshan_phase25_current_app_profile_20261016` | `db/roshan_phase25_current_app_profile.sql` | PR #48 merged; CI passed; simulated authenticated receptionist received own profile and 20 permissions while direct RLS reads remained empty; anon EXECUTE denied |
 
-The post-deployment revocation SQL `db/roshan_phase17_revoke_legacy_dispense_rpc.sql` is present in the repository but **not applied**. It must remain unapplied until authenticated browser/UI smoke tests pass, because the current deployed UI may still call the legacy dispense RPC.
+The Phase 24/25 migrations are narrow additive SECURITY DEFINER RPCs with empty `search_path`, authenticated-only EXECUTE, and branch/self scoping. They were applied only after their PostgreSQL 17 regression suites passed, and post-application checks were run in rolled-back, read-only transactions. They do not establish that the 79 historical migrations are a clean replayable baseline.
 
-The billing migration sequence passed isolated PostgreSQL 17 integration tests and a rollback-only live-schema/behavior dry run before application. After application, simulated-auth smoke tests verified consultation + lab consolidation, idempotent retry, and explicit secondary invoice creation; all synthetic rows were removed. This narrow validation does not make the 79 historical migrations a clean replayable baseline. There is still no timestamped `supabase/migrations` directory on main, and unrelated candidate RLS/finance migrations still require source mapping and isolated validation.
+The post-deployment revocation SQL `db/roshan_phase17_revoke_legacy_dispense_rpc.sql` remains **not applied**. Keep it unapplied until authenticated browser/UI smoke tests pass, because the current deployed UI may still call the legacy dispense RPC.
+
+The billing migration sequence passed isolated PostgreSQL 17 integration tests and a rollback-only live-schema/behavior dry run before application. After application, simulated-auth smoke tests verified consultation + lab consolidation, idempotent retry, and explicit secondary invoice creation; all synthetic rows were removed. The historical source mapping, clean replay, and live-schema parity remain unresolved. The current production UI smoke test for Phases 24/25 is still pending because Vercel production deployment is blocked by the account build-rate limit; do not describe the frontend changes as live until a new READY production deployment and authenticated smoke test succeed.

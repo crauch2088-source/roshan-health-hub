@@ -105,3 +105,18 @@ These results supplement the 79-row source inventory. “Executable-content matc
 | `20260908210824` `roshan_phase4_finance_v2` (function-level comparison) | `db/roshan_phase4_finance.sql` | All 14 recovered function names exist in the candidate; 13 function bodies match after normalization. `fn_ledger_post` differs in the partial-index predicate of its `ON CONFLICT` clause. | Confirm the deployed unique index predicate and intended NULL semantics; this is function-level mapping only because the candidate includes additional schema/setup SQL. |
 
 All comparisons above were source-only. No SQL was executed and no production schema or data was changed. Recovered SQL remains quarantined under `docs/recovered-migrations/sql/`.
+
+
+## Fresh live ledger count after 2026-10-16 Phase 21–25 additions
+
+A new read-only count confirms **93 applied ledger rows** through `20261016222009`. The byte-length/MD5 table above remains the original 79-row historical snapshot; the ledger SQL byte lengths/checksums for the 14 later rows were not refreshed here, so this appendix does not claim content-level parity for them. The latest five rows beyond the prior 88-entry inventory are:
+
+| Version | Applied migration name | Tracked source candidate | Status |
+|---|---|---|---|
+| `20261016204859` | `roshan_phase21_patient_registration_privileges_20261016` | `db/roshan_phase21_patient_registration_privileges.sql` | Applied; CI/integration covered; checksum refresh and full-ledger comparison pending |
+| `20261016211342` | `roshan_phase22_clinic_local_queue_date_20261016` | `db/roshan_phase22_clinic_local_queue_date.sql` | Applied; CI + synthetic browser verification passed; checksum refresh pending |
+| `20261016215806` | `roshan_phase23_legacy_queue_allocator_20261016` | `db/roshan_phase23_legacy_queue_allocator_20261016.sql` | Applied; CI + synthetic browser verification passed; checksum refresh pending |
+| `20261016221553` | `roshan_phase24_visit_form_options_20261016` | `db/roshan_phase24_visit_form_options.sql` | Applied after CI; simulated receptionist branch-scope and least-privilege checks passed; browser UI verification awaits Vercel deployment |
+| `20261016222009` | `roshan_phase25_current_app_profile_20261016` | `db/roshan_phase25_current_app_profile.sql` | Applied after CI; simulated receptionist self-profile/permissions check passed; browser login verification awaits Vercel deployment |
+
+These five additions are source-controlled and have targeted verification evidence, but must not be counted as proof of exact historical ledger parity until the stored ledger representations are compared to the repository candidates. Keep recovered historical SQL quarantined and do not replay the full historical set in production.
