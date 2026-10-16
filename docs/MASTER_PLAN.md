@@ -483,3 +483,13 @@ A disposable PostgreSQL 17 regression was added; it failed on head `69945084c67a
 - [x] Reviewed PR #39's server-side permission, active-user, required-branch, and server-derived audit attribution checks.
 - [x] Reviewed disposable PostgreSQL coverage for invalid input, permission denial, missing branch, rollback, and two-session MRN allocation concurrency.
 - [x] Confirmed full CI passed on PR #39 head 8fa3ae58ffc8964ce5e4397e4a34a3c2618b3a1a in run 38903131578; migration remains unapplied and PR remains draft.
+
+
+## Verified follow-up batch — 2026-10-16
+- [x] Confirmed the latest master-plan documentation commit's full GitHub Actions job completed successfully: run [38908548869](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38908548869), including dependency/security checks, role-guard tests, typecheck, lint, and production build.
+- [x] Cross-checked the connected Supabase migration ledger against the documented inventory: 79 rows, from `20260818162003` through `20261014164131`; this confirms count/range only, not semantic parity of the SQL sources.
+- [x] Rechecked PR #23's current head and CI association: it remains OPEN/DRAFT, based on `main`, with CI run [38872711903](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38872711903) successful. It is not merged or released.
+- [x] Rechecked PR #33's current head and dependency: it remains OPEN/DRAFT, based on `fix/invoice-atomicity` (PR #23), with CI run [38880644006](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38880644006) successful. It must not be released ahead of its base migration.
+- [x] Repeated the read-only private-helper ACL audit: five SECURITY DEFINER helpers have effective anon EXECUTE according to PostgreSQL privilege checks, while anon has no USAGE on schema `private`. Treat as least-privilege debt, not proof of a current PostgREST route; map policy/trigger dependencies before proposing revocations.
+
+These checks are repository/metadata verification, not application feature completion. No production SQL, data, grants, merges, or deployments were changed.
