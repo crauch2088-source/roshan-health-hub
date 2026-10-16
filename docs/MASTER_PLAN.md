@@ -823,3 +823,12 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - [x] `anon` has EXECUTE ACLs on five functions in the `private` schema, but read-only schema privilege check confirms `anon` has no USAGE on `private`, so those functions are not reachable through normal schema access. Keep least-privilege review open rather than claiming these ACLs are ideal.
 - [ ] Still open: function-by-function adversarial authorization testing, branch isolation for cross-entity IDs, the Auth leaked-password protection setting, `pg_trgm` extension placement, and migration replay parity.
 - [ ] Vercel runtime-error cluster lookup returned 403 for the connected account. No retries were made; request logs/error clusters remain unavailable through that specific connector operation.
+
+## Phase 22 — clinic-local visit/queue date regression — 2026-10-16
+
+- [x] Confirmed production defect with the authenticated synthetic smoke test: the UI encoded clinic midnight as UTC 2026-10-15 22:00:00+00, while the visit trigger derived queue_date using UTC and assigned 2026-10-15. The visits page filters on the clinic's current date, so the saved visit was hidden from that date's list.
+- [x] Added a source fix to send the intended clinic-local queue_date explicitly with the visit, while retaining visit_date as a timestamp.
+- [x] Added a tracked migration that changes both private.ensure_visit_queue() and private.create_queue_ticket() to derive fallback dates in Africa/Khartoum, preserving the empty search_path security posture.
+- [x] Added a PostgreSQL 17 integration regression covering the UTC rollover boundary, exactly-one queue ticket, and explicit queue-date preservation; added it to CI plus a source guard test.
+- [ ] Apply the migration to the verified Supabase production project only after CI passes; verify both live function definitions and run the regression query.
+- [ ] Deploy the UI change and rerun one bounded authenticated synthetic visit → queue test. Clean only the exact synthetic test records; patient-level archive remains a separate UX/safety task.

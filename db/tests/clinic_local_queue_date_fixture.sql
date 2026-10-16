@@ -20,8 +20,6 @@ CREATE TABLE public.queue_tickets (
   department_id uuid
 );
 
--- Mirror the current production behavior so the regression test is RED
--- until the timezone-aware migration is applied.
 CREATE FUNCTION private.ensure_visit_queue() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $function$
