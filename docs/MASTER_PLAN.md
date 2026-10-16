@@ -408,3 +408,8 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 ### Finance hardening follow-up evidence — 2026-10-16
 - PR #32's general CI and PostgreSQL audit-dedup behavioral job passed (run `38878206233`); PR #31's general CI, RPC-only finance integration, and two-session idempotency job passed (run `38893892959`). Both PRs remain draft/unmerged; no production migration or deployment was performed.
 - Live catalog confirms both generic and finance audit triggers are attached to all five targeted finance tables. Supplier-bill invariant checks are currently inconclusive on live data because there are zero supplier bills and zero supplier payments; isolated integration tests are required.
+
+
+### Insurance workflow evidence and unresolved business semantics — 2026-10-16
+- PR #12 (invoice required for claim creation) and PR #13 (claim amount invariants) have successful GitHub Actions CI; PR #13's isolated insurance-claim integrity integration also passed. Both remain draft/unmerged.
+- Read-only production aggregate query found zero active insurance claims and zero claim items, so production data cannot confirm behavior for invoice linkage, service references, or covered/patient amount splits. Keep the insurance semantics decision gate open rather than treating zero observed violations as proof.
