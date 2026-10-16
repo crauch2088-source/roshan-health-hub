@@ -343,3 +343,9 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [x] **Cashbox migration comparison refined:** the apparent SQL mismatch was isolated to the legacy file's explicit transaction wrapper (`BEGIN`/`COMMIT`); after removing that wrapper, normalized SQL text matches the recovered applied statement set. This does not replace disposable replay testing.
 
 - [x] **Read-only live lab-parameter invariant check (2026-10-16):** Supabase returned 12 undeleted lab tests, zero tests without any parameter, and zero tests without an active parameter. This confirms the current data invariant only; it does not prove the recovered phase-2 migration contained the legacy backfill statement or establish how the invariant was achieved.
+
+
+### Finance migration live-state findings (read-only, 2026-10-16)
+- Compared `db/roshan_phase4_finance.sql`, recovered migration `20260908210824_roshan_phase4_finance_v2`, and current live function/trigger catalogs without writing to production. The source pair is a successive patch vs. a foundational script, not a direct replacement.
+- Live financial RPCs checked in this slice (`post_invoice_payment`, `post_expense`, `post_cashbox_entry`, `post_supplier_bill`, `post_supplier_payment`, `reverse_cashbox_entry`) are SECURITY DEFINER with empty `search_path`; authenticated has EXECUTE, anon/PUBLIC do not. This is a narrow grant/config snapshot only.
+- Important live-vs-source differences recorded in `docs/DB_MIGRATION_RECONCILIATION.md`: branch-aware/private-helper RPC implementations, `customer_payment` ledger type vs. `income` in candidate sources, a stricter live conflict predicate, and overlapping audit triggers. These need dependency-aware review and disposable-database tests; do not alter production or replay the legacy script based on this observation.
