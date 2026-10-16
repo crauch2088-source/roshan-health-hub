@@ -67,7 +67,7 @@ function emptyForm() {
   return {
     full_name: "",
     phone: "",
-    gender: "male",
+    gender: "",
     date_of_birth: "",
     national_id: "",
   };
@@ -101,20 +101,17 @@ function PatientsPageInner() {
   const create = useSave(
     async () => {
       if (!form.full_name.trim()) throw new Error(t("full_name"));
+      if (!form.gender) throw new Error(t("gender"));
 
-      // MRNs are generated the same way as invoice/queue numbers elsewhere
-      // in the app: a server-side RPC, never guessed on the client.
-      const mrn = await rpc<string>("next_mrn");
-
-      const { error } = await supabase.from("patients").insert({
-        mrn,
-        full_name: form.full_name.trim(),
-        phone: form.phone || null,
-        gender: form.gender || null,
-        date_of_birth: form.date_of_birth || null,
-        national_id: form.national_id || null,
+      // Allocate the MRN and insert the patient in one database transaction.
+      // Separate next_mrn() + INSERT calls can race and leave one registration failing.
+      await rpc<string>("create_patient_atomic", {
+        _full_name: form.full_name.trim(),
+        _gender: form.gender,
+        _date_of_birth: form.date_of_birth || null,
+        _phone: form.phone.trim() || null,
+        _national_id: form.national_id.trim() || null,
       });
-      if (error) throw new Error(error.message);
       return null;
     },
     {
@@ -198,7 +195,7 @@ function PatientsPageInner() {
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!form.full_name.trim() || create.isPending}
+                  disabled={!form.full_name.trim() || !form.gender || create.isPending}
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}
