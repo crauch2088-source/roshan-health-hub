@@ -582,3 +582,21 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 - Supabase branching: https://supabase.com/docs/guides/deployment/branching — branches are isolated; Git-connected branches apply repository migrations while dashboard branches derive from project migration history.
 - PostgreSQL 17 CREATE FUNCTION security: https://www.postgresql.org/docs/17/sql-createfunction.html — SECURITY DEFINER routines require a trusted search_path and selective EXECUTE grants.
 
+
+
+## Execution batch C — 2026-10-16
+
+### Verified changes
+- Recorded the user's standing authorization for direct in-scope execution, Composio-first workflows, SQL, and merges, while retaining scoped-change, rollback, and verification safeguards.
+- Merged PR #26: archived the 79 applied migration statements and manifest under `docs/recovered-migrations/`. These remain quarantined documentation, not executable migrations.
+- Merged PR #41 after fresh CI: expense creation now uses the existing `post_expense` RPC; the UI rejects non-finite and non-positive amounts. The old stale/conflicted PR #30 was closed as superseded.
+- Applied and verified finance audit trigger deduplication in Supabase as migration `roshan_phase18_dedupe_finance_audit_triggers_20261016` / version `20261016161923`. Removed only the five duplicate generic audit triggers; verified each finance table retained `trg_finance_audit`; no rows were deleted or updated. PR #43 passed CI and was merged to track the migration and tests.
+- Applied Phase 21A of patient registration as `roshan_phase21_patient_registration_atomicity_20261016` / version `20261016162410`. The `SECURITY DEFINER` RPC uses an empty `search_path`, and authenticated can execute it. Existing direct INSERT and `next_mrn()` privileges remain unchanged for compatibility.
+- Split patient registration rollout into Phase 21A (RPC install) and Phase 21B (legacy privilege revocation). PR #44 contains the staged migrations, PostgreSQL 17 integration/concurrency tests, and current guard-test updates. The dedicated registration test passed on its first run, but the full workflow was cancelled during a PR close/reopen cycle; a full rerun has been requested. Do not apply Phase 21B until the updated UI is deployed and smoke-tested.
+
+### Deployment limitation
+- The latest verified production deployment is still on commit `9f6b2c881247b570cc75e1f61ed13a2337183b86`, before the PR #41 and #43 merges. Vercel deployment creation returned HTTP 402: the team's daily API deployment quota (100/day) is exhausted, resetting approximately 2026-10-17 16:24 UTC. No alternate account or bypass was attempted. Once quota resets, deploy current `main`, verify the app, then apply Phase 21B.
+- Supabase migration history now contains 81 entries. The broader historical migration parity/replay audit remains open; archived SQL has not been replayed.
+
+### Checklist accounting
+- Main-plan checklist: **63/156 = 40.4%**. This percentage is unchanged because this batch's merges, audits, migration operations, and rollout preparation do not independently complete additional checklist items. No checklist items were marked complete solely to reflect investigation or a pending deployment.
