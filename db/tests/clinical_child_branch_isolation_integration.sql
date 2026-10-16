@@ -86,6 +86,47 @@ BEGIN
   GET DIAGNOSTICS affected = ROW_COUNT;
   IF affected <> 1 THEN RAISE EXCEPTION 'same-branch lab order item UPDATE was denied'; END IF;
 
+  UPDATE public.medical_certificates SET patient_id='30000000-0000-0000-0000-000000000001'
+  WHERE id='80000000-0000-0000-0000-000000000002';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch medical certificate UPDATE was allowed'; END IF;
+  UPDATE public.medical_certificates SET patient_id='30000000-0000-0000-0000-000000000001'
+  WHERE id='80000000-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 1 THEN RAISE EXCEPTION 'same-branch medical certificate UPDATE was denied'; END IF;
+
+  UPDATE public.patient_discounts SET patient_id='30000000-0000-0000-0000-000000000001'
+  WHERE id='90000000-0000-0000-0000-000000000002';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch patient discount UPDATE was allowed'; END IF;
+  UPDATE public.patient_discounts SET patient_id='30000000-0000-0000-0000-000000000001'
+  WHERE id='90000000-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 1 THEN RAISE EXCEPTION 'same-branch patient discount UPDATE was denied'; END IF;
+
+  UPDATE public.insurance_prior_authorizations SET patient_insurance_id='70000000-0000-0000-0000-000000000001'
+  WHERE id='a0000000-0000-0000-0000-000000000002';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch prior authorization UPDATE was allowed'; END IF;
+  UPDATE public.insurance_prior_authorizations SET patient_insurance_id='70000000-0000-0000-0000-000000000001'
+  WHERE id='a0000000-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 1 THEN RAISE EXCEPTION 'same-branch prior authorization UPDATE was denied'; END IF;
+
+  DELETE FROM public.medical_certificates WHERE id='80000000-0000-0000-0000-000000000002';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch medical certificate DELETE was allowed'; END IF;
+  DELETE FROM public.medical_certificates WHERE id='80000000-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 1 THEN RAISE EXCEPTION 'same-branch medical certificate DELETE was denied'; END IF;
+
+  DELETE FROM public.patient_discounts WHERE id='90000000-0000-0000-0000-000000000002';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch patient discount DELETE was allowed'; END IF;
+  DELETE FROM public.patient_discounts WHERE id='90000000-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 1 THEN RAISE EXCEPTION 'same-branch patient discount DELETE was denied'; END IF;
+
   BEGIN
     INSERT INTO public.prescriptions(patient_id,visit_id,notes)
     VALUES('30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','cross-branch');
