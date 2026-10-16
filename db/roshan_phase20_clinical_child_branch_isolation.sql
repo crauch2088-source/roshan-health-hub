@@ -50,6 +50,31 @@ $function$;
 REVOKE ALL ON FUNCTION private.app_has_lab_order_branch_access(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.app_has_lab_order_branch_access(uuid) TO authenticated;
 
+-- Branch access and relational consistency for prescription patient/visit links.
+-- A visit must belong to the same patient when both identifiers are supplied.
+CREATE OR REPLACE FUNCTION private.app_has_prescription_parent_access(_patient_id uuid, _visit_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT private.app_has_attachment_branch_access(_patient_id, _visit_id)
+    AND (
+      _visit_id IS NULL
+      OR _patient_id IS NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.visits AS v
+        WHERE v.id = _visit_id
+          AND v.patient_id = _patient_id
+      )
+    )
+$function$;
+
+REVOKE ALL ON FUNCTION private.app_has_prescription_parent_access(uuid, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_prescription_parent_access(uuid, uuid) TO authenticated;
+
 CREATE OR REPLACE FUNCTION private.app_has_prescription_branch_access(_prescription_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -61,7 +86,7 @@ AS $function$
     SELECT 1
     FROM public.prescriptions AS p
     WHERE p.id = _prescription_id
-      AND private.app_has_attachment_branch_access(p.patient_id, p.visit_id)
+      AND private.app_has_prescription_parent_access(p.patient_id, p.visit_id)
   )
 $function$;
 
@@ -74,7 +99,7 @@ ALTER POLICY prescriptions_select ON public.prescriptions
       (SELECT public.app_has_perm('pharmacy.read'))
       OR (SELECT public.app_has_perm('emr.read'))
     )
-    AND (SELECT private.app_has_attachment_branch_access(prescriptions.patient_id, prescriptions.visit_id))
+    AND (SELECT private.app_has_prescription_parent_access(prescriptions.patient_id, prescriptions.visit_id))
   );
 ALTER POLICY prescriptions_insert ON public.prescriptions
   WITH CHECK (
