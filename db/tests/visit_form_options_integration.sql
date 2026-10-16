@@ -21,10 +21,10 @@ BEGIN
     ('30000000-0000-0000-0000-000000000004', 'Pharmacist', true, null, '20000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000001', 'private4@example.invalid', '333'),
     ('30000000-0000-0000-0000-000000000005', 'Branchless Doctor', true, null, '20000000-0000-0000-0000-000000000003', null, 'private5@example.invalid', '444');
 
-  SELECT set_config('test.visits_create', 'true', false);
-  SELECT set_config('test.super_admin', 'false', false);
-  SELECT set_config('test.admin_full', 'false', false);
-  SELECT set_config('test.branch_id', '40000000-0000-0000-0000-000000000001', false);
+  PERFORM set_config('test.visits_create', 'true', false);
+  PERFORM set_config('test.super_admin', 'false', false);
+  PERFORM set_config('test.admin_full', 'false', false);
+  PERFORM set_config('test.branch_id', '40000000-0000-0000-0000-000000000001', false);
 
   options := public.get_visit_form_options();
   department_count := jsonb_array_length(options -> 'departments');
@@ -50,7 +50,7 @@ BEGIN
     RAISE EXCEPTION 'authenticated execution must be granted';
   END IF;
 
-  SELECT set_config('test.visits_create', 'false', false);
+  PERFORM set_config('test.visits_create', 'false', false);
   BEGIN
     PERFORM public.get_visit_form_options();
     RAISE EXCEPTION 'caller without visits.create should be denied';
