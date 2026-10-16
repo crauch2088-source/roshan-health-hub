@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createEmptyPrescriptionDraft, validatePrescriptionDrafts } from "../src/lib/prescription-draft.ts";
+import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -58,4 +59,16 @@ test("shell and navigation use the refreshed Roshan surface and mobile-safe layo
   assert.match(shell, /roshan-app-background/);
   assert.match(shell, /max-w-\[1680px\]/);
   assert.match(nav, /env\(safe-area-inset-bottom\)/);
+});
+
+test("laboratory workflow timeline follows persisted states and treats unknown states conservatively", () => {
+  assert.equal(labWorkflowStage("ordered"), 0);
+  assert.equal(labWorkflowStage("sample_collected"), 1);
+  assert.equal(labWorkflowStage("in_progress"), 2);
+  assert.equal(labWorkflowStage("completed"), 3);
+  assert.equal(labWorkflowStage("verified"), 4);
+  assert.equal(labWorkflowStage("unexpected"), 0);
+  const ui = read("../src/routes/_authenticated/lab.tsx");
+  assert.match(ui, /Laboratory workflow stage/);
+  assert.match(ui, /مرحلة سير المختبر/);
 });
