@@ -11,6 +11,13 @@ DECLARE
   second_mrn text;
   row_count integer;
 BEGIN
+  IF has_table_privilege('authenticated', 'public.patients', 'INSERT') THEN
+    RAISE EXCEPTION 'authenticated must not bypass atomic patient registration with direct INSERT';
+  END IF;
+  IF has_function_privilege('authenticated', 'public.next_mrn()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated must not call legacy next_mrn directly';
+  END IF;
+
   first_id := public.create_patient_atomic('Atomic Test Patient One','male',NULL,'555-0101','TEST-NID-1');
   second_id := public.create_patient_atomic('Atomic Test Patient Two','female',NULL,'555-0102','TEST-NID-2');
 

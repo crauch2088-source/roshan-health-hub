@@ -87,3 +87,9 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.create_patient_atomic(text, text, date, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_patient_atomic(text, text, date, text, text) TO authenticated;
+
+
+-- Registration must go through the atomic RPC so callers cannot bypass
+-- branch-derived assignment/MRN allocation or call the legacy allocator.
+REVOKE INSERT ON TABLE public.patients FROM authenticated;
+REVOKE ALL ON FUNCTION public.next_mrn() FROM PUBLIC, anon, authenticated;

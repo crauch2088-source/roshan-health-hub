@@ -23,6 +23,12 @@ CREATE TABLE public.patients (
   deleted_at timestamptz,
   deleted_by uuid
 );
+CREATE FUNCTION public.next_mrn()
+RETURNS text LANGUAGE sql SECURITY DEFINER SET search_path TO ''
+AS $ SELECT 'RMC999999'::text $;
+GRANT INSERT ON public.patients TO authenticated;
+GRANT EXECUTE ON FUNCTION public.next_mrn() TO authenticated;
+
 CREATE FUNCTION public.app_has_perm(_code text)
 RETURNS boolean LANGUAGE sql STABLE
 AS $$ SELECT COALESCE(current_setting('test.allow_create', true) = 'true', false) $$;
