@@ -24,7 +24,6 @@ test("patient registration regression test is part of the guard suite", () => {
   assert.match(pkg.scripts?.["test:guard"] ?? "", /patient-registration-atomicity\.test\.ts/);
 });
 
-
 test("patient registration requires an explicitly selected gender", () => {
   assert.match(ui, /gender: ""/);
   const start = ui.indexOf("const create = useSave(");
