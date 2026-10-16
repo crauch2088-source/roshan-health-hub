@@ -38,7 +38,7 @@ BEGIN
         JOIN pg_class c ON c.oid=tr.tgrelid
         JOIN pg_namespace n ON n.oid=c.relnamespace
         WHERE n.nspname='public' AND c.relname=v_table_name
-          AND tr.tgname='trg_audit_' || table_name AND NOT tr.tgisinternal
+          AND tr.tgname='trg_audit_' || v_table_name AND NOT tr.tgisinternal
       ) THEN
         RAISE EXCEPTION 'duplicate generic audit trigger remains on %',v_table_name;
       END IF;
