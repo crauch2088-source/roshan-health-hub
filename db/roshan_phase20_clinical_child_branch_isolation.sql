@@ -5,6 +5,11 @@
 -- permissions but not the branch of the parent patient/visit/order. These tables have
 -- no branch_id of their own, so their policy must derive branch access from the parent.
 
+-- The shared branch helper is called by RLS policies and must not be
+-- directly executable by anonymous/PUBLIC callers.
+REVOKE ALL ON FUNCTION private.app_has_branch_access(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_branch_access(uuid) TO authenticated;
+
 -- A lab order's visit, when supplied, must belong to the same patient_id.
 -- This is a linkage-integrity invariant; branch assignment remains controlled by
 -- lab_orders.branch_id to preserve the explicit lab-order branch context.
