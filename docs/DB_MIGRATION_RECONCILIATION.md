@@ -62,9 +62,9 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 | 20260906161023 | `roshan_phase4_finance_security_verification_patch` | Not exact-matched; source mapping pending |
 | 20260906203143 | `roshan_phase3_pharmacy_runtime_hardening` | Not exact-matched; source mapping pending |
 | 20260908210824 | `roshan_phase4_finance_v2` | Partial mapping; live effective-state audit recorded below |
-| 20260909110657 | `roshan_phase5_insurance` | Exact basename: `db/roshan_phase5_insurance.sql` |
-| 20260909110735 | `roshan_phase5_insurance_functions` | Not exact-matched; source mapping pending |
-| 20260909110753 | `roshan_phase5_insurance_permissions_rls` | Not exact-matched; source mapping pending |
+| 20260909110657 | `roshan_phase5_insurance` | Exact basename; 20 normalized statements match the legacy Phase 5 script |
+| 20260909110735 | `roshan_phase5_insurance_functions` | Partial candidate; 3 normalized statements match the legacy Phase 5 script |
+| 20260909110753 | `roshan_phase5_insurance_permissions_rls` | Partial candidate; 27 normalized statements match the legacy Phase 5 script |
 | 20260911120231 | `roshan_phase12_invoice_visit_unique` | Exact basename: `db/roshan_phase12_invoice_visit_unique.sql` |
 | 20260911130749 | `harden_security_and_fk_indexes_20260911` | Not exact-matched; source mapping pending |
 | 20260911130812 | `restrict_security_definer_api_execution_20260911` | Not exact-matched; source mapping pending |
@@ -72,7 +72,7 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 | 20260911133229 | `harden_mrn_invoice_number_concurrency` | Not exact-matched; source mapping pending |
 | 20260911133255 | `enforce_branch_isolation_rls` | Not exact-matched; source mapping pending |
 | 20260911133312 | `harden_insurance_branch_isolation` | Not exact-matched; source mapping pending |
-| 20260911133319 | `harden_insurance_coverage_rpc_branch` | Not exact-matched; source mapping pending |
+| 20260911133319 | `harden_insurance_coverage_rpc_branch` | Later override of the coverage function; adds explicit branch isolation |
 | 20260911133334 | `harden_finance_branch_context` | Not exact-matched; source mapping pending |
 | 20260911133353 | `fix_insurance_ledger_branch` | Not exact-matched; source mapping pending |
 | 20260911134639 | `grant_next_invoice_number_authenticated` | Not exact-matched; source mapping pending |
@@ -89,7 +89,7 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 | 20260911141142 | `fix_payment_ledger_transaction_type` | Not exact-matched; source mapping pending |
 | 20260911141502 | `fix_medicines_generic_name_compatibility` | Not exact-matched; source mapping pending |
 | 20261011074344 | `harden_patient_invoice_number_rpc_permissions` | Not exact-matched; source mapping pending |
-| 20261011074437 | `harden_insurance_coverage_rpc_permissions` | Not exact-matched; source mapping pending |
+| 20261011074437 | `harden_insurance_coverage_rpc_permissions` | Later override of the coverage function; adds permission check and empty search_path |
 | 20261011075101 | `harden_pharmacy_batch_branch_isolation` | Not exact-matched; source mapping pending |
 | 20261011080253 | `harden_supplier_bill_rpc_branch_and_search_path` | Not exact-matched; source mapping pending |
 | 20261011080319 | `harden_finance_pharmacy_rpc_search_paths` | Not exact-matched; source mapping pending |
@@ -233,3 +233,21 @@ A fresh aggregate-only query against the live Supabase project reconfirmed:
 - `public.stock_movements` still has 8 rows: four purchase movements totaling +1,025, all with NULL branch IDs; four dispense movements totaling -4, including both batch-linked and unlinked records. This ledger does not reconcile the 4,484 legacy catalog quantity.
 
 Safety implication: keep PR #23's batch-only/branch-matched rejection behavior; do not restore legacy-stock fallback to make dispensing appear functional. The clinic must first identify whether the legacy balances are test seeds, real stock, or historic balances, and document branch ownership, expiry, supplier provenance, and auditable opening-balance adjustments. No inventory or movement rows were changed.
+
+
+### Phase 5 insurance source comparison — statement-level — 2026-10-16
+
+A SQL-aware statement comparison of `db/roshan_phase5_insurance.sql` (51 top-level statements, split while respecting dollar-quoted function bodies) found **50 normalized statement matches** across the three early recovered migrations:
+- `20260909110657_roshan_phase5_insurance.sql`: 20 matches.
+- `20260909110735_roshan_phase5_insurance_functions.sql`: 3 matches.
+- `20260909110753_roshan_phase5_insurance_permissions_rls.sql`: 27 matches.
+
+The single unmatched legacy statement is `public.fn_calculate_insurance_coverage(...)`. This is explained by later recovered overrides: `20260911133319_harden_insurance_coverage_rpc_branch.sql` adds explicit branch isolation, and `20261011074437_harden_insurance_coverage_rpc_permissions.sql` adds an `insurance.read` permission gate and `search_path = ''`. Classification: strong partial mapping with a documented later replacement; not an exact replayable source file.
+
+### Unversioned pharmacist supplier-permission supplement — read-only — 2026-10-16
+
+`db/roshan_phase4_finance_pharmacist_grant.sql` is a standalone, non-timestamped one-statement supplement rather than one of the 79 recovered ledger files. A read-only aggregate query confirmed the live pharmacist role currently has `suppliers.read`, `suppliers.create`, and `suppliers.update`. This verifies the intended effective permission state, but not whether this exact file was the source of the change. Do not replay it or treat it as a canonical migration without reconstructing its history.
+
+### Privileged-role guard candidate — read-only — 2026-10-16
+
+The live trigger catalog contains no `trg_guard_super_admin_users`, `trg_guard_super_admin_roles`, or `trg_guard_super_admin_role_permissions` triggers. The prepared file `db/roshan_security_privileged_role_guard.sql` is therefore not reflected in the current live trigger set. Draft [PR #38](https://github.com/crauch2088-source/roshan-health-hub/pull/38) adds an isolated PostgreSQL 17 integration job and static guard checks for the prepared SQL; CI passed on commit `dc6301732093abc4a28aeedcff2a1d1738405552` (run [#38892744625](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38892744625)). It is test-only and does not apply the migration to production.
