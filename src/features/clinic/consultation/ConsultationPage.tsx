@@ -20,6 +20,17 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const { user } = useAuth();
   const { currency } = useSettings();
   const [tab, setTab] = useState("note");
+  const [noteDirty, setNoteDirty] = useState(false);
+  const changeTab = (nextTab: string) => {
+    if (tab === "note" && noteDirty && nextTab !== "note") {
+      const message = lang === "ar"
+        ? "لديك تغييرات غير محفوظة في الملاحظات السريرية. هل تريد مغادرة القسم وفقدان هذه التغييرات؟"
+        : "You have unsaved clinical note changes. Leave this section and discard them?";
+      if (!window.confirm(message)) return;
+      setNoteDirty(false);
+    }
+    setTab(nextTab);
+  };
   const visitQ = useRows<Row[]>(["consultation-visit", visitId], () =>
     supabase
       .from("visits")
@@ -220,7 +231,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
               aria-selected={tab === item.key}
               aria-controls={`panel-${item.key}`}
               tabIndex={tab === item.key ? 0 : -1}
-              onClick={() => setTab(item.key)}
+              onClick={() => changeTab(item.key)}
               onKeyDown={(event) => {
                 const backwards = event.key === "ArrowLeft" || event.key === "ArrowUp";
                 const forwards = event.key === "ArrowRight" || event.key === "ArrowDown";
@@ -230,7 +241,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
                 if (targetIndex >= 0) {
                   event.preventDefault();
                   const next = tabs[targetIndex];
-                  setTab(next.key);
+                  changeTab(next.key);
                   document.getElementById(`tab-${next.key}`)?.focus();
                 }
               }}
@@ -248,7 +259,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         tabIndex={0}
         className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
       >
-        {tab === "note" && <ClinicalNoteTab visitId={visitId} />}
+        {tab === "note" && <ClinicalNoteTab visitId={visitId} onDirtyChange={setNoteDirty} />}
         {tab === "vitals" && <VitalsTab visitId={visitId} />}
         {tab === "labs" && <LaboratoryTab visitId={visitId} />}
         {tab === "prescription" && <PrescriptionTab visitId={visitId} />}

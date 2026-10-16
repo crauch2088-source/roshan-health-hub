@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -67,10 +67,17 @@ function QuickChips({
   );
 }
 
-export function ClinicalNoteTab({ visitId }: { visitId: string }) {
+export function ClinicalNoteTab({
+  visitId,
+  onDirtyChange,
+}: {
+  visitId: string;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { user } = useAuth();
   const { lang } = useLang();
   const [form, setForm] = useState<Record<string, string>>({});
+  const initialFormRef = useRef("{}");
   const [diagnosisSearch, setDiagnosisSearch] = useState("");
 
   const noteQ = useRows<Row[]>(["clinical-note", visitId], () =>
@@ -93,11 +100,31 @@ export function ClinicalNoteTab({ visitId }: { visitId: string }) {
 
   useEffect(() => {
     const r = ((noteQ.data ?? []) as Row[])[0];
-    if (!r) return;
+    if (!r) {
+      initialFormRef.current = "{}";
+      return;
+    }
     const next: Record<string, string> = {};
     for (const [key, value] of Object.entries(r)) next[key] = value == null ? "" : String(value);
+    initialFormRef.current = JSON.stringify(next);
     setForm(next);
-  }, [noteQ.data]);
+    onDirtyChange?.(false);
+  }, [noteQ.data, onDirtyChange]);
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(form) !== initialFormRef.current);
+  }, [form, onDirtyChange]);
+
+  useEffect(() => {
+    const dirty = JSON.stringify(form) !== initialFormRef.current;
+    if (!dirty) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [form]);
 
   const save = useSave(
     async () => {
@@ -125,6 +152,10 @@ export function ClinicalNoteTab({ visitId }: { visitId: string }) {
     {
       invalidate: [["clinical-note", visitId]],
       successMessage: lang === "ar" ? "تم حفظ الملاحظات" : "Clinical note saved",
+      onDone: () => {
+        initialFormRef.current = JSON.stringify(form);
+        onDirtyChange?.(false);
+      },
     },
   );
 
