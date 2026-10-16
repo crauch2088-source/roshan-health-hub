@@ -7,6 +7,9 @@ VALUES ('10000000-0000-0000-0000-000000000001',
         '20000000-0000-0000-0000-000000000001',true);
 INSERT INTO public.suppliers(id,active)
 VALUES ('30000000-0000-0000-0000-000000000001',true);
+INSERT INTO public.invoices(id,branch_id,net_amount,total_amount,paid_amount)
+VALUES ('40000000-0000-0000-0000-000000000001',
+        '20000000-0000-0000-0000-000000000001',10,10,0);
 
 SET ROLE authenticated;
 
@@ -59,9 +62,36 @@ $test$;
 -- only, matching the permission allowed by the live RLS policies and UI.
 SELECT public.post_cashbox_entry('deposit',10,'cash','manual','test deposit',now());
 SELECT public.post_expense('other',2,'test expense',current_date,'cash',NULL);
-SELECT public.post_invoice_payment(
-  '40000000-0000-0000-0000-000000000001',3,'cash','test payment','test-idempotency-key'
-);
+DO $payment_test$
+DECLARE
+  first_id uuid;
+  retry_id uuid;
+  rejected boolean := false;
+  message text;
+BEGIN
+  BEGIN
+    PERFORM public.post_invoice_payment(
+      '40000000-0000-0000-0000-000000000001',11,'cash','overpayment','overpayment-key'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS message = MESSAGE_TEXT;
+    rejected := message LIKE '%exceeds outstanding balance%';
+  END;
+  IF NOT rejected THEN
+    RAISE EXCEPTION 'payment RPC did not reject an amount above the outstanding balance';
+  END IF;
+
+  first_id := public.post_invoice_payment(
+    '40000000-0000-0000-0000-000000000001',3,'cash','test payment','test-idempotency-key'
+  );
+  retry_id := public.post_invoice_payment(
+    '40000000-0000-0000-0000-000000000001',3,'cash','test payment','test-idempotency-key'
+  );
+  IF first_id IS DISTINCT FROM retry_id THEN
+    RAISE EXCEPTION 'payment RPC idempotent retry returned a different payment id';
+  END IF;
+END
+$payment_test$;
 SELECT public.post_supplier_bill(
   '30000000-0000-0000-0000-000000000001','BILL-001',current_date,NULL,20,0,'test bill'
 );
