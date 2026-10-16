@@ -119,16 +119,16 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         )}
       </div>
     );
-  const tabs: [string, string][] = [
-    ["note", "الملاحظات"],
-    ["vitals", "العلامات الحيوية"],
-    ["labs", "المختبر"],
-    ["prescription", "الوصفة"],
-    ["history", "السجل السابق"],
-  ];
+  const tabs = [
+    { key: "note", ar: "الملاحظات", en: "Clinical note" },
+    { key: "vitals", ar: "العلامات الحيوية", en: "Vitals" },
+    { key: "labs", ar: "المختبر", en: "Laboratory" },
+    { key: "prescription", ar: "الوصفة", en: "Prescription" },
+    { key: "history", ar: "السجل السابق", en: "History" },
+  ] as const;
   return (
-    <div className="container mx-auto max-w-7xl space-y-4 p-4" dir="auto">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mx-auto max-w-[1440px] space-y-5" dir="auto">
+      <div className="flex flex-wrap items-center gap-3">
         <Link to="/clinic" className={buttonVariants({ variant: "outline", size: "sm" })}>
           <ArrowLeft className="size-4" /> {lang === "ar" ? "العيادة" : "Clinic"}
         </Link>
@@ -178,29 +178,25 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           )}
         </div>
       </div>
-      <Card>
-        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "المريض" : "Patient"}
-            </div>
-            <div className="font-semibold">{s(patient, "full_name")}</div>
-            <div className="text-xs" dir="ltr">
-              {s(patient, "mrn")}
+      <Card className="roshan-patient-context overflow-hidden">
+        <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
+          <div className="min-w-0">
+            <div className="roshan-field-label">{lang === "ar" ? "المريض" : "Patient"}</div>
+            <div className="truncate text-base font-bold tracking-tight">{s(patient, "full_name") || "—"}</div>
+            <div className="mt-1 inline-flex rounded-md bg-background/80 px-2 py-0.5 font-mono text-xs text-muted-foreground" dir="ltr">
+              {s(patient, "mrn") || "—"}
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "العمر / الجنس" : "Age / Sex"}
-            </div>
-            <div>
-              {calcAge(s(patient, "date_of_birth")) ?? "—"} · {s(patient, "gender")}
-            </div>
+            <div className="roshan-field-label">{lang === "ar" ? "العمر / الجنس" : "Age / Sex"}</div>
+            <div className="font-semibold">{calcAge(s(patient, "date_of_birth")) ?? "—"} · {s(patient, "gender") || "—"}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "القسم" : "Department"}
-            </div>
+            <div className="roshan-field-label">{lang === "ar" ? "رقم الزيارة" : "Visit number"}</div>
+            <div className="font-mono text-base font-bold" dir="ltr">{s(visit, "visit_number") || "—"}</div>
+          </div>
+          <div>
+            <div className="roshan-field-label">{lang === "ar" ? "القسم" : "Department"}</div>
             <div>
               {lang === "ar"
                 ? s(rel(visit, "departments"), "name_ar") || s(rel(visit, "departments"), "name")
@@ -208,31 +204,56 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "الطبيب" : "Doctor"}
-            </div>
+            <div className="roshan-field-label">{lang === "ar" ? "الطبيب" : "Doctor"}</div>
             <div>{s(rel(visit, "users"), "full_name") || "—"}</div>
           </div>
         </CardContent>
       </Card>
-      <div className="overflow-x-auto border-b">
-        <div className="flex min-w-max gap-1">
-          {tabs.map(([k, l]) => (
+      <div className="roshan-surface p-1.5">
+        <div className="flex gap-1 overflow-x-auto" role="tablist" aria-label={lang === "ar" ? "أقسام ملف الزيارة" : "Visit chart sections"}>
+          {tabs.map((item, index) => (
             <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`border-b-2 px-4 py-3 text-sm font-medium ${tab === k ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+              key={item.key}
+              id={`tab-${item.key}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.key}
+              aria-controls={`panel-${item.key}`}
+              tabIndex={tab === item.key ? 0 : -1}
+              onClick={() => setTab(item.key)}
+              onKeyDown={(event) => {
+                const backwards = event.key === "ArrowLeft" || event.key === "ArrowUp";
+                const forwards = event.key === "ArrowRight" || event.key === "ArrowDown";
+                const targetIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 :
+                  backwards ? (index - 1 + tabs.length) % tabs.length :
+                  forwards ? (index + 1) % tabs.length : -1;
+                if (targetIndex >= 0) {
+                  event.preventDefault();
+                  const next = tabs[targetIndex];
+                  setTab(next.key);
+                  document.getElementById(`tab-${next.key}`)?.focus();
+                }
+              }}
+              className="roshan-tab shrink-0 px-4 py-2.5 text-sm font-semibold text-muted-foreground"
             >
-              {l}
+              {lang === "ar" ? item.ar : item.en}
             </button>
           ))}
         </div>
       </div>
-      {tab === "note" && <ClinicalNoteTab visitId={visitId} />}{" "}
-      {tab === "vitals" && <VitalsTab visitId={visitId} />}{" "}
-      {tab === "labs" && <LaboratoryTab visitId={visitId} />}{" "}
-      {tab === "prescription" && <PrescriptionTab visitId={visitId} />}{" "}
-      {tab === "history" && <HistoryTab visitId={visitId} />}
+      <section
+        id={`panel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        tabIndex={0}
+        className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
+      >
+        {tab === "note" && <ClinicalNoteTab visitId={visitId} />}
+        {tab === "vitals" && <VitalsTab visitId={visitId} />}
+        {tab === "labs" && <LaboratoryTab visitId={visitId} />}
+        {tab === "prescription" && <PrescriptionTab visitId={visitId} />}
+        {tab === "history" && <HistoryTab visitId={visitId} />}
+      </section>
     </div>
   );
 }
