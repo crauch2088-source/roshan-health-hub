@@ -222,6 +222,33 @@ jobs:
             -f db/roshan_phase24_visit_form_options.sql \
             -f db/tests/visit_form_options_integration.sql
 
+  sql-current-app-profile:
+    name: Authenticated self-profile RPC under RLS
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute current app profile authorization tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/current_app_profile_fixture.sql \
+            -f db/roshan_phase25_current_app_profile.sql \
+            -f db/tests/current_app_profile_integration.sql
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest

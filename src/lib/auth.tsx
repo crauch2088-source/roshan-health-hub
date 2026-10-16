@@ -22,19 +22,18 @@ export type AppUser = {
   active: boolean;
 };
 
-type Role = {
-  code: string;
-  name: string;
-};
-
-type UserDbResponse = {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  role_id: string | null;
-  active: boolean | null;
-  roles: Role | Role[] | null;
+type ProfileRpcResponse = {
+  user: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    phone: string | null;
+    role_id: string | null;
+    active: boolean | null;
+    role_code: string | null;
+    role_name: string | null;
+  };
+  permissions: string[];
 };
 
 type AuthCtx = {
@@ -78,11 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPermissionsReady(false);
       setError(null);
 
-      const { data, error: profileError } = await supabase
-        .from("users")
-        .select("id, full_name, email, phone, role_id, active, roles(code, name)")
-        .eq("auth_user_id", authUserId)
-        .maybeSingle();
+      const { data, error: profileError } = await supabase.rpc("get_my_app_profile");
 
       if (profileError) {
         setError(dbError(profileError));
@@ -97,9 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const userData = data as unknown as UserDbResponse;
-
-      const roleRel = Array.isArray(userData.roles) ? userData.roles[0] : userData.roles;
+      const profile = data as unknown as ProfileRpcResponse;
+      const userData = profile.user;
 
       const appUser: AppUser = {
         id: userData.id,
@@ -107,8 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: userData.email ?? null,
         phone: userData.phone ?? null,
         role_id: userData.role_id ?? null,
-        role_code: roleRel?.code ?? null,
-        role_name: roleRel?.name ?? null,
+        role_code: userData.role_code ?? null,
+        role_name: userData.role_name ?? null,
         active: userData.active ?? false,
       };
 
@@ -141,21 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data: rolePermissions, error: permissionsError } = await supabase
-        .from("role_permissions")
-        .select("permissions(code)")
-        .eq("role_id", appUser.role_id);
-
-      if (permissionsError) {
-        setPerms(new Set());
-        setPermissionsReady(false);
-        setError(dbError(permissionsError));
-        return;
-      }
-
-      const codes = (rolePermissions ?? [])
-        .map((row) => (row as unknown as { permissions?: { code?: string } }).permissions?.code)
-        .filter((code): code is string => Boolean(code));
+      const codes = Array.isArray(profile.permissions)
+        ? profile.permissions.filter((code): code is string => typeof code === "string")
+        : [];
 
       setPerms(new Set(codes));
       setPermissionsReady(true);
