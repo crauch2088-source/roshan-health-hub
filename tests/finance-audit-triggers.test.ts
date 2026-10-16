@@ -12,7 +12,7 @@ const integration = readFileSync(
 );
 
 test("finance audit cleanup removes only the redundant trigger from all four affected tables", () => {
-  for (const table of ["payments", "expenses", "supplier_payments", "cashbox_transactions"]) {
+  for (const table of ["payments", "expenses", "supplier_payments", "supplier_bills", "cashbox_transactions"]) {
     assert.match(
       migration,
       new RegExp("DROP TRIGGER IF EXISTS trg_finance_audit ON public\\." + table, "i"),
