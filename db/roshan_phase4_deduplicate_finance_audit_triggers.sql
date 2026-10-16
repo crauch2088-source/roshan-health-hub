@@ -10,6 +10,7 @@ BEGIN;
 DROP TRIGGER IF EXISTS trg_finance_audit ON public.payments;
 DROP TRIGGER IF EXISTS trg_finance_audit ON public.expenses;
 DROP TRIGGER IF EXISTS trg_finance_audit ON public.supplier_payments;
+DROP TRIGGER IF EXISTS trg_finance_audit ON public.supplier_bills;
 DROP TRIGGER IF EXISTS trg_finance_audit ON public.cashbox_transactions;
 
 COMMIT;
