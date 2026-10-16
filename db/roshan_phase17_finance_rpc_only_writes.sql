@@ -86,6 +86,11 @@ DECLARE
   uid uuid;
   invoice_branch uuid;
   user_branch uuid;
+  existing_actor uuid;
+  existing_invoice_id uuid;
+  existing_amount numeric;
+  existing_method text;
+  existing_reference text;
 BEGIN
   IF NOT public.app_has_perm('payments.create')
      AND NOT public.app_has_perm('billing.create')
@@ -110,10 +115,26 @@ BEGIN
   END IF;
 
   IF _idempotency_key IS NOT NULL THEN
-    SELECT id INTO pay_id
-    FROM public.payments
-    WHERE idempotency_key = _idempotency_key;
+    SELECT p.id,
+           p.created_by,
+           p.invoice_id,
+           p.amount,
+           COALESCE(p.payment_method, p.method, 'cash'),
+           NULLIF(BTRIM(COALESCE(p.reference_no, p.reference, '')), '')
+      INTO pay_id, existing_actor, existing_invoice_id, existing_amount,
+           existing_method, existing_reference
+    FROM public.payments AS p
+    WHERE p.idempotency_key = _idempotency_key;
+
     IF pay_id IS NOT NULL THEN
+      IF existing_actor IS DISTINCT FROM uid
+         OR existing_invoice_id IS DISTINCT FROM _invoice_id
+         OR existing_amount IS DISTINCT FROM _amount
+         OR existing_method IS DISTINCT FROM COALESCE(_method, 'cash')
+         OR existing_reference IS DISTINCT FROM NULLIF(BTRIM(COALESCE(_reference, '')), '') THEN
+        RAISE EXCEPTION 'idempotency key reused with different payment request'
+          USING ERRCODE = '22023';
+      END IF;
       RETURN pay_id;
     END IF;
   END IF;
