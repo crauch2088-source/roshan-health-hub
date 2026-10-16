@@ -52,6 +52,7 @@ import {
   type ClaimItemInput,
   type ClaimStatus,
 } from "@/lib/insurance";
+import { isInsuranceClaimReadyToSubmit } from "@/lib/insurance-validation";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -657,6 +658,7 @@ function ClaimsTab({ currency }: { currency: string }) {
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
   const [patientInsuranceId, setPatientInsuranceId] = useState("");
+  const [invoiceId, setInvoiceId] = useState("");
   const [items, setItems] = useState<DraftItem[]>([]);
   const [itemForm, setItemForm] = useState({
     service_type: "consultation" as DraftItem["service_type"],
@@ -671,11 +673,28 @@ function ClaimsTab({ currency }: { currency: string }) {
   const membership = useRows<Row[]>(["patient-insurance-picker"], () =>
     supabase
       .from("patient_insurance")
-      .select("id, patients(full_name, mrn), insurance_companies(name)")
+      .select("id, patient_id, patients(full_name, mrn), insurance_companies(name)")
       .eq("status", "active")
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(200),
+  );
+
+  const selectedMembership = ((membership.data ?? []) as Row[]).find(
+    (m) => s(m, "id") === patientInsuranceId,
+  );
+  const selectedPatientId = selectedMembership ? s(selectedMembership, "patient_id") : "";
+  const invoices = useRows<Row[]>(
+    ["insurance-claim-invoices", selectedPatientId],
+    () =>
+      supabase
+        .from("invoices")
+        .select("id, invoice_number, net_amount, total_amount, paid_amount, created_at")
+        .eq("patient_id", selectedPatientId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(100),
+    { enabled: Boolean(selectedPatientId) },
   );
 
   const claims = useRows<Row[]>(["insurance-claims"], () =>
@@ -691,7 +710,7 @@ function ClaimsTab({ currency }: { currency: string }) {
 
   async function addItem() {
     const gross = Number(itemForm.gross_amount) || 0;
-    if (!itemForm.description.trim() || gross <= 0 || !patientInsuranceId) return;
+    if (!itemForm.description.trim() || gross <= 0 || !patientInsuranceId || !invoiceId) return;
     const coverage = await calculateInsuranceCoverage({
       patientInsuranceId,
       serviceType: itemForm.service_type,
@@ -714,13 +733,13 @@ function ClaimsTab({ currency }: { currency: string }) {
 
   const create = useSave(
     async () => {
-      if (!patientInsuranceId || items.length === 0)
+      if (!patientInsuranceId || !invoiceId || items.length === 0)
         throw new Error(
           lang === "ar"
-            ? "اختر تأمين المريض وأضف بنوداً"
-            : "Select patient insurance and add line items",
+            ? "اختر تأمين المريض والفاتورة وأضف بنداً واحداً على الأقل"
+            : "Select patient insurance and an invoice, then add at least one line item",
         );
-      await createInsuranceClaim({ patientInsuranceId, invoiceId: null, items });
+      await createInsuranceClaim({ patientInsuranceId, invoiceId, items });
       return null;
     },
     {
@@ -729,6 +748,7 @@ function ClaimsTab({ currency }: { currency: string }) {
       onDone: () => {
         setOpen(false);
         setPatientInsuranceId("");
+        setInvoiceId("");
         setItems([]);
       },
     },
@@ -900,7 +920,11 @@ function ClaimsTab({ currency }: { currency: string }) {
             <Field label={`${t("patient_insurance")} *`}>
               <Select
                 {...(patientInsuranceId ? { value: patientInsuranceId } : {})}
-                onValueChange={setPatientInsuranceId}
+                onValueChange={(value) => {
+                  setPatientInsuranceId(value);
+                  setInvoiceId("");
+                  setItems([]);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("none")} />
@@ -910,6 +934,28 @@ function ClaimsTab({ currency }: { currency: string }) {
                     <SelectItem key={s(m, "id")} value={s(m, "id")}>
                       {s(rel(m, "patients"), "full_name")} —{" "}
                       {s(rel(m, "insurance_companies"), "name")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label={`${t("invoice_number")} *`}>
+              <Select
+                {...(invoiceId ? { value: invoiceId } : {})}
+                onValueChange={(value) => {
+                  setInvoiceId(value);
+                  setItems([]);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("none")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {((invoices.data ?? []) as Row[]).map((invoice) => (
+                    <SelectItem key={s(invoice, "id")} value={s(invoice, "id")}>
+                      {s(invoice, "invoice_number")} —{" "}
+                      {money(n(invoice, "net_amount") || n(invoice, "total_amount"), currency)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -955,7 +1001,10 @@ function ClaimsTab({ currency }: { currency: string }) {
                 size="sm"
                 className="mt-2"
                 disabled={
-                  !patientInsuranceId || !itemForm.description.trim() || !itemForm.gross_amount
+                  !patientInsuranceId ||
+                  !invoiceId ||
+                  !itemForm.description.trim() ||
+                  !itemForm.gross_amount
                 }
                 onClick={() => void addItem()}
               >
@@ -991,7 +1040,14 @@ function ClaimsTab({ currency }: { currency: string }) {
               {t("cancel")}
             </Button>
             <Button
-              disabled={!patientInsuranceId || items.length === 0 || create.isPending}
+              disabled={
+                !isInsuranceClaimReadyToSubmit({
+                  patientInsuranceId,
+                  invoiceId,
+                  itemCount: items.length,
+                  isSaving: create.isPending,
+                })
+              }
               onClick={() => create.mutate(undefined as never)}
             >
               {create.isPending ? t("saving") : t("save")}
