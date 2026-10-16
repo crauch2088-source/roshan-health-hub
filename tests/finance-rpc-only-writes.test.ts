@@ -63,6 +63,7 @@ test("migration revokes direct write privileges but retains authenticated RPC ac
   assert.match(integration, /accounting\.create/);
   assert.match(integration, /did not reject an amount above the outstanding balance/);
   assert.match(integration, /idempotent retry returned a different payment id/);
+  assert.match(integration, /accepted a different payload for a committed idempotency key/);
   for (const table of ["insurance_claims", "insurance_claim_items", "insurance_claim_payments"]) {
     assert.match(migration, new RegExp(table));
   }
