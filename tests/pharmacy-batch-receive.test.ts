@@ -27,8 +27,14 @@ test("server RPC validates numeric bounds, supplier, active medicine, branch, an
   assert.match(rpcSql, /invalid_purchase_price/);
   assert.match(rpcSql, /invalid_selling_price/);
   assert.match(rpcSql, /active_supplier_not_found/);
+  assert.match(rpcSql, /IF v_branch IS NULL THEN/);
+  assert.match(rpcSql, /even super-admins must/);
+
   assert.match(rpcSql, /m\.active IS TRUE/);
   assert.match(rpcSql, /stock_quantity_overflow/);
+  assert.match(integration, /super-admin received stock without a branch/);
+  assert.match(integration, /unassigned branch batch was created/);
+
   assert.match(
     rpcSql,
     /REVOKE INSERT ON TABLE public\.stock_movements FROM PUBLIC, anon, authenticated/,
