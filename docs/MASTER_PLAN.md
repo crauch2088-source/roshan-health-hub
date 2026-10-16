@@ -475,3 +475,11 @@ A disposable PostgreSQL 17 regression was added; it failed on head `69945084c67a
 - [x] Compared live invoice and invoice-item RLS: invoice SELECT checks branch access, while invoice-item SELECT currently checks permission only. PR #33 proposes parent-invoice branch filtering; validate against a disposable clone before release.
 - [x] Aggregate integrity check confirmed 6 invoices and 6 invoice items; all 6 invoices are branchless, and no invoice item is orphaned. Branch assignment remains blocked on the existing synthetic-vs-operational data decision.
 - [x] Confirmed next_invoice_number() and post_invoice_payment(...) are authenticated-only SECURITY DEFINER/RPC paths with empty search_path; they do not provide the missing invoice-create RPCs.
+
+
+### Patient registration atomicity audit — 2026-10-16
+- [x] Read-only catalog comparison confirmed the proposed atomic patient RPC preserves the live RMC MRN prefix and advisory-lock key.
+- [x] Aggregate production check recorded 10 patient rows: 5 RMC MRNs, 1 TEST-prefixed MRN, and 4 NULL MRNs; no identifying fields were retrieved and no data was modified.
+- [x] Reviewed PR #39's server-side permission, active-user, required-branch, and server-derived audit attribution checks.
+- [x] Reviewed disposable PostgreSQL coverage for invalid input, permission denial, missing branch, rollback, and two-session MRN allocation concurrency.
+- [x] Confirmed full CI passed on PR #39 head 8fa3ae58ffc8964ce5e4397e4a34a3c2618b3a1a in run 38903131578; migration remains unapplied and PR remains draft.
