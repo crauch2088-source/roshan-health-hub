@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  buildMedicineSearchFilter,
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
   editPrescriptionName,
@@ -34,8 +35,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
+  const medicineFilter = buildMedicineSearchFilter(debouncedSearch);
   const medsQ = useRows<Row[]>(
-    ["medicines-search", cleanSearch],
+    ["medicines-search", medicineFilter ?? ""],
     () => {
       let query = supabase
         .from("medicines")
@@ -44,14 +46,10 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         .is("deleted_at", null)
         .order("name")
         .limit(30);
-      if (cleanSearch.length >= 2) {
-        query = query.or(
-          `name.ilike.%${cleanSearch}%,generic_name.ilike.%${cleanSearch}%,brand_name.ilike.%${cleanSearch}%,strength.ilike.%${cleanSearch}%`,
-        );
-      }
+      if (medicineFilter) query = query.or(medicineFilter);
       return query;
     },
-    { enabled: cleanSearch.length !== 1 },
+    { enabled: Boolean(medicineFilter) },
   );
   const [form, setForm] = useState<PrescriptionDraft>(createEmptyPrescriptionDraft);
   const [items, setItems] = useState<PrescriptionDraft[]>([]);
