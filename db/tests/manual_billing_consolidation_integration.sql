@@ -148,7 +148,7 @@ END;
 $$;
 
 SELECT set_config('test.perms','billing.create',false);
-DO $
+DO $$
 DECLARE a uuid; b uuid; n integer; m integer;
 BEGIN
  a := public.create_billing_invoice_atomic('30000000-0000-0000-0000-000000000003','50000000-0000-0000-0000-000000000004',NULL,CURRENT_DATE,0,
@@ -163,5 +163,5 @@ BEGIN
  IF (SELECT count(*) FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000004')<>n THEN RAISE EXCEPTION 'manual retry duplicated invoice'; END IF;
  IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=a AND deleted_at IS NULL)<>m THEN RAISE EXCEPTION 'manual retry duplicated invoice lines'; END IF;
 END;
-$;
+$$;
 SELECT 'manual billing consolidation integration tests passed' AS result;
