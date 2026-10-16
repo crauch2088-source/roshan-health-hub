@@ -14,7 +14,7 @@
 2. `roshan_phase21_patient_registration_atomicity_20261016` — version `20261016162410`; installed `public.create_patient_atomic` with `SECURITY DEFINER` and empty `search_path`. Direct INSERT and legacy `next_mrn()` permissions remain enabled so the currently deployed app keeps working.
 
 ## Pending rollout
-- [PR #44 — staged atomic patient registration](https://github.com/crauch2088-source/roshan-health-hub/pull/44) separates Phase 21A function creation from Phase 21B permission revocation. The dedicated PostgreSQL 17 integration job passed, but a full CI run was cancelled during PR refresh; a rerun was requested. Phase 21B must wait until the updated UI is deployed and smoke-tested.
+- [PR #44 — staged atomic patient registration](https://github.com/crauch2088-source/roshan-health-hub/pull/44) separates Phase 21A function creation from Phase 21B privilege revocation. Its full CI rerun passed all four jobs: patient registration/MRN concurrency, cashbox concurrency, finance audit behavior, and app install/audit/typecheck/lint/build. PR #44 was merged as `36903ddcf1fb27ba35eb1237f594c006b5529dc2`. Phase 21B must wait until the updated UI is deployed and smoke-tested.
 - Production deployment remains on `9f6b2c881247b570cc75e1f61ed13a2337183b86`; PR #41, #43, and #44 are merged but not yet deployed. Vercel returned HTTP 402 because the team's 100/day deployment API quota is exhausted; reset is approximately 2026-10-17 16:24 UTC.
 - Supabase migration history count: 81. Full historical migration parity/replay remains open; archived SQL has not been replayed.
 
