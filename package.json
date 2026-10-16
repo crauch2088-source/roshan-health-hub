@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test:guard": "node --test --experimental-strip-types tests/role-guard.test.ts tests/runtime-engine.test.ts tests/nav-active.test.ts tests/search-core.test.ts tests/nav-layout.test.ts tests/nav-permissions.test.ts tests/search-memory.test.ts tests/paging.test.ts tests/dashboard-metrics.test.ts tests/ssr-log-redaction.test.ts"
+    "test:guard": "node --test --experimental-strip-types tests/role-guard.test.ts tests/runtime-engine.test.ts tests/nav-active.test.ts tests/search-core.test.ts tests/nav-layout.test.ts tests/nav-permissions.test.ts tests/search-memory.test.ts tests/paging.test.ts tests/dashboard-metrics.test.ts tests/ssr-log-redaction.test.ts tests/patient-registration-atomicity.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
