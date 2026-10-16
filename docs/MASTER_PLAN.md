@@ -493,3 +493,5 @@ A disposable PostgreSQL 17 regression was added; it failed on head `69945084c67a
 - [x] Repeated the read-only private-helper ACL audit: five SECURITY DEFINER helpers have effective anon EXECUTE according to PostgreSQL privilege checks, while anon has no USAGE on schema `private`. Treat as least-privilege debt, not proof of a current PostgREST route; map policy/trigger dependencies before proposing revocations.
 
 These checks are repository/metadata verification, not application feature completion. No production SQL, data, grants, merges, or deployments were changed.
+
+- [x] Mapped live dependencies before considering any helper permission change: branch-access helper → 50 policies/13 tables; claim helper → 4 policies/2 tables; invoice helper → 3 policies; patient helper → 3 policies; role-sync helper → one trigger. Broad changes are explicitly blocked pending isolated-context regression tests.
