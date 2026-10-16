@@ -301,7 +301,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **43 checked / 135 total (~32% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **44 checked / 136 total (~32% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -390,3 +390,8 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [x] Checked the current 24-hour runtime-error aggregate: Vercel reported no runtime error groups. The older missing `VITE_SUPABASE_PUBLISHABLE_KEY` cluster is timestamped 2026-10-14, and the latest selected 24-hour window contained no runtime errors; do not describe that historical cluster as a current outage. A 30-minute production error-log query returned no entries. Read Vercel environment-variable metadata without decrypting values and confirmed `VITE_SUPABASE_PUBLISHABLE_KEY` is configured for both production and preview. This is an observability/configuration snapshot, not an authenticated clinical smoke test.
 - [ ] Vercel preview builds are still blocked by the Hobby build-rate limit for multiple draft PRs. Continue using GitHub PostgreSQL 17 integration/guard jobs and source-level checks while rate-limited; do not change plan or create a second Vercel project to work around this.
 - [ ] Keep production at the currently verified main deployment until reviewed changes are approved; none of the current draft hardening PRs has been merged by this work session.
+
+
+## Prescription workflow cross-PR consolidation — 2026-10-16
+
+- [x] Compared the overlapping prescription-search PR #15 with atomic prescription PR #22 at source level. Ported the remaining search-safety and catalog-form normalization gaps into PR #22: remove SQL LIKE `%`/`_` wildcard characters and PostgREST filter grammar from user terms; avoid querying the catalog for empty/one-character searches; normalize supported catalog dosage forms to the select's canonical lowercase values and the route to `oral`; unknown dosage forms remain unselected rather than being misrepresented. Added regression cases first; CI confirmed the missing helper (RED), then the helper/UI assertions and formatting were corrected. Latest head `e9b85929357360006cff31d690ea6658a928c7c6` passed 68 guard tests, PostgreSQL 17 atomic prescription integration, security audit, typecheck, lint, and build in [run #38899424448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38899424448). PR #15 was closed as superseded after a note was added; PR #22 remains open/draft/unmerged. No production SQL, merge, or deployment occurred. The current catalog has 9 active medicines and all 9 have blank dosage_form values, so this normalization primarily prevents future inconsistent values rather than changing existing catalog entries.
