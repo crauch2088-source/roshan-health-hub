@@ -74,6 +74,35 @@ jobs:
             -f db/roshan_phase18_dedupe_finance_audit_triggers.sql \
             -f db/tests/finance_audit_trigger_dedup_integration.sql
 
+  sql-patient-registration-atomicity:
+    name: Atomic patient registration and MRN concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute atomic patient registration tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/patient_registration_atomicity_fixture.sql \
+            -f db/roshan_phase21_patient_registration_atomicity.sql \
+            -f db/roshan_phase21_patient_registration_privileges.sql \
+            -f db/tests/patient_registration_atomicity_integration.sql
+          bash db/tests/patient_registration_atomicity_concurrency.sh
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest
