@@ -215,5 +215,5 @@ BEGIN
    RAISE EXCEPTION 'legacy dispense RPC remains executable and bypasses pharmacy invoicing';
  END IF;
 END;
-$$;
+$privilege_test$;
 SELECT 'pharmacy dispense + invoice integration tests passed' AS result;
