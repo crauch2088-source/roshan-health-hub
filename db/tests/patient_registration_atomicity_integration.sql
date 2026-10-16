@@ -44,6 +44,12 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '22023' THEN
     NULL;
   END;
+  BEGIN
+    PERFORM public.create_patient_atomic('Missing Gender Patient','',NULL,NULL,NULL);
+    RAISE EXCEPTION 'blank gender unexpectedly succeeded';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
   SELECT count(*) INTO row_count FROM public.patients;
   IF row_count <> 2 THEN RAISE EXCEPTION 'invalid registration created a row'; END IF;
 

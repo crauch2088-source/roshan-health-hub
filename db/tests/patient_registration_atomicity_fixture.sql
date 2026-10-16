@@ -26,7 +26,7 @@ CREATE TABLE public.patients (
 );
 CREATE FUNCTION public.next_mrn()
 RETURNS text LANGUAGE sql SECURITY DEFINER SET search_path TO ''
-AS $ SELECT 'RMC999999'::text $;
+AS $$ SELECT 'RMC999999'::text $$;
 GRANT INSERT ON public.patients TO authenticated;
 GRANT EXECUTE ON FUNCTION public.next_mrn() TO authenticated;
 
