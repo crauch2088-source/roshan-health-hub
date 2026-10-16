@@ -25,6 +25,24 @@ $function$;
 REVOKE ALL ON FUNCTION private.app_has_lab_order_branch_access(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.app_has_lab_order_branch_access(uuid) TO authenticated;
 
+CREATE OR REPLACE FUNCTION private.app_has_prescription_branch_access(_prescription_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.prescriptions AS p
+    WHERE p.id = _prescription_id
+      AND private.app_has_attachment_branch_access(p.patient_id, p.visit_id)
+  )
+$function$;
+
+REVOKE ALL ON FUNCTION private.app_has_prescription_branch_access(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_prescription_branch_access(uuid) TO authenticated;
+
 ALTER POLICY prescriptions_select ON public.prescriptions
   USING (
     (
@@ -71,11 +89,7 @@ ALTER POLICY prescription_items_select ON public.prescription_items
       (SELECT public.app_has_perm('pharmacy.read'))
       OR (SELECT public.app_has_perm('emr.read'))
     )
-    AND EXISTS (
-      SELECT 1 FROM public.prescriptions AS p
-      WHERE p.id = prescription_items.prescription_id
-        AND (SELECT private.app_has_attachment_branch_access(p.patient_id, p.visit_id))
-    )
+    AND (SELECT private.app_has_prescription_branch_access(prescription_items.prescription_id))
   );
 ALTER POLICY prescription_items_insert ON public.prescription_items
   WITH CHECK (
@@ -83,11 +97,7 @@ ALTER POLICY prescription_items_insert ON public.prescription_items
       (SELECT public.app_has_perm('pharmacy.create'))
       OR (SELECT public.app_has_perm('emr.create'))
     )
-    AND EXISTS (
-      SELECT 1 FROM public.prescriptions AS p
-      WHERE p.id = prescription_items.prescription_id
-        AND (SELECT private.app_has_attachment_branch_access(p.patient_id, p.visit_id))
-    )
+    AND (SELECT private.app_has_prescription_branch_access(prescription_items.prescription_id))
   );
 ALTER POLICY prescription_items_update ON public.prescription_items
   USING (
@@ -95,22 +105,14 @@ ALTER POLICY prescription_items_update ON public.prescription_items
       (SELECT public.app_has_perm('pharmacy.update'))
       OR (SELECT public.app_has_perm('emr.update'))
     )
-    AND EXISTS (
-      SELECT 1 FROM public.prescriptions AS p
-      WHERE p.id = prescription_items.prescription_id
-        AND (SELECT private.app_has_attachment_branch_access(p.patient_id, p.visit_id))
-    )
+    AND (SELECT private.app_has_prescription_branch_access(prescription_items.prescription_id))
   )
   WITH CHECK (
     (
       (SELECT public.app_has_perm('pharmacy.update'))
       OR (SELECT public.app_has_perm('emr.update'))
     )
-    AND EXISTS (
-      SELECT 1 FROM public.prescriptions AS p
-      WHERE p.id = prescription_items.prescription_id
-        AND (SELECT private.app_has_attachment_branch_access(p.patient_id, p.visit_id))
-    )
+    AND (SELECT private.app_has_prescription_branch_access(prescription_items.prescription_id))
   );
 ALTER POLICY prescription_items_delete ON public.prescription_items
   USING (
@@ -118,11 +120,7 @@ ALTER POLICY prescription_items_delete ON public.prescription_items
       (SELECT public.app_has_perm('pharmacy.delete'))
       OR (SELECT public.app_has_perm('emr.delete'))
     )
-    AND EXISTS (
-      SELECT 1 FROM public.prescriptions AS p
-      WHERE p.id = prescription_items.prescription_id
-        AND (SELECT private.app_has_attachment_branch_access(p.patient_id, p.visit_id))
-    )
+    AND (SELECT private.app_has_prescription_branch_access(prescription_items.prescription_id))
   );
 
 ALTER POLICY lab_order_items_select ON public.lab_order_items
