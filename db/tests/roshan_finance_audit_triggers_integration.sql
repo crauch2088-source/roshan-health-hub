@@ -10,7 +10,7 @@ DECLARE
   op text;
   actual_count integer;
 BEGIN
-  FOREACH tbl IN ARRAY ARRAY['payments','expenses','supplier_payments','cashbox_transactions'] LOOP
+  FOREACH tbl IN ARRAY ARRAY['payments','expenses','supplier_payments','supplier_bills','cashbox_transactions'] LOOP
     IF NOT EXISTS (
       SELECT 1 FROM pg_trigger t
       JOIN pg_class c ON c.oid=t.tgrelid
