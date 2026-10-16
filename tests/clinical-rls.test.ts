@@ -6,6 +6,7 @@ const migration = read("../db/roshan_phase20_clinical_child_branch_isolation.sql
 const integration = read("../db/tests/clinical_child_branch_isolation_integration.sql");
 test("clinical child policies use parent branch helpers", () => {
   assert.ok(migration.includes("app_has_attachment_branch_access"));
+  assert.ok(migration.includes("app_has_prescription_branch_access"));
   assert.ok(migration.includes("app_has_lab_order_branch_access"));
   assert.ok(integration.includes("cross-branch prescription UPDATE was allowed"));
 });
