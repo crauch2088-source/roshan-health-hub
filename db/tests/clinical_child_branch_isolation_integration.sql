@@ -1,5 +1,5 @@
 SELECT set_config('test.auth_uid','10000000-0000-0000-0000-000000000002',false);
-SELECT set_config('test.permissions','pharmacy.read|emr.read|lab.read|pharmacy.create|emr.create|lab.create|pharmacy.update|emr.update|lab.update|pharmacy.delete|emr.delete|lab.delete',false);
+SELECT set_config('test.permissions','pharmacy.read|emr.read|lab.read|pharmacy.create|emr.create|lab.create|pharmacy.update|emr.update|lab.update|pharmacy.delete|emr.delete|lab.delete|certificates.read|certificates.create|certificates.update|certificates.delete|billing.read|billing.create|billing.update|billing.delete|patients.read|insurance.read|insurance.create|insurance.update',false);
 SELECT set_config('test.super_admin','false',false);
 
 INSERT INTO public.users(id,auth_user_id,branch_id,active)
@@ -24,6 +24,18 @@ INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id) VALUES
 INSERT INTO public.lab_order_items(order_id,status) VALUES
  ('60000000-0000-0000-0000-000000000001','pending'),
  ('60000000-0000-0000-0000-000000000002','pending');
+INSERT INTO public.patient_insurance(id,patient_id) VALUES
+ ('70000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001'),
+ ('70000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002');
+INSERT INTO public.medical_certificates(id,patient_id) VALUES
+ ('80000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001'),
+ ('80000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002');
+INSERT INTO public.patient_discounts(id,patient_id) VALUES
+ ('90000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001'),
+ ('90000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002');
+INSERT INTO public.insurance_prior_authorizations(id,patient_insurance_id) VALUES
+ ('a0000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001'),
+ ('a0000000-0000-0000-0000-000000000002','70000000-0000-0000-0000-000000000002');
 
 SET ROLE authenticated;
 
@@ -38,6 +50,15 @@ BEGIN
   END IF;
   IF (SELECT count(*) FROM public.lab_order_items) <> 1 THEN
     RAISE EXCEPTION 'lab_order_items SELECT leaked or hid a branch-local row';
+  END IF;
+  IF (SELECT count(*) FROM public.medical_certificates) <> 1 THEN
+    RAISE EXCEPTION 'medical_certificates SELECT leaked or hid a branch-local row';
+  END IF;
+  IF (SELECT count(*) FROM public.patient_discounts) <> 1 THEN
+    RAISE EXCEPTION 'patient_discounts SELECT leaked or hid a branch-local row';
+  END IF;
+  IF (SELECT count(*) FROM public.insurance_prior_authorizations) <> 1 THEN
+    RAISE EXCEPTION 'insurance_prior_authorizations SELECT leaked or hid a branch-local row';
   END IF;
 
   UPDATE public.prescriptions SET notes='tampered' WHERE id='50000000-0000-0000-0000-000000000002';
@@ -83,6 +104,24 @@ BEGIN
     RAISE EXCEPTION 'cross-branch lab item INSERT was allowed';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
+  BEGIN
+    INSERT INTO public.medical_certificates(patient_id)
+    VALUES('30000000-0000-0000-0000-000000000002');
+    RAISE EXCEPTION 'cross-branch medical certificate INSERT was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO public.patient_discounts(patient_id)
+    VALUES('30000000-0000-0000-0000-000000000002');
+    RAISE EXCEPTION 'cross-branch patient discount INSERT was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO public.insurance_prior_authorizations(patient_insurance_id)
+    VALUES('70000000-0000-0000-0000-000000000002');
+    RAISE EXCEPTION 'cross-branch prior authorization INSERT was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
 END
 $test$;
 
@@ -98,6 +137,15 @@ BEGIN
   END IF;
   IF EXISTS (SELECT 1 FROM public.lab_order_items WHERE order_id='60000000-0000-0000-0000-000000000002' AND status <> 'pending') THEN
     RAISE EXCEPTION 'branch B lab item was mutated';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.medical_certificates WHERE id='80000000-0000-0000-0000-000000000002' AND patient_id <> '30000000-0000-0000-0000-000000000002') THEN
+    RAISE EXCEPTION 'branch B medical certificate was mutated';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='90000000-0000-0000-0000-000000000002' AND patient_id <> '30000000-0000-0000-0000-000000000002') THEN
+    RAISE EXCEPTION 'branch B patient discount was mutated';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.insurance_prior_authorizations WHERE id='a0000000-0000-0000-0000-000000000002' AND patient_insurance_id <> '70000000-0000-0000-0000-000000000002') THEN
+    RAISE EXCEPTION 'branch B prior authorization was mutated';
   END IF;
 END
 $test$;
