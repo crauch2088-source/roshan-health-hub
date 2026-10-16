@@ -251,3 +251,16 @@ The single unmatched legacy statement is `public.fn_calculate_insurance_coverage
 ### Privileged-role guard candidate — read-only — 2026-10-16
 
 The live trigger catalog contains no `trg_guard_super_admin_users`, `trg_guard_super_admin_roles`, or `trg_guard_super_admin_role_permissions` triggers. The prepared file `db/roshan_security_privileged_role_guard.sql` is therefore not reflected in the current live trigger set. Draft [PR #38](https://github.com/crauch2088-source/roshan-health-hub/pull/38) adds an isolated PostgreSQL 17 integration job and static guard checks for the prepared SQL; CI passed on commit `dc6301732093abc4a28aeedcff2a1d1738405552` (run [#38892744625](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38892744625)). It is test-only and does not apply the migration to production.
+
+
+### Insurance workflow readiness snapshot — aggregate-only, read-only — 2026-10-16
+
+A fresh query of the live database returned:
+- Insurance plans: **0** total; plans with non-zero default coverage: **0**.
+- Insurance coverage rules: **0**.
+- Patient insurance policies: **0**.
+- Insurance claims and claim items: **0**; there is no historic claim-item population to migrate or compare.
+- Invoice items: **6** total, all non-deleted: 4 `consultation`, 2 `laboratory`.
+- Existing check constraints restrict claim item `service_type` to `consultation`, `lab`, or `medicine`, but the live invoice item categories currently use `consultation` and `laboratory`. The mismatch should be handled explicitly in the business mapping rather than by string assumptions.
+
+No claim item has a live `reference_id` because there are no claim items. `insurance_claim_items.reference_id` still has no foreign key, and coverage rules have no rows to establish the intended target. Consequently, the reference model and coverage/override policy remain business decisions. Do not infer that `reference_id` must be an invoice item ID, and do not enable insurance billing until plans/rules and the mapping have been defined and tested. No data was changed.
