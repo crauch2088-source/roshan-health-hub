@@ -744,3 +744,10 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - [ ] Review the `pg_trgm` extension placement warning; assess dependency impact and migration/rollback path before moving it.
 - [ ] Performance advisor currently lists 100 unused-index findings. Do not drop them without query/workload evidence; measure query plans and preserve indexes used by branch scoping, uniqueness, foreign keys, and high-frequency search.
 - [x] Vercel inventory reconfirmed one linked project in team `roshan45`: `roshan-health-hub` linked to `crauch2088-source/roshan-health-hub`.
+
+
+## Repository cross-check from integration review (2026-10-16)
+- [ ] Open draft PR #34, [branch-scope prescription/lab child rows](https://github.com/crauch2088-source/roshan-health-hub/pull/34), has reported passing PostgreSQL 17 integration + guard/typecheck/lint/build checks on its latest head, but remains unapplied to production. Preserve the migration-history reconciliation and business-review gates; do not merge solely because CI is green.
+- [ ] Keep open security issue #25 active: secret scanning/push protection are reported disabled and historical environment-file exposure is still unverified.
+- [ ] Re-triage existing finance/clinical data integrity issues before launch, including invoice amount validation/atomicity (#20), complete patient balance aggregation (#18), and insurance claim invariants (#16). Re-check issue/PR state before acting; these notes are snapshots, not assertions that each remains unchanged.
+- The documentation-only integration-map commit reports Vercel status pending; do not interpret that alone as a failed app build or change production configuration for a docs-only commit.
