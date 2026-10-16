@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 
 import { PENDING_LAB_STATUSES, sumAmounts } from "../src/lib/dashboard-metrics.ts";
 
@@ -27,4 +28,22 @@ test("sumAmounts supports a row filter and rounds to cents", () => {
     sumAmounts(rows, (r) => String(r["d"]).startsWith("2026-10-14")),
     0.3,
   );
+});
+
+const dashboardSource = readFileSync(
+  new URL("../src/routes/_authenticated/dashboard.tsx", import.meta.url),
+  "utf8",
+);
+
+test("dashboard list panels distinguish query failures from empty results", () => {
+  const guardedPanels = [
+    /visits\.error \? \([\s\S]{0,100}<ErrorBox error=\{visits\.error\} \/>/,
+    /appointments\.error \? \([\s\S]{0,120}<ErrorBox error=\{appointments\.error\} \/>/,
+    /labPending\.error \? \([\s\S]{0,120}<ErrorBox error=\{labPending\.error\} \/>/,
+    /followups\.error \? \([\s\S]{0,120}<ErrorBox error=\{followups\.error\} \/>/,
+    /lowStockMeds\.error \? \([\s\S]{0,120}<ErrorBox error=\{lowStockMeds\.error\} \/>/,
+    /batchesForAlerts\.error \? \([\s\S]{0,140}<ErrorBox error=\{batchesForAlerts\.error\} \/>/,
+    /insurance\.error \? \([\s\S]{0,120}<ErrorBox error=\{insurance\.error\} \/>/,
+  ];
+  for (const pattern of guardedPanels) assert.match(dashboardSource, pattern);
 });
