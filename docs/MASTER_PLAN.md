@@ -493,3 +493,13 @@ A disposable PostgreSQL 17 regression was added; it failed on head `69945084c67a
 - [x] Repeated the read-only private-helper ACL audit: five SECURITY DEFINER helpers have effective anon EXECUTE according to PostgreSQL privilege checks, while anon has no USAGE on schema `private`. Treat as least-privilege debt, not proof of a current PostgREST route; map policy/trigger dependencies before proposing revocations.
 
 These checks are repository/metadata verification, not application feature completion. No production SQL, data, grants, merges, or deployments were changed.
+
+
+## Verified follow-up batch — 2026-10-16
+- [x] Latest plan-document CI completed successfully: run [38908548869](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38908548869), including security checks, role-guard tests, typecheck, lint, and build.
+- [x] Read-only Supabase migration-ledger check: 79 rows, from `20260818162003` through `20261014164131`; count/range match the recorded inventory but do not establish SQL-source parity.
+- [x] Rechecked PR #23: OPEN/DRAFT on `main`; CI run [38872711903](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38872711903) succeeded. No merge/release.
+- [x] Rechecked PR #33: OPEN/DRAFT on `fix/invoice-atomicity` (PR #23); CI run [38880644006](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38880644006) succeeded. Keep dependency/release ordering intact.
+- [x] Repeated read-only privilege checks on five SECURITY DEFINER helpers: PostgreSQL reports effective anon EXECUTE, but anon lacks USAGE on `private`. Track as least-privilege debt; map RLS/trigger dependencies before any proposed change.
+
+These checks are repository and metadata verification, not application feature completion. No production SQL, data, grants, merges, or deployments were changed.
