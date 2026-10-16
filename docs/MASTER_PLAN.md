@@ -814,3 +814,12 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - [x] Post-migration browser smoke test successfully registered one synthetic patient via the current UI and displayed “Saved” with MRN `RMC000001`. Test run: https://agent.tinyfish.ai/runs/643f8bd1-d227-4fc8-b96b-fa6098819ebf. The exact synthetic patient `QA TINYFISH PHASE21B POSTMIGRATION 20261016` (UUID `d6d0b9dc-84bb-4d29-a1c2-5538a3cdd1d4`) had no dependent rows; guarded cleanup deleted only that exact patient and its patient audit rows.
 - [x] Final postconditions confirmed patients=0, visits=0, queue_tickets=0, invoices=0, payments=0, audit_logs=0; registration RPC remains executable by `authenticated` and not `anon`.
 - [ ] Keep broader role/branch adversarial authorization testing open. This change closes the direct-write bypass for patient registration but does not prove all other SECURITY DEFINER RPCs and branch policies safe.
+
+
+## Supabase SECURITY DEFINER inventory after Phase 21B — 2026-10-16
+
+- [x] Read-only catalog inventory counted 42 `SECURITY DEFINER` functions in `public`; 20 currently have EXECUTE for `authenticated`, and zero public functions have EXECUTE for `anon`.
+- [x] All 20 authenticated-callable public SECURITY DEFINER functions have an empty/pinned `search_path`; static body scan found authorization/scope markers in each definition. This is a triage signal only—not a substitute for negative tests of every argument, branch, patient/visit relation, and financial invariant.
+- [x] `anon` has EXECUTE ACLs on five functions in the `private` schema, but read-only schema privilege check confirms `anon` has no USAGE on `private`, so those functions are not reachable through normal schema access. Keep least-privilege review open rather than claiming these ACLs are ideal.
+- [ ] Still open: function-by-function adversarial authorization testing, branch isolation for cross-entity IDs, the Auth leaked-password protection setting, `pg_trgm` extension placement, and migration replay parity.
+- [ ] Vercel runtime-error cluster lookup returned 403 for the connected account. No retries were made; request logs/error clusters remain unavailable through that specific connector operation.
