@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **17 checked / 98 total (~17% of listed checkbox items marked complete)**.
+- Current unweighted checkbox count after this audit: **20 checked / 104 total (~19% of listed checkbox items marked complete)**.
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -313,4 +313,13 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [x] Added a high-risk review note to [PR #23](https://github.com/crauch2088-source/roshan-health-hub/pull/23#issuecomment-6211071309): its draft dispense RPC can consume unbatched legacy `medicines.stock_quantity` and record the movement against the current branch, but the live `medicines` table has no `branch_id`. The live `pharmacy_inventory` batches are branch-scoped. The aggregate mismatch means ownership of the legacy quantity cannot be inferred safely.
 - [ ] Before enabling this workflow, choose and test one safe path: (a) dispense only from batches assigned to the same branch, rejecting insufficient branch stock, or (b) create a reviewed allocation/reconciliation mechanism for legacy stock with explicit branch ownership and audit history. Do not decrement the global legacy balance as if it were branch-specific.
 - [ ] Add a PostgreSQL integration case where stock exists only as unallocated legacy quantity and a different branch attempts to dispense it; expected outcome must be a denial with no stock/invoice/prescription changes.
+
+## Targeted safety fixes verified by CI — 2026-10-16
+
+- [x] **PR #23 dispensing safety:** removed fallback dispensing from global legacy `medicines.stock_quantity`; dispensing now requires sufficient unexpired FEFO batches assigned to the acting branch. Added a regression test proving an unbatched legacy balance cannot change stock, invoice lines, prescription status, or movement ledger. Corrected the test fixture so cross-branch denial exercises a genuinely different-branch prescription. Full CI passed on [run #38872714484](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38872714484).
+- [x] **PR #29 receiving safety:** a stock-receive RPC without an explicit target-branch parameter now rejects requests when the acting user has no configured branch, including super-admins, preventing creation of unassigned batches. Added PostgreSQL regression coverage. Full CI passed on [run #38873151138](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38873151138).
+- [x] **PR #22 prescription catalog consistency:** prescription creation now requires both `medicines.active` and `medicines.is_active`, matching the dispense path; added a regression case for inconsistent flags. Full CI passed on [run #38873151121](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38873151121).
+- [ ] Keep all three PRs draft/unmerged until migration-source reconciliation, isolated database validation, and authenticated role/branch smoke tests are completed.
+- [ ] Do not reconcile the legacy stock discrepancy by copying totals or inventing batches. Establish provenance and branch ownership first, then run a documented adjustment process with an auditable ledger.
+- [ ] Insurance claim gross amounts still need an agreed linkage model to invoice/service lines. Current UI permits free-form descriptions and null reference IDs; do not infer the intended split-override policy. Define reference semantics and permitted manual adjustments before changing the RPC contract.
 
