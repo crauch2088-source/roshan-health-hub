@@ -467,3 +467,11 @@ Other aggregate results during the same read-only pass: `patient_discounts` has 
 During the PR #34 review, a read-only production catalog check found that `private.app_has_patient_branch(uuid)` was SECURITY DEFINER with an empty `search_path` but still executable by `anon`. The proposed child-table RLS migration called this helper directly and initially revoked anonymous execution only from `private.app_has_branch_access(uuid)`.
 
 A disposable PostgreSQL 17 regression was added; it failed on head `69945084c67a088c9f7e793daa150866c129398d` with `anonymous role must not execute private patient-branch helper`. The migration was corrected to revoke PUBLIC/anon and grant authenticated execution for `private.app_has_patient_branch(uuid)`. Latest PR #34 head `0e18974ebfc588cbf605b62cdc5d4169f93fcca7` passed both PostgreSQL 17 integration and full install/audit/role-guard/typecheck/lint/build in CI run [38906930251](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38906930251). The change remains in an open draft PR; no production permissions or SQL were changed.
+
+
+### Invoice write-path parity audit — 2026-10-16
+- [x] Read-only catalog check verified the three proposed invoice-creation RPCs from draft PR #33 are not yet present in production; PR #23 must precede PR #33.
+- [x] Read-only ACL check confirmed authenticated still has direct INSERT/UPDATE/DELETE on invoices and invoice_items; anonymous INSERT is denied. No grant changes were applied.
+- [x] Compared live invoice and invoice-item RLS: invoice SELECT checks branch access, while invoice-item SELECT currently checks permission only. PR #33 proposes parent-invoice branch filtering; validate against a disposable clone before release.
+- [x] Aggregate integrity check confirmed 6 invoices and 6 invoice items; all 6 invoices are branchless, and no invoice item is orphaned. Branch assignment remains blocked on the existing synthetic-vs-operational data decision.
+- [x] Confirmed next_invoice_number() and post_invoice_payment(...) are authenticated-only SECURITY DEFINER/RPC paths with empty search_path; they do not provide the missing invoice-create RPCs.
