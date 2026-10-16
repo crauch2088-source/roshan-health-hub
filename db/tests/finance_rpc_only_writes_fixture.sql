@@ -238,7 +238,7 @@ BEGIN
       coalesce((item->>'patient_amount')::numeric,0));
   END LOOP;
   RETURN claim_id;
-END $;
+END $claim$;
 
 CREATE FUNCTION public.update_insurance_claim_status(
   _claim_id uuid, _new_status text, _approved_amount numeric DEFAULT NULL, _notes text DEFAULT NULL
@@ -251,7 +251,7 @@ BEGIN
   UPDATE public.insurance_claims
   SET status=_new_status, approved_amount=_approved_amount, notes=coalesce(_notes,notes)
   WHERE id=_claim_id;
-END $;
+END $claim$;
 
 CREATE FUNCTION public.post_insurance_claim_payment(
   _claim_id uuid, _amount numeric, _method text DEFAULT 'bank', _reference text DEFAULT NULL
@@ -267,7 +267,7 @@ BEGIN
   VALUES(_claim_id,_amount,coalesce(_method,'bank'),_reference,uid) RETURNING id INTO new_id;
   UPDATE public.insurance_claims SET paid_amount=coalesce(paid_amount,0)+_amount WHERE id=_claim_id;
   RETURN new_id;
-END $;
+END $claim$;
 
 GRANT EXECUTE ON FUNCTION public.post_expense(text,numeric,text,date,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.post_invoice_payment(uuid,numeric,text,text,text) TO authenticated;
