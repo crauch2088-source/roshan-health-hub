@@ -86,5 +86,4 @@ BEGIN
     RAISE EXCEPTION 'Legacy-safe visit should create exactly one ticket dated 2026-10-17';
   END IF;
 
-END;
-$;
+END;$$;
