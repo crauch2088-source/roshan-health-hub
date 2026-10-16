@@ -433,3 +433,5 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - General CI run #38904041803 has passed install, dependency audit, patched TanStack checks, guard tests, and typecheck; lint was still running at last observation and build had not started. Do not claim full CI until refreshed.
 - Production audit inspection was read-only. No migration was applied to production; this PR remains draft pending review of user attribution and audit-retention expectations.
 - Separate read-only insurance aggregate found no active insurance claims or claim items currently present (six active invoices and six invoice items). This does not resolve the policy question of whether claims must reference exact invoice lines or server-recalculate coverage; keep insurance financial integrity open pending explicit business-rule design.
+
+- Follow-up aggregate-only audit comparison found all 20 near-identical pairs had matching `user_id` values between the two trigger-generated rows (3 pairs had both user IDs null; none differed). This lowers observed attribution-divergence concern but does not replace review of noninteractive/service-role paths.
