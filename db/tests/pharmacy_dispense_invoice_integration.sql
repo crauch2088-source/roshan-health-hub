@@ -218,8 +218,8 @@ BEGIN
  IF has_function_privilege('anon','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE') THEN
    RAISE EXCEPTION 'anon can execute dispense-and-invoice RPC';
  END IF;
- IF has_function_privilege('authenticated','public.fn_dispense_prescription(uuid)','EXECUTE') THEN
-   RAISE EXCEPTION 'legacy dispense RPC remains executable and bypasses pharmacy invoicing';
+ IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription(uuid)','EXECUTE') THEN
+   RAISE EXCEPTION 'legacy dispense RPC must remain callable during the compatibility window';
  END IF;
 END;
 $privilege_test$;
