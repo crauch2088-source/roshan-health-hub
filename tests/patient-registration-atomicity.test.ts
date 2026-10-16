@@ -21,8 +21,5 @@ test("patient registration regression test is part of the guard suite", () => {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
     scripts?: Record<string, string>;
   };
-  assert.match(
-    pkg.scripts?.["test:guard"] ?? "",
-    /patient-registration-atomicity\.test\.ts/,
-  );
+  assert.match(pkg.scripts?.["test:guard"] ?? "", /patient-registration-atomicity\.test\.ts/);
 });
