@@ -15,7 +15,8 @@ DECLARE
   table_name text;
 BEGIN
   FOREACH table_name IN ARRAY ARRAY[
-    'cashbox_transactions','expenses','payments','supplier_bills','supplier_payments'
+    'cashbox_transactions','expenses','payments','supplier_bills','supplier_payments',
+    'insurance_claims','insurance_claim_items','insurance_claim_payments'
   ] LOOP
     IF has_table_privilege('authenticated',format('public.%I',table_name),'INSERT')
        OR has_table_privilege('authenticated',format('public.%I',table_name),'UPDATE')
@@ -69,6 +70,20 @@ SELECT public.post_supplier_payment(
   1,'cash','test supplier payment',current_date,'test'
 );
 
+SELECT set_config('test.permissions','accounting.create|insurance.create|insurance.update',false);
+SELECT public.create_insurance_claim(
+  '50000000-0000-0000-0000-000000000001',
+  '40000000-0000-0000-0000-000000000001',
+  '[{"service_type":"consultation","description":"test claim item","gross_amount":10,"covered_amount":8,"patient_amount":2}]'::jsonb,
+  'test claim'
+);
+SELECT public.update_insurance_claim_status(
+  (SELECT id FROM public.insurance_claims LIMIT 1),'approved',10,'approved'
+);
+SELECT public.post_insurance_claim_payment(
+  (SELECT id FROM public.insurance_claims LIMIT 1),2,'bank','test insurance payment'
+);
+
 RESET ROLE;
 
 DO $test$
@@ -89,6 +104,15 @@ BEGIN
   END IF;
   IF (SELECT count(*) FROM public.supplier_payments) <> 1 THEN
     RAISE EXCEPTION 'supplier payment RPC did not create exactly one row';
+  END IF;
+  IF (SELECT count(*) FROM public.insurance_claims) <> 1 THEN
+    RAISE EXCEPTION 'insurance claim RPC did not create exactly one row';
+  END IF;
+  IF (SELECT count(*) FROM public.insurance_claim_items) <> 1 THEN
+    RAISE EXCEPTION 'insurance claim RPC did not create one item';
+  END IF;
+  IF (SELECT count(*) FROM public.insurance_claim_payments) <> 1 THEN
+    RAISE EXCEPTION 'insurance payment RPC did not create exactly one row';
   END IF;
 
   IF EXISTS (SELECT 1 FROM public.cashbox_transactions WHERE branch_id IS DISTINCT FROM expected_branch)
