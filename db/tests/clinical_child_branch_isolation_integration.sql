@@ -86,6 +86,25 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
 
+  -- Parent identifiers must remain valid during UPDATE too, not just INSERT.
+  BEGIN
+    UPDATE public.lab_orders
+    SET patient_id='30000000-0000-0000-0000-000000000002',
+        visit_id='40000000-0000-0000-0000-000000000002'
+    WHERE id='60000000-0000-0000-0000-000000000003';
+    RAISE EXCEPTION 'cross-branch lab order parent UPDATE was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE public.lab_orders
+    SET patient_id='30000000-0000-0000-0000-000000000001',
+        visit_id='40000000-0000-0000-0000-000000000003'
+    WHERE id='60000000-0000-0000-0000-000000000003';
+    RAISE EXCEPTION 'mismatched patient/visit lab order UPDATE was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
   IF (SELECT count(*) FROM public.medical_certificates) <> 1 THEN
     RAISE EXCEPTION 'medical_certificates SELECT leaked or hid a branch-local row';
   END IF;
