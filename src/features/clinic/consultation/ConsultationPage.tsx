@@ -241,8 +241,10 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
                 if (targetIndex >= 0) {
                   event.preventDefault();
                   const next = tabs[targetIndex];
-                  changeTab(next.key);
-                  document.getElementById(`tab-${next.key}`)?.focus();
+                  if (next) {
+                    changeTab(next.key);
+                    document.getElementById(`tab-${next.key}`)?.focus();
+                  }
                 }
               }}
               className="roshan-tab shrink-0 px-4 py-2.5 text-sm font-semibold text-muted-foreground"
