@@ -44,7 +44,7 @@
 - [ ] Review draft PR #22 for atomic prescription creation. Latest head [46eb12b](https://github.com/crauch2088-source/roshan-health-hub/commit/46eb12b0523e87c4a9fc70f7226f4056984c46d8) passes CI run [#38787425415](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38787425415), including PostgreSQL 17 integration, security audit, guard tests, typecheck, lint, and build. Vercel Preview is currently blocked by the account build-rate limit; authenticated preview smoke tests and migration-history reconciliation remain prerequisites before merge/deployment.
 - [ ] Fix patient snapshot outstanding balance completeness/error states: source review found a 1,000-invoice cap, missing `total_amount` fallback, and query errors that render like zero values. Tracked in [Issue #18](https://github.com/crauch2088-source/roshan-health-hub/issues/18).
 - [ ] Fix invoice header/items non-atomic writes and server-side amount validation. Tracked in [Issue #20](https://github.com/crauch2088-source/roshan-health-hub/issues/20).
-- [ ] Review draft PR #23 for atomic invoice creation and server-side financial invariants. Latest CI run [#38772767477](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38772767477) passed the PostgreSQL 17 integration job, security audit, guard tests, typecheck, lint, and build. The narrower PR #21 is closed as superseded. Migration-history parity and authenticated preview smoke tests remain prerequisites before merge/deployment.
+- [ ] Review draft PR #23 for atomic invoice creation and server-side financial invariants. The 2026-10-16 billing decision is one fully itemized primary invoice by default with explicit secondary invoices allowed; before release, add durable idempotency for lab/manual billing and test retries so invoice lines/orders cannot duplicate. Latest CI run [#38772767477](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38772767477) passed the PostgreSQL 17 integration job, security audit, guard tests, typecheck, lint, and build. The narrower PR #21 is closed as superseded. Migration-history parity and authenticated preview smoke tests remain prerequisites before merge/deployment.
 - [ ] Add automated unauthenticated, wrong-role, cross-branch, and forbidden-write tests.
 **Exit:** no unresolved critical/high-risk access-control issue; repeatable checks and evidence.
 
@@ -70,6 +70,15 @@
 **Exit:** synthetic end-to-end clinical workflow matrix passes.
 
 ### 5. Pharmacy, inventory, and finance
+
+#### Billing decision — 2026-10-16 (authoritative)
+- Default to one fully itemized primary invoice per visit/clinical transaction, combining consultation, laboratory tests, dispensed medicines, procedures, and other billable items where the relevant workflow permits it.
+- Keep explicit support for separate/secondary invoices when required; do not enforce an absolute one-invoice-per-visit rule.
+- Preserve patient, visit, branch, item, payment, discount, adjustment, cancellation, and audit relationships. Recompute totals transactionally and never reduce the invoice net below already recorded payments.
+- Prevent duplicate charges and duplicate clinical/service records when a client retries after a timeout. Atomicity alone is not idempotency: RPCs need a durable request key or an equivalent verified duplicate guard.
+- PR #23 proposes the primary/secondary invoice model and atomic consultation/lab/pharmacy/manual billing paths. Its CI is green, but source review identified a release-blocking gap: lab-order and manual billing retries do not yet have a durable idempotency key; explicit secondary-invoice retries may create duplicate invoices. Track this before approval.
+- Keep all proposed SQL unapplied until canonical migration-source reconciliation, isolated PostgreSQL/Supabase validation, and authenticated workflow smoke tests are complete. Do not apply recovered SQL to production.
+
 - [ ] Test receiving batches, expiry, FEFO dispensing, stock movements/returns, and expired/negative stock prevention.
 - [ ] Test concurrency/idempotency for dispensing, invoices, payments, cashbox entries/reversals, supplier bills/payments, and expenses.
 - [ ] Insurance claims UI/RPC mismatch found and patched in draft PR #12: UI previously sent `invoiceId: null` while the database RPC requires a valid invoice. The draft now requires an invoice belonging to the selected patient, resets stale claim items when the insurance/invoice selection changes, and validates required fields before RPC. CI is green on head `a2cd2dd752d5577506674284db239865d1fc5459`; Vercel preview is READY. Still needs human review and an authenticated smoke test; not merged/deployed.
