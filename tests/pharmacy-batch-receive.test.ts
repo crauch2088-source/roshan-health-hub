@@ -10,6 +10,10 @@ const rpcSql = readFileSync(
   new URL("../db/roshan_phase3_pharmacy_batch_receive_validation.sql", import.meta.url),
   "utf8",
 );
+const integration = readFileSync(
+  new URL("../db/tests/pharmacy_batch_receive_integration.sql", import.meta.url),
+  "utf8",
+);
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   scripts?: Record<string, string>;
 };
