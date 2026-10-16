@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+const idempotency = readFileSync(new URL("../db/roshan_phase16_billing_idempotency.sql", import.meta.url), "utf8");
 const sql = readFileSync(
   new URL("../db/roshan_phase13_consolidated_visit_invoice.sql", import.meta.url),
   "utf8",
@@ -49,4 +50,14 @@ test("laboratory order and its invoice items share one transaction", () => {
   assert.match(sql, /CREATE OR REPLACE FUNCTION private\.create_or_append_visit_invoice_atomic/);
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_visit_consultation_invoice_atomic/);
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_lab_order_with_invoice_atomic/);
+});
+
+test("laboratory billing uses durable request idempotency", () => {
+  assert.match(idempotency, /CREATE TABLE IF NOT EXISTS private\\.billing_rpc_idempotency/);
+  assert.match(idempotency, /request_payload IS DISTINCT FROM v_payload/);
+  assert.match(idempotency, /ON CONFLICT \\(request_id\\) DO NOTHING/);
+  assert.match(idempotency, /p_request_id uuid/);
+  assert.match(idempotency, /GRANT EXECUTE ON FUNCTION public\\.create_lab_order_with_invoice_atomic\\(uuid,text,text,uuid\\[\\],boolean,uuid\\) TO authenticated/);
+  assert.match(laboratory, /p_request_id: requestId/);
+  assert.match(laboratory, /crypto\\.randomUUID\\(\\)/);
 });
