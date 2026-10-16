@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **28 checked / 117 total (~24% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **29 checked / 120 total (~24% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -358,3 +358,9 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [ ] Review stacked draft [PR #31](https://github.com/crauch2088-source/roshan-health-hub/pull/31), which proposes revoking direct finance/insurance table mutations and aligning two RPC permission gates. PostgreSQL 17 integration, guard tests, security audit, typecheck, lint, and build passed on head `c9fb87b6ebbb6d8cee4f97af5b56c45958eb7dba` in [run #38878871048](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38878871048). Vercel Preview remains rate-limited. Do not apply to production until the full migration chain is reconciled and isolated Supabase tests pass.
 
 - [ ] Review draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32), which removes duplicate generic audit triggers only from finance tables while preserving the finance-specific audit trigger. Disposable PostgreSQL 17 integration and the full guard/typecheck/lint/build suite passed on head `a626104e616a5d19857db4b819099be55aad4e6c` in [run #38878206233](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38878206233). Do not apply until migration history and audit-retention semantics are reviewed.
+
+## Clinical child-row branch isolation and invoice access — 2026-10-16
+
+- [x] Completed a read-only RLS inventory for `invoice_items`, `prescriptions`, `prescription_items`, and `lab_order_items`. Found that invoice-item SELECT permission lacked a parent-branch predicate, while prescription and lab-order child policies checked permissions but omitted branch checks through the parent records.
+- [ ] Review stacked draft [PR #33](https://github.com/crauch2088-source/roshan-health-hub/pull/33), based on PR #23. It revokes direct invoice table mutations after atomic RPC migration and scopes invoice-item reads to the accessible parent invoice branch. PostgreSQL integration passes; the latest guard/lint rerun is pending.
+- [ ] Review draft [PR #34](https://github.com/crauch2088-source/roshan-health-hub/pull/34), which scopes prescription, prescription-item, and lab-order-item RLS to the parent patient/visit/order branch. PostgreSQL 17 integration, guard tests, typecheck, lint, and build passed on head `8d9fbd438f02c21d0bccfa970c102d5adc4d24f0` in [run #38880416281](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38880416281). Neither migration is applied to production.
