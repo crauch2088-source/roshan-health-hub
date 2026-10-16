@@ -1,8 +1,8 @@
 -- =====================================================================
 -- Roshan Health Hub — privileged-role guard
 --
--- STATUS: PREPARED, NOT APPLIED. Do not run against production until the
--- owner has reviewed it. Idempotent (safe to run twice).
+-- STATUS: REVIEWED CANDIDATE MIGRATION. Apply only through the tracked migration
+-- workflow after CI and live-schema preconditions are verified. Idempotent.
 --
 -- Problem (verified against the live database 2026-10-10):
 --   * RLS on public.users only requires the generic `users.create` /
@@ -26,6 +26,21 @@
 -- =====================================================================
 
 begin;
+
+-- Distinguish trusted service/migration execution from anonymous JWTs.
+-- auth.uid() is NULL for both anon and trusted contexts, so it is not a trust signal.
+create or replace function private.is_trusted_role_guard_context()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $trusted$
+  select coalesce(auth.role() = 'service_role', false)
+      or (auth.role() is null and session_user in ('postgres', 'supabase_admin'))
+$trusted$;
+
+revoke all on function private.is_trusted_role_guard_context() from public, anon, authenticated;
 
 -- 1. Helper: is this role id the super_admin role?
 create or replace function private.is_super_admin_role(_role_id uuid)
@@ -52,7 +67,7 @@ set search_path = ''
 as $$
 begin
   -- Trusted, non-end-user context (migrations, service_role).
-  if auth.uid() is null then
+  if private.is_trusted_role_guard_context() then
     if tg_op = 'DELETE' then return old; end if;
     return new;
   end if;
@@ -110,7 +125,7 @@ security definer
 set search_path = ''
 as $$
 begin
-  if auth.uid() is null then
+  if private.is_trusted_role_guard_context() then
     if tg_op = 'DELETE' then return old; end if;
     return new;
   end if;
@@ -156,7 +171,7 @@ security definer
 set search_path = ''
 as $$
 begin
-  if auth.uid() is null then
+  if private.is_trusted_role_guard_context() then
     if tg_op = 'DELETE' then return old; end if;
     return new;
   end if;
@@ -220,4 +235,5 @@ commit;
 --   drop function if exists private.guard_super_admin_roles();
 --   drop function if exists private.guard_super_admin_role_permissions();
 --   drop function if exists private.is_super_admin_role(uuid);
+--   drop function if exists private.is_trusted_role_guard_context();
 -- ---------------------------------------------------------------------
