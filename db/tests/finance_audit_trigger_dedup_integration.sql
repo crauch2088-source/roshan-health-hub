@@ -23,10 +23,11 @@ CREATE OR REPLACE FUNCTION public.audit_row_change()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO public.audit_logs(table_name, record_id, action, old_data, new_data)
-  VALUES (TG_TABLE_NAME, COALESCE(NEW.id, OLD.id), TG_OP,
+  VALUES (TG_TABLE_NAME, CASE WHEN TG_OP = 'DELETE' THEN OLD.id ELSE NEW.id END, TG_OP,
           CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) END,
           CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE to_jsonb(NEW) END);
-  RETURN COALESCE(NEW, OLD);
+  IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
 END;
 $$;
 
@@ -34,10 +35,11 @@ CREATE OR REPLACE FUNCTION public.fn_finance_audit()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO public.audit_logs(table_name, record_id, action, old_data, new_data)
-  VALUES (TG_TABLE_NAME, COALESCE(NEW.id, OLD.id), TG_OP,
+  VALUES (TG_TABLE_NAME, CASE WHEN TG_OP = 'DELETE' THEN OLD.id ELSE NEW.id END, TG_OP,
           CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) END,
           CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE to_jsonb(NEW) END);
-  RETURN COALESCE(NEW, OLD);
+  IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
 END;
 $$;
 
