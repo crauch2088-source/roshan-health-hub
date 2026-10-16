@@ -40,6 +40,22 @@ CREATE TABLE public.lab_order_items (
   order_id uuid,
   status text
 );
+CREATE TABLE public.patient_insurance (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id uuid
+);
+CREATE TABLE public.medical_certificates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id uuid
+);
+CREATE TABLE public.patient_discounts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id uuid
+);
+CREATE TABLE public.insurance_prior_authorizations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_insurance_id uuid
+);
 
 CREATE FUNCTION auth.uid()
 RETURNS uuid LANGUAGE sql STABLE
@@ -64,6 +80,18 @@ AS $function$
         AND u.branch_id=_branch_id
     )
 $function$;
+CREATE FUNCTION private.app_has_patient_branch(_patient_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT COALESCE(private.is_super_admin(),false)
+    OR EXISTS (
+      SELECT 1 FROM public.patients p
+      WHERE p.id=_patient_id AND private.app_has_branch_access(p.branch_id)
+    )
+$function$;
+REVOKE ALL ON FUNCTION private.app_has_patient_branch(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_patient_branch(uuid) TO authenticated;
+
 CREATE FUNCTION private.app_has_attachment_branch_access(_patient_id uuid, _visit_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $function$
@@ -97,6 +125,9 @@ GRANT EXECUTE ON FUNCTION private.app_has_attachment_branch_access(uuid,uuid) TO
 ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prescription_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lab_order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.medical_certificates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patient_discounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.insurance_prior_authorizations ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY prescriptions_select ON public.prescriptions FOR SELECT TO authenticated
   USING ((SELECT public.app_has_perm('pharmacy.read')) OR (SELECT public.app_has_perm('emr.read')));
@@ -127,6 +158,20 @@ CREATE POLICY lab_order_items_update ON public.lab_order_items FOR UPDATE TO aut
   WITH CHECK ((SELECT public.app_has_perm('lab.update')));
 CREATE POLICY lab_order_items_delete ON public.lab_order_items FOR DELETE TO authenticated
   USING ((SELECT public.app_has_perm('lab.delete')));
+
+CREATE POLICY medical_certificates_select ON public.medical_certificates FOR SELECT TO authenticated USING (true);
+CREATE POLICY medical_certificates_insert ON public.medical_certificates FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY medical_certificates_update ON public.medical_certificates FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY medical_certificates_delete ON public.medical_certificates FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY patient_discounts_select ON public.patient_discounts FOR SELECT TO authenticated USING (true);
+CREATE POLICY patient_discounts_insert ON public.patient_discounts FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY patient_discounts_update ON public.patient_discounts FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY patient_discounts_delete ON public.patient_discounts FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY insurance_prior_authorizations_sel ON public.insurance_prior_authorizations FOR SELECT TO authenticated USING (true);
+CREATE POLICY insurance_prior_authorizations_ins ON public.insurance_prior_authorizations FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY insurance_prior_authorizations_upd ON public.insurance_prior_authorizations FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.prescriptions, public.prescription_items, public.lab_order_items TO authenticated;
 
