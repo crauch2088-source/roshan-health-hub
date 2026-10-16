@@ -104,3 +104,17 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 3. Preserve separate entries where the live database contains successive patches to the same feature; do not collapse them just because filenames are similar.
 4. After all rows are mapped or explicitly classified as unrecovered, assemble an ordered migration chain and test a clean replay in disposable PostgreSQL/Supabase.
 5. Run a schema diff and targeted behavioral tests against a non-production instance before proposing any production reconciliation.
+
+
+## Focused content comparison — 2026-10-16
+
+A read-only, comment/whitespace-insensitive text comparison was run for four likely source candidates. This is a preliminary text comparison, not a parser-based semantic proof.
+
+| Legacy repository file (main) | Recovered applied migration | Result | Action |
+|---|---|---|---|
+| db/roshan_phase12_invoice_visit_unique.sql | 20260911120231_roshan_phase12_invoice_visit_unique.sql | **Normalized SQL text matches** | Candidate content-confirmed match for this migration only; preserve comments/context separately |
+| db/roshan_phase2_clinical_workflow.sql | 20260820150215_roshan_phase2_clinical_workflow.sql | **Different** (1267 vs 637 characters before normalization) | Legacy file contains extra statements; compare statement-by-statement, do not substitute |
+| db/roshan_phase4_cashbox_reversal_concurrency.sql | 20261014164131_roshan_cashbox_reversal_concurrency.sql | **Different** (2714 vs 2212 characters before normalization) | Review wrapper, checks, and transaction behavior; no equivalence claim |
+| db/roshan_phase4_finance.sql | 20260908210824_roshan_phase4_finance_v2.sql | **Different** (30999 vs 24044 characters before normalization) | Treat as legacy/current script vs a successive deployed patch, not a direct match |
+
+The comparison removed SQL line/block comments, removed whitespace, and lowercased text before equality checks. It did not parse SQL, normalize literals, or prove equivalent runtime effects. Three differences remain unresolved; the normalized match does not validate the other 78 migration rows or a clean replay.
