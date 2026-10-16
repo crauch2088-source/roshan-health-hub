@@ -9,7 +9,7 @@ Supabase project: jewzonxplxhogqrnhosl
 - Preserved role/security/catalog data: 16 roles, 107 permissions, 491 role-permission rows, 11 departments, 13 services, 12 lab tests, 18 lab parameters, 9 medicines, 24 procedures, 8 system settings.
 - Single-branch readiness: ROS-MAIN is the only active branch. The unopened MAIN row remains for referential safety but is inactive. Four non-super-admin staff accounts were assigned to ROS-MAIN; the global super-admin remains branchless. No user account was deleted.
 - Confirmed storage.objects=0.
-- PR #22 (atomic prescription save) head 6eb0d63f92465ee4bec2084daef217cc2fd3ec1b has 9 check runs and the latest observed test/security/build checks are successful. Moved PR #22 from draft to ready-for-review. It is not merged or deployed.
+- PR #22 was merged into main as 18c377dd480791332e4c4369891310587c30036f after all 9 PR checks passed; all 4 main CI jobs on the merge commit passed. The production UI is not yet confirmed deployed.
 - Refreshed Supabase advisors: 17 authenticated-callable SECURITY DEFINER warnings and one public-schema extension warning; 123 unused-index notices. No blanket revocations or index drops were made.
 
 ## User-directed reprioritization
@@ -21,6 +21,7 @@ Supabase project: jewzonxplxhogqrnhosl
 - PR #22 description was corrected to reflect the already-installed RPC. The live RPC passed a rollback/cleanup smoke test under transaction-local authenticated JWT claims; browser/UI smoke testing remains pending.
 - Vercel deployment quota had previously returned HTTP 402; deploy only after quota reset and verify authenticated registration, consultation, and prescription flows.
 - PR #34 remains deferred because its proposed RLS SQL includes an insurance-prior-authorization policy and needs live-schema/migration review.
+- PR #23 invoice/billing candidate was synchronized with main via a conflict-resolving merge commit; all 12 CI checks passed. A rollback-only live-schema dry run of all 35 SQL statements and a simulated-auth consultation + lab + secondary-invoice smoke test passed, with no persistent DDL or data. It remains draft because phase14 currently revokes the legacy dispense RPC used by the deployed UI; split that revoke into a post-deployment migration before applying/merging the billing release.
 - Checklist progress remains implementation-based; cleanup/audit activity does not count as completed features.
 
 ## References
@@ -28,3 +29,11 @@ Supabase project: jewzonxplxhogqrnhosl
 - Branch readiness report (historical snapshot superseded by post-reset note): https://github.com/crauch2088-source/roshan-health-hub/blob/main/docs/BRANCH_DATA_READINESS_2026-10-16.md
 - PR #22: https://github.com/crauch2088-source/roshan-health-hub/pull/22
 - PR #34: https://github.com/crauch2088-source/roshan-health-hub/pull/34
+
+
+## Follow-up after PR #22 merge
+- Main merge commit: 18c377dd480791332e4c4369891310587c30036f; four main CI jobs passed.
+- Latest observed production deployment is still 9e032c5b6844c7db8fc14e23513eab37de384627; verify deployment after quota/integration allows it.
+- PR #23 conflict-resolution merge commit: 45f4aaf4e2945eec5091d548c34ad1f9890ed004; 12/12 CI checks passed.
+- Live rollback-only billing validation passed, including consultation + lab consolidation, idempotent retry, and explicit secondary invoice; all DDL and test rows were rolled back. No billing SQL was permanently applied.
+- Keep insurance work paused. Checklist remains 65/156 = 41.7%.

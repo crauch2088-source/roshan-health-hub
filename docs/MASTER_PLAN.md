@@ -657,11 +657,11 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 - The prior branch-data readiness report is superseded for current counts; see the updated snapshot in docs/BRANCH_DATA_READINESS_2026-10-16.md.
 
 ### Non-insurance implementation path
-- Rechecked the atomic prescription UI/RPC candidate, PR #22, at head 6eb0d63f92465ee4bec2084daef217cc2fd3ec1b; latest CI reports 9 check runs, including successful finance-audit, cashbox-concurrency, PostgreSQL integration, security, typecheck, lint, and build jobs. PR #22 was moved from draft to ready-for-review.
-- The production RPC is already installed under Supabase migration ledger version 20261016172209; the source PR has not been merged or deployed. Its PR body was corrected to reflect that the RPC is already installed; the PR is still not merged or deployed.
+- Rechecked the atomic prescription UI/RPC candidate, PR #22, at head 6eb0d63f92465ee4bec2084daef217cc2fd3ec1b; latest CI reports 9 check runs, including successful finance-audit, cashbox-concurrency, PostgreSQL integration, security, typecheck, lint, and build jobs. PR #22 was merged into main as commit 18c377dd480791332e4c4369891310587c30036f after all 9 PR checks passed; the four main CI jobs on the merge commit also passed. The merged UI is not yet present in the latest observed production deployment.
+- The production RPC is already installed under Supabase migration ledger version 20261016172209; PR #22 is now merged but not yet deployed; its PR body reflects that the RPC is already installed. The latest observed Vercel production deployment is still SHA 9e032c5b6844c7db8fc14e23513eab37de384627, which predates the merge.
 - PR #34 remains deferred: it covers branch-aware RLS for clinical child tables but also includes an insurance-prior-authorization policy. Do not merge/apply it while insurance work is paused and migration/live-schema review remains open.
 - Current security advisor snapshot: 17 authenticated-callable SECURITY DEFINER notices (review each RPC individually; these are warnings, not proof of vulnerability), plus pg_trgm in public. Performance advisor reports 123 unused-index notices; no indexes were dropped.
-- The checklist remains based on implemented/verified plan items only. The data reset and audit work do not count as feature completion. Recount after this batch and keep the numerator unchanged unless an existing checklist item now genuinely meets its exit criteria.
+- The checklist remains based on implemented/verified plan items only. The data reset and audit work do not count as feature completion. PR #22 is merged but its production UI smoke gate is still open, so keep the numerator unchanged unless an existing checklist item genuinely meets its exit criteria.
 
 ### Remaining gates
 1. Reconcile the live 83-entry Supabase migration ledger with repository SQL artifacts and establish a repeatable migration source of truth.
@@ -679,3 +679,26 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - The smoke test inserted a synthetic patient and visit, called the live RPC with one active catalog medicine, and asserted one prescription item was created with the server-derived catalog price.
 - The same statement cleaned up the generated prescription, queue ticket, visit, patient, and audit rows before completing. Final independent counts confirmed zero patients, visits, queue tickets, prescriptions, prescription items, and audit logs; all six auth users and all six public user rows remain.
 - The initial fixture was corrected after two setup/cleanup issues (MRN column length and a queue-ticket FK); those failures were atomic and left no records. The final run passed. This is simulated-auth database-level validation only; authenticated browser/UI testing remains pending.
+
+
+## Execution batch G — prescription merge and billing live-schema validation — 2026-10-16
+
+### Prescription workflow merged
+- PR #22 was merged into main with squash commit 18c377dd480791332e4c4369891310587c30036f after all 9 PR checks passed. Main CI on the merge commit passed all 4 jobs.
+- The live create_prescription_atomic RPC was exercised under transaction-local authenticated JWT claims for an assigned doctor. It created one prescription item and used the catalog price; the synthetic patient, visit, prescription, queue ticket, and audit rows were cleaned up in the same atomic statement. Independent postconditions confirmed zero patients, visits, prescriptions, prescription_items, queue_tickets, and audit_logs.
+- The latest observed Vercel production deployment remains SHA 9e032c5b6844c7db8fc14e23513eab37de384627, older than the PR #22 merge. No claim that the merged UI is live until a deployment with commit 18c377dd or later is confirmed.
+
+### Itemized invoice and billing candidate advanced safely
+- PR #23 (consolidated visit invoice, atomic lab billing, pharmacy dispensing invoice, and billing idempotency) had a stale base and merge conflicts in only .github/workflows/ci.yml and package.json. Both were reconciled by preserving all current main jobs and combining the main and invoice test suites; the branch now includes a merge commit with main and keeps all 26 intended changed files.
+- All 12 CI checks on the resolved PR #23 head 45f4aaf4e2945eec5091d548c34ad1f9890ed004 passed. PR #23 remains draft and its SQL has not been applied.
+- Ran a rollback-only live-schema dry run of all 35 statements across the five billing SQL files, followed by simulated-auth smoke tests using an assigned doctor and receptionist. The test created a primary consultation invoice, appended a lab line to the same invoice, verified an idempotent lab-order retry did not duplicate the order/lines, and created an explicit secondary invoice. The transaction's sentinel exception rolled back all DDL and test rows. Postconditions verified the is_primary column, billing RPCs, and idempotency table were not persisted and all patient/visit/lab/invoice/audit tables remained empty.
+- Release hazard found: the current production UI still calls public.fn_dispense_prescription(uuid), while PR #23's phase14 SQL revokes authenticated execution of that legacy RPC. Do not apply/merge the billing release until the revocation is split into a post-deployment migration (or an equivalent compatibility sequence) so the existing UI cannot break between schema change and UI deployment.
+- Historical migration reproducibility remains separate: live ledger has 83 entries (79 historical statements archived and 4 later tracked SQL changes). The rollback-only live-schema check and isolated PostgreSQL 17 integration tests validate this narrow billing change, but the recovered 79-entry archive is not a clean from-scratch baseline.
+- Insurance implementation remains paused at user request. Insurance-related checklist items are neither marked complete nor removed.
+
+### Current release sequence
+1. Split legacy dispense RPC revocation into a post-deployment migration and add a CI regression test for the compatibility window.
+2. Re-run PR #23 CI, then apply the five billing migrations in order only after the staged compatibility sequence is reviewed; do not deploy UI against missing RPCs.
+3. Merge PR #23 only after the DB layer is ready; confirm a Vercel deployment at the merged main SHA.
+4. Run authenticated browser/UI tests for consultation, lab order, consolidated invoice, explicit secondary invoice, pharmacy dispense, and retry/idempotency. Only then apply the legacy dispense RPC revoke.
+5. Checklist remains 65/156 = 41.7%; no new feature checkbox is counted complete until its rollout and verification gates pass.
