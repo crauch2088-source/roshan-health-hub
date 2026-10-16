@@ -37,7 +37,10 @@
 ### 1. Security, privacy, and repository hygiene
 - [ ] Audit current files/history for exposed credentials; report paths/types, never values. Rotate/revoke any real exposed credential before history rewriting.
 - [x] Read-only scan of current main for common Supabase/service-role/access-token/database-URL patterns found no hard-coded credential assignment. `src/lib/supabase-admin.ts` reads `SUPABASE_SECRET_KEY` / legacy `SUPABASE_SERVICE_ROLE_KEY` only from `process.env`; `.npmrc` contains only the public npm registry, and root environment files are `.env.example` only. This does not inspect every historical commit or prove the absence of all secret formats; history exposure remains unverified.
-- [ ] Verify secret scanning, dependency alerts, and code scanning availability.
+- [x] Enabled GitHub secret scanning and push protection on the public repository (2026-10-16); verified both settings enabled and the open-alert query returned zero alerts. This does not prove historical secret exposure is absent.
+- [x] Configured GitHub CodeQL default setup for JavaScript/TypeScript using the default query suite and GitHub-hosted runner. Initial setup workflow #38969319514 was still in progress at the last check; code-scanning alert API reports no results because a scan has not completed yet.
+- [ ] Enable Dependabot vulnerability alerts/security updates. The repository currently reports these disabled; the connected tool surface did not expose a supported toggle, so do not mark this complete.
+- [ ] Decide on main-branch protection. No branch rules are currently active; avoid introducing required-check gates until they are aligned with the user's direct-main workflow.
 - [x] Initial read-only review of all 15 authenticated-callable SECURITY DEFINER RPCs: no anon EXECUTE, empty `search_path`, and internal permission checks observed. [ ] Finish function-by-function adversarial tests for cross-branch IDs, invalid financial inputs, and branchless super-admin inventory/cashbox paths.
 - [ ] Insurance financial integrity remains incomplete and implementation is paused at the user's request. PR #13 remains unapplied; do not resume insurance-specific changes until the user asks.
 - [ ] Review RLS policies/grants for identity, patient, clinical, lab, pharmacy, inventory, finance, and insurance tables.
