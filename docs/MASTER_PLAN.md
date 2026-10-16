@@ -35,6 +35,7 @@
 
 ### 1. Security, privacy, and repository hygiene
 - [ ] Audit current files/history for exposed credentials; report paths/types, never values. Rotate/revoke any real exposed credential before history rewriting.
+- [x] Read-only scan of current main for common Supabase/service-role/access-token/database-URL patterns found no hard-coded credential assignment. `src/lib/supabase-admin.ts` reads `SUPABASE_SECRET_KEY` / legacy `SUPABASE_SERVICE_ROLE_KEY` only from `process.env`; `.npmrc` contains only the public npm registry, and root environment files are `.env.example` only. This does not inspect every historical commit or prove the absence of all secret formats; history exposure remains unverified.
 - [ ] Verify secret scanning, dependency alerts, and code scanning availability.
 - [x] Initial read-only review of all 15 authenticated-callable SECURITY DEFINER RPCs: no anon EXECUTE, empty `search_path`, and internal permission checks observed. [ ] Finish function-by-function adversarial tests for cross-branch IDs, invalid financial inputs, and branchless super-admin inventory/cashbox paths.
 - [ ] Insurance financial integrity remains incomplete. PR #13 proposes server-side policy/invoice patient matching, branch checks, and balanced item-split validation, but review found it still does not reconcile each submitted claim item's gross amount/reference to actual invoice lines or enforce server-side coverage calculations. See [PR #13 review note](https://github.com/crauch2088-source/roshan-health-hub/pull/13#issuecomment-6211061012) and [Issue #16](https://github.com/crauch2088-source/roshan-health-hub/issues/16). PR #12 client-side validation is defense-in-depth only; database-side remediation must be tested in disposable/staging Supabase before production.
@@ -298,7 +299,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **32 checked / 124 total (~26% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **33 checked / 125 total (~26% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
