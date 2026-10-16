@@ -104,3 +104,10 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Issue #18 is now closed after verifying exact paginated invoice retrieval, completeness gating, fallback amount handling, explicit query-error states, and regression tests for >1,000 rows, failures, inexact counts, and invalid amounts.
 - CI run #38964357807 passed the tooling-map documentation update. Documentation CI is not evidence of a new production deployment.
 - Reception→visit→queue browser flow remains incomplete after a TinyFish failure during New Visit navigation; exact synthetic patient/audit cleanup completed and all relevant table counts returned to zero. Diagnose the automation failure before a new bounded attempt.
+
+
+## Phase 21B production hardening completed — 2026-10-16
+- Applied the tracked migration `db/roshan_phase21_patient_registration_privileges.sql` through Supabase `apply_migration` under name `roshan_phase21_patient_registration_privileges_20261016`.
+- Verified effective grants after migration: authenticated direct INSERT on `public.patients` denied; authenticated and anon EXECUTE on `public.next_mrn()` denied; service_role retains next_mrn; authenticated EXECUTE on `public.create_patient_atomic` remains allowed; anon cannot execute the new RPC.
+- Post-migration TinyFish registration smoke succeeded (run https://agent.tinyfish.ai/runs/643f8bd1-d227-4fc8-b96b-fa6098819ebf). The unique synthetic patient and its exact audit rows were then removed after confirming no dependent rows; final patients/visits/queue/invoice/payment/audit counts are zero.
+- Continue broader role/branch negative authorization tests; this phase only hardens the patient-registration write path.
