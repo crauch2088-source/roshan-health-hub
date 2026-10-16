@@ -43,10 +43,22 @@ CREATE TABLE public.payments (
   invoice_id uuid,
   amount numeric,
   payment_method text,
+  method text,
+  reference_no text,
   reference text,
   idempotency_key text,
   payment_date timestamptz,
+  received_at timestamptz,
+  received_by uuid,
   created_by uuid
+);
+CREATE TABLE public.invoices (
+  id uuid PRIMARY KEY,
+  branch_id uuid,
+  net_amount numeric,
+  total_amount numeric,
+  paid_amount numeric,
+  deleted_at timestamptz
 );
 CREATE TABLE public.supplier_bills (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
