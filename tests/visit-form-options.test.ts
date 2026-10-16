@@ -13,6 +13,6 @@ test("visit form options use a narrow server-side RPC instead of direct staff-ta
   assert.match(migration, /public\.app_has_perm\('visits\.create'\)/);
   assert.match(migration, /private\.app_has_branch_access\(u\.branch_id\)/);
   assert.match(migration, /REVOKE ALL ON FUNCTION public\.get_visit_form_options\(\) FROM PUBLIC, anon/);
-  assert.match(integration, /cross-branch doctor leaked into receptionist options/);
+  assert.match(integration, /cross-branch, inactive, non-clinical, or branchless doctor leaked into receptionist options/);
   assert.match(integration, /anonymous execution must be denied/);
 });

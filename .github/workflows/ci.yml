@@ -217,9 +217,9 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-            -f db/tests/visit_form_options_fixture.sql \\
-            -f db/roshan_phase24_visit_form_options.sql \\
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/visit_form_options_fixture.sql \
+            -f db/roshan_phase24_visit_form_options.sql \
             -f db/tests/visit_form_options_integration.sql
 
   verify:
