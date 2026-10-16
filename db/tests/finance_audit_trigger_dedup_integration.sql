@@ -6,29 +6,29 @@ VALUES ('10000000-0000-0000-0000-000000000001',
 
 DO $test$
 DECLARE
-  table_name text;
+  v_table_name text;
   operation text;
   actual_count bigint;
   finance_table boolean;
 BEGIN
-  FOREACH table_name IN ARRAY ARRAY[
+  FOREACH v_table_name IN ARRAY ARRAY[
     'cashbox_transactions','expenses','payments','supplier_bills','supplier_payments','patients'
   ] LOOP
-    EXECUTE format('INSERT INTO public.%I(value) VALUES (%L)',table_name,'before');
-    EXECUTE format('UPDATE public.%I SET value = %L',table_name,'after');
-    EXECUTE format('DELETE FROM public.%I',table_name);
+    EXECUTE format('INSERT INTO public.%I(value) VALUES (%L)',v_table_name,'before');
+    EXECUTE format('UPDATE public.%I SET value = %L',v_table_name,'after');
+    EXECUTE format('DELETE FROM public.%I',v_table_name);
 
-    finance_table := table_name <> 'patients';
+    finance_table := v_table_name <> 'patients';
 
     FOREACH operation IN ARRAY ARRAY['INSERT','UPDATE','DELETE'] LOOP
       SELECT count(*) INTO actual_count
       FROM public.audit_logs
-      WHERE public.audit_logs.table_name = table_name
+      WHERE public.audit_logs.table_name = v_table_name
         AND public.audit_logs.action = operation;
 
       IF actual_count <> 1 THEN
         RAISE EXCEPTION 'expected exactly one audit row for %.%, got %',
-          table_name,operation,actual_count;
+          v_table_name,operation,actual_count;
       END IF;
     END LOOP;
 
@@ -37,7 +37,7 @@ BEGIN
         SELECT 1 FROM pg_trigger tr
         JOIN pg_class c ON c.oid=tr.tgrelid
         JOIN pg_namespace n ON n.oid=c.relnamespace
-        WHERE n.nspname='public' AND c.relname=table_name
+        WHERE n.nspname='public' AND c.relname=v_table_name
           AND tr.tgname='trg_audit_' || table_name AND NOT tr.tgisinternal
       ) THEN
         RAISE EXCEPTION 'duplicate generic audit trigger remains on %',table_name;
@@ -47,7 +47,7 @@ BEGIN
         SELECT 1 FROM pg_trigger tr
         JOIN pg_class c ON c.oid=tr.tgrelid
         JOIN pg_namespace n ON n.oid=c.relnamespace
-        WHERE n.nspname='public' AND c.relname=table_name
+        WHERE n.nspname='public' AND c.relname=v_table_name
           AND tr.tgname='trg_finance_audit' AND NOT tr.tgisinternal
       ) THEN
         RAISE EXCEPTION 'canonical finance audit trigger missing on %',table_name;
