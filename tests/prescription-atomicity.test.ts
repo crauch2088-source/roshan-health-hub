@@ -3,11 +3,11 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
+  buildMedicineSearchFilter,
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
   editPrescriptionName,
 } from "../src/lib/prescription-draft.ts";
-import { buildMedicineSearchFilter } from "../src/lib/prescription-draft.ts";
 
 const sql = readFileSync(
   new URL("../db/roshan_phase7_atomic_prescription.sql", import.meta.url),
@@ -15,6 +15,10 @@ const sql = readFileSync(
 );
 const ui = readFileSync(
   new URL("../src/features/clinic/consultation/components/PrescriptionTab.tsx", import.meta.url),
+  "utf8",
+);
+const prescriptionDraft = readFileSync(
+  new URL("../src/lib/prescription-draft.ts", import.meta.url),
   "utf8",
 );
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
@@ -85,7 +89,7 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
   assert.match(ui, /sanitizeTerm\(debouncedSearch\)/);
   assert.match(ui, /\.limit\(30\)/);
   assert.doesNotMatch(ui, /\.limit\(500\)/);
-  assert.match(ui, /brand_name\.ilike/);
+  assert.match(prescriptionDraft, /brand_name\.ilike/);
   assert.match(ui, /Could not load medicines/);
   assert.match(ui, /No matching medicines/);
 });
