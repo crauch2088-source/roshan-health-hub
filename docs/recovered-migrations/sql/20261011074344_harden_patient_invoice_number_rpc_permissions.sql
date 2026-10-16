@@ -1,0 +1,49 @@
+
+create or replace function public.next_invoice_number()
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  month_key text := to_char(now(), 'YYYYMM');
+  next_no bigint;
+begin
+  if not private.app_has_perm('billing.create') then
+    raise exception 'Permission denied' using errcode = '42501';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext('roshan:invoice:' || month_key));
+
+  select coalesce(max((pg_catalog.regexp_match(invoice_number, '^INV-[0-9]{6}-([0-9]+)$'))[1]::bigint), 0) + 1
+    into next_no
+  from public.invoices
+  where invoice_number like 'INV-' || month_key || '-%';
+
+  return 'INV-' || month_key || '-' || pg_catalog.lpad(next_no::text, 5, '0');
+end;
+$function$;
+
+create or replace function public.next_mrn()
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  next_no bigint;
+begin
+  if not private.app_has_perm('patients.create') then
+    raise exception 'Permission denied' using errcode = '42501';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext('roshan:mrn'));
+
+  select coalesce(max(nullif(pg_catalog.regexp_replace(mrn, '[^0-9]', '', 'g'), '')::bigint), 0) + 1
+    into next_no
+  from public.patients
+  where mrn ~ '^RMC[0-9]+$';
+
+  return 'RMC' || pg_catalog.lpad(next_no::text, 6, '0');
+end;
+$function$;
