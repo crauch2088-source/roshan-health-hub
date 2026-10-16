@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const idempotency = readFileSync(new URL("../db/roshan_phase16_billing_idempotency.sql", import.meta.url), "utf8");
+const idempotency = readFileSync(
+  new URL("../db/roshan_phase16_billing_idempotency.sql", import.meta.url),
+  "utf8",
+);
 const migration = readFileSync(
   new URL("../db/roshan_phase15_manual_invoice_consolidation.sql", import.meta.url),
   "utf8",
@@ -39,7 +42,11 @@ test("manual invoice integration proves append-by-default and explicit standalon
 
 test("manual billing reuses a durable request key across retries", () => {
   assert.ok(idempotency.includes("v_operation text := 'create_billing_invoice_atomic'"));
-  assert.ok(idempotency.includes("GRANT EXECUTE ON FUNCTION public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean,uuid) TO authenticated"));
+  assert.ok(
+    idempotency.includes(
+      "GRANT EXECUTE ON FUNCTION public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean,uuid) TO authenticated",
+    ),
+  );
   assert.ok(billingRoute.includes("p_request_id: requestId"));
   assert.ok(billingRoute.includes("pendingInvoiceRequestRef"));
   assert.ok(billingRoute.includes("crypto.randomUUID()"));
