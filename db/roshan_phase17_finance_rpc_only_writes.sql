@@ -115,6 +115,14 @@ BEGIN
   END IF;
 
   IF _idempotency_key IS NOT NULL THEN
+    -- Serialize concurrent requests sharing this key before reading the existing
+    -- payment. Without this lock, two sessions can both observe no row and race
+    -- into the invoice lock/INSERT; the loser then gets a unique violation rather
+    -- than the original payment ID.
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended('roshan.payment.idempotency:' || _idempotency_key, 0)
+    );
+
     SELECT p.id,
            p.created_by,
            p.invoice_id,
