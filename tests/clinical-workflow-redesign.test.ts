@@ -97,6 +97,7 @@ test("pediatric prescriptions prompt for weight-based review without calculating
   assert.match(ui, /patients\(id,full_name,date_of_birth\)/);
   assert.match(ui, /clinic-vitals-weight/);
   assert.match(ui, /Pediatric safety: no current visit weight is recorded/);
+  assert.match(ui, /Could not verify the recorded weight/);
   assert.match(ui, /system does not calculate pediatric doses/);
 });
 

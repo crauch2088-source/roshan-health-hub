@@ -47,7 +47,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
   const isPediatric = patientAge != null && patientAge < 18;
-  const pediatricWeightMissing = isPediatric && patientWeight <= 0;
+  const pediatricWeightMissing = isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -160,8 +160,12 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             role="alert"
             className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
           >
-            {pediatricWeightMissing
+            {vitalsQ.error
               ? lang === "ar"
+                ? "تعذّر التحقق من الوزن المسجل. راجع ملف المريض يدويًا قبل اعتماد أي جرعة تعتمد على الوزن."
+                : "Could not verify the recorded weight. Check the patient chart manually before approving any weight-based dose."
+              : pediatricWeightMissing
+                ? lang === "ar"
                 ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
                 : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
               : lang === "ar"
