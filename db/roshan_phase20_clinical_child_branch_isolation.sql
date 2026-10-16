@@ -48,7 +48,10 @@ AS $function$
     LEFT JOIN public.patients AS p ON p.id = lo.patient_id
     WHERE lo.id = _order_id
       AND private.lab_order_parent_ids_match(lo.patient_id, lo.visit_id)
-      AND private.app_has_branch_access(COALESCE(lo.branch_id, v.branch_id, p.branch_id))
+      -- Match the parent lab_orders RLS policy: a NULL explicit branch fails
+      -- closed for branch-scoped users, even if a patient/visit has a branch.
+      -- Super admins retain access through app_has_branch_access().
+      AND private.app_has_branch_access(lo.branch_id)
   )
 $function$;
 
