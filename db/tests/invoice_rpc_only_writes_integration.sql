@@ -1,8 +1,19 @@
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
-SELECT set_config('test.permissions','billing.create|lab.create|visits.create',false);
-INSERT INTO public.users(id,branch_id)
+SELECT set_config('test.auth_uid','20000000-0000-0000-0000-000000000002',false);
+SELECT set_config('test.permissions','billing.create|billing.read|billing.view|billing.update|billing.delete|lab.create|visits.create',false);
+INSERT INTO public.users(id,branch_id,auth_user_id)
 VALUES ('10000000-0000-0000-0000-000000000001',
-        '20000000-0000-0000-0000-000000000001');
+        '20000000-0000-0000-0000-000000000001',
+        '20000000-0000-0000-0000-000000000002');
+
+INSERT INTO public.invoices(id,branch_id,invoice_date,total_amount)
+VALUES
+ ('70000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',current_date,1),
+ ('70000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002',current_date,1);
+INSERT INTO public.invoice_items(invoice_id,item_type,item_name,quantity,unit_price,total_price)
+VALUES
+ ('70000000-0000-0000-0000-000000000001','service','branch-read-test',1,1,1),
+ ('70000000-0000-0000-0000-000000000002','service','branch-read-test',1,1,1);
 
 SET ROLE authenticated;
 
@@ -41,6 +52,9 @@ BEGIN
      OR NOT has_table_privilege('authenticated','public.invoice_items','SELECT') THEN
     RAISE EXCEPTION 'invoice read privileges were unexpectedly revoked';
   END IF;
+  IF (SELECT count(*) FROM public.invoice_items) <> 1 THEN
+    RAISE EXCEPTION 'invoice item SELECT policy did not enforce parent-branch access';
+  END IF;
   IF has_table_privilege('anon','public.invoices','INSERT')
      OR has_table_privilege('anon','public.invoice_items','INSERT') THEN
     RAISE EXCEPTION 'anon retains direct invoice INSERT';
@@ -64,6 +78,10 @@ SELECT public.create_lab_order_with_invoice_atomic(
 );
 
 RESET ROLE;
+
+DELETE FROM public.invoice_items WHERE item_name='branch-read-test';
+DELETE FROM public.invoices
+WHERE id IN ('70000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000002');
 
 DO $test$
 DECLARE expected_branch uuid := '20000000-0000-0000-0000-000000000001';
