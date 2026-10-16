@@ -45,6 +45,8 @@ test("invoice grant migration preserves wrapper RPC access while removing direct
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_lab_order_with_invoice_atomic/);
   assert.match(integration, /direct INSERT unexpectedly succeeded/);
   assert.match(integration, /invoice read privileges were unexpectedly revoked/);
+  assert.match(migration, /private\\.app_has_branch_access\\(i\\.branch_id\\)/);
+  assert.match(integration, /invoice item SELECT policy did not enforce parent-branch access/);
 });
 
 test("invoice RPC-only write guard runs in the standard test suite", () => {
