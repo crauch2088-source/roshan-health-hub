@@ -43,7 +43,7 @@
 - [ ] Review RLS policies/grants for identity, patient, clinical, lab, pharmacy, inventory, finance, and insurance tables.
 - [ ] Verify historical environment-file exposure and enable secret scanning/push protection if available. Tracked in [Issue #25](https://github.com/crauch2088-source/roshan-health-hub/issues/25); current `main` has `.env.example` only, while the historical leak status remains unverified.
 - [ ] Fix prescription header/items non-atomic save: the candidate UI/RPC is in draft PR #22 and its additive `create_prescription_atomic` function was applied to production under tracked migration `20261016172209`; the UI has not been merged/deployed. Live branch readiness is a release blocker: all 36 current visits have NULL branch_id and 5/6 active users have NULL branch_id. Do not merge/deploy the UI or apply PR #34 RLS until branch assignment is reconciled. Tracked in [Issue #17](https://github.com/crauch2088-source/roshan-health-hub/issues/17).
-- [ ] Keep draft PR #22 for atomic prescription creation gated on branch-data reconciliation. Latest refreshed head [`7e009d9`](https://github.com/crauch2088-source/roshan-health-hub/commit/7e009d98e0fb7463bc95ace1fed3a6c2b5a2c7e8) passes the dedicated PostgreSQL 17 integration and all four main CI jobs, including typecheck, lint, build, audit, and concurrency checks. Vercel Preview is currently blocked by the account build-rate limit; authenticated preview smoke tests and migration-history reconciliation remain prerequisites before merge/deployment.
+- [ ] PR #22 for atomic prescription creation was marked ready for review after the data reset and latest CI verification; merge/deployment remains gated on migration-history reconciliation and authenticated workflow smoke testing. Latest refreshed head [`7e009d9`](https://github.com/crauch2088-source/roshan-health-hub/commit/7e009d98e0fb7463bc95ace1fed3a6c2b5a2c7e8) passes the dedicated PostgreSQL 17 integration and all four main CI jobs, including typecheck, lint, build, audit, and concurrency checks. Vercel Preview is currently blocked by the account build-rate limit; authenticated preview smoke tests and migration-history reconciliation remain prerequisites before merge/deployment.
 - [ ] Fix patient snapshot outstanding balance completeness/error states: source review found a 1,000-invoice cap, missing `total_amount` fallback, and query errors that render like zero values. Tracked in [Issue #18](https://github.com/crauch2088-source/roshan-health-hub/issues/18).
 - [ ] Fix invoice header/items non-atomic writes and server-side amount validation. Tracked in [Issue #20](https://github.com/crauch2088-source/roshan-health-hub/issues/20).
 - [ ] Review draft PR #23 for atomic invoice creation and server-side financial invariants. The owner decision is one fully itemized primary invoice by default, with deliberate secondary invoices allowed. Phase16 adds durable request-key idempotency for lab and manual billing. CI passed on head `a5edda2a79ad393c4b0022912c45a3ccd063749b` in run [#38870998242](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38870998242); migration-source reconciliation, isolated Supabase validation, and authenticated smoke tests remain gates.
@@ -637,3 +637,38 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 
 ### Checklist accounting
 - Checklist remains **65/156 = 41.7%**. No additional checklist item is marked complete here: PR #12 still needs deployment and authenticated workflow verification, and the broader role-guard migration-parity gate remains open even though the narrow migration was applied and behaviorally verified.
+
+
+## Execution batch F — user-authorized test-data reset and reprioritization — 2026-10-16
+
+### User clarification and scope
+- The user confirmed that the clinic has one operational branch; the second branch has not opened, and all previously stored patient/clinical/financial records were manually entered test fixtures, not real patient or financial data.
+- The user explicitly authorized deleting these test records while preserving user accounts, requested that insurance-related plan work be temporarily deferred, and directed continued progress on other plan tracks.
+- Insurance code/schema were not removed and insurance-specific checklist items were not marked complete; implementation work on insurance is paused by user request.
+
+### Live database reset completed and verified
+- Cleared transactional/test rows from appointments, patient records and their clinical child records, visits, vitals, diagnoses, notes, laboratory orders/items/results, prescriptions/items, invoices/items, payments, expenses, cashbox transactions, queue tickets, follow-ups, stock movements, supplier bills/payments, patient discounts, certificates, procedure orders/results, insurance transactions, corporate/partner test records, and the application audit log. Explicit TRUNCATE with RESTART IDENTITY and CASCADE was executed inside one PostgreSQL transaction block; only named operational tables and their FK-dependent rows were targeted.
+- Verified zero rows in public.patients, appointments, visits, vitals, diagnoses, clinical_notes, lab_orders, lab_order_items, lab_results, prescriptions, prescription_items, invoices, invoice_items, payments, expenses, cashbox_transactions, queue_tickets, followups, stock_movements, and audit_logs.
+- Verified user accounts were preserved: 6 rows in auth.users, 6 in public.users, and 5 in public.profiles.
+- Preserved authorization/configuration/reference data: 16 roles, 107 permissions, 491 role-permission links, 11 departments, 13 services, 12 lab tests, 18 lab parameters, 9 medicines, 24 procedures, and 8 system settings.
+- Verified there is now exactly 1 active branch: ROSHAN Main Branch (ROS-MAIN). The unopened الفرع الرئيسي (MAIN) row was retained for referential safety but marked inactive (active=false, is_active=false).
+- Assigned the four branchless non-super-admin staff accounts to ROS-MAIN. The one global super-admin account remains branchless by design; the other super-admin remains assigned to the operational branch. No user account was deleted.
+- Verified storage.objects contains 0 objects, so no uploaded test files needed removal.
+- The prior branch-data readiness report is superseded for current counts; see the updated snapshot in docs/BRANCH_DATA_READINESS_2026-10-16.md.
+
+### Non-insurance implementation path
+- Rechecked the atomic prescription UI/RPC candidate, PR #22, at head 6eb0d63f92465ee4bec2084daef217cc2fd3ec1b; latest CI reports 9 check runs, including successful finance-audit, cashbox-concurrency, PostgreSQL integration, security, typecheck, lint, and build jobs. PR #22 was moved from draft to ready-for-review.
+- The production RPC is already installed under Supabase migration ledger version 20261016172209; the source PR has not been merged or deployed. Its PR body still contains stale wording about SQL being unapplied and must be reconciled.
+- PR #34 remains deferred: it covers branch-aware RLS for clinical child tables but also includes an insurance-prior-authorization policy. Do not merge/apply it while insurance work is paused and migration/live-schema review remains open.
+- Current security advisor snapshot: 17 authenticated-callable SECURITY DEFINER notices (review each RPC individually; these are warnings, not proof of vulnerability), plus pg_trgm in public. Performance advisor reports 123 unused-index notices; no indexes were dropped.
+- The checklist remains based on implemented/verified plan items only. The data reset and audit work do not count as feature completion. Recount after this batch and keep the numerator unchanged unless an existing checklist item now genuinely meets its exit criteria.
+
+### Remaining gates
+1. Reconcile the live 82-entry Supabase migration ledger with repository SQL artifacts and establish a repeatable migration source of truth.
+2. Correct PR #22 description to reflect the already-installed RPC, complete source review, then merge when the migration/release gates are satisfied.
+3. After Vercel's deployment quota resets, deploy the intended main SHA and run authenticated registration/consultation/prescription smoke tests.
+4. Continue non-insurance security review and patient/invoice atomicity work; keep insurance implementation paused until the user resumes it.
+
+
+### Checklist accounting after batch F
+The current checklist is 0/0 = NaN%. The data reset and audit work do not count as feature completion. Keep the numerator unchanged unless an existing checklist item genuinely meets its exit criteria.
