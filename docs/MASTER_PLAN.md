@@ -671,4 +671,4 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 
 
 ### Checklist accounting after batch F
-The current checklist is 0/0 = NaN%. The data reset and audit work do not count as feature completion. Keep the numerator unchanged unless an existing checklist item genuinely meets its exit criteria.
+The current checklist is 65/156 = 41.7%. The data reset and audit work do not count as feature completion. Keep the numerator unchanged unless an existing checklist item genuinely meets its exit criteria.
