@@ -16,6 +16,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sql-payment-idempotency-concurrency:
+    name: Concurrent invoice-payment idempotency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run deterministic two-session idempotency race
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/finance_payment_idempotency_concurrency.sh
+
   sql-finance-rpc-only-writes:
     name: Finance RPC-only write integration
     runs-on: ubuntu-latest
