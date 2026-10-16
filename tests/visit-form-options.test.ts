@@ -9,6 +9,7 @@ const integration = read("../db/tests/visit_form_options_integration.sql");
 
 test("visit form options use a narrow server-side RPC instead of direct staff-table reads", () => {
   assert.match(ui, /supabase\.rpc\("get_visit_form_options"\)/);
+  assert.match(ui, /\["visit-form-options", user\?\.id/);
   assert.doesNotMatch(ui, /\.from\("users"\)\s*\.select\("id, full_name, roles\(code\)"\)/);
   assert.match(migration, /public\.app_has_perm\('visits\.create'\)/);
   assert.match(migration, /private\.app_has_branch_access\(u\.branch_id\)/);

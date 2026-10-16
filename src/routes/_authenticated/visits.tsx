@@ -106,7 +106,7 @@ function VisitsPage() {
 
 function VisitsPageInner() {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const { currency } = useSettings();
   const search = Route.useSearch();
 
@@ -183,7 +183,7 @@ function VisitsPageInner() {
   }, [search.patient]);
 
   const visitFormOptions = useRows<{ departments: Row[]; doctors: Row[] }>(
-    ["visit-form-options"],
+    ["visit-form-options", user?.id ?? "anonymous"],
     () => supabase.rpc("get_visit_form_options"),
     { enabled: canCreate },
   );
