@@ -1,0 +1,10 @@
+ALTER FUNCTION public.add_cashbox_entry(text, numeric, text, text, text, text, timestamptz) SET search_path = '';
+ALTER FUNCTION public.create_insurance_claim(uuid, uuid, jsonb, text) SET search_path = '';
+ALTER FUNCTION public.fn_dispense_prescription(uuid) SET search_path = '';
+ALTER FUNCTION public.post_cashbox_entry(text, numeric, text, text, text, timestamptz) SET search_path = '';
+ALTER FUNCTION public.post_expense(text, numeric, text, date, text, text) SET search_path = '';
+ALTER FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text) SET search_path = '';
+ALTER FUNCTION public.post_invoice_payment(uuid, numeric, text, text, text) SET search_path = '';
+ALTER FUNCTION public.post_supplier_payment(uuid, numeric, text, text, date, text) SET search_path = '';
+ALTER FUNCTION public.reverse_cashbox_entry(uuid, text) SET search_path = '';
+ALTER FUNCTION public.update_insurance_claim_status(uuid, text, numeric, text) SET search_path = '';
