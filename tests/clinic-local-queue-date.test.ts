@@ -10,9 +10,9 @@ const migration = readFileSync(
   new URL("../db/roshan_phase22_clinic_local_queue_date.sql", import.meta.url),
   "utf8",
 );
-const pkg = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as { scripts?: Record<string, string> };
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+  scripts?: Record<string, string>;
+};
 
 test("visit creation persists the intended clinic-local date", () => {
   assert.match(ui, /queue_date:\s*date/);
