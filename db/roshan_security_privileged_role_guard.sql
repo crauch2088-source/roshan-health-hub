@@ -1,8 +1,8 @@
 -- =====================================================================
 -- Roshan Health Hub — privileged-role guard
 --
--- STATUS: PREPARED, NOT APPLIED. Do not run against production until the
--- owner has reviewed it. Idempotent (safe to run twice).
+-- STATUS: REVIEWED CANDIDATE MIGRATION. Apply only through the tracked migration
+-- workflow after CI and live-schema preconditions are verified. Idempotent.
 --
 -- Problem (verified against the live database 2026-10-10):
 --   * RLS on public.users only requires the generic `users.create` /
@@ -235,4 +235,5 @@ commit;
 --   drop function if exists private.guard_super_admin_roles();
 --   drop function if exists private.guard_super_admin_role_permissions();
 --   drop function if exists private.is_super_admin_role(uuid);
+--   drop function if exists private.is_trusted_role_guard_context();
 -- ---------------------------------------------------------------------
