@@ -168,14 +168,24 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
       if (!selected.length)
         throw new Error(lang === "ar" ? "اختر فحصاً واحداً على الأقل" : "Select at least one test");
       const testIds = selected.map((test) => s(test, "id"));
-      const fingerprint = JSON.stringify({ visitId, priority, notes: notes || null, testIds, separateInvoice });
+      const fingerprint = JSON.stringify({
+        visitId,
+        priority,
+        notes: notes || null,
+        testIds,
+        separateInvoice,
+      });
       if (pendingRequestRef.current?.fingerprint !== fingerprint) {
         pendingRequestRef.current = { fingerprint, id: crypto.randomUUID() };
       }
       const requestId = pendingRequestRef.current.id;
       const { data: orderId, error } = await supabase.rpc("create_lab_order_with_invoice_atomic", {
-        p_visit_id: visitId, p_priority: priority, p_notes: notes || null,
-        p_test_ids: testIds, p_separate_invoice: separateInvoice, p_request_id: requestId,
+        p_visit_id: visitId,
+        p_priority: priority,
+        p_notes: notes || null,
+        p_test_ids: testIds,
+        p_separate_invoice: separateInvoice,
+        p_request_id: requestId,
       });
       if (error) throw new Error(error.message);
       pendingRequestRef.current = null;
