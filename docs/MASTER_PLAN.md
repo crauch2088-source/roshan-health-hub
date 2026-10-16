@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **26 checked / 112 total (~23% of listed checkbox items marked complete)**.
+- Current unweighted checkbox count after this audit: **27 checked / 113 total (~24% of listed checkbox items marked complete)**.
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -341,3 +341,5 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - 2026-10-16: Added a focused, read-only content comparison of four recovered migration candidates to the reconciliation inventory. One normalized SQL text match was confirmed; three candidates differed and remain unresolved. No database writes, merges, or deployments occurred.
 
 - [x] **Cashbox migration comparison refined:** the apparent SQL mismatch was isolated to the legacy file's explicit transaction wrapper (`BEGIN`/`COMMIT`); after removing that wrapper, normalized SQL text matches the recovered applied statement set. This does not replace disposable replay testing.
+
+- [x] **Read-only live lab-parameter invariant check (2026-10-16):** Supabase returned 12 undeleted lab tests, zero tests without any parameter, and zero tests without an active parameter. This confirms the current data invariant only; it does not prove the recovered phase-2 migration contained the legacy backfill statement or establish how the invariant was achieved.
