@@ -40,7 +40,7 @@ BEGIN
         WHERE n.nspname='public' AND c.relname=v_table_name
           AND tr.tgname='trg_audit_' || table_name AND NOT tr.tgisinternal
       ) THEN
-        RAISE EXCEPTION 'duplicate generic audit trigger remains on %',table_name;
+        RAISE EXCEPTION 'duplicate generic audit trigger remains on %',v_table_name;
       END IF;
 
       IF NOT EXISTS (
@@ -50,7 +50,7 @@ BEGIN
         WHERE n.nspname='public' AND c.relname=v_table_name
           AND tr.tgname='trg_finance_audit' AND NOT tr.tgisinternal
       ) THEN
-        RAISE EXCEPTION 'canonical finance audit trigger missing on %',table_name;
+        RAISE EXCEPTION 'canonical finance audit trigger missing on %',v_table_name;
       END IF;
     ELSE
       IF NOT EXISTS (
