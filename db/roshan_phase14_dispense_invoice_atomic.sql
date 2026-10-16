@@ -164,8 +164,8 @@ BEGIN
     RAISE EXCEPTION 'medicine aggregate stock is insufficient or inconsistent';
   END IF;
 
-  -- Consume batches in FEFO order, then the legacy stock balance, preserving the
-  -- existing movement/audit behavior. Any invoice failure rolls all of this back.
+  -- Consume only branch-assigned, unexpired batches in FEFO order. The legacy
+  -- medicine stock balance has no branch owner and must never be used as fallback.
   FOR v_item IN
     SELECT pi.id, pi.medicine_id, COALESCE(pi.quantity,1) AS qty,
            COALESCE(NULLIF(btrim(m.name),''),NULLIF(btrim(m.brand_name),''),NULLIF(btrim(m.generic_name),'')) AS name
@@ -221,29 +221,10 @@ BEGIN
 
     v_shortfall := GREATEST(v_needed,0);
     IF v_shortfall > 0 THEN
-      SELECT m.stock_quantity INTO v_stock
-        FROM public.medicines AS m
-       WHERE m.id = v_item.medicine_id AND m.deleted_at IS NULL
-       FOR UPDATE;
-      IF COALESCE(v_stock,0) < v_shortfall THEN
-        RAISE EXCEPTION 'insufficient_stock: %',v_item.name;
-      END IF;
-      INSERT INTO public.stock_movements (
-        medicine_id,batch_id,movement_type,quantity,reference_id,reference_table,branch_id,created_by
-      ) VALUES (
-        v_item.medicine_id,NULL,'dispense',-v_shortfall,p_prescription_id,'prescriptions',
-        COALESCE(v_visit_branch,v_branch),v_uid
-      );
-      item_id := v_item.id;
-      medicine_id := v_item.medicine_id;
-      medicine_name := v_item.name;
-      batch_id := NULL;
-      batch_number := NULL;
-      expiry_date := NULL;
-      quantity_dispensed := v_shortfall;
-      batch_quantity_remaining := NULL;
-      source := 'legacy';
-      RETURN NEXT;
+      -- Legacy medicine.stock_quantity has no branch ownership. Never use it as
+      -- a substitute for an assigned, unexpired batch: doing so can consume
+      -- another branch's stock or stock with no expiry/audit trail.
+      RAISE EXCEPTION 'insufficient_branch_batch_stock: %',v_item.name;
     END IF;
 
     UPDATE public.medicines AS m
