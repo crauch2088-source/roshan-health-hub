@@ -57,3 +57,11 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 
 ## Change log
 - 2026-10-16: Initial map created from the current master plan, connected integration inventory, available direct tools, and current official Supabase/PostHog privacy guidance. Confirm connection status before assuming any integration remains active.
+
+
+## Fresh live advisor snapshot (2026-10-16)
+- Supabase security advisor: 21 authenticated-callable `SECURITY DEFINER` function warnings, one disabled leaked-password protection warning, and one `pg_trgm`-in-public-schema warning.
+- Supabase performance advisor: 100 unused-index informational findings.
+- Interpretation: these are triage signals, not an instruction to revoke all RPC grants or drop indexes. Some RPCs are deliberately callable by signed-in roles and may contain authorization checks. Review each function's implementation, grants, fixed `search_path`, role/branch enforcement, and negative tests first.
+- Vercel's connected account currently reports a single linked project `roshan-health-hub` under team `roshan45`, connected to the expected GitHub repository.
+- Next high-value release gate remains authenticated browser smoke testing; TinyFish is suggested as an optional connection for this. Firecrawl is suggested for research tasks requiring broad multi-page source review.
