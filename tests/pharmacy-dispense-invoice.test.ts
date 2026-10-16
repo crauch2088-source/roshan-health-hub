@@ -24,6 +24,9 @@ test("pharmacy dispense and billing are one server-side transaction", () => {
   assert.match(migration, /private\.create_or_append_visit_invoice_atomic/);
   assert.match(migration, /public\.create_invoice_atomic/);
   assert.match(migration, /m\.selling_price/);
+  assert.match(migration, /insufficient_branch_batch_stock/);
+  assert.doesNotMatch(migration, /source := 'legacy'/);
+  assert.match(migration, /medicine\\.stock_quantity has no branch owner/);
   assert.match(
     migration,
     /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription\(uuid\) FROM PUBLIC, anon, authenticated/,
@@ -51,4 +54,7 @@ test("integration contract covers itemized medicine charges, rollback, retry, an
   assert.match(integration, /explicit separate pharmacy invoice was not created/);
   assert.match(integration, /cross-branch denial changed stock/);
   assert.match(integration, /aggregate stock guard did not rollback stock/);
+  assert.match(integration, /unbatched legacy stock unexpectedly dispensed/);
+  assert.match(integration, /legacy-stock denial changed medicine stock/);
+  assert.match(integration, /legacy-stock denial created stock movements/);
 });
