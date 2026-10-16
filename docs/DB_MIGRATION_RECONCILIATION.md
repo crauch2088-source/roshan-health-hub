@@ -264,3 +264,12 @@ A fresh query of the live database returned:
 - Existing check constraints restrict claim item `service_type` to `consultation`, `lab`, or `medicine`, but the live invoice item categories currently use `consultation` and `laboratory`. The mismatch should be handled explicitly in the business mapping rather than by string assumptions.
 
 No claim item has a live `reference_id` because there are no claim items. `insurance_claim_items.reference_id` still has no foreign key, and coverage rules have no rows to establish the intended target. Consequently, the reference model and coverage/override policy remain business decisions. Do not infer that `reference_id` must be an invoice item ID, and do not enable insurance billing until plans/rules and the mapping have been defined and tested. No data was changed.
+
+
+## Insurance UI/RPC compatibility check — read-only — 2026-10-16
+
+The current `main` UI in `src/routes/_authenticated/insurance.tsx` still builds free-form claim items with `reference_id: null` and calls `createInsuranceClaim({ patientInsuranceId, invoiceId: null, items })`. The live `public.create_insurance_claim` RPC looks up the supplied invoice and raises `invoice not found` when no invoice row is found; therefore this current main-branch workflow cannot successfully create a claim through that RPC.
+
+Draft PR #12 (`fix/insurance-claim-invoice-link`, head `175216a4b929b23690f979a7d234899d3e25a71c`) has been independently checked: its branch removes the null-invoice call, adds invoice selection and stale-item clearing, and the claim helper now requires a non-null invoice ID. This fixes the immediate UI/RPC mismatch but does **not** settle the separate business/schema gate: the live claim-item `reference_id` is nullable UUID without a foreign key, free-form descriptions are allowed, and gross amounts are not yet tied to actual invoice line IDs/amounts. PR #13 adds server-side amount/eligibility validation but its own review note correctly leaves invoice-line linkage and override policy unresolved.
+
+Classification: **immediate UI/RPC incompatibility has a draft code fix; not in main and not released. Invoice-line reference semantics and authoritative coverage/override rules remain unresolved.** Do not treat PR #12/#13 as production-fixed until reviewed, migration history reconciled, and authenticated workflow tested.
