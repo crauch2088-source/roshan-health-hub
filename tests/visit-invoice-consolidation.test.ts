@@ -29,6 +29,10 @@ test("visit invoice consolidation has explicit primary/secondary model and least
   assert.match(sql, /REVOKE ALL ON FUNCTION[\s\S]*FROM anon/);
 });
 
+test("consultation links always resolve to the primary invoice when secondary invoices exist", () => {
+  assert.match(consultation, /\.eq\("is_primary", true\)/);
+});
+
 test("visit and consultation invoice flows use atomic visit invoice RPC", () => {
   assert.match(visits, /rpc\(\s*"create_visit_consultation_invoice_atomic"/);
   assert.match(consultation, /rpc\(\s*"create_visit_consultation_invoice_atomic"/);
