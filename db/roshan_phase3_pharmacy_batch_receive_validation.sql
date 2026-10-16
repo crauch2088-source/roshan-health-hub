@@ -67,7 +67,9 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'active_application_user_not_found' USING ERRCODE = '42501';
   END IF;
-  IF NOT COALESCE(public.is_super_admin(), false) AND v_branch IS NULL THEN
+  IF v_branch IS NULL THEN
+    -- This RPC has no explicit target-branch argument; even super-admins must
+    -- receive stock while operating in a concrete branch to avoid orphan batches.
     RAISE EXCEPTION 'user_branch_not_configured' USING ERRCODE = '42501';
   END IF;
 
