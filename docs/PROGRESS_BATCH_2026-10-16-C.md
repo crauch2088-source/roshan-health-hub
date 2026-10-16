@@ -19,7 +19,7 @@
 - Supabase migration history count: 81. Full historical migration parity/replay remains open; archived SQL has not been replayed.
 
 ## Next actions
-1. Finish fresh CI for PR #44; merge when all checks pass.
+1. When Vercel quota resets, deploy current `main`, smoke-test patient registration and expense creation, then apply Phase 21B.
 2. When Vercel quota resets, deploy current `main` and verify patient registration/expense creation.
 3. Apply Phase 21B only after the new patient-registration RPC path is live and smoke-tested; then verify the direct INSERT and legacy allocator grants are revoked.
 4. Continue migration parity audit and resume remaining ready PRs after refreshing their bases/checks.
