@@ -53,6 +53,15 @@ BEGIN
     RAISE EXCEPTION 'super admin permissions should continue to be handled by the application wildcard';
   END IF;
 
+  PERFORM set_config('request.jwt.claim.sub', '50000000-0000-0000-0000-000000000003', false);
+  profile := public.get_my_app_profile();
+  IF profile #>> '{user,active}' <> 'false' THEN
+    RAISE EXCEPTION 'inactive account status should be preserved for the UI';
+  END IF;
+  IF jsonb_array_length(profile->'permissions') <> 0 THEN
+    RAISE EXCEPTION 'inactive accounts must not receive permission codes';
+  END IF;
+
   PERFORM set_config('request.jwt.claim.sub', '', false);
   IF public.get_my_app_profile() IS NOT NULL THEN
     RAISE EXCEPTION 'unauthenticated call should return NULL';

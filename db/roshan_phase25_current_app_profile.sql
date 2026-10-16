@@ -53,7 +53,8 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  IF v_role_code IS NOT NULL
+  IF v_active IS TRUE
+     AND v_role_code IS NOT NULL
      AND v_role_code <> 'super_admin'
      AND v_role_id IS NOT NULL THEN
     SELECT coalesce(jsonb_agg(p.code ORDER BY p.code), '[]'::jsonb)
