@@ -329,3 +329,11 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [x] Confirmed that `main` contains only 10 top-level SQL files in `db/` and no `supabase/` migration directory. The new inventory identifies 4 exact basename matches; an earlier broader reconciliation note recorded 5 exact source matches, so the discrepancy in matching criteria must itself be reconciled rather than silently treating a filename similarity as proof.
 - [ ] Use the inventory to recover exact source mappings for the remaining entries. Do not label a row fully recovered based only on a similar name; preserve the difference between exact basename match, content-confirmed match, partial candidate, and unrecovered source.
 
+
+
+## Migration semantic comparison checkpoint — 2026-10-16
+
+- [x] Inspected the recovered migration archive in draft [PR #26](https://github.com/crauch2088-source/roshan-health-hub/pull/26) and compared four recovered SQL candidates against the legacy db/*.sql scripts using whitespace/comment-insensitive SQL text comparison.
+- [x] Confirmed the recovered invoice-per-visit migration (20260911120231_roshan_phase12_invoice_visit_unique) is semantically text-equivalent to db/roshan_phase12_invoice_visit_unique.sql after stripping SQL comments and whitespace. This is a content match for that migration only, not proof that the entire migration chain is replayable.
+- [x] Confirmed three apparent matches are not content-equivalent: db/roshan_phase2_clinical_workflow.sql includes additional statements beyond the recovered phase-2 migration; db/roshan_phase4_cashbox_reversal_concurrency.sql differs from the latest recovered cashbox migration; and db/roshan_phase4_finance.sql differs from recovered finance-v2. These should remain separate sources/patches until statement-level review classifies their differences.
+- [ ] Continue statement-level comparison of the remaining recovered migrations and legacy SQL scripts. Do not promote archive files into the canonical migration directory or execute them until isolated replay and Supabase-specific validation pass.
