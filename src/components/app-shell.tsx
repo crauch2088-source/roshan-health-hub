@@ -20,11 +20,11 @@ function Brand({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className={cn(
-        "flex h-14 items-center gap-2.5 border-b border-sidebar-border px-3.5",
+        "flex h-16 items-center gap-3 border-b border-sidebar-border/80 px-4",
         collapsed && "justify-center px-2",
       )}
     >
-      <img src="/roshan-logo.png" alt={t("app_name")} className="size-8 shrink-0 object-contain" />
+      <img src="/roshan-logo.png" alt={t("app_name")} className="size-9 shrink-0 object-contain" />
       {!collapsed ? (
         <div className="min-w-0 leading-tight">
           <p className="truncate font-display text-base font-extrabold text-sidebar-foreground">
@@ -109,7 +109,7 @@ function Shell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background" dir={direction}>
+    <div className="roshan-app-background flex min-h-screen bg-background" dir={direction}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground"
@@ -157,7 +157,7 @@ function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col pb-[calc(7.5rem+env(safe-area-inset-bottom))] lg:pb-0">
-        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-background/95 px-3 backdrop-blur sm:gap-3 sm:px-5 lg:px-7">
+        <header className="no-print sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-border/80 bg-card/85 px-3 shadow-sm backdrop-blur-xl sm:gap-3 sm:px-5 lg:px-7">
           <img src="/roshan-logo.png" alt="" className="size-7 shrink-0 object-contain lg:hidden" />
           <BreadcrumbNav />
           <div className="min-w-0 flex-1" />
@@ -178,7 +178,7 @@ function Shell({ children }: { children: ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 p-3 outline-none sm:p-5 lg:p-7"
+          className="roshan-main mx-auto w-full min-w-0 max-w-[1680px] flex-1 p-3 outline-none sm:p-5 lg:p-8"
         >
           {children}
         </main>
@@ -191,7 +191,7 @@ function Shell({ children }: { children: ReactNode }) {
 
 function cnRail(collapsed: boolean): string {
   return cn(
-    "no-print sticky top-0 hidden h-dvh shrink-0 flex-col border-e border-sidebar-border bg-sidebar lg:flex transition-[width] duration-200 ease-out",
+    "no-print sticky top-0 z-30 hidden h-dvh shrink-0 flex-col border-e border-sidebar-border/80 bg-sidebar shadow-[0_12px_36px_-32px_oklch(0.2_0.04_245_/_0.45)] transition-[width] duration-200 ease-out lg:flex",
     collapsed ? "w-[4.25rem]" : "w-60",
   );
 }

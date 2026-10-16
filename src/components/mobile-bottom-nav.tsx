@@ -99,7 +99,7 @@ export function MobileBottomNav() {
       ) : null}
 
       <nav
-        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 items-center border-t border-border bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-16 items-center border-t border-border/80 bg-card/90 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-28px_oklch(0.2_0.04_245_/_0.55)] backdrop-blur-xl lg:hidden"
         aria-label={t("navigation")}
         // One column per visible destination plus More, so hidden-by-permission
         // items never leave empty cells and the bar stays balanced.
@@ -113,7 +113,7 @@ export function MobileBottomNav() {
               key={item.to}
               to={item.to}
               aria-current={active ? "page" : undefined}
-              className="relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[11px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+              className="relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span
                 aria-hidden

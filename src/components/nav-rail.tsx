@@ -43,13 +43,13 @@ function RailLink({
       // (the tooltip only describes the link while it is open).
       aria-label={collapsed ? t(item.key) : undefined}
       className={cn(
-        "group/link relative flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium outline-none transition-[background-color,color,transform] duration-150 active:translate-y-px",
+        "group/link relative flex min-h-10 items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium outline-none transition-[background-color,color,transform,box-shadow] duration-150 active:translate-y-px",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
         collapsed && "justify-center px-2",
         hasTrailing && "pe-9",
         active
-          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-primary/15"
+          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground",
       )}
     >
       <span
@@ -116,7 +116,7 @@ export function NavRail({
     <TooltipProvider delayDuration={150}>
       <div className="flex h-full flex-col">
         <ScrollArea className="flex-1">
-          <nav className="space-y-5 p-2.5" aria-label={t("main_navigation")}>
+          <nav className="space-y-5 p-3" aria-label={t("main_navigation")}>
             <RailLink
               item={HOME_ITEM}
               collapsed={collapsed}
@@ -127,9 +127,9 @@ export function NavRail({
             {favoriteItems.length > 0 ? (
               <div
                 className={cn(
-                  "space-y-0.5",
+                  "space-y-1",
                   !collapsed &&
-                    "rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-1.5",
+                    "rounded-xl border border-sidebar-border/80 bg-card/45 p-1.5",
                 )}
               >
                 {!collapsed ? (
