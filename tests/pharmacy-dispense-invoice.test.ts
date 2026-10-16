@@ -26,7 +26,7 @@ test("pharmacy dispense and billing are one server-side transaction", () => {
   assert.match(migration, /m\.selling_price/);
   assert.match(migration, /insufficient_branch_batch_stock/);
   assert.doesNotMatch(migration, /source := 'legacy'/);
-  assert.match(migration, /medicine\\.stock_quantity has no branch owner/);
+  assert.match(migration, /stock_quantity has no branch owner/);
   assert.match(
     migration,
     /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription\(uuid\) FROM PUBLIC, anon, authenticated/,
