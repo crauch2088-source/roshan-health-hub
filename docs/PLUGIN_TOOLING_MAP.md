@@ -111,3 +111,10 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Verified effective grants after migration: authenticated direct INSERT on `public.patients` denied; authenticated and anon EXECUTE on `public.next_mrn()` denied; service_role retains next_mrn; authenticated EXECUTE on `public.create_patient_atomic` remains allowed; anon cannot execute the new RPC.
 - Post-migration TinyFish registration smoke succeeded (run https://agent.tinyfish.ai/runs/643f8bd1-d227-4fc8-b96b-fa6098819ebf). The unique synthetic patient and its exact audit rows were then removed after confirming no dependent rows; final patients/visits/queue/invoice/payment/audit counts are zero.
 - Continue broader role/branch negative authorization tests; this phase only hardens the patient-registration write path.
+
+
+## Supabase security catalog check — 2026-10-16
+- After Phase 21B, read-only inventory found 42 public SECURITY DEFINER functions; 20 are executable by `authenticated`, zero public ones by `anon`; all 20 authenticated-callable definitions have empty `search_path` and static authorization/scope markers.
+- Five private-schema functions have anon EXECUTE ACLs, but anon lacks USAGE on `private`; treat as defense-in-depth cleanup candidate, not evidence of an exposed endpoint. Do not revoke grants broadly without checking callers and default privileges.
+- Full adversarial authorization/branch tests remain pending. Supabase Auth leaked-password protection and `pg_trgm` extension placement are still open review items.
+- Vercel runtime-error cluster API returned 403 for the connected account; did not retry unchanged. Use only an explicitly authorized alternative if runtime-error evidence becomes necessary.
