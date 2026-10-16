@@ -313,3 +313,5 @@ Draft PR #40 proposes an idempotent migration at `db/roshan_phase4_finance_audit
 The read-only aggregate of current production insurance data returned zero active claims and zero active claim items, with six active invoices and six active invoice items. Because no claim history currently exists, the item-to-invoice reference semantics and coverage override policy remain business-rule decisions; no schema or production data was changed.
 
 - Additional aggregate-only comparison of the same 20 near-identical audit pairs found `same_user_pairs=20`, `different_user_pairs=0`, and `both_null_user_pairs=3`. Thus no attribution mismatch was observed in this sample; the three null/null pairs and service-role/noninteractive cases still warrant review before merge.
+
+- Deduplication follow-up: a second draft PR (#40) was closed as redundant after discovering the earlier, broader PR #32. Prefer PR #32 because it covers all five finance tables including supplier bills, retains a non-finance control table, and tests user-attribution behavior; PR #40 is closed and must not be merged.
