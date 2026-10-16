@@ -155,3 +155,10 @@ Confirmed observations:
 - `trg_sync_supplier_bill_payment` and `trg_recompute_supplier_bill` both recalculate the same supplier bill on INSERT/UPDATE, but use different formulas: the sync trigger clamps `paid_amount` to `total_amount` and updates `updated_by`, while the recompute trigger stores the raw sum and recalculates on DELETE too. This overlapping behavior needs regression tests for overpayment, soft-delete, UPDATE, and DELETE; do not change production triggers before the intended invariant is settled.
 
 Classification: **partial mapping with live effective-state evidence; not replay-safe and not production-change authorization**. Next steps are to inspect the remaining relevant migration versions around finance-v2, compare exact function bodies and grants by signature, and validate trigger interactions plus view dependencies in a disposable PostgreSQL/Supabase environment. No production SQL was written.
+
+
+## Security-migration statement-level mapping follow-up — 2026-10-16
+
+The recovered `20260911130749_harden_security_and_fk_indexes_20260911.sql` was compared against all ten top-level legacy SQL files on `main`. No complete source-file match was found; only isolated statements overlap. Its dynamic SECURITY DEFINER revoke loop, several explicit search-path alterations, policy consolidation, and FK-index statements remain a **partial/unmapped source** rather than proof of missing live protections.
+
+The recovered `20260911130812_restrict_security_definer_api_execution_20260911.sql` also has no full legacy-file match. Six individual EXECUTE grant statements were found in the legacy corpus, while its dynamic PUBLIC/anon revoke loop and several RPC grants do not match a single legacy source as a complete statement set. The live catalog still shows a narrower callable surface than the legacy baseline; preserve the recovered files as quarantine evidence and do not replay them to reconstruct history.
