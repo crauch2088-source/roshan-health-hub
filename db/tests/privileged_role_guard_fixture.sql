@@ -31,6 +31,14 @@ AS $function$
   SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid
 $function$;
 
+CREATE FUNCTION auth.role()
+RETURNS text
+LANGUAGE sql
+STABLE
+AS $function$
+  SELECT NULLIF(current_setting('test.auth_role', true), '')
+$function$;
+
 CREATE FUNCTION private.is_super_admin()
 RETURNS boolean
 LANGUAGE sql
@@ -44,7 +52,7 @@ RETURNS uuid LANGUAGE sql AS $function$ SELECT NULL::uuid $function$;
 CREATE FUNCTION public.bootstrap_super_admin(uuid, text, text)
 RETURNS uuid LANGUAGE sql AS $function$ SELECT NULL::uuid $function$;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.roles, public.users, public.role_permissions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.roles, public.users, public.role_permissions TO anon, authenticated;
 
 INSERT INTO public.roles(id, code, name) VALUES
  ('10000000-0000-0000-0000-000000000001', 'admin', 'Admin'),
