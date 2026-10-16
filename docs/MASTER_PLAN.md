@@ -435,3 +435,5 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - Separate read-only insurance aggregate found no active insurance claims or claim items currently present (six active invoices and six invoice items). This does not resolve the policy question of whether claims must reference exact invoice lines or server-recalculate coverage; keep insurance financial integrity open pending explicit business-rule design.
 
 - Follow-up aggregate-only audit comparison found all 20 near-identical pairs had matching `user_id` values between the two trigger-generated rows (3 pairs had both user IDs null; none differed). This lowers observed attribution-divergence concern but does not replace review of noninteractive/service-role paths.
+
+- Anti-duplication check: PR #40 was created while following the live audit finding, then immediately closed as redundant after discovering the existing, broader PR #32. PR #32 is the canonical proposed fix: it covers all five finance tables, retains generic auditing on a non-finance control table, and its PostgreSQL 17 integration + full CI passed. Do not merge PR #40.
