@@ -36,16 +36,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const patientRow = rel((visitQ.data ?? [])[0], "patients");
   const patient = s(patientRow, "id");
   const patientAge = calcAge(s(patientRow, "date_of_birth"));
-  const vitalsQ = useRows<Row[]>(
-    ["clinic-vitals-weight", visitId],
-    () =>
-      supabase
-        .from("vitals")
-        .select("weight,created_at")
-        .eq("visit_id", visitId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(1),
+  const vitalsQ = useRows<Row[]>(["clinic-vitals-weight", visitId], () =>
+    supabase
+      .from("vitals")
+      .select("weight,created_at")
+      .eq("visit_id", visitId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1),
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
   const isPediatric = patientAge != null && patientAge < 18;
