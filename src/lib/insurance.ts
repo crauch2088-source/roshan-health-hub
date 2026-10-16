@@ -1,4 +1,5 @@
 import { rpc } from "./db";
+import { validateInsuranceClaimDraft } from "./insurance-validation";
 
 export type ClaimStatus =
   "draft" | "submitted" | "under_review" | "approved" | "partially_approved" | "rejected" | "paid";
@@ -67,10 +68,11 @@ export async function calculateInsuranceCoverage(args: {
 
 export function createInsuranceClaim(args: {
   patientInsuranceId: string;
-  invoiceId: string | null;
+  invoiceId: string;
   items: ClaimItemInput[];
   notes?: string | null;
 }): Promise<string> {
+  validateInsuranceClaimDraft(args);
   return rpc<string>("create_insurance_claim", {
     _patient_insurance_id: args.patientInsuranceId,
     _invoice_id: args.invoiceId,
