@@ -173,7 +173,7 @@ END;
 $$;
 
 -- Legacy stock without a branch-owned batch must never be dispensed as if it belonged to this branch.
-DO $
+DO $legacy_stock_test$
 DECLARE v_stock integer; v_lines bigint;
 BEGIN
  SELECT stock_quantity INTO v_stock FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000003';
@@ -201,7 +201,7 @@ BEGIN
    RAISE EXCEPTION 'legacy-stock denial created stock movements';
  END IF;
 END;
-$;
+$legacy_stock_test$;
 
 DO $
 BEGIN
