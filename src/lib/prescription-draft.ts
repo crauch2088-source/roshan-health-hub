@@ -74,7 +74,7 @@ export function editPrescriptionName(draft: PrescriptionDraft, name: string): Pr
 export function buildMedicineSearchFilter(term: string): string | null {
   const clean = term
     .replace(/[(),*%_\\'"]/g, " ")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
   if (clean.length < 2) return null;
 
