@@ -263,3 +263,20 @@ BEGIN
   END IF;
 END
 $test$;
+
+
+-- Super admins can still audit/manage legacy branchless rows, while branch-scoped
+-- users above were required to fail closed for both branchless edge cases.
+SELECT set_config('test.super_admin','true',false);
+SET ROLE authenticated;
+DO $test$
+BEGIN
+  IF (SELECT count(*) FROM public.lab_orders) <> 5 THEN
+    RAISE EXCEPTION 'super admin should see all five valid lab orders, including legacy branchless rows';
+  END IF;
+  IF (SELECT count(*) FROM public.lab_order_items) <> 4 THEN
+    RAISE EXCEPTION 'super admin should see all four lab items, including legacy branchless rows';
+  END IF;
+END
+$test$;
+RESET ROLE;
