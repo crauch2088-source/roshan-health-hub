@@ -90,6 +90,19 @@ BEGIN
   IF first_id IS DISTINCT FROM retry_id THEN
     RAISE EXCEPTION 'payment RPC idempotent retry returned a different payment id';
   END IF;
+
+  rejected := false;
+  BEGIN
+    PERFORM public.post_invoice_payment(
+      '40000000-0000-0000-0000-000000000001',4,'cash','different amount','test-idempotency-key'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS message = MESSAGE_TEXT;
+    rejected := message LIKE '%idempotency key reused with different payment request%';
+  END;
+  IF NOT rejected THEN
+    RAISE EXCEPTION 'payment RPC accepted a different payload for a committed idempotency key';
+  END IF;
 END
 $payment_test$;
 SELECT public.post_supplier_bill(
