@@ -76,6 +76,9 @@ BEGIN
   IF (SELECT count(*) FROM public.prescription_items) <> 1 THEN
     RAISE EXCEPTION 'prescription_items SELECT leaked or hid a branch-local row';
   END IF;
+  IF (SELECT count(*) FROM public.lab_orders) <> 1 THEN
+    RAISE EXCEPTION 'branch-scoped user should not see branchless lab orders even when patient/visit branch fallback exists';
+  END IF;
   IF (SELECT count(*) FROM public.lab_order_items) <> 1 THEN
     RAISE EXCEPTION 'lab_order_items SELECT leaked or hid a branch-local row';
   END IF;
