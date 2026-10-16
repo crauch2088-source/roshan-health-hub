@@ -221,3 +221,15 @@ The test waits for session A to be visible in `pg_stat_activity` inside the cont
 
 
 - Follow-up to the invoice-payment permission check: the live `post_invoice_payment` returns an existing payment for any previously seen `idempotency_key` without checking that the actor, invoice, amount, method, or reference matches the new request. A disposable PostgreSQL regression reproduced the silent acceptance of a changed amount. Draft PR #31 now compares these request fields and fails closed on mismatches while returning the original ID for an identical retry. PostgreSQL 17 integration plus guard/typecheck/lint/build passed on head `49ae949f70b40c2c09b9378e5fe8f459e43ae9b3` (run #38888211717); no production function or data was changed.
+
+
+### Pharmacy inventory eligibility recheck — read-only — 2026-10-16
+
+A fresh aggregate-only query against the live Supabase project reconfirmed:
+- `public.medicines`: 9 active/non-deleted rows with nonzero legacy `stock_quantity`; sum = 4,484.
+- `public.pharmacy_inventory`: 1 non-deleted batch row; its `branch_id` is NULL, its expiry date is before the database's current date, and its remaining quantity is 498.
+- Branch-assigned non-deleted batches: **0**. Therefore there is currently no confirmed unexpired, branch-assigned batch stock available for the batch-only FEFO dispense path.
+- `public.medicines_2` has 0 rows in the live project, supporting—but not by itself proving—that it is not the active stock source.
+- `public.stock_movements` still has 8 rows: four purchase movements totaling +1,025, all with NULL branch IDs; four dispense movements totaling -4, including both batch-linked and unlinked records. This ledger does not reconcile the 4,484 legacy catalog quantity.
+
+Safety implication: keep PR #23's batch-only/branch-matched rejection behavior; do not restore legacy-stock fallback to make dispensing appear functional. The clinic must first identify whether the legacy balances are test seeds, real stock, or historic balances, and document branch ownership, expiry, supplier provenance, and auditable opening-balance adjustments. No inventory or movement rows were changed.
