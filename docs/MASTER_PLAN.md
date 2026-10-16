@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **27 checked / 113 total (~24% of listed checkbox items marked complete)**.
+- Current unweighted checkbox count after this audit: **28 checked / 116 total (~24% of listed checkbox items marked complete)**.
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -349,3 +349,10 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - Compared `db/roshan_phase4_finance.sql`, recovered migration `20260908210824_roshan_phase4_finance_v2`, and current live function/trigger catalogs without writing to production. The source pair is a successive patch vs. a foundational script, not a direct replacement.
 - Live financial RPCs checked in this slice (`post_invoice_payment`, `post_expense`, `post_cashbox_entry`, `post_supplier_bill`, `post_supplier_payment`, `reverse_cashbox_entry`) are SECURITY DEFINER with empty `search_path`; authenticated has EXECUTE, anon/PUBLIC do not. This is a narrow grant/config snapshot only.
 - Important live-vs-source findings recorded in `docs/DB_MIGRATION_RECONCILIATION.md`: branch-aware/private-helper RPC implementations and the stricter live conflict predicate are later hardening layers; `customer_payment` is explicitly set by recovered follow-up migration `20260911141142`; two audit trigger families both write `audit_logs`, and an aggregate-only last-30-day query found 20 near-identical audit pairs (10 cashbox INSERT, 9 payment INSERT, 1 payment DELETE); and two supplier-payment triggers recompute balances with different overpayment/soft-delete behavior. Reproduce the duplicate audit rows and supplier-bill edge cases in disposable tests before any change; do not alter production or replay the legacy script based on this observation.
+
+
+## Financial write-path hardening — 2026-10-16
+
+- [x] Completed a read-only live audit of finance-table grants, RPC validation, RLS predicates, and overlapping audit triggers. Confirmed 20 near-identical audit pairs in the last 30 days and that direct authenticated table writes can bypass at least the supplier-payment outstanding-balance check. Details are in `docs/DB_MIGRATION_RECONCILIATION.md`.
+- [ ] Review draft [PR #30](https://github.com/crauch2088-source/roshan-health-hub/pull/30), which routes the Expenses screen through `post_expense`. CI passed on head `4841a48c11a01425532f210f53d7257c23d75747` in [run #38876630369](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38876630369); Vercel preview remains rate-limited. Keep draft until the stacked database restrictions, migration reconciliation, and authenticated smoke tests are reviewed.
+- [ ] Review stacked draft [PR #31](https://github.com/crauch2088-source/roshan-health-hub/pull/31), which proposes revoking direct financial table mutations and aligning two RPC permission gates. Its PostgreSQL 17 integration run is pending at the time of this note. Do not apply the migration to production until the full migration chain is reconciled and isolated tests pass.
