@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **25 checked / 111 total (~23% of listed checkbox items marked complete)**.
+- Current unweighted checkbox count after this audit: **26 checked / 112 total (~23% of listed checkbox items marked complete)**.
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -335,7 +335,9 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 - [x] Inspected the recovered migration archive in draft [PR #26](https://github.com/crauch2088-source/roshan-health-hub/pull/26) and compared four recovered SQL candidates against the legacy db/*.sql scripts using whitespace/comment-insensitive SQL text comparison.
 - [x] Confirmed the recovered invoice-per-visit migration (20260911120231_roshan_phase12_invoice_visit_unique) is semantically text-equivalent to db/roshan_phase12_invoice_visit_unique.sql after stripping SQL comments and whitespace. This is a content match for that migration only, not proof that the entire migration chain is replayable.
-- [x] Confirmed three apparent matches are not content-equivalent: db/roshan_phase2_clinical_workflow.sql includes additional statements beyond the recovered phase-2 migration; db/roshan_phase4_cashbox_reversal_concurrency.sql differs from the latest recovered cashbox migration; and db/roshan_phase4_finance.sql differs from recovered finance-v2. These should remain separate sources/patches until statement-level review classifies their differences.
+- [x] Confirmed two candidates differ from their recovered migration text: db/roshan_phase2_clinical_workflow.sql includes an additional lab-parameter backfill statement; db/roshan_phase4_finance.sql differs from recovered finance-v2. For the cashbox concurrency candidate, removing the explicit BEGIN/COMMIT wrapper makes the remaining normalized SQL text match the recovered ledger statement set; this supports a content match with a wrapper difference, not a replay-safety conclusion.
 - [ ] Continue statement-level comparison of the remaining recovered migrations and legacy SQL scripts. Do not promote archive files into the canonical migration directory or execute them until isolated replay and Supabase-specific validation pass.
 
 - 2026-10-16: Added a focused, read-only content comparison of four recovered migration candidates to the reconciliation inventory. One normalized SQL text match was confirmed; three candidates differed and remain unresolved. No database writes, merges, or deployments occurred.
+
+- [x] **Cashbox migration comparison refined:** the apparent SQL mismatch was isolated to the legacy file's explicit transaction wrapper (`BEGIN`/`COMMIT`); after removing that wrapper, normalized SQL text matches the recovered applied statement set. This does not replace disposable replay testing.
