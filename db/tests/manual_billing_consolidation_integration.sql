@@ -132,11 +132,14 @@ $$;
 
 DO $$
 BEGIN
- IF NOT has_function_privilege('authenticated','public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN
-   RAISE EXCEPTION 'authenticated cannot execute manual billing wrapper';
+ IF has_function_privilege('authenticated','public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN
+   RAISE EXCEPTION 'authenticated can bypass idempotent manual billing wrapper';
  END IF;
- IF has_function_privilege('anon','public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN
-   RAISE EXCEPTION 'anon can execute manual billing wrapper';
+ IF NOT has_function_privilege('authenticated','public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean,uuid)','EXECUTE') THEN
+   RAISE EXCEPTION 'authenticated cannot execute idempotent manual billing wrapper';
+ END IF;
+ IF has_function_privilege('anon','public.create_billing_invoice_atomic(uuid,uuid,uuid,date,numeric,jsonb,boolean,uuid)','EXECUTE') THEN
+   RAISE EXCEPTION 'anon can execute idempotent manual billing wrapper';
  END IF;
  IF has_function_privilege('authenticated','public.create_invoice_atomic(uuid,uuid,date,numeric,jsonb)','EXECUTE') THEN
    RAISE EXCEPTION 'authenticated can bypass the manual billing wrapper';
@@ -144,4 +147,21 @@ BEGIN
 END;
 $$;
 
+SELECT set_config('test.perms','billing.create',false);
+DO $
+DECLARE a uuid; b uuid; n integer; m integer;
+BEGIN
+ a := public.create_billing_invoice_atomic('30000000-0000-0000-0000-000000000003','50000000-0000-0000-0000-000000000004',NULL,CURRENT_DATE,0,
+  jsonb_build_array(jsonb_build_object('item_name','Retry-safe procedure','item_type','procedure','quantity',1,'unit_price',4)),false,
+  '70000000-0000-0000-0000-000000000003'::uuid);
+ SELECT count(*) INTO n FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000004';
+ SELECT count(*) INTO m FROM public.invoice_items WHERE invoice_id=a AND deleted_at IS NULL;
+ b := public.create_billing_invoice_atomic('30000000-0000-0000-0000-000000000003','50000000-0000-0000-0000-000000000004',NULL,CURRENT_DATE,0,
+  jsonb_build_array(jsonb_build_object('item_name','Retry-safe procedure','item_type','procedure','quantity',1,'unit_price',4)),false,
+  '70000000-0000-0000-0000-000000000003'::uuid);
+ IF a IS DISTINCT FROM b THEN RAISE EXCEPTION 'manual retry returned a different invoice'; END IF;
+ IF (SELECT count(*) FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000004')<>n THEN RAISE EXCEPTION 'manual retry duplicated invoice'; END IF;
+ IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=a AND deleted_at IS NULL)<>m THEN RAISE EXCEPTION 'manual retry duplicated invoice lines'; END IF;
+END;
+$;
 SELECT 'manual billing consolidation integration tests passed' AS result;
