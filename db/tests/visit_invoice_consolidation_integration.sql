@@ -196,6 +196,18 @@ BEGIN
  IF (SELECT count(*) FROM public.invoice_items ii JOIN public.invoices i ON i.id=ii.invoice_id WHERE i.visit_id='50000000-0000-0000-0000-000000000003' AND ii.deleted_at IS NULL)<>m THEN RAISE EXCEPTION 'default retry duplicated invoice lines'; END IF;
 END;
 $$;
+-- Reusing a committed request key with a different payload must fail closed.
+DO $$
+BEGIN
+ BEGIN
+  PERFORM public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','urgent','different payload',ARRAY['60000000-0000-0000-0000-000000000002'::uuid],false,'70000000-0000-0000-0000-000000000001'::uuid);
+  RAISE EXCEPTION 'test failed: mismatched idempotency payload was accepted';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='test failed: mismatched idempotency payload was accepted' THEN RAISE; END IF;
+  IF SQLERRM NOT LIKE '%idempotency key reused with different request%' THEN RAISE; END IF;
+ END;
+END;
+$$;
 SELECT set_config('test.perms','lab.create,billing.create',false);
 DO $$
 DECLARE a uuid; b uuid; n integer;
