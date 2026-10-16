@@ -2,8 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const read = (path: string) =>
-  readFileSync(new URL(path, import.meta.url), "utf8");
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const accounting = read("../src/routes/_authenticated/accounting.tsx");
 const finance = read("../src/routes/_authenticated/finance.tsx");
@@ -23,7 +22,11 @@ test("finance UI routes financial writes through RPCs rather than direct table D
     ["finance", finance],
     ["expenses", expenses],
   ] as const) {
-    assert.doesNotMatch(source, directFinancialWrite, `${name} must not mutate financial tables directly`);
+    assert.doesNotMatch(
+      source,
+      directFinancialWrite,
+      `${name} must not mutate financial tables directly`,
+    );
   }
 
   assert.match(accounting, /rpc\(["']post_cashbox_entry["']/);
@@ -38,7 +41,10 @@ test("migration revokes direct write privileges but retains authenticated RPC ac
     migration,
     /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER[\s\S]*FROM PUBLIC, anon, authenticated/,
   );
-  assert.match(migration, /public\.post_cashbox_entry[\s\S]*public\.app_has_perm\('accounting\.create'\)/);
+  assert.match(
+    migration,
+    /public\.post_cashbox_entry[\s\S]*public\.app_has_perm\('accounting\.create'\)/,
+  );
   assert.match(migration, /private\.app_has_perm\('accounting\.create'\)/);
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.post_expense[\s\S]*TO authenticated/);
   assert.match(integration, /direct INSERT unexpectedly succeeded/);
