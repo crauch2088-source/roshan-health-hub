@@ -3,6 +3,12 @@ BEGIN
   IF has_function_privilege('anon','private.app_has_branch_access(uuid)','EXECUTE') THEN
     RAISE EXCEPTION 'anonymous role must not execute private branch helper';
   END IF;
+  IF has_function_privilege('anon','private.app_has_patient_branch(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'anonymous role must not execute private patient-branch helper';
+  END IF;
+  IF NOT has_function_privilege('authenticated','private.app_has_patient_branch(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated role must execute private patient-branch helper for RLS';
+  END IF;
   IF NOT has_function_privilege('authenticated','private.app_has_branch_access(uuid)','EXECUTE') THEN
     RAISE EXCEPTION 'authenticated role must execute private branch helper for RLS';
   END IF;
