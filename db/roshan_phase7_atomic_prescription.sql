@@ -80,6 +80,7 @@ BEGIN
        WHERE m.id = v_medicine_id
          AND m.deleted_at IS NULL
          AND m.active IS TRUE
+         AND m.is_active IS TRUE
        FOR SHARE;
       IF NOT FOUND THEN
         RAISE EXCEPTION 'active catalog medicine not found';
@@ -116,6 +117,7 @@ BEGIN
        WHERE m.id = v_medicine_id
          AND m.deleted_at IS NULL
          AND m.active IS TRUE
+         AND m.is_active IS TRUE
        FOR SHARE;
     ELSE
       v_medicine_name := btrim(v_item->>'medication_name');
