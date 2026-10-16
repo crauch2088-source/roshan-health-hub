@@ -157,9 +157,10 @@ $$;
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
 SELECT set_config('test.perms','pharmacy.update,billing.create',false);
 DO $$
-DECLARE v_stock numeric;
+DECLARE v_stock numeric; v_lines bigint;
 BEGIN
  SELECT quantity_remaining INTO v_stock FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001';
+ SELECT count(*) INTO v_lines FROM public.invoice_items WHERE invoice_id=(SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE) AND deleted_at IS NULL;
  BEGIN
    PERFORM * FROM public.fn_dispense_prescription_with_invoice('90000000-0000-0000-0000-000000000003',false);
    RAISE EXCEPTION 'test failed: cross-branch dispense unexpectedly succeeded';
@@ -168,6 +169,12 @@ BEGIN
  END;
  IF (SELECT quantity_remaining FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001') <> v_stock THEN
    RAISE EXCEPTION 'cross-branch denial changed stock';
+ END IF;
+ IF (SELECT status FROM public.prescriptions WHERE id='90000000-0000-0000-0000-000000000003') <> 'pending' THEN
+   RAISE EXCEPTION 'cross-branch denial changed prescription status';
+ END IF;
+ IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=(SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE) AND deleted_at IS NULL) <> v_lines THEN
+   RAISE EXCEPTION 'cross-branch denial changed invoice lines';
  END IF;
 END;
 $$;
