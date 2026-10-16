@@ -175,3 +175,9 @@ CREATE POLICY insurance_prior_authorizations_upd ON public.insurance_prior_autho
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.prescriptions, public.prescription_items, public.lab_order_items TO authenticated;
 
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+  public.medical_certificates,
+  public.patient_discounts,
+  public.insurance_prior_authorizations
+TO authenticated;
