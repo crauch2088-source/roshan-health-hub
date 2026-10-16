@@ -797,3 +797,10 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - [x] Closed the obsolete Composio pipeline test issue [#1](https://github.com/crauch2088-source/roshan-health-hub/issues/1); active tooling routing is now maintained in `docs/PLUGIN_TOOLING_MAP.md`.
 - [ ] Keep [Issue #18](https://github.com/crauch2088-source/roshan-health-hub/issues/18) open: source currently uses exact paginated invoice reads, total_amount fallback, and explicit unavailable states, but add/verify focused regression coverage for >1,000 invoices and query-failure behavior before closing it.
 - [ ] The reception→visit→queue browser test remains incomplete because TinyFish failed mid-run. Do not retry the same run blindly; continue via an independent path, and recheck the empty-state baseline before a fresh bounded run.
+
+
+## Final triage correction — 2026-10-16
+
+- [x] Closed [Issue #18](https://github.com/crauch2088-source/roshan-health-hub/issues/18) after a fresh main-source review confirmed complete range pagination and exact-count gating in `usePatientSnapshot`, `net_amount` → `total_amount` fallback, explicit unavailable states, and regression tests for >1,000 rows, query failure, early termination, and invalid monetary data.
+- [x] Main CI passed for the documentation/tooling map update in run [#38964357807](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38964357807). This run validates repository checks for that commit, not a new production deployment.
+- [ ] Reception→visit→queue remains unverified end-to-end: TinyFish failed after the second synthetic patient saved but before a visit was created. The exact patient and its audit rows were removed; live database counts were independently verified back to zero. Continue with a new, diagnosed browser attempt rather than assuming the failed run completed.
