@@ -61,7 +61,7 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 | 20260906144008 | `roshan_phase4_finance_cashbox_debts` | Not exact-matched; source mapping pending |
 | 20260906161023 | `roshan_phase4_finance_security_verification_patch` | Not exact-matched; source mapping pending |
 | 20260906203143 | `roshan_phase3_pharmacy_runtime_hardening` | Not exact-matched; source mapping pending |
-| 20260908210824 | `roshan_phase4_finance_v2` | Not exact-matched; source mapping pending |
+| 20260908210824 | `roshan_phase4_finance_v2` | Partial mapping; live effective-state audit recorded below |
 | 20260909110657 | `roshan_phase5_insurance` | Exact basename: `db/roshan_phase5_insurance.sql` |
 | 20260909110735 | `roshan_phase5_insurance_functions` | Not exact-matched; source mapping pending |
 | 20260909110753 | `roshan_phase5_insurance_permissions_rls` | Not exact-matched; source mapping pending |
@@ -134,3 +134,19 @@ A read-only aggregate query against the connected Supabase project returned:
 - Undeleted lab tests with no active parameter row: **0**
 
 The current database state satisfies this narrow lab-parameter invariant. This does **not** prove the backfill `INSERT` present in `db/roshan_phase2_clinical_workflow.sql` was part of the applied migration: the recovered ledger statement set for version `20260820150215` contains the five index statements but not that backfill. No rows were changed. Recheck after any catalog migration and keep source-history provenance unresolved until the original statement source is found.
+
+
+## Finance-v2 live-state comparison — read-only — 2026-10-16
+
+The live Supabase state was inspected with read-only catalog queries after comparing the repository baseline `db/roshan_phase4_finance.sql` against recovered applied migration `20260908210824_roshan_phase4_finance_v2.sql`. This is an effective-state observation, not authorization to replay either source.
+
+Confirmed observations:
+- The recovered finance-v2 source is a successive patch, not a complete replacement for the repository baseline: it begins by redefining three views and finance functions, while the repository baseline also creates/extends supplier, supplier-bill, supplier-payment, and cashbox tables/columns/indexes and contains additional setup.
+- Live versions of `post_invoice_payment`, `post_expense`, `post_cashbox_entry`, `post_supplier_bill`, `post_supplier_payment`, and `reverse_cashbox_entry` are SECURITY DEFINER, have an empty `search_path`, are executable by `authenticated`, and are not executable by `anon` or `PUBLIC` according to `has_function_privilege`. This is a useful privilege/config snapshot, not a complete adversarial security review.
+- The live finance RPC definitions contain branch-context checks and use `private.*` helpers in at least the supplier-bill path; the repository baseline shown here uses `public.*` helpers and omits some live branch checks. Do not overwrite live functions with the baseline without reconciling the later migrations.
+- The live `fn_ledger_from_payment()` writes transaction type `customer_payment`; the repository baseline writes `income`, while the recovered finance-v2 source writes `income` as well. This is a material semantic difference to trace through reporting/UI consumers before any canonicalization.
+- The live `fn_ledger_post` conflict predicate is `where source_type is not null and source_id is not null`; the repository baseline uses `where source_id is not null`. The live function has `search_path=public`, whereas the later RPC functions above have an empty path. Confirm the exact unique-index predicate and all downstream expectations before treating this as a defect or attempting a change.
+- Read-only trigger inventory shows both `trg_audit_*` triggers and `trg_finance_audit` on finance tables. This may produce duplicate audit rows for the same event; the audit handlers and existing data must be compared before deciding whether either trigger should be removed.
+- `trg_sync_supplier_bill_payment` coexists with `trg_recompute_supplier_bill` and the finance audit/ledger triggers on `supplier_payments`; inspect the synchronization function and its event semantics in a disposable database before changing any of them.
+
+Classification: **partial mapping with live effective-state evidence; not replay-safe and not production-change authorization**. Next steps are to inspect the remaining relevant migration versions around finance-v2, compare exact function bodies and grants by signature, and validate trigger interactions plus view dependencies in a disposable PostgreSQL/Supabase environment. No production SQL was written.
