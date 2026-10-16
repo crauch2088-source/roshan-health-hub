@@ -346,3 +346,16 @@ Read-only checks against the connected production project were completed before 
 - [x] **Privilege boundary distinction:** live next_invoice_number() is executable by authenticated but not anon and uses an empty search_path; post_invoice_payment(uuid,numeric,text,text,text) is SECURITY DEFINER, uses an empty search_path, and is executable by authenticated but not anon. These existing RPCs do not substitute for the three missing create-invoice RPCs and should not be revoked by the proposed migration.
 
 **Release ordering:** review and validate PR #23's atomic invoice RPC definitions and client paths first; then validate PR #33's exact function signatures against that result. Run the fixture/integration workflow against a disposable PostgreSQL 17 database and test both branch-visible and cross-branch invoice items. Keep both PRs draft/unmerged until migration-source reconciliation and the branchless legacy-data decision are complete. No production SQL was executed beyond SELECT-only catalog/aggregate queries.
+
+
+## Patient registration atomicity — production parity review — 2026-10-16
+
+Read-only production checks and draft PR #39 review. No production data or privileges changed.
+
+- [x] **MRN format parity:** the live public.next_mrn() uses prefix RMC and the same transaction advisory-lock key ('roshan:mrn') as proposed public.create_patient_atomic(). The new function retains that prefix and lock key, so the intended sequence remains compatible with the deployed generator.
+- [x] **Existing MRN aggregate:** production has 10 patient rows; 5 use RMC numeric MRNs, 1 has a TEST-prefixed MRN, and 4 have NULL MRN. No patient names, phone numbers, IDs, or row-level records were retrieved. The new generator calculates only from RMC numeric values, matching the existing next_mrn() behavior; the legacy NULL/TEST rows remain a separate data-quality issue.
+- [x] **Permission/branch behavior:** proposed RPC derives user and branch server-side, checks patients.create, requires an active application user and non-NULL branch, and writes created_by/registered_by/updated_by from the authenticated application user. It does not accept a client-supplied branch or MRN.
+- [x] **Atomicity/concurrency test coverage:** PR #39 contains a disposable PostgreSQL 17 fixture, permission/invalid-input/branch failure rollback checks, and a two-session concurrency script that waits for the first insert to enter a controlled delay before starting the second registration. Both concurrent registrations must succeed with distinct MRNs.
+- [x] **CI evidence:** PR #39 head 8fa3ae58ffc8964ce5e4397e4a34a3c2618b3a1a passed full CI in run 38903131578. This validates the disposable fixture and repository guards only; it does not prove the migration against the exact production schema or authorize deployment.
+
+**Release gates remain:** reconcile the applied migration chain, validate the SQL against a disposable copy of the live schema, confirm branch assignment/readiness, and complete authenticated smoke tests before merge or production application. PR #39 remains draft/unmerged.
