@@ -219,10 +219,12 @@ function VisitsPageInner() {
           doctor_id: form.doctor_id || null,
 
           /*
-           * Keep the requested clinic date explicit.
-           * queue_date is derived by the database trigger.
+           * Keep the clinic-local calendar date explicit. visit_date is stored
+           * as UTC, so deriving queue_date from its UTC date shifts midnight
+           * in Sudan to the previous day.
            */
           visit_date: new Date(`${date}T00:00:00+02:00`).toISOString(),
+          queue_date: date,
 
           visit_type: form.visit_type,
           status: "waiting",

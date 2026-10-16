@@ -118,3 +118,8 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Five private-schema functions have anon EXECUTE ACLs, but anon lacks USAGE on `private`; treat as defense-in-depth cleanup candidate, not evidence of an exposed endpoint. Do not revoke grants broadly without checking callers and default privileges.
 - Full adversarial authorization/branch tests remain pending. Supabase Auth leaked-password protection and `pg_trgm` extension placement are still open review items.
 - Vercel runtime-error cluster API returned 403 for the connected account; did not retry unchanged. Use only an explicitly authorized alternative if runtime-error evidence becomes necessary.
+
+## Verified date-boundary bug and workflow rule — 2026-10-16
+- Production smoke testing proved that clinic-local midnight (Africa/Khartoum) is 22:00 UTC on the previous calendar date. A visit persisted with the previous UTC date was therefore excluded by the visits screen's queue_date = todayISO() filter.
+- Fix under review in Phase 22: the UI explicitly persists the intended queue_date, and both database trigger fallbacks use AT TIME ZONE 'Africa/Khartoum'. PostgreSQL 17 regression coverage asserts the visit date, exactly-one ticket, and explicit-date path.
+- For browser QA that creates records, wait for the current TinyFish run to reach a terminal state before starting another. A retry loop previously created seven visits; all seven are soft-deleted and their queue tickets were removed. Never use unbounded repeated submits to diagnose a visually empty list.
