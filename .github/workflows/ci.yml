@@ -99,6 +99,7 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/patient_registration_atomicity_fixture.sql \
             -f db/roshan_phase21_patient_registration_atomicity.sql \
+            -f db/roshan_phase21_patient_registration_privileges.sql \
             -f db/tests/patient_registration_atomicity_integration.sql
           bash db/tests/patient_registration_atomicity_concurrency.sh
 

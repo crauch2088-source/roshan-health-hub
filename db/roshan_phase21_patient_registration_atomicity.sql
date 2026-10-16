@@ -1,5 +1,5 @@
--- Proposed follow-up migration. Keep unapplied until migration reconciliation
--- is complete and the isolated PostgreSQL integration/concurrency tests pass.
+-- Phase 21A: install atomic patient creation without revoking the legacy write path.
+-- This is safe before UI cutover; Phase 21B revokes direct writes only after the new UI is live.
 -- Patient MRN allocation and patient creation must share one transaction; calling
 -- next_mrn() and INSERT separately releases its advisory lock between operations.
 
@@ -87,9 +87,3 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.create_patient_atomic(text, text, date, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_patient_atomic(text, text, date, text, text) TO authenticated;
-
-
--- Registration must go through the atomic RPC so callers cannot bypass
--- branch-derived assignment/MRN allocation or call the legacy allocator.
-REVOKE INSERT ON TABLE public.patients FROM authenticated;
-REVOKE ALL ON FUNCTION public.next_mrn() FROM PUBLIC, anon, authenticated;
