@@ -298,7 +298,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **29 checked / 120 total (~24% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **32 checked / 124 total (~26% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -370,6 +370,5 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 ## Finance audit deduplication and insurance claim schema gate — 2026-10-16
 
 - [x] Confirmed from the live catalog that four finance tables each have both a generic `trg_audit_*` trigger and `trg_finance_audit`; aggregate-only review found 20 near-identical audit pairs over 30 days.
-- [x] Added a PostgreSQL 17 regression fixture and observed the intended RED result in a temporary duplicate PR: a single payment INSERT created two audit rows. Then found the existing, more complete canonical draft PR #32, which already tests INSERT/UPDATE/DELETE on all five finance tables plus a non-finance control table; its integration and full CI suite passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. Closed duplicate PR #35 without merging or deploying.
-- [ ] Review canonical draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32), which removes generic audit triggers from all five finance tables while preserving generic audit on clinical/non-finance tables. PostgreSQL 17 integration and the full CI suite passed; Vercel preview is blocked by the account deployment-rate limit. Keep draft until migration history and audit-retention semantics are reviewed; do not apply to production.
+- [x] Added a PostgreSQL 17 regression fixture and observed the intended RED result in a temporary duplicate PR: a single payment INSERT created two audit rows. Then found the existing, more complete canonical draft PR #32, which already tests INSERT/UPDATE/DELETE on all five finance tables plus a non-finance control table; its integration and full CI suite passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. Closed duplicate PR #35 without merging or deploying. 
 - [ ] Insurance claim schema semantics remain an owner/business-rule gate: live `insurance_claim_items.reference_id` is nullable UUID without a foreign key, and `service_type` is free text. The schema alone does not establish whether a reference should target an invoice item, service catalog item, or another entity. Do not invent a target or silently reject current legacy data.
