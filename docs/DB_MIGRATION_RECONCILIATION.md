@@ -173,3 +173,11 @@ Draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32) p
 ## Proposed finance audit trigger cleanup — CI status — 2026-10-16
 
 Draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32) proposes dropping only `trg_audit_*` from the five finance tables and retaining `trg_finance_audit`. Its disposable PostgreSQL 17 integration test verifies one audit row for INSERT/UPDATE/DELETE on each of the five finance tables and verifies that the generic audit trigger remains on a non-finance control table. The integration, guard tests, typecheck, lint, and build passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. This remains a draft; no production triggers were changed.
+
+
+## Clinical child-row branch isolation — read-only catalog audit — 2026-10-16
+
+- Live `invoice_items_select` checks `billing.read` / `billing.view` but has no parent-invoice branch predicate. `invoice_items` has no `branch_id`, so a user with billing read permission could query line items for an invoice outside their branch if they know the invoice ID. The parent `invoices` table itself has branch-scoped policies. Draft PR #33 (stacked on the atomic invoice PR) adds a parent-branch check to invoice-item SELECT and proposes revoking direct invoice table DML after the atomic wrappers are available.
+- The recovered `20261011080434_enforce_branch_isolation_on_clinical_child_tables.sql` updates `clinical_notes`, `diagnoses`, `vitals`, `lab_results`, and `attachments`, but it does not update the live policies on `prescriptions`, `prescription_items`, or `lab_order_items`. Current policies for those three tables check permissions only; none has `branch_id`. This is a confirmed policy gap, not evidence that the recovered migration failed to apply.
+- Draft PR #34 adds parent-branch helpers for prescriptions and lab orders, then adds branch checks to SELECT/INSERT/UPDATE/DELETE policies for those child tables. Its disposable PostgreSQL 17 test passed on head `8d9fbd438f02c21d0bccfa970c102d5adc4d24f0` in run #38880416281. It is not merged and was not applied to production.
+- Keep both changes gated on the full migration-history reconciliation and isolated branch-access testing; no live policies or patient data were changed during this audit.
