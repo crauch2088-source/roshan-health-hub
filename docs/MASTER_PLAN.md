@@ -53,7 +53,7 @@
 
 ### 2. Runtime and CI reproducibility
 - [x] Align Node version in package.json, CI, lockfile, and the retained Vercel project at `22.x`.
-- [ ] Run guard tests, typecheck, lint, production build, and dependency/security checks on a frozen candidate SHA.
+- [x] Run guard tests, typecheck, lint, production build, and dependency/security checks on frozen main candidate `3166f0bef5b734dad541516fb37fa003accfed2f`; GitHub Actions run [#38932545934](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38932545934) passed all four jobs.
 - [ ] Verify SSR log redaction with synthetic tokens, cookies, UUIDs, emails, and query strings.
 - [ ] Resolve lint/format debt narrowly; avoid unrelated sweeping rewrites.
 **Exit:** reproducible green checks and documented deployment target.
@@ -600,3 +600,17 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 
 ### Checklist accounting
 - Main-plan checklist: **64/156 = 41.0%**. One existing checklist item for the Expenses RPC UI was marked complete after PR #41 merged and passed fresh CI. Finance audit and patient RPC work are recorded, but they do not independently close more checklist items while production UI deployment and Phase 21B remain pending.
+
+
+## Execution batch D — 2026-10-16
+
+### Production deployment recovered and verified
+- Deployed current `main` commit `3166f0bef5b734dad541516fb37fa003accfed2f` to the canonical Vercel project `roshan-health-hub` after the previous daily API quota window had elapsed. Deployment [2Usy7342GX3XFarGVrqs64sGFFWk](https://vercel.com/roshan45/roshan-health-hub/2Usy7342GX3XFarGVrqs64sGFFWk) reached `READY`, with the canonical alias `https://roshan-health-hub.vercel.app`. This deployment includes the already-merged PR #41, #43, and #44 code.
+- Verified current main CI run [#38932545934](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38932545934): all four jobs succeeded — finance audit trigger deduplication, atomic patient registration/MRN concurrency, cashbox reversal two-session concurrency, and install/audit/typecheck/lint/build.
+- Anonymous HTTP smoke checks returned 200 for `/`, `/auth`, `/setup`, `/dashboard`, `/patients`, `/insurance`, `/pharmacy`, and `/queue`. These prove public route-shell reachability only; they do not prove successful login, authenticated mutations, role enforcement, or branch isolation. The nonexistent `/login` path returned 404 and was not treated as a product route.
+- Read-only production database review verified the 16 inspected SECURITY DEFINER RPCs have empty function-level `search_path`, no EXECUTE for `anon` or `PUBLIC`, and EXECUTE for `authenticated`; the reviewed functions contain application permission checks, but this is not a substitute for adversarial cross-branch testing.
+- No new database migration or privilege change was applied in this batch. Phase 21B remains gated on authenticated smoke testing of the deployed patient-registration path; historical migration parity is still unresolved.
+
+### Checklist accounting
+- Updated the existing reproducible-CI checklist item after the current main SHA passed all four required jobs: **65/156 = 41.7%**.
+- Security advisor warnings remain for `pg_trgm` in `public`, authenticated access to 16 SECURITY DEFINER functions (review each as an intentional RPC surface), and disabled leaked-password protection. No blind function revocations or auth configuration changes were made.
