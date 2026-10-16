@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { n, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { EXPENSE_CATEGORIES, formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -73,7 +73,7 @@ function ExpensesPage() {
 
 function ExpensesPageInner() {
   const { t } = useLang();
-  const { can, user } = useAuth();
+  const { can } = useAuth();
   const { currency } = useSettings();
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [open, setOpen] = useState(false);
@@ -101,14 +101,16 @@ function ExpensesPageInner() {
 
   const create = useSave(
     async () => {
-      const { error } = await supabase.from("expenses").insert({
-        category: form.category,
-        amount: Number(form.amount) || 0,
-        description: form.description || null,
-        expense_date: form.expense_date,
-        created_by: user?.id ?? null,
+      const amount = Number(form.amount);
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error(t("invalid_amount"));
+      await rpc("post_expense", {
+        _category: form.category,
+        _amount: amount,
+        _description: form.description.trim() || null,
+        _expense_date: form.expense_date || todayISO(),
+        _method: "cash",
+        _paid_to: null,
       });
-      if (error) throw new Error(error.message);
       return null;
     },
     {
