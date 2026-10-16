@@ -8,6 +8,8 @@ INSERT INTO public.visits (id, patient_id, branch_id) VALUES
  ('30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002');
 INSERT INTO public.medicines (id,name,generic_name,selling_price,active,is_active)
 VALUES ('50000000-0000-0000-0000-000000000001','Amoxicillin 500 mg','Amoxicillin',12.50,true,true);
+INSERT INTO public.medicines (id,name,generic_name,selling_price,active,is_active)
+VALUES ('50000000-0000-0000-0000-000000000002','Inactive flag medicine','Generic',3.00,true,false);
 
 DO $$
 DECLARE v_rx uuid;
@@ -61,7 +63,21 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
-DO $$
+DO $inactive_flag_test$
+BEGIN
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '30000000-0000-0000-0000-000000000001',false,
+      '[{"medicine_id":"50000000-0000-0000-0000-000000000002","medication_name":"spoofed","quantity":1}]'::jsonb
+    );
+    RAISE EXCEPTION 'test failed: medicine with is_active=false was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='test failed: medicine with is_active=false was accepted' THEN RAISE; END IF;
+  END;
+END;
+$inactive_flag_test$;
+
+DO $
 BEGIN
   IF (SELECT count(*) FROM public.prescriptions) <> 1 THEN
     RAISE EXCEPTION 'invalid request created header';
