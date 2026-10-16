@@ -164,4 +164,16 @@ BEGIN
  IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=a AND deleted_at IS NULL)<>m THEN RAISE EXCEPTION 'manual retry duplicated invoice lines'; END IF;
 END;
 $$;
+-- Reusing a manual billing request key with changed item pricing must be rejected.
+DO $$
+BEGIN
+ BEGIN
+  PERFORM public.create_billing_invoice_atomic('30000000-0000-0000-0000-000000000003','50000000-0000-0000-0000-000000000004',NULL,CURRENT_DATE,0,jsonb_build_array(jsonb_build_object('item_name','Retry-safe procedure','item_type','procedure','quantity',1,'unit_price',5)),false,'70000000-0000-0000-0000-000000000003'::uuid);
+  RAISE EXCEPTION 'test failed: mismatched manual idempotency payload was accepted';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='test failed: mismatched manual idempotency payload was accepted' THEN RAISE; END IF;
+  IF SQLERRM NOT LIKE '%idempotency key reused with different request%' THEN RAISE; END IF;
+ END;
+END;
+$$;
 SELECT 'manual billing consolidation integration tests passed' AS result;
