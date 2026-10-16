@@ -23,11 +23,7 @@ test("billing, visit, consultation, and lab workflows do not write invoice table
     ["consultation", consultation],
     ["laboratory", lab],
   ] as const) {
-    assert.doesNotMatch(
-      source,
-      directInvoiceWrite,
-      `${name} must use the atomic invoice RPCs`,
-    );
+    assert.doesNotMatch(source, directInvoiceWrite, `${name} must use the atomic invoice RPCs`);
   }
 
   assert.match(billing, /rpc\(["']create_billing_invoice_atomic["']/);
@@ -41,7 +37,10 @@ test("invoice grant migration preserves wrapper RPC access while removing direct
     /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER[\s\S]*public\.invoices, public\.invoice_items[\s\S]*FROM PUBLIC, anon, authenticated/,
   );
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_billing_invoice_atomic/);
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_visit_consultation_invoice_atomic/);
+  assert.match(
+    migration,
+    /GRANT EXECUTE ON FUNCTION public\.create_visit_consultation_invoice_atomic/,
+  );
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_lab_order_with_invoice_atomic/);
   assert.match(integration, /direct INSERT unexpectedly succeeded/);
   assert.match(integration, /invoice read privileges were unexpectedly revoked/);
