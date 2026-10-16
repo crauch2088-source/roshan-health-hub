@@ -23,7 +23,7 @@ const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url),
 test("prescription RPC contains permission, branch, and least-privilege guards", () => {
   assert.match(sql, /app_has_perm\('pharmacy\.create'\)[\s\S]*app_has_perm\('emr\.create'\)/);
   assert.match(sql, /cross-branch prescription access denied/);
-  assert.match(sql, /m\\.is_active IS TRUE/);
+  assert.ok(sql.includes("m.is_active IS TRUE"));
   assert.match(sql, /SECURITY DEFINER[\s\S]*SET search_path TO ''/);
   assert.match(sql, /REVOKE ALL ON FUNCTION[\s\S]*FROM anon/);
   assert.match(sql, /GRANT EXECUTE ON FUNCTION[\s\S]*TO authenticated/);
