@@ -35,10 +35,10 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $trusted$
   select coalesce(auth.role() = 'service_role', false)
       or (auth.role() is null and session_user in ('postgres', 'supabase_admin'))
-$;
+$trusted$;
 
 revoke all on function private.is_trusted_role_guard_context() from public, anon, authenticated;
 
