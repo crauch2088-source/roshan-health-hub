@@ -62,6 +62,6 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 40. [x] Add pediatric age/weight safety warnings with distinct messages for missing versus unverifiable current weight; do not calculate or infer doses. Medicine-specific dose libraries remain blocked on clinical governance.
 
 ## Verification status
-- Automated source/pure-logic regression file is included in test:guard. CI run 38982298600 passed all 10 jobs on commit a46d0a3; the current final commit must pass the latest CI run before the branch is ready.
-- CI, mobile/RTL/LTR browser matrix, screen-reader review, and E2E clinical/lab workflows remain release gates.
+- Automated source/pure-logic regression file is included in test:guard. Final CI run 38982527057 passed all 10 jobs on commit c24dbfb; this documentation-only refresh should pass CI again before merge.
+- Completed in code: 40/40 checklist items with source/pure-logic regression coverage. Remaining release gates are actual device/browser screenshots (RTL/LTR and dark/light/print), live screen-reader/keyboard review, full synthetic-data E2E, clinician review of pediatric safety wording, and a current preview deployment. These are not claimed completed merely because code tests pass.
 - Feature branch only: no database migration, production SQL mutation, merge, or deployment.
