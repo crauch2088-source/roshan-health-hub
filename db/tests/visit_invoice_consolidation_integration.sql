@@ -177,8 +177,34 @@ BEGIN
  IF has_function_privilege('anon','private.create_or_append_visit_invoice_atomic(uuid,date,numeric,jsonb,boolean)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute private invoice helper'; END IF;
  IF NOT has_function_privilege('authenticated','public.create_visit_consultation_invoice_atomic(uuid,date)','EXECUTE') THEN RAISE EXCEPTION 'authenticated cannot execute consultation invoice RPC'; END IF;
  IF has_function_privilege('anon','public.create_visit_consultation_invoice_atomic(uuid,date)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute consultation invoice RPC'; END IF;
- IF NOT has_function_privilege('authenticated','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean)','EXECUTE') THEN RAISE EXCEPTION 'authenticated cannot execute lab invoice RPC'; END IF;
- IF has_function_privilege('anon','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute lab invoice RPC'; END IF;
+ IF has_function_privilege('authenticated','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean)','EXECUTE') THEN RAISE EXCEPTION 'authenticated can bypass idempotent lab invoice RPC'; END IF;
+ IF NOT has_function_privilege('authenticated','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean,uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated cannot execute idempotent lab invoice RPC'; END IF;
+ IF has_function_privilege('anon','public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon can execute idempotent lab invoice RPC'; END IF;
 END;
 $$;
+
+SELECT set_config('test.perms','lab.create',false);
+DO $
+DECLARE a uuid; b uuid; n integer; m integer;
+BEGIN
+ a := public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','normal','retry default',ARRAY['60000000-0000-0000-0000-000000000002'::uuid],false,'70000000-0000-0000-0000-000000000001'::uuid);
+ SELECT count(*) INTO n FROM public.lab_orders WHERE visit_id='50000000-0000-0000-0000-000000000003';
+ SELECT count(*) INTO m FROM public.invoice_items ii JOIN public.invoices i ON i.id=ii.invoice_id WHERE i.visit_id='50000000-0000-0000-0000-000000000003' AND ii.deleted_at IS NULL;
+ b := public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','normal','retry default',ARRAY['60000000-0000-0000-0000-000000000002'::uuid],false,'70000000-0000-0000-0000-000000000001'::uuid);
+ IF a IS DISTINCT FROM b THEN RAISE EXCEPTION 'retry returned a different lab order'; END IF;
+ IF (SELECT count(*) FROM public.lab_orders WHERE visit_id='50000000-0000-0000-0000-000000000003')<>n THEN RAISE EXCEPTION 'default retry duplicated lab order'; END IF;
+ IF (SELECT count(*) FROM public.invoice_items ii JOIN public.invoices i ON i.id=ii.invoice_id WHERE i.visit_id='50000000-0000-0000-0000-000000000003' AND ii.deleted_at IS NULL)<>m THEN RAISE EXCEPTION 'default retry duplicated invoice lines'; END IF;
+END;
+$;
+SELECT set_config('test.perms','lab.create,billing.create',false);
+DO $
+DECLARE a uuid; b uuid; n integer;
+BEGIN
+ a := public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','normal','retry secondary',ARRAY['60000000-0000-0000-0000-000000000003'::uuid],true,'70000000-0000-0000-0000-000000000002'::uuid);
+ SELECT count(*) INTO n FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000003' AND is_primary IS FALSE AND deleted_at IS NULL;
+ b := public.create_lab_order_with_invoice_atomic('50000000-0000-0000-0000-000000000003','normal','retry secondary',ARRAY['60000000-0000-0000-0000-000000000003'::uuid],true,'70000000-0000-0000-0000-000000000002'::uuid);
+ IF a IS DISTINCT FROM b THEN RAISE EXCEPTION 'secondary retry returned a different order'; END IF;
+ IF (SELECT count(*) FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000003' AND is_primary IS FALSE AND deleted_at IS NULL)<>n THEN RAISE EXCEPTION 'secondary retry duplicated invoice'; END IF;
+END;
+$;
 SELECT 'consolidated visit invoice integration tests passed' AS result;
