@@ -161,7 +161,7 @@ DECLARE v_stock numeric;
 BEGIN
  SELECT quantity_remaining INTO v_stock FROM public.pharmacy_inventory WHERE id='80000000-0000-0000-0000-000000000001';
  BEGIN
-   PERFORM * FROM public.fn_dispense_prescription_with_invoice('90000000-0000-0000-0000-000000000004',false);
+   PERFORM * FROM public.fn_dispense_prescription_with_invoice('90000000-0000-0000-0000-000000000003',false);
    RAISE EXCEPTION 'test failed: cross-branch dispense unexpectedly succeeded';
  EXCEPTION WHEN OTHERS THEN
    IF SQLERRM='test failed: cross-branch dispense unexpectedly succeeded' THEN RAISE; END IF;
