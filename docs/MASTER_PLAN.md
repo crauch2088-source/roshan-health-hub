@@ -413,3 +413,9 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 ### Insurance workflow evidence and unresolved business semantics — 2026-10-16
 - PR #12 (invoice required for claim creation) and PR #13 (claim amount invariants) have successful GitHub Actions CI; PR #13's isolated insurance-claim integrity integration also passed. Both remain draft/unmerged.
 - Read-only production aggregate query found zero active insurance claims and zero claim items, so production data cannot confirm behavior for invoice linkage, service references, or covered/patient amount splits. Keep the insurance semantics decision gate open rather than treating zero observed violations as proof.
+
+
+### Patient registration and private helper privileges — 2026-10-16
+- PR #39's latest CI run `38903131578` passed the full verification job and PostgreSQL atomic/MRN concurrency tests after fixing the regression test's typed-RPC pattern and Prettier formatting. PR remains draft/unmerged; no production migration applied.
+- PR #34 now adds an explicit least-privilege grant boundary for `private.app_has_branch_access(uuid)` plus an integration assertion. The latest CI run was pending at the time of this note.
+- Read-only ACL review also identified four other private helpers with anon EXECUTE ACLs, while anon has no schema USAGE. Schedule a separate dependency-aware sweep rather than treating them as externally reachable or revoking them without checking policy/trigger callers.
