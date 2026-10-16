@@ -265,7 +265,7 @@ BEGIN
 END;
 $function$;
 
--- Close the legacy entry point so clients cannot dispense stock without billing.
-REVOKE ALL ON FUNCTION public.fn_dispense_prescription(uuid) FROM PUBLIC, anon, authenticated;
+-- Keep the legacy entry point available during the compatibility window.
+-- Phase17 revokes it only after the new UI is deployed and authenticated smoke tests pass.
 REVOKE ALL ON FUNCTION public.fn_dispense_prescription_with_invoice(uuid, boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription_with_invoice(uuid, boolean) TO authenticated;
