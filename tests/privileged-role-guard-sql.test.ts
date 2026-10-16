@@ -16,6 +16,8 @@ test("privileged-role guard protects users, roles, and role permissions", () => 
   );
   assert.equal((migration.match(/USING errcode = '42501'/gi) ?? []).length >= 6, true);
   assert.match(migration, /SET search_path = ''/i);
+  assert.match(migration, /private\.is_trusted_role_guard_context\(\)/i);
+  assert.doesNotMatch(migration, /if auth\.uid\(\) is null then/i);
   assert.match(
     migration,
     /REVOKE ALL ON FUNCTION private\.guard_super_admin_users\(\) FROM public, anon, authenticated/i,
