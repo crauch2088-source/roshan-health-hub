@@ -114,7 +114,12 @@ A read-only, comment/whitespace-insensitive text comparison was run for four lik
 |---|---|---|---|
 | db/roshan_phase12_invoice_visit_unique.sql | 20260911120231_roshan_phase12_invoice_visit_unique.sql | **Normalized SQL text matches** | Candidate content-confirmed match for this migration only; preserve comments/context separately |
 | db/roshan_phase2_clinical_workflow.sql | 20260820150215_roshan_phase2_clinical_workflow.sql | **Different** (1267 vs 637 characters before normalization) | Legacy file contains extra statements; compare statement-by-statement, do not substitute |
-| db/roshan_phase4_cashbox_reversal_concurrency.sql | 20261014164131_roshan_cashbox_reversal_concurrency.sql | **Different** (2714 vs 2212 characters before normalization) | Review wrapper, checks, and transaction behavior; no equivalence claim |
+| db/roshan_phase4_cashbox_reversal_concurrency.sql | 20261014164131_roshan_cashbox_reversal_concurrency.sql | **Matches after removing explicit BEGIN/COMMIT wrapper** | Remaining normalized SQL text matches; replay and transaction-boundary behavior still need isolated validation |
 | db/roshan_phase4_finance.sql | 20260908210824_roshan_phase4_finance_v2.sql | **Different** (30999 vs 24044 characters before normalization) | Treat as legacy/current script vs a successive deployed patch, not a direct match |
 
-The comparison removed SQL line/block comments, removed whitespace, and lowercased text before equality checks. It did not parse SQL, normalize literals, or prove equivalent runtime effects. Three differences remain unresolved; the normalized match does not validate the other 78 migration rows or a clean replay.
+The comparison removed SQL line/block comments, removed whitespace, and lowercased text before equality checks. For the cashbox candidate, the comparison also separately removed the outer explicit BEGIN/COMMIT wrapper before comparing the remaining statement text. It did not parse SQL, normalize literals, or prove equivalent runtime effects. Two differences remain unresolved; the two normalized content matches do not validate the other 77 migration rows or a clean replay.
+
+
+## Follow-up comparison — cashbox wrapper isolated — 2026-10-16
+
+The initial cashbox mismatch was rechecked. The legacy file starts with an explicit `BEGIN;` and ends with `COMMIT;`, while the recovered migration statement set does not contain those wrapper statements. Once that outer wrapper is removed, the normalized SQL bodies are equal (1907 characters each after normalization). Classification: content-confirmed body match with transaction-wrapper difference. Do not infer that replay is safe until a disposable database replay confirms migration-runner transaction behavior and dependencies.
