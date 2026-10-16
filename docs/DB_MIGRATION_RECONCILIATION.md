@@ -167,3 +167,8 @@ The recovered `20260911130812_restrict_security_definer_api_execution_20260911.s
 ## Proposed finance audit trigger cleanup — CI status — 2026-10-16
 
 Draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32) proposes dropping only `trg_audit_*` from the five finance tables and retaining `trg_finance_audit`. Its disposable PostgreSQL 17 integration test verifies one audit row for INSERT/UPDATE/DELETE on each of the five finance tables and verifies that the generic audit trigger remains on a non-finance control table. The integration, guard tests, typecheck, lint, and build passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. This remains a draft; no production triggers were changed.
+
+
+## Proposed finance audit trigger cleanup — CI status — 2026-10-16
+
+Draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32) proposes dropping only `trg_audit_*` from the five finance tables and retaining `trg_finance_audit`. Its disposable PostgreSQL 17 integration test verifies one audit row for INSERT/UPDATE/DELETE on each of the five finance tables and verifies that the generic audit trigger remains on a non-finance control table. The integration, guard tests, typecheck, lint, and build passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. This remains a draft; no production triggers were changed.
