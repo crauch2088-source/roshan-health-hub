@@ -140,5 +140,23 @@ BEGIN
   IF (SELECT stock_quantity FROM public.medicines WHERE id='30000000-0000-0000-0000-000000000001') <> 10 THEN
     RAISE EXCEPTION 'medicine stock update survived failed stock movement';
   END IF;
+
+  -- Even a super-admin cannot create an unassigned stock batch implicitly.
+  -- The receiving RPC has no explicit target-branch argument, so a branch is mandatory.
+  UPDATE public.users SET branch_id=NULL WHERE id='10000000-0000-0000-0000-000000000001';
+  PERFORM set_config('test.super_admin','true',false);
+  SELECT count(*) INTO v_batches_before FROM public.pharmacy_inventory;
+  v_rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch('30000000-0000-0000-0000-000000000001',1,'NO-BRANCH');
+  EXCEPTION WHEN OTHERS THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'super-admin received stock without a branch'; END IF;
+  IF (SELECT count(*) FROM public.pharmacy_inventory) <> v_batches_before THEN
+    RAISE EXCEPTION 'unassigned branch batch was created';
+  END IF;
+  UPDATE public.users SET branch_id='20000000-0000-0000-0000-000000000001'
+   WHERE id='10000000-0000-0000-0000-000000000001';
+  PERFORM set_config('test.super_admin','false',false);
 END;
 $test$;
