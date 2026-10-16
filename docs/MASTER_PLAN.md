@@ -847,3 +847,11 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - [x] Guarded cleanup removed only the exact synthetic patient, visit, queue ticket, and related audit rows after confirming there were no appointments, clinical notes, diagnoses, labs, prescriptions, invoices, payments, procedures, attachments, or vitals linked to the test visit. Follow-up SQL confirmed all four exact-ID counts are zero. The seven older soft-deleted visit rows were left untouched.
 - [ ] Follow up on the New Visit selectors: the browser displayed no department/doctor choices, while a live catalog count showed 11 active departments and one active doctor-role user. Investigate authenticated API/RLS/query errors and the role filter before launch; the visit was allowed to save without selecting either.
 - [ ] Continue broader clinical UAT, cross-branch negative authorization tests, and historical migration-source/replay parity review.
+
+
+## Phase 24 — permission-safe visit-form options (in progress, 2026-10-16)
+
+- Read-only production checks confirm 11 departments satisfy the active/not-deleted filters and an active clinical doctor exists. The UI's direct queries are subject to mismatched RLS: department SELECT requires `admin.full`, while reception has `visits.create`; staff-directory SELECT requires `users.read`. Do not broaden direct SELECT on `public.users`, because it contains contact/account fields.
+- Proposed fix uses `public.get_visit_form_options()`, a narrowly shaped SECURITY DEFINER RPC gated by `visits.create`, returning only active departments and minimal active clinical-staff identifiers/names within the caller's branch. It explicitly revokes PUBLIC/anon execution and grants authenticated execution.
+- Added PostgreSQL 17 integration coverage for permission denial, active/deleted filtering, clinical-role filtering, cross-branch and branchless staff exclusion, minimal returned fields, and anon/authenticated EXECUTE privileges. Added a UI guard test and CI job.
+- Status: candidate implementation is source-controlled on a dedicated branch/PR only; do not apply the migration to production or mark the selector issue resolved until CI passes and the authenticated receptionist/super-admin UI behavior is verified. This phase is independent of Phase 23 queue-number repair.

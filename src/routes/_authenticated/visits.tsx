@@ -106,7 +106,7 @@ function VisitsPage() {
 
 function VisitsPageInner() {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const { currency } = useSettings();
   const search = Route.useSearch();
 
@@ -182,20 +182,10 @@ function VisitsPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.patient]);
 
-  const departments = useRows<Row[]>(["departments"], () =>
-    supabase
-      .from("departments")
-      .select("id, name, name_ar")
-      .is("deleted_at", null)
-      .eq("is_active", true),
-  );
-
-  const doctors = useRows<Row[]>(["doctors"], () =>
-    supabase
-      .from("users")
-      .select("id, full_name, roles(code)")
-      .eq("active", true)
-      .is("deleted_at", null),
+  const visitFormOptions = useRows<{ departments: Row[]; doctors: Row[] }>(
+    ["visit-form-options", user?.id ?? "anonymous"],
+    () => supabase.rpc("get_visit_form_options"),
+    { enabled: canCreate },
   );
 
   const create = useSave<void>(
@@ -311,17 +301,8 @@ function VisitsPageInner() {
 
   const rows = visits.data ?? [];
 
-  /*
-   * Only actual clinical roles should appear as doctors.
-   * Do NOT treat a missing role as a doctor.
-   */
-  const doctorRows = doctors.data ?? [];
-
-  const filteredDoctors = doctorRows.filter((doctor) => {
-    const roleCode = s(rel(doctor, "roles"), "code").toLowerCase();
-
-    return ["gp", "dentist", "specialist", "doctor", "physician"].includes(roleCode);
-  });
+  const departmentRows = visitFormOptions.data?.departments ?? [];
+  const filteredDoctors = visitFormOptions.data?.doctors ?? [];
 
   if (visits.isLoading) {
     return <Loading />;
@@ -395,7 +376,7 @@ function VisitsPageInner() {
                     </SelectTrigger>
 
                     <SelectContent>
-                      {(departments.data ?? []).map((department) => (
+                      {departmentRows.map((department) => (
                         <SelectItem key={s(department, "id")} value={s(department, "id")}>
                           {lang === "ar"
                             ? s(department, "name_ar") || s(department, "name")
@@ -508,6 +489,7 @@ function VisitsPageInner() {
       </PageHeader>
 
       <ErrorBox error={visits.error} />
+      {canCreate ? <ErrorBox error={visitFormOptions.error} /> : null}
 
       <Card>
         <CardContent className="overflow-x-auto p-0">
