@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import { GlobalSearchDialog } from "@/components/global-search-dialog";
-import { flatNavItems } from "@/config/nav";
+import { navPermissionForRoute } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
 
 type CommandPaletteContextValue = {
@@ -60,8 +60,8 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 
       const path = SHORTCUT_ROUTES[e.key.toLowerCase()];
       if (!path) return;
-      const perm = flatNavItems().find((item) => item.to === path)?.perm;
-      if (perm && !can(perm)) return;
+      const perm = navPermissionForRoute(path);
+      if (!perm || !can(perm)) return;
       e.preventDefault();
       void navigate({ to: path });
     }
