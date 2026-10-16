@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,6 +70,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
   const [priority, setPriority] = useState("normal");
   const [notes, setNotes] = useState("");
   const [separateInvoice, setSeparateInvoice] = useState(false);
+  const pendingRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
 
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
@@ -166,14 +167,18 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         throw new Error(lang === "ar" ? "المريض غير موجود" : "Patient not found");
       if (!selected.length)
         throw new Error(lang === "ar" ? "اختر فحصاً واحداً على الأقل" : "Select at least one test");
+      const testIds = selected.map((test) => s(test, "id"));
+      const fingerprint = JSON.stringify({ visitId, priority, notes: notes || null, testIds, separateInvoice });
+      if (pendingRequestRef.current?.fingerprint !== fingerprint) {
+        pendingRequestRef.current = { fingerprint, id: crypto.randomUUID() };
+      }
+      const requestId = pendingRequestRef.current.id;
       const { data: orderId, error } = await supabase.rpc("create_lab_order_with_invoice_atomic", {
-        p_visit_id: visitId,
-        p_priority: priority,
-        p_notes: notes || null,
-        p_test_ids: selected.map((test) => s(test, "id")),
-        p_separate_invoice: separateInvoice,
+        p_visit_id: visitId, p_priority: priority, p_notes: notes || null,
+        p_test_ids: testIds, p_separate_invoice: separateInvoice, p_request_id: requestId,
       });
       if (error) throw new Error(error.message);
+      pendingRequestRef.current = null;
       setSelected([]);
       setNotes("");
       setSeparateInvoice(false);
