@@ -204,3 +204,10 @@ The prior single-session test explicitly noted that a true two-session race was 
 - asserts exactly one reversal row, `is_reversed = true` on the original, and original plus reversal amounts net to zero.
 
 The two-session race and the full repository CI passed on head `9dda2ea5feadf23cd3d9da640ab38c6387763add` in run [#38886016506](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38886016506). This is disposable PostgreSQL evidence only; the proposed migration has not been replayed against an isolated Supabase branch or applied to production.
+
+
+### Supplier-payment trigger overlap — data limitation — read-only 2026-10-16
+
+- The live trigger catalog confirms `trg_recompute_supplier_bill` runs on INSERT/UPDATE/DELETE and `trg_sync_supplier_bill_payment` runs on INSERT/UPDATE. The two functions both update `supplier_bills.paid_amount/status`; the sync function clamps the sum to `total_amount`, while the recompute function stores the raw active-payment sum and also runs on DELETE.
+- An aggregate-only live query found **0 non-deleted supplier bills** at the time of inspection. Consequently, the current live dataset cannot validate the balance/status invariant or establish whether this overlapping behavior has caused a real production failure. Treat this as a structural edge-case risk requiring disposable PostgreSQL tests, not a claim of observed supplier-bill corruption.
+- The supported `post_supplier_payment` RPC locks the bill row and rejects a payment above the outstanding balance. However, live grants/policies also permit authenticated direct DML on supplier-payment tables; the separate draft PR #31 proposes RPC-only financial writes. Keep the change unmerged until its tests, UI consumers, and migration history are reviewed.
