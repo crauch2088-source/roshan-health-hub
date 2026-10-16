@@ -1,6 +1,7 @@
 -- The guard is tested as an authenticated non-super-admin, a super-admin,
 -- and a trusted database/migration context. All mutations are fixture-only.
 SELECT set_config('test.auth_uid', '30000000-0000-0000-0000-000000000001', false);
+SELECT set_config('test.auth_role', 'authenticated', false);
 SELECT set_config('test.super_admin', 'false', false);
 SET ROLE authenticated;
 
