@@ -181,3 +181,16 @@ Draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32) p
 - The recovered `20261011080434_enforce_branch_isolation_on_clinical_child_tables.sql` updates `clinical_notes`, `diagnoses`, `vitals`, `lab_results`, and `attachments`, but it does not update the live policies on `prescriptions`, `prescription_items`, or `lab_order_items`. Current policies for those three tables check permissions only; none has `branch_id`. This is a confirmed policy gap, not evidence that the recovered migration failed to apply.
 - Draft PR #34 adds parent-branch helpers for prescriptions and lab orders, then adds branch checks to SELECT/INSERT/UPDATE/DELETE policies for those child tables. Its disposable PostgreSQL 17 test passed on head `8d9fbd438f02c21d0bccfa970c102d5adc4d24f0` in run #38880416281. It is not merged and was not applied to production.
 - Keep both changes gated on the full migration-history reconciliation and isolated branch-access testing; no live policies or patient data were changed during this audit.
+
+
+## Insurance claim reference semantics — read-only catalog check — 2026-10-16
+
+The live `public.insurance_claim_items` schema shows:
+- `reference_id`: nullable UUID, no foreign-key constraint.
+- `service_type`: required text, no foreign-key constraint.
+- `coverage_rule_id`: nullable UUID with a foreign-key constraint.
+- `gross_amount`, `covered_amount`, and `patient_amount`: numeric columns with defaults of zero; no table-level check constraint was returned by the catalog inventory for their relationship.
+
+The current live `create_insurance_claim` RPC accepts a nullable `reference_id`, verifies patient-insurance/invoice patient matching and branch access, then inserts claim items. It rejects negative amounts but does not enforce `covered_amount + patient_amount = gross_amount` at the database boundary. Draft PRs #12 and #13 propose UI and RPC-level protections, but reference semantics still require an explicit business decision before introducing a foreign key or deriving references automatically.
+
+No production data was changed by this inspection.
