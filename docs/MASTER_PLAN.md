@@ -84,7 +84,7 @@
 
 - [ ] Test receiving batches, expiry, FEFO dispensing, stock movements/returns, and expired/negative stock prevention.
 - [ ] Test concurrency/idempotency for dispensing, invoices, payments, cashbox entries/reversals, supplier bills/payments, and expenses.
-- [ ] Insurance claims UI/RPC mismatch found and patched in draft PR #12: UI previously sent `invoiceId: null` while the database RPC requires a valid invoice. The draft now requires an invoice belonging to the selected patient, resets stale claim items when the insurance/invoice selection changes, and validates required fields before RPC. CI is green on head `a2cd2dd752d5577506674284db239865d1fc5459`; Vercel preview is READY. Still needs human review and an authenticated smoke test; not merged/deployed.
+- [ ] Insurance claims UI/RPC mismatch fix merged as PR #12 (`e6f664d6b3a99a1925871280dbfa7b1f528090c5`) after focused regression and all four main CI jobs passed. Its UI change is not yet in production because the current Vercel deployment API quota is exhausted; authenticated smoke testing remains pending. Client validation is defense-in-depth only; server-side insurance integrity and invoice-line linkage remain open.
 - [ ] Reconcile ledger totals and stock movement history; test branch isolation and audit trail.
 - [ ] Verify exact dashboard counts and pagination for large datasets.
 **Exit:** no unexplained stock or ledger discrepancy across end-to-end and concurrency tests.
@@ -123,7 +123,7 @@
 **Exit:** stable service and agreed maintenance cadence.
 
 ## Immediate next actions
-1. Review PR #12 (insurance claim invoice-link fix), run an authenticated smoke test on its preview, and merge only after review.
+1. After the Vercel deployment quota permits the next production release, run an authenticated smoke test for the merged PR #12 insurance claim workflow; client validation remains defense-in-depth.
 2. Run authenticated runtime smoke tests on `https://roshan-health-hub.vercel.app` and confirm role/branch gates.
 3. Reconcile the 79 applied Supabase migrations against repository artifacts; source SQL has now been recovered to quarantine in draft [PR #26](https://github.com/crauch2088-source/roshan-health-hub/pull/26), with ledger checksums and a basic secret-pattern scan. Next: semantic diff against `db/*.sql`, review data/destructive assumptions, then clean PostgreSQL 17 replay and Supabase-specific validation. Do not move the recovered files into the canonical migration directory or execute them yet.
 4. Review draft PR #13, which adds DB-side insurance claim amount invariants. Latest head `e1ef268c519398e97e78c8beec96dc613e141340` passed PostgreSQL 17 behavioral integration and application CI in [run #38789219521](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38789219521), covering amount splits/precision, active insurance, invoice/patient matching, branch isolation, authorization, and rollback. Vercel Preview remains blocked by the account build-rate limit. This fixture does not replace full Supabase staging validation; migration parity and authenticated smoke tests remain required. Continue adversarial tests for all 15 authenticated-callable SECURITY DEFINER RPCs.
@@ -381,8 +381,8 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ### Privileged-role database guard review — 2026-10-16
 - [x] Read-only live catalog check confirmed that the three prepared protection triggers for `users`, `roles`, and `role_permissions` are absent in production. The current RLS policy set permits generic user creation/update and `admin.full` role maintenance without a database-level `role_id = super_admin` invariant. There are currently zero active users assigned the `admin` role, but this remains a structural escalation risk if that role is activated or assigned.
-- [x] Extended draft [PR #38](https://github.com/crauch2088-source/roshan-health-hub/pull/38) from a test-only guard check into a tested hardening fix. The new PostgreSQL 17 regression reproduced that `auth.uid() IS NULL` lets an anonymous JWT bypass the prepared role guard; the old behavior failed in run [#38896579035](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38896579035). The guard now trusts only a `service_role` JWT or a direct trusted DB session with no JWT role claim (`postgres`/`supabase_admin`); anonymous JWTs are denied even in a fixture that grants them direct table DML. Full PostgreSQL 17 integration, security audit, guard tests, typecheck, lint, and build passed on head `523f7a0f9cc1359d9ed162eede9e75dd388a5d31` in [run #38897148980](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38897148980). Draft/unmerged; no production SQL or data was changed.
-- [ ] Complete migration-sequence reconciliation and rollback review for the now-hardened role guard, validate the trusted-context behavior on isolated Supabase, then decide whether to add it to the canonical migration chain. Do not apply the prepared script directly to production.
+- [x] Extended draft [PR #38](https://github.com/crauch2088-source/roshan-health-hub/pull/38) from a test-only guard check into a tested hardening fix. The new PostgreSQL 17 regression reproduced that `auth.uid() IS NULL` lets an anonymous JWT bypass the prepared role guard; the old behavior failed in run [#38896579035](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38896579035). The guard now trusts only a `service_role` JWT or a direct trusted DB session with no JWT role claim (`postgres`/`supabase_admin`); anonymous JWTs are denied even in a fixture that grants them direct table DML. Full PostgreSQL 17 integration, security audit, guard tests, typecheck, lint, and build passed on head `523f7a0f9cc1359d9ed162eede9e75dd388a5d31` in [run #38897148980](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38897148980). At the time of that audit the change was draft and unapplied; it was superseded on 2026-10-16 by merge `cf42e6bf97dafe47b71cdff37578f42eb3a2ac52` and tracked production migration `20261016170816`.
+- [ ] Historical migration-sequence parity remains unresolved. The role guard was applied as a new tracked Supabase migration after PostgreSQL 17 integration tests, exact live-schema review, rollback correction, and rollback-only live behavior checks. Continue full history reconciliation and isolated Supabase validation before applying the separate PR #22/#34/#13 candidates; do not replay recovered historical SQL.
 
 
 ## Production operations snapshot — 2026-10-16
@@ -527,11 +527,11 @@ These checks are repository/metadata verification, not application feature compl
 
 ## Release gates still open
 
-- PR #12 remains draft pending human review and authenticated insurance-claim smoke test.
+- PR #12 is merged as `e6f664d`; its production UI deployment and authenticated insurance-claim smoke test remain pending.
 - PR #13 remains blocked by staging/Supabase validation and migration-history reconciliation.
-- PRs #22, #23, #29, #30, #31, #32, #33, #34, #38, and #39 contain proposed SQL or security-sensitive changes. Passing PostgreSQL fixtures are useful evidence, but do not prove compatibility with the current live Supabase schema.
+- Open SQL/security candidates #13, #22, #23, #29, #31, #33, and #34 still need their stated live-schema, migration-parity, and business-rule gates; PostgreSQL fixtures alone do not prove compatibility with production. PR #38 is now merged and its narrow guard migration is applied.
 - The connected Supabase migration ledger still has 79 applied entries, while canonical repository migration-history parity remains unresolved. No production SQL was run in this batch.
-- PR #39 requires its latest CI run to pass, then isolated schema/authorization validation and the existing branch-assignment/data-readiness gate before it can be considered merge-ready.
+- PR #39 was superseded by PR #44; Phase 21B patient privilege revocation still awaits a deployed and authenticated registration smoke test.
 - No production SQL was applied in this batch. The only merge was PR #19, a UI/query correctness change without schema changes.
 
 
@@ -614,3 +614,26 @@ Execution rules: maximize concrete, verifiable progress in batches; use parallel
 ### Checklist accounting
 - Updated the existing reproducible-CI checklist item after the current main SHA passed all four required jobs: **65/156 = 41.7%**.
 - Security advisor warnings remain for `pg_trgm` in `public`, authenticated access to 16 SECURITY DEFINER functions (review each as an intentional RPC surface), and disabled leaked-password protection. No blind function revocations or auth configuration changes were made.
+
+
+## Execution batch E — 2026-10-16 (late)
+
+### Production and security work completed
+- Merged PR #12, `fix(insurance): require invoice for claim creation`, as `e6f664d6b3a99a1925871280dbfa7b1f528090c5`. Focused insurance-claim validation tests and all four main CI jobs passed. The UI change has not yet reached production because Vercel's deployment API quota is exhausted; authenticated insurance workflow smoke testing remains open.
+- Merged PR #38, `fix(security): guard privileged role mutations`, as `cf42e6bf97dafe47b71cdff37578f42eb3a2ac52`. Post-merge main CI run [#38937191630](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38937191630) passed all four jobs. The PostgreSQL 17 privileged-role guard integration and app checks were green on the merged candidate.
+- Applied the guard through the tracked Supabase migration workflow as `roshan_security_privileged_role_guard_20261016`, ledger version `20261016170816`. Migration history now contains 82 entries. The three BEFORE-row triggers are present on `public.users`, `public.roles`, and `public.role_permissions`; five private SECURITY DEFINER helpers have empty `search_path` and no EXECUTE for `anon`, `authenticated`, or `PUBLIC`. Bootstrap function EXECUTE remained revoked as before.
+- Verified that the database still has exactly one `super_admin` role and two users assigned to it. Four live behavioral assertions ran inside explicit transactions that were rolled back: anonymous JWT cannot assign the `super_admin` role; an authenticated non-super-admin cannot assign it; a real super-admin remains recognized and can update their own row; and an ordinary user can update their own non-super-admin row. No persistent test user or row change was retained.
+- Corrected the guard migration's rollback notes to include the new trusted-context helper before merge.
+
+### Current open PRs and CI
+- PR #22 is refreshed to current main at head `4008bdccdc807453c87bf6f11186420de4b9fb63`. Its dedicated PostgreSQL 17 integration checks passed on the refreshed head; the latest application CI was still running at the last check. Keep it draft until migration-history reconciliation and authenticated clinical workflow review are complete.
+- PR #34 is refreshed to current main at head `ec83e94a33e9c299ecf6ea32c1886e51c2da482f`. Its dedicated PostgreSQL 17 branch-isolation integration passed on the refreshed head; application CI was queued/not yet visible at the last check. Keep it draft because live-schema compatibility, branchless parent-row behavior, and migration-history parity remain open.
+- PR #38 is merged and applied. PR #12 is merged but not yet deployed. PR #13 remains blocked by the unresolved insurance invoice-line/reference business model.
+
+### Deployment quota and rollout gate
+- Latest verified production deployment remains `3166f0bef5b734dad541516fb37fa003accfed2f` at [the canonical Vercel project](https://vercel.com/roshan45/roshan-health-hub/2Usy7342GX3XFarGVrqs64sGFFWk). It includes PR #41, #43, and #44, but predates PR #12 and #38.
+- A production deployment attempt for latest main `e6f664d` was rejected with HTTP 402, `api-deployments-free-per-day`, `retryAfter=86400`. The mapped Vercel CLI fallback was checked but the CLI is not installed in the available cloud shell. No alternate account or quota bypass was attempted. Earliest reasonable retry is approximately 2026-10-17 17:03 UTC / 19:03 Sudan local time.
+- Do not apply patient Phase 21B until the new registration UI is deployed and authenticated smoke-tested. Do not apply PR #22, #34, or #13 SQL solely because fixture CI is green; their migration-history/live-schema/business-rule gates remain open.
+
+### Checklist accounting
+- Checklist remains **65/156 = 41.7%**. No additional checklist item is marked complete here: PR #12 still needs deployment and authenticated workflow verification, and the broader role-guard migration-parity gate remains open even though the narrow migration was applied and behaviorally verified.
