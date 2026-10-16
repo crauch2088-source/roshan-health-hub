@@ -118,6 +118,46 @@ UPDATE public.role_permissions SET permission_id='40000000-0000-0000-0000-000000
 WHERE role_id='10000000-0000-0000-0000-000000000002';
 RESET ROLE;
 
+-- Anonymous JWTs have no auth.uid(), but are NOT a trusted migration/service context.
+-- Grant table DML in this disposable fixture so the guard itself must reject escalation.
+SELECT set_config('test.auth_uid', '', false);
+SELECT set_config('test.auth_role', 'anon', false);
+SELECT set_config('test.super_admin', 'false', false);
+SET ROLE anon;
+
+DO $anon$
+BEGIN
+  BEGIN
+    INSERT INTO public.users(id, role_id, full_name)
+    VALUES ('20000000-0000-0000-0000-000000000021', '10000000-0000-0000-0000-000000000002', 'Anonymous escalation');
+    RAISE EXCEPTION 'anonymous INSERT into super_admin role unexpectedly succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE public.users SET role_id='10000000-0000-0000-0000-000000000002'
+    WHERE id='20000000-0000-0000-0000-000000000003';
+    RAISE EXCEPTION 'anonymous UPDATE into super_admin role unexpectedly succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE public.roles SET name='Anonymous tampered'
+    WHERE id='10000000-0000-0000-0000-000000000002';
+    RAISE EXCEPTION 'anonymous edit of super_admin role unexpectedly succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    INSERT INTO public.role_permissions(role_id, permission_id)
+    VALUES ('10000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000021');
+    RAISE EXCEPTION 'anonymous grant to super_admin permissions unexpectedly succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END
+$anon$;
+RESET ROLE;
+
 -- Trusted migration context is allowed to maintain protected rows.
 SELECT set_config('test.auth_uid', '', false);
 SELECT set_config('test.super_admin', 'false', false);
