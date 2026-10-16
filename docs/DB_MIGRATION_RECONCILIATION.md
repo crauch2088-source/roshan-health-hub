@@ -123,3 +123,14 @@ The comparison removed SQL line/block comments, removed whitespace, and lowercas
 ## Follow-up comparison — cashbox wrapper isolated — 2026-10-16
 
 The initial cashbox mismatch was rechecked. The legacy file starts with an explicit `BEGIN;` and ends with `COMMIT;`, while the recovered migration statement set does not contain those wrapper statements. Once that outer wrapper is removed, the normalized SQL bodies are equal (1907 characters each after normalization). Classification: content-confirmed body match with transaction-wrapper difference. Do not infer that replay is safe until a disposable database replay confirms migration-runner transaction behavior and dependencies.
+
+
+## Read-only current-state check — laboratory parameters — 2026-10-16
+
+A read-only aggregate query against the connected Supabase project returned:
+
+- Undeleted lab tests: **12**
+- Undeleted lab tests with no parameter rows: **0**
+- Undeleted lab tests with no active parameter row: **0**
+
+The current database state satisfies this narrow lab-parameter invariant. This does **not** prove the backfill `INSERT` present in `db/roshan_phase2_clinical_workflow.sql` was part of the applied migration: the recovered ledger statement set for version `20260820150215` contains the five index statements but not that backfill. No rows were changed. Recheck after any catalog migration and keep source-history provenance unresolved until the original statement source is found.
