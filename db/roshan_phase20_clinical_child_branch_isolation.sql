@@ -107,7 +107,7 @@ ALTER POLICY prescriptions_insert ON public.prescriptions
       (SELECT public.app_has_perm('pharmacy.create'))
       OR (SELECT public.app_has_perm('emr.create'))
     )
-    AND (SELECT private.app_has_attachment_branch_access(prescriptions.patient_id, prescriptions.visit_id))
+    AND (SELECT private.app_has_prescription_parent_access(prescriptions.patient_id, prescriptions.visit_id))
   );
 ALTER POLICY prescriptions_update ON public.prescriptions
   USING (
@@ -115,14 +115,14 @@ ALTER POLICY prescriptions_update ON public.prescriptions
       (SELECT public.app_has_perm('pharmacy.update'))
       OR (SELECT public.app_has_perm('emr.update'))
     )
-    AND (SELECT private.app_has_attachment_branch_access(prescriptions.patient_id, prescriptions.visit_id))
+    AND (SELECT private.app_has_prescription_parent_access(prescriptions.patient_id, prescriptions.visit_id))
   )
   WITH CHECK (
     (
       (SELECT public.app_has_perm('pharmacy.update'))
       OR (SELECT public.app_has_perm('emr.update'))
     )
-    AND (SELECT private.app_has_attachment_branch_access(prescriptions.patient_id, prescriptions.visit_id))
+    AND (SELECT private.app_has_prescription_parent_access(prescriptions.patient_id, prescriptions.visit_id))
   );
 ALTER POLICY prescriptions_delete ON public.prescriptions
   USING (
@@ -130,7 +130,7 @@ ALTER POLICY prescriptions_delete ON public.prescriptions
       (SELECT public.app_has_perm('pharmacy.delete'))
       OR (SELECT public.app_has_perm('emr.delete'))
     )
-    AND (SELECT private.app_has_attachment_branch_access(prescriptions.patient_id, prescriptions.visit_id))
+    AND (SELECT private.app_has_prescription_parent_access(prescriptions.patient_id, prescriptions.visit_id))
   );
 
 ALTER POLICY prescription_items_select ON public.prescription_items
