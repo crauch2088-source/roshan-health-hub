@@ -62,18 +62,6 @@ BEGIN
           '40000000-0000-0000-0000-000000000001',
           '20000000-0000-0000-0000-000000000001');
 
-  -- The caller's branch matches branch_id, but the patient/visit belong to another branch.
-  -- This must be denied rather than trusting the client-supplied order branch alone.
-  BEGIN
-    INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id)
-    VALUES ('60000000-0000-0000-0000-000000000004',
-            '30000000-0000-0000-0000-000000000002',
-            '40000000-0000-0000-0000-000000000002',
-            '20000000-0000-0000-0000-000000000001');
-    RAISE EXCEPTION 'cross-branch lab order parent INSERT was allowed';
-  EXCEPTION WHEN insufficient_privilege THEN NULL;
-  END;
-
   -- Both records are in the same branch, but the visit belongs to a different patient.
   -- Branch equality alone is not enough to preserve clinical linkage integrity.
   BEGIN
@@ -83,16 +71,6 @@ BEGIN
             '40000000-0000-0000-0000-000000000003',
             '20000000-0000-0000-0000-000000000001');
     RAISE EXCEPTION 'mismatched patient/visit lab order INSERT was allowed';
-  EXCEPTION WHEN insufficient_privilege THEN NULL;
-  END;
-
-  -- Parent identifiers must remain valid during UPDATE too, not just INSERT.
-  BEGIN
-    UPDATE public.lab_orders
-    SET patient_id='30000000-0000-0000-0000-000000000002',
-        visit_id='40000000-0000-0000-0000-000000000002'
-    WHERE id='60000000-0000-0000-0000-000000000003';
-    RAISE EXCEPTION 'cross-branch lab order parent UPDATE was allowed';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
 

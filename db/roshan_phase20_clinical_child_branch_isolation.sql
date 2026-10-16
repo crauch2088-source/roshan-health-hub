@@ -5,6 +5,30 @@
 -- permissions but not the branch of the parent patient/visit/order. These tables have
 -- no branch_id of their own, so their policy must derive branch access from the parent.
 
+-- A lab order's visit, when supplied, must belong to the same patient_id.
+-- This is a linkage-integrity invariant; branch assignment remains controlled by
+-- lab_orders.branch_id to preserve the explicit lab-order branch context.
+CREATE OR REPLACE FUNCTION private.lab_order_parent_ids_match(_patient_id uuid, _visit_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT CASE
+    WHEN _visit_id IS NULL THEN true
+    ELSE EXISTS (
+      SELECT 1
+      FROM public.visits AS v
+      WHERE v.id = _visit_id
+        AND (_patient_id IS NULL OR v.patient_id = _patient_id)
+    )
+  END
+$function$;
+
+REVOKE ALL ON FUNCTION private.lab_order_parent_ids_match(uuid, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.lab_order_parent_ids_match(uuid, uuid) TO authenticated;
+
 CREATE OR REPLACE FUNCTION private.app_has_lab_order_branch_access(_order_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -18,6 +42,7 @@ AS $function$
     LEFT JOIN public.visits AS v ON v.id = lo.visit_id
     LEFT JOIN public.patients AS p ON p.id = lo.patient_id
     WHERE lo.id = _order_id
+      AND private.lab_order_parent_ids_match(lo.patient_id, lo.visit_id)
       AND private.app_has_branch_access(COALESCE(lo.branch_id, v.branch_id, p.branch_id))
   )
 $function$;
@@ -121,6 +146,38 @@ ALTER POLICY prescription_items_delete ON public.prescription_items
       OR (SELECT public.app_has_perm('emr.delete'))
     )
     AND (SELECT private.app_has_prescription_branch_access(prescription_items.prescription_id))
+  );
+
+-- Keep the existing lab-order branch context, but prevent a lab order from
+-- being linked to a visit that belongs to a different patient.
+ALTER POLICY lab_orders_select ON public.lab_orders
+  USING (
+    (SELECT public.app_has_perm('lab.read'))
+    AND (SELECT private.app_has_branch_access(lab_orders.branch_id))
+    AND (SELECT private.lab_order_parent_ids_match(lab_orders.patient_id, lab_orders.visit_id))
+  );
+ALTER POLICY lab_orders_insert ON public.lab_orders
+  WITH CHECK (
+    (SELECT public.app_has_perm('lab.create'))
+    AND (SELECT private.app_has_branch_access(lab_orders.branch_id))
+    AND (SELECT private.lab_order_parent_ids_match(lab_orders.patient_id, lab_orders.visit_id))
+  );
+ALTER POLICY lab_orders_update ON public.lab_orders
+  USING (
+    (SELECT public.app_has_perm('lab.update'))
+    AND (SELECT private.app_has_branch_access(lab_orders.branch_id))
+    AND (SELECT private.lab_order_parent_ids_match(lab_orders.patient_id, lab_orders.visit_id))
+  )
+  WITH CHECK (
+    (SELECT public.app_has_perm('lab.update'))
+    AND (SELECT private.app_has_branch_access(lab_orders.branch_id))
+    AND (SELECT private.lab_order_parent_ids_match(lab_orders.patient_id, lab_orders.visit_id))
+  );
+ALTER POLICY lab_orders_delete ON public.lab_orders
+  USING (
+    (SELECT public.app_has_perm('lab.delete'))
+    AND (SELECT private.app_has_branch_access(lab_orders.branch_id))
+    AND (SELECT private.lab_order_parent_ids_match(lab_orders.patient_id, lab_orders.visit_id))
   );
 
 ALTER POLICY lab_order_items_select ON public.lab_order_items
