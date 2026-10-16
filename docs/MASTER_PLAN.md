@@ -686,19 +686,43 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 ### Prescription workflow merged
 - PR #22 was merged into main with squash commit 18c377dd480791332e4c4369891310587c30036f after all 9 PR checks passed. Main CI on the merge commit passed all 4 jobs.
 - The live create_prescription_atomic RPC was exercised under transaction-local authenticated JWT claims for an assigned doctor. It created one prescription item and used the catalog price; the synthetic patient, visit, prescription, queue ticket, and audit rows were cleaned up in the same atomic statement. Independent postconditions confirmed zero patients, visits, prescriptions, prescription_items, queue_tickets, and audit_logs.
-- The latest observed Vercel production deployment remains SHA 9e032c5b6844c7db8fc14e23513eab37de384627, older than the PR #22 merge. No claim that the merged UI is live until a deployment with commit 18c377dd or later is confirmed.
+- The billing merge is now deployed: Vercel production deployment is READY at SHA a4e53787bed97f9f2d34038641a2a839b12c01ba and is aliased to roshan-health-hub.vercel.app. Main CI passed all 7 jobs.
 
 ### Itemized invoice and billing candidate advanced safely
 - PR #23 (consolidated visit invoice, atomic lab billing, pharmacy dispensing invoice, and billing idempotency) had a stale base and merge conflicts in only .github/workflows/ci.yml and package.json. Both were reconciled by preserving all current main jobs and combining the main and invoice test suites; the branch now includes a merge commit with main and keeps all 26 intended changed files.
-- All 12 CI checks on the resolved PR #23 head 45f4aaf4e2945eec5091d548c34ad1f9890ed004 passed. PR #23 remains draft and its SQL has not been applied.
+- All 12 CI checks on the resolved PR #23 head 45f4aaf4e2945eec5091d548c34ad1f9890ed004 passed. PR #23 was merged as a4e53787bed97f9f2d34038641a2a839b12c01ba; five billing SQL migrations are now installed in Supabase. The post-deployment legacy RPC revoke remains intentionally unapplied.
 - Ran a rollback-only live-schema dry run of all 35 statements across the five billing SQL files, followed by simulated-auth smoke tests using an assigned doctor and receptionist. The test created a primary consultation invoice, appended a lab line to the same invoice, verified an idempotent lab-order retry did not duplicate the order/lines, and created an explicit secondary invoice. The transaction's sentinel exception rolled back all DDL and test rows. Postconditions verified the is_primary column, billing RPCs, and idempotency table were not persisted and all patient/visit/lab/invoice/audit tables remained empty.
-- Release hazard found: the current production UI still calls public.fn_dispense_prescription(uuid), while PR #23's phase14 SQL revokes authenticated execution of that legacy RPC. Do not apply/merge the billing release until the revocation is split into a post-deployment migration (or an equivalent compatibility sequence) so the existing UI cannot break between schema change and UI deployment.
+- Release hazard resolved through staged compatibility: phase14 now leaves public.fn_dispense_prescription(uuid) callable for the current UI; the new phase17 migration revokes it only after the new UI is deployed and authenticated browser smoke tests pass.
 - Historical migration reproducibility remains separate: live ledger has 83 entries (79 historical statements archived and 4 later tracked SQL changes). The rollback-only live-schema check and isolated PostgreSQL 17 integration tests validate this narrow billing change, but the recovered 79-entry archive is not a clean from-scratch baseline.
 - Insurance implementation remains paused at user request. Insurance-related checklist items are neither marked complete nor removed.
 
 ### Current release sequence
-1. Split legacy dispense RPC revocation into a post-deployment migration and add a CI regression test for the compatibility window.
-2. Re-run PR #23 CI, then apply the five billing migrations in order only after the staged compatibility sequence is reviewed; do not deploy UI against missing RPCs.
-3. Merge PR #23 only after the DB layer is ready; confirm a Vercel deployment at the merged main SHA.
-4. Run authenticated browser/UI tests for consultation, lab order, consolidated invoice, explicit secondary invoice, pharmacy dispense, and retry/idempotency. Only then apply the legacy dispense RPC revoke.
+1. Completed: split legacy dispense RPC revocation into phase17 and add CI regression tests for the compatibility window.
+2. Completed: applied five billing migrations in order (ledger versions 20261016183123–20261016183152) while preserving the legacy RPC.
+3. Completed: merged PR #23 as a4e53787bed97f9f2d34038641a2a839b12c01ba; all 7 main CI jobs passed and Vercel production deployment is READY.
+4. Pending: authenticated browser/UI tests for consultation, lab order, consolidated invoice, explicit secondary invoice, pharmacy dispense, and retry/idempotency. Apply phase17 only after those tests pass.
 5. Checklist remains 65/156 = 41.7%; no new feature checkbox is counted complete until its rollout and verification gates pass.
+
+
+## Execution batch H — billing release merged and deployed — 2026-10-16
+
+### Mainline and deployment
+- PR #23 merged as commit a4e53787bed97f9f2d34038641a2a839b12c01ba.
+- Main CI on that merge commit passed all 7 jobs: pharmacy dispense/invoice integration, consolidated visit invoice integration, cashbox concurrency, patient registration/MRN concurrency, finance audit deduplication, atomic invoice integration, and install/audit/typecheck/lint/build.
+- Vercel production deployment for the merge commit reached READY and is aliased to https://roshan-health-hub.vercel.app. This confirms deployment readiness, not authenticated UI correctness.
+
+### Five billing migrations applied and verified
+- 20261016183123 roshan_phase8_atomic_invoice
+- 20261016183130 roshan_phase13_consolidated_visit_invoice
+- 20261016183136 roshan_phase14_dispense_invoice_atomic_compat
+- 20261016183145 roshan_phase15_manual_invoice_consolidation
+- 20261016183152 roshan_phase16_billing_idempotency
+- The database-level simulated-auth smoke passed after the migrations were applied: consultation and lab lines consolidated into one primary invoice, lab retry returned the same order without duplicate lines, and an explicit secondary invoice was created with idempotent retry.
+- Test rows were cleaned before completion. Postconditions: auth.users=6, public.users=6, patients=0, visits=0, queue_tickets=0, lab_orders=0, lab_order_items=0, invoices=0, invoice_items=0, private.billing_rpc_idempotency=0, public.audit_logs=0, auth.audit_log_entries=0.
+- The current legacy dispense RPC remains callable so the previously deployed UI remains compatible. New billing RPCs are authenticated-only; anon execution is denied; the non-idempotent manual-invoice overload is denied to authenticated.
+
+### Deferred post-deployment step
+- Do not apply db/roshan_phase17_revoke_legacy_dispense_rpc.sql yet. Browser automation is not connected and no user credentials were provided, so authenticated UI smoke tests are pending.
+- After authenticated browser tests pass for consultation, lab order, consolidated invoice, separate invoice, pharmacy dispense, and idempotent retries, apply phase17 and verify the legacy RPC is no longer executable.
+- Insurance implementation remains paused at user request.
+- Checklist remains 65/156 = 41.7%; keep the numerator unchanged until authenticated UI verification completes.
