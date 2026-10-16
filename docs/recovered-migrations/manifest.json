@@ -1,0 +1,646 @@
+{
+  "generated_from": "read-only SELECT of supabase_migrations.schema_migrations on 2026-10-15",
+  "project_ref": "jewzonxplxhogqrnhosl",
+  "row_count": 79,
+  "total_recovered_sql_characters": 247724,
+  "scan_result": "A basic scan identified one migration containing an environment-specific admin email and user UUID in a one-time identity-linking UPDATE; its public file is redacted. No common private-key or token patterns were found. This is not a complete secret/privacy audit.",
+  "checksum_definition": "ledger_md5 is MD5(statements::text) from PostgreSQL; ledger_bytes is octet_length(statements::text). These refer to the original ledger representation, not the reconstructed .sql file.",
+  "migrations": [
+    {
+      "version": "20260818162003",
+      "name": "fix_duplicate_unique_constraint",
+      "path": "docs/recovered-migrations/sql/20260818162003_fix_duplicate_unique_constraint.sql",
+      "ledger_md5": "61a0f9e47443649d4616936ff42f79ca",
+      "ledger_bytes": 103,
+      "sql_characters": 99
+    },
+    {
+      "version": "20260818191254",
+      "name": "fix_patients_rls_and_admin_link",
+      "path": "docs/recovered-migrations/sql/20260818191254_fix_patients_rls_and_admin_link.sql",
+      "ledger_md5": "f4e22a4ed44c5f423cb11cac897d06e0",
+      "ledger_bytes": 1084,
+      "sql_characters": null,
+      "sql_characters_original_from_ledger": 1080,
+      "public_archive_redacted": true,
+      "recovery_status": "redacted_identity_mapping",
+      "redaction_reason": "Environment-specific admin email and user UUID in one-time users.auth_user_id mapping"
+    },
+    {
+      "version": "20260818191556",
+      "name": "install_safe_visit_number_function",
+      "path": "docs/recovered-migrations/sql/20260818191556_install_safe_visit_number_function.sql",
+      "ledger_md5": "07cffd7a16337644b1585d6bc74de0aa",
+      "ledger_bytes": 737,
+      "sql_characters": 733
+    },
+    {
+      "version": "20260818192452",
+      "name": "fix_daily_queue_numbers_v4",
+      "path": "docs/recovered-migrations/sql/20260818192452_fix_daily_queue_numbers_v4.sql",
+      "ledger_md5": "88910b769fcf4e9de21116221f7113d2",
+      "ledger_bytes": 1565,
+      "sql_characters": 1561
+    },
+    {
+      "version": "20260818194104",
+      "name": "fix_daily_queue_numbering",
+      "path": "docs/recovered-migrations/sql/20260818194104_fix_daily_queue_numbering.sql",
+      "ledger_md5": "49b6db1c9c75724444676a9f627b15ee",
+      "ledger_bytes": 2180,
+      "sql_characters": 2176
+    },
+    {
+      "version": "20260818194429",
+      "name": "repair_queue_and_harden_queue_security",
+      "path": "docs/recovered-migrations/sql/20260818194429_repair_queue_and_harden_queue_security.sql",
+      "ledger_md5": "80a66f6704da724185a7ce5be3da0b61",
+      "ledger_bytes": 4892,
+      "sql_characters": 4888
+    },
+    {
+      "version": "20260818194457",
+      "name": "consolidate_queue_triggers",
+      "path": "docs/recovered-migrations/sql/20260818194457_consolidate_queue_triggers.sql",
+      "ledger_md5": "d6755cb678b0566deed766ad3a482ed4",
+      "ledger_bytes": 3157,
+      "sql_characters": 3153
+    },
+    {
+      "version": "20260818195753",
+      "name": "fix_visit_queue_numbering",
+      "path": "docs/recovered-migrations/sql/20260818195753_fix_visit_queue_numbering.sql",
+      "ledger_md5": "89d78b1689ad934b4f4484a500bd5656",
+      "ledger_bytes": 2292,
+      "sql_characters": 2288
+    },
+    {
+      "version": "20260818195811",
+      "name": "sync_existing_queue_tickets",
+      "path": "docs/recovered-migrations/sql/20260818195811_sync_existing_queue_tickets.sql",
+      "ledger_md5": "116e6960f69905e86691f47e58ff25e0",
+      "ledger_bytes": 285,
+      "sql_characters": 281
+    },
+    {
+      "version": "20260818200206",
+      "name": "fix_queue_numbering_authoritative",
+      "path": "docs/recovered-migrations/sql/20260818200206_fix_queue_numbering_authoritative.sql",
+      "ledger_md5": "1788f1c5c07c56f1524639c40c408687",
+      "ledger_bytes": 2689,
+      "sql_characters": 2685
+    },
+    {
+      "version": "20260818200246",
+      "name": "harden_visit_queue_rls_and_cleanup",
+      "path": "docs/recovered-migrations/sql/20260818200246_harden_visit_queue_rls_and_cleanup.sql",
+      "ledger_md5": "2723798f30e0c66149f9dece79c4ffc6",
+      "ledger_bytes": 2096,
+      "sql_characters": 2092
+    },
+    {
+      "version": "20260818200336",
+      "name": "finalize_non_recycling_queue_allocator",
+      "path": "docs/recovered-migrations/sql/20260818200336_finalize_non_recycling_queue_allocator.sql",
+      "ledger_md5": "08d337b9dc9add2d77091e79c2d087b2",
+      "ledger_bytes": 1368,
+      "sql_characters": 1364
+    },
+    {
+      "version": "20260818202356",
+      "name": "fix_appointments_rls_auth_and_audit",
+      "path": "docs/recovered-migrations/sql/20260818202356_fix_appointments_rls_auth_and_audit.sql",
+      "ledger_md5": "bf439a86b9fd31c5282a61361ad96f7a",
+      "ledger_bytes": 828,
+      "sql_characters": 824
+    },
+    {
+      "version": "20260818232848",
+      "name": "harden_core_indexes_and_legacy_compatibility_v2",
+      "path": "docs/recovered-migrations/sql/20260818232848_harden_core_indexes_and_legacy_compatibility_v2.sql",
+      "ledger_md5": "e8813fabc4451694071ab43f76e8ae7a",
+      "ledger_bytes": 7636,
+      "sql_characters": 7632
+    },
+    {
+      "version": "20260818233558",
+      "name": "harden_security_definer_helpers_and_duplicate_index_v2",
+      "path": "docs/recovered-migrations/sql/20260818233558_harden_security_definer_helpers_and_duplicate_index_v2.sql",
+      "ledger_md5": "2a5cd75eac385055a01dd3db53cfdf05",
+      "ledger_bytes": 5656,
+      "sql_characters": 5652
+    },
+    {
+      "version": "20260818234039",
+      "name": "harden_rls_permissions_and_public_grants_v1",
+      "path": "docs/recovered-migrations/sql/20260818234039_harden_rls_permissions_and_public_grants_v1.sql",
+      "ledger_md5": "7a20a1b456d5ac28b7939264cd85fb0c",
+      "ledger_bytes": 29681,
+      "sql_characters": 29673
+    },
+    {
+      "version": "20260818234050",
+      "name": "harden_services_rls_v1",
+      "path": "docs/recovered-migrations/sql/20260818234050_harden_services_rls_v1.sql",
+      "ledger_md5": "0736405983339e302a4363ae83b7aa43",
+      "ledger_bytes": 676,
+      "sql_characters": 672
+    },
+    {
+      "version": "20260818234146",
+      "name": "repair_roshan_rbac_role_links_v1",
+      "path": "docs/recovered-migrations/sql/20260818234146_repair_roshan_rbac_role_links_v1.sql",
+      "ledger_md5": "33a9375f8f84f73b213b256d52257840",
+      "ledger_bytes": 2174,
+      "sql_characters": 2170
+    },
+    {
+      "version": "20260819000003",
+      "name": "harden_public_defaults_and_sync_user_roles",
+      "path": "docs/recovered-migrations/sql/20260819000003_harden_public_defaults_and_sync_user_roles.sql",
+      "ledger_md5": "83601720d0bd6443dc85b3c463b39794",
+      "ledger_bytes": 1739,
+      "sql_characters": 1735
+    },
+    {
+      "version": "20260819000016",
+      "name": "tighten_public_default_privileges",
+      "path": "docs/recovered-migrations/sql/20260819000016_tighten_public_default_privileges.sql",
+      "ledger_md5": "c7abfd29bad141caa28cf0d901438c7c",
+      "ledger_bytes": 389,
+      "sql_characters": 385
+    },
+    {
+      "version": "20260819100756",
+      "name": "roshan_phase1_pagination_and_settings",
+      "path": "docs/recovered-migrations/sql/20260819100756_roshan_phase1_pagination_and_settings.sql",
+      "ledger_md5": "33e550dacd27b9007897dbaa1fd42bd4",
+      "ledger_bytes": 1129,
+      "sql_characters": 1125
+    },
+    {
+      "version": "20260819105146",
+      "name": "roshan_settings_public_enforcement",
+      "path": "docs/recovered-migrations/sql/20260819105146_roshan_settings_public_enforcement.sql",
+      "ledger_md5": "5fc9082104fc8cdf9b65776478895a36",
+      "ledger_bytes": 942,
+      "sql_characters": 936
+    },
+    {
+      "version": "20260819123920",
+      "name": "grant_authenticated_execute_next_mrn",
+      "path": "docs/recovered-migrations/sql/20260819123920_grant_authenticated_execute_next_mrn.sql",
+      "ledger_md5": "8997024e51ab6ffc93be3ffb4aef3032",
+      "ledger_bytes": 65,
+      "sql_characters": 61
+    },
+    {
+      "version": "20260819124045",
+      "name": "fix_next_mrn_rpc_access",
+      "path": "docs/recovered-migrations/sql/20260819124045_fix_next_mrn_rpc_access.sql",
+      "ledger_md5": "3febc123265bfaf81d777533064f65f9",
+      "ledger_bytes": 494,
+      "sql_characters": 490
+    },
+    {
+      "version": "20260819125755",
+      "name": "add_missing_audit_relationships",
+      "path": "docs/recovered-migrations/sql/20260819125755_add_missing_audit_relationships.sql",
+      "ledger_md5": "c409776a912a1f55c4fd961d5325e65e",
+      "ledger_bytes": 1052,
+      "sql_characters": 1048
+    },
+    {
+      "version": "20260819125807",
+      "name": "add_followups_users_computed_relationship",
+      "path": "docs/recovered-migrations/sql/20260819125807_add_followups_users_computed_relationship.sql",
+      "ledger_md5": "388272b5e71cb49ac177945f32384edd",
+      "ledger_bytes": 455,
+      "sql_characters": 451
+    },
+    {
+      "version": "20260819130039",
+      "name": "compat_patients_patient_number",
+      "path": "docs/recovered-migrations/sql/20260819130039_compat_patients_patient_number.sql",
+      "ledger_md5": "652a89bec1fe269fbafc5e7ac936fb68",
+      "ledger_bytes": 254,
+      "sql_characters": 250
+    },
+    {
+      "version": "20260819222434",
+      "name": "add_prescription_ux_fields",
+      "path": "docs/recovered-migrations/sql/20260819222434_add_prescription_ux_fields.sql",
+      "ledger_md5": "a86f52c024524c8fa937fcfc88b413e2",
+      "ledger_bytes": 358,
+      "sql_characters": 354
+    },
+    {
+      "version": "20260819223342",
+      "name": "add_medical_certificates_soft_delete_columns",
+      "path": "docs/recovered-migrations/sql/20260819223342_add_medical_certificates_soft_delete_columns.sql",
+      "ledger_md5": "a3c703eb0319e1f1ef98a4156120cd3d",
+      "ledger_bytes": 290,
+      "sql_characters": 286
+    },
+    {
+      "version": "20260820000007",
+      "name": "add_medicines_2_stock_quantity_compatibility",
+      "path": "docs/recovered-migrations/sql/20260820000007_add_medicines_2_stock_quantity_compatibility.sql",
+      "ledger_md5": "a49ef8d739e6cb267888a0c1b7ec9a73",
+      "ledger_bytes": 956,
+      "sql_characters": 952
+    },
+    {
+      "version": "20260820000143",
+      "name": "add_medicines_2_stock_quantity",
+      "path": "docs/recovered-migrations/sql/20260820000143_add_medicines_2_stock_quantity.sql",
+      "ledger_md5": "1d32e0cc340a46f6d5bf252caec99d24",
+      "ledger_bytes": 102,
+      "sql_characters": 98
+    },
+    {
+      "version": "20260820000336",
+      "name": "fix_medicines_stock_quantity_schema_cache",
+      "path": "docs/recovered-migrations/sql/20260820000336_fix_medicines_stock_quantity_schema_cache.sql",
+      "ledger_md5": "241bbbb27bf3edafeb60191bdaa0a630",
+      "ledger_bytes": 356,
+      "sql_characters": 352
+    },
+    {
+      "version": "20260820000656",
+      "name": "add_medicines_reorder_level",
+      "path": "docs/recovered-migrations/sql/20260820000656_add_medicines_reorder_level.sql",
+      "ledger_md5": "1e478733e1e978283a4fb06bc0dde2ee",
+      "ledger_bytes": 99,
+      "sql_characters": 95
+    },
+    {
+      "version": "20260820000725",
+      "name": "add_medicines_expiry_date",
+      "path": "docs/recovered-migrations/sql/20260820000725_add_medicines_expiry_date.sql",
+      "ledger_md5": "34caa91bdc2b6b1051202d380336d4ca",
+      "ledger_bytes": 75,
+      "sql_characters": 71
+    },
+    {
+      "version": "20260820005417",
+      "name": "fix_followups_user_relationship",
+      "path": "docs/recovered-migrations/sql/20260820005417_fix_followups_user_relationship.sql",
+      "ledger_md5": "75d47f32e8627e2d587990284791fa63",
+      "ledger_bytes": 507,
+      "sql_characters": 503
+    },
+    {
+      "version": "20260820010030",
+      "name": "fix_medicines_batch_number",
+      "path": "docs/recovered-migrations/sql/20260820010030_fix_medicines_batch_number.sql",
+      "ledger_md5": "857c21fd0dff64de9f3a8c5cb6555e8b",
+      "ledger_bytes": 190,
+      "sql_characters": 186
+    },
+    {
+      "version": "20260820150215",
+      "name": "roshan_phase2_clinical_workflow",
+      "path": "docs/recovered-migrations/sql/20260820150215_roshan_phase2_clinical_workflow.sql",
+      "ledger_md5": "3b13a90d96e8d878c97be72b8c21c905",
+      "ledger_bytes": 640,
+      "sql_characters": 636
+    },
+    {
+      "version": "20260822094358",
+      "name": "roshan_workflow_performance_20260822",
+      "path": "docs/recovered-migrations/sql/20260822094358_roshan_workflow_performance_20260822.sql",
+      "ledger_md5": "a47d2b6af7e90cf6c9375af0308ae32f",
+      "ledger_bytes": 2230,
+      "sql_characters": 2226
+    },
+    {
+      "version": "20260822094405",
+      "name": "roshan_drop_duplicate_prescription_index_20260822",
+      "path": "docs/recovered-migrations/sql/20260822094405_roshan_drop_duplicate_prescription_index_20260822.sql",
+      "ledger_md5": "013b6f046a1cc5d09636d142232ce8b1",
+      "ledger_bytes": 64,
+      "sql_characters": 60
+    },
+    {
+      "version": "20260906142737",
+      "name": "roshan_phase3_allow_pharmacy_setting_public",
+      "path": "docs/recovered-migrations/sql/20260906142737_roshan_phase3_allow_pharmacy_setting_public.sql",
+      "ledger_md5": "2c21995b7a241df642b44c06d8202eb9",
+      "ledger_bytes": 1199,
+      "sql_characters": 1191
+    },
+    {
+      "version": "20260906142803",
+      "name": "roshan_phase3_pharmacy_batches",
+      "path": "docs/recovered-migrations/sql/20260906142803_roshan_phase3_pharmacy_batches.sql",
+      "ledger_md5": "5af0b31a2ae1998a57a4dd3e8f510759",
+      "ledger_bytes": 9097,
+      "sql_characters": 9093
+    },
+    {
+      "version": "20260906144008",
+      "name": "roshan_phase4_finance_cashbox_debts",
+      "path": "docs/recovered-migrations/sql/20260906144008_roshan_phase4_finance_cashbox_debts.sql",
+      "ledger_md5": "bc611918fa30c7aa33622350d63c4f1e",
+      "ledger_bytes": 14679,
+      "sql_characters": 14675
+    },
+    {
+      "version": "20260906161023",
+      "name": "roshan_phase4_finance_security_verification_patch",
+      "path": "docs/recovered-migrations/sql/20260906161023_roshan_phase4_finance_security_verification_patch.sql",
+      "ledger_md5": "49626f4e7b252184c147402f4639f3ba",
+      "ledger_bytes": 3589,
+      "sql_characters": 3583
+    },
+    {
+      "version": "20260906203143",
+      "name": "roshan_phase3_pharmacy_runtime_hardening",
+      "path": "docs/recovered-migrations/sql/20260906203143_roshan_phase3_pharmacy_runtime_hardening.sql",
+      "ledger_md5": "a7a95cc25eb5e395af595ab2192c9d34",
+      "ledger_bytes": 6980,
+      "sql_characters": 6976
+    },
+    {
+      "version": "20260908210824",
+      "name": "roshan_phase4_finance_v2",
+      "path": "docs/recovered-migrations/sql/20260908210824_roshan_phase4_finance_v2.sql",
+      "ledger_md5": "4be9232e7e06b03ff5827ae9af046ec0",
+      "ledger_bytes": 24052,
+      "sql_characters": 24044
+    },
+    {
+      "version": "20260909110657",
+      "name": "roshan_phase5_insurance",
+      "path": "docs/recovered-migrations/sql/20260909110657_roshan_phase5_insurance.sql",
+      "ledger_md5": "0270b37760a90ace769c63cee95d7bfa",
+      "ledger_bytes": 7616,
+      "sql_characters": 7600
+    },
+    {
+      "version": "20260909110735",
+      "name": "roshan_phase5_insurance_functions",
+      "path": "docs/recovered-migrations/sql/20260909110735_roshan_phase5_insurance_functions.sql",
+      "ledger_md5": "20fa5cff06280170d2d4a2cb85e63e0b",
+      "ledger_bytes": 10859,
+      "sql_characters": 10851
+    },
+    {
+      "version": "20260909110753",
+      "name": "roshan_phase5_insurance_permissions_rls",
+      "path": "docs/recovered-migrations/sql/20260909110753_roshan_phase5_insurance_permissions_rls.sql",
+      "ledger_md5": "0eacc16749f50f8401dfdeb48699c486",
+      "ledger_bytes": 4922,
+      "sql_characters": 4918
+    },
+    {
+      "version": "20260911120231",
+      "name": "roshan_phase12_invoice_visit_unique",
+      "path": "docs/recovered-migrations/sql/20260911120231_roshan_phase12_invoice_visit_unique.sql",
+      "ledger_md5": "5182147d2ed12b1a7df402b763c5a1c5",
+      "ledger_bytes": 425,
+      "sql_characters": 417
+    },
+    {
+      "version": "20260911130749",
+      "name": "harden_security_and_fk_indexes_20260911",
+      "path": "docs/recovered-migrations/sql/20260911130749_harden_security_and_fk_indexes_20260911.sql",
+      "ledger_md5": "2cbc5a3b8a370baae854dc1883604aa2",
+      "ledger_bytes": 7111,
+      "sql_characters": 7107
+    },
+    {
+      "version": "20260911130812",
+      "name": "restrict_security_definer_api_execution_20260911",
+      "path": "docs/recovered-migrations/sql/20260911130812_restrict_security_definer_api_execution_20260911.sql",
+      "ledger_md5": "52b0166fba689c66bf81454aa91b200c",
+      "ledger_bytes": 2164,
+      "sql_characters": 2160
+    },
+    {
+      "version": "20260911131456",
+      "name": "deep_audit_branch_isolation_rpc_hardening",
+      "path": "docs/recovered-migrations/sql/20260911131456_deep_audit_branch_isolation_rpc_hardening.sql",
+      "ledger_md5": "2e229e263b04b6144047fcabbbd87d94",
+      "ledger_bytes": 8077,
+      "sql_characters": 8073
+    },
+    {
+      "version": "20260911133229",
+      "name": "harden_mrn_invoice_number_concurrency",
+      "path": "docs/recovered-migrations/sql/20260911133229_harden_mrn_invoice_number_concurrency.sql",
+      "ledger_md5": "0fd7b0b1afb1ef6cb390a0b6657de5d2",
+      "ledger_bytes": 1009,
+      "sql_characters": 1005
+    },
+    {
+      "version": "20260911133255",
+      "name": "enforce_branch_isolation_rls",
+      "path": "docs/recovered-migrations/sql/20260911133255_enforce_branch_isolation_rls.sql",
+      "ledger_md5": "7cb965a4218bb2772115ac51c62ade30",
+      "ledger_bytes": 1566,
+      "sql_characters": 1562
+    },
+    {
+      "version": "20260911133312",
+      "name": "harden_insurance_branch_isolation",
+      "path": "docs/recovered-migrations/sql/20260911133312_harden_insurance_branch_isolation.sql",
+      "ledger_md5": "807b9c4f3b44051dfcce405d9134ea91",
+      "ledger_bytes": 10214,
+      "sql_characters": 10208
+    },
+    {
+      "version": "20260911133319",
+      "name": "harden_insurance_coverage_rpc_branch",
+      "path": "docs/recovered-migrations/sql/20260911133319_harden_insurance_coverage_rpc_branch.sql",
+      "ledger_md5": "729d5bcf5413cd22f9e55cf567339536",
+      "ledger_bytes": 3256,
+      "sql_characters": 3252
+    },
+    {
+      "version": "20260911133334",
+      "name": "harden_finance_branch_context",
+      "path": "docs/recovered-migrations/sql/20260911133334_harden_finance_branch_context.sql",
+      "ledger_md5": "a71cfe441881bc3b5c446d278004f141",
+      "ledger_bytes": 5439,
+      "sql_characters": 5433
+    },
+    {
+      "version": "20260911133353",
+      "name": "fix_insurance_ledger_branch",
+      "path": "docs/recovered-migrations/sql/20260911133353_fix_insurance_ledger_branch.sql",
+      "ledger_md5": "69c264478ac420a24e4f220628991008",
+      "ledger_bytes": 2412,
+      "sql_characters": 2406
+    },
+    {
+      "version": "20260911134639",
+      "name": "grant_next_invoice_number_authenticated",
+      "path": "docs/recovered-migrations/sql/20260911134639_grant_next_invoice_number_authenticated.sql",
+      "ledger_md5": "689073830d971ea3797b9134cf742e54",
+      "ledger_bytes": 76,
+      "sql_characters": 72
+    },
+    {
+      "version": "20260911135036",
+      "name": "grant_stock_movements_authenticated_access",
+      "path": "docs/recovered-migrations/sql/20260911135036_grant_stock_movements_authenticated_access.sql",
+      "ledger_md5": "1f8872b32f0155a028f92f6fe7abf63a",
+      "ledger_bytes": 74,
+      "sql_characters": 70
+    },
+    {
+      "version": "20260911135318",
+      "name": "fix_dispense_prescription_nullable_join_lock",
+      "path": "docs/recovered-migrations/sql/20260911135318_fix_dispense_prescription_nullable_join_lock.sql",
+      "ledger_md5": "f19b9e9be96dd1576bcea4a5905466f6",
+      "ledger_bytes": 4530,
+      "sql_characters": 4526
+    },
+    {
+      "version": "20260911135417",
+      "name": "fix_dispense_prescription_branch_resolution",
+      "path": "docs/recovered-migrations/sql/20260911135417_fix_dispense_prescription_branch_resolution.sql",
+      "ledger_md5": "245bb5f291ab0d66a3b50a1cf67d384f",
+      "ledger_bytes": 4942,
+      "sql_characters": 4938
+    },
+    {
+      "version": "20260911135547",
+      "name": "fix_dispense_batch_number_ambiguity",
+      "path": "docs/recovered-migrations/sql/20260911135547_fix_dispense_batch_number_ambiguity.sql",
+      "ledger_md5": "b97b78aebc298b59968f5b61ed4f0fc5",
+      "ledger_bytes": 4514,
+      "sql_characters": 4510
+    },
+    {
+      "version": "20260911135644",
+      "name": "add_medicines_updated_at_column",
+      "path": "docs/recovered-migrations/sql/20260911135644_add_medicines_updated_at_column.sql",
+      "ledger_md5": "fe9d4a0aeab1f2d43387afe8fc75ee42",
+      "ledger_bytes": 202,
+      "sql_characters": 198
+    },
+    {
+      "version": "20260911135738",
+      "name": "add_prescription_items_updated_at",
+      "path": "docs/recovered-migrations/sql/20260911135738_add_prescription_items_updated_at.sql",
+      "ledger_md5": "6ec0de79ef268dde821bc900141f4d5a",
+      "ledger_bytes": 209,
+      "sql_characters": 205
+    },
+    {
+      "version": "20260911135858",
+      "name": "add_prescriptions_updated_at",
+      "path": "docs/recovered-migrations/sql/20260911135858_add_prescriptions_updated_at.sql",
+      "ledger_md5": "7ef79eb4301246c5d8ccd11e0c98f36c",
+      "ledger_bytes": 199,
+      "sql_characters": 195
+    },
+    {
+      "version": "20260911140337",
+      "name": "add_cashbox_reversal_columns",
+      "path": "docs/recovered-migrations/sql/20260911140337_add_cashbox_reversal_columns.sql",
+      "ledger_md5": "7ee3c7aa0e90cdef42c673ddb1400c79",
+      "ledger_bytes": 352,
+      "sql_characters": 348
+    },
+    {
+      "version": "20260911140514",
+      "name": "allow_cashbox_reversal_transaction_type",
+      "path": "docs/recovered-migrations/sql/20260911140514_allow_cashbox_reversal_transaction_type.sql",
+      "ledger_md5": "8902149a901a8b8d98d17d7c81025995",
+      "ledger_bytes": 458,
+      "sql_characters": 454
+    },
+    {
+      "version": "20260911141036",
+      "name": "harden_cashbox_reversal_type",
+      "path": "docs/recovered-migrations/sql/20260911141036_harden_cashbox_reversal_type.sql",
+      "ledger_md5": "43ebb562e681f2573d5da1b18cc88eeb",
+      "ledger_bytes": 2019,
+      "sql_characters": 2013
+    },
+    {
+      "version": "20260911141142",
+      "name": "fix_payment_ledger_transaction_type",
+      "path": "docs/recovered-migrations/sql/20260911141142_fix_payment_ledger_transaction_type.sql",
+      "ledger_md5": "bfa156ad16dc182f9c0f6d12db669d0e",
+      "ledger_bytes": 463,
+      "sql_characters": 459
+    },
+    {
+      "version": "20260911141502",
+      "name": "fix_medicines_generic_name_compatibility",
+      "path": "docs/recovered-migrations/sql/20260911141502_fix_medicines_generic_name_compatibility.sql",
+      "ledger_md5": "7cd494cb4719e2aea283093afa056648",
+      "ledger_bytes": 1205,
+      "sql_characters": 1201
+    },
+    {
+      "version": "20261011074344",
+      "name": "harden_patient_invoice_number_rpc_permissions",
+      "path": "docs/recovered-migrations/sql/20261011074344_harden_patient_invoice_number_rpc_permissions.sql",
+      "ledger_md5": "fa85bc51d4fe743b5a5762718e46e736",
+      "ledger_bytes": 1369,
+      "sql_characters": 1365
+    },
+    {
+      "version": "20261011074437",
+      "name": "harden_insurance_coverage_rpc_permissions",
+      "path": "docs/recovered-migrations/sql/20261011074437_harden_insurance_coverage_rpc_permissions.sql",
+      "ledger_md5": "8504c98d1e4d3cee48826e41e5d69408",
+      "ledger_bytes": 3835,
+      "sql_characters": 3831
+    },
+    {
+      "version": "20261011075101",
+      "name": "harden_pharmacy_batch_branch_isolation",
+      "path": "docs/recovered-migrations/sql/20261011075101_harden_pharmacy_batch_branch_isolation.sql",
+      "ledger_md5": "2e632526be6a5021352adcb533d20b09",
+      "ledger_bytes": 2639,
+      "sql_characters": 2635
+    },
+    {
+      "version": "20261011080253",
+      "name": "harden_supplier_bill_rpc_branch_and_search_path",
+      "path": "docs/recovered-migrations/sql/20261011080253_harden_supplier_bill_rpc_branch_and_search_path.sql",
+      "ledger_md5": "5d6254563c77eba7445c7cd441761598",
+      "ledger_bytes": 2418,
+      "sql_characters": 2414
+    },
+    {
+      "version": "20261011080319",
+      "name": "harden_finance_pharmacy_rpc_search_paths",
+      "path": "docs/recovered-migrations/sql/20261011080319_harden_finance_pharmacy_rpc_search_paths.sql",
+      "ledger_md5": "c03361836985e996c05206b78f0b5127",
+      "ledger_bytes": 971,
+      "sql_characters": 967
+    },
+    {
+      "version": "20261011080434",
+      "name": "enforce_branch_isolation_on_clinical_child_tables",
+      "path": "docs/recovered-migrations/sql/20261011080434_enforce_branch_isolation_on_clinical_child_tables.sql",
+      "ledger_md5": "78010a0852d06cdae5d19c7743387478",
+      "ledger_bytes": 6804,
+      "sql_characters": 6800
+    },
+    {
+      "version": "20261011080524",
+      "name": "preserve_super_admin_supplier_bill_compatibility",
+      "path": "docs/recovered-migrations/sql/20261011080524_preserve_super_admin_supplier_bill_compatibility.sql",
+      "ledger_md5": "f057895df5f103ba2dd6740e5dbc8152",
+      "ledger_bytes": 2439,
+      "sql_characters": 2435
+    },
+    {
+      "version": "20261014164131",
+      "name": "roshan_cashbox_reversal_concurrency",
+      "path": "docs/recovered-migrations/sql/20261014164131_roshan_cashbox_reversal_concurrency.sql",
+      "ledger_md5": "ae4f73ae273554f14fc0f5cf8052f9ef",
+      "ledger_bytes": 2217,
+      "sql_characters": 2211
+    }
+  ]
+}

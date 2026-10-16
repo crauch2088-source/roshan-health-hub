@@ -13,7 +13,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { n, s, useRows, type Row } from "@/lib/db";
+import { n, s, useAllRows, useRows, type Row } from "@/lib/db";
+import { calculateOutstandingBalance } from "@/lib/patient-snapshot";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money } from "@/lib/medical";
 import { patientPickerQuery, useDebounced } from "@/lib/search";
@@ -226,30 +227,31 @@ export function usePatientSnapshot(patientId: string | null) {
     },
   });
 
-  const invoices = useQuery({
-    queryKey: ["patient-snapshot-invoices", patientId ?? ""],
-    enabled,
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
+  const invoices = useAllRows<Row>(
+    ["patient-snapshot-invoices", patientId ?? ""],
+    ({ from, to }) =>
+      supabase
         .from("invoices")
-        .select("net_amount, paid_amount")
+        .select("id, net_amount, total_amount, paid_amount", { count: "exact" })
         .eq("patient_id", patientId as string)
         .is("deleted_at", null)
-        .limit(1000);
-      if (error) throw new Error(dbError(error));
-      return ((data ?? []) as Row[]).reduce(
-        (sum, inv) => sum + n(inv, "net_amount") - n(inv, "paid_amount"),
-        0,
-      );
-    },
-  });
+        .order("id", { ascending: true })
+        .range(from, to),
+    { enabled },
+  );
+
+  const invoicesExact = invoices.data?.exact === true;
 
   return {
     isLoading: visits.isLoading || invoices.isLoading,
+    visitsError: visits.isError,
+    invoicesError: invoices.isError,
+    invoicesExact,
     visitsCount: visits.data?.count ?? 0,
     lastVisitDate: visits.data?.last ?? null,
-    outstandingBalance: invoices.data ?? 0,
+    outstandingBalance: invoicesExact
+      ? calculateOutstandingBalance(invoices.data?.rows ?? [])
+      : null,
   };
 }
 
@@ -261,7 +263,7 @@ export function PatientSnapshotStrip({
   patientId: string;
   currency: string;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const snap = usePatientSnapshot(patientId);
 
   if (snap.isLoading)
@@ -269,19 +271,33 @@ export function PatientSnapshotStrip({
 
   return (
     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-xs">
-      <span>
-        <span className="text-muted-foreground">{t("previous_visits")}: </span>
-        <span className="font-medium" dir="ltr">
-          {snap.visitsCount}
+      {snap.visitsError ? (
+        <span className="text-destructive">
+          {lang === "ar" ? "تعذر تحميل سجل الزيارات" : "Visit history unavailable"}
         </span>
-      </span>
-      <span>
-        <span className="text-muted-foreground">{t("last_visit")}: </span>
-        <span className="font-medium" dir="ltr">
-          {snap.lastVisitDate ? formatDate(snap.lastVisitDate) : "—"}
+      ) : (
+        <>
+          <span>
+            <span className="text-muted-foreground">{t("previous_visits")}: </span>
+            <span className="font-medium" dir="ltr">
+              {snap.visitsCount}
+            </span>
+          </span>
+          <span>
+            <span className="text-muted-foreground">{t("last_visit")}: </span>
+            <span className="font-medium" dir="ltr">
+              {snap.lastVisitDate ? formatDate(snap.lastVisitDate) : "—"}
+            </span>
+          </span>
+        </>
+      )}
+      {snap.invoicesError || !snap.invoicesExact || snap.outstandingBalance == null ? (
+        <span className="text-destructive">
+          {lang === "ar"
+            ? "تعذر التحقق من الرصيد المستحق بالكامل"
+            : "Outstanding balance could not be verified completely"}
         </span>
-      </span>
-      {snap.outstandingBalance > 0 ? (
+      ) : snap.outstandingBalance > 0 ? (
         <span>
           <span className="text-muted-foreground">{t("outstanding_balance")}: </span>
           <span className="font-semibold text-destructive" dir="ltr">

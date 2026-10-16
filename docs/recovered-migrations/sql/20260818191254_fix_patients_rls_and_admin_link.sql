@@ -1,0 +1,8 @@
+-- PUBLIC ARCHIVE REDACTION
+-- Source migration: 20260818191254_fix_patients_rls_and_admin_link
+-- The production ledger version includes an environment-specific admin email
+-- and user UUID in a one-time UPDATE to public.users.auth_user_id.
+-- Those identity literals are intentionally omitted from this public repository.
+-- See docs/recovered-migrations/manifest.json for the original ledger checksum
+-- and byte count. This placeholder is NOT executable migration SQL and must not
+-- be replayed. Recover the original only through an approved private process.
