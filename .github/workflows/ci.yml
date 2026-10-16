@@ -40,7 +40,7 @@ jobs:
       - name: Verify finance audit trigger deduplication
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/finance_audit_trigger_fixture.sql -f db/roshan_phase17_deduplicate_finance_audit_triggers.sql -f db/tests/finance_audit_trigger_deduplication_test.sql
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/finance_audit_trigger_fixture.sql -f db/roshan_phase21_deduplicate_finance_audit_triggers.sql -f db/tests/finance_audit_trigger_deduplication_test.sql
 
   verify:
     name: Install, audit, typecheck, lint, build
