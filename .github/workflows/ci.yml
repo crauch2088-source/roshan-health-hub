@@ -70,6 +70,7 @@ jobs:
             -f db/roshan_phase8_atomic_invoice.sql \
             -f db/roshan_phase13_consolidated_visit_invoice.sql \
             -f db/roshan_phase15_manual_invoice_consolidation.sql \
+            -f db/roshan_phase16_billing_idempotency.sql \
             -f db/tests/visit_invoice_consolidation_integration.sql \
             -f db/tests/manual_billing_consolidation_integration.sql
 
@@ -102,6 +103,7 @@ jobs:
             -f db/roshan_phase13_consolidated_visit_invoice.sql \
             -f db/roshan_phase14_dispense_invoice_atomic.sql \
             -f db/roshan_phase15_manual_invoice_consolidation.sql \
+            -f db/roshan_phase16_billing_idempotency.sql \
             -f db/tests/pharmacy_dispense_invoice_integration.sql
 
   verify:
