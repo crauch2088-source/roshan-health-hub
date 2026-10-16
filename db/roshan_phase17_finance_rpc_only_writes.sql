@@ -145,7 +145,8 @@ $function$;
 -- Preserve RPC access while denying direct client-side financial table mutations.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
   ON TABLE public.cashbox_transactions, public.expenses, public.payments,
-           public.supplier_bills, public.supplier_payments
+           public.supplier_bills, public.supplier_payments, public.insurance_claims,
+           public.insurance_claim_items, public.insurance_claim_payments
   FROM PUBLIC, anon, authenticated;
 
 REVOKE EXECUTE ON FUNCTION public.post_cashbox_entry(text, numeric, text, text, text, timestamptz)
@@ -175,3 +176,18 @@ GRANT EXECUTE ON FUNCTION public.post_supplier_payment(uuid, numeric, text, text
 
 REVOKE EXECUTE ON FUNCTION public.reverse_cashbox_entry(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.reverse_cashbox_entry(uuid, text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.create_insurance_claim(uuid, uuid, jsonb, text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_insurance_claim(uuid, uuid, jsonb, text)
+  TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.update_insurance_claim_status(uuid, text, numeric, text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_insurance_claim_status(uuid, text, numeric, text)
+  TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text)
+  TO authenticated;
