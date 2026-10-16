@@ -7,6 +7,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
 const accounting = read("../src/routes/_authenticated/accounting.tsx");
 const finance = read("../src/routes/_authenticated/finance.tsx");
 const expenses = read("../src/routes/_authenticated/expenses.tsx");
+const insurance = read("../src/lib/insurance.ts");
 const migration = read("../db/roshan_phase17_finance_rpc_only_writes.sql");
 const integration = read("../db/tests/finance_rpc_only_writes_integration.sql");
 const pkg = JSON.parse(read("../package.json")) as {
@@ -15,12 +16,13 @@ const pkg = JSON.parse(read("../package.json")) as {
 
 test("finance UI routes financial writes through RPCs rather than direct table DML", () => {
   const directFinancialWrite =
-    /\.from\(["'](?:cashbox_transactions|payments|expenses|supplier_bills|supplier_payments)["']\)\s*\.(?:insert|update|delete)\s*\(/;
+    /\.from\(["'](?:cashbox_transactions|payments|expenses|supplier_bills|supplier_payments|insurance_claims|insurance_claim_items|insurance_claim_payments)["']\)\s*\.(?:insert|update|delete)\s*\(/;
 
   for (const [name, source] of [
     ["accounting", accounting],
     ["finance", finance],
     ["expenses", expenses],
+    ["insurance library", insurance],
   ] as const) {
     assert.doesNotMatch(
       source,
@@ -34,6 +36,9 @@ test("finance UI routes financial writes through RPCs rather than direct table D
   assert.match(accounting, /rpc\(["']post_supplier_bill["']/);
   assert.match(accounting, /rpc\(["']post_supplier_payment["']/);
   assert.match(expenses, /rpc\(["']post_expense["']/);
+  assert.match(insurance, /rpc\(["']create_insurance_claim["']/);
+  assert.match(insurance, /rpc\(["']post_insurance_claim_payment["']/);
+  assert.match(insurance, /rpc\(["']update_insurance_claim_status["']/);
 });
 
 test("migration revokes direct write privileges but retains authenticated RPC access", () => {
@@ -51,6 +56,12 @@ test("migration revokes direct write privileges but retains authenticated RPC ac
   assert.match(integration, /direct UPDATE unexpectedly succeeded/);
   assert.match(integration, /direct DELETE unexpectedly succeeded/);
   assert.match(integration, /accounting\.create/);
+  for (const table of ["insurance_claims", "insurance_claim_items", "insurance_claim_payments"]) {
+    assert.match(migration, new RegExp(table));
+  }
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_insurance_claim/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.post_insurance_claim_payment/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.update_insurance_claim_status/);
 });
 
 test("RPC-only finance guard is part of the standard guard suite", () => {
