@@ -36,9 +36,9 @@ test("finance UI routes financial writes through RPCs rather than direct table D
   assert.match(accounting, /rpc\(["']post_supplier_bill["']/);
   assert.match(accounting, /rpc\(["']post_supplier_payment["']/);
   assert.match(expenses, /rpc\(["']post_expense["']/);
-  assert.match(insurance, /rpc\(["']create_insurance_claim["']/);
-  assert.match(insurance, /rpc\(["']post_insurance_claim_payment["']/);
-  assert.match(insurance, /rpc\(["']update_insurance_claim_status["']/);
+  assert.match(insurance, /rpc(?:<[^>]+>)?\(["']create_insurance_claim["']/);
+  assert.match(insurance, /rpc(?:<[^>]+>)?\(["']post_insurance_claim_payment["']/);
+  assert.match(insurance, /rpc(?:<[^>]+>)?\(["']update_insurance_claim_status["']/);
 });
 
 test("migration revokes direct write privileges but retains authenticated RPC access", () => {
