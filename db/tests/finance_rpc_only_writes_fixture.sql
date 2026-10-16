@@ -220,7 +220,7 @@ END $$;
 CREATE FUNCTION public.create_insurance_claim(
   _patient_insurance_id uuid, _invoice_id uuid, _items jsonb, _notes text DEFAULT NULL
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $claim$
 DECLARE claim_id uuid; uid uuid; item jsonb; total numeric := 0;
 BEGIN
   IF NOT public.app_has_perm('insurance.create') THEN
@@ -243,7 +243,7 @@ END $;
 CREATE FUNCTION public.update_insurance_claim_status(
   _claim_id uuid, _new_status text, _approved_amount numeric DEFAULT NULL, _notes text DEFAULT NULL
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $claim$
 BEGIN
   IF NOT public.app_has_perm('insurance.update') THEN
     RAISE EXCEPTION 'not authorised to update insurance claims' USING ERRCODE = '42501';
@@ -256,7 +256,7 @@ END $;
 CREATE FUNCTION public.post_insurance_claim_payment(
   _claim_id uuid, _amount numeric, _method text DEFAULT 'bank', _reference text DEFAULT NULL
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $claim$
 DECLARE uid uuid; new_id uuid;
 BEGIN
   IF NOT public.app_has_perm('insurance.update') THEN
