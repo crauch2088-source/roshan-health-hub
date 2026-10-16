@@ -14,6 +14,8 @@ INSERT INTO public.visits (id,patient_id,consultation_fee,branch_id) VALUES
 INSERT INTO public.medicines (id,name,selling_price,stock_quantity,active) VALUES
  ('70000000-0000-0000-0000-000000000001','Amoxicillin',4.50,10,true),
  ('70000000-0000-0000-0000-000000000002','Paracetamol',2.00,20,true);
+INSERT INTO public.medicines (id,name,selling_price,stock_quantity,active) VALUES
+ ('70000000-0000-0000-0000-000000000003','Unbatched legacy stock',1.00,5,true);
 INSERT INTO public.pharmacy_inventory
  (id,medicine_id,batch_number,expiry_date,quantity,quantity_remaining,branch_id) VALUES
  ('80000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001','AMX-A',CURRENT_DATE + 180,10,10,'20000000-0000-0000-0000-000000000001'),
@@ -24,6 +26,8 @@ INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VAL
  ('90000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002','50000000-0000-0000-0000-000000000002','pending',false),
  ('90000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false),
  ('90000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
+INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VALUES
+ ('90000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
 INSERT INTO public.prescription_items
  (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
  ('91000000-0000-0000-0000-000000000001','90000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001','Amoxicillin',2,'500 mg','BID','5 days'),
@@ -33,6 +37,9 @@ INSERT INTO public.prescription_items
  ('91000000-0000-0000-0000-000000000005','90000000-0000-0000-0000-000000000004','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days'),
  ('91000000-0000-0000-0000-000000000006','90000000-0000-0000-0000-000000000005','70000000-0000-0000-0000-000000000001','Amoxicillin',5,'500 mg','BID','5 days'),
  ('91000000-0000-0000-0000-000000000007','90000000-0000-0000-0000-000000000005','70000000-0000-0000-0000-000000000001','Amoxicillin',5,'500 mg','BID','5 days');
+INSERT INTO public.prescription_items
+ (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
+ ('91000000-0000-0000-0000-000000000008','90000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000003','Unbatched legacy stock',1,'10 mg','OD','1 day');
 
 DO $$
 DECLARE v_invoice uuid;
@@ -165,7 +172,38 @@ BEGIN
 END;
 $$;
 
-DO $$
+-- Legacy stock without a branch-owned batch must never be dispensed as if it belonged to this branch.
+DO $
+DECLARE v_stock integer; v_lines bigint;
+BEGIN
+ SELECT stock_quantity INTO v_stock FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000003';
+ SELECT count(*) INTO v_lines FROM public.invoice_items WHERE invoice_id=(
+   SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE
+ ) AND deleted_at IS NULL;
+ BEGIN
+   PERFORM * FROM public.fn_dispense_prescription_with_invoice('90000000-0000-0000-0000-000000000006',false);
+   RAISE EXCEPTION 'test failed: unbatched legacy stock unexpectedly dispensed';
+ EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM='test failed: unbatched legacy stock unexpectedly dispensed' THEN RAISE; END IF;
+ END;
+ IF (SELECT stock_quantity FROM public.medicines WHERE id='70000000-0000-0000-0000-000000000003') <> v_stock THEN
+   RAISE EXCEPTION 'legacy-stock denial changed medicine stock';
+ END IF;
+ IF (SELECT status FROM public.prescriptions WHERE id='90000000-0000-0000-0000-000000000006') <> 'pending' THEN
+   RAISE EXCEPTION 'legacy-stock denial changed prescription status';
+ END IF;
+ IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=(
+   SELECT id FROM public.invoices WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE
+ ) AND deleted_at IS NULL) <> v_lines THEN
+   RAISE EXCEPTION 'legacy-stock denial created invoice lines';
+ END IF;
+ IF EXISTS (SELECT 1 FROM public.stock_movements WHERE medicine_id='70000000-0000-0000-0000-000000000003') THEN
+   RAISE EXCEPTION 'legacy-stock denial created stock movements';
+ END IF;
+END;
+$;
+
+DO $
 BEGIN
  IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE') THEN
    RAISE EXCEPTION 'authenticated cannot execute dispense-and-invoice RPC';
