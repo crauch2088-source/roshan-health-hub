@@ -54,7 +54,7 @@ test("laboratory order and its invoice items share one transaction", () => {
 
 test("laboratory billing uses durable request idempotency", () => {
   assert.ok(idempotency.includes("CREATE TABLE IF NOT EXISTS private.billing_rpc_idempotency"));
-  assert.ok(idempotency.includes("request_payload IS DISTINCT FROM v_payload"));
+  assert.ok(idempotency.includes("v_old_payload IS DISTINCT FROM v_payload"));
   assert.ok(idempotency.includes("ON CONFLICT(request_id) DO NOTHING"));
   assert.ok(idempotency.includes("p_request_id uuid"));
   assert.ok(idempotency.includes("GRANT EXECUTE ON FUNCTION public.create_lab_order_with_invoice_atomic(uuid,text,text,uuid[],boolean,uuid) TO authenticated"));
