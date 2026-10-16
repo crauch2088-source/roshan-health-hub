@@ -209,7 +209,8 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 - [ ] Reconcile `next_invoice_number()`'s internal `billing.create` permission with every remaining UI call site; migrate visits, consultation, and lab billing to role-safe atomic RPCs before calling invoice creation end-to-end atomic.
 - [ ] Reconstruct the final visit/queue allocator from the recovered migration sequence and verify date-keyed concurrency, unique constraints, soft-delete/hard-delete behavior, timezone/date normalization, and whether any UI reserves a queue number in a separate RPC before inserting the visit.
 - [ ] Compare effective RLS policies table by table after all applied migrations, accounting for PostgreSQL's permissive policy OR behavior; specifically reconcile `queue.create` client INSERT policy with trigger-generated queue-ticket ownership.
-- [ ] Add a concurrent cashbox reversal test: two simultaneous reversals of one transaction must yield exactly one reversal row, with original/reversal linkage and ledger values balanced.
+- [x] Added a true two-session cashbox reversal race test using the existing migration in a disposable PostgreSQL 17 service. Exactly one of two simultaneous reversal calls succeeded; one reversal row remained, the original was marked reversed, and amounts netted to zero. Full CI passed on head `9dda2ea5feadf23cd3d9da640ab38c6387763add` in [run #38886016506](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38886016506).
+- [ ] Review test-only draft [PR #36](https://github.com/crauch2088-source/roshan-health-hub/pull/36); it adds this concurrency proof to CI. Keep separate from production rollout until migration reconciliation and isolated Supabase validation are complete.
 - [ ] Include `normalize_medicine_names()` and the applied `updated_at` columns in the canonical migration source, or update the UI/schema contract together; medicine creation currently relies on the deployed name-to-generic-name compatibility trigger.
 - [ ] Resolve the one-active-invoice-per-visit invariant against laboratory billing: decide whether a visit has one invoice with appended items or may have multiple invoice documents, then test the consultation-fee + lab-order sequence.
 - [ ] Identify duplicated calculations or client-trusted fields; keep authoritative financial, stock, and permission decisions server-side where appropriate.
@@ -299,7 +300,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **33 checked / 125 total (~26% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **34 checked / 126 total (~27% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
