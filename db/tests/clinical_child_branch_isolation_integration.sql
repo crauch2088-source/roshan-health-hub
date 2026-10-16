@@ -100,6 +100,23 @@ BEGIN
   GET DIAGNOSTICS affected = ROW_COUNT;
   IF affected <> 1 THEN RAISE EXCEPTION 'same-branch prescription UPDATE was denied'; END IF;
 
+  BEGIN
+    INSERT INTO public.prescriptions(id,patient_id,visit_id,notes)
+    VALUES ('50000000-0000-0000-0000-000000000003',
+            '30000000-0000-0000-0000-000000000001',
+            '40000000-0000-0000-0000-000000000003',
+            'mismatched patient/visit');
+    RAISE EXCEPTION 'mismatched patient/visit prescription INSERT was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE public.prescriptions SET visit_id='40000000-0000-0000-0000-000000000003'
+    WHERE id='50000000-0000-0000-0000-000000000001';
+    RAISE EXCEPTION 'mismatched patient/visit prescription UPDATE was allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
   UPDATE public.prescription_items SET medication_name='tampered'
   WHERE prescription_id='50000000-0000-0000-0000-000000000002';
   GET DIAGNOSTICS affected = ROW_COUNT;
