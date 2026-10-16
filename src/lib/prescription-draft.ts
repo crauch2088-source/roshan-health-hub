@@ -31,10 +31,26 @@ export function createPrescriptionDraftForMedicine(medicine: {
   generic_name?: string | null;
   dosage_form?: string | null;
 }): PrescriptionDraft {
-  const dosageForm = medicine.dosage_form?.trim() ?? "";
-  const form = dosageForm.toLowerCase();
-  const route =
-    form.includes("tablet") || form.includes("capsule") || form.includes("syrup") ? "Oral" : "";
+  const rawForm = medicine.dosage_form?.trim().toLowerCase() ?? "";
+  const supportedForms = new Set([
+    "tablet",
+    "capsule",
+    "syrup",
+    "suspension",
+    "drops",
+    "injection",
+    "cream",
+    "ointment",
+    "gel",
+    "lotion",
+    "suppository",
+    "inhaler",
+    "solution",
+    "sachet",
+  ]);
+  const dosageForm = supportedForms.has(rawForm) ? rawForm : "";
+  const oralForms = new Set(["tablet", "capsule", "syrup", "suspension"]);
+  const route = oralForms.has(dosageForm) ? "oral" : "";
 
   return {
     ...createEmptyPrescriptionDraft(),
@@ -51,4 +67,22 @@ export function editPrescriptionName(draft: PrescriptionDraft, name: string): Pr
     return { ...createEmptyPrescriptionDraft(), name };
   }
   return { ...draft, name };
+}
+
+
+/** Build a safe PostgREST OR filter for user-entered medicine catalog text. */
+export function buildMedicineSearchFilter(term: string): string | null {
+  const clean = term
+    .replace(/[(),*%_\\'"]/g, " ")
+    .replace(/\\s+/g, " ")
+    .trim();
+  if (clean.length < 2) return null;
+
+  const pattern = "%" + clean + "%";
+  return [
+    "name.ilike." + pattern,
+    "generic_name.ilike." + pattern,
+    "brand_name.ilike." + pattern,
+    "strength.ilike." + pattern,
+  ].join(",");
 }
