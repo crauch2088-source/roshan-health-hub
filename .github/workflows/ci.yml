@@ -195,6 +195,33 @@ jobs:
             -f db/roshan_phase17_revoke_legacy_dispense_rpc.sql \
             -f db/tests/legacy_dispense_revocation_integration.sql
 
+  sql-visit-form-options:
+    name: Permission-safe visit form options RPC
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute visit form options authorization tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
+            -f db/tests/visit_form_options_fixture.sql \\
+            -f db/roshan_phase24_visit_form_options.sql \\
+            -f db/tests/visit_form_options_integration.sql
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest
