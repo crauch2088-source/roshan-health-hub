@@ -191,7 +191,9 @@ jobs:
             -f db/roshan_phase14_dispense_invoice_atomic.sql \
             -f db/roshan_phase15_manual_invoice_consolidation.sql \
             -f db/roshan_phase16_billing_idempotency.sql \
-            -f db/tests/pharmacy_dispense_invoice_integration.sql
+            -f db/tests/pharmacy_dispense_invoice_integration.sql \
+            -f db/roshan_phase17_revoke_legacy_dispense_rpc.sql \
+            -f db/tests/legacy_dispense_revocation_integration.sql
 
   verify:
     name: Install, audit, typecheck, lint, build
