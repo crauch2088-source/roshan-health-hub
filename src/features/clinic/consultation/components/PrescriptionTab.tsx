@@ -47,7 +47,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
   const isPediatric = patientAge != null && patientAge < 18;
-  const pediatricWeightMissing = isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
+  const pediatricWeightMissing =
+    isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -166,11 +167,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Could not verify the recorded weight. Check the patient chart manually before approving any weight-based dose."
               : pediatricWeightMissing
                 ? lang === "ar"
-                ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
-                : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
-              : lang === "ar"
-                ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
-                : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
+                  ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
+                  : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
+                : lang === "ar"
+                  ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
+                  : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
           </div>
         ) : null}
         <div
