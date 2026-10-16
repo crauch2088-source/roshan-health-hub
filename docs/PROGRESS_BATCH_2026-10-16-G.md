@@ -17,8 +17,8 @@ Supabase project: jewzonxplxhogqrnhosl
 - Continue non-insurance tracks: atomic prescription workflow, patient registration/invoice atomicity, RPC authorization review, UI/navigation audit, authenticated runtime smoke tests, and migration reproducibility.
 
 ## Not done / remaining gates
-- Migration-history parity is still unresolved; reconcile the live 82-entry ledger with repo SQL artifacts before treating the migration workflow as reproducible.
-- PR #22 description has stale text claiming SQL is unapplied; reconcile before merge.
+- Migration-history parity is still unresolved; reconcile the live 83-entry ledger with repo SQL artifacts before treating the migration workflow as reproducible.
+- PR #22 description was corrected to reflect the already-installed RPC. The live RPC passed a rollback/cleanup smoke test under transaction-local authenticated JWT claims; browser/UI smoke testing remains pending.
 - Vercel deployment quota had previously returned HTTP 402; deploy only after quota reset and verify authenticated registration, consultation, and prescription flows.
 - PR #34 remains deferred because its proposed RLS SQL includes an insurance-prior-authorization policy and needs live-schema/migration review.
 - Checklist progress remains implementation-based; cleanup/audit activity does not count as completed features.
