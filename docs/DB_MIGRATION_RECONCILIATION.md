@@ -315,3 +315,12 @@ The read-only aggregate of current production insurance data returned zero activ
 - Additional aggregate-only comparison of the same 20 near-identical audit pairs found `same_user_pairs=20`, `different_user_pairs=0`, and `both_null_user_pairs=3`. Thus no attribution mismatch was observed in this sample; the three null/null pairs and service-role/noninteractive cases still warrant review before merge.
 
 - Deduplication follow-up: a second draft PR (#40) was closed as redundant after discovering the earlier, broader PR #32. Prefer PR #32 because it covers all five finance tables including supplier bills, retains a non-finance control table, and tests user-attribution behavior; PR #40 is closed and must not be merged.
+
+
+## Clinical child branch isolation — legacy branchless lab orders — 2026-10-16
+
+A read-only aggregate query against production found 9 non-deleted `lab_orders` rows, all with `branch_id IS NULL`. Only one has a patient with a non-null branch available as fallback; eight have neither a patient nor visit branch fallback. No row-level patient-identifying values were selected.
+
+The proposed PR #34 migration originally used `COALESCE(lo.branch_id, v.branch_id, p.branch_id)` for child-row access while the parent `lab_orders` policies used only `app_has_branch_access(lab_orders.branch_id)`. That allowed an inconsistency for branchless orders whose patient/visit belongs to the user's branch. A disposable PostgreSQL 17 regression was added first and failed as expected on head `bf473c63a67e45d08a7146a9e2308989cc3e3af0` with `lab_order_items SELECT leaked or hid a branch-local row`, confirming the edge case rather than assuming it.
+
+The proposed helper was then changed to use the explicit `lo.branch_id`, matching the parent policy's fail-closed behavior for ordinary branch-scoped users; a NULL branch does not inherit patient/visit access implicitly. Tests now cover (1) branchless order with patient/visit fallback, (2) branchless order without any fallback, (3) ordinary branch user cannot see the parent or child rows in either case, and (4) super-admin can still see the legacy records. The updated PR #34 head is `b01b036af5aa35e13adc1816425031a24827779c`; the corresponding GitHub Actions run was not yet visible as completed at the time this note was written. Keep this change unmerged until the latest CI is green and review confirms that fail-closed behavior is the intended handling of legacy records. Do not backfill production rows without a separately approved data-repair decision.
