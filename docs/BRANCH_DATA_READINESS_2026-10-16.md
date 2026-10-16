@@ -10,7 +10,7 @@ This is an aggregate-only readiness snapshot from the live Roshan Production Sup
 - Active users: **6** total; **5** have `branch_id IS NULL`, and 1 has a branch assignment.
 - Non-deleted visits: **36** total; **36** have `branch_id IS NULL`, and 0 have a branch assignment.
 - Non-deleted patients: **10** total; **9** have `branch_id IS NULL`, and 1 has a branch assignment.
-- Of the 36 branchless visits, 5 have a creator account whose branch is assigned; 31 have a creator account with no branch. All 36 currently have no assigned doctor (`doctor_id IS NULL`). Creator branch is only a candidate clue, not sufficient evidence to assign the visit.
+- Of the 36 branchless visits, 31 have no `created_by` value and 5 have a creator account whose branch is assigned. All 36 currently have no assigned doctor (`doctor_id IS NULL`). The five visits with an assigned creator do **not** match the creator's branch to the patient's branch or any linked invoice branch; five visits have a patient with a branch assigned and five have a linked invoice, but no creator/patient/invoice branch match was found. Creator branch is therefore not a safe assignment source.
 - The new `public.create_prescription_atomic(uuid, boolean, jsonb)` RPC is present in production under migration version `20261016172209`. It is SECURITY DEFINER with empty `search_path`, denies EXECUTE to `anon` and PUBLIC, and allows `authenticated`. Its branch guard intentionally rejects a NULL user branch or NULL visit branch for non-super-admin users. The function is additive; PR #22's UI is still unmerged/unreleased, so current UI behavior is unchanged.
 
 ## Release decision
