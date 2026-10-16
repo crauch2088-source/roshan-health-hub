@@ -51,11 +51,17 @@ test("migration revokes direct write privileges but retains authenticated RPC ac
     /public\.post_cashbox_entry[\s\S]*public\.app_has_perm\('accounting\.create'\)/,
   );
   assert.match(migration, /private\.app_has_perm\('accounting\.create'\)/);
+  assert.match(
+    migration,
+    /CREATE OR REPLACE FUNCTION public\\.post_invoice_payment[\\s\\S]*public\\.app_has_perm\\('accounting\\.create'\\)/,
+  );
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.post_expense[\s\S]*TO authenticated/);
   assert.match(integration, /direct INSERT unexpectedly succeeded/);
   assert.match(integration, /direct UPDATE unexpectedly succeeded/);
   assert.match(integration, /direct DELETE unexpectedly succeeded/);
   assert.match(integration, /accounting\.create/);
+  assert.match(integration, /did not reject an amount above the outstanding balance/);
+  assert.match(integration, /idempotent retry returned a different payment id/);
   for (const table of ["insurance_claims", "insurance_claim_items", "insurance_claim_payments"]) {
     assert.match(migration, new RegExp(table));
   }
