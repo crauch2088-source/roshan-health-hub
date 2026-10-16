@@ -10,6 +10,10 @@ const migration = readFileSync(
   new URL("../db/roshan_phase22_clinic_local_queue_date.sql", import.meta.url),
   "utf8",
 );
+const allocatorMigration = readFileSync(
+  new URL("../db/roshan_phase23_legacy_queue_allocator_20261016.sql", import.meta.url),
+  "utf8",
+);
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   scripts?: Record<string, string>;
 };
@@ -26,4 +30,9 @@ test("queue trigger derives fallback dates in the clinic timezone for both visit
 
 test("clinic-local queue-date regression test is part of the guard suite", () => {
   assert.match(pkg.scripts?.["test:guard"] ?? "", /clinic-local-queue-date\.test\.ts/);
+});
+
+test("queue allocator accounts for legacy rows with a stale UTC-derived queue date", () => {
+  assert.match(allocatorMigration, /v\.queue_date = d/);
+  assert.match(allocatorMigration, /v\.visit_date AT TIME ZONE 'Africa\/Khartoum'/);
 });

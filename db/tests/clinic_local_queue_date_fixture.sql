@@ -7,7 +7,8 @@ CREATE TABLE public.visits (
   queue_date date,
   queue_number integer,
   visit_number text,
-  department_id uuid
+  department_id uuid,
+  deleted_at timestamptz
 );
 
 CREATE TABLE public.queue_tickets (
@@ -19,6 +20,8 @@ CREATE TABLE public.queue_tickets (
   status text NOT NULL,
   department_id uuid
 );
+
+CREATE UNIQUE INDEX visits_visit_number_day_key ON public.visits (visit_date, visit_number);
 
 CREATE FUNCTION private.ensure_visit_queue() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
