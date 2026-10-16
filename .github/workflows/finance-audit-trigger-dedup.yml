@@ -1,0 +1,39 @@
+name: Finance audit trigger deduplication
+
+on:
+  pull_request:
+    paths:
+      - "db/roshan_phase4_finance_audit_trigger_dedup.sql"
+      - "db/tests/finance_audit_trigger_dedup_integration.sql"
+      - ".github/workflows/finance-audit-trigger-dedup.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL 17 audit-trigger regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Reproduce duplicate audit writes and verify migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/finance_audit_trigger_dedup_integration.sql
