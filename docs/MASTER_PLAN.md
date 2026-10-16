@@ -287,3 +287,12 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 - [ ] Isolated validation is still blocked by the lack of a disposable Supabase branch. Check the quoted branch cost and usage terms before creating one; if cost requires confirmation, request it before proceeding. Never use production as the test target.
 - [ ] Continue the high-risk audit in this order: invoice/payment invariants and insurance claim server-side checks; pharmacy FEFO/stock reconciliation and dispense permissions; cross-branch RPC authorization; queue/visit numbering and deletion/audit history; then authenticated clinical workflow smoke tests and privacy/telemetry review.
 
+## Production aggregate integrity snapshot — 2026-10-16
+
+Read-only aggregate SQL checks (no patient names, identifiers, or individual clinical records were returned) found:
+
+- [ ] **Inventory discrepancy requires reconciliation before enforcing batch-only dispensing or changing stock.** The live catalog has 9 active/non-deleted medicine rows with nonzero legacy `stock_quantity`; only 1 non-deleted pharmacy inventory batch exists. Eight medicine rows have nonzero stock but no matching batch, all 9 catalog rows differ from summed batch quantities, legacy stock totals 4,484 units, and batch quantities total 498 units. Do not overwrite either source or create synthetic batches automatically. First establish whether these are seed/test balances, legacy stock, or actual inventory; then design a documented reconciliation preserving branch, expiry, movement, and audit history.
+- [x] The same aggregate snapshot found 6 invoices and 6 invoice-item rows; no invoice header/item subtotal mismatches and no invoices with paid amount greater than net amount were detected in this snapshot. This is a point-in-time integrity check, not proof of all finance workflows.
+- [x] No insurance claims were present at the time of the snapshot, so production data could not validate insurance amount behavior; use isolated fixtures and server-side invariant tests instead.
+- [ ] Add the observed stock discrepancy to PR #29 review notes and ensure the proposed atomic receiving/dispensing workflow does not silently force `medicines.stock_quantity` to equal batch totals. Preserve legacy stock handling until the source-of-truth decision and reconciliation procedure are tested.
+
