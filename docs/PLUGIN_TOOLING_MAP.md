@@ -65,3 +65,9 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Interpretation: these are triage signals, not an instruction to revoke all RPC grants or drop indexes. Some RPCs are deliberately callable by signed-in roles and may contain authorization checks. Review each function's implementation, grants, fixed `search_path`, role/branch enforcement, and negative tests first.
 - Vercel's connected account currently reports a single linked project `roshan-health-hub` under team `roshan45`, connected to the expected GitHub repository.
 - Next high-value release gate remains authenticated browser smoke testing; TinyFish is suggested as an optional connection for this. Firecrawl is suggested for research tasks requiring broad multi-page source review.
+
+
+## Repository work discovered during the same review
+- Draft PR #34 ([branch-scope prescription/lab child rows](https://github.com/crauch2088-source/roshan-health-hub/pull/34)) reports green PostgreSQL 17 integration and repository checks, but remains unapplied to production. Keep migration-history reconciliation and business review as release gates.
+- Open issues requiring prelaunch re-triage include #25 (secret scanning and historical environment-file exposure), #20 (invoice validation/atomicity), #18 (complete patient outstanding-balance calculation), and #16 (server-side insurance-claim invariants).
+- Recheck live issue/PR states before acting; this list is a snapshot, not a claim that each item is unchanged.
