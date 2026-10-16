@@ -6,6 +6,10 @@ const migration = readFileSync(
   new URL("../db/roshan_phase14_dispense_invoice_atomic.sql", import.meta.url),
   "utf8",
 );
+const revocationMigration = readFileSync(
+  new URL("../db/roshan_phase17_revoke_legacy_dispense_rpc.sql", import.meta.url),
+  "utf8",
+);
 const pharmacyRoute = readFileSync(
   new URL("../src/routes/_authenticated/pharmacy.tsx", import.meta.url),
   "utf8",
@@ -27,8 +31,12 @@ test("pharmacy dispense and billing are one server-side transaction", () => {
   assert.match(migration, /insufficient_branch_batch_stock/);
   assert.doesNotMatch(migration, /source := 'legacy'/);
   assert.match(migration, /stock_quantity has no branch owner/);
-  assert.match(
+  assert.doesNotMatch(
     migration,
+    /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription\(uuid\) FROM PUBLIC, anon, authenticated/,
+  );
+  assert.match(
+    revocationMigration,
     /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription\(uuid\) FROM PUBLIC, anon, authenticated/,
   );
   assert.match(
