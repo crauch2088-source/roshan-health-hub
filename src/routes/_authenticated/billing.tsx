@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   Empty,
@@ -81,6 +81,7 @@ function BillingPageInner() {
   const { currency } = useSettings();
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
+  const pendingInvoiceRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const [open, setOpen] = useState(false);
   const [patientId, setPatientId] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
@@ -131,24 +132,41 @@ function BillingPageInner() {
         throw new Error("Choose a visit or explicitly select a standalone invoice.");
       }
       const validated = validateInvoiceDraft(lines, discount);
+      const items = validated.lines.map((line) => ({
+        item_name: line.description,
+        item_type: line.item_type,
+        quantity: line.quantity,
+        unit_price: line.unit_price,
+      }));
+      const separate = standaloneInvoice || separateInvoice;
+      const fingerprint = JSON.stringify({
+        patientId,
+        visitId: visitId || null,
+        partnerId: partnerId || null,
+        date,
+        discount: validated.discount,
+        items,
+        separate,
+      });
+      if (pendingInvoiceRequestRef.current?.fingerprint !== fingerprint) {
+        pendingInvoiceRequestRef.current = { fingerprint, id: crypto.randomUUID() };
+      }
+      const requestId = pendingInvoiceRequestRef.current.id;
       const { data: invoiceId, error } = await supabase.rpc("create_billing_invoice_atomic", {
         p_patient_id: patientId,
         p_visit_id: visitId || null,
         p_partner_id: partnerId || null,
         p_invoice_date: date,
         p_discount: validated.discount,
-        p_items: validated.lines.map((line) => ({
-          item_name: line.description,
-          item_type: line.item_type,
-          quantity: line.quantity,
-          unit_price: line.unit_price,
-        })),
-        p_separate_invoice: standaloneInvoice || separateInvoice,
+        p_items: items,
+        p_separate_invoice: separate,
+        p_request_id: requestId,
       });
       if (error) throw new Error(error.message);
       if (typeof invoiceId !== "string" || !invoiceId) {
         throw new Error("The database did not return the created invoice ID.");
       }
+      pendingInvoiceRequestRef.current = null;
       return invoiceId;
     },
     {
