@@ -123,3 +123,8 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Production smoke testing proved that clinic-local midnight (Africa/Khartoum) is 22:00 UTC on the previous calendar date. A visit persisted with the previous UTC date was therefore excluded by the visits screen's queue_date = todayISO() filter.
 - Fix under review in Phase 22: the UI explicitly persists the intended queue_date, and both database trigger fallbacks use AT TIME ZONE 'Africa/Khartoum'. PostgreSQL 17 regression coverage asserts the visit date, exactly-one ticket, and explicit-date path.
 - For browser QA that creates records, wait for the current TinyFish run to reach a terminal state before starting another. A retry loop previously created seven visits; all seven are soft-deleted and their queue tickets were removed. Never use unbounded repeated submits to diagnose a visually empty list.
+
+## Phase 22 execution status — 2026-10-16
+- PR #45 merged into main at `3f55f1ec6acaa33bab51a58c64f0c5bf518f25c8`; main CI run [#38967952735](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38967952735) passed, including the new PostgreSQL 17 clinic-local queue-date regression.
+- Supabase production migration `roshan_phase22_clinic_local_queue_date_20261016` is applied and both live trigger definitions were verified with `search_path = ''` and the `Africa/Khartoum` timezone fallback.
+- Production Vercel deployment is blocked by a 402 `api-deployments-free-per-day` limit; retry after 24 hours or resolve the billing/plan limit. No CLI fallback session was available, so no alternate deployment path was attempted.
