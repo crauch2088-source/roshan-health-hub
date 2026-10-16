@@ -1,0 +1,42 @@
+name: Insurance claim integrity integration
+
+on:
+  pull_request:
+    paths:
+      - 'db/**'
+      - 'tests/**'
+      - '.github/workflows/ci-insurance-claim-integrity.yml'
+  push:
+    branches:
+      - 'fix/insurance-claim-amount-integrity'
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL 17 integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run SQL integration tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/insurance_claim_rpc_fixture.sql \
+            -f db/roshan_phase5_insurance_claim_amount_integrity.sql \
+            -f db/roshan_phase5_insurance_coverage_validity.sql \
+            -f db/tests/insurance_claim_rpc_integration.sql \
+            -f db/tests/insurance_coverage_validity.sql \
+            -f db/tests/roshan_insurance_claim_amount_integrity_test.sql
