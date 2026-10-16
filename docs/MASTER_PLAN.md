@@ -301,7 +301,7 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **36 checked / 128 total (~28% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **37 checked / 130 total (~28% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
@@ -376,3 +376,9 @@ Read-only aggregate SQL checks (no patient names, identifiers, or individual cli
 - [x] Confirmed from the live catalog that five finance tables (`cashbox_transactions`, `expenses`, `payments`, `supplier_bills`, `supplier_payments`) each have both a generic `trg_audit_*` trigger and `trg_finance_audit`. Aggregate-only review found 20 near-identical audit pairs over 30 days, concentrated in cashbox and payments; no matching pairs were observed for the other overlapping tables in that window.
 - [x] Added a PostgreSQL 17 regression fixture and observed the intended RED result in a temporary duplicate PR: a single payment INSERT created two audit rows. Then found the existing, more complete canonical draft PR #32, which already tests INSERT/UPDATE/DELETE on all five finance tables plus a non-finance control table; its integration and full CI suite passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. Closed duplicate PR #35 without merging or deploying. A later independently created duplicate, PR #37, also reproduced the behavior in PostgreSQL 17 but was closed in favor of the more complete PR #32; PR #37's PostgreSQL integration passed, while lint failed on its intermediate head. 
 - [ ] Insurance claim schema semantics remain an owner/business-rule gate: live `insurance_claim_items.reference_id` is nullable UUID without a foreign key, and `service_type` is free text. The schema alone does not establish whether a reference should target an invoice item, service catalog item, or another entity. Do not invent a target or silently reject current legacy data.
+
+
+### Privileged-role database guard review — 2026-10-16
+- [x] Read-only live catalog check confirmed that the three prepared protection triggers for `users`, `roles`, and `role_permissions` are absent in production. The current RLS policy set permits generic user creation/update and `admin.full` role maintenance without a database-level `role_id = super_admin` invariant. There are currently zero active users assigned the `admin` role, but this remains a structural escalation risk if that role is activated or assigned.
+- [x] Added draft test-only [PR #38](https://github.com/crauch2088-source/roshan-health-hub/pull/38) to exercise the existing prepared SQL guard in an ephemeral PostgreSQL 17 database. CI passed on head `dc6301732093abc4a28aeedcff2a1d1738405552`, run [#38892744625](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38892744625). No production SQL, data, merge, or deployment was performed.
+- [ ] Review the guard's trusted-context assumptions, confirm the migration sequence and rollback plan, then decide whether to add it to the canonical migration chain after reconciliation. Do not apply the prepared script directly to production.
