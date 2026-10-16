@@ -7,7 +7,7 @@ import {
   createPrescriptionDraftForMedicine,
   editPrescriptionName,
 } from "../src/lib/prescription-draft.ts";
-import { sanitizeTerm } from "../src/lib/search.ts";
+import { buildMedicineSearchFilter } from "../src/lib/prescription-draft.ts";
 
 const sql = readFileSync(
   new URL("../db/roshan_phase7_atomic_prescription.sql", import.meta.url),
@@ -91,8 +91,27 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
 });
 
 
-test("medicine search removes SQL LIKE underscore wildcards", () => {
-  assert.equal(sanitizeTerm("amox_i%llin"), "amox i llin");
+test("medicine search removes SQL LIKE wildcards and PostgREST filter grammar", () => {
+  assert.equal(
+    buildMedicineSearchFilter("amox%_cillin"),
+    "name.ilike.%amox cillin%,generic_name.ilike.%amox cillin%,brand_name.ilike.%amox cillin%,strength.ilike.%amox cillin%",
+  );
+  assert.equal(
+    buildMedicineSearchFilter("amox),status.eq.active,(brand"),
+    "name.ilike.%amox status.eq.active brand%,generic_name.ilike.%amox status.eq.active brand%,brand_name.ilike.%amox status.eq.active brand%,strength.ilike.%amox status.eq.active brand%",
+  );
+});
+
+test("short medicine search terms do not query a broad catalog", () => {
+  assert.equal(buildMedicineSearchFilter(""), null);
+  assert.equal(buildMedicineSearchFilter("a"), null);
+  assert.equal(buildMedicineSearchFilter("  a  "), null);
+});
+
+test("prescription catalog query uses only the sanitized server-side filter", () => {
+  assert.match(ui, /buildMedicineSearchFilter\(debouncedSearch\)/);
+  assert.match(ui, /query\.or\(medicineFilter\)/);
+  assert.match(ui, /enabled: Boolean\(medicineFilter\)/);
 });
 
 test("unknown catalog dosage forms do not masquerade as a supported form", () => {
