@@ -1,3 +1,5 @@
+> Current status update — 2026-10-16, after user-authorized reset: The historical snapshot below is superseded. All disposable test patient/clinical/financial transaction rows and all public.audit_logs rows were cleared. The six auth accounts and six application user rows were preserved. Exactly one branch remains active: ROSHAN Main Branch / ROS-MAIN; the unopened الفرع الرئيسي / MAIN branch row was retained but marked inactive. All patient and visit tables are now empty. Four non-super-admin staff accounts were assigned to ROS-MAIN; one global super-admin remains branchless. Current post-reset counts are documented in the latest execution batch in docs/MASTER_PLAN.md.
+
 # Branch-data readiness audit — 2026-10-16
 
 ## Purpose
