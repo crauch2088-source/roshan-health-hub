@@ -16,6 +16,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sql-clinical-child-branch-isolation:
+    name: Clinical child branch-isolation integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Execute cross-branch RLS tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/clinical_child_branch_isolation_fixture.sql \
+            -f db/roshan_phase20_clinical_child_branch_isolation.sql \
+            -f db/tests/clinical_child_branch_isolation_integration.sql
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest
