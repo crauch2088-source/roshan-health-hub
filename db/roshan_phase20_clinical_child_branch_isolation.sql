@@ -10,6 +10,11 @@
 REVOKE ALL ON FUNCTION private.app_has_branch_access(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.app_has_branch_access(uuid) TO authenticated;
 
+-- This existing helper is also called directly by the new patient-linked RLS
+-- policies. Do not leave its SECURITY DEFINER implementation executable by anon/PUBLIC.
+REVOKE ALL ON FUNCTION private.app_has_patient_branch(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_patient_branch(uuid) TO authenticated;
+
 -- A lab order's visit, when supplied, must belong to the same patient_id.
 -- This is a linkage-integrity invariant; branch assignment remains controlled by
 -- lab_orders.branch_id to preserve the explicit lab-order branch context.
