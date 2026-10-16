@@ -194,3 +194,13 @@ The live `public.insurance_claim_items` schema shows:
 The current live `create_insurance_claim` RPC accepts a nullable `reference_id`, verifies patient-insurance/invoice patient matching and branch access, then inserts claim items. It rejects negative amounts but does not enforce `covered_amount + patient_amount = gross_amount` at the database boundary. Draft PRs #12 and #13 propose UI and RPC-level protections, but reference semantics still require an explicit business decision before introducing a foreign key or deriving references automatically.
 
 No production data was changed by this inspection.
+
+
+## Cashbox reversal concurrency — disposable PostgreSQL 17 — 2026-10-16
+
+The prior single-session test explicitly noted that a true two-session race was still missing. Draft PR #36 adds a separate PostgreSQL 17 service-container job that:
+- starts two independent `psql` sessions against the same original transaction with overlapping reversal attempts;
+- requires exactly one call to succeed and the competing call to be rejected;
+- asserts exactly one reversal row, `is_reversed = true` on the original, and original plus reversal amounts net to zero.
+
+The two-session race and the full repository CI passed on head `9dda2ea5feadf23cd3d9da640ab38c6387763add` in run [#38886016506](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38886016506). This is disposable PostgreSQL evidence only; the proposed migration has not been replayed against an isolated Supabase branch or applied to production.
