@@ -227,10 +227,11 @@ BEGIN
     RAISE EXCEPTION 'not authorised to create insurance claims' USING ERRCODE = '42501';
   END IF;
   uid := public.current_app_user_id();
-  SELECT COALESCE(sum((x->>'gross_amount')::numeric),0) INTO total FROM jsonb_array_elements(_items) x;
+  SELECT COALESCE(sum((value->>'gross_amount')::numeric),0) INTO total
+  FROM jsonb_array_elements(_items) AS entries(value);
   INSERT INTO public.insurance_claims(patient_insurance_id,invoice_id,status,submitted_amount,notes,created_by)
   VALUES(_patient_insurance_id,_invoice_id,'draft',total,_notes,uid) RETURNING id INTO claim_id;
-  FOR item IN SELECT * FROM jsonb_array_elements(_items) LOOP
+  FOR item IN SELECT value FROM jsonb_array_elements(_items) AS entries(value) LOOP
     INSERT INTO public.insurance_claim_items(claim_id,service_type,description,gross_amount,covered_amount,patient_amount)
     VALUES(claim_id,item->>'service_type',coalesce(item->>'description',''),
       coalesce((item->>'gross_amount')::numeric,0),coalesce((item->>'covered_amount')::numeric,0),
