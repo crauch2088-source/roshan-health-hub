@@ -51,10 +51,11 @@ test("migration revokes direct write privileges but retains authenticated RPC ac
     /public\.post_cashbox_entry[\s\S]*public\.app_has_perm\('accounting\.create'\)/,
   );
   assert.match(migration, /private\.app_has_perm\('accounting\.create'\)/);
-  assert.match(
-    migration,
-    /CREATE OR REPLACE FUNCTION public\\.post_invoice_payment[\\s\\S]*public\\.app_has_perm\\('accounting\\.create'\\)/,
+  const invoicePaymentFunction = migration.slice(
+    migration.indexOf("CREATE OR REPLACE FUNCTION public.post_invoice_payment("),
+    migration.indexOf("CREATE OR REPLACE FUNCTION public.post_supplier_bill("),
   );
+  assert.ok(invoicePaymentFunction.includes("public.app_has_perm('accounting.create')"));
   assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.post_expense[\s\S]*TO authenticated/);
   assert.match(integration, /direct INSERT unexpectedly succeeded/);
   assert.match(integration, /direct UPDATE unexpectedly succeeded/);
