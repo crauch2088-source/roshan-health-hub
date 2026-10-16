@@ -16,6 +16,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sql-privileged-role-guard:
+    name: Privileged role guard integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Execute privileged-role guard behavioral tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/privileged_role_guard_fixture.sql \
+            -f db/roshan_security_privileged_role_guard.sql \
+            -f db/tests/privileged_role_guard_integration.sql
+
   verify:
     name: Install, audit, typecheck, lint, build
     runs-on: ubuntu-latest
