@@ -359,3 +359,14 @@ Read-only production checks and draft PR #39 review. No production data or privi
 - [x] **CI evidence:** PR #39 head 8fa3ae58ffc8964ce5e4397e4a34a3c2618b3a1a passed full CI in run 38903131578. This validates the disposable fixture and repository guards only; it does not prove the migration against the exact production schema or authorize deployment.
 
 **Release gates remain:** reconcile the applied migration chain, validate the SQL against a disposable copy of the live schema, confirm branch assignment/readiness, and complete authenticated smoke tests before merge or production application. PR #39 remains draft/unmerged.
+
+
+## Follow-up batch: ledger and invoice release ordering — 2026-10-16
+
+- Read-only query of `supabase_migrations.schema_migrations` returned **79 rows**, minimum version `20260818162003`, maximum version `20261014164131`. This confirms count/range only; it does not prove semantic parity between repository SQL files and production-applied SQL.
+- Master-plan CI run [38908548869](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38908548869) completed successfully for security checks, role guard, typecheck, lint, and build.
+- PR #23 remains OPEN/DRAFT on `main`, head `14e0b167a9b80c989184a60f35a2b8ab449df62e`; CI run [38872711903](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38872711903) succeeded.
+- PR #33 remains OPEN/DRAFT, based on `fix/invoice-atomicity`, head `863dae0f482a06882f6b3740e8cdde673e869c9c`; CI run [38880644006](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38880644006) succeeded. Keep release order #23 then #33 after source reconciliation, disposable-schema validation, and authenticated smoke tests.
+- Read-only ACL recheck found effective anon EXECUTE for five SECURITY DEFINER helpers in `private`, while anon has no USAGE on that schema. This is a least-privilege hardening lead, not proof of direct API reachability. Map RLS policy and trigger dependencies before any targeted revocation; do not blanket-revoke.
+
+No production SQL, grants, data, merge, or deployment was changed in this batch.
