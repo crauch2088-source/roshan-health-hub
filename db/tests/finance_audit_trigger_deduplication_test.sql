@@ -1,5 +1,5 @@
 -- Regression: every finance row change should write exactly one audit row.
--- This fails against the observed duplicate trigger installation until the migration is applied.
+-- Apply db/roshan_phase17_deduplicate_finance_audit_triggers.sql first; this test runs only on disposable PostgreSQL.
 BEGIN;
 
 INSERT INTO public.payments(amount) VALUES (11);
