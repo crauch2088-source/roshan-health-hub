@@ -89,8 +89,7 @@ AS $function$
       WHERE p.id=_patient_id AND private.app_has_branch_access(p.branch_id)
     )
 $function$;
-REVOKE ALL ON FUNCTION private.app_has_patient_branch(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION private.app_has_patient_branch(uuid) TO authenticated;
+-- Migration under test must establish the production helper's safe grants.
 
 CREATE FUNCTION private.app_has_attachment_branch_access(_patient_id uuid, _visit_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
