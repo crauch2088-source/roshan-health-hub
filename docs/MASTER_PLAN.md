@@ -294,13 +294,14 @@ This is an explicit product-quality workstream, not merely visual polish. Delive
 Read-only aggregate SQL checks (no patient names, identifiers, or individual clinical records were returned) found:
 
 - [ ] **Inventory discrepancy requires reconciliation before enforcing batch-only dispensing or changing stock.** The live catalog has 9 active/non-deleted medicine rows with nonzero legacy `stock_quantity`; only 1 non-deleted pharmacy inventory batch exists. Eight medicine rows have nonzero stock but no matching batch, all 9 catalog rows differ from summed batch quantities, legacy stock totals 4,484 units, and batch quantities total 498 units. Do not overwrite either source or create synthetic batches automatically. First establish whether these are seed/test balances, legacy stock, or actual inventory; then design a documented reconciliation preserving branch, expiry, movement, and audit history.
+- [x] Read-only stock-movement aggregation found only 8 movement rows: 4 purchase rows sum to +1,025 units (3 lack `batch_id`, all 4 lack `branch_id`) and 4 dispense rows sum to −4 units (2 lack `batch_id`, none lack `branch_id`). These records do not explain the 4,484 legacy-stock total or 498 batch total, so stock provenance remains unresolved.
 - [x] The same aggregate snapshot found 6 invoices and 6 invoice-item rows; no invoice header/item subtotal mismatches and no invoices with paid amount greater than net amount were detected in this snapshot. This is a point-in-time integrity check, not proof of all finance workflows.
 - [x] No insurance claims were present at the time of the snapshot, so production data could not validate insurance amount behavior; use isolated fixtures and server-side invariant tests instead.
 - [x] Added the observed stock discrepancy to [PR #29 review notes](https://github.com/crauch2088-source/roshan-health-hub/pull/29#issuecomment-6211050412). Ensure the proposed atomic receiving/dispensing workflow does not silently force `medicines.stock_quantity` to equal batch totals. Preserve legacy stock handling until the source-of-truth decision and reconciliation procedure are tested.
 
 ## Master-plan checklist accounting — 2026-10-16
 
-- Current unweighted checkbox count after this audit: **34 checked / 126 total (~27% of listed checkbox items marked complete)**;
+- Current unweighted checkbox count after this audit: **35 checked / 127 total (~28% of listed checkbox items marked complete)**;
 - This is **not** a weighted measure of application functionality: the plan deliberately lists many separate security, migration, and launch gates, and some completed work is summarized in prose rather than represented as checkboxes. Use it as a measure of explicit plan-tracking completion only, not as the project's overall implementation percentage.
 - Production readiness remains gated by migration-history reconciliation, isolated Supabase validation, the legacy-stock discrepancy, authenticated role/branch workflows, and unresolved server-side insurance invariants.
 
