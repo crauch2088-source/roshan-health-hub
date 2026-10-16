@@ -162,3 +162,8 @@ Classification: **partial mapping with live effective-state evidence; not replay
 The recovered `20260911130749_harden_security_and_fk_indexes_20260911.sql` was compared against all ten top-level legacy SQL files on `main`. No complete source-file match was found; only isolated statements overlap. Its dynamic SECURITY DEFINER revoke loop, several explicit search-path alterations, policy consolidation, and FK-index statements remain a **partial/unmapped source** rather than proof of missing live protections.
 
 The recovered `20260911130812_restrict_security_definer_api_execution_20260911.sql` also has no full legacy-file match. Six individual EXECUTE grant statements were found in the legacy corpus, while its dynamic PUBLIC/anon revoke loop and several RPC grants do not match a single legacy source as a complete statement set. The live catalog still shows a narrower callable surface than the legacy baseline; preserve the recovered files as quarantine evidence and do not replay them to reconstruct history.
+
+
+## Proposed finance audit trigger cleanup — CI status — 2026-10-16
+
+Draft [PR #32](https://github.com/crauch2088-source/roshan-health-hub/pull/32) proposes dropping only `trg_audit_*` from the five finance tables and retaining `trg_finance_audit`. Its disposable PostgreSQL 17 integration test verifies one audit row for INSERT/UPDATE/DELETE on each of the five finance tables and verifies that the generic audit trigger remains on a non-finance control table. The integration, guard tests, typecheck, lint, and build passed on head `a626104e616a5d19857db4b819099be55aad4e6c`. This remains a draft; no production triggers were changed.
