@@ -1,3 +1,14 @@
+DO $test$
+BEGIN
+  IF has_function_privilege('anon','private.app_has_branch_access(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'anonymous role must not execute private branch helper';
+  END IF;
+  IF NOT has_function_privilege('authenticated','private.app_has_branch_access(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated role must execute private branch helper for RLS';
+  END IF;
+END
+$test$;
+
 SELECT set_config('test.auth_uid','10000000-0000-0000-0000-000000000002',false);
 SELECT set_config('test.permissions','pharmacy.read|emr.read|lab.read|pharmacy.create|emr.create|lab.create|pharmacy.update|emr.update|lab.update|pharmacy.delete|emr.delete|lab.delete|certificates.read|certificates.create|certificates.update|certificates.delete|billing.read|billing.create|billing.update|billing.delete|patients.read|insurance.read|insurance.create|insurance.update',false);
 SELECT set_config('test.super_admin','false',false);
