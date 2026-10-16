@@ -203,7 +203,7 @@ The prior single-session test explicitly noted that a true two-session race was 
 - requires exactly one call to succeed and the competing call to be rejected;
 - asserts exactly one reversal row, `is_reversed = true` on the original, and original plus reversal amounts net to zero.
 
-The two-session race and the full repository CI passed on head `9dda2ea5feadf23cd3d9da640ab38c6387763add` in run [#38886016506](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38886016506). This is disposable PostgreSQL evidence only; the proposed migration has not been replayed against an isolated Supabase branch or applied to production.
+The test waits for session A to be visible in `pg_stat_activity` inside the controlled `pg_sleep` trigger while it holds the original-row lock, then starts session B. The two-session race and full repository CI passed on head `c7a12408dcd154af65ba0726a59455436d5ea5af` in run [#38887494366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38887494366). This is disposable PostgreSQL evidence only; the proposed migration has not been replayed against an isolated Supabase branch or applied to production.
 
 
 ### Supplier-payment trigger overlap — data limitation — read-only 2026-10-16
