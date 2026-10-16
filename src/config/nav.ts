@@ -88,4 +88,9 @@ export function flatNavItems(): NavConfigItem[] {
   return NAV_GROUPS.flatMap((g) => g.items);
 }
 
+/** Resolve the permission for any route offered by navigation, including Home. */
+export function navPermissionForRoute(to: string): string | undefined {
+  return [HOME_ITEM, ...flatNavItems()].find((item) => item.to === to)?.perm;
+}
+
 export default NAV_GROUPS;

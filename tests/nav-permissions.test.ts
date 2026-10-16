@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { flatNavItems, HOME_ITEM } from "../src/config/nav.ts";
+import { flatNavItems, HOME_ITEM, navPermissionForRoute } from "../src/config/nav.ts";
 import { isNavItemActive } from "../src/lib/nav-active.ts";
 import { QUICK_ACTIONS } from "../src/lib/quick-actions.ts";
 
@@ -43,4 +43,10 @@ test("every quick action targets an existing nav destination that is permission 
     assert.ok(destination, `${action.key} points at ${action.to}, which is not in the nav config`);
     assert.ok(destination.perm, `${action.to} has no permission`);
   }
+});
+
+test("shortcut permission lookup includes Home and fails closed for unknown routes", () => {
+  assert.equal(navPermissionForRoute("/dashboard"), HOME_ITEM.perm);
+  assert.equal(navPermissionForRoute("/patients"), "patients.read");
+  assert.equal(navPermissionForRoute("/not-a-route"), undefined);
 });
