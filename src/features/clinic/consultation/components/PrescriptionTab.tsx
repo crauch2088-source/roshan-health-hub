@@ -18,9 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { s, useRows, useSave, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import { calcAge } from "@/lib/medical";
 import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
@@ -28,11 +29,27 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
       .from("visits")
-      .select("id,patient_id,doctor_id,patients(id,full_name)")
+      .select("id,patient_id,doctor_id,patients(id,full_name,date_of_birth)")
       .eq("id", visitId)
       .limit(1),
   );
-  const patient = s(rel((visitQ.data ?? [])[0], "patients"), "id");
+  const patientRow = rel((visitQ.data ?? [])[0], "patients");
+  const patient = s(patientRow, "id");
+  const patientAge = calcAge(s(patientRow, "date_of_birth"));
+  const vitalsQ = useRows<Row[]>(
+    ["clinic-vitals-weight", visitId],
+    () =>
+      supabase
+        .from("vitals")
+        .select("weight,created_at")
+        .eq("visit_id", visitId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1),
+  );
+  const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
+  const isPediatric = patientAge != null && patientAge < 18;
+  const pediatricWeightMissing = isPediatric && patientWeight <= 0;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -140,6 +157,20 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
+        {isPediatric ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
+          >
+            {pediatricWeightMissing
+              ? lang === "ar"
+                ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
+                : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
+              : lang === "ar"
+                ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
+                : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
+          </div>
+        ) : null}
         <div
           className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground"
           role="note"

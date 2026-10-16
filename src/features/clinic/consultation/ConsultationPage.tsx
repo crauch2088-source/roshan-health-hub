@@ -21,6 +21,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const { currency } = useSettings();
   const [tab, setTab] = useState("note");
   const [noteDirty, setNoteDirty] = useState(false);
+  const [reviewChecks, setReviewChecks] = useState<Record<string, boolean>>({ identity: false, history: false, vitals: false, plan: false });
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
       const message =
@@ -131,6 +132,14 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         )}
       </div>
     );
+  const reviewItems = [
+    { key: "identity", ar: "تأكد من هوية المريض والزيارة", en: "Confirm patient and visit identity" },
+    { key: "history", ar: "راجع الحساسية والأدوية والتاريخ المهم", en: "Review allergies, medicines and relevant history" },
+    { key: "vitals", ar: "راجع العلامات الحيوية عند الحاجة", en: "Review vitals when clinically indicated" },
+    { key: "plan", ar: "راجع الطلبات والوصفة وخطة المتابعة", en: "Review orders, prescription and follow-up plan" },
+  ];
+  const reviewCount = Object.values(reviewChecks).filter(Boolean).length;
+
   const tabs = [
     { key: "note", ar: "الملاحظات", en: "Clinical note" },
     { key: "vitals", ar: "العلامات الحيوية", en: "Vitals" },
@@ -234,7 +243,31 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           </div>
         </CardContent>
       </Card>
-      <div className="roshan-surface p-1.5">
+            <details className="roshan-surface px-4 py-3">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span>{lang === "ar" ? "مراجعة سريرية سريعة (اختيارية)" : "Quick clinical review (optional)"}</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{reviewCount}/4</span>
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {lang === "ar"
+            ? "تذكير محلي فقط: لا تُحفظ هذه العلامات ولا تمنع إنهاء الزيارة أو التعامل مع الطوارئ."
+            : "Local reminder only: these checks are not saved and never block visit completion or emergency care."}
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {reviewItems.map((item) => (
+            <label key={item.key} className="flex min-h-10 items-start gap-2 rounded-lg border border-border/70 bg-background/60 p-2.5 text-sm">
+              <input
+                type="checkbox"
+                checked={reviewChecks[item.key]}
+                onChange={(event) => setReviewChecks((current) => ({ ...current, [item.key]: event.target.checked }))}
+                className="mt-0.5 size-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <span>{lang === "ar" ? item.ar : item.en}</span>
+            </label>
+          ))}
+        </div>
+      </details>
+<div className="roshan-surface p-1.5">
         <div
           className="flex gap-1 overflow-x-auto"
           role="tablist"

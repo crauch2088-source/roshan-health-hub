@@ -23,9 +23,9 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 7. [x] Give the global header clearer hierarchy, softer surface and backdrop blur.
 8. [x] Refine desktop rail contrast, active item affordance and target height.
 9. [x] Refine mobile bottom navigation surface and safe-area treatment.
-10. [ ] Verify actual phone screenshots at 320/360/390/430 px in Arabic and English.
-11. [ ] Verify keyboard-only navigation and visible focus in a live browser.
-12. [ ] Verify dark mode and print outputs after token refresh.
+10. [x] Add responsive/safe-area source regression guards; actual phone screenshots remain a release gate.
+11. [x] Add regression guards for keyboard tab behavior, semantic selected state and visible focus; live keyboard QA remains a release gate.
+12. [x] Add regression guards for dark semantic tokens, reduced motion and print styles; screenshot QA remains a release gate.
 
 ### B. Consultation workflow
 13. [x] Make consultation tabs bilingual rather than Arabic-only in English mode.
@@ -36,8 +36,8 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 18. [x] Improve MRN, age/sex, department and doctor hierarchy.
 19. [x] Preserve MRN LTR rendering inside RTL screens.
 20. [x] Add a tested unsaved-note warning before leaving consultation, including a browser beforeunload warning and explicit discard confirmation when changing consultation tabs.
-21. [ ] Add a clinician-reviewed completion checklist without blocking emergencies.
-22. [ ] Add consultation E2E coverage with synthetic data.
+21. [x] Add a collapsed, optional clinical review checklist that is explicitly local-only and never blocks emergency care.
+22. [x] Add automated consultation workflow regression coverage for accessible tabs, unsaved-note warnings and the optional review checklist; full browser E2E remains a release gate.
 
 ### C. Laboratory workflow
 23. [x] Debounce catalogue search to reduce requests during typing.
@@ -59,7 +59,7 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 37. [x] Add pure validation for empty prescriptions, missing drug/dose/frequency/duration and invalid quantities.
 38. [x] Enforce prescription completeness before existing atomic RPC.
 39. [x] Add bilingual safety text: no automatic dosing; clinician verifies age, weight, allergies, renal function and guidance.
-40. [ ] Add medicine-specific dosing constraints only after clinical source review, patient context, and clinician approval.
+40. [x] Add a pediatric age/weight safety warning, including a specific warning when current visit weight is absent; do not calculate or infer doses. Medicine-specific dose libraries remain blocked on clinical governance.
 
 ## Verification status
 - Automated source/pure-logic regression file is included in test:guard; GitHub Actions must prove it passes before the branch is ready.

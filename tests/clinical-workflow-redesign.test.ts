@@ -83,3 +83,29 @@ test("lab result verification blocks unsaved edits and asks for review of abnorm
   assert.match(ui, /outside the reference range/);
   assert.match(ui, /not a critical-value classifier/);
 });
+
+test("consultation quick review is optional, local-only and non-blocking", () => {
+  const ui = read("../src/features/clinic/consultation/ConsultationPage.tsx");
+  assert.match(ui, /Quick clinical review \(optional\)/);
+  assert.match(ui, /these checks are not saved/);
+  assert.match(ui, /never block visit completion or emergency care/);
+  assert.match(ui, /reviewChecks\[item\.key\]/);
+});
+
+test("pediatric prescriptions prompt for weight-based review without calculating a dose", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(ui, /patients\(id,full_name,date_of_birth\)/);
+  assert.match(ui, /clinic-vitals-weight/);
+  assert.match(ui, /Pediatric safety: no current visit weight is recorded/);
+  assert.match(ui, /system does not calculate pediatric doses/);
+});
+
+test("responsive, focus, dark-mode and print guardrails are present in source", () => {
+  const css = read("../src/styles.css");
+  assert.match(css, /max-width: 639px/);
+  assert.match(css, /safe-area-inset-bottom/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /\.dark/);
+  assert.match(css, /@media print/);
+  assert.match(css, /:focus-visible/);
+});
