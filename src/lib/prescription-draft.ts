@@ -69,7 +69,6 @@ export function editPrescriptionName(draft: PrescriptionDraft, name: string): Pr
   return { ...draft, name };
 }
 
-
 /** Build a safe PostgREST OR filter for user-entered medicine catalog text. */
 export function buildMedicineSearchFilter(term: string): string | null {
   const clean = term
