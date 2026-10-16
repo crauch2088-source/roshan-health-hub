@@ -67,9 +67,9 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   // Visit -> Billing integration. visits.tsx already auto-creates an invoice
   // (linked via invoices.visit_id) at the moment the visit is created, IF a
   // consultation fee was set then. This just surfaces that link here, and —
-  // only if no invoice exists yet for this visit_id — offers a safe way to
-  // create one, using the exact same insert shape visits.tsx uses. Checking
-  // for an existing row first is what prevents a duplicate invoice.
+  // only if no primary invoice exists yet for this visit_id — offers a safe way to
+  // create one. Secondary invoices are intentional exceptions and must never hide
+  // the visit’s consolidated primary invoice.
   const invoiceQ = useRows<Row[]>(
     ["consultation-invoice", visitId],
     () =>
@@ -77,6 +77,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         .from("invoices")
         .select("id,invoice_number,net_amount,paid_amount,status")
         .eq("visit_id", visitId)
+        .eq("is_primary", true)
         .is("deleted_at", null)
         .limit(1),
     { enabled: Boolean(visitId) },
