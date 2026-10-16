@@ -203,7 +203,7 @@ BEGIN
 END;
 $legacy_stock_test$;
 
-DO $
+DO $privilege_test$
 BEGIN
  IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE') THEN
    RAISE EXCEPTION 'authenticated cannot execute dispense-and-invoice RPC';
