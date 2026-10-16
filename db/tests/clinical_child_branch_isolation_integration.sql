@@ -52,6 +52,19 @@ INSERT INTO public.insurance_prior_authorizations(id,patient_insurance_id) VALUE
  ('a0000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001'),
  ('a0000000-0000-0000-0000-000000000002','70000000-0000-0000-0000-000000000002');
 
+
+-- Legacy edge cases: explicit lab-order branch is NULL even when the linked
+-- patient/visit have a branch, and when no parent branch is available.
+-- These rows must fail closed for branch-scoped users, matching lab_orders RLS.
+INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id) VALUES
+ ('60000000-0000-0000-0000-000000000004',
+  '30000000-0000-0000-0000-000000000001',
+  '40000000-0000-0000-0000-000000000001',NULL),
+ ('60000000-0000-0000-0000-000000000006',NULL,NULL,NULL);
+INSERT INTO public.lab_order_items(order_id,status) VALUES
+ ('60000000-0000-0000-0000-000000000004','legacy-branchless-fallback-present'),
+ ('60000000-0000-0000-0000-000000000006','legacy-branchless-no-fallback');
+
 SET ROLE authenticated;
 
 DO $test$
