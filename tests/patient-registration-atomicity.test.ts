@@ -23,3 +23,14 @@ test("patient registration regression test is part of the guard suite", () => {
   };
   assert.match(pkg.scripts?.["test:guard"] ?? "", /patient-registration-atomicity\.test\.ts/);
 });
+
+
+test("patient registration requires an explicitly selected gender", () => {
+  assert.match(ui, /gender: ""/);
+  const start = ui.indexOf("const create = useSave(");
+  const end = ui.indexOf("\n\n  const rows", start);
+  const handler = ui.slice(start, end);
+  assert.ok(handler.includes('if (!form.gender) throw new Error(t("gender"));'));
+  assert.ok(handler.includes("_gender: form.gender,"));
+  assert.ok(!handler.includes('_gender: form.gender || "male"'));
+});

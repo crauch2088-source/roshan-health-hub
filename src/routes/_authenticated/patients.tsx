@@ -67,7 +67,7 @@ function emptyForm() {
   return {
     full_name: "",
     phone: "",
-    gender: "male",
+    gender: "",
     date_of_birth: "",
     national_id: "",
   };
@@ -101,12 +101,13 @@ function PatientsPageInner() {
   const create = useSave(
     async () => {
       if (!form.full_name.trim()) throw new Error(t("full_name"));
+      if (!form.gender) throw new Error(t("gender"));
 
       // Allocate the MRN and insert the patient in one database transaction.
       // Separate next_mrn() + INSERT calls can race and leave one registration failing.
       await rpc<string>("create_patient_atomic", {
         _full_name: form.full_name.trim(),
-        _gender: form.gender || "male",
+        _gender: form.gender,
         _date_of_birth: form.date_of_birth || null,
         _phone: form.phone.trim() || null,
         _national_id: form.national_id.trim() || null,
@@ -194,7 +195,7 @@ function PatientsPageInner() {
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!form.full_name.trim() || create.isPending}
+                  disabled={!form.full_name.trim() || !form.gender || create.isPending}
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}
