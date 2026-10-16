@@ -83,10 +83,18 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         const messages = {
           empty: lang === "ar" ? "أضف دواءً واحداً على الأقل" : "Add at least one medicine",
           "missing-name": lang === "ar" ? "أدخل اسم كل دواء" : "Enter a name for every medicine",
-          "missing-dose": lang === "ar" ? "أكمل الجرعة لكل دواء" : "Complete the dose for every medicine",
-          "missing-frequency": lang === "ar" ? "أكمل تكرار الاستخدام لكل دواء" : "Complete the frequency for every medicine",
-          "missing-duration": lang === "ar" ? "أكمل مدة العلاج لكل دواء" : "Complete the duration for every medicine",
-          "invalid-quantity": lang === "ar" ? "يجب أن تكون كمية كل دواء عددًا صحيحًا موجبًا" : "Each medicine quantity must be a positive whole number",
+          "missing-dose":
+            lang === "ar" ? "أكمل الجرعة لكل دواء" : "Complete the dose for every medicine",
+          "missing-frequency":
+            lang === "ar"
+              ? "أكمل تكرار الاستخدام لكل دواء"
+              : "Complete the frequency for every medicine",
+          "missing-duration":
+            lang === "ar" ? "أكمل مدة العلاج لكل دواء" : "Complete the duration for every medicine",
+          "invalid-quantity":
+            lang === "ar"
+              ? "يجب أن تكون كمية كل دواء عددًا صحيحًا موجبًا"
+              : "Each medicine quantity must be a positive whole number",
         };
         throw new Error(messages[validation]);
       }
@@ -132,7 +140,10 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground" role="note">
+        <div
+          className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground"
+          role="note"
+        >
           {lang === "ar"
             ? "تنبيه سلامة: لا يقترح النظام جرعات تلقائيًا. أدخل الجرعة والتكرار والمدة بعد التحقق من العمر والوزن والحساسية ووظائف الكلى والإرشادات المعتمدة."
             : "Safety note: the system does not auto-prescribe doses. Enter dose, frequency and duration only after checking age, weight, allergies, renal function and the applicable clinical guidance."}

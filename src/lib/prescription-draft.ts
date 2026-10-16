@@ -86,7 +86,6 @@ export function buildMedicineSearchFilter(term: string): string | null {
   ].join(",");
 }
 
-
 export type PrescriptionValidationError =
   | "empty"
   | "missing-name"

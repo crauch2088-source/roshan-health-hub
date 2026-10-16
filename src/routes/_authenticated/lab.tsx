@@ -58,16 +58,44 @@ const LAB_STAGE_LABELS = {
   en: ["Ordered", "Sample", "Processing", "Result", "Verified"],
 } as const;
 
-function LabProgress({ status, lang, compact = false }: { status: string; lang: "ar" | "en"; compact?: boolean }) {
+function LabProgress({
+  status,
+  lang,
+  compact = false,
+}: {
+  status: string;
+  lang: "ar" | "en";
+  compact?: boolean;
+}) {
   const current = labWorkflowStage(status);
   const labels = LAB_STAGE_LABELS[lang];
-  const accessibleLabel = lang === "ar" ? "مرحلة سير المختبر: " + labels[current] : "Laboratory workflow stage: " + labels[current];
+  const accessibleLabel =
+    lang === "ar"
+      ? "مرحلة سير المختبر: " + labels[current]
+      : "Laboratory workflow stage: " + labels[current];
   return (
-    <div className={compact ? "mt-1 flex max-w-36 items-center gap-1" : "mt-2 flex items-center gap-1.5"} role="img" aria-label={accessibleLabel} title={labels[current]}>
+    <div
+      className={
+        compact ? "mt-1 flex max-w-36 items-center gap-1" : "mt-2 flex items-center gap-1.5"
+      }
+      role="img"
+      aria-label={accessibleLabel}
+      title={labels[current]}
+    >
       {labels.map((label, index) => (
-        <span key={label} className={"h-1.5 flex-1 rounded-full " + (index <= current ? "bg-primary" : "bg-muted")} aria-hidden="true" />
+        <span
+          key={label}
+          className={"h-1.5 flex-1 rounded-full " + (index <= current ? "bg-primary" : "bg-muted")}
+          aria-hidden="true"
+        />
       ))}
-      {!compact ? <span className="ms-1 shrink-0 text-[11px] font-medium text-muted-foreground">{labels[current]}</span> : <span className="sr-only">{labels[current]}</span>}
+      {!compact ? (
+        <span className="ms-1 shrink-0 text-[11px] font-medium text-muted-foreground">
+          {labels[current]}
+        </span>
+      ) : (
+        <span className="sr-only">{labels[current]}</span>
+      )}
     </div>
   );
 }

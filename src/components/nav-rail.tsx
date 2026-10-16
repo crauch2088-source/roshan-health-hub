@@ -128,8 +128,7 @@ export function NavRail({
               <div
                 className={cn(
                   "space-y-1",
-                  !collapsed &&
-                    "rounded-xl border border-sidebar-border/80 bg-card/45 p-1.5",
+                  !collapsed && "rounded-xl border border-sidebar-border/80 bg-card/45 p-1.5",
                 )}
               >
                 {!collapsed ? (

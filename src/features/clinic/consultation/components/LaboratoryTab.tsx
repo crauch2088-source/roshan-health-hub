@@ -266,12 +266,20 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
           </div>
         )}
         {testsQ.isLoading ? (
-          <p role="status" className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <p
+            role="status"
+            className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground"
+          >
             {lang === "ar" ? "جارٍ تحميل قائمة التحاليل…" : "Loading test catalogue…"}
           </p>
         ) : testsQ.error ? (
-          <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-            {lang === "ar" ? "تعذّر تحميل قائمة التحاليل. لم يتم إرسال أي طلب؛ حاول مجددًا." : "Could not load the test catalogue. No order was submitted; please retry."}
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+          >
+            {lang === "ar"
+              ? "تعذّر تحميل قائمة التحاليل. لم يتم إرسال أي طلب؛ حاول مجددًا."
+              : "Could not load the test catalogue. No order was submitted; please retry."}
           </p>
         ) : null}
         <div className="grid gap-4 lg:grid-cols-2">
@@ -281,7 +289,10 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
               const group = visible.filter((t) => normalizeCategory(s(t, "category")) === cat);
               if (!group.length) return null;
               return (
-                <div key={cat} className="overflow-hidden rounded-xl border border-border/80 bg-card/75 shadow-sm">
+                <div
+                  key={cat}
+                  className="overflow-hidden rounded-xl border border-border/80 bg-card/75 shadow-sm"
+                >
                   <div className="flex items-center justify-between border-b bg-muted/45 px-3 py-2.5">
                     <span className="font-medium">
                       {lang === "ar" ? (CATEGORY_AR[cat] ?? cat) : cat}
@@ -333,10 +344,14 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
                     : `Selected tests (${selected.length})`}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {lang === "ar" ? "المجموع التقديري للفحوصات المحددة" : "Estimated selected-test subtotal"}
+                  {lang === "ar"
+                    ? "المجموع التقديري للفحوصات المحددة"
+                    : "Estimated selected-test subtotal"}
                 </div>
                 <div className="mt-0.5 text-lg font-bold tabular-nums text-primary" dir="ltr">
-                  {selected.reduce((sum, item) => sum + n(item, "price"), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  {selected
+                    .reduce((sum, item) => sum + n(item, "price"), 0)
+                    .toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </div>
               </div>
               <Button type="button" variant="ghost" size="sm" onClick={() => setSelected([])}>
@@ -353,7 +368,11 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
                   <button
                     type="button"
                     onClick={() => toggle(t)}
-                    aria-label={lang === "ar" ? `إزالة ${s(t, "name_ar") || s(t, "name")}` : `Remove ${s(t, "name")}`}
+                    aria-label={
+                      lang === "ar"
+                        ? `إزالة ${s(t, "name_ar") || s(t, "name")}`
+                        : `Remove ${s(t, "name")}`
+                    }
                     className="rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="size-3" />
@@ -376,7 +395,9 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
             </select>
             {priority === "urgent" ? (
               <span className="mt-1 block text-xs font-medium text-warning-foreground">
-                {lang === "ar" ? "تأكد من وجود مبرر سريري للأولوية العاجلة وفق بروتوكول المركز." : "Use urgent priority only when clinically justified under the center protocol."}
+                {lang === "ar"
+                  ? "تأكد من وجود مبرر سريري للأولوية العاجلة وفق بروتوكول المركز."
+                  : "Use urgent priority only when clinically justified under the center protocol."}
               </span>
             ) : null}
           </label>
@@ -401,7 +422,9 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
             </Button>
           ) : null}
           <Button
-            disabled={create.isPending || !selected.length || !s(patient, "id") || Boolean(testsQ.error)}
+            disabled={
+              create.isPending || !selected.length || !s(patient, "id") || Boolean(testsQ.error)
+            }
             onClick={() => create.mutate(undefined as never)}
           >
             {create.isPending

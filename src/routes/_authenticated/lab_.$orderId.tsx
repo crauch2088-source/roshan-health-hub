@@ -173,24 +173,33 @@ function LabOrderPageInner() {
       .some((parameter) => {
         const key = s(item, "id") + ":" + s(parameter, "id");
         const saved = resultRows.find(
-          (row) => s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(parameter, "id"),
+          (row) =>
+            s(row, "order_item_id") === s(item, "id") &&
+            s(row, "parameter_id") === s(parameter, "id"),
         );
-        return (values[key] ?? "").trim() !== s(saved, "result_value").trim() ||
-          (comments[key] ?? "") !== s(saved, "comment");
+        return (
+          (values[key] ?? "").trim() !== s(saved, "result_value").trim() ||
+          (comments[key] ?? "") !== s(saved, "comment")
+        );
       }),
   );
   const abnormalResultCount = items.reduce((count, item) => {
-    const itemParameters = parameters.filter((parameter) => s(parameter, "test_id") === s(item, "test_id"));
-    return count + itemParameters.filter((parameter) => {
-      const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
-      if (!value) return false;
-      const numeric = Number(value);
-      if (!Number.isFinite(numeric)) return false;
-      const range = rangeFor(s(parameter, "id"));
-      const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-      const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-      return (low !== 0 && numeric < low) || (high !== 0 && numeric > high);
-    }).length;
+    const itemParameters = parameters.filter(
+      (parameter) => s(parameter, "test_id") === s(item, "test_id"),
+    );
+    return (
+      count +
+      itemParameters.filter((parameter) => {
+        const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
+        if (!value) return false;
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return false;
+        const range = rangeFor(s(parameter, "id"));
+        const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
+        const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
+        return (low !== 0 && numeric < low) || (high !== 0 && numeric > high);
+      }).length
+    );
   }, 0);
   const save = useSave(
     async () => {
@@ -337,7 +346,10 @@ function LabOrderPageInner() {
       />
 
       {abnormalResultCount > 0 ? (
-        <div role="alert" className="rounded-xl border border-destructive/35 bg-destructive/5 p-4 text-sm">
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/35 bg-destructive/5 p-4 text-sm"
+        >
           <p className="font-semibold text-destructive">
             {lang === "ar"
               ? "توجد " + abnormalResultCount + " نتيجة خارج المدى المرجعي."
@@ -487,16 +499,27 @@ function LabOrderPageInner() {
             {can("lab.verify") && (
               <Button
                 variant="secondary"
-                disabled={verify.isPending || actualResultsQ.isLoading || parametersQ.isLoading || rangeQ.isLoading}
+                disabled={
+                  verify.isPending ||
+                  actualResultsQ.isLoading ||
+                  parametersQ.isLoading ||
+                  rangeQ.isLoading
+                }
                 onClick={() => {
                   if (hasUnsavedResultEdits) {
-                    window.alert(lang === "ar" ? "احفظ تعديلات النتائج أولاً قبل اعتمادها." : "Save result changes before verification.");
+                    window.alert(
+                      lang === "ar"
+                        ? "احفظ تعديلات النتائج أولاً قبل اعتمادها."
+                        : "Save result changes before verification.",
+                    );
                     return;
                   }
                   if (abnormalResultCount > 0) {
-                    const confirmed = window.confirm(lang === "ar"
-                      ? "توجد نتائج خارج المدى المرجعي. هل راجعتها مع سياق المريض قبل الاعتماد؟"
-                      : "Some results are outside the reference range. Have you reviewed the clinical context?");
+                    const confirmed = window.confirm(
+                      lang === "ar"
+                        ? "توجد نتائج خارج المدى المرجعي. هل راجعتها مع سياق المريض قبل الاعتماد؟"
+                        : "Some results are outside the reference range. Have you reviewed the clinical context?",
+                    );
                     if (!confirmed) return;
                   }
                   verify.mutate(undefined as never);

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { createEmptyPrescriptionDraft, validatePrescriptionDrafts } from "../src/lib/prescription-draft.ts";
+import {
+  createEmptyPrescriptionDraft,
+  validatePrescriptionDrafts,
+} from "../src/lib/prescription-draft.ts";
 import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");

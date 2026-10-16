@@ -23,9 +23,10 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const [noteDirty, setNoteDirty] = useState(false);
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
-      const message = lang === "ar"
-        ? "لديك تغييرات غير محفوظة في الملاحظات السريرية. هل تريد مغادرة القسم وفقدان هذه التغييرات؟"
-        : "You have unsaved clinical note changes. Leave this section and discard them?";
+      const message =
+        lang === "ar"
+          ? "لديك تغييرات غير محفوظة في الملاحظات السريرية. هل تريد مغادرة القسم وفقدان هذه التغييرات؟"
+          : "You have unsaved clinical note changes. Leave this section and discard them?";
       if (!window.confirm(message)) return;
       setNoteDirty(false);
     }
@@ -193,18 +194,31 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
           <div className="min-w-0">
             <div className="roshan-field-label">{lang === "ar" ? "المريض" : "Patient"}</div>
-            <div className="truncate text-base font-bold tracking-tight">{s(patient, "full_name") || "—"}</div>
-            <div className="mt-1 inline-flex rounded-md bg-background/80 px-2 py-0.5 font-mono text-xs text-muted-foreground" dir="ltr">
+            <div className="truncate text-base font-bold tracking-tight">
+              {s(patient, "full_name") || "—"}
+            </div>
+            <div
+              className="mt-1 inline-flex rounded-md bg-background/80 px-2 py-0.5 font-mono text-xs text-muted-foreground"
+              dir="ltr"
+            >
               {s(patient, "mrn") || "—"}
             </div>
           </div>
           <div>
-            <div className="roshan-field-label">{lang === "ar" ? "العمر / الجنس" : "Age / Sex"}</div>
-            <div className="font-semibold">{calcAge(s(patient, "date_of_birth")) ?? "—"} · {s(patient, "gender") || "—"}</div>
+            <div className="roshan-field-label">
+              {lang === "ar" ? "العمر / الجنس" : "Age / Sex"}
+            </div>
+            <div className="font-semibold">
+              {calcAge(s(patient, "date_of_birth")) ?? "—"} · {s(patient, "gender") || "—"}
+            </div>
           </div>
           <div>
-            <div className="roshan-field-label">{lang === "ar" ? "رقم الزيارة" : "Visit number"}</div>
-            <div className="font-mono text-base font-bold" dir="ltr">{s(visit, "visit_number") || "—"}</div>
+            <div className="roshan-field-label">
+              {lang === "ar" ? "رقم الزيارة" : "Visit number"}
+            </div>
+            <div className="font-mono text-base font-bold" dir="ltr">
+              {s(visit, "visit_number") || "—"}
+            </div>
           </div>
           <div>
             <div className="roshan-field-label">{lang === "ar" ? "القسم" : "Department"}</div>
@@ -221,7 +235,11 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         </CardContent>
       </Card>
       <div className="roshan-surface p-1.5">
-        <div className="flex gap-1 overflow-x-auto" role="tablist" aria-label={lang === "ar" ? "أقسام ملف الزيارة" : "Visit chart sections"}>
+        <div
+          className="flex gap-1 overflow-x-auto"
+          role="tablist"
+          aria-label={lang === "ar" ? "أقسام ملف الزيارة" : "Visit chart sections"}
+        >
           {tabs.map((item, index) => (
             <button
               key={item.key}
@@ -235,9 +253,16 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
               onKeyDown={(event) => {
                 const backwards = event.key === "ArrowLeft" || event.key === "ArrowUp";
                 const forwards = event.key === "ArrowRight" || event.key === "ArrowDown";
-                const targetIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 :
-                  backwards ? (index - 1 + tabs.length) % tabs.length :
-                  forwards ? (index + 1) % tabs.length : -1;
+                const targetIndex =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? tabs.length - 1
+                      : backwards
+                        ? (index - 1 + tabs.length) % tabs.length
+                        : forwards
+                          ? (index + 1) % tabs.length
+                          : -1;
                 if (targetIndex >= 0) {
                   event.preventDefault();
                   const next = tabs[targetIndex];
