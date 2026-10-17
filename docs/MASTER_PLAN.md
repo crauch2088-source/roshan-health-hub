@@ -1106,3 +1106,15 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - CI for that docs commit: all 10 application jobs passed in [run #39018590529](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39018590529); CodeQL [run #39018590577](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39018590577) remained in progress at the last poll. Re-check it in the next session.
 - GitHub branch lookup reported `main` unprotected with no required status checks at this snapshot. Treat this as a governance hardening task; do not change repository protection blindly without checking current project workflow requirements.
 - Continue with the priorities in the root README: reauthorize Vercel team scope, reconcile all live migration ledger entries and stale inventory header, establish a clean disposable replay, complete the role/operation/branch authorization matrix, and only then review/merge/apply the SQL candidates.
+
+
+## No-cost security-test continuation — 2026-10-17
+
+- User explicitly declined all paid services. Do not create Supabase branches/projects or incur usage charges. Continue isolated PostgreSQL 17 integration through GitHub Actions runners for this public repository.
+- Updated PR #50: added parent-changing `invoice_id` UPDATE denial and strict original-row postconditions. PostgreSQL 17 integration and CI passed at `ba5f742a05bb912ec169a056e9c29a0b08967f64`.
+- Updated PR #51: added certificate/procedure-order parent reassignment, patient-discount cross-branch reparenting, authenticated helper EXECUTE assertions, and branch-B row postconditions. Parent-branch integration passed at `70eb7a38e66f448c0a4f5cb2a28d3c1d30207c52`; recheck general CI before any merge.
+- Updated PR #52: added follow-up/queue parent-changing UPDATE cases; queue/follow-up integration and CI passed at `2fdb444743603ad383e4c774cc35060f3aea21e7`. Queue DELETE is intentionally super-admin-only; a non-super-admin denial does not independently prove branch-specific DELETE semantics.
+- Updated PR #53: added prescription-item and lab-order-item parent reassignment tests; corrected the lab FK column to `order_id` after CI caught the mismatch. PostgreSQL 17 integration and CI passed at `8187d1d95e2b6d485163a8805947abee71ad086e`.
+- PR #54 finance-only RPC integration and CI passed on `f002a7944bc219fbca305901434d9ccbd42ed8a9`; exhaustive role × RPC and full-chain replay remain gates.
+- No PR merged and no production SQL/policies/grants/data changed. Full migration replay remains blocked by the missing trustworthy pre-migration baseline and the intentionally redacted one-time identity link. Do not guess a baseline.
+- Detailed findings and check links: [SECURITY_PR_REVIEW.md](SECURITY_PR_REVIEW.md).
