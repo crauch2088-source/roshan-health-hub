@@ -1,23 +1,18 @@
-import { navPermissionForRoute } from "@/config/nav";
-
 const FLAG_PREFIX = "roshan:quick-action:";
 const QUICK_ACTION_EVENT = "roshan:quick-action";
 
 export type QuickActionKey = "new_patient" | "new_visit" | "new_invoice";
-export type QuickAction = { key: QuickActionKey; labelKey: string; to: string; icon: string; permission: string };
+export type QuickAction = { key: QuickActionKey; labelKey: string; to: string; icon: string; readPermission: string; permission: string };
 
 export const QUICK_ACTIONS: QuickAction[] = [
-  { key: "new_patient", labelKey: "new_patient", to: "/patients", icon: "UserRound", permission: "patients.create" },
-  { key: "new_visit", labelKey: "new_visit", to: "/visits", icon: "ClipboardList", permission: "visits.create" },
-  { key: "new_invoice", labelKey: "new_invoice", to: "/billing", icon: "Receipt", permission: "billing.create" },
+  { key: "new_patient", labelKey: "new_patient", to: "/patients", icon: "UserRound", readPermission: "patients.read", permission: "patients.create" },
+  { key: "new_visit", labelKey: "new_visit", to: "/visits", icon: "ClipboardList", readPermission: "visits.read", permission: "visits.create" },
+  { key: "new_invoice", labelKey: "new_invoice", to: "/billing", icon: "Receipt", readPermission: "billing.read", permission: "billing.create" },
 ];
 
 /** Require both route visibility and the permission needed to create the record. */
 export function getAvailableQuickActions(can: (permission: string) => boolean): QuickAction[] {
-  return QUICK_ACTIONS.filter((action) => {
-    const readPermission = navPermissionForRoute(action.to);
-    return Boolean(readPermission && can(readPermission) && can(action.permission));
-  });
+  return QUICK_ACTIONS.filter((action) => can(action.readPermission) && can(action.permission));
 }
 
 /**
