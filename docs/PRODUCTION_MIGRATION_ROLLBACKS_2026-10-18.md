@@ -240,3 +240,11 @@ END; $function$;
 ```
 
 **Preflight evidence:** `payments`, `pharmacy_inventory`, and `stock_movements` were empty; all existing non-deleted medicine master purchase/selling prices had at most two decimal places.
+
+## Final applied-state update — 2026-10-18 (103-entry ledger)
+
+The two final precision migrations are now applied and verified in `jewzonxplxhogqrnhosl`:
+- `roshan_invoice_payment_money_precision` — `20261017231612`
+- `roshan_pharmacy_batch_money_precision` — `20261017231629`
+
+The ledger now contains 103 entries. Preflight/postflight confirmed zero payments, pharmacy inventory batches, stock movements, claims, claim payments, expenses, and prior authorizations; all current medicine master prices have at most two decimal places. No business rows were modified by these migrations.
