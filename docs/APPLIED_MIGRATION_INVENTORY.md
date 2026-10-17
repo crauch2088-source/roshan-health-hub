@@ -124,16 +124,13 @@ These five additions are source-controlled and have targeted verification eviden
 
 ## Live ledger delta — 2026-10-17 13:00 UTC
 
-Three tracked forward migrations were applied after the original 93-row snapshot. The live ledger now contains 96 rows; the exact source comparisons and post-apply read-back are recorded in [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md).
+Four tracked forward migrations were applied after the original 93-row snapshot. The live ledger now contains 97 rows; the exact source comparisons and post-apply read-back are recorded in [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md).
 
 | Version | Applied migration name | Tracked source candidate | Exact source verification |
 |---|---|---|---|
 | `20261017125924` | `roshan_security_candidate_bundle_20261017` | `db/roshan_security_candidate_bundle_20261017.sql` | Stored statement exactly equals tracked source (29,974 chars) |
 | `20261017125934` | `roshan_insurance_claim_amount_integrity_20261017` | `db/roshan_phase5_insurance_claim_amount_integrity.sql` | Stored statement exactly equals tracked source (7,357 chars) |
 | `20261017125936` | `roshan_insurance_coverage_validity_20261017` | `db/roshan_phase5_insurance_coverage_validity.sql` | Stored statement exactly equals tracked source (7,334 chars) |
-
-The old byte-length/MD5 inventory remains a historical snapshot. The three current rows were compared directly against the live stored statement strings after application. The historical chain was not replayed and the redacted identity-link migration remains intentionally unreconstructed.
-
 | `20261017133157` | `roshan_revoke_legacy_invoice_number_20261017` | `db/roshan_phase27_revoke_legacy_invoice_number.sql` | Stored statement exactly equals tracked source (256 chars) |
 
-The live ledger now contains **97 rows**. The additional RPC revocation is verified in the live delta report.
+The old byte-length/MD5 inventory remains a historical snapshot. All four current migrations were compared directly against the live stored statement strings after application. The historical chain was not replayed and the redacted identity-link migration remains intentionally unreconstructed.
