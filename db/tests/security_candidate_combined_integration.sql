@@ -89,6 +89,9 @@ BEGIN
      OR has_function_privilege('anon','public.next_invoice_number()','EXECUTE') THEN
     RAISE EXCEPTION 'unscoped next_invoice_number RPC remains callable';
   END IF;
+  IF NOT has_function_privilege('postgres','public.next_invoice_number()','EXECUTE') THEN
+    RAISE EXCEPTION 'invoice-number allocator owner execution was unexpectedly revoked';
+  END IF;
 
   IF NOT has_table_privilege('authenticated','public.insurance_claims','SELECT')
      OR NOT has_table_privilege('authenticated','public.insurance_claim_items','SELECT')
