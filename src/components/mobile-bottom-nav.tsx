@@ -9,7 +9,7 @@ import { useLang } from "@/lib/i18n";
 import { bottomBarColumns, pickPrimaryRoutes } from "@/lib/nav-layout";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavItemActive } from "@/lib/nav-active";
-import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
+import { armQuickAction, getAvailableQuickActions } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
 // Preferred bar destinations, in order. The bar shows the first four the signed-in
@@ -41,10 +41,7 @@ export function MobileBottomNav() {
     return Boolean(item && can(item.perm));
   });
   const primary = primaryRoutes.flatMap((to) => allItems.filter((i) => i.to === to));
-  const availableActions = QUICK_ACTIONS.filter((action) => {
-    const destination = allItems.find((item) => item.to === action.to);
-    return destination ? can(destination.perm) : false;
-  });
+  const availableActions = getAvailableQuickActions(can);
   const moreActive = NAV_GROUPS.some((group) =>
     group.items.some(
       (item) =>
