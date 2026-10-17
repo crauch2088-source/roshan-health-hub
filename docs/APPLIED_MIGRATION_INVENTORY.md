@@ -133,3 +133,7 @@ Three tracked forward migrations were applied after the original 93-row snapshot
 | `20261017125936` | `roshan_insurance_coverage_validity_20261017` | `db/roshan_phase5_insurance_coverage_validity.sql` | Stored statement exactly equals tracked source (7,334 chars) |
 
 The old byte-length/MD5 inventory remains a historical snapshot. The three current rows were compared directly against the live stored statement strings after application. The historical chain was not replayed and the redacted identity-link migration remains intentionally unreconstructed.
+
+| `20261017133157` | `roshan_revoke_legacy_invoice_number_20261017` | `db/roshan_phase27_revoke_legacy_invoice_number.sql` | Stored statement exactly equals tracked source (256 chars) |
+
+The live ledger now contains **97 rows**. The additional RPC revocation is verified in the live delta report.
