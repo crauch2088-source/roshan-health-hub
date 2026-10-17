@@ -5,6 +5,28 @@ GRANT EXECUTE ON FUNCTION private.app_has_patient_branch(uuid) TO authenticated;
 REVOKE ALL ON FUNCTION private.app_has_attachment_branch_access(uuid, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.app_has_attachment_branch_access(uuid, uuid) TO authenticated;
 
+CREATE OR REPLACE FUNCTION private.app_has_patient_visit_branch_access(_patient_id uuid, _visit_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT private.app_has_attachment_branch_access(_patient_id, _visit_id)
+    AND (
+      _visit_id IS NULL
+      OR _patient_id IS NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.visits AS v
+        WHERE v.id = _visit_id
+          AND v.patient_id = _patient_id
+      )
+    )
+$function$;
+REVOKE ALL ON FUNCTION private.app_has_patient_visit_branch_access(uuid, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_patient_visit_branch_access(uuid, uuid) TO authenticated;
+
 CREATE OR REPLACE FUNCTION private.app_has_procedure_order_branch_access(_order_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -16,7 +38,7 @@ AS $function$
     SELECT 1
     FROM public.procedure_orders AS po
     WHERE po.id = _order_id
-      AND private.app_has_attachment_branch_access(po.patient_id, po.visit_id)
+      AND private.app_has_patient_visit_branch_access(po.patient_id, po.visit_id)
   )
 $function$;
 REVOKE ALL ON FUNCTION private.app_has_procedure_order_branch_access(uuid) FROM PUBLIC, anon;
@@ -25,7 +47,7 @@ GRANT EXECUTE ON FUNCTION private.app_has_procedure_order_branch_access(uuid) TO
 ALTER POLICY certificates_select ON public.certificates
   USING (
     (SELECT public.app_has_perm('certificates.read'))
-    AND (SELECT private.app_has_attachment_branch_access(certificates.patient_id, certificates.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(certificates.patient_id, certificates.visit_id))
   );
 ALTER POLICY certificates_insert ON public.certificates
   WITH CHECK (
@@ -109,7 +131,7 @@ ALTER POLICY patient_discounts_delete ON public.patient_discounts
 ALTER POLICY procedure_orders_select ON public.procedure_orders
   USING (
     (SELECT public.app_has_perm('procedures.read'))
-    AND (SELECT private.app_has_attachment_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
   );
 ALTER POLICY procedure_orders_insert ON public.procedure_orders
   WITH CHECK (
