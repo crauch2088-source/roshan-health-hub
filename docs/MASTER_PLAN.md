@@ -14,6 +14,16 @@
 - Corrected the stale migration reconciliation header from 79 to 93 and recorded the exact latest ledger version in commit `90c30ea600afc876afbe77b5d0c5df07f2e5fdc8`. This was documentation-only; no SQL was applied.
 - Next: complete exact historical source mapping for all 93 entries; build and prove a clean replay in a disposable PostgreSQL/Supabase environment; only then resume PR #50–#54 merge decisions. If disposable Supabase branch/project incurs nonzero cost, obtain the quoted cost and explicit agreement before creating it.
 
+
+
+## Migration reconciliation evidence — 2026-10-17
+
+- The connected Supabase migration-history API returned all **93/93** applied versions and their exact stored SQL bodies. Compared those bodies with **105** tracked migration-source files (79 timestamped historical recovery files and 26 top-level `db/` SQL files): **92 normalized text matches, 1 intentionally redacted exception, 0 unmapped ledger entries**. The comparison ignores comments and whitespace and is not a SQL-parser semantic proof.
+- Exception: `20260818191254_fix_patients_rls_and_admin_link` includes a one-time environment-specific Auth-to-app-user identity link. The public source is deliberately redacted to avoid publishing its email/user UUID; it cannot be replayed as-is. Do not restore those literals to public docs or repository history.
+- The 93 migrations are not yet a proven clean bootstrap: earliest migrations assume pre-existing objects. A reviewed baseline schema and replay-only variant that omits the environment-specific identity UPDATE are still required.
+- Supabase quoted development-branch cost is **US$0.01344/hour**. No branch was created because nonzero recurring cost requires explicit user agreement. Continue static/source work while waiting; do not use production as replay target.
+- Vercel team/project listing now succeeds, so the old 403 was not reproduced. Project `roshan-health-hub` and canonical domain aliases are visible; latest production deployment reports READY. The newest source commit's Vercel check still points to the build-rate-limit page; do not bypass or force deployment.
+
 ## Operating rules
 - Execute work directly with connected tools. Request any missing integration/permission explicitly.
 - If a specific step repeatedly fails despite reasonable diagnosis, stop looping, ask the user to use Claude for that step, then resume the remaining plan.
