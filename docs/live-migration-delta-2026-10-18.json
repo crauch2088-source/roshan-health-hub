@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-10-18",
+  "project_ref": "jewzonxplxhogqrnhosl",
+  "live_ledger_count": 99,
+  "latest_live_version": "20261017225540",
+  "historical_snapshot_count": 93,
+  "forward_migration_count": 6,
+  "entries": [
+    {
+      "version": "20261017125924",
+      "name": "roshan_security_candidate_bundle_20261017",
+      "source_path": "db/roshan_security_candidate_bundle_20261017.sql",
+      "source_git_blob_sha": "fd5d2862a915a02445be2402d7b56e3e1f42d3dc",
+      "normalized_source_sql_sha256": "92cf7590d8389760bdf4efdb6646cfc89721c54206687b2c3c933dd06503cf34",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Prior live source-parity audit recorded 96/97 exact matches; this is one of the four non-redacted Oct-17 forward entries."
+    },
+    {
+      "version": "20261017125934",
+      "name": "roshan_insurance_claim_amount_integrity_20261017",
+      "source_path": "db/roshan_phase5_insurance_claim_amount_integrity.sql",
+      "source_git_blob_sha": "79065cf92db8a5009a21f73c838f8f71e30df0a6",
+      "normalized_source_sql_sha256": "cda198bda8a954f35dba6ec970a42385267b59eae667a5e04b7f5fd1c545b94c",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Prior live source-parity audit recorded 96/97 exact matches; this is one of the four non-redacted Oct-17 forward entries."
+    },
+    {
+      "version": "20261017125936",
+      "name": "roshan_insurance_coverage_validity_20261017",
+      "source_path": "db/roshan_phase5_insurance_coverage_validity.sql",
+      "source_git_blob_sha": "b740eb67507a6e29e53b08f5dc2320f9f5e4bfd1",
+      "normalized_source_sql_sha256": "b5c5ced3283efc4c6b9bd9362ea806a31f53970e448c25d3595a980dfb91b1df",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Prior live source-parity audit recorded 96/97 exact matches; this is one of the four non-redacted Oct-17 forward entries."
+    },
+    {
+      "version": "20261017133157",
+      "name": "roshan_revoke_legacy_invoice_number_20261017",
+      "source_path": "db/roshan_phase27_revoke_legacy_invoice_number.sql",
+      "source_git_blob_sha": "6a6536d90c2f46dbb3ba399791c2e7f606b4d148",
+      "normalized_source_sql_sha256": "8dfcba1a393ba0c3a122228d9ce248adc2881be4af49c78335dcf785b6ac4563",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Prior live source-parity audit recorded 96/97 exact matches; this is one of the four non-redacted Oct-17 forward entries."
+    },
+    {
+      "version": "20261017225523",
+      "name": "roshan_insurance_prior_authorization_branch_isolation",
+      "source_path": "db/roshan_insurance_prior_authorization_branch_isolation.sql",
+      "source_git_blob_sha": "6b63b1dde23d4ec5a25d7c79d96738479de54172",
+      "normalized_source_sql_sha256": "2c54a4ba7a1da2ee2df22044c5c97cc0bf5b3cc264007624a4e20b56e6787650",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was supplied to the Supabase migration API; ledger version/name were read back. The API does not expose a persisted SQL hash."
+    },
+    {
+      "version": "20261017225540",
+      "name": "roshan_post_expense_finite_amount",
+      "source_path": "db/roshan_post_expense_finite_amount.sql",
+      "source_git_blob_sha": "05b67cc86cd062b99ed309f38ffc996f6c9f787c",
+      "normalized_source_sql_sha256": "73884e40f17851d1d6a8d9285240d8085afa66e8ff212d2fced2608d2bac7b5d",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was supplied to the Supabase migration API; ledger version/name were read back. The API does not expose a persisted SQL hash."
+    }
+  ],
+  "limitations": "This manifest verifies the exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute a live SQL hash; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
+}
