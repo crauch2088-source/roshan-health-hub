@@ -1,3 +1,13 @@
+## Production uptime monitoring — Better Stack — 2026-10-17 15:10 UTC
+
+- Created and read back the Better Stack monitor **Roshan Health Hub - Production**, ID `5086672`, for `https://roshan-health-hub-hjfy.vercel.app/`.
+- Configuration: HTTP status monitor, 180-second check frequency, regions `eu` and `as`, 15-second request timeout, TLS certificate verification enabled, redirects followed, email alerts enabled, 60-second confirmation period, 180-second recovery period, and monitor is not paused.
+- The monitor was confirmed present through both list and detail reads. Its status was still `pending` and `last_checked_at` was empty at the time of verification. The availability endpoint showed 100% with zero incidents/downtime but no recorded check; **this is not evidence of a successful first probe**.
+- Follow-up: re-read monitor `5086672` and its availability after the first scheduled probe; record the first check timestamp and observed status. Do not create a duplicate monitor if it remains pending; investigate provider-side scheduling/validation instead.
+- No paid plan/resource was created, no duplicate monitor was created, and no application or patient data was sent to the monitoring provider. Monitoring covers HTTP status/uptime only; it does not prove authentication, clinical workflows, database health, or clinical readiness.
+
+---
+
 ## Latest verified continuation — 2026-10-17 13:20 UTC
 
 - Production security migrations are applied and read back. Supabase ledger contains 97 rows, latest `20261017133157`; four stored SQL statements match tracked source exactly.

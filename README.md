@@ -1,3 +1,11 @@
+# Production monitoring update — 2026-10-17 15:10 UTC
+
+- Better Stack monitor **Roshan Health Hub - Production** (`5086672`) was created and verified for `https://roshan-health-hub-hjfy.vercel.app/`. It checks HTTP status every 3 minutes from EU and Asia, with SSL verification, redirect following, 15-second timeout, and email alerts enabled.
+- **First probe not yet confirmed:** provider status was `pending`, `last_checked_at` was empty, and the availability endpoint's 100%/zero-incidents summary had no recorded check behind it. Recheck before claiming the site passed.
+- No paid resource or duplicate monitor was created. This monitor is uptime-only and is not a clinical-readiness or authenticated end-to-end test. See [master plan](docs/MASTER_PLAN.md) and [tooling map](docs/PLUGIN_TOOLING_MAP.md).
+
+---
+
 # Latest verified status — 2026-10-17
 
 - Current source includes merged PR #62 (`9404a9b71f8248398663c6ad7b7275208230db15`): desktop quick actions, permission-safe filtering, functional route listeners for patient/visit/invoice dialogs, and a visits-list hint for lab-order shortcuts. Test guard now includes `tests/quick-actions.test.ts`; tested head passed CI and associated PostgreSQL 17 workflows.
