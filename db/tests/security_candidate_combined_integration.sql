@@ -85,6 +85,11 @@ BEGIN
     RAISE EXCEPTION 'insurance direct-write privileges unexpectedly remain in combined catalog';
   END IF;
 
+  IF has_function_privilege('authenticated','public.next_invoice_number()','EXECUTE')
+     OR has_function_privilege('anon','public.next_invoice_number()','EXECUTE') THEN
+    RAISE EXCEPTION 'unscoped next_invoice_number RPC remains callable';
+  END IF;
+
   IF NOT has_table_privilege('authenticated','public.insurance_claims','SELECT')
      OR NOT has_table_privilege('authenticated','public.insurance_claim_items','SELECT')
      OR NOT has_table_privilege('authenticated','public.insurance_claim_payments','SELECT') THEN
