@@ -51,6 +51,8 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.cashbox_transactions WHERE amount=10 AND branch_id='20000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'deposit missing branch or signed amount'; END IF;
  IF NOT EXISTS (SELECT 1 FROM public.cashbox_transactions WHERE amount=-2 AND branch_id='20000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'withdrawal missing branch or signed amount'; END IF;
  BEGIN PERFORM public.post_cashbox_entry('deposit',0,'cash','manual','invalid',now()); RAISE EXCEPTION 'zero cashbox amount accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM public.post_cashbox_entry('deposit','NaN'::numeric,'cash','manual','invalid NaN amount',now()); RAISE EXCEPTION 'NaN cashbox amount accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM public.post_cashbox_entry('deposit','Infinity'::numeric,'cash','manual','invalid infinite amount',now()); RAISE EXCEPTION 'infinite cashbox amount accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.post_cashbox_entry(NULL,10,'cash','manual','invalid null direction',now()); RAISE EXCEPTION 'NULL cashbox direction accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
 END
 $test$;
@@ -63,6 +65,12 @@ BEGIN
  BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',11,'cash','overpay','key-overpay');
  EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%exceeds outstanding balance%'; END;
  IF NOT rejected THEN RAISE EXCEPTION 'overpayment was not rejected'; END IF;
+ rejected:=false;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001','NaN'::numeric,'cash','invalid NaN','key-nan'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'NaN invoice payment amount was accepted'; END IF;
+ rejected:=false;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001','Infinity'::numeric,'cash','invalid infinity','key-infinity'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'infinite invoice payment amount was accepted'; END IF;
  first_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000001',3,'cash','test','key-valid');
  retry_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000001',3,'cash','test','key-valid');
  IF first_id IS DISTINCT FROM retry_id THEN RAISE EXCEPTION 'idempotent retry returned different ID'; END IF;
@@ -85,6 +93,12 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.supplier_bills WHERE invoice_number='BILL-QA' AND branch_id='20000000-0000-0000-0000-000000000001' AND total_amount=18) THEN RAISE EXCEPTION 'supplier bill did not derive branch or net amount'; END IF;
  BEGIN PERFORM public.post_supplier_bill('30000000-0000-0000-0000-000000000001','BILL-BAD',current_date,NULL,20,21,'invalid'); EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%discount must be finite and between zero and subtotal%'; END;
  IF NOT rejected THEN RAISE EXCEPTION 'supplier bill accepted discount above subtotal'; END IF;
+ rejected:=false;
+ BEGIN PERFORM public.post_supplier_bill('30000000-0000-0000-0000-000000000001','BILL-NAN',current_date,NULL,'NaN'::numeric,0,'invalid'); EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%bill subtotal must be finite and greater than zero%'; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'supplier bill accepted NaN subtotal'; END IF;
+ rejected:=false;
+ BEGIN PERFORM public.post_supplier_bill('30000000-0000-0000-0000-000000000001','BILL-INF-DISCOUNT',current_date,NULL,20,'Infinity'::numeric,'invalid'); EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%discount must be finite and between zero and subtotal%'; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'supplier bill accepted infinite discount'; END IF;
  rejected:=false;
  BEGIN PERFORM public.post_supplier_bill('ffffffff-ffff-ffff-ffff-ffffffffffff','BILL-MISSING',current_date,NULL,20,0,'invalid'); EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%active supplier not found%'; END;
  IF NOT rejected THEN RAISE EXCEPTION 'supplier bill accepted missing supplier'; END IF;
