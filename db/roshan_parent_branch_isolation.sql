@@ -52,21 +52,21 @@ ALTER POLICY certificates_select ON public.certificates
 ALTER POLICY certificates_insert ON public.certificates
   WITH CHECK (
     (SELECT public.app_has_perm('certificates.create'))
-    AND (SELECT private.app_has_attachment_branch_access(certificates.patient_id, certificates.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(certificates.patient_id, certificates.visit_id))
   );
 ALTER POLICY certificates_update ON public.certificates
   USING (
     (SELECT public.app_has_perm('certificates.update'))
-    AND (SELECT private.app_has_attachment_branch_access(certificates.patient_id, certificates.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(certificates.patient_id, certificates.visit_id))
   )
   WITH CHECK (
     (SELECT public.app_has_perm('certificates.update'))
-    AND (SELECT private.app_has_attachment_branch_access(certificates.patient_id, certificates.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(certificates.patient_id, certificates.visit_id))
   );
 ALTER POLICY certificates_delete ON public.certificates
   USING (
     (SELECT public.app_has_perm('certificates.delete'))
-    AND (SELECT private.app_has_attachment_branch_access(certificates.patient_id, certificates.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(certificates.patient_id, certificates.visit_id))
   );
 
 ALTER POLICY medical_certificates_select ON public.medical_certificates
@@ -136,21 +136,21 @@ ALTER POLICY procedure_orders_select ON public.procedure_orders
 ALTER POLICY procedure_orders_insert ON public.procedure_orders
   WITH CHECK (
     (SELECT public.app_has_perm('procedures.create'))
-    AND (SELECT private.app_has_attachment_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
   );
 ALTER POLICY procedure_orders_update ON public.procedure_orders
   USING (
     (SELECT public.app_has_perm('procedures.update'))
-    AND (SELECT private.app_has_attachment_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
   )
   WITH CHECK (
     (SELECT public.app_has_perm('procedures.update'))
-    AND (SELECT private.app_has_attachment_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
   );
 ALTER POLICY procedure_orders_delete ON public.procedure_orders
   USING (
     (SELECT public.app_has_perm('procedures.delete'))
-    AND (SELECT private.app_has_attachment_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
+    AND (SELECT private.app_has_patient_visit_branch_access(procedure_orders.patient_id, procedure_orders.visit_id))
   );
 
 ALTER POLICY procedure_results_select ON public.procedure_results
