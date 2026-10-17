@@ -1315,3 +1315,13 @@ First-pass source review at main snapshot `0157ff3d74692fa4786b60d4e0917b4d1488f
 - This is explicitly a first-pass compatibility inventory, not the exhaustive repository-wide audit. Do not change app code or production grants on this evidence alone; finish the complete direct-write/RPC/server-action search and test actual payload shapes against the combined policy suite.
 
 The combined-schema PostgreSQL 17 test passed at candidate code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`; its test fixture is synthetic and does not replace full historical migration replay/source reconciliation. PR #55 remains draft/open, and production remains unchanged.
+
+
+## Security bundle integration update — 2026-10-17
+
+- PR #55 stages five child-table branch-isolation and finance direct-write hardening candidates. The combined PostgreSQL 17 test passed before the bundle was canonicalized; a fresh run against the canonical bundle is required before merge.
+- Live read-only catalog evidence: 44 policies on 11 child tables still use permission-only predicates without parent-branch helpers; authenticated retains INSERT/UPDATE/DELETE privileges on all five finance tables targeted by the finance candidate.
+- The application call-site scan found no direct client writes to `invoice_items`, `prescription_items`, `payments`, `cashbox_transactions`, `expenses`, `supplier_bills`, or `supplier_payments` in the inspected routes. Verified direct child-table writes remain in follow-ups, medical certificates, queue-ticket updates, and lab-order-item updates; these depend on RLS branch predicates. The finance screen's direct INSERT is to `suppliers`, not one of the five restricted ledger tables.
+- Added `db/roshan_security_candidate_bundle_20261017.sql` as the ordered artifact; the combined-schema job applies this exact file, then runs the five integration suites and catalog assertions.
+- Main is `627baa6568eebf1b69cd7afa73da7fa7e9fc3da9`; its Vercel status is a build-rate-limit failure, not a passing deployment for this source. Historical migration replay remains unproven: 92/93 normalized source matches, one intentionally redacted identity-link migration, zero unmapped ledger entries.
+- No production SQL or grants have been changed. Merge/release remains blocked until fresh CI and a clean replay from a reviewed baseline.
