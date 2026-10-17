@@ -4,7 +4,7 @@
 **Target:** Connected Roshan Health Hub Supabase project (read-only inventory)  
 **Applied migration rows returned:** 93  
 **Latest verified applied migration:** `20261016222009_roshan_phase25_current_app_profile_20261016` (confirmed by live Supabase migration ledger on 2026-10-17).  
-**Committed SQL files in `db/` on `main`:** 10  
+**Top-level migration SQL files in `db/` on `main`:** 26  
 **Exact basename matches:** 4  
 **Exact basename matches do not prove full semantic equivalence.** No migration was applied, rolled back, or edited in the database during this inventory.
 
@@ -97,6 +97,25 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 | 20261011080434 | `enforce_branch_isolation_on_clinical_child_tables` | Not exact-matched; source mapping pending |
 | 20261011080524 | `preserve_super_admin_supplier_bill_compatibility` | Not exact-matched; source mapping pending |
 | 20261014164131 | `roshan_cashbox_reversal_concurrency` | Not exact-matched; source mapping pending |
+
+
+## Full live-ledger SQL source comparison — 2026-10-17
+
+A read-only comparison was run against the current connected Supabase migration API and the tracked source tree on `main`.
+
+- Retrieved all **93/93** applied migration records and their exact stored SQL statement bodies from the Supabase migration-history API; no database mutation was performed.
+- Inspected **105 tracked migration-source SQL files**: 79 timestamped recovered historical files under `docs/recovered-migrations/sql/` plus 26 top-level migration candidates under `db/`. Test fixtures were excluded from source matching.
+- A conservative text comparison that ignores SQL comments and whitespace found **92/93 normalized source matches**. There were **zero completely unmapped ledger entries**. The 79 historical versions have timestamped recovered-source paths; later applied versions were matched against current `db/` candidates by content rather than filename alone.
+- The single non-match is `20260818191254_fix_patients_rls_and_admin_link`. The live ledger body contains an environment-specific one-time admin identity-linking UPDATE plus four patient RLS policy statements. The public recovered file is deliberately a redaction placeholder because it omits the environment-specific email and user UUID; this is a privacy safeguard, not an accidental filename miss. The exact live SQL was inspected through the authorized read-only API, but the identity literals are intentionally not copied into this document or public source control.
+- This is **source-body parity evidence**, not proof of clean replay, semantic equivalence under every PostgreSQL version, or equivalence of the one-time identity-link data effect. The normalization is comment/whitespace-insensitive text comparison, not a SQL parser. Do not execute the redacted placeholder.
+- Clean replay remains blocked until a replay-safe migration variant is explicitly defined for the redacted identity-link step and the pre-migration baseline schema/roles/functions are reconstructed or recovered. The earliest migrations alter pre-existing objects, so the 93 rows alone are not a self-contained empty-database bootstrap. No disposable full-chain replay has yet been claimed or performed.
+
+### Exact next actions
+
+1. Build a replay-only variant of the redacted migration that retains the schema/policy changes but deliberately omits the environment-specific identity-link UPDATE; document that fresh environments must provision their own administrative Auth-to-app-user linkage through a separate controlled setup step.
+2. Recover or synthesize a reviewed pre-migration bootstrap schema (tables, roles, auth helpers, extensions, grants and baseline functions) without production row data. Do not use the current post-migration schema as though it were the pre-migration baseline.
+3. Run the complete ordered 93-step chain against disposable PostgreSQL 17 using synthetic fixtures, then compare resulting schema/policies/functions against the live inventory. Preserve per-migration failure output and a rollback/reset strategy.
+4. Only after replay passes, reassess PRs #50–#54 and assemble a canonical timestamped chain; none of their SQL has been applied to production as part of this comparison.
 
 ## Next reconciliation steps
 
