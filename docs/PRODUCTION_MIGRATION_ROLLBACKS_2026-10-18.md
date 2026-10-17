@@ -3,6 +3,10 @@
 This is the reviewed rollback reference for the applied branch/finite guards and the subsequent monetary-precision candidates in:
 - `db/roshan_insurance_prior_authorization_branch_isolation.sql`
 - `db/roshan_post_expense_finite_amount.sql`
+- `db/roshan_post_expense_money_precision.sql`
+- `db/roshan_insurance_claim_money_precision.sql`
+- `db/roshan_invoice_payment_money_precision.sql`
+- `db/roshan_pharmacy_batch_money_precision.sql`
 
 **Scope and safety:** the live Supabase project is `jewzonxplxhogqrnhosl`. Before the proposed changes, read-only queries confirmed zero rows in `public.insurance_prior_authorizations` and `public.patient_insurance`; the new helper `private.app_has_prior_authorization_branch_access(uuid)` did not exist. The production `post_expense` body was captured before modification. Do not use a rollback to conceal a failed test; first capture the exact error and confirm whether any writes occurred.
 
@@ -172,3 +176,67 @@ The four reviewed forward migrations are now applied and read back from Supabase
 - `roshan_insurance_claim_money_precision` — `20261017230645`
 
 The live ledger is at 101 entries. The precision migration rollbacks restore the previous finite-only expense guard and the captured prior insurance approval/payment function bodies, respectively. Preflight and postflight found zero claims, payments, expenses, or prior authorizations, and zero existing claim-payment/cashbox mismatches.
+
+## 5. Invoice-payment precision rollback
+
+Restores the exact live function body captured before `roshan_invoice_payment_money_precision`. It retains the existing finite/positive guard, branch enforcement, idempotency lock, and payment trigger behavior, but again permits amounts with more than two decimals that will be silently rounded by `payments.amount numeric(14,2)`. Use only for a confirmed regression.
+
+```sql
+CREATE OR REPLACE FUNCTION public.post_invoice_payment(_invoice_id uuid, _amount numeric, _method text DEFAULT 'cash'::text, _reference text DEFAULT NULL::text, _idempotency_key text DEFAULT NULL::text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE net numeric; already numeric; outstanding numeric; pay_id uuid; uid uuid; invoice_branch uuid; user_branch uuid; existing_actor uuid; existing_invoice_id uuid; existing_amount numeric; existing_method text; existing_reference text;
+BEGIN
+  IF NOT public.app_has_perm('payments.create') AND NOT public.app_has_perm('billing.create') AND NOT public.app_has_perm('accounting.create') THEN RAISE EXCEPTION 'not authorised to record payments' USING ERRCODE='42501'; END IF;
+  IF _amount IS NULL OR _amount::text IN ('NaN','Infinity','-Infinity') OR _amount<=0 THEN RAISE EXCEPTION 'payment amount must be finite and greater than zero' USING ERRCODE='22023'; END IF;
+  IF _invoice_id IS NULL THEN RAISE EXCEPTION 'invoice is required' USING ERRCODE='22023'; END IF;
+  uid:=public.current_app_user_id();
+  SELECT branch_id INTO user_branch FROM public.users WHERE id=uid AND deleted_at IS NULL AND active IS TRUE;
+  IF NOT public.is_super_admin() AND user_branch IS NULL THEN RAISE EXCEPTION 'user branch is not configured' USING ERRCODE='42501'; END IF;
+  IF _idempotency_key IS NOT NULL THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('roshan.payment.idempotency:'||_idempotency_key,0));
+    SELECT p.id,p.created_by,p.invoice_id,p.amount,COALESCE(p.payment_method,p.method,'cash'),NULLIF(BTRIM(COALESCE(p.reference_no,p.reference,'')),'')
+      INTO pay_id,existing_actor,existing_invoice_id,existing_amount,existing_method,existing_reference FROM public.payments p WHERE p.idempotency_key=_idempotency_key;
+    IF pay_id IS NOT NULL THEN
+      IF existing_actor IS DISTINCT FROM uid OR existing_invoice_id IS DISTINCT FROM _invoice_id OR existing_amount IS DISTINCT FROM _amount OR existing_method IS DISTINCT FROM COALESCE(_method,'cash') OR existing_reference IS DISTINCT FROM NULLIF(BTRIM(COALESCE(_reference,'')),'') THEN RAISE EXCEPTION 'idempotency key reused with different payment request' USING ERRCODE='22023'; END IF;
+      RETURN pay_id;
+    END IF;
+  END IF;
+  SELECT COALESCE(i.net_amount,i.total_amount,0),COALESCE(i.paid_amount,0),i.branch_id INTO net,already,invoice_branch FROM public.invoices i WHERE i.id=_invoice_id AND i.deleted_at IS NULL FOR UPDATE;
+  IF net IS NULL THEN RAISE EXCEPTION 'invoice not found' USING ERRCODE='22023'; END IF;
+  IF NOT public.is_super_admin() AND invoice_branch IS DISTINCT FROM user_branch THEN RAISE EXCEPTION 'cross_branch_access_denied' USING ERRCODE='42501'; END IF;
+  outstanding:=GREATEST(net-already,0);
+  IF _amount>outstanding THEN RAISE EXCEPTION 'payment (%) exceeds outstanding balance (%)',_amount,outstanding USING ERRCODE='22023'; END IF;
+  INSERT INTO public.payments(invoice_id,amount,payment_method,method,reference_no,reference,payment_date,received_at,received_by,created_by,branch_id,idempotency_key)
+  VALUES(_invoice_id,_amount,COALESCE(_method,'cash'),COALESCE(_method,'cash'),NULLIF(BTRIM(COALESCE(_reference,'')),''),NULLIF(BTRIM(COALESCE(_reference,'')),''),CURRENT_DATE,now(),uid,uid,invoice_branch,_idempotency_key) RETURNING id INTO pay_id;
+  RETURN pay_id;
+END; $function$;
+```
+
+## 6. Pharmacy batch precision rollback
+
+Restores the live function body captured before `roshan_pharmacy_batch_money_precision`. This restores the old behavior that accepted fractional/non-finite purchase prices and an over-precision effective selling price; the inventory numeric(14,2) columns can silently round those values while the medicine master stores them at higher precision. Use only for a confirmed regression.
+
+```sql
+CREATE OR REPLACE FUNCTION public.fn_receive_pharmacy_batch(p_medicine_id uuid,p_quantity numeric,p_batch_number text DEFAULT NULL::text,p_expiry_date date DEFAULT NULL::date,p_manufacture_date date DEFAULT NULL::date,p_purchase_price numeric DEFAULT 0,p_selling_price numeric DEFAULT NULL::numeric,p_supplier_id uuid DEFAULT NULL::uuid,p_invoice_reference text DEFAULT NULL::text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE v_uid uuid:=public.current_app_user_id(); v_branch uuid; v_batch_id uuid; v_sell numeric;
+BEGIN
+ IF NOT public.app_has_perm('pharmacy.update') THEN RAISE EXCEPTION 'insufficient_permission' USING ERRCODE='42501'; END IF;
+ IF p_quantity IS NULL OR p_quantity<>pg_catalog.trunc(p_quantity) OR p_quantity<=0 THEN RAISE EXCEPTION 'invalid_quantity'; END IF;
+ IF p_purchase_price IS NULL OR p_purchase_price<0 THEN RAISE EXCEPTION 'invalid_purchase_price'; END IF;
+ IF p_expiry_date IS NOT NULL AND p_manufacture_date IS NOT NULL AND p_manufacture_date>p_expiry_date THEN RAISE EXCEPTION 'manufacture_after_expiry'; END IF;
+ SELECT u.branch_id INTO v_branch FROM public.users u WHERE u.id=v_uid AND u.deleted_at IS NULL;
+ IF NOT public.is_super_admin() AND v_branch IS NULL THEN RAISE EXCEPTION 'user_branch_not_configured' USING ERRCODE='42501'; END IF;
+ SELECT COALESCE(p_selling_price,m.selling_price,0) INTO v_sell FROM public.medicines m WHERE m.id=p_medicine_id AND m.deleted_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'medicine_not_found'; END IF;
+ INSERT INTO public.pharmacy_inventory(medicine_id,batch_number,batch_no,expiry_date,manufacture_date,quantity,quantity_received,quantity_remaining,purchase_price,selling_price,supplier_id,invoice_reference,branch_id,created_by,updated_by)
+ VALUES(p_medicine_id,NULLIF(pg_catalog.btrim(p_batch_number),''),NULLIF(pg_catalog.btrim(p_batch_number),''),p_expiry_date,p_manufacture_date,p_quantity,p_quantity,p_quantity,p_purchase_price,v_sell,p_supplier_id,NULLIF(pg_catalog.btrim(p_invoice_reference),''),v_branch,v_uid,v_uid) RETURNING id INTO v_batch_id;
+ UPDATE public.medicines SET stock_quantity=COALESCE(stock_quantity,0)+p_quantity::integer,cost_price=p_purchase_price,selling_price=v_sell,updated_at=pg_catalog.now(),updated_by=v_uid WHERE id=p_medicine_id;
+ INSERT INTO public.stock_movements(medicine_id,batch_id,movement_type,quantity,reference_id,reference_table,branch_id,created_by) VALUES(p_medicine_id,v_batch_id,'purchase',p_quantity,v_batch_id,'pharmacy_inventory',v_branch,v_uid);
+ RETURN v_batch_id;
+END; $function$;
+```
+
+**Preflight evidence:** `payments`, `pharmacy_inventory`, and `stock_movements` were empty; all existing non-deleted medicine master purchase/selling prices had at most two decimal places.
