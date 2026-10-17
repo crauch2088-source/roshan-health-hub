@@ -42,6 +42,15 @@ BEGIN
 
   INSERT INTO public.invoice_items(id,invoice_id,description)
   VALUES ('40000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','same branch');
+
+  -- Updating a visible row must not re-parent it into another branch.
+  BEGIN
+    UPDATE public.invoice_items SET invoice_id='30000000-0000-0000-0000-000000000002'
+    WHERE id='40000000-0000-0000-0000-000000000001';
+    GET DIAGNOSTICS affected = ROW_COUNT;
+    IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch invoice item parent reassignment was allowed'; END IF;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
   
   DELETE FROM public.invoice_items WHERE id='40000000-0000-0000-0000-000000000002';
   GET DIAGNOSTICS affected = ROW_COUNT;
@@ -56,8 +65,11 @@ RESET ROLE;
 
 DO $test$
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.invoice_items WHERE id='40000000-0000-0000-0000-000000000002' AND description <> 'branch B item') THEN
-    RAISE EXCEPTION 'branch B invoice item was mutated';
+  IF NOT EXISTS (SELECT 1 FROM public.invoice_items WHERE id='40000000-0000-0000-0000-000000000002' AND description = 'branch B item' AND invoice_id='30000000-0000-0000-0000-000000000002') THEN
+    RAISE EXCEPTION 'branch B invoice item was deleted or mutated';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.invoice_items WHERE id='40000000-0000-0000-0000-000000000001' AND invoice_id='30000000-0000-0000-0000-000000000001') THEN
+    RAISE EXCEPTION 'visible invoice item was re-parented';
   END IF;
   IF EXISTS (SELECT 1 FROM public.invoice_items WHERE id='40000000-0000-0000-0000-000000000003') THEN
     RAISE EXCEPTION 'cross-branch invoice item INSERT left a row behind';
