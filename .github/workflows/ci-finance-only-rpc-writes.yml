@@ -1,0 +1,40 @@
+name: Finance-only RPC write isolation integration
+
+on:
+  pull_request:
+    paths:
+      - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/tests/finance_only_rpc_writes_fixture.sql'
+      - 'db/tests/finance_only_rpc_writes_integration.sql'
+      - '.github/workflows/ci-finance-only-rpc-writes.yml'
+  push:
+    branches:
+      - 'security/finance-only-rpc-writes'
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL 17 finance RPC-only writes
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run finance-only privilege and RPC regression tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/finance_only_rpc_writes_fixture.sql \
+            -f db/roshan_phase27_finance_rpc_only_writes.sql \
+            -f db/tests/finance_only_rpc_writes_integration.sql
