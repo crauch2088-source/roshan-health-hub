@@ -99,3 +99,6 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 - Added [security PR review](docs/SECURITY_PR_REVIEW.md) documenting concrete regression-test gaps for PRs #50–#53 and remaining replay/authorization matrix gates for #54. All five PRs remain open/draft and source-only.
 - Read-only live schema checks confirmed `patient_id`/`visit_id` nullable on `followups`, `queue_tickets`, `patient_discounts`, and `procedure_orders`; prescription and lab-order patient IDs are NOT NULL. Helper semantics in #51/#52 should reject or explicitly constrain null-patient + valid-visit linkage.
 - A disposable Supabase development branch quote is US$0.01344/hour. It has not been created pending explicit approval of this nonzero recurring cost.
+
+
+- **Live authorization baseline (2026-10-17):** 56/56 public tables have RLS and none lacks policies; detailed advisor and grant findings are recorded in [security review](docs/SECURITY_PR_REVIEW.md). This is not a completed adversarial authorization matrix.
