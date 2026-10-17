@@ -12,9 +12,6 @@ on:
       - 'db/tests/finance_only_rpc_writes_*.sql'
       - 'db/tests/security_candidate_combined_*.sql'
       - '.github/workflows/ci-security-candidate-bundle.yml'
-  push:
-    branches:
-      - 'security/combined-branch-isolation-regression'
 
 jobs:
   candidate-bundle:
