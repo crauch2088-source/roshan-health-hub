@@ -61,3 +61,9 @@ Do not merge or apply the security SQL to production until all are true:
 - [ ] Production deployment and database change are planned as separate, reversible steps with a post-change read-only verification.
 
 **Production safety:** no SQL or policy changes were made to the live database as part of this audit. Until the gates above pass, treat the cross-branch RLS gap as a release blocker before introducing real patient or financial data.
+
+## Newly verified integration-harness gap
+
+The five existing PostgreSQL 17 workflows each create an isolated miniature database fixture. Each fixture declares the same global roles (`anon`, `authenticated`), schemas (`auth`, `private`), and overlapping helper functions; several create shared table names such as `users`, `patients`, and `visits`. The finance fixture also creates a separate set of finance RPCs and a payment trigger. Therefore, the current fixture files cannot simply be concatenated and run in one PostgreSQL session: duplicate role/schema/function/table declarations and fixture-specific policy setup would collide. The existing green checks prove the individual candidates in their own fixtures, not their combined migration order or combined database behavior.
+
+**Required next implementation step:** create one purpose-built combined fixture with each shared role/schema/table/helper defined exactly once, then apply the candidate migration SQL in a declared order and run one combined integration script. Keep the individual workflows intact as fast targeted regression checks. The combined fixture must assert policy catalog state and effective role/branch behavior after all migrations have been applied; it must not be described as full historical replay until the reviewed pre-migration baseline is also present.
