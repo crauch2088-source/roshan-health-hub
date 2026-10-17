@@ -46,6 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useAuth } from "@/lib/auth";
+import { listenForQuickAction } from "@/lib/quick-actions";
 import { n, rel, s, type Row, useRows, useSave, useSettings } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
@@ -114,6 +115,16 @@ function VisitsPageInner() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<VisitForm>(emptyForm);
   const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
+
+  useEffect(
+    () => listenForQuickAction("new_visit", () => {
+      if (!can("visits.create")) return;
+      setSelectedPatient(null);
+      setForm(emptyForm);
+      setOpen(true);
+    }),
+    [can],
+  );
 
   const canCreate = can("visits.create");
   const canDelete = can("visits.delete");
