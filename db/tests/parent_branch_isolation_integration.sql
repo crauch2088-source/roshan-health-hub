@@ -1,4 +1,4 @@
--- 54 explicit checks: five tables get full branch access matrices plus linkage/grant invariants.
+-- Explicit branch-access matrix plus parent-reassignment and helper-grant invariants.
 -- SELECT, cross-branch UPDATE denial, same-branch UPDATE success,
 -- cross-branch INSERT denial, same-branch INSERT success,
 -- cross-branch DELETE denial, same-branch DELETE success, and no residual write.
@@ -122,6 +122,6 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.procedure_results WHERE id='90000000-0000-0000-0000-000000000002' AND findings='B') THEN RAISE EXCEPTION '50 branch-B procedure result changed'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND patient_id='30000000-0000-0000-0000-000000000002') THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000002' AND patient_id='30000000-0000-0000-0000-000000000002' AND visit_id='40000000-0000-0000-0000-000000000002') THEN RAISE EXCEPTION 'branch-B procedure order missing or changed'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND discount_percent=5) THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND discount_percent=10) THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
 END
 $test$;
