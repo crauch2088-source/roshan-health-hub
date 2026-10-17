@@ -10,6 +10,8 @@
 \i db/tests/prescription_lab_child_branch_isolation_integration.sql
 \echo 'Combined regression: finance RPC-only writes'
 \i db/tests/finance_only_rpc_writes_integration.sql
+\echo 'Combined regression: insurance prior-authorization branch isolation'
+\i db/tests/insurance_prior_authorization_branch_isolation_integration.sql
 
 -- Assert the final combined policy catalog, not just individual row behavior.
 DO $catalog$
