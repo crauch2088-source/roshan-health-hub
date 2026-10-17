@@ -29,4 +29,5 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/pharmacy_batch_money_precision_fixture.sql \
             -f db/roshan_pharmacy_batch_money_precision.sql \
+            -f db/roshan_pharmacy_batch_receipt_idempotency.sql \
             -f db/tests/pharmacy_batch_money_precision_integration.sql
