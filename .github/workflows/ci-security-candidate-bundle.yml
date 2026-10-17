@@ -1,0 +1,83 @@
+name: Security candidate bundle regression (isolated fixtures)
+
+on:
+  pull_request:
+    paths:
+      - 'db/roshan_invoice_item_branch_isolation.sql'
+      - 'db/roshan_parent_branch_isolation.sql'
+      - 'db/roshan_queue_followup_branch_isolation.sql'
+      - 'db/roshan_prescription_lab_child_branch_isolation.sql'
+      - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/tests/*branch_isolation*.sql'
+      - 'db/tests/finance_only_rpc_writes_*.sql'
+      - '.github/workflows/ci-security-candidate-bundle.yml'
+  push:
+    branches:
+      - 'security/combined-branch-isolation-regression'
+
+jobs:
+  candidate-bundle:
+    name: PostgreSQL 17 aggregate candidate regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create isolated databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for db in invoice_item parent_branch queue_followup prescription_lab finance_rpc; do
+            psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${db};"
+          done
+      - name: Invoice item branch isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d invoice_item -v ON_ERROR_STOP=1 \
+            -f db/tests/invoice_item_branch_isolation_fixture.sql \
+            -f db/roshan_invoice_item_branch_isolation.sql \
+            -f db/tests/invoice_item_branch_isolation_integration.sql
+      - name: Parent and patient child branch isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d parent_branch -v ON_ERROR_STOP=1 \
+            -f db/tests/parent_branch_isolation_fixture.sql \
+            -f db/roshan_parent_branch_isolation.sql \
+            -f db/tests/parent_branch_isolation_integration.sql
+      - name: Queue and follow-up branch isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d queue_followup -v ON_ERROR_STOP=1 \
+            -f db/tests/queue_followup_branch_isolation_fixture.sql \
+            -f db/roshan_queue_followup_branch_isolation.sql \
+            -f db/tests/queue_followup_branch_isolation_integration.sql
+      - name: Prescription and lab child branch isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d prescription_lab -v ON_ERROR_STOP=1 \
+            -f db/tests/prescription_lab_child_branch_isolation_fixture.sql \
+            -f db/roshan_prescription_lab_child_branch_isolation.sql \
+            -f db/tests/prescription_lab_child_branch_isolation_integration.sql
+      - name: Finance RPC-only writes and numeric validation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d finance_rpc -v ON_ERROR_STOP=1 \
+            -f db/tests/finance_only_rpc_writes_fixture.sql \
+            -f db/roshan_phase27_finance_rpc_only_writes.sql \
+            -f db/tests/finance_only_rpc_writes_integration.sql
