@@ -5,8 +5,9 @@
 **Applied migration rows returned:** 93  
 **Latest verified applied migration:** `20261016222009_roshan_phase25_current_app_profile_20261016` (confirmed by live Supabase migration ledger on 2026-10-17).  
 **Top-level migration SQL files in `db/` on `main`:** 26  
-**Exact basename matches:** 4  
-**Exact basename matches do not prove full semantic equivalence.** No migration was applied, rolled back, or edited in the database during this inventory.
+**Exact basename matches among the 26 top-level `db/` candidates:** 4  
+**Normalized source-content matches across all 105 tracked candidates:** 92 of 93 applied ledger entries; 1 intentionally redacted environment-specific identity mapping; 0 unmapped ledger entries.  
+These are distinct measures: basename matching counts names in the top-level directory, while `docs/recovered-migrations/source-parity-report.json` records the per-version content-hash comparison across the timestamped recovery directory and `db/`. The text-level normalization ignores comments and whitespace and is not a SQL-parser semantic proof. No migration was applied, rolled back, or edited in the database during this inventory.
 
 ## Purpose and safety
 
@@ -18,85 +19,85 @@ Do not reconstruct missing migrations from guessed SQL, do not mark partial file
 
 | Live version | Live migration name | Repository mapping |
 |---|---|---|
-| 20260818162003 | `fix_duplicate_unique_constraint` | Not exact-matched; source mapping pending |
-| 20260818191254 | `fix_patients_rls_and_admin_link` | Not exact-matched; source mapping pending |
-| 20260818191556 | `install_safe_visit_number_function` | Not exact-matched; source mapping pending |
-| 20260818192452 | `fix_daily_queue_numbers_v4` | Not exact-matched; source mapping pending |
-| 20260818194104 | `fix_daily_queue_numbering` | Not exact-matched; source mapping pending |
-| 20260818194429 | `repair_queue_and_harden_queue_security` | Not exact-matched; source mapping pending |
-| 20260818194457 | `consolidate_queue_triggers` | Not exact-matched; source mapping pending |
-| 20260818195753 | `fix_visit_queue_numbering` | Not exact-matched; source mapping pending |
-| 20260818195811 | `sync_existing_queue_tickets` | Not exact-matched; source mapping pending |
-| 20260818200206 | `fix_queue_numbering_authoritative` | Not exact-matched; source mapping pending |
-| 20260818200246 | `harden_visit_queue_rls_and_cleanup` | Not exact-matched; source mapping pending |
-| 20260818200336 | `finalize_non_recycling_queue_allocator` | Not exact-matched; source mapping pending |
-| 20260818202356 | `fix_appointments_rls_auth_and_audit` | Not exact-matched; source mapping pending |
-| 20260818232848 | `harden_core_indexes_and_legacy_compatibility_v2` | Not exact-matched; source mapping pending |
-| 20260818233558 | `harden_security_definer_helpers_and_duplicate_index_v2` | Not exact-matched; source mapping pending |
-| 20260818234039 | `harden_rls_permissions_and_public_grants_v1` | Not exact-matched; source mapping pending |
-| 20260818234050 | `harden_services_rls_v1` | Not exact-matched; source mapping pending |
-| 20260818234146 | `repair_roshan_rbac_role_links_v1` | Not exact-matched; source mapping pending |
-| 20260819000003 | `harden_public_defaults_and_sync_user_roles` | Not exact-matched; source mapping pending |
-| 20260819000016 | `tighten_public_default_privileges` | Not exact-matched; source mapping pending |
-| 20260819100756 | `roshan_phase1_pagination_and_settings` | Exact basename: `db/roshan_phase1_pagination_and_settings.sql` |
-| 20260819105146 | `roshan_settings_public_enforcement` | Not exact-matched; source mapping pending |
-| 20260819123920 | `grant_authenticated_execute_next_mrn` | Not exact-matched; source mapping pending |
-| 20260819124045 | `fix_next_mrn_rpc_access` | Not exact-matched; source mapping pending |
-| 20260819125755 | `add_missing_audit_relationships` | Not exact-matched; source mapping pending |
-| 20260819125807 | `add_followups_users_computed_relationship` | Not exact-matched; source mapping pending |
-| 20260819130039 | `compat_patients_patient_number` | Not exact-matched; source mapping pending |
-| 20260819222434 | `add_prescription_ux_fields` | Not exact-matched; source mapping pending |
-| 20260819223342 | `add_medical_certificates_soft_delete_columns` | Not exact-matched; source mapping pending |
-| 20260820000007 | `add_medicines_2_stock_quantity_compatibility` | Not exact-matched; source mapping pending |
-| 20260820000143 | `add_medicines_2_stock_quantity` | Not exact-matched; source mapping pending |
-| 20260820000336 | `fix_medicines_stock_quantity_schema_cache` | Not exact-matched; source mapping pending |
-| 20260820000656 | `add_medicines_reorder_level` | Not exact-matched; source mapping pending |
-| 20260820000725 | `add_medicines_expiry_date` | Not exact-matched; source mapping pending |
-| 20260820005417 | `fix_followups_user_relationship` | Not exact-matched; source mapping pending |
-| 20260820010030 | `fix_medicines_batch_number` | Not exact-matched; source mapping pending |
-| 20260820150215 | `roshan_phase2_clinical_workflow` | Exact basename: `db/roshan_phase2_clinical_workflow.sql` |
-| 20260822094358 | `roshan_workflow_performance_20260822` | Not exact-matched; source mapping pending |
-| 20260822094405 | `roshan_drop_duplicate_prescription_index_20260822` | Not exact-matched; source mapping pending |
-| 20260906142737 | `roshan_phase3_allow_pharmacy_setting_public` | Not exact-matched; source mapping pending |
-| 20260906142803 | `roshan_phase3_pharmacy_batches` | Not exact-matched; source mapping pending |
-| 20260906144008 | `roshan_phase4_finance_cashbox_debts` | Not exact-matched; source mapping pending |
-| 20260906161023 | `roshan_phase4_finance_security_verification_patch` | Not exact-matched; source mapping pending |
-| 20260906203143 | `roshan_phase3_pharmacy_runtime_hardening` | Not exact-matched; source mapping pending |
-| 20260908210824 | `roshan_phase4_finance_v2` | Partial mapping; live effective-state audit recorded below |
-| 20260909110657 | `roshan_phase5_insurance` | Exact basename; 20 normalized statements match the legacy Phase 5 script |
-| 20260909110735 | `roshan_phase5_insurance_functions` | Partial candidate; 3 normalized statements match the legacy Phase 5 script |
-| 20260909110753 | `roshan_phase5_insurance_permissions_rls` | Partial candidate; 27 normalized statements match the legacy Phase 5 script |
-| 20260911120231 | `roshan_phase12_invoice_visit_unique` | Exact basename: `db/roshan_phase12_invoice_visit_unique.sql` |
-| 20260911130749 | `harden_security_and_fk_indexes_20260911` | Not exact-matched; source mapping pending |
-| 20260911130812 | `restrict_security_definer_api_execution_20260911` | Not exact-matched; source mapping pending |
-| 20260911131456 | `deep_audit_branch_isolation_rpc_hardening` | Not exact-matched; source mapping pending |
-| 20260911133229 | `harden_mrn_invoice_number_concurrency` | Not exact-matched; source mapping pending |
-| 20260911133255 | `enforce_branch_isolation_rls` | Not exact-matched; source mapping pending |
-| 20260911133312 | `harden_insurance_branch_isolation` | Not exact-matched; source mapping pending |
-| 20260911133319 | `harden_insurance_coverage_rpc_branch` | Later override of the coverage function; adds explicit branch isolation |
-| 20260911133334 | `harden_finance_branch_context` | Not exact-matched; source mapping pending |
-| 20260911133353 | `fix_insurance_ledger_branch` | Not exact-matched; source mapping pending |
-| 20260911134639 | `grant_next_invoice_number_authenticated` | Not exact-matched; source mapping pending |
-| 20260911135036 | `grant_stock_movements_authenticated_access` | Not exact-matched; source mapping pending |
-| 20260911135318 | `fix_dispense_prescription_nullable_join_lock` | Not exact-matched; source mapping pending |
-| 20260911135417 | `fix_dispense_prescription_branch_resolution` | Not exact-matched; source mapping pending |
-| 20260911135547 | `fix_dispense_batch_number_ambiguity` | Not exact-matched; source mapping pending |
-| 20260911135644 | `add_medicines_updated_at_column` | Not exact-matched; source mapping pending |
-| 20260911135738 | `add_prescription_items_updated_at` | Not exact-matched; source mapping pending |
-| 20260911135858 | `add_prescriptions_updated_at` | Not exact-matched; source mapping pending |
-| 20260911140337 | `add_cashbox_reversal_columns` | Not exact-matched; source mapping pending |
-| 20260911140514 | `allow_cashbox_reversal_transaction_type` | Not exact-matched; source mapping pending |
-| 20260911141036 | `harden_cashbox_reversal_type` | Not exact-matched; source mapping pending |
-| 20260911141142 | `fix_payment_ledger_transaction_type` | Not exact-matched; source mapping pending |
-| 20260911141502 | `fix_medicines_generic_name_compatibility` | Not exact-matched; source mapping pending |
-| 20261011074344 | `harden_patient_invoice_number_rpc_permissions` | Not exact-matched; source mapping pending |
-| 20261011074437 | `harden_insurance_coverage_rpc_permissions` | Later override of the coverage function; adds permission check and empty search_path |
-| 20261011075101 | `harden_pharmacy_batch_branch_isolation` | Not exact-matched; source mapping pending |
-| 20261011080253 | `harden_supplier_bill_rpc_branch_and_search_path` | Not exact-matched; source mapping pending |
-| 20261011080319 | `harden_finance_pharmacy_rpc_search_paths` | Not exact-matched; source mapping pending |
-| 20261011080434 | `enforce_branch_isolation_on_clinical_child_tables` | Not exact-matched; source mapping pending |
-| 20261011080524 | `preserve_super_admin_supplier_bill_compatibility` | Not exact-matched; source mapping pending |
-| 20261014164131 | `roshan_cashbox_reversal_concurrency` | Not exact-matched; source mapping pending |
+| 20260818162003 | `fix_duplicate_unique_constraint` | Normalized text match: `docs/recovered-migrations/sql/20260818162003_fix_duplicate_unique_constraint.sql` |
+| 20260818191254 | `fix_patients_rls_and_admin_link` | Intentionally redacted placeholder: `docs/recovered-migrations/sql/20260818191254_fix_patients_rls_and_admin_link.sql` (identity-specific UPDATE omitted) |
+| 20260818191556 | `install_safe_visit_number_function` | Normalized text match: `docs/recovered-migrations/sql/20260818191556_install_safe_visit_number_function.sql` |
+| 20260818192452 | `fix_daily_queue_numbers_v4` | Normalized text match: `docs/recovered-migrations/sql/20260818192452_fix_daily_queue_numbers_v4.sql` |
+| 20260818194104 | `fix_daily_queue_numbering` | Normalized text match: `docs/recovered-migrations/sql/20260818194104_fix_daily_queue_numbering.sql` |
+| 20260818194429 | `repair_queue_and_harden_queue_security` | Normalized text match: `docs/recovered-migrations/sql/20260818194429_repair_queue_and_harden_queue_security.sql` |
+| 20260818194457 | `consolidate_queue_triggers` | Normalized text match: `docs/recovered-migrations/sql/20260818194457_consolidate_queue_triggers.sql` |
+| 20260818195753 | `fix_visit_queue_numbering` | Normalized text match: `docs/recovered-migrations/sql/20260818195753_fix_visit_queue_numbering.sql` |
+| 20260818195811 | `sync_existing_queue_tickets` | Normalized text match: `docs/recovered-migrations/sql/20260818195811_sync_existing_queue_tickets.sql` |
+| 20260818200206 | `fix_queue_numbering_authoritative` | Normalized text match: `docs/recovered-migrations/sql/20260818200206_fix_queue_numbering_authoritative.sql` |
+| 20260818200246 | `harden_visit_queue_rls_and_cleanup` | Normalized text match: `docs/recovered-migrations/sql/20260818200246_harden_visit_queue_rls_and_cleanup.sql` |
+| 20260818200336 | `finalize_non_recycling_queue_allocator` | Normalized text match: `docs/recovered-migrations/sql/20260818200336_finalize_non_recycling_queue_allocator.sql` |
+| 20260818202356 | `fix_appointments_rls_auth_and_audit` | Normalized text match: `docs/recovered-migrations/sql/20260818202356_fix_appointments_rls_auth_and_audit.sql` |
+| 20260818232848 | `harden_core_indexes_and_legacy_compatibility_v2` | Normalized text match: `docs/recovered-migrations/sql/20260818232848_harden_core_indexes_and_legacy_compatibility_v2.sql` |
+| 20260818233558 | `harden_security_definer_helpers_and_duplicate_index_v2` | Normalized text match: `docs/recovered-migrations/sql/20260818233558_harden_security_definer_helpers_and_duplicate_index_v2.sql` |
+| 20260818234039 | `harden_rls_permissions_and_public_grants_v1` | Normalized text match: `docs/recovered-migrations/sql/20260818234039_harden_rls_permissions_and_public_grants_v1.sql` |
+| 20260818234050 | `harden_services_rls_v1` | Normalized text match: `docs/recovered-migrations/sql/20260818234050_harden_services_rls_v1.sql` |
+| 20260818234146 | `repair_roshan_rbac_role_links_v1` | Normalized text match: `docs/recovered-migrations/sql/20260818234146_repair_roshan_rbac_role_links_v1.sql` |
+| 20260819000003 | `harden_public_defaults_and_sync_user_roles` | Normalized text match: `docs/recovered-migrations/sql/20260819000003_harden_public_defaults_and_sync_user_roles.sql` |
+| 20260819000016 | `tighten_public_default_privileges` | Normalized text match: `docs/recovered-migrations/sql/20260819000016_tighten_public_default_privileges.sql` |
+| 20260819100756 | `roshan_phase1_pagination_and_settings` | Normalized text match: `docs/recovered-migrations/sql/20260819100756_roshan_phase1_pagination_and_settings.sql` |
+| 20260819105146 | `roshan_settings_public_enforcement` | Normalized text match: `docs/recovered-migrations/sql/20260819105146_roshan_settings_public_enforcement.sql` |
+| 20260819123920 | `grant_authenticated_execute_next_mrn` | Normalized text match: `docs/recovered-migrations/sql/20260819123920_grant_authenticated_execute_next_mrn.sql` |
+| 20260819124045 | `fix_next_mrn_rpc_access` | Normalized text match: `docs/recovered-migrations/sql/20260819124045_fix_next_mrn_rpc_access.sql` |
+| 20260819125755 | `add_missing_audit_relationships` | Normalized text match: `docs/recovered-migrations/sql/20260819125755_add_missing_audit_relationships.sql` |
+| 20260819125807 | `add_followups_users_computed_relationship` | Normalized text match: `docs/recovered-migrations/sql/20260819125807_add_followups_users_computed_relationship.sql` |
+| 20260819130039 | `compat_patients_patient_number` | Normalized text match: `docs/recovered-migrations/sql/20260819130039_compat_patients_patient_number.sql` |
+| 20260819222434 | `add_prescription_ux_fields` | Normalized text match: `docs/recovered-migrations/sql/20260819222434_add_prescription_ux_fields.sql` |
+| 20260819223342 | `add_medical_certificates_soft_delete_columns` | Normalized text match: `docs/recovered-migrations/sql/20260819223342_add_medical_certificates_soft_delete_columns.sql` |
+| 20260820000007 | `add_medicines_2_stock_quantity_compatibility` | Normalized text match: `docs/recovered-migrations/sql/20260820000007_add_medicines_2_stock_quantity_compatibility.sql` |
+| 20260820000143 | `add_medicines_2_stock_quantity` | Normalized text match: `docs/recovered-migrations/sql/20260820000143_add_medicines_2_stock_quantity.sql` |
+| 20260820000336 | `fix_medicines_stock_quantity_schema_cache` | Normalized text match: `docs/recovered-migrations/sql/20260820000336_fix_medicines_stock_quantity_schema_cache.sql` |
+| 20260820000656 | `add_medicines_reorder_level` | Normalized text match: `docs/recovered-migrations/sql/20260820000656_add_medicines_reorder_level.sql` |
+| 20260820000725 | `add_medicines_expiry_date` | Normalized text match: `docs/recovered-migrations/sql/20260820000725_add_medicines_expiry_date.sql` |
+| 20260820005417 | `fix_followups_user_relationship` | Normalized text match: `docs/recovered-migrations/sql/20260820005417_fix_followups_user_relationship.sql` |
+| 20260820010030 | `fix_medicines_batch_number` | Normalized text match: `docs/recovered-migrations/sql/20260820010030_fix_medicines_batch_number.sql` |
+| 20260820150215 | `roshan_phase2_clinical_workflow` | Normalized text match: `docs/recovered-migrations/sql/20260820150215_roshan_phase2_clinical_workflow.sql` |
+| 20260822094358 | `roshan_workflow_performance_20260822` | Normalized text match: `docs/recovered-migrations/sql/20260822094358_roshan_workflow_performance_20260822.sql` |
+| 20260822094405 | `roshan_drop_duplicate_prescription_index_20260822` | Normalized text match: `docs/recovered-migrations/sql/20260822094405_roshan_drop_duplicate_prescription_index_20260822.sql` |
+| 20260906142737 | `roshan_phase3_allow_pharmacy_setting_public` | Normalized text match: `docs/recovered-migrations/sql/20260906142737_roshan_phase3_allow_pharmacy_setting_public.sql` |
+| 20260906142803 | `roshan_phase3_pharmacy_batches` | Normalized text match: `docs/recovered-migrations/sql/20260906142803_roshan_phase3_pharmacy_batches.sql` |
+| 20260906144008 | `roshan_phase4_finance_cashbox_debts` | Normalized text match: `docs/recovered-migrations/sql/20260906144008_roshan_phase4_finance_cashbox_debts.sql` |
+| 20260906161023 | `roshan_phase4_finance_security_verification_patch` | Normalized text match: `docs/recovered-migrations/sql/20260906161023_roshan_phase4_finance_security_verification_patch.sql` |
+| 20260906203143 | `roshan_phase3_pharmacy_runtime_hardening` | Normalized text match: `docs/recovered-migrations/sql/20260906203143_roshan_phase3_pharmacy_runtime_hardening.sql` |
+| 20260908210824 | `roshan_phase4_finance_v2` | Normalized text match: `docs/recovered-migrations/sql/20260908210824_roshan_phase4_finance_v2.sql` |
+| 20260909110657 | `roshan_phase5_insurance` | Normalized text match: `docs/recovered-migrations/sql/20260909110657_roshan_phase5_insurance.sql` |
+| 20260909110735 | `roshan_phase5_insurance_functions` | Normalized text match: `docs/recovered-migrations/sql/20260909110735_roshan_phase5_insurance_functions.sql` |
+| 20260909110753 | `roshan_phase5_insurance_permissions_rls` | Normalized text match: `docs/recovered-migrations/sql/20260909110753_roshan_phase5_insurance_permissions_rls.sql` |
+| 20260911120231 | `roshan_phase12_invoice_visit_unique` | Normalized text match: `docs/recovered-migrations/sql/20260911120231_roshan_phase12_invoice_visit_unique.sql` |
+| 20260911130749 | `harden_security_and_fk_indexes_20260911` | Normalized text match: `docs/recovered-migrations/sql/20260911130749_harden_security_and_fk_indexes_20260911.sql` |
+| 20260911130812 | `restrict_security_definer_api_execution_20260911` | Normalized text match: `docs/recovered-migrations/sql/20260911130812_restrict_security_definer_api_execution_20260911.sql` |
+| 20260911131456 | `deep_audit_branch_isolation_rpc_hardening` | Normalized text match: `docs/recovered-migrations/sql/20260911131456_deep_audit_branch_isolation_rpc_hardening.sql` |
+| 20260911133229 | `harden_mrn_invoice_number_concurrency` | Normalized text match: `docs/recovered-migrations/sql/20260911133229_harden_mrn_invoice_number_concurrency.sql` |
+| 20260911133255 | `enforce_branch_isolation_rls` | Normalized text match: `docs/recovered-migrations/sql/20260911133255_enforce_branch_isolation_rls.sql` |
+| 20260911133312 | `harden_insurance_branch_isolation` | Normalized text match: `docs/recovered-migrations/sql/20260911133312_harden_insurance_branch_isolation.sql` |
+| 20260911133319 | `harden_insurance_coverage_rpc_branch` | Normalized text match: `docs/recovered-migrations/sql/20260911133319_harden_insurance_coverage_rpc_branch.sql` |
+| 20260911133334 | `harden_finance_branch_context` | Normalized text match: `docs/recovered-migrations/sql/20260911133334_harden_finance_branch_context.sql` |
+| 20260911133353 | `fix_insurance_ledger_branch` | Normalized text match: `docs/recovered-migrations/sql/20260911133353_fix_insurance_ledger_branch.sql` |
+| 20260911134639 | `grant_next_invoice_number_authenticated` | Normalized text match: `docs/recovered-migrations/sql/20260911134639_grant_next_invoice_number_authenticated.sql` |
+| 20260911135036 | `grant_stock_movements_authenticated_access` | Normalized text match: `docs/recovered-migrations/sql/20260911135036_grant_stock_movements_authenticated_access.sql` |
+| 20260911135318 | `fix_dispense_prescription_nullable_join_lock` | Normalized text match: `docs/recovered-migrations/sql/20260911135318_fix_dispense_prescription_nullable_join_lock.sql` |
+| 20260911135417 | `fix_dispense_prescription_branch_resolution` | Normalized text match: `docs/recovered-migrations/sql/20260911135417_fix_dispense_prescription_branch_resolution.sql` |
+| 20260911135547 | `fix_dispense_batch_number_ambiguity` | Normalized text match: `docs/recovered-migrations/sql/20260911135547_fix_dispense_batch_number_ambiguity.sql` |
+| 20260911135644 | `add_medicines_updated_at_column` | Normalized text match: `docs/recovered-migrations/sql/20260911135644_add_medicines_updated_at_column.sql` |
+| 20260911135738 | `add_prescription_items_updated_at` | Normalized text match: `docs/recovered-migrations/sql/20260911135738_add_prescription_items_updated_at.sql` |
+| 20260911135858 | `add_prescriptions_updated_at` | Normalized text match: `docs/recovered-migrations/sql/20260911135858_add_prescriptions_updated_at.sql` |
+| 20260911140337 | `add_cashbox_reversal_columns` | Normalized text match: `docs/recovered-migrations/sql/20260911140337_add_cashbox_reversal_columns.sql` |
+| 20260911140514 | `allow_cashbox_reversal_transaction_type` | Normalized text match: `docs/recovered-migrations/sql/20260911140514_allow_cashbox_reversal_transaction_type.sql` |
+| 20260911141036 | `harden_cashbox_reversal_type` | Normalized text match: `docs/recovered-migrations/sql/20260911141036_harden_cashbox_reversal_type.sql` |
+| 20260911141142 | `fix_payment_ledger_transaction_type` | Normalized text match: `docs/recovered-migrations/sql/20260911141142_fix_payment_ledger_transaction_type.sql` |
+| 20260911141502 | `fix_medicines_generic_name_compatibility` | Normalized text match: `docs/recovered-migrations/sql/20260911141502_fix_medicines_generic_name_compatibility.sql` |
+| 20261011074344 | `harden_patient_invoice_number_rpc_permissions` | Normalized text match: `docs/recovered-migrations/sql/20261011074344_harden_patient_invoice_number_rpc_permissions.sql` |
+| 20261011074437 | `harden_insurance_coverage_rpc_permissions` | Normalized text match: `docs/recovered-migrations/sql/20261011074437_harden_insurance_coverage_rpc_permissions.sql` |
+| 20261011075101 | `harden_pharmacy_batch_branch_isolation` | Normalized text match: `docs/recovered-migrations/sql/20261011075101_harden_pharmacy_batch_branch_isolation.sql` |
+| 20261011080253 | `harden_supplier_bill_rpc_branch_and_search_path` | Normalized text match: `docs/recovered-migrations/sql/20261011080253_harden_supplier_bill_rpc_branch_and_search_path.sql` |
+| 20261011080319 | `harden_finance_pharmacy_rpc_search_paths` | Normalized text match: `docs/recovered-migrations/sql/20261011080319_harden_finance_pharmacy_rpc_search_paths.sql` |
+| 20261011080434 | `enforce_branch_isolation_on_clinical_child_tables` | Normalized text match: `docs/recovered-migrations/sql/20261011080434_enforce_branch_isolation_on_clinical_child_tables.sql` |
+| 20261011080524 | `preserve_super_admin_supplier_bill_compatibility` | Normalized text match: `docs/recovered-migrations/sql/20261011080524_preserve_super_admin_supplier_bill_compatibility.sql` |
+| 20261014164131 | `roshan_cashbox_reversal_concurrency` | Normalized text match: `docs/recovered-migrations/sql/20261014164131_roshan_cashbox_reversal_concurrency.sql` |
 
 
 ## Full live-ledger SQL source comparison — 2026-10-17
@@ -410,11 +411,11 @@ A fresh read-only query of `supabase_migrations.schema_migrations` now returns *
 
 | Version | Live migration name | Repository SQL source | Verification status |
 |---|---|---|---|
-| 20261016204859 | `roshan_phase21_patient_registration_privileges_20261016` | `db/roshan_phase21_patient_registration_privileges.sql` | Applied and included in the green patient-registration CI suite; historical full-ledger parity remains open |
-| 20261016211342 | `roshan_phase22_clinic_local_queue_date_20261016` | `db/roshan_phase22_clinic_local_queue_date.sql` | Applied; clinic-local date regression passed in CI and browser smoke |
-| 20261016215806 | `roshan_phase23_legacy_queue_allocator_20261016` | `db/roshan_phase23_legacy_queue_allocator_20261016.sql` | Applied; legacy collision regression passed in PostgreSQL 17 and synthetic browser test |
-| 20261016221553 | `roshan_phase24_visit_form_options_20261016` | `db/roshan_phase24_visit_form_options.sql` | PR #47 merged; CI passed; simulated authenticated receptionist received 11 departments and one same-branch doctor; anon EXECUTE denied |
-| 20261016222009 | `roshan_phase25_current_app_profile_20261016` | `db/roshan_phase25_current_app_profile.sql` | PR #48 merged; CI passed; simulated authenticated receptionist received own profile and 20 permissions while direct RLS reads remained empty; anon EXECUTE denied |
+| 20261016204859 | `roshan_phase21_patient_registration_privileges_20261016` | Normalized text match: `db/roshan_phase21_patient_registration_privileges.sql` | Applied and included in the green patient-registration CI suite; historical full-ledger parity remains open |
+| 20261016211342 | `roshan_phase22_clinic_local_queue_date_20261016` | Normalized text match: `db/roshan_phase22_clinic_local_queue_date.sql` | Applied; clinic-local date regression passed in CI and browser smoke |
+| 20261016215806 | `roshan_phase23_legacy_queue_allocator_20261016` | Normalized text match: `db/roshan_phase23_legacy_queue_allocator_20261016.sql` | Applied; legacy collision regression passed in PostgreSQL 17 and synthetic browser test |
+| 20261016221553 | `roshan_phase24_visit_form_options_20261016` | Normalized text match: `db/roshan_phase24_visit_form_options.sql` | PR #47 merged; CI passed; simulated authenticated receptionist received 11 departments and one same-branch doctor; anon EXECUTE denied |
+| 20261016222009 | `roshan_phase25_current_app_profile_20261016` | Normalized text match: `db/roshan_phase25_current_app_profile.sql` | PR #48 merged; CI passed; simulated authenticated receptionist received own profile and 20 permissions while direct RLS reads remained empty; anon EXECUTE denied |
 
 The Phase 24/25 migrations are narrow additive SECURITY DEFINER RPCs with empty `search_path`, authenticated-only EXECUTE, and branch/self scoping. They were applied only after their PostgreSQL 17 regression suites passed, and post-application checks were run in rolled-back, read-only transactions. They do not establish that the 79 historical migrations are a clean replayable baseline.
 
