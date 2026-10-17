@@ -40,6 +40,13 @@ AS $function$
     WHERE lo.id=_order_id
       AND private.app_has_branch_access(lo.branch_id)
       AND private.app_has_attachment_branch_access(lo.patient_id, lo.visit_id)
+      AND (
+        lo.visit_id IS NULL
+        OR EXISTS (
+          SELECT 1 FROM public.visits v
+          WHERE v.id = lo.visit_id AND v.patient_id = lo.patient_id
+        )
+      )
   )
 $function$;
 REVOKE ALL ON FUNCTION private.app_has_lab_order_item_branch_access(uuid) FROM PUBLIC, anon;
