@@ -6,6 +6,10 @@ BEGIN
  IF NOT has_function_privilege('authenticated','public.post_cashbox_entry(text,numeric,text,text,text,timestamptz)','EXECUTE') THEN RAISE EXCEPTION 'cashbox RPC EXECUTE missing'; END IF;
  IF NOT has_function_privilege('authenticated','public.post_invoice_payment(uuid,numeric,text,text,text)','EXECUTE') THEN RAISE EXCEPTION 'invoice payment RPC EXECUTE missing'; END IF;
  IF NOT has_function_privilege('authenticated','public.post_supplier_bill(uuid,text,date,date,numeric,numeric,text)','EXECUTE') THEN RAISE EXCEPTION 'supplier bill RPC EXECUTE missing'; END IF;
+ IF NOT has_function_privilege('authenticated','public.post_expense(text,numeric,text,date,text,text)','EXECUTE') THEN RAISE EXCEPTION 'expense RPC EXECUTE missing'; END IF;
+ IF NOT has_function_privilege('authenticated','public.post_supplier_payment(uuid,numeric,text,text,date,text)','EXECUTE') THEN RAISE EXCEPTION 'supplier payment RPC EXECUTE missing'; END IF;
+ IF NOT has_function_privilege('authenticated','public.reverse_cashbox_entry(uuid,text)','EXECUTE') THEN RAISE EXCEPTION 'cashbox reversal RPC EXECUTE missing'; END IF;
+ IF has_function_privilege('anon','public.post_cashbox_entry(text,numeric,text,text,text,timestamptz)','EXECUTE') OR has_function_privilege('anon','public.post_expense(text,numeric,text,date,text,text)','EXECUTE') OR has_function_privilege('anon','public.post_invoice_payment(uuid,numeric,text,text,text)','EXECUTE') OR has_function_privilege('anon','public.post_supplier_bill(uuid,text,date,date,numeric,numeric,text)','EXECUTE') OR has_function_privilege('anon','public.post_supplier_payment(uuid,numeric,text,text,date,text)','EXECUTE') OR has_function_privilege('anon','public.reverse_cashbox_entry(uuid,text)','EXECUTE') THEN RAISE EXCEPTION 'anon retains EXECUTE on a finance write RPC'; END IF;
  FOREACH t IN ARRAY ARRAY['cashbox_transactions','expenses','payments','supplier_bills','supplier_payments'] LOOP
   IF has_table_privilege('authenticated',format('public.%I',t),'INSERT')
      OR has_table_privilege('authenticated',format('public.%I',t),'UPDATE')
