@@ -2,6 +2,7 @@ CREATE ROLE anon;
 CREATE ROLE authenticated;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
+GRANT USAGE ON SCHEMA private TO authenticated;
 
 CREATE TABLE public.users (id uuid PRIMARY KEY, auth_user_id uuid NOT NULL, branch_id uuid, active boolean NOT NULL DEFAULT true);
 CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid);
