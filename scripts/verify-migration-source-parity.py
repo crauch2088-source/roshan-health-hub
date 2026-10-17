@@ -46,11 +46,11 @@ def main() -> None:
     replay_safe = ROOT / "docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql"
     if not replay_safe.is_file(): fail("replay-safe policy-only variant is missing")
     replay_sql = replay_safe.read_text(encoding="utf-8")
-    if re.search(r"(?im)^\\s*update\\s+public\\.users\\s+set\\s+auth_user_id\\b", replay_sql): fail("replay-safe variant contains an Auth identity UPDATE")
-    if re.search(r"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", replay_sql): fail("replay-safe variant contains an email literal")
-    if re.search(r"\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b", replay_sql, re.I): fail("replay-safe variant contains an identity UUID")
+    if re.search(r"(?im)^\s*update\s+public\.users\s+set\s+auth_user_id\b", replay_sql): fail("replay-safe variant contains an Auth identity UPDATE")
+    if re.search(r"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", replay_sql): fail("replay-safe variant contains an email literal")
+    if re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", replay_sql, re.I): fail("replay-safe variant contains an identity UUID")
     for policy in ("patients_select", "patients_insert", "patients_update", "patients_delete"):
-        if not re.search(r"(?im)^\\s*create\\s+policy\\s+" + policy + r"\\b", replay_sql): fail(f"replay-safe variant missing {policy}")
+        if not re.search(r"(?im)^\s*create\s+policy\s+" + policy + r"\b", replay_sql): fail(f"replay-safe variant missing {policy}")
     print(f"PASS: {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder; no database connection made.")
     print("LIMIT: text parity is not proof of clean-chain replay or semantic equivalence.")
 if __name__ == "__main__": main()
