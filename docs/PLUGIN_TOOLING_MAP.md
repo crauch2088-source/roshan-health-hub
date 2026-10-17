@@ -137,3 +137,11 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - PostHog project 657231 had ingested no events, and `package.json` has no PostHog SDK dependency, so application instrumentation is not wired. Privacy settings updated before any telemetry rollout: IP anonymization enabled, console-log capture disabled, session recordings remain disabled, and reporting timezone set to `Africa/Khartoum`. Performance capture remains enabled; do not introduce analytics or replay on clinical screens until the SDK/config and event payloads are reviewed for patient/financial data.
 - Browser Use Cloud tools are discoverable through Composio and the instant account is active for start-run/status/get-run operations, but accepted runs are metered and have a required positive USD cost cap. Prefer the already-connected TinyFish workflow for routine smoke tests unless Browser Use offers a specific missing capability and its cost is acceptable.
 - Main branch currently has no active branch protection rules. Do not add required-check rules until they are aligned with the user's direct-main workflow; CI should continue to be checked explicitly.
+
+
+## Live verification update — 2026-10-17
+
+- Supabase project `jewzonxplxhogqrnhosl` is ACTIVE_HEALTHY on PostgreSQL 17.6; the migration ledger has 93 entries through `20261016222009_roshan_phase25_current_app_profile_20261016`. A read-only normalized comparison matched 92/93 applied SQL bodies to tracked sources; see `docs/DB_MIGRATION_RECONCILIATION.md` and `docs/recovered-migrations/source-parity-report.json`. One public source is intentionally redacted for an environment-specific identity link; clean replay remains blocked.
+- Vercel team/project list access works now and confirms the single canonical `roshan-health-hub` project/domain. Latest production deployment was reported READY, but latest-main Vercel status has shown the build-rate-limit failure link; verify exact deployment SHA and alias before treating main as live. Do not bypass rate limits.
+- Security PR review findings are tracked in `docs/SECURITY_PR_REVIEW.md`; #50–#54 remain open/draft and unapplied.
+- Disposable Supabase branch quote is US$0.01344/hour; do not create until user explicitly approves the recurring cost.
