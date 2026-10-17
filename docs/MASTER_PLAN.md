@@ -33,6 +33,18 @@
 - Read-only schema/function inspection confirmed nullable patient/visit columns for followups, queue tickets, patient discounts, and procedure orders. Do not treat this as a demonstrated cross-branch exploit, but resolve the linkage-integrity gap before merging.
 - Supabase branch cost quote is US$0.01344/hour. No branch was created; nonzero recurring cost needs explicit user agreement. Continue independent source work while replay environment is blocked.
 
+
+
+## Live authorization-surface baseline — 2026-10-17
+
+Read-only inspection of the connected production project found:
+
+- All 56/56 public base tables have RLS enabled, and none of those tables is missing all RLS policies. This is only a configuration baseline; it does not prove each policy is correct.
+- `anon` has no `USAGE` on schema `private`, while `authenticated` does. A few private `SECURITY DEFINER` helpers show `anon EXECUTE` ACLs, but the missing schema `USAGE` blocks direct schema access; review these as defense-in-depth cleanup candidates, not a demonstrated exposed endpoint.
+- Security Advisor currently reports 22 public `SECURITY DEFINER` functions callable by `authenticated`, one `pg_trgm` extension-in-public-schema warning, and disabled leaked-password protection. Review each RPC's authorization, branch checks, grants, and fixed `search_path`; do not revoke all RPCs wholesale.
+- Performance Advisor reports 90 unused-index findings. Do not drop indexes based on this signal alone.
+- The live grants inventory still shows `authenticated` DML grants on many public objects. RLS remains the row filter, but this makes the full role × object × operation matrix and PR #54's focused finance revocations important. No production grants or policies were changed by this audit.
+
 ## Operating rules
 - Execute work directly with connected tools. Request any missing integration/permission explicitly.
 - If a specific step repeatedly fails despite reasonable diagnosis, stop looping, ask the user to use Claude for that step, then resume the remaining plan.
