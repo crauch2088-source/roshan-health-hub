@@ -1,13 +1,14 @@
 const FLAG_PREFIX = "roshan:quick-action:";
 const QUICK_ACTION_EVENT = "roshan:quick-action";
 
-export type QuickActionKey = "new_patient" | "new_visit" | "new_invoice";
+export type QuickActionKey = "new_patient" | "new_visit" | "new_invoice" | "new_lab_order";
 export type QuickAction = { key: QuickActionKey; labelKey: string; to: string; icon: string; readPermission: string; permission: string };
 
 export const QUICK_ACTIONS: QuickAction[] = [
   { key: "new_patient", labelKey: "new_patient", to: "/patients", icon: "UserRound", readPermission: "patients.read", permission: "patients.create" },
   { key: "new_visit", labelKey: "new_visit", to: "/visits", icon: "ClipboardList", readPermission: "visits.read", permission: "visits.create" },
   { key: "new_invoice", labelKey: "new_invoice", to: "/billing", icon: "Receipt", readPermission: "billing.read", permission: "billing.create" },
+  { key: "new_lab_order", labelKey: "new_lab_order", to: "/visits", icon: "FlaskConical", readPermission: "visits.read", permission: "lab.create" },
 ];
 
 /** Require both route visibility and the permission needed to create the record. */
