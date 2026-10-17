@@ -1,8 +1,8 @@
 # Latest verified status — 2026-10-17
 
 - Current source includes merged PR #62 (`9404a9b71f8248398663c6ad7b7275208230db15`): desktop quick actions, permission-safe filtering, functional route listeners for patient/visit/invoice dialogs, and a visits-list hint for lab-order shortcuts. Test guard now includes `tests/quick-actions.test.ts`; tested head passed CI and associated PostgreSQL 17 workflows.
-- Production security migrations are applied and read back. Supabase ledger has 96 rows; latest version `20261017125936`.
-- All 44 policies across the 11 targeted child tables include their expected branch/parent helper. Direct write privileges are revoked for authenticated/anon on five finance and three insurance ledger tables; authenticated SELECT remains.
+- Production security migrations are applied and read back. Supabase ledger has 97 rows; latest version `20261017133157`.
+- All 44 policies across the 11 targeted child tables include their expected branch/parent helper. Direct write privileges are revoked for authenticated/anon on five finance and three insurance ledger tables; authenticated SELECT remains. The unused global `next_invoice_number()` RPC is no longer directly callable by browser roles.
 - Insurance claim and coverage RPCs are updated, authenticated-only, and use an empty fixed `search_path`. Live definitions include invoice/visit patient/branch, amount split, service-type, and currency precision guards.
 - Full evidence: [live migration delta](docs/LIVE_MIGRATION_DELTA_2026-10-17.md), [UX audit](docs/UX_AUDIT_2026-10-17.md), and [master plan](docs/MASTER_PLAN.md).
 - Full historical migration replay remains unproven because the initial schema baseline is missing and one historical identity-link migration is intentionally redacted. No historical replay was attempted.
