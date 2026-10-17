@@ -1,10 +1,13 @@
-## Latest verified continuation — 2026-10-17 12:45 UTC
+## Latest verified continuation — 2026-10-17 13:00 UTC
 
-- Current main after source/test improvements: `0ab1a85e572897b9aa95e14d7240560e9efbe8a7` (insurance visit-linkage guard and PostgreSQL 17 regressions merged via PR #58).
-- PR #57 merged `68655eb53680ebef2b1541086ecf6c7e99dd0aba`, enabling manual reruns of the security candidate bundle integration workflow.
-- The canonical security bundle passed all six PostgreSQL 17 GitHub Actions jobs (five isolated components + combined-schema test). The insurance candidate's new invoice/visit patient and branch consistency tests failed before the fix and passed after the fix; associated CI, source-parity, insurance, role-guard and prescription integration workflows passed.
-- These are source/fixture results, not live production verification. The live child-table RLS policies and five finance-table write grants remain unremediated; the insurance RPC is not deployed. Do not apply SQL until the no-cost historical baseline/replay and exact live compatibility gate is complete.
-- Vercel production is still behind current main; current-main Vercel check remains blocked by the Hobby build-rate limit. No paid upgrade or bypass was attempted.
+- **Production security migrations applied and read back:** Supabase ledger now contains 96 rows, latest `20261017125936`. Three migrations were applied through the Supabase migration tool and each stored statement was compared byte-for-byte to its tracked source.
+- **Branch isolation:** all 44 policies across the 11 targeted child tables now include the expected parent/branch helper (zero missing helpers in live read-back).
+- **Financial write isolation:** authenticated and anon direct INSERT/UPDATE/DELETE are revoked on the five finance tables and three insurance ledger tables. Authenticated SELECT remains available. The unused legacy `add_cashbox_entry` RPC is no longer executable; validated finance RPCs remain authenticated-only with empty `search_path`.
+- **Insurance:** live `create_insurance_claim` includes invoice/visit patient and branch checks plus amount-split invariants; live coverage RPC rejects unsupported service types and fractional-cent amounts. Both RPCs are authenticated-only and have empty `search_path`.
+- **Evidence:** security candidate suite passed all six PostgreSQL 17 jobs; insurance claim and coverage suites passed after test-first red/green regressions; main CI on tested PR heads passed build/typecheck/lint and integration suites. Exact combined SQL dry-run against the live schema passed with catalog assertions and rollback before applying.
+- **Migration limitation:** the old 93-row source-parity report remains a historical snapshot; current ledger is 95/96 source matched with one redacted identity-link exception and zero unmapped versions. Full historical clean bootstrap remains unproven and was not replayed.
+- **Deployment limitation:** current production deployment is behind main. The deployed app commit was checked and already uses the validated finance RPCs; latest current-main Vercel check is blocked by Hobby build-rate limit. No paid upgrade or forced deploy. No live browser login/write smoke test was performed, so clinical readiness is not claimed.
+- Full post-apply evidence: [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md). Issue #16 is ready for closure after live verification; Issue #25 remains open for alert/security-control follow-up.
 
 ---
 
