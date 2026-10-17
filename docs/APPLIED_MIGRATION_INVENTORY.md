@@ -120,3 +120,16 @@ A new read-only count confirms **93 applied ledger rows** through `2026101622200
 | `20261016222009` | `roshan_phase25_current_app_profile_20261016` | `db/roshan_phase25_current_app_profile.sql` | Applied after CI; simulated receptionist self-profile/permissions check passed; browser login verification awaits Vercel deployment |
 
 These five additions are source-controlled and have targeted verification evidence, but must not be counted as proof of exact historical ledger parity until the stored ledger representations are compared to the repository candidates. Keep recovered historical SQL quarantined and do not replay the full historical set in production.
+
+
+## Live ledger delta — 2026-10-17 13:00 UTC
+
+Three tracked forward migrations were applied after the original 93-row snapshot. The live ledger now contains 96 rows; the exact source comparisons and post-apply read-back are recorded in [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md).
+
+| Version | Applied migration name | Tracked source candidate | Exact source verification |
+|---|---|---|---|
+| `20261017125924` | `roshan_security_candidate_bundle_20261017` | `db/roshan_security_candidate_bundle_20261017.sql` | Stored statement exactly equals tracked source (29,974 chars) |
+| `20261017125934` | `roshan_insurance_claim_amount_integrity_20261017` | `db/roshan_phase5_insurance_claim_amount_integrity.sql` | Stored statement exactly equals tracked source (7,357 chars) |
+| `20261017125936` | `roshan_insurance_coverage_validity_20261017` | `db/roshan_phase5_insurance_coverage_validity.sql` | Stored statement exactly equals tracked source (7,334 chars) |
+
+The old byte-length/MD5 inventory remains a historical snapshot. The three current rows were compared directly against the live stored statement strings after application. The historical chain was not replayed and the redacted identity-link migration remains intentionally unreconstructed.
