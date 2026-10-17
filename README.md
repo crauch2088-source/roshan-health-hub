@@ -1,8 +1,8 @@
-# Production monitoring update — 2026-10-17 15:10 UTC
+# Production monitoring update — 2026-10-17 15:13 UTC
 
-- Better Stack monitor **Roshan Health Hub - Production** (`5086672`) was created and verified for `https://roshan-health-hub-hjfy.vercel.app/`. It checks HTTP status every 3 minutes from EU and Asia, with SSL verification, redirect following, 15-second timeout, and email alerts enabled.
-- **First probe not yet confirmed:** provider status was `pending`, `last_checked_at` was empty, and the availability endpoint's 100%/zero-incidents summary had no recorded check behind it. Recheck before claiming the site passed.
-- No paid resource or duplicate monitor was created. This monitor is uptime-only and is not a clinical-readiness or authenticated end-to-end test. See [master plan](docs/MASTER_PLAN.md) and [tooling map](docs/PLUGIN_TOOLING_MAP.md).
+- Better Stack monitor **Roshan Health Hub - Production** (`5086672`) now targets the Vercel-verified canonical production domain `https://roshan-health-hub.vercel.app/`. The initial `roshan-health-hub-hjfy.vercel.app` target returned HTTP 404 `DEPLOYMENT_NOT_FOUND`; incident `1033415913` was created.
+- The existing monitor was updated in place (no duplicate) and retains 3-minute checks from EU/Asia, SSL verification, redirect following, 15-second timeout, and email alerts. At the time of correction, Better Stack still showed `down` and the latest check timestamp predated the URL update; a successful post-correction probe remains pending.
+- No paid resource was created. This monitor is uptime-only and is not a clinical-readiness or authenticated end-to-end test. See [master plan](docs/MASTER_PLAN.md) and [tooling map](docs/PLUGIN_TOOLING_MAP.md).
 
 ---
 

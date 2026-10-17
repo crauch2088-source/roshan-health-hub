@@ -1,10 +1,10 @@
-## Production uptime monitoring — Better Stack — 2026-10-17 15:10 UTC
+## Production uptime monitoring — Better Stack — updated 2026-10-17 15:13 UTC
 
-- Created and read back the Better Stack monitor **Roshan Health Hub - Production**, ID `5086672`, for `https://roshan-health-hub-hjfy.vercel.app/`.
-- Configuration: HTTP status monitor, 180-second check frequency, regions `eu` and `as`, 15-second request timeout, TLS certificate verification enabled, redirects followed, email alerts enabled, 60-second confirmation period, 180-second recovery period, and monitor is not paused.
-- The monitor was confirmed present through both list and detail reads. Its status was still `pending` and `last_checked_at` was empty at the time of verification. The availability endpoint showed 100% with zero incidents/downtime but no recorded check; **this is not evidence of a successful first probe**.
-- Follow-up: re-read monitor `5086672` and its availability after the first scheduled probe; record the first check timestamp and observed status. Do not create a duplicate monitor if it remains pending; investigate provider-side scheduling/validation instead.
-- No paid plan/resource was created, no duplicate monitor was created, and no application or patient data was sent to the monitoring provider. Monitoring covers HTTP status/uptime only; it does not prove authentication, clinical workflows, database health, or clinical readiness.
+- Created monitor **Roshan Health Hub - Production**, ID `5086672`, and confirmed it through Better Stack list/detail reads.
+- The initial target `https://roshan-health-hub-hjfy.vercel.app/` returned HTTP 404 `DEPLOYMENT_NOT_FOUND` with response body `The deployment could not be found on Vercel.` Incident `1033415913` was created. Vercel project lookup verified `roshan-health-hub.vercel.app` as the canonical production domain; the project `roshan-health-hub-hjfy` does not exist in the connected Vercel team.
+- Corrected the existing monitor (no duplicate created) to `https://roshan-health-hub.vercel.app/`, preserving its 180-second check frequency, `eu`/`as` regions, 15-second timeout, SSL verification, redirect following, email alerts, 60-second confirmation period, 180-second recovery period, and unpaused state.
+- At 15:13 UTC the monitor still reported `down`; its `last_checked_at` (15:12:47 UTC) was from before the target URL correction, so a successful probe of the corrected URL is **not yet confirmed**. Recheck monitor `5086672` after the next scheduled probe and confirm the incident resolves before marking monitoring healthy.
+- No paid plan/resource or duplicate monitor was created, and no application or patient data was sent to the monitoring provider. HTTP uptime monitoring does not prove authentication, clinical workflows, database health, or clinical readiness.
 
 ---
 
