@@ -92,11 +92,29 @@ END
 $test$;
 RESET ROLE;
 
+-- Preserve the explicitly documented legacy compatibility path: an active super-admin without a branch may create an unassigned supplier bill.
+UPDATE public.users SET branch_id=NULL WHERE id='10000000-0000-0000-0000-000000000001';
+SELECT set_config('test.super_admin','true',false);
+SET ROLE authenticated;
+SELECT public.post_supplier_bill('30000000-0000-0000-0000-000000000001','BILL-SUPER-UNASSIGNED',current_date,NULL,30,0,'synthetic super-admin compatibility test');
+DO $test$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM public.supplier_bills WHERE invoice_number='BILL-SUPER-UNASSIGNED' AND branch_id IS NULL AND total_amount=30) THEN
+   RAISE EXCEPTION 'super-admin without branch lost unassigned supplier-bill compatibility';
+ END IF;
+END
+$test$;
+RESET ROLE;
+UPDATE public.users SET branch_id='20000000-0000-0000-0000-000000000001' WHERE id='10000000-0000-0000-0000-000000000001';
+SELECT set_config('test.super_admin','false',false);
+
 DO $test$
 BEGIN
  IF (SELECT count(*) FROM public.payments)<>1 THEN RAISE EXCEPTION 'payment idempotency did not preserve one payment'; END IF;
  IF (SELECT paid_amount FROM public.invoices WHERE id='40000000-0000-0000-0000-000000000001')<>3 THEN RAISE EXCEPTION 'invoice paid amount did not match one payment'; END IF;
  IF (SELECT count(*) FROM public.cashbox_transactions)<>2 THEN RAISE EXCEPTION 'cashbox direct-write guard changed RPC writes'; END IF;
- IF (SELECT count(*) FROM public.supplier_bills)<>1 THEN RAISE EXCEPTION 'supplier bill invalid attempts left rows'; END IF;
+ IF (SELECT count(*) FROM public.supplier_bills)<>2 THEN RAISE EXCEPTION 'supplier bill invalid attempts or compatibility path changed row count'; END IF;
+ IF NOT EXISTS (SELECT 1 FROM public.supplier_bills WHERE invoice_number='BILL-QA' AND branch_id='20000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'branch-scoped supplier bill missing'; END IF;
+ IF NOT EXISTS (SELECT 1 FROM public.supplier_bills WHERE invoice_number='BILL-SUPER-UNASSIGNED' AND branch_id IS NULL) THEN RAISE EXCEPTION 'unassigned super-admin supplier bill missing'; END IF;
 END
 $test$;
