@@ -110,6 +110,7 @@ BEGIN
  BEGIN INSERT INTO public.procedure_orders VALUES ('80000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatched patient'); RAISE EXCEPTION '52 same-branch mismatched procedure patient/visit was allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF EXISTS (SELECT 1 FROM public.certificates WHERE id='50000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION '53 mismatched certificate residue'; END IF;
  IF EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION '54 mismatched procedure order residue'; END IF;
+ BEGIN INSERT INTO public.procedure_orders VALUES ('80000000-0000-0000-0000-000000000007',NULL,'40000000-0000-0000-0000-000000000002','null patient cross-branch visit'); RAISE EXCEPTION 'null patient_id bypassed branch isolation for procedure order'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END
 $test$;
 RESET ROLE;
@@ -123,5 +124,6 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND patient_id='30000000-0000-0000-0000-000000000002') THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000002' AND patient_id='30000000-0000-0000-0000-000000000002' AND visit_id='40000000-0000-0000-0000-000000000002') THEN RAISE EXCEPTION 'branch-B procedure order missing or changed'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND discount_percent=10) THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
+ IF EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000007') THEN RAISE EXCEPTION 'null-patient cross-branch procedure order residue'; END IF;
 END
 $test$;
