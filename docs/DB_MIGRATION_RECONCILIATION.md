@@ -509,3 +509,12 @@ Two tested source candidates were applied to Supabase project `jewzonxplxhogqrnh
 - `roshan_post_expense_finite_amount` version `20261017225540`: live `post_expense` now guards NULL/NaN/±Infinity/zero/negative values and retains its security-definer/search-path/execution posture. No data writes were performed by the migration.
 - The live ledger has 99 entries through version `20261017225540`; both new migration names are recorded once. Rollback SQL and operational verification are in [docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md](PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md).
 - The earlier source-parity report is not current for 99 entries. Rerun the migration source-parity workflow and update the current reconciliation result. Full historical replay remains blocked by the missing reviewed initial baseline and the intentionally redacted environment-specific identity-link migration.
+
+## Superseding live-ledger update — 2026-10-18 (101 entries)
+
+Two additional precision migrations were applied after the 99-entry state above:
+
+- `roshan_post_expense_money_precision` version `20261017230623`: `post_expense` now rejects any amount not representable to two decimal places, while retaining the prior finite/non-positive guards.
+- `roshan_insurance_claim_money_precision` version `20261017230645`: approval/payment RPCs reject non-finite and over-precision amounts; payment storage and ledger amounts now use the same validated two-decimal value, and the claim row is selected with an exact row shape before locking.
+
+Read-back confirms **101 ledger entries** through `20261017230645`. The current source-delta JSON and verifier cover eight later source mappings plus the frozen 93-entry hash snapshot. No claims, payments, expenses, or prior authorizations existed at preflight/postflight, and no business rows were modified by these migrations. The delta workflow validates source files and mapping metadata, not persisted SQL hashes. Full historical replay remains unproven because the initial baseline is missing and the environment-specific identity mapping remains intentionally redacted.
