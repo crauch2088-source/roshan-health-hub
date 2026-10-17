@@ -401,3 +401,18 @@ The Phase 24/25 migrations are narrow additive SECURITY DEFINER RPCs with empty 
 The post-deployment revocation SQL `db/roshan_phase17_revoke_legacy_dispense_rpc.sql` remains **not applied**. Keep it unapplied until authenticated browser/UI smoke tests pass, because the current deployed UI may still call the legacy dispense RPC.
 
 The billing migration sequence passed isolated PostgreSQL 17 integration tests and a rollback-only live-schema/behavior dry run before application. After application, simulated-auth smoke tests verified consultation + lab consolidation, idempotent retry, and explicit secondary invoice creation; all synthetic rows were removed. The historical source mapping, clean replay, and live-schema parity remain unresolved. The current production UI smoke test for Phases 24/25 is still pending because Vercel production deployment is blocked by the account build-rate limit; do not describe the frontend changes as live until a new READY production deployment and authenticated smoke test succeed.
+
+
+## Verified executable-source parity for the latest five ledger entries — 2026-10-17
+
+A read-only query retrieved the stored `statements` array for each applied migration below. These comparisons are limited to these five rows; they do not establish parity for the earlier 88 entries or prove that a clean replay is safe.
+
+| Version | Applied migration | Source candidate | Live statement chars | Stored statement MD5 (array joined with LF) | Comparison |
+|---|---|---|---:|---|---|
+| `20261016204859` | `roshan_phase21_patient_registration_privileges_20261016` | `db/roshan_phase21_patient_registration_privileges.sql` | 242 | `d144550991750e1da0038b0abe736467` | Executable statements match; explanatory comments differ |
+| `20261016211342` | `roshan_phase22_clinic_local_queue_date_20261016` | `db/roshan_phase22_clinic_local_queue_date.sql` | 1530 | `e00a14d7e2e85c0b8758b25530461cd7` | Exact size match; source body inspected |
+| `20261016215806` | `roshan_phase23_legacy_queue_allocator_20261016` | `db/roshan_phase23_legacy_queue_allocator_20261016.sql` | 1020 | `3834801544bdb05811970fe960e3815a` | Exact size match; source body inspected |
+| `20261016221553` | `roshan_phase24_visit_form_options_20261016` | `db/roshan_phase24_visit_form_options.sql` | 1584 | `d0db6a224a6996ef36bd885c6357b17d` | Source differs by one trailing character/newline; function and grant statements match on inspection |
+| `20261016222009` | `roshan_phase25_current_app_profile_20261016` | `db/roshan_phase25_current_app_profile.sql` | 2012 | `bc446eaaafd5b080ce00a5b53d713174` | Source differs by one trailing character/newline; function and grant statements match on inspection |
+
+The fingerprint is `md5(array_to_string(statements, E'\\n'))` over the live `supabase_migrations.schema_migrations.statements` array. All five live rows have one stored statement and no stored rollback body. This adds reproducible live fingerprints and partial source mapping, not a claim of full migration parity. The full 93-row ledger still requires mapping, semantic diff, dependency ordering, and disposable clean-replay validation before any historical replay or new RLS rollout.
