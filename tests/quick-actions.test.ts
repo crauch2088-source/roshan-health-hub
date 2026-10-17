@@ -8,6 +8,7 @@ const ROUTE_FILES: Record<string, string> = {
   new_patient: "patients.tsx",
   new_visit: "visits.tsx",
   new_invoice: "billing.tsx",
+  new_lab_order: "visits.tsx",
 };
 
 test("quick actions require both route-read and action-create permissions", () => {
