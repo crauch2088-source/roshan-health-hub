@@ -191,3 +191,15 @@ This section supersedes older status snapshots above wherever they conflict. Sou
 - The five PR API snapshots report different base SHAs; do not assume their diffs are based on the same current main or merge them in a batch. Refresh base/head comparisons immediately before any integration decision.
 - Vercel's latest listed READY production deployment remains SHA `4b4b871b6637bb85703336d3c6f47e4e3f3f0c1f`, behind current main. Do not force deployment while the build-rate-limit failure remains unresolved.
 - No Supabase writes, production migration, PR merge, or paid-resource creation was performed during this refresh.
+
+
+## PR ancestry comparison against current main — 2026-10-17 10:47 UTC
+
+GitHub compare API reports every security draft #50–#54 as **diverged** from current `main`; their merge bases are historical and their heads are respectively 49, 49, 49, 48, and 42 commits behind the current main tip (while 5, 18, 9, 10, and 9 branch commits are ahead). Current comparison results:
+- #50: merge base `43afd071ace95f891591ba1ca5448713e1df38cb`, 5 ahead / 49 behind.
+- #51: merge base `43afd071ace95f891591ba1ca5448713e1df38cb`, 18 ahead / 49 behind.
+- #52: merge base `43afd071ace95f891591ba1ca5448713e1df38cb`, 9 ahead / 49 behind.
+- #53: merge base `710f1232b8c972c0d1a5d9720c2cf8e03c8a96e7`, 10 ahead / 48 behind.
+- #54: merge base `de28027ac8798e025f22f68a122b132ebf1b6029`, 9 ahead / 42 behind.
+
+The focused SQL and fixture files appear as added files in each comparison, but that does not establish migration-order compatibility or prove clean replay. Treat current successful CI as fixture-level evidence only. Do not merge/rebase these drafts blindly; first reconstruct the dependency/order map and compare each candidate against current migration sources and grants.
