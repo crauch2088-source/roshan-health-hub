@@ -7,6 +7,8 @@
 - **Repository:** https://github.com/crauch2088-source/roshan-health-hub
 - **Master plan (detailed execution source of truth):** [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md)
 - **Database migration reconciliation:** [docs/DB_MIGRATION_RECONCILIATION.md](docs/DB_MIGRATION_RECONCILIATION.md)
+- **Per-migration source parity manifest:** [docs/recovered-migrations/source-parity-report.json](docs/recovered-migrations/source-parity-report.json)
+- **Security PR review:** [docs/SECURITY_PR_REVIEW.md](docs/SECURITY_PR_REVIEW.md)
 - **Tool/integration map:** [docs/PLUGIN_TOOLING_MAP.md](docs/PLUGIN_TOOLING_MAP.md)
 - **Archived original product brief:** [docs/ORIGINAL_PRODUCT_BRIEF.md](docs/ORIGINAL_PRODUCT_BRIEF.md)
 - **Production domain historically verified:** https://roshan-health-hub.vercel.app/
@@ -89,3 +91,11 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 - The 93 migrations are not yet a proven clean bootstrap: earliest migrations assume pre-existing objects. A reviewed baseline schema and replay-only variant that omits the environment-specific identity UPDATE are still required.
 - Supabase quoted development-branch cost is **US$0.01344/hour**. No branch was created because nonzero recurring cost requires explicit user agreement. Continue static/source work while waiting; do not use production as replay target.
 - Vercel team/project listing now succeeds, so the old 403 was not reproduced. Project `roshan-health-hub` and canonical domain aliases are visible; latest production deployment reports READY. The newest source commit's Vercel check still points to the build-rate-limit page; do not bypass or force deployment.
+
+
+## Security review continuation — 2026-10-17
+
+- Added [per-migration source parity manifest](docs/recovered-migrations/source-parity-report.json) with 93 version/name entries and SHA-256 hashes of normalized SQL (no SQL text or identity literals included). Result: 92 normalized matches, one intentionally redacted identity-link migration, zero unmapped entries.
+- Added [security PR review](docs/SECURITY_PR_REVIEW.md) documenting concrete regression-test gaps for PRs #50–#53 and remaining replay/authorization matrix gates for #54. All five PRs remain open/draft and source-only.
+- Read-only live schema checks confirmed `patient_id`/`visit_id` nullable on `followups`, `queue_tickets`, `patient_discounts`, and `procedure_orders`; prescription and lab-order patient IDs are NOT NULL. Helper semantics in #51/#52 should reject or explicitly constrain null-patient + valid-visit linkage.
+- A disposable Supabase development branch quote is US$0.01344/hour. It has not been created pending explicit approval of this nonzero recurring cost.
