@@ -100,6 +100,23 @@ BEGIN
      OR v_result.coverage_rule_id <> '62000000-0000-0000-0000-000000000002' THEN
     RAISE EXCEPTION 'generic medicine coverage rule was not applied';
   END IF;
+
+  -- The calculator must accept only supported service types and currency-scale amounts.
+  BEGIN
+    PERFORM * FROM public.fn_calculate_insurance_coverage(
+      '63000000-0000-0000-0000-000000000001','unsupported',NULL,NULL,100
+    );
+    RAISE EXCEPTION 'test failed: unsupported service type accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
+
+  BEGIN
+    PERFORM * FROM public.fn_calculate_insurance_coverage(
+      '63000000-0000-0000-0000-000000000001','consultation',NULL,NULL,10.001
+    );
+    RAISE EXCEPTION 'test failed: over-precision gross amount accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
 END;
 $coverage$;
 
