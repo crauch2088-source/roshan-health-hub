@@ -52,6 +52,13 @@ BEGIN
   END;
   IF NOT rejected THEN RAISE EXCEPTION 'negative expense amount was accepted'; END IF;
 
+  rejected := false;
+  BEGIN
+    PERFORM public.post_expense('other', 17.251, 'invalid over-precision amount');
+  EXCEPTION WHEN invalid_parameter_value THEN rejected := true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'over-precision expense amount was accepted'; END IF;
+
   expense_id := public.post_expense('utilities', 17.25, 'valid regression expense');
   SELECT amount, branch_id INTO actual_amount, actual_branch
     FROM public.expenses WHERE id = expense_id;
