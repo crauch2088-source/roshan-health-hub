@@ -13,11 +13,11 @@ testRunner("inventory receiving uses the atomic guarded pharmacy RPC", () => {
     /\.rpc\(["']fn_receive_pharmacy_batch_atomic["']/,
     "batch receipt must call the server-side atomic RPC",
   );
-  assert.match(source, /p_idempotency_key:\\s*idempotencyKey/);
-  assert.match(source, /setActiveTab\\("batches"\\)/);
-  assert.match(source, /initialMedicineId=\\{pendingReceiveMedicineId\\}/);
-  assert.match(source, /<Field label=\\{t\\("purchase_price"\\)\\}>\\s*<Input\\s+type="number"\\s+min="0"\\s+step="0\\.01"/s);
-  assert.match(source, /<Field label=\\{t\\("selling_price"\\)\\}>\\s*<Input\\s+type="number"\\s+min="0"\\s+step="0\\.01"/s);
+  assert.match(source, /p_idempotency_key:\s*idempotencyKey/);
+  assert.match(source, /setActiveTab\("batches"\)/);
+  assert.match(source, /initialMedicineId=\{pendingReceiveMedicineId\}/);
+  assert.match(source, /purchase_price"\)\}>\s*<Input\s+type="number"\s+min="0"\s+step="0\.01"/s);
+  assert.match(source, /selling_price"\)\}>\s*<Input\s+type="number"\s+min="0"\s+step="0\.01"/s);
   assert.doesNotMatch(
     source,
     /supabase\s*\.from\(["']pharmacy_inventory["']\)\s*\.insert\s*\(/,
