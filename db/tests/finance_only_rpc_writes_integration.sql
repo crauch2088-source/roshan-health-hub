@@ -51,6 +51,7 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.cashbox_transactions WHERE amount=10 AND branch_id='20000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'deposit missing branch or signed amount'; END IF;
  IF NOT EXISTS (SELECT 1 FROM public.cashbox_transactions WHERE amount=-2 AND branch_id='20000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'withdrawal missing branch or signed amount'; END IF;
  BEGIN PERFORM public.post_cashbox_entry('deposit',0,'cash','manual','invalid',now()); RAISE EXCEPTION 'zero cashbox amount accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM public.post_cashbox_entry(NULL,10,'cash','manual','invalid null direction',now()); RAISE EXCEPTION 'NULL cashbox direction accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
 END
 $test$;
 
