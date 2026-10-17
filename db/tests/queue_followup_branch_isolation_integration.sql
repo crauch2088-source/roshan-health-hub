@@ -19,6 +19,7 @@ BEGIN
  -- Reparenting an otherwise visible row to a different patient's visit must fail.
  BEGIN UPDATE public.followups SET visit_id='40000000-0000-0000-0000-000000000003' WHERE id='50000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'followup patient/visit reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF affected<>1 THEN RAISE EXCEPTION 'followups same-branch UPDATE denied'; END IF;
+ BEGIN UPDATE public.followups SET patient_id='30000000-0000-0000-0000-000000000003' WHERE id='50000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'followup patient reassignment mismatched with visit was allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','cross'); RAISE EXCEPTION 'followups cross-branch INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','local');
  DELETE FROM public.followups WHERE id='50000000-0000-0000-0000-000000000002'; GET DIAGNOSTICS affected=ROW_COUNT;
@@ -35,6 +36,7 @@ BEGIN
  -- Queue ticket parent reassignment must not bypass the patient/visit invariant.
  BEGIN UPDATE public.queue_tickets SET visit_id='40000000-0000-0000-0000-000000000003' WHERE id='60000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'queue ticket patient/visit reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF affected<>1 THEN RAISE EXCEPTION 'queue same-branch UPDATE denied'; END IF;
+ BEGIN UPDATE public.queue_tickets SET patient_id='30000000-0000-0000-0000-000000000003' WHERE id='60000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'queue ticket patient reassignment mismatched with visit was allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','cross'); RAISE EXCEPTION 'queue cross-branch INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','waiting');
  DELETE FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000002'; GET DIAGNOSTICS affected=ROW_COUNT;
