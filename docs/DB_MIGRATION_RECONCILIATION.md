@@ -493,3 +493,10 @@ The original 93-row snapshot had 92/93 normalized source matches. The current 97
 
 PR [#64](https://github.com/crauch2088-source/roshan-health-hub/pull/64) merged as `580f4a4ef6b8745eaff9eb6e7f012a1e4afdd68e` after 27/27 exact-head checks passed. It adds a source-only RLS migration and synthetic PostgreSQL 17 regression for `insurance_prior_authorizations`; the source branch was deleted. No SQL was applied to Supabase production. The live ledger remains 97 entries through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`, so the three existing prior-authorization policies remain a live branch-isolation gap pending a reviewed production migration. The post-merge CI and Vercel build were still running at the last check. See [MASTER_PLAN.md](MASTER_PLAN.md) for next steps.
 
+## 2026-10-18 continuation — focused candidates merged, not yet applied
+
+- PR #65 merged as `ae5140f608c3f00e4dee7060408a6d5c14590675`; it adds a parent-reassignment denial regression for prior authorizations. Exact PR head passed 26/26 checks.
+- PR #66 merged as `e8b9ada207eca147f586fc360275f3926721f306`; it adds the source-only `post_expense` finite-amount guard and PostgreSQL 17 regression for NaN/±Infinity/zero/negative values. Exact PR head passed 20/20 checks.
+- Live read-only checks show 97 tracked migrations through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`, zero rows in `patient_insurance` and `insurance_prior_authorizations`, and the three prior-authorization policies still permission-only. The live `post_expense` body also remains unchanged. No production SQL was executed for either candidate.
+- Canonical Vercel deployment for `e8b9ada207eca147f586fc360275f3926721f306` reached `READY`/`PROMOTED`, alias assigned with no error.
+- Release gates remain: write/read a rollback plan, reconcile migration naming/order against the live ledger, apply only after exact-target preflight, and then re-read the migration history and live function/policy catalog. Full replay remains unproven because the initial baseline is missing and one environment-specific identity-link migration is deliberately redacted.
