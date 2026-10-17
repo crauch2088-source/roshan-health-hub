@@ -10,7 +10,7 @@ const source = readFileSync(
 testRunner("inventory receiving uses the atomic guarded pharmacy RPC", () => {
   assert.match(
     source,
-    /\.rpc\(["']fn_receive_pharmacy_batch["']/,
+    /\.rpc\(["']fn_receive_pharmacy_batch_atomic["']/,
     "batch receipt must call the server-side atomic RPC",
   );
   assert.doesNotMatch(
