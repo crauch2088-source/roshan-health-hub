@@ -1,3 +1,16 @@
+## Live production security audit — 2026-10-17 (latest verified)
+
+See [`docs/LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md`](LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md) for the full evidence and exact release gate.
+
+- Current `main`: `5b549663a4d8f26d372a31f19b63ee5d4cdba812`.
+- Live Supabase confirms the 11 targeted child-table policies still lack parent/branch predicates and `authenticated` retains direct write privileges on the five finance tables. The insurance claim RPC is also still the older, weaker definition. These are confirmed configuration gaps, not proof of an actual breach.
+- The candidate bundle is merged into source but is **not deployed**. Production application remains blocked pending a no-cost clean-replay/baseline proof and full compatibility/test review; no production SQL was changed in this audit.
+- The migration ledger remains at 93 versions, with 92 normalized source matches and one intentionally redacted identity-link exception; a clean bootstrap remains unproven.
+- Latest inspected Vercel production deployment is READY but is behind current `main`; current-main combined status reports a Vercel build-rate-limit failure. No paid upgrade or bypass was attempted.
+- Next execution: establish a zero-cost PostgreSQL 17 replay route, complete exact bundle/role-operation tests, then apply as one tracked migration only if the release gate passes. Continue independent UI/business-logic work while blocked.
+
+---
+
 # Roshan Health Hub — Master Plan to Production
 
 **Single source of truth:** keep this plan updated until launch. Snapshot date: 2026-10-16. Repository: https://github.com/crauch2088-source/roshan-health-hub
