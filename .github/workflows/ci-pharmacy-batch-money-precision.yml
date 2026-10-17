@@ -1,10 +1,11 @@
-name: Pharmacy batch money precision regression (PostgreSQL 17)
+name: Pharmacy batch precision and idempotency regression (PostgreSQL 17)
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
       - 'db/roshan_pharmacy_batch_money_precision.sql'
+      - 'db/roshan_pharmacy_batch_receipt_idempotency.sql'
       - 'db/tests/pharmacy_batch_money_precision_fixture.sql'
       - 'db/tests/pharmacy_batch_money_precision_integration.sql'
       - '.github/workflows/ci-pharmacy-batch-money-precision.yml'
@@ -28,4 +29,5 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/pharmacy_batch_money_precision_fixture.sql \
             -f db/roshan_pharmacy_batch_money_precision.sql \
+            -f db/roshan_pharmacy_batch_receipt_idempotency.sql \
             -f db/tests/pharmacy_batch_money_precision_integration.sql
