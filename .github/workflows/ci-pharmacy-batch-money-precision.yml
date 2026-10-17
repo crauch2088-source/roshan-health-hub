@@ -1,0 +1,31 @@
+name: Pharmacy batch money precision regression (PostgreSQL 17)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'db/roshan_pharmacy_batch_money_precision.sql'
+      - 'db/tests/pharmacy_batch_money_precision_fixture.sql'
+      - 'db/tests/pharmacy_batch_money_precision_integration.sql'
+      - '.github/workflows/ci-pharmacy-batch-money-precision.yml'
+jobs:
+  pharmacy-batch-precision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply fixture, migration, and behavioral regression
+        env: { PGPASSWORD: postgres }
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/pharmacy_batch_money_precision_fixture.sql \
+            -f db/roshan_pharmacy_batch_money_precision.sql \
+            -f db/tests/pharmacy_batch_money_precision_integration.sql
