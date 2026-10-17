@@ -34,6 +34,18 @@ CREATE TABLE public.supplier_payments (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, supplier_bill_id uuid, supplier_id uuid,
  amount numeric, payment_method text, reference text, payment_date date, notes text, created_by uuid, deleted_at timestamptz
 );
+CREATE TABLE public.insurance_claims (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), claim_number text, patient_insurance_id uuid, invoice_id uuid,
+ status text, submitted_amount numeric, approved_amount numeric, paid_amount numeric, notes text, created_by uuid
+);
+CREATE TABLE public.insurance_claim_items (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), claim_id uuid, service_type text, reference_id uuid,
+ description text, gross_amount numeric, covered_amount numeric, patient_amount numeric, coverage_rule_id uuid
+);
+CREATE TABLE public.insurance_claim_payments (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), claim_id uuid, amount numeric, payment_method text, reference text,
+ payment_date date, created_by uuid
+);
 
 CREATE FUNCTION public.app_has_perm(p_permission text) RETURNS boolean LANGUAGE sql STABLE
 AS $function$ SELECT position('|' || p_permission || '|' IN '|' || COALESCE(current_setting('test.permissions',true),'') || '|')>0 $function$;
@@ -51,6 +63,8 @@ AS $function$ SELECT public.is_super_admin() $function$;
 -- Representative live grants before the proposed migration.
 GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON
  public.cashbox_transactions,public.expenses,public.payments,public.supplier_bills,public.supplier_payments TO authenticated,anon;
+GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON
+ public.insurance_claims,public.insurance_claim_items,public.insurance_claim_payments TO authenticated,anon;
 
 CREATE FUNCTION public.add_cashbox_entry(_direction text,_amount numeric,_type text,_method text,_category text,_description text,_date timestamptz)
 RETURNS uuid LANGUAGE sql SECURITY DEFINER SET search_path TO ''

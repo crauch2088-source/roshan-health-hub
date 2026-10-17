@@ -631,6 +631,12 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
            public.supplier_bills, public.supplier_payments
   FROM PUBLIC, anon, authenticated;
 
+-- Insurance claims, claim items and insurer payments are financial ledger records.
+-- The application writes them through validated SECURITY DEFINER RPCs only.
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
+  ON TABLE public.insurance_claims, public.insurance_claim_items, public.insurance_claim_payments
+  FROM PUBLIC, anon, authenticated;
+
 -- Retire the unused legacy cashbox RPC; the app calls post_cashbox_entry.
 REVOKE EXECUTE ON FUNCTION public.add_cashbox_entry(text,numeric,text,text,text,text,timestamptz)
   FROM PUBLIC, anon, authenticated;
