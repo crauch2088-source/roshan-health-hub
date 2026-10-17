@@ -203,3 +203,11 @@ The parent-branch test suite previously duplicated a certificate `visit_id` reas
 Draft [PR #55](https://github.com/crauch2088-source/roshan-health-hub/pull/55) now stages all five security candidates and includes a same-schema PostgreSQL 17 combined regression. At code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`, the combined-schema job passed: migrations #50–#54 applied in order, all five existing regression suites passed in one database, and policy catalog / finance privilege assertions passed. The isolated matrix also passed 5/5. Later commits on that PR were documentation-only.
 
 This is not full historical migration replay. The migration-source baseline and the intentionally redacted identity-link migration still need independent reconciliation, and the exhaustive app call-site audit is incomplete. PR #55 remains draft/open; no production SQL, policy, grant, or row was changed. Do not clear the cross-branch release blocker until those remaining gates pass.
+
+
+## Supabase Auth password hardening — 2026-10-17
+
+- Verified the Supabase Auth service is ACTIVE_HEALTHY.
+- The live password_min_length was 6; it has been raised to **8** via the Management API, and the subsequent read-back verified 8. This applies to future password setting/change flows; it does not change existing passwords or require an immediate sign-out.
+- Leaked-password protection (password_hibp_enabled) remains **disabled**. An attempted single-setting enable was rejected by Supabase because HaveIBeenPwned protection is available only on Pro plans and above. No upgrade or paid resource was purchased, and no other Auth setting was changed by that attempt.
+- This Advisor finding remains open; do not mark it resolved or bypass the plan restriction. Revisit only if a no-cost supported alternative becomes available or the user explicitly approves a plan change.

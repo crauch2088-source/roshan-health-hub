@@ -258,3 +258,21 @@ See [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](docs/SECURITY_BRANCH_ISOLATI
 - The isolated candidate matrix passed 5/5 jobs. More importantly, the shared-schema integration job passed at code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`: it applied all five candidate migrations in order, ran all five existing regression scripts against one database, and passed policy-catalog and finance-privilege assertions. The subsequent PR commits were documentation-only.
 - The shared-schema fixture is synthetic and is **not** a replay of the entire historical production migration chain. Full baseline/source reconciliation, app RPC call-site audit, and release review remain required. PR #55 is draft/open and no candidate SQL was applied to production.
 - See [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md) on the integration branch / PR #55 for the complete evidence and remaining gates.
+
+
+## Security bundle integration update — 2026-10-17
+
+- PR #55 stages five child-table branch-isolation and finance direct-write hardening candidates. The combined PostgreSQL 17 test passed before the bundle was canonicalized; a fresh run against the canonical bundle is required before merge.
+- Live read-only catalog evidence: 44 policies on 11 child tables still use permission-only predicates without parent-branch helpers; authenticated retains INSERT/UPDATE/DELETE privileges on all five finance tables targeted by the finance candidate.
+- The application call-site scan found no direct client writes to `invoice_items`, `prescription_items`, `payments`, `cashbox_transactions`, `expenses`, `supplier_bills`, or `supplier_payments` in the inspected routes. Verified direct child-table writes remain in follow-ups, medical certificates, queue-ticket updates, and lab-order-item updates; these depend on RLS branch predicates. The finance screen's direct INSERT is to `suppliers`, not one of the five restricted ledger tables.
+- Added `db/roshan_security_candidate_bundle_20261017.sql` as the ordered artifact; the combined-schema job applies this exact file, then runs the five integration suites and catalog assertions.
+- Main is `627baa6568eebf1b69cd7afa73da7fa7e9fc3da9`; its Vercel status is a build-rate-limit failure, not a passing deployment for this source. Historical migration replay remains unproven: 92/93 normalized source matches, one intentionally redacted identity-link migration, zero unmapped ledger entries.
+- No production SQL or grants have been changed. Merge/release remains blocked until fresh CI and a clean replay from a reviewed baseline.
+
+
+## Supabase Auth password hardening — 2026-10-17
+
+- Verified the Supabase Auth service is ACTIVE_HEALTHY.
+- The live password_min_length was 6; it has been raised to **8** via the Management API, and the subsequent read-back verified 8. This applies to future password setting/change flows; it does not change existing passwords or require an immediate sign-out.
+- Leaked-password protection (password_hibp_enabled) remains **disabled**. An attempted single-setting enable was rejected by Supabase because HaveIBeenPwned protection is available only on Pro plans and above. No upgrade or paid resource was purchased, and no other Auth setting was changed by that attempt.
+- This Advisor finding remains open; do not mark it resolved or bypass the plan restriction. Revisit only if a no-cost supported alternative becomes available or the user explicitly approves a plan change.

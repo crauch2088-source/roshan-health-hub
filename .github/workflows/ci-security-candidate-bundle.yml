@@ -1,0 +1,97 @@
+name: Security candidate bundle regression (isolated fixtures)
+
+on:
+  pull_request:
+    paths:
+      - 'db/roshan_invoice_item_branch_isolation.sql'
+      - 'db/roshan_parent_branch_isolation.sql'
+      - 'db/roshan_queue_followup_branch_isolation.sql'
+      - 'db/roshan_prescription_lab_child_branch_isolation.sql'
+      - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/roshan_security_candidate_bundle_20261017.sql'
+      - 'db/tests/*branch_isolation*.sql'
+      - 'db/tests/finance_only_rpc_writes_*.sql'
+      - 'db/tests/security_candidate_combined_*.sql'
+      - '.github/workflows/ci-security-candidate-bundle.yml'
+
+jobs:
+  candidate-bundle:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Invoice item branch isolation
+            fixture: db/tests/invoice_item_branch_isolation_fixture.sql
+            migration: db/roshan_invoice_item_branch_isolation.sql
+            integration: db/tests/invoice_item_branch_isolation_integration.sql
+          - name: Parent and patient child branch isolation
+            fixture: db/tests/parent_branch_isolation_fixture.sql
+            migration: db/roshan_parent_branch_isolation.sql
+            integration: db/tests/parent_branch_isolation_integration.sql
+          - name: Queue and follow-up branch isolation
+            fixture: db/tests/queue_followup_branch_isolation_fixture.sql
+            migration: db/roshan_queue_followup_branch_isolation.sql
+            integration: db/tests/queue_followup_branch_isolation_integration.sql
+          - name: Prescription and lab child branch isolation
+            fixture: db/tests/prescription_lab_child_branch_isolation_fixture.sql
+            migration: db/roshan_prescription_lab_child_branch_isolation.sql
+            integration: db/tests/prescription_lab_child_branch_isolation_integration.sql
+          - name: Finance RPC-only writes and numeric validation
+            fixture: db/tests/finance_only_rpc_writes_fixture.sql
+            migration: db/roshan_phase27_finance_rpc_only_writes.sql
+            integration: db/tests/finance_only_rpc_writes_integration.sql
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply candidate and its focused regression suite
+        env:
+          PGPASSWORD: postgres
+          FIXTURE: ${{ matrix.fixture }}
+          MIGRATION: ${{ matrix.migration }}
+          INTEGRATION: ${{ matrix.integration }}
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f "$FIXTURE" \
+            -f "$MIGRATION" \
+            -f "$INTEGRATION"
+
+  combined-schema:
+    name: Combined schema migration and policy regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply shared synthetic fixture and all candidate migrations in order
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/security_candidate_combined_fixture.sql \
+            -f db/roshan_security_candidate_bundle_20261017.sql \
+            -f db/tests/security_candidate_combined_integration.sql
