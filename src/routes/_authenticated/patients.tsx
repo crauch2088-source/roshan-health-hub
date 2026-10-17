@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, Phone, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   DataPanel,
@@ -43,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
+import { listenForQuickAction } from "@/lib/quick-actions";
 import { rpc, s, usePagedRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, formatDate } from "@/lib/medical";
@@ -90,6 +91,15 @@ function PatientsPageInner() {
   const debouncedSearch = useDebounced(search, 300);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm());
+
+  useEffect(
+    () => listenForQuickAction("new_patient", () => {
+      if (!can("patients.create")) return;
+      setForm(emptyForm());
+      setOpen(true);
+    }),
+    [can],
+  );
 
   const list = usePagedRows<Row[]>(
     ["patients", debouncedSearch],
