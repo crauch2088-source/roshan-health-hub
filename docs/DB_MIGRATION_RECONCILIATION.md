@@ -464,3 +464,10 @@ The public source for `20260818191254_fix_patients_rls_and_admin_link` remains a
 A free GitHub Actions PostgreSQL 17 job applies this variant to a synthetic fixture and verifies the four policy operations and predicates, fixture DML behavior, and that no identity link is created. The job passed on main commit `ed1218e35121d9de08845fcc943fb8a3252717a6`; all 14 checks on that commit were successful. This is an isolated test of the policy-repair portion, **not** proof that the complete 93-entry migration chain replays cleanly.
 
 The full-chain replay gate remains open because a trustworthy pre-migration schema baseline is still missing. Do not use a guessed baseline or production as a replay target. No paid Supabase resource was created.
+
+
+## Final replay-safe validation status — 2026-10-17
+
+The replay-only policy variant and synthetic PostgreSQL 17 integration are now enforced by CI. The source-parity verifier also rejects an email, identity UUID, or `UPDATE public.users SET auth_user_id` in the replay variant, and checks that all four patient policy definitions remain present. Latest main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed all 15 checks, including both CodeQL language analyses.
+
+This is evidence for the policy portion of the redacted migration only. It does not supply the missing pre-migration baseline or prove a clean replay of the full 93-entry chain. Production remains unchanged and no paid database branch was created.

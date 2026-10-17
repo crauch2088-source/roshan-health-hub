@@ -1155,3 +1155,11 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - Added `db/tests/redacted_migration_policy_replay_fixture.sql` and `db/tests/redacted_migration_policy_replay_integration.sql`; GitHub Actions PostgreSQL 17 applies the synthetic fixture, runs the policy repair, verifies policy names/commands/permission predicates, tests SELECT/INSERT/UPDATE/DELETE, and asserts the synthetic app user remains unlinked.
 - Main commit `ed1218e35121d9de08845fcc943fb8a3252717a6` passed all 14 checks, including the new isolated replay job, source-parity verifier, application CI, and both CodeQL analyses.
 - Full-chain replay remains blocked by the missing trustworthy pre-migration baseline. Do not claim all 93 migrations replay cleanly and do not use production as a test target. No paid Supabase branch/project was created.
+
+
+## Final verification after replay-safe migration checks — 2026-10-17
+
+- Latest main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed all **15/15** checks: application CI, source-parity manifest plus replay-safe variant validation, isolated PostgreSQL 17 patient-policy replay test, and both CodeQL language analyses.
+- The source-parity verifier now enforces that the replay-safe redacted-migration variant contains no email/identity UUID and no identity UPDATE, while preserving all four patient RLS policies.
+- PRs #50–#54 remain open/draft/unmerged; latest head checks are all green. No paid resources or production SQL/grant/policy/data mutations were performed.
+- Full 93-migration replay is still blocked by the absence of a reviewed pre-migration baseline. Vercel's current-main status points to a build-rate-limit failure; do not force deployment. Last READY deployment inspected is earlier docs-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`.

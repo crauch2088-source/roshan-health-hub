@@ -145,3 +145,11 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 - Recovered a replay-only variant of `20260818191254_fix_patients_rls_and_admin_link` at [the replay-safe SQL file](docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql). It preserves the four patient RLS policy changes but intentionally omits the one-time environment-specific Auth-to-app-user identity UPDATE; no email or identity UUID is included.
 - Added a synthetic PostgreSQL 17 fixture and behavioral integration test. The new `Replay redacted migration policy portion` job passed, and all 14 checks on main commit `ed1218e35121d9de08845fcc943fb8a3252717a6` were green, including CodeQL and the 93-entry source-parity check.
 - This closes the isolated policy-portion test gap only. The full 93-migration chain still cannot be replayed from blank until a trustworthy pre-migration baseline is reconstructed and reviewed. No paid resource or production database change was used.
+
+
+## Final verification after replay-safe migration checks — 2026-10-17
+
+- Latest main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed all **15/15** checks, including the 93-entry source-parity verifier, replay-safe patient-policy migration integration, application build/lint/typecheck, and both CodeQL language analyses.
+- The parity verifier now additionally ensures the replay-safe migration variant contains no environment email/identity UUID or `UPDATE public.users SET auth_user_id`, while retaining all four patient policies.
+- All PRs #50–#54 remain open/draft/unmerged; every workflow on their latest test heads is green. No paid resources or production database changes were used.
+- Full-chain replay remains blocked by the missing trustworthy pre-migration baseline. Vercel's check on current main still reports the provider build-rate-limit page; the last READY deployment inspected is earlier documentation-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. No deployment was forced.

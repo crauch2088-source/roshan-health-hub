@@ -168,3 +168,10 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - The redacted historical migration's policy repair is now tested using a separate replay-only variant that omits its environment-specific identity UPDATE. The synthetic PostgreSQL 17 fixture verifies policy replacement and SELECT/INSERT/UPDATE/DELETE behavior; no Supabase connection is used.
 - The new job is part of `.github/workflows/ci.yml` and passed on main SHA `ed1218e35121d9de08845fcc943fb8a3252717a6`. All 14 main checks on that SHA passed.
 - Full 93-migration replay remains blocked by the missing reviewed pre-migration baseline. No paid branch/project was created.
+
+
+## Final no-cost verification — 2026-10-17
+
+- Latest main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed 15/15 checks, including the source-parity verifier's identity-redaction assertions, the replay-safe patient policy integration, application CI and both CodeQL language analyses.
+- No paid Supabase resource was created. The only replay is a synthetic PostgreSQL 17 fixture on GitHub Actions; the full migration chain still lacks a reviewed baseline.
+- Vercel current-main status remains the build-rate-limit failure link; no forced deployment was attempted.

@@ -119,3 +119,10 @@ Read-only inspection of the connected production project found:
 - The isolated PostgreSQL 17 workflow verifies stale-policy removal, four authenticated policies and their operation/permission predicates, successful fixture SELECT/INSERT/UPDATE/DELETE, and no Auth-to-app-user identity assignment. The workflow passed on main commit `ed1218e35121d9de08845fcc943fb8a3252717a6`.
 - All 14 checks on that main commit passed, including the replay-safe policy job, source-parity check, application CI and both CodeQL language analyses.
 - This validates only the policy portion of one redacted migration. Full replay remains blocked until a reviewed pre-migration baseline exists; PRs #50–#54 remain open/draft and unmerged pending that release gate.
+
+
+## Final verification after replay-safe migration checks — 2026-10-17
+
+- The final main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed 15/15 checks, including the new replay-safe policy integration, source-parity checks that reject identity literals/UPDATEs in the replay variant, and both CodeQL analyses.
+- All PRs #50–#54 remain open/draft/unmerged and their latest test heads have passing focused PostgreSQL 17 integration and full CI.
+- No paid resources or production database mutations were used. Full-chain replay remains gated on a trustworthy pre-migration baseline. Vercel's current-main check still points to the build-rate-limit page; no deployment was forced.

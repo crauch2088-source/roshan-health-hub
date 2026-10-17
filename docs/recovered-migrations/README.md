@@ -18,3 +18,8 @@ Next gates: review migration bodies in order; compare to current `db/*.sql` arti
 - `replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql` is a deliberately separate, non-canonical test variant. It removes the identity UPDATE entirely and preserves the four patient RLS policy changes. It includes no environment email or identity UUID.
 - `db/tests/redacted_migration_policy_replay_fixture.sql` and `db/tests/redacted_migration_policy_replay_integration.sql` validate this policy portion on an isolated PostgreSQL 17 fixture through free GitHub Actions. The job passed on `ed1218e35121d9de08845fcc943fb8a3252717a6`.
 - This does not reconstruct the missing pre-migration baseline and does not establish full-chain replay. Do not move the replay-only file into `supabase/migrations` or use it for production deployment.
+
+
+## Final verification status — 2026-10-17
+
+The replay-safe policy-only variant is covered by a synthetic PostgreSQL 17 integration test. CI verifies the four patient policy operations and confirms the replay variant contains no email/identity UUID and no identity UPDATE. Main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed all 15 checks. The original migration remains redacted; the replay variant is not canonical deployment SQL and does not prove full-chain replay because the pre-migration baseline is still missing.
