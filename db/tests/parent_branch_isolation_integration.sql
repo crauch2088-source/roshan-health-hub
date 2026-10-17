@@ -5,6 +5,8 @@
 DO $test$
 BEGIN
  IF has_function_privilege('anon','private.app_has_patient_branch(uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon patient helper EXECUTE must be revoked'; END IF;
+ IF NOT has_function_privilege('authenticated','private.app_has_patient_branch(uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated patient helper EXECUTE missing'; END IF;
+ IF NOT has_function_privilege('authenticated','private.app_has_attachment_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated attachment helper EXECUTE missing'; END IF;
  IF has_function_privilege('anon','private.app_has_attachment_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon attachment helper EXECUTE must be revoked'; END IF;
  IF has_function_privilege('anon','private.app_has_patient_visit_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon patient-visit helper EXECUTE must be revoked'; END IF;
  IF NOT has_function_privilege('authenticated','private.app_has_patient_visit_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated patient-visit helper EXECUTE missing'; END IF;
@@ -54,6 +56,7 @@ BEGIN
  IF affected<>0 THEN RAISE EXCEPTION '18 patient discounts cross-branch UPDATE'; END IF;
  UPDATE public.patient_discounts SET discount_percent=6 WHERE id='70000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT;
  IF affected<>1 THEN RAISE EXCEPTION '19 patient discounts same-branch UPDATE denied'; END IF;
+ BEGIN UPDATE public.patient_discounts SET patient_id='30000000-0000-0000-0000-000000000002' WHERE id='70000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'patient discount cross-branch parent reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.patient_discounts VALUES ('70000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002',20); RAISE EXCEPTION '20 patient discounts cross-branch INSERT'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.patient_discounts VALUES ('70000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001',7);
  DELETE FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002'; GET DIAGNOSTICS affected=ROW_COUNT;
@@ -119,5 +122,6 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.procedure_results WHERE id='90000000-0000-0000-0000-000000000002' AND findings='B') THEN RAISE EXCEPTION '50 branch-B procedure result changed'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND patient_id='30000000-0000-0000-0000-000000000002') THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000002' AND patient_id='30000000-0000-0000-0000-000000000002' AND visit_id='40000000-0000-0000-0000-000000000002') THEN RAISE EXCEPTION 'branch-B procedure order missing or changed'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.patient_discounts WHERE id='70000000-0000-0000-0000-000000000002' AND discount_percent=5) THEN RAISE EXCEPTION 'branch-B patient discount missing or changed'; END IF;
 END
 $test$;
