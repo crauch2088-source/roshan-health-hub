@@ -416,3 +416,22 @@ A read-only query retrieved the stored `statements` array for each applied migra
 | `20261016222009` | `roshan_phase25_current_app_profile_20261016` | `db/roshan_phase25_current_app_profile.sql` | 2012 | `bc446eaaafd5b080ce00a5b53d713174` | Source differs by one trailing character/newline; function and grant statements match on inspection |
 
 The fingerprint is `md5(array_to_string(statements, E'\\n'))` over the live `supabase_migrations.schema_migrations.statements` array. All five live rows have one stored statement and no stored rollback body. This adds reproducible live fingerprints and partial source mapping, not a claim of full migration parity. The full 93-row ledger still requires mapping, semantic diff, dependency ordering, and disposable clean-replay validation before any historical replay or new RLS rollout.
+
+
+## Additional executable-source comparison — 2026-10-17
+
+The live `statements` arrays for the following applied entries were inspected read-only and compared with their named repository candidates. The stored SQL fingerprint is `md5(array_to_string(statements, E'\\n'))`. Matching character counts support the comparison but are not a cryptographic source-to-ledger match by themselves; statuses below distinguish exact-size matches from comment-only differences.
+
+| Version | Applied migration | Repository source | Live SQL chars | Live SQL MD5 | Comparison |
+|---|---|---|---:|---|---|
+| `20261016161923` | `roshan_phase18_dedupe_finance_audit_triggers_20261016` | `db/roshan_phase18_dedupe_finance_audit_triggers.sql` | 488 | `85508b85692a7e7afde5b9d95bc710a7` | Executable DROP TRIGGER statements match; candidate contains additional explanatory comments |
+| `20261016162410` | `roshan_phase21_patient_registration_atomicity_20261016` | `db/roshan_phase21_patient_registration_atomicity.sql` | 2719 | `b4def56bc1051561e0fd050d8bc68c2e` | Exact size match |
+| `20261016170816` | `roshan_security_privileged_role_guard_20261016` | `db/roshan_security_privileged_role_guard.sql` | 9007 | `821e577820db96b6aae38a8f85d87c21` | Exact size match |
+| `20261016172209` | `roshan_phase7_atomic_prescription_20261016` | `db/roshan_phase7_atomic_prescription.sql` | 6122 | `7c98f8352ebb8fc3828b27f32eed4ee1` | Function and grants match; live ledger includes additional deployment/rollback header comments |
+| `20261016183123` | `roshan_phase8_atomic_invoice` | `db/roshan_phase8_atomic_invoice.sql` | 5873 | `22e6a70963e0b2ef883f8e7223b38bfe` | Exact size match |
+| `20261016183130` | `roshan_phase13_consolidated_visit_invoice` | `db/roshan_phase13_consolidated_visit_invoice.sql` | 16827 | `58ab88398b767ece8b4d7841ddf9b244` | Exact size match |
+| `20261016183136` | `roshan_phase14_dispense_invoice_atomic_compat` | `db/roshan_phase14_dispense_invoice_atomic.sql` | 10609 | `fabc2d706bba136ef7f6e2daa10fb9af` | Exact size match |
+| `20261016183145` | `roshan_phase15_manual_invoice_consolidation` | `db/roshan_phase15_manual_invoice_consolidation.sql` | 4133 | `c58f615ca007f1ed9a51d02e1df00a0b` | Exact size match |
+| `20261016183152` | `roshan_phase16_billing_idempotency` | `db/roshan_phase16_billing_idempotency.sql` | 5001 | `e6cb5067237f10e45bb8955a62254cd2` | Exact size match |
+
+Together with the preceding five-entry comparison, this adds source mapping for ten recent ledger entries, including the important atomic prescription/invoice and privileged-role guard changes. It still does not reconcile the earlier historical migration sequence or replace a clean disposable replay. Do not replay any migration or promote the proposed RLS candidates on this evidence alone.
