@@ -8,7 +8,14 @@ import { CommandPaletteProvider, useCommandPalette } from "@/components/command-
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { NavRail } from "@/components/nav-rail";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { NavPreferencesProvider } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
@@ -70,7 +77,11 @@ function DesktopQuickActions() {
   return (
     <DropdownMenu dir={lang === "ar" ? "rtl" : "ltr"}>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" className="hidden shrink-0 gap-1.5 shadow-sm lg:inline-flex" aria-label={t("quick_actions")}>
+        <Button
+          size="sm"
+          className="hidden shrink-0 gap-1.5 shadow-sm lg:inline-flex"
+          aria-label={t("quick_actions")}
+        >
           <Plus className="size-4" aria-hidden />
           <span>{t("quick_actions")}</span>
         </Button>
