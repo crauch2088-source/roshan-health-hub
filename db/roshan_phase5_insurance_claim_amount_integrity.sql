@@ -21,6 +21,9 @@ DECLARE
   pi_patient_id uuid;
   invoice_patient_id uuid;
   invoice_branch uuid;
+  invoice_visit_id uuid;
+  visit_patient_id uuid;
+  visit_branch uuid;
   user_branch uuid;
   item_gross numeric;
   item_covered numeric;
@@ -63,7 +66,8 @@ BEGIN
     RAISE EXCEPTION 'active patient insurance not found';
   END IF;
 
-  SELECT patient_id, branch_id INTO invoice_patient_id, invoice_branch
+  SELECT patient_id, branch_id, visit_id
+    INTO invoice_patient_id, invoice_branch, invoice_visit_id
   FROM public.invoices
   WHERE id = _invoice_id AND deleted_at IS NULL;
 
@@ -73,6 +77,29 @@ BEGIN
 
   IF pi_patient_id <> invoice_patient_id THEN
     RAISE EXCEPTION 'patient insurance does not belong to invoice patient';
+  END IF;
+
+  -- A visit-linked invoice must agree with its visit on both patient and branch.
+  -- Otherwise an invoice can be crafted with a legitimate patient/branch but a
+  -- different visit, bypassing the intended clinical/financial linkage.
+  IF invoice_visit_id IS NOT NULL THEN
+    SELECT v.patient_id, v.branch_id
+      INTO visit_patient_id, visit_branch
+      FROM public.visits v
+     WHERE v.id = invoice_visit_id
+       AND v.deleted_at IS NULL;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'invoice visit not found';
+    END IF;
+
+    IF visit_patient_id IS DISTINCT FROM invoice_patient_id THEN
+      RAISE EXCEPTION 'invoice visit patient does not match invoice patient';
+    END IF;
+
+    IF visit_branch IS DISTINCT FROM invoice_branch THEN
+      RAISE EXCEPTION 'invoice visit branch does not match invoice branch';
+    END IF;
   END IF;
 
   SELECT branch_id INTO user_branch
