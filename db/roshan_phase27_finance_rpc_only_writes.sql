@@ -29,7 +29,7 @@ BEGIN
   IF _amount IS NULL OR _amount::text IN ('NaN','Infinity','-Infinity') OR _amount <= 0 THEN
     RAISE EXCEPTION 'amount must be finite and greater than zero' USING ERRCODE = '22023';
   END IF;
-  IF _direction NOT IN ('deposit','withdrawal') THEN
+  IF _direction IS NULL OR _direction NOT IN ('deposit','withdrawal') THEN
     RAISE EXCEPTION 'direction must be deposit or withdrawal' USING ERRCODE = '22023';
   END IF;
   uid := public.current_app_user_id();
