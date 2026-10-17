@@ -65,3 +65,13 @@ Principles: preserve permission gates and atomic RPCs; never auto-invent clinica
 - Automated source/pure-logic regression file is included in test:guard. Final CI run 38982527057 passed all 10 jobs on commit c24dbfb; this documentation-only refresh should pass CI again before merge.
 - Completed in code: 40/40 checklist items with source/pure-logic regression coverage. Remaining release gates are actual device/browser screenshots (RTL/LTR and dark/light/print), live screen-reader/keyboard review, full synthetic-data E2E, clinician review of pediatric safety wording, and a current preview deployment. These are not claimed completed merely because code tests pass.
 - Feature branch only: no database migration, production SQL mutation, merge, or deployment.
+
+## Verification update — 2026-10-17
+
+- Focused follow-up fix: empty laboratory result values were being coerced to numeric zero by `Number("")`, which could incorrectly display an out-of-range warning when the configured lower reference bound was positive.
+- Extracted `isAbnormalLabResult` into `src/lib/lab-workflow.ts` and added regression coverage for empty/whitespace/nonnumeric values and below/within/above-range numeric values in `tests/clinical-workflow-redesign.test.ts`.
+- First CI run exposed a missing import; fixed in the follow-up commit. Current branch head: `3e61a29dfa041c32fc3b528738a11b25c42da8a5`.
+- Current CI run [#39008648463](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39008648463): install/security audit/typecheck/lint/build, guard tests, PostgreSQL 17 integrations, and the existing billing/pharmacy/registration/permissions regression jobs passed. CodeQL job completed successfully and uploaded results; confirm the code-scanning dashboard for any resulting alerts before release.
+- Vercel preview deployment is READY for the current branch head: https://roshan-health-hub-git-redesign-clinical-workflo-eaaa52-roshan45.vercel.app
+- No authenticated internal-screen browser QA was possible: available browser profiles have no recorded signed-in sites for the application. The login page alone is not sufficient to sign off RTL/LTR, dark mode, printing, screen-reader/keyboard behavior, or clinical E2E.
+- Release gates remain open: authenticated mobile/browser walkthrough, full synthetic-data E2E, clinician review of pediatric wording, historical migration-source parity, and review of any CodeQL findings. This branch remains unmerged and no production deployment or database mutation was performed.
