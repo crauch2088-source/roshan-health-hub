@@ -102,3 +102,12 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 
 
 - **Live authorization baseline (2026-10-17):** 56/56 public tables have RLS and none lacks policies; detailed advisor and grant findings are recorded in [security review](docs/SECURITY_PR_REVIEW.md). This is not a completed adversarial authorization matrix.
+
+
+## No-cost security continuation — 2026-10-17
+
+- No paid Supabase branch or project was created. Use GitHub Actions PostgreSQL 17 services for isolated tests.
+- Regression suites were strengthened on PRs #50–#53: parent reassignments now exercise RLS `WITH CHECK`, with row postconditions and helper grants where applicable. Latest dedicated PostgreSQL 17 results passed for #50, #52, #53 and the parent-branch integration for #51; general CI for the final #51 test commit was still running at last check. PR #54's finance integration and CI are green.
+- All PRs #50–#54 remain unmerged pending clean migration replay and any outstanding review gates. No production SQL or permissions changed.
+- Full replay is still not proven: 92/93 normalized source matches, one intentionally redacted environment-specific identity-link migration, and no reviewed pre-migration baseline. Do not guess the baseline or replay against production.
+- Details: [security PR review](docs/SECURITY_PR_REVIEW.md), [master plan](docs/MASTER_PLAN.md), [migration reconciliation](docs/DB_MIGRATION_RECONCILIATION.md), [source parity manifest](docs/recovered-migrations/source-parity-report.json).
