@@ -1,6 +1,7 @@
 name: Finance-only RPC write isolation integration
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
