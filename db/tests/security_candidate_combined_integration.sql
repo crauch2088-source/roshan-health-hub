@@ -72,7 +72,16 @@ BEGIN
      OR has_table_privilege('authenticated','public.insurance_claim_items','DELETE')
      OR has_table_privilege('authenticated','public.insurance_claim_payments','INSERT')
      OR has_table_privilege('authenticated','public.insurance_claim_payments','UPDATE')
-     OR has_table_privilege('authenticated','public.insurance_claim_payments','DELETE') THEN
+     OR has_table_privilege('authenticated','public.insurance_claim_payments','DELETE')
+     OR has_table_privilege('anon','public.insurance_claims','INSERT')
+     OR has_table_privilege('anon','public.insurance_claims','UPDATE')
+     OR has_table_privilege('anon','public.insurance_claims','DELETE')
+     OR has_table_privilege('anon','public.insurance_claim_items','INSERT')
+     OR has_table_privilege('anon','public.insurance_claim_items','UPDATE')
+     OR has_table_privilege('anon','public.insurance_claim_items','DELETE')
+     OR has_table_privilege('anon','public.insurance_claim_payments','INSERT')
+     OR has_table_privilege('anon','public.insurance_claim_payments','UPDATE')
+     OR has_table_privilege('anon','public.insurance_claim_payments','DELETE') THEN
     RAISE EXCEPTION 'insurance direct-write privileges unexpectedly remain in combined catalog';
   END IF;
 
