@@ -27,10 +27,11 @@
       "normalized_live_sql_sha256": "87afb3fb053e79ae55185c9b0d081f5fa5c7c347b3d637b86f3e903762213791",
       "source_path": "docs/recovered-migrations/sql/20260818191254_fix_patients_rls_and_admin_link.sql",
       "source_git_blob_sha": "951b4a1741a08192b6a1edfe8082dc568254ca72",
-      "normalized_source_sql_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalized_source_sql_sha256": null,
       "normalized_text_match": false,
       "classification": "redacted_environment_specific_identity_mapping",
-      "notes": "Public source intentionally omits environment-specific identity-link SQL; not replayable as-is."
+      "notes": "Public source is a comment-only redaction placeholder; normalized SQL hash omitted because it contains no executable statements.",
+      "source_is_placeholder": true
     },
     {
       "version": "20260818191556",
