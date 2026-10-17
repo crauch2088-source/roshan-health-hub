@@ -93,11 +93,11 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-            -f db/tests/security_candidate_combined_fixture.sql \\
-            -f db/roshan_invoice_item_branch_isolation.sql \\
-            -f db/roshan_parent_branch_isolation.sql \\
-            -f db/roshan_queue_followup_branch_isolation.sql \\
-            -f db/roshan_prescription_lab_child_branch_isolation.sql \\
-            -f db/roshan_phase27_finance_rpc_only_writes.sql \\
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/security_candidate_combined_fixture.sql \
+            -f db/roshan_invoice_item_branch_isolation.sql \
+            -f db/roshan_parent_branch_isolation.sql \
+            -f db/roshan_queue_followup_branch_isolation.sql \
+            -f db/roshan_prescription_lab_child_branch_isolation.sql \
+            -f db/roshan_phase27_finance_rpc_only_writes.sql \
             -f db/tests/security_candidate_combined_integration.sql
