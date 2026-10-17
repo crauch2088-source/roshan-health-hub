@@ -37,7 +37,7 @@ test("every advertised quick action has a route consumer for its one-shot flag",
     );
     assert.match(
       source,
-      new RegExp(`listenForQuickAction\\(["']${action.key}["']\\)`),
+      new RegExp(`listenForQuickAction\\(["']${action.key}["']\\s*,`),
       `${action.key} must open its create flow after navigation`,
     );
   }
