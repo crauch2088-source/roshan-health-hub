@@ -1255,3 +1255,22 @@ The focused SQL and fixture files appear as added files in each comparison, but 
 2. Recover or reconstruct a reviewed pre-migration baseline and prove the complete ordered 93-entry chain in a zero-cost disposable PostgreSQL environment, retaining the redacted identity migration's privacy boundary.
 3. Decide explicitly whether nullable patient/visit child links are valid product states before adding stricter constraints to PR #51/#52.
 4. Resume per-PR grant, policy, and role × operation × branch review; then rerun CI on the final integrated candidate.
+
+
+## Execution batch — 2026-10-17 (verified follow-up)
+### Verified outcomes
+- Corrected the migration reconciliation inventory to use the per-version source parity manifest instead of stale “source mapping pending” labels. The document now distinguishes 4 exact basename matches among 26 top-level `db/` files from 92 normalized content matches across 105 tracked candidates; the remaining one is the intentionally redacted environment-specific identity-link migration. Commit: [`b03b3c0`](https://github.com/crauch2088-source/roshan-health-hub/commit/b03b3c07f33266b55c60a27c7b7e5a3e154c708e).
+- Found and fixed duplicated regression assertions in the parent-branch test suites. PR #51 now independently tests `procedure_orders.patient_id` reassignment and same-branch-but-mismatched patient/visit INSERT; current head [`b2cd795`](https://github.com/crauch2088-source/roshan-health-hub/commit/b2cd795af0ffa0d4de93ccdfe721bfa94257ee9f) passed 20/20 checks.
+- PR #52 adds `patient_id` reassignment checks for both follow-ups and queue tickets; current head [`c806059`](https://github.com/crauch2088-source/roshan-health-hub/commit/c8060592284355ed1c934120be7cfe0ae7c650c1) passed 20/20 checks.
+- PR #53 replaces a duplicate lab-order parent reassignment test with a distinct same-branch mismatched patient/visit parent test; current head [`91c6f33`](https://github.com/crauch2088-source/roshan-health-hub/commit/91c6f33d0873c533040a911de1599065aa995acf) passed 20/20 checks.
+- PR #54 adds a compatibility regression for the documented super-admin-without-branch supplier-bill path. A read-only aggregate live audit found one active super-admin account without a branch; no user identity was copied into the repo. Current head [`9ad29bb`](https://github.com/crauch2088-source/roshan-health-hub/commit/9ad29bbc5f21d980279e916e8f4a9d5d140dffa4) passed 21/21 checks.
+- Main migration-inventory documentation commit `b03b3c07f33266b55c60a27c7b7e5a3e154c708e` passed all 14 checks.
+- Latest Vercel production deployment still verified READY on older SHA `5cf7eea2037314f7e90bf2f654e05a4d3840e667`; the current docs-only main SHA is not confirmed deployed. Do not trigger a manual deployment or bypass build-rate limits.
+- PR #50 remains unchanged at the previously verified head `ba5f742a05bb912ec169a056e9c29a0b08967f64` with its focused checks green. All PRs #50–#54 remain draft/open; no SQL was applied to production and no PR was merged.
+- Release blockers remain: safely reconcile PR ancestry/dependency order, preserve the intentionally redacted identity mapping, and prove the complete ordered migration chain against a reviewed pre-migration baseline in a zero-cost disposable PostgreSQL environment. Normalized text parity is not semantic proof or full replay evidence.
+
+### Next execution steps
+1. Re-check the live main SHA, current PR heads, and deployment alias before each integration batch.
+2. Continue authorization review for PRs #50–#54 by role × operation × branch, then resolve ancestry and dependencies without blind merging.
+3. Extend the free PostgreSQL 17 fixture tests only where a concrete gap is identified; use each PR head’s own CI result.
+4. Keep full migration replay blocked until a reviewed baseline exists; do not create a paid Supabase branch/project or execute candidate SQL on production.

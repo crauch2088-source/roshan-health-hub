@@ -170,3 +170,17 @@ The parent-branch test suite previously duplicated a certificate `visit_id` reas
 - PR #51 head `19e91bc38af9f16c2a6d46f8af6249742812ba84` has passing dedicated PostgreSQL 17 integration and PR-wide CI, including source-parity and replay-safe policy fixture jobs. This is not proof of full-chain replay.
 - Read-only live catalog counts: 44 public + 25 private SECURITY DEFINER functions. Of these, 22 public functions are authenticated-callable and zero public functions are anon-callable; anon lacks USAGE on `private` despite five private EXECUTE grants. No blanket grant changes recommended from counts alone.
 - No production SQL or grants changed. Keep PRs #50–#54 as drafts until clean replay baseline, nullable-link contract, ancestry, and final authorization matrices are resolved.
+
+
+## Execution batch — 2026-10-17 (verified follow-up)
+### New regression coverage and status
+- PR #51 (`b2cd795af0ffa0d4de93ccdfe721bfa94257ee9f`): 20/20 checks passed. Removed duplicate procedure-order visit reassignment assertions; now tests patient reassignment against a different visit and rejects a same-branch mismatched patient/visit INSERT.
+- PR #52 (`c8060592284355ed1c934120be7cfe0ae7c650c1`): 20/20 checks passed. Added patient reassignment regression checks for followups and queue tickets.
+- PR #53 (`91c6f33d0873c533040a911de1599065aa995acf`): 20/20 checks passed. Replaced duplicate lab-order cross-branch reassignment coverage with a same-branch mismatched-parent reassignment case.
+- PR #54 (`9ad29bbc5f21d980279e916e8f4a9d5d140dffa4`): 21/21 checks passed. Added a fixture regression for the explicitly documented super-admin/no-branch supplier-bill compatibility path. Read-only live aggregate confirms that this account state exists; this finding does not justify changing the established behavior without a product decision.
+- PR #50 remains at previously checked head `ba5f742a05bb912ec169a056e9c29a0b08967f64`; no new code was added to it in this batch.
+- Main migration-inventory documentation commit `b03b3c07f33266b55c60a27c7b7e5a3e154c708e` passed all 14 checks. Vercel remains READY on older SHA `5cf7eea2037314f7e90bf2f654e05a4d3840e667`; current docs-only SHA is not confirmed deployed.
+### Decision gates unchanged
+- All five security PRs remain open/draft and unmerged because their bases/ancestry are not reconciled with current `main` and full-chain replay is not proven.
+- No production SQL, policy, grant, or data mutation; no paid resource created.
+- Keep the redacted identity mapping private. The 92/93 normalized source comparison is text-level evidence only; it is not semantic proof or a clean replay.
