@@ -30,7 +30,7 @@ import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { getNavIcon } from "@/lib/nav-icons";
 import { filterByScope, getSearchMemory, type SearchResultItem } from "@/lib/search-service";
-import { armQuickAction, QUICK_ACTIONS } from "@/lib/quick-actions";
+import { armQuickAction, getAvailableQuickActions, type QuickActionKey } from "@/lib/quick-actions";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_ICON = {
@@ -123,14 +123,7 @@ export function GlobalSearchDialog({
     [pages, can, favorites],
   );
 
-  const availableActions = useMemo(
-    () =>
-      QUICK_ACTIONS.filter((action) => {
-        const destination = pages.find((item) => item.to === action.to);
-        return destination ? can(destination.perm) : false;
-      }),
-    [pages, can],
-  );
+  const availableActions = useMemo(() => getAvailableQuickActions(can), [can]);
 
   function reset() {
     setQuery("");
@@ -154,7 +147,7 @@ export function GlobalSearchDialog({
     goTo(item.to);
   }
 
-  function selectQuickAction(actionKey: (typeof QUICK_ACTIONS)[number]["key"], to: string) {
+  function selectQuickAction(actionKey: QuickActionKey, to: string) {
     armQuickAction(actionKey);
     goTo(to);
   }

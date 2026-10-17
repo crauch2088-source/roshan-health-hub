@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Languages, Search, UserRound } from "lucide-react";
+import { LogOut, Languages, Search, UserRound, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { AccountMenu } from "@/components/account-menu";
@@ -8,10 +8,20 @@ import { CommandPaletteProvider, useCommandPalette } from "@/components/command-
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { NavRail } from "@/components/nav-rail";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { NavPreferencesProvider } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { getNavIcon } from "@/lib/nav-icons";
+import { armQuickAction, getAvailableQuickActions } from "@/lib/quick-actions";
 
 const RAIL_COLLAPSED_KEY = "roshan:nav:rail-collapsed";
 
@@ -54,6 +64,49 @@ function SearchTrigger() {
         Ctrl K
       </kbd>
     </Button>
+  );
+}
+
+function DesktopQuickActions() {
+  const { t, lang } = useLang();
+  const { can } = useAuth();
+  const navigate = useNavigate();
+  const actions = getAvailableQuickActions(can);
+  if (actions.length === 0) return null;
+
+  return (
+    <DropdownMenu dir={lang === "ar" ? "rtl" : "ltr"}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="sm"
+          className="hidden shrink-0 gap-1.5 shadow-sm lg:inline-flex"
+          aria-label={t("quick_actions")}
+        >
+          <Plus className="size-4" aria-hidden />
+          <span>{t("quick_actions")}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>{t("quick_actions")}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {actions.map((action) => {
+          const Icon = getNavIcon(action.icon);
+          return (
+            <DropdownMenuItem
+              key={action.key}
+              className="min-h-10 gap-2"
+              onSelect={() => {
+                armQuickAction(action.key);
+                void navigate({ to: action.to });
+              }}
+            >
+              <Icon className="size-4 text-primary" aria-hidden />
+              {t(action.labelKey)}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -161,6 +214,7 @@ function Shell({ children }: { children: ReactNode }) {
           <img src="/roshan-logo.png" alt="" className="size-7 shrink-0 object-contain lg:hidden" />
           <BreadcrumbNav />
           <div className="min-w-0 flex-1" />
+          <DesktopQuickActions />
           <SearchTrigger />
           <MobileSearchButton />
           <Button
