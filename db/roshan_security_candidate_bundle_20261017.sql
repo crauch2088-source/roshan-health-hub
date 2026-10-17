@@ -6,7 +6,12 @@
 -- prescription/lab children -> finance RPC-only writes.
 -- Validation workflow applies this exact bundle to one PostgreSQL 17 schema.
 
-\n-- ============================================================================\n-- Component: db/roshan_invoice_item_branch_isolation.sql\n-- ============================================================================\n\n-- Focused remediation for invoice child-row branch isolation.
+
+-- ============================================================================
+-- Component: db/roshan_invoice_item_branch_isolation.sql
+-- ============================================================================
+
+-- Focused remediation for invoice child-row branch isolation.
 -- Apply only after the normal migration-history/replay review.
 -- invoice_items has no branch_id; derive authorization from its parent invoice.
 REVOKE ALL ON FUNCTION private.app_has_invoice_branch(uuid) FROM PUBLIC, anon;
@@ -47,8 +52,14 @@ ALTER POLICY invoice_items_delete ON public.invoice_items
   USING (
     (SELECT public.app_has_perm('billing.delete'))
     AND (SELECT private.app_has_invoice_branch(invoice_items.invoice_id))
-  );\n
-\n-- ============================================================================\n-- Component: db/roshan_parent_branch_isolation.sql\n-- ============================================================================\n\n-- Focused parent-branch isolation for child tables without branch_id.
+  );
+
+
+-- ============================================================================
+-- Component: db/roshan_parent_branch_isolation.sql
+-- ============================================================================
+
+-- Focused parent-branch isolation for child tables without branch_id.
 -- This source migration is not production-applied; migration replay parity is a release gate.
 REVOKE ALL ON FUNCTION private.app_has_patient_branch(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.app_has_patient_branch(uuid) TO authenticated;
@@ -226,8 +237,14 @@ ALTER POLICY procedure_results_delete ON public.procedure_results
   USING (
     (SELECT public.app_has_perm('procedures.delete'))
     AND (SELECT private.app_has_procedure_order_branch_access(procedure_results.procedure_order_id))
-  );\n
-\n-- ============================================================================\n-- Component: db/roshan_queue_followup_branch_isolation.sql\n-- ============================================================================\n\n-- Parent-branch authorization for queue tickets and follow-ups.
+  );
+
+
+-- ============================================================================
+-- Component: db/roshan_queue_followup_branch_isolation.sql
+-- ============================================================================
+
+-- Parent-branch authorization for queue tickets and follow-ups.
 -- Source-only: do not apply to production until migration replay parity is resolved.
 CREATE OR REPLACE FUNCTION private.app_has_patient_visit_branch_access(_patient_id uuid, _visit_id uuid)
 RETURNS boolean
@@ -280,8 +297,14 @@ ALTER POLICY queue_tickets_upd ON public.queue_tickets
     AND (SELECT private.app_has_patient_visit_branch_access(queue_tickets.patient_id, queue_tickets.visit_id)));
 ALTER POLICY queue_tickets_del ON public.queue_tickets
   USING ((SELECT public.is_super_admin())
-    AND (SELECT private.app_has_patient_visit_branch_access(queue_tickets.patient_id, queue_tickets.visit_id)));\n
-\n-- ============================================================================\n-- Component: db/roshan_prescription_lab_child_branch_isolation.sql\n-- ============================================================================\n\n-- Parent-branch isolation for prescriptions, prescription items, and lab-order items.
+    AND (SELECT private.app_has_patient_visit_branch_access(queue_tickets.patient_id, queue_tickets.visit_id)));
+
+
+-- ============================================================================
+-- Component: db/roshan_prescription_lab_child_branch_isolation.sql
+-- ============================================================================
+
+-- Parent-branch isolation for prescriptions, prescription items, and lab-order items.
 -- Source-only candidate: never apply to live Supabase before migration replay parity review.
 REVOKE ALL ON FUNCTION private.app_has_attachment_branch_access(uuid, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.app_has_attachment_branch_access(uuid, uuid) TO authenticated;
@@ -408,8 +431,14 @@ ALTER POLICY lab_order_items_delete ON public.lab_order_items
   USING (
     (SELECT public.app_has_perm('lab.delete'))
     AND (SELECT private.app_has_lab_order_item_branch_access(lab_order_items.order_id))
-  );\n
-\n-- ============================================================================\n-- Component: db/roshan_phase27_finance_rpc_only_writes.sql\n-- ============================================================================\n\n-- Finance-only direct-write hardening, split from the insurance-coupled draft.
+  );
+
+
+-- ============================================================================
+-- Component: db/roshan_phase27_finance_rpc_only_writes.sql
+-- ============================================================================
+
+-- Finance-only direct-write hardening, split from the insurance-coupled draft.
 -- Source-only candidate. Do not apply before full migration-source parity review.
 -- Existing UI uses post_cashbox_entry; add_cashbox_entry is legacy and has no current
 -- application call sites, so retire its authenticated EXECUTE path after verification.
@@ -617,4 +646,4 @@ GRANT EXECUTE ON FUNCTION public.post_supplier_bill(uuid,text,date,date,numeric,
 REVOKE EXECUTE ON FUNCTION public.post_supplier_payment(uuid,numeric,text,text,date,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.post_supplier_payment(uuid,numeric,text,text,date,text) TO authenticated;
 REVOKE EXECUTE ON FUNCTION public.reverse_cashbox_entry(uuid,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.reverse_cashbox_entry(uuid,text) TO authenticated;\n
+GRANT EXECUTE ON FUNCTION public.reverse_cashbox_entry(uuid,text) TO authenticated;

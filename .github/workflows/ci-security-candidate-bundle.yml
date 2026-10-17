@@ -8,6 +8,7 @@ on:
       - 'db/roshan_queue_followup_branch_isolation.sql'
       - 'db/roshan_prescription_lab_child_branch_isolation.sql'
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/roshan_security_candidate_bundle_20261017.sql'
       - 'db/tests/*branch_isolation*.sql'
       - 'db/tests/finance_only_rpc_writes_*.sql'
       - 'db/tests/security_candidate_combined_*.sql'
