@@ -1,3 +1,13 @@
+## Latest verified continuation — 2026-10-17 12:45 UTC
+
+- Current main after source/test improvements: `0ab1a85e572897b9aa95e14d7240560e9efbe8a7` (insurance visit-linkage guard and PostgreSQL 17 regressions merged via PR #58).
+- PR #57 merged `68655eb53680ebef2b1541086ecf6c7e99dd0aba`, enabling manual reruns of the security candidate bundle integration workflow.
+- The canonical security bundle passed all six PostgreSQL 17 GitHub Actions jobs (five isolated components + combined-schema test). The insurance candidate's new invoice/visit patient and branch consistency tests failed before the fix and passed after the fix; associated CI, source-parity, insurance, role-guard and prescription integration workflows passed.
+- These are source/fixture results, not live production verification. The live child-table RLS policies and five finance-table write grants remain unremediated; the insurance RPC is not deployed. Do not apply SQL until the no-cost historical baseline/replay and exact live compatibility gate is complete.
+- Vercel production is still behind current main; current-main Vercel check remains blocked by the Hobby build-rate limit. No paid upgrade or bypass was attempted.
+
+---
+
 ## Live production security audit — 2026-10-17 (latest verified)
 
 See [`docs/LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md`](LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md) for the full evidence and exact release gate.
