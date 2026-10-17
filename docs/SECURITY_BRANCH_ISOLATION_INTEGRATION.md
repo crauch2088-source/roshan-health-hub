@@ -79,3 +79,10 @@ A dedicated integration branch, `security/combined-branch-isolation-regression`,
 ### Aggregate matrix result
 
 At integration head `f4282efb10b6aeced74c6b7dbf6ae5916a65895e`, the corrected aggregate workflow completed **5/5 candidate jobs successfully**: invoice-item isolation, parent/patient child isolation, queue/follow-up isolation, prescription/lab child isolation, and finance RPC-only writes. The earlier single-job design failed because PostgreSQL roles are cluster-global even when separate databases are used; the workflow was corrected to use a separate PostgreSQL service container per matrix job. This result validates the isolated candidate suites from one integration branch, not a shared-schema combined migration replay. Other PR checks were still running at the time of this note.
+
+
+## Combined-schema test implementation — 2026-10-17
+
+Added `db/tests/security_candidate_combined_fixture.sql`, which defines the shared roles, schemas, tables, helper functions, seed rows, permissions, and baseline policies once, and `db/tests/security_candidate_combined_integration.sql`, which runs the five existing regression scripts sequentially against that same schema and then checks the final policy catalog and finance direct-write grants. The workflow now has a separate PostgreSQL 17 `combined-schema` job that applies candidates #50, #51, #52, #53, and #54 in that order before running the shared integration script. This is stronger than the five-job isolated matrix because it exercises the shared helper redefinition and cross-candidate policy state in one database.
+
+The latest workflow revision also removes the branch-push trigger so changes to this branch do not launch duplicate runs alongside the pull-request trigger. **Status at handoff:** the first run for the combined-schema job was queued; do not mark this new same-schema test as passing until its own exact-head job completes successfully. The earlier isolated matrix completed 5/5 successfully at `f4282efb10b6aeced74c6b7dbf6ae5916a65895e`.
