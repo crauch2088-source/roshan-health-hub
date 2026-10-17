@@ -1405,3 +1405,17 @@ Read-only verification performed at approximately 2026-10-17 22:18 UTC:
 2. Review migration replay/baseline parity and write a rollback/recovery plan before applying the source-only RLS migration to production.
 3. Continue per-function Security Advisor review and the authenticated phone-first RTL clinical workflow audit.
 
+## Continuation update — focused security hardening — 2026-10-18
+
+- Merged PR [#65](https://github.com/crauch2088-source/roshan-health-hub/pull/65) as `ae5140f608c3f00e4dee7060408a6d5c14590675`. Added a PostgreSQL 17 regression for reassigning an existing prior authorization from its valid same-branch insurance parent to another branch's parent; the test asserts rejection and unchanged parent linkage. All 26 checks passed on exact head `988cce45ae8772ac303f0d14dcb4e13f2bdcd53e`.
+- Merged PR [#66](https://github.com/crauch2088-source/roshan-health-hub/pull/66) as `e8b9ada207eca147f586fc360275f3926721f306`. Read-only inspection found live `public.post_expense` accepted PostgreSQL `numeric` NaN/±Infinity because its only amount guard was `NULL OR amount <= 0`. The source-only candidate rejects NULL, NaN, ±Infinity, zero, and negative values; its valid-expense/branch-attribution regression and dedicated PostgreSQL 17 CI job passed, with 20/20 checks successful on exact head `0aba80b61e23f74dfd95ad87816853fc8c255499`.
+- Vercel canonical production project `roshan-health-hub` has a `READY`/`PROMOTED` deployment for `e8b9ada207eca147f586fc360275f3926721f306`, with alias assigned and no alias error. The canonical URL remains `https://roshan-health-hub.vercel.app/`.
+- Fresh read-only Supabase audit: `insurance_prior_authorizations` and `patient_insurance` each contain zero rows; all three live prior-authorization policies still check permissions only, and the new private helper is not yet present. Live `post_expense` still has its old amount guard. The migration ledger remains at 97 entries through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`. **Neither candidate has been applied to production**; merging SQL source is not a live database change.
+- Security-function inventory: 20 authenticated-callable `SECURITY DEFINER` routines all have an empty fixed `search_path`; none is executable by `anon`; all remain executable by `authenticated` and must be assessed individually. The self-profile RPC is expected to be reviewed against its self-only identity contract rather than blanket-revoked.
+- Migration replay is still not proven: current ledger/source parity is 96/97 with one deliberately redacted environment-specific identity-link migration and no reviewed initial schema baseline. Do not claim production RLS or financial numeric hardening is complete until a tracked forward migration is safely applied and read back.
+
+### Next execution order
+1. Complete rollback/recovery review and verify migration ordering against the live ledger.
+2. Apply only the two narrow tested forward fixes if the rollback and ledger-tracking preflight passes; read back policies/function body and ledger after each migration.
+3. Continue individual SECURITY DEFINER call-site review and the authenticated phone-first RTL clinical workflow audit.
+4. Keep full historical replay and paid-only leaked-password protection explicitly unresolved until their actual prerequisites are met.
