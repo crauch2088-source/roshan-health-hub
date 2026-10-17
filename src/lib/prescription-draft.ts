@@ -85,3 +85,27 @@ export function buildMedicineSearchFilter(term: string): string | null {
     "strength.ilike." + pattern,
   ].join(",");
 }
+
+export type PrescriptionValidationError =
+  | "empty"
+  | "missing-name"
+  | "missing-dose"
+  | "missing-frequency"
+  | "missing-duration"
+  | "invalid-quantity";
+
+/** Validates completeness only; deliberately does not recommend a dose or regimen. */
+export function validatePrescriptionDrafts(
+  items: PrescriptionDraft[],
+): PrescriptionValidationError | null {
+  if (items.length === 0) return "empty";
+  for (const item of items) {
+    if (!item.name.trim()) return "missing-name";
+    if (!item.dose.trim()) return "missing-dose";
+    if (!item.frequency.trim()) return "missing-frequency";
+    if (!item.duration.trim()) return "missing-duration";
+    const quantity = Number(item.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1) return "invalid-quantity";
+  }
+  return null;
+}

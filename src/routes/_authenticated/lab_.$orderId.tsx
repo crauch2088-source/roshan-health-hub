@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
+import { isAbnormalLabResult } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
@@ -166,6 +167,39 @@ function LabOrderPageInner() {
     );
   }
 
+  const resultRows = (actualResultsQ.data ?? []) as Row[];
+  const hasUnsavedResultEdits = items.some((item) =>
+    parameters
+      .filter((parameter) => s(parameter, "test_id") === s(item, "test_id"))
+      .some((parameter) => {
+        const key = s(item, "id") + ":" + s(parameter, "id");
+        const saved = resultRows.find(
+          (row) =>
+            s(row, "order_item_id") === s(item, "id") &&
+            s(row, "parameter_id") === s(parameter, "id"),
+        );
+        return (
+          (values[key] ?? "").trim() !== s(saved, "result_value").trim() ||
+          (comments[key] ?? "") !== s(saved, "comment")
+        );
+      }),
+  );
+  const abnormalResultCount = items.reduce((count, item) => {
+    const itemParameters = parameters.filter(
+      (parameter) => s(parameter, "test_id") === s(item, "test_id"),
+    );
+    return (
+      count +
+      itemParameters.filter((parameter) => {
+        const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
+        if (!value) return false;
+        const range = rangeFor(s(parameter, "id"));
+        const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
+        const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
+        return isAbnormalLabResult(value, low, high);
+      }).length
+    );
+  }, 0);
   const save = useSave(
     async () => {
       for (let i = 0; i < items.length; i++) {
@@ -310,6 +344,24 @@ function LabOrderPageInner() {
         }
       />
 
+      {abnormalResultCount > 0 ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/35 bg-destructive/5 p-4 text-sm"
+        >
+          <p className="font-semibold text-destructive">
+            {lang === "ar"
+              ? "توجد " + abnormalResultCount + " نتيجة خارج المدى المرجعي."
+              : abnormalResultCount + " result(s) are outside the configured reference range."}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {lang === "ar"
+              ? "راجع القيم وسياق المريض قبل اعتماد النتائج. التنبيه لا يحدد القيم الحرجة؛ اتبع بروتوكول المركز للتصعيد."
+              : "Review the values and clinical context before verification. This is not a critical-value classifier; follow the center protocol."}
+          </p>
+        </div>
+      ) : null}
+
       <Card>
         <CardContent className="p-4">
           <SectionTitle>{lang === "ar" ? "النتائج" : "Results"}</SectionTitle>
@@ -366,11 +418,7 @@ function LabOrderPageInner() {
 
                           const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
 
-                          const num = Number(value);
-
-                          const abnormal =
-                            Number.isFinite(num) &&
-                            ((low !== 0 && num < low) || (high !== 0 && num > high));
+                          const abnormal = isAbnormalLabResult(value, low, high);
 
                           return (
                             <TableRow key={key}>
@@ -446,8 +494,31 @@ function LabOrderPageInner() {
             {can("lab.verify") && (
               <Button
                 variant="secondary"
-                disabled={verify.isPending}
-                onClick={() => verify.mutate(undefined as never)}
+                disabled={
+                  verify.isPending ||
+                  actualResultsQ.isLoading ||
+                  parametersQ.isLoading ||
+                  rangeQ.isLoading
+                }
+                onClick={() => {
+                  if (hasUnsavedResultEdits) {
+                    window.alert(
+                      lang === "ar"
+                        ? "احفظ تعديلات النتائج أولاً قبل اعتمادها."
+                        : "Save result changes before verification.",
+                    );
+                    return;
+                  }
+                  if (abnormalResultCount > 0) {
+                    const confirmed = window.confirm(
+                      lang === "ar"
+                        ? "توجد نتائج خارج المدى المرجعي. هل راجعتها مع سياق المريض قبل الاعتماد؟"
+                        : "Some results are outside the reference range. Have you reviewed the clinical context?",
+                    );
+                    if (!confirmed) return;
+                  }
+                  verify.mutate(undefined as never);
+                }}
               >
                 <CheckCircle2 className="size-4" />
                 {t("verify")}

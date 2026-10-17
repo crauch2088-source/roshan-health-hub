@@ -20,6 +20,24 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const { user } = useAuth();
   const { currency } = useSettings();
   const [tab, setTab] = useState("note");
+  const [noteDirty, setNoteDirty] = useState(false);
+  const [reviewChecks, setReviewChecks] = useState<Record<string, boolean>>({
+    identity: false,
+    history: false,
+    vitals: false,
+    plan: false,
+  });
+  const changeTab = (nextTab: string) => {
+    if (tab === "note" && noteDirty && nextTab !== "note") {
+      const message =
+        lang === "ar"
+          ? "لديك تغييرات غير محفوظة في الملاحظات السريرية. هل تريد مغادرة القسم وفقدان هذه التغييرات؟"
+          : "You have unsaved clinical note changes. Leave this section and discard them?";
+      if (!window.confirm(message)) return;
+      setNoteDirty(false);
+    }
+    setTab(nextTab);
+  };
   const visitQ = useRows<Row[]>(["consultation-visit", visitId], () =>
     supabase
       .from("visits")
@@ -119,16 +137,40 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         )}
       </div>
     );
-  const tabs: [string, string][] = [
-    ["note", "الملاحظات"],
-    ["vitals", "العلامات الحيوية"],
-    ["labs", "المختبر"],
-    ["prescription", "الوصفة"],
-    ["history", "السجل السابق"],
+  const reviewItems = [
+    {
+      key: "identity",
+      ar: "تأكد من هوية المريض والزيارة",
+      en: "Confirm patient and visit identity",
+    },
+    {
+      key: "history",
+      ar: "راجع الحساسية والأدوية والتاريخ المهم",
+      en: "Review allergies, medicines and relevant history",
+    },
+    {
+      key: "vitals",
+      ar: "راجع العلامات الحيوية عند الحاجة",
+      en: "Review vitals when clinically indicated",
+    },
+    {
+      key: "plan",
+      ar: "راجع الطلبات والوصفة وخطة المتابعة",
+      en: "Review orders, prescription and follow-up plan",
+    },
   ];
+  const reviewCount = Object.values(reviewChecks).filter(Boolean).length;
+
+  const tabs = [
+    { key: "note", ar: "الملاحظات", en: "Clinical note" },
+    { key: "vitals", ar: "العلامات الحيوية", en: "Vitals" },
+    { key: "labs", ar: "المختبر", en: "Laboratory" },
+    { key: "prescription", ar: "الوصفة", en: "Prescription" },
+    { key: "history", ar: "السجل السابق", en: "History" },
+  ] as const;
   return (
-    <div className="container mx-auto max-w-7xl space-y-4 p-4" dir="auto">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mx-auto max-w-[1440px] space-y-5" dir="auto">
+      <div className="flex flex-wrap items-center gap-3">
         <Link to="/clinic" className={buttonVariants({ variant: "outline", size: "sm" })}>
           <ArrowLeft className="size-4" /> {lang === "ar" ? "العيادة" : "Clinic"}
         </Link>
@@ -178,29 +220,38 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           )}
         </div>
       </div>
-      <Card>
-        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "المريض" : "Patient"}
+      <Card className="roshan-patient-context overflow-hidden">
+        <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
+          <div className="min-w-0">
+            <div className="roshan-field-label">{lang === "ar" ? "المريض" : "Patient"}</div>
+            <div className="truncate text-base font-bold tracking-tight">
+              {s(patient, "full_name") || "—"}
             </div>
-            <div className="font-semibold">{s(patient, "full_name")}</div>
-            <div className="text-xs" dir="ltr">
-              {s(patient, "mrn")}
+            <div
+              className="mt-1 inline-flex rounded-md bg-background/80 px-2 py-0.5 font-mono text-xs text-muted-foreground"
+              dir="ltr"
+            >
+              {s(patient, "mrn") || "—"}
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">
+            <div className="roshan-field-label">
               {lang === "ar" ? "العمر / الجنس" : "Age / Sex"}
             </div>
-            <div>
-              {calcAge(s(patient, "date_of_birth")) ?? "—"} · {s(patient, "gender")}
+            <div className="font-semibold">
+              {calcAge(s(patient, "date_of_birth")) ?? "—"} · {s(patient, "gender") || "—"}
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "القسم" : "Department"}
+            <div className="roshan-field-label">
+              {lang === "ar" ? "رقم الزيارة" : "Visit number"}
             </div>
+            <div className="font-mono text-base font-bold" dir="ltr">
+              {s(visit, "visit_number") || "—"}
+            </div>
+          </div>
+          <div>
+            <div className="roshan-field-label">{lang === "ar" ? "القسم" : "Department"}</div>
             <div>
               {lang === "ar"
                 ? s(rel(visit, "departments"), "name_ar") || s(rel(visit, "departments"), "name")
@@ -208,31 +259,102 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "الطبيب" : "Doctor"}
-            </div>
+            <div className="roshan-field-label">{lang === "ar" ? "الطبيب" : "Doctor"}</div>
             <div>{s(rel(visit, "users"), "full_name") || "—"}</div>
           </div>
         </CardContent>
       </Card>
-      <div className="overflow-x-auto border-b">
-        <div className="flex min-w-max gap-1">
-          {tabs.map(([k, l]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`border-b-2 px-4 py-3 text-sm font-medium ${tab === k ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+      <details className="roshan-surface px-4 py-3">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span>
+            {lang === "ar" ? "مراجعة سريرية سريعة (اختيارية)" : "Quick clinical review (optional)"}
+          </span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+            {reviewCount}/4
+          </span>
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {lang === "ar"
+            ? "تذكير محلي فقط: لا تُحفظ هذه العلامات ولا تمنع إنهاء الزيارة أو التعامل مع الطوارئ."
+            : "Local reminder only: these checks are not saved and never block visit completion or emergency care."}
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {reviewItems.map((item) => (
+            <label
+              key={item.key}
+              className="flex min-h-10 items-start gap-2 rounded-lg border border-border/70 bg-background/60 p-2.5 text-sm"
             >
-              {l}
+              <input
+                type="checkbox"
+                checked={reviewChecks[item.key]}
+                onChange={(event) =>
+                  setReviewChecks((current) => ({ ...current, [item.key]: event.target.checked }))
+                }
+                className="mt-0.5 size-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <span>{lang === "ar" ? item.ar : item.en}</span>
+            </label>
+          ))}
+        </div>
+      </details>
+      <div className="roshan-surface p-1.5">
+        <div
+          className="flex gap-1 overflow-x-auto"
+          role="tablist"
+          aria-label={lang === "ar" ? "أقسام ملف الزيارة" : "Visit chart sections"}
+        >
+          {tabs.map((item, index) => (
+            <button
+              key={item.key}
+              id={`tab-${item.key}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.key}
+              aria-controls={`panel-${item.key}`}
+              tabIndex={tab === item.key ? 0 : -1}
+              onClick={() => changeTab(item.key)}
+              onKeyDown={(event) => {
+                const backwards = event.key === "ArrowLeft" || event.key === "ArrowUp";
+                const forwards = event.key === "ArrowRight" || event.key === "ArrowDown";
+                const targetIndex =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? tabs.length - 1
+                      : backwards
+                        ? (index - 1 + tabs.length) % tabs.length
+                        : forwards
+                          ? (index + 1) % tabs.length
+                          : -1;
+                if (targetIndex >= 0) {
+                  event.preventDefault();
+                  const next = tabs[targetIndex];
+                  if (next) {
+                    changeTab(next.key);
+                    document.getElementById(`tab-${next.key}`)?.focus();
+                  }
+                }
+              }}
+              className="roshan-tab shrink-0 px-4 py-2.5 text-sm font-semibold text-muted-foreground"
+            >
+              {lang === "ar" ? item.ar : item.en}
             </button>
           ))}
         </div>
       </div>
-      {tab === "note" && <ClinicalNoteTab visitId={visitId} />}{" "}
-      {tab === "vitals" && <VitalsTab visitId={visitId} />}{" "}
-      {tab === "labs" && <LaboratoryTab visitId={visitId} />}{" "}
-      {tab === "prescription" && <PrescriptionTab visitId={visitId} />}{" "}
-      {tab === "history" && <HistoryTab visitId={visitId} />}
+      <section
+        id={`panel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        tabIndex={0}
+        className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
+      >
+        {tab === "note" && <ClinicalNoteTab visitId={visitId} onDirtyChange={setNoteDirty} />}
+        {tab === "vitals" && <VitalsTab visitId={visitId} />}
+        {tab === "labs" && <LaboratoryTab visitId={visitId} />}
+        {tab === "prescription" && <PrescriptionTab visitId={visitId} />}
+        {tab === "history" && <HistoryTab visitId={visitId} />}
+      </section>
     </div>
   );
 }

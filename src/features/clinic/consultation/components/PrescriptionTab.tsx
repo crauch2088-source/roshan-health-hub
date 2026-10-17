@@ -4,6 +4,7 @@ import {
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
   editPrescriptionName,
+  validatePrescriptionDrafts,
   type PrescriptionDraft,
 } from "@/lib/prescription-draft";
 import { sanitizeTerm, useDebounced } from "@/lib/search";
@@ -17,9 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { s, useRows, useSave, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import { calcAge } from "@/lib/medical";
 import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
@@ -27,11 +29,26 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
       .from("visits")
-      .select("id,patient_id,doctor_id,patients(id,full_name)")
+      .select("id,patient_id,doctor_id,patients(id,full_name,date_of_birth)")
       .eq("id", visitId)
       .limit(1),
   );
-  const patient = s(rel((visitQ.data ?? [])[0], "patients"), "id");
+  const patientRow = rel((visitQ.data ?? [])[0], "patients");
+  const patient = s(patientRow, "id");
+  const patientAge = calcAge(s(patientRow, "date_of_birth"));
+  const vitalsQ = useRows<Row[]>(["clinic-vitals-weight", visitId], () =>
+    supabase
+      .from("vitals")
+      .select("weight,created_at")
+      .eq("visit_id", visitId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1),
+  );
+  const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
+  const isPediatric = patientAge != null && patientAge < 18;
+  const pediatricWeightMissing =
+    isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -77,8 +94,26 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const save = useSave(
     async () => {
       if (!patient) throw new Error(lang === "ar" ? "المريض غير موجود" : "Patient not found");
-      if (!items.length)
-        throw new Error(lang === "ar" ? "أضف دواءً واحداً على الأقل" : "Add at least one medicine");
+      const validation = validatePrescriptionDrafts(items);
+      if (validation) {
+        const messages = {
+          empty: lang === "ar" ? "أضف دواءً واحداً على الأقل" : "Add at least one medicine",
+          "missing-name": lang === "ar" ? "أدخل اسم كل دواء" : "Enter a name for every medicine",
+          "missing-dose":
+            lang === "ar" ? "أكمل الجرعة لكل دواء" : "Complete the dose for every medicine",
+          "missing-frequency":
+            lang === "ar"
+              ? "أكمل تكرار الاستخدام لكل دواء"
+              : "Complete the frequency for every medicine",
+          "missing-duration":
+            lang === "ar" ? "أكمل مدة العلاج لكل دواء" : "Complete the duration for every medicine",
+          "invalid-quantity":
+            lang === "ar"
+              ? "يجب أن تكون كمية كل دواء عددًا صحيحًا موجبًا"
+              : "Each medicine quantity must be a positive whole number",
+        };
+        throw new Error(messages[validation]);
+      }
       const payload = items.map((item) => ({
         medicine_id: item.medicine_id || null,
         medication_name: item.name.trim(),
@@ -121,6 +156,32 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
+        {isPediatric ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
+          >
+            {vitalsQ.error
+              ? lang === "ar"
+                ? "تعذّر التحقق من الوزن المسجل. راجع ملف المريض يدويًا قبل اعتماد أي جرعة تعتمد على الوزن."
+                : "Could not verify the recorded weight. Check the patient chart manually before approving any weight-based dose."
+              : pediatricWeightMissing
+                ? lang === "ar"
+                  ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
+                  : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
+                : lang === "ar"
+                  ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
+                  : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
+          </div>
+        ) : null}
+        <div
+          className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground"
+          role="note"
+        >
+          {lang === "ar"
+            ? "تنبيه سلامة: لا يقترح النظام جرعات تلقائيًا. أدخل الجرعة والتكرار والمدة بعد التحقق من العمر والوزن والحساسية ووظائف الكلى والإرشادات المعتمدة."
+            : "Safety note: the system does not auto-prescribe doses. Enter dose, frequency and duration only after checking age, weight, allergies, renal function and the applicable clinical guidance."}
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
