@@ -26,6 +26,28 @@ BEGIN
   GET DIAGNOSTICS affected = ROW_COUNT;
   IF affected <> 0 THEN RAISE EXCEPTION 'cross-branch update unexpectedly affected % rows', affected; END IF;
 
+  -- The row is visible before the UPDATE, so this specifically exercises WITH CHECK
+  -- when a valid same-branch row is reassigned to a different-branch parent.
+  BEGIN
+    UPDATE public.insurance_prior_authorizations
+       SET patient_insurance_id='a1000000-0000-0000-0000-000000000002'
+     WHERE id='a2000000-0000-0000-0000-000000000001';
+    GET DIAGNOSTICS affected = ROW_COUNT;
+    IF affected <> 0 THEN
+      RAISE EXCEPTION 'cross-branch parent reassignment unexpectedly affected % rows', affected;
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+
+  SELECT count(*) INTO visible_count
+    FROM public.insurance_prior_authorizations
+   WHERE id='a2000000-0000-0000-0000-000000000001'
+     AND patient_insurance_id='a1000000-0000-0000-0000-000000000001';
+  IF visible_count <> 1 THEN
+    RAISE EXCEPTION 'cross-branch parent reassignment changed the authorization parent';
+  END IF;
+
   BEGIN
     INSERT INTO public.insurance_prior_authorizations(id,patient_insurance_id,status)
     VALUES ('a2000000-0000-0000-0000-000000000003','a1000000-0000-0000-0000-000000000002','pending');
