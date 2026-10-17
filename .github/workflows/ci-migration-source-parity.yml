@@ -1,0 +1,31 @@
+name: Migration source parity manifest
+
+on:
+  pull_request:
+    paths:
+      - 'docs/recovered-migrations/source-parity-report.json'
+      - 'docs/recovered-migrations/sql/**'
+      - 'db/roshan_phase*.sql'
+      - 'scripts/verify-migration-source-parity.py'
+      - '.github/workflows/ci-migration-source-parity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/recovered-migrations/source-parity-report.json'
+      - 'docs/recovered-migrations/sql/**'
+      - 'db/roshan_phase*.sql'
+      - 'scripts/verify-migration-source-parity.py'
+      - '.github/workflows/ci-migration-source-parity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-source-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify 93-entry source parity manifest
+        run: python3 scripts/verify-migration-source-parity.py
