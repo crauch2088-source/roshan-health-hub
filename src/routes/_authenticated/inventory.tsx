@@ -439,8 +439,6 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
           />
         </CardContent>
       </Card>
-
-
     </div>
   );
 }
@@ -581,7 +579,10 @@ function BatchesTab({
       const moneyPattern = /^\d+(?:\.\d{1,2})?$/;
       const purchaseText = form.purchase_price.trim();
       const sellingText = form.selling_price.trim();
-      if ((purchaseText && !moneyPattern.test(purchaseText)) || (sellingText && !moneyPattern.test(sellingText))) {
+      if (
+        (purchaseText && !moneyPattern.test(purchaseText)) ||
+        (sellingText && !moneyPattern.test(sellingText))
+      ) {
         throw new Error(t("invalid_amount"));
       }
 
