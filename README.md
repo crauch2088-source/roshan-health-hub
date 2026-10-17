@@ -1,3 +1,14 @@
+# Latest verified status — 2026-10-17
+
+- Current main after PR #58: `0ab1a85e572897b9aa95e14d7240560e9efbe8a7`.
+- PR #57 added manual dispatch for the security candidate workflow and is merged. The exact security bundle passed all six PostgreSQL 17 integration jobs.
+- PR #58 added an insurance claim guard for invoice/visit patient and branch consistency. The test reproduced the defect before the fix and passed after; the insurance, source-parity, role-guard, prescription atomicity and general CI workflows passed on the tested head.
+- **Production remains unremediated:** live RLS policy gaps and finance direct-write grants are still present; insurance RPC fix is source-only. SQL application is blocked by the unresolved clean historical migration baseline/replay gate.
+- Vercel production deployment is behind current main, and current-main checks report a Hobby build-rate-limit failure. No paid upgrade, bypass or forced deploy was attempted.
+- Full evidence: [live security audit](docs/LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md) and [master plan](docs/MASTER_PLAN.md).
+
+---
+
 # Live production status — 2026-10-17
 
 > **Security release gate remains open.** The security bundle is present in source but has not been applied to production. Live Supabase inspection confirmed that 11 child-table RLS policies still lack expected parent/branch predicates, direct write grants remain on five finance tables, and the insurance-claim RPC is still on its older definition. These are configuration gaps, not evidence of an actual breach.
