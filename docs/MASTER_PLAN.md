@@ -125,19 +125,21 @@
 - [ ] Fix critical issues via isolated changes and regression tests; verify backups and privacy-safe analytics.
 **Exit:** stable service and agreed maintenance cadence.
 
-## Immediate next actions
-1. After the Vercel deployment quota permits the next production release, run an authenticated smoke test for the merged PR #12 insurance claim workflow; client validation remains defense-in-depth.
-2. Run authenticated runtime smoke tests on `https://roshan-health-hub.vercel.app` and confirm role/branch gates.
-3. Reconcile the 79 applied Supabase migrations against repository artifacts; source SQL has now been recovered to quarantine in draft [PR #26](https://github.com/crauch2088-source/roshan-health-hub/pull/26), with ledger checksums and a basic secret-pattern scan. Next: semantic diff against `db/*.sql`, review data/destructive assumptions, then clean PostgreSQL 17 replay and Supabase-specific validation. Do not move the recovered files into the canonical migration directory or execute them yet.
-4. PR #13 is merged as `5229ef8`, which adds tested DB-side insurance claim amount invariants and policy-validity checks. Its SQL is still not applied to production; The final ACL fix passed dedicated PostgreSQL 17 integration on head [`8be7e13`](https://github.com/crauch2088-source/roshan-health-hub/commit/8be7e134862fb4cdad3172b1f888bbc237295bf0); the main application/security/concurrency suite passed on its immediately preceding code-equivalent head, and mainline CI passed after merge, covering amount splits/precision, active insurance, invoice/patient matching, branch isolation, authorization, and rollback. Vercel Preview remains blocked by the account build-rate limit. This fixture does not replace full Supabase staging validation; migration parity and authenticated smoke tests remain required. Continue adversarial tests for all 15 authenticated-callable SECURITY DEFINER RPCs.
-5. Classify pharmacy inventory reconciliation before changing quantities: current read-only snapshot shows all 9 active medicine rows have `stock_quantity` different from the sum of non-deleted batch `quantity_remaining` (8 have no remaining batch quantity; ceftriaxone has 1,994 legacy vs 498 batch units). This may reflect intentionally separate legacy/batch stock, so do not auto-sync; trace dispense/receive semantics and UI source-of-truth first.
-6. Safely scan Git history for credentials without printing values; determine whether rotation is required.
-7. Review PostHog privacy settings before enabling any telemetry.
-8. Refresh PR #9 against current `main` and keep it draft until its contents and CI are current.
+## Immediate next actions — refreshed 2026-10-17
 
-- Historical: PR #14 was an earlier draft of batch receiving. Its old CI/preview evidence is not evidence for the current implementation; PR #14 remains open only for historical comparison and should not be merged.
-- Current pharmacy-receive work is in [draft PR #29](https://github.com/crauch2088-source/roshan-health-hub/pull/29), head `e06afc57938ddad2bc27ca51fe4d4da7caa44295`; CI run [#38795032633](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/38795032633) passed PostgreSQL 17 behavior/rollback tests, security audit, guard tests, typecheck, lint, and build. The current proposal uses `pharmacy.update`, routes both quick-receive and batch-tab receipts through the atomic RPC, rejects invalid/expired batch data, removes direct browser INSERT on `stock_movements`, and keeps newly created medicine stock at zero until a batch is received. SQL remains unapplied; PR #29 is still draft pending review and migration-source reconciliation. Vercel Preview is blocked by the account build-rate limit, so authenticated browser smoke testing remains outstanding. Existing legacy-vs-batch stock differences remain untouched and require separate review.
+1. **Finish post-merge CI** for main commit `f08ad543cefa8e94aff4500d6361d71f4aa3060f`: runs [#39012087070](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39012087070) and [#39012087462](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39012087462) were still running at the last check.
+2. **Keep the production release gated.** PR #49 is merged, but its automatically created production deployment was canceled before completion because clinician review of pediatric safety wording, device/accessibility QA, and full synthetic-data E2E are still outstanding. Latest verified READY production SHA remains `1d23c39d15b3cd9399c81169830086694bcafc6`; do not describe the newly merged UI as production-live.
+3. After the release gates are met and a new deployment is authorized by the release criteria, deploy current `main` and run authenticated production smoke tests for registration, role/branch access, visit/queue, consultation, lab order/result verification, prescription, dispensing, consolidated/separate invoices, payment, cashbox and reports. The saved TinyFish profile is available; its metadata still does not list the app under `signed_in_sites`, so validate authentication at run start.
+4. Reconcile the **93-entry** Supabase migration ledger against archived `docs/recovered-migrations/`, `db/*.sql`, and applied later phases. There is still no canonical timestamped `supabase/migrations/` sequence. Keep recovered historical SQL quarantined; do not replay it or apply unrelated candidate migrations until semantic mapping, clean PostgreSQL 17 replay, rollback, and Supabase-specific checks pass.
+5. Continue independent authorization tests for all 22 authenticated-callable public SECURITY DEFINER overloads, including cross-branch IDs, branchless super-admin cases, invalid financial values, retries and forbidden writes. Current read-only snapshot: 56/56 public tables have RLS, 44 public SECURITY DEFINER functions, zero anon-callable SECURITY DEFINER functions, and all 44 have a function-level `search_path` setting. This is not proof of correct function logic.
+6. Keep the live stock discrepancy untouched until the legacy-versus-batch source of truth and branch ownership are established. Do not copy aggregate quantities or invent stock batches.
+7. Keep insurance-specific implementation paused until invoice-line linkage and insurer/patient split rules are defined; do not merge/apply insurance-related draft SQL just because fixture CI passes.
+8. Keep PR #29 (pharmacy receiving) and PR #34 (clinical child-row branch isolation, currently coupled to an insurance prior-authorization policy) in draft until their migration/live-schema and scope gates are satisfied.
+9. Review Supabase warnings for `pg_trgm` in `public`, 22 authenticated-callable SECURITY DEFINER functions, and disabled leaked-password protection. Do not blindly revoke intentional RPCs or move the extension until dependencies and client compatibility are proven.
+10. Reconcile production operational-row baseline before any cleanup: latest read-only counts were 1 soft-deleted patient, 7 soft-deleted visits, zero queue tickets/invoices/payments, and 16 audit rows. No data was deleted in this batch.
 
+- Historical: PR #14 remains only for comparison and must not be merged.
+- Historical: the old PR #9/PR #24 plan references are superseded by the current master-plan state and the migration inventory under review.
 
 ## Change log
 - 2026-10-15: Initialized from connected-tool inspection. No database writes, destructive changes, merges, or deployments performed.
@@ -863,3 +865,70 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - [x] Migration `roshan_phase25_current_app_profile_20261016` applied to production. `public.get_my_app_profile()` returns only the caller's non-deleted profile and that user's permission codes; inactive accounts receive no permission codes. Function configuration has an empty `search_path`; anon EXECUTE is false and authenticated EXECUTE is true.
 - [x] Simulated authenticated receptionist verification after applying the migration returned role `receptionist`, active status, 20 assigned permission codes including `visits.create`, while direct RLS-protected reads still returned zero rows. The verification used a rolled-back, read-only transaction and changed no account data.
 - Remaining deployment gate: Vercel production deployment is blocked by the team's build-rate limit. The latest READY production deployment is still on the earlier commit, so the browser-level receptionist/doctor/super-admin login and visit-creation smoke test remains pending until a new build can deploy. Do not describe the UI fix as production-live until that smoke test passes.
+
+
+## Execution batch I — 40 clinical UI/workflow items delivered to main — 2026-10-17
+
+**Result:** all 40 implementation deliverables from the clinical UX workstream have been merged into `main` in commit [`f08ad543`](https://github.com/crauch2088-source/roshan-health-hub/commit/f08ad543cefa8e94aff4500d6361d71f4aa3060f) via [PR #49](https://github.com/crauch2088-source/roshan-health-hub/pull/49). This records implementation delivery only; it does not mark the application production-ready.
+
+### Completed deliverables (40/40)
+
+**Design system and navigation (1–12)**
+1. Refreshed semantic teal/ink color tokens while preserving light/dark token structure.
+2. Increased shared corner-radius treatment for the clinical workspace.
+3. Added a subtle, low-contrast clinical canvas background.
+4. Added reusable surface, patient-context, field-label and tab styling.
+5. Added restrained page-enter motion with a reduced-motion override.
+6. Improved shell spacing and working-canvas width.
+7. Clarified global-header hierarchy and surface treatment.
+8. Refined desktop navigation rail contrast, active state and target height.
+9. Refined mobile bottom-navigation surface and safe-area padding.
+10. Added source-level responsive/safe-area regression guards.
+11. Added source-level keyboard tab, selected-state and visible-focus regression guards.
+12. Added regression guards for dark semantic tokens, reduced motion and print styling.
+
+**Consultation workflow (13–22)**
+13. Made consultation tabs bilingual.
+14. Added semantic tablist/tab/tabpanel roles and selected state.
+15. Added arrow/Home/End keyboard navigation.
+16. Improved the patient-context banner.
+17. Made visit number more prominent.
+18. Improved MRN, age/sex, department and doctor information hierarchy.
+19. Preserved LTR rendering for MRNs in RTL screens.
+20. Added unsaved-note confirmation on tab change and browser navigation/unload.
+21. Added a collapsed optional local-only clinical review checklist that does not block emergency care.
+22. Added automated consultation regression coverage for tabs, unsaved-note warnings and the optional checklist.
+
+**Laboratory workflow (23–36)**
+23. Debounced catalogue search.
+24. Sanitized search input before composing PostgREST filters.
+25. Added an explicit catalogue-loading state.
+26. Added a clear catalogue-error state and no-submit explanation.
+27. Improved search/category controls and category counts.
+28. Exposed selection state using accessible `aria-pressed`.
+29. Added selected-test subtotal estimation.
+30. Improved selected-test summary and desktop sticky placement.
+31. Added bilingual accessible names to removal controls.
+32. Added a clinical-justification reminder for urgent priority.
+33. Disabled submission for unresolved patient or catalogue error.
+34. Preserved idempotency key and atomic order-plus-invoice RPC.
+35. Added a bilingual five-stage worklist indicator from persisted status.
+36. Added abnormal-result acknowledgement and blocked verification while edits are unsaved; critical-value escalation remains intentionally unimplemented until governed thresholds/policy exist.
+
+**Prescription safety and correctness (37–40)**
+37. Added pure validation for empty prescriptions, missing medication/dose/frequency/duration and invalid quantity.
+38. Enforced prescription completeness before calling the existing atomic RPC.
+39. Added bilingual clinician-entered dosing safety text; the system does not infer doses.
+40. Added pediatric age/weight warnings distinguishing missing weight from unreadable/unavailable weight; no automatic dose calculation was added.
+
+### Verification and release boundary
+
+- PR #49 head `712f0968ae15dfe333a575482da27de0fa5e7496` passed all 10 application CI jobs and the PostgreSQL 17 integration job in [run #39010816932](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39010816932) and [run #39010816947](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39010816947).
+- Authenticated, read-only preview smoke test: [TinyFish run #55bf12a1](https://agent.tinyfish.ai/runs/55bf12a1-5cef-42f5-9a5f-093d79d6b794). The app shell loaded, 23 navigation sections were reachable, RTL/LTR switching and search overlay worked, and dashboard/patient/visit/appointment/pharmacy/lab/billing pages rendered expected empty states. No records were created, edited, deleted, or submitted.
+- Code-scanning open-alert query returned zero open alerts for the reviewed branch; this does not prove the absence of all security issues.
+- Post-merge main CI is still running as of this snapshot: [#39012087070](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39012087070) and [#39012087462](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39012087462).
+- Vercel automatically started a production-target build for merge SHA `f08ad543`; it was explicitly canceled before completion because release gates remain open. Latest previously verified READY production deployment is still `1d23c39d15b3cd9399c81169830086694bcafc6`. No production release of this redesign is claimed.
+- Remaining gates: clinician approval of pediatric wording; actual phone screenshots for RTL/LTR and light/dark/print; live keyboard/screen-reader review; full synthetic-data end-to-end workflows; and migration-history parity plus the broader authorization/security review.
+- The current live DB contains 93 applied migration records. Read-only aggregate verification found 56/56 public tables with RLS, 44 public SECURITY DEFINER functions, zero anon EXECUTE on those functions, 22 authenticated-callable SECURITY DEFINER functions, and function-level `search_path` configuration on all 44. Supabase advisors still report `pg_trgm` in `public`, the authenticated SECURITY DEFINER warning, and disabled leaked-password protection.
+- Read-only operational counts at the same checkpoint: one soft-deleted patient, seven soft-deleted visits, zero queue tickets, zero invoices, zero payments, and 16 audit rows. These rows were not changed.
+- Current raw master-document checkbox count before this append was 120 checked / 230 total, but historical execution logs duplicate checklist items, so that raw ratio is not a reliable weighted product-readiness metric. Do not count this 40-item batch as 40 additional production-ready checklist gates.
