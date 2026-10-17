@@ -94,6 +94,12 @@ BEGIN
  BEGIN INSERT INTO public.procedure_orders VALUES ('80000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002','mismatched'); RAISE EXCEPTION '45 mixed-branch procedure linkage was allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF EXISTS (SELECT 1 FROM public.certificates WHERE id='50000000-0000-0000-0000-000000000005') THEN RAISE EXCEPTION '46 mixed-branch certificate residue'; END IF;
  IF EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000005') THEN RAISE EXCEPTION '47 mixed-branch procedure order residue'; END IF;
+
+ -- Additional patient/visit integrity checks: same-branch IDs can still belong to different patients.
+ BEGIN INSERT INTO public.certificates VALUES ('50000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatched patient'); RAISE EXCEPTION '51 same-branch mismatched certificate patient/visit was allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN INSERT INTO public.procedure_orders VALUES ('80000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatched patient'); RAISE EXCEPTION '52 same-branch mismatched procedure patient/visit was allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF EXISTS (SELECT 1 FROM public.certificates WHERE id='50000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION '53 mismatched certificate residue'; END IF;
+ IF EXISTS (SELECT 1 FROM public.procedure_orders WHERE id='80000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION '54 mismatched procedure order residue'; END IF;
 END
 $test$;
 RESET ROLE;
