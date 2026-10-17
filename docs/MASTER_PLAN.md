@@ -941,3 +941,83 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - The saved browser profile currently has no site sign-in recorded for the production or preview domains. A secure setup session for the canonical production URL has been created; user must sign in and save the profile before authenticated production E2E can continue. No credentials were requested or exposed in chat.
 - Current main source head after the plan update is `761b6eaf72a2ba387de2de1179fa350bae538878`. CI for the code merge and plan documentation is green. Production-target builds for `f08ad543` and `761b6eaf` were explicitly canceled before completion because clinical wording review, actual device/accessibility QA, and full synthetic-data E2E remain release gates. Latest previously verified READY production SHA remains `1d23c39d15b3cd9399c81169830086694bcafc6`.
 - Read-only RLS policy inspection surfaced child-table policies on `invoice_items`, `lab_order_items`, and `prescription_items` whose visible expressions check permission but do not themselves show a parent-branch predicate. The existing draft PR #34 targets related clinical child-row isolation but is coupled to an insurance prior-authorization policy and has unresolved migration parity. Treat this as a high-priority follow-up for focused parent-branch authorization tests; do not merge the combined PR or apply its migration until split/reviewed and isolated CI passes.
+
+
+## Execution batch II — 50 parent-branch authorization regression checks — 2026-10-17
+
+**Verified runtime QA:** Authenticated read-only production browser run [ef4ba3bc](https://agent.tinyfish.ai/runs/ef4ba3bc-7a56-4444-aef1-f76e3be29147) confirmed a valid General Manager session, all 23 sidebar routes, Arabic RTL and English LTR layout, session persistence after language switching, and no observed console/HTTP errors. It performed no writes. Production data pages showed zero active rows. This verifies the currently deployed version, not the pending UI redesign or the source-only SQL in the security PRs.
+
+**Source-only security work delivered for review:**
+- [PR #50 — invoice item branch isolation](https://github.com/crauch2088-source/roshan-health-hub/pull/50): focused invoice_items policy patch plus PostgreSQL 17 fixture. The dedicated integration workflow passed; full application CI run [#39014063654](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39014063654) passed all 10 jobs. The Vercel preview check passed. The PR remains draft because it is a proposed SQL change and must not be confused with production application.
+- [PR #51 — 50 parent-branch authorization regressions](https://github.com/crauch2088-source/roshan-health-hub/pull/51): scoped policies for certificates, medical_certificates, patient_discounts, procedure_orders, and procedure_results; added private.app_has_procedure_order_branch_access with pinned empty search_path and restricted grants. The dedicated PostgreSQL 17 test passed on [run #39014128392](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39014128392); full app CI [#39014128414](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39014128414) passed all 10 jobs; Vercel preview check passed. The first fixture attempt failed because the disposable test role lacked USAGE on the private schema; this was fixed in the fixture and the rerun passed.
+- These changes are deliberately **not applied to the live Supabase database**. Migration-history/replay parity and broader adversarial authorization review remain mandatory. The broader draft PR #34 still includes insurance/certificate/discount scope and is not merged; do not apply its migration as-is.
+- Live policy inventory also confirms missing explicit parent-branch predicates on followups and queue_tickets; queue delete remains super-admin-only. Track these as next focused work, and keep the existing queue-date/atomic workflows intact.
+
+### The 50 regression checks in PR #51
+
+1. certificates SELECT shows only the current branch's row.
+2. Cross-branch certificate UPDATE affects zero rows.
+3. Same-branch certificate UPDATE succeeds.
+4. Cross-branch certificate INSERT is rejected.
+5. Same-branch certificate INSERT succeeds.
+6. Cross-branch certificate DELETE affects zero rows.
+7. Same-branch certificate DELETE succeeds.
+8. Rejected certificate INSERT leaves no row.
+9. medical_certificates SELECT shows only the current branch's row.
+10. Cross-branch medical-certificate UPDATE affects zero rows.
+11. Same-branch medical-certificate UPDATE succeeds.
+12. Cross-branch medical-certificate INSERT is rejected.
+13. Same-branch medical-certificate INSERT succeeds.
+14. Cross-branch medical-certificate DELETE affects zero rows.
+15. Same-branch medical-certificate DELETE succeeds.
+16. Rejected medical-certificate INSERT leaves no row.
+17. patient_discounts SELECT shows only the current branch's row.
+18. Cross-branch patient-discount UPDATE affects zero rows.
+19. Same-branch patient-discount UPDATE succeeds.
+20. Cross-branch patient-discount INSERT is rejected.
+21. Same-branch patient-discount INSERT succeeds.
+22. Cross-branch patient-discount DELETE affects zero rows.
+23. Same-branch patient-discount DELETE succeeds.
+24. Rejected patient-discount INSERT leaves no row.
+25. procedure_orders SELECT shows only the current branch's row.
+26. Cross-branch procedure-order UPDATE affects zero rows.
+27. Same-branch procedure-order UPDATE succeeds.
+28. Cross-branch procedure-order INSERT is rejected.
+29. Same-branch procedure-order INSERT succeeds.
+30. Cross-branch procedure-order DELETE affects zero rows.
+31. Same-branch procedure-order DELETE succeeds.
+32. Rejected procedure-order INSERT leaves no row.
+33. procedure_results SELECT derives access from the parent procedure order.
+34. Cross-branch procedure-result UPDATE affects zero rows.
+35. Same-branch procedure-result UPDATE succeeds.
+36. Cross-branch procedure-result INSERT is rejected.
+37. Same-branch procedure-result INSERT succeeds.
+38. Cross-branch procedure-result DELETE affects zero rows.
+39. Same-branch procedure-result DELETE succeeds.
+40. Rejected procedure-result INSERT leaves no row.
+41. Missing patient IDs fail closed in the patient-branch helper.
+42. A tuple with no patient and no visit fails closed.
+43. A nonexistent procedure-order ID fails closed.
+44. A certificate cannot combine a current-branch patient with a foreign-branch visit.
+45. A procedure order cannot combine a current-branch patient with a foreign-branch visit.
+46. A rejected mixed-branch certificate leaves no row.
+47. A rejected mixed-branch procedure order leaves no row.
+48. The foreign-branch certificate remains unchanged after attempted writes.
+49. The foreign-branch medical certificate remains unchanged after attempted writes.
+50. The foreign-branch procedure result remains unchanged after attempted writes.
+
+### Additional invoice-item checks in PR #50
+
+- Invoice-item SELECT is parent-invoice branch scoped.
+- Cross-branch INSERT is rejected; same-branch INSERT succeeds.
+- Cross-branch UPDATE and DELETE affect zero rows; same-branch UPDATE and DELETE succeed.
+- The invoice-branch helper denies nonexistent invoice IDs and is not directly executable by anon.
+- The dedicated PostgreSQL 17 workflow passed, and the normal app CI passed all 10 jobs.
+
+### Release gates remain open
+
+- [ ] Reconcile the historic migration ledger against canonical, replayable source migrations before applying any of these proposed policy changes.
+- [ ] Add isolated negative/positive tests for followups and queue_tickets; preserve the queue delete super-admin-only invariant.
+- [ ] Complete broader cross-branch testing of every authenticated SECURITY DEFINER RPC and direct table policy.
+- [ ] Complete clinician review of pediatric safety wording, actual-phone RTL/LTR/light/dark/print screenshots, keyboard/screen-reader review, and synthetic-data end-to-end clinical workflows.
+- [ ] Keep production on the previously verified READY deployment until all release gates pass; successful preview and CI are not a production release.
