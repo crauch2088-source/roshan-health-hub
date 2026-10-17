@@ -1391,4 +1391,17 @@ Read-only verification performed at approximately 2026-10-17 22:18 UTC:
 4. Continue per-function review of the 20 Advisor warnings, using repository call-site evidence; leave paid-only leaked-password protection unresolved on the current free plan.
 5. Continue the separate authenticated browser/mobile RTL clinical workflow audit. Uptime `UP` and CI green do not establish clinical readiness.
 
+## Execution update — insurance prior-authorization branch isolation merged (2026-10-18)
+
+- Merged PR [#64](https://github.com/crauch2088-source/roshan-health-hub/pull/64) into `main` as `580f4a4ef6b8745eaff9eb6e7f012a1e4afdd68e`. The source branch was deleted after merge.
+- The merge includes `db/roshan_insurance_prior_authorization_branch_isolation.sql`, a fixed-search-path private branch helper, the SELECT/INSERT/UPDATE RLS policies that preserve `insurance.read/create/update`, a synthetic PostgreSQL 17 regression, and free GitHub Actions workflow wiring.
+- All 27 checks on the exact PR head `654825a149cd158779ac4ca41a1cdfb81e0409ae` completed successfully, including the focused prior-authorization branch-isolation test, combined-schema regression, migration source-parity manifest, install/audit/typecheck/lint/build, and CodeQL (no new alerts). The first regression run caught a PostgreSQL catalog-query mistake; it was corrected and the exact final head passed.
+- Source search found no current application-code call sites for `insurance_prior_authorizations`; the parent `patient_insurance` and insurance-claim flows are separate.
+- **Production database was not modified.** The live Supabase migration ledger remains at 97 entries through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`; therefore the live three-policy branch-isolation gap remains until a separately reviewed production migration is applied. Do not mistake the merged SQL source file for a live schema change.
+- Post-merge GitHub Actions and Vercel production build for `580f4a4ef6b8745eaff9eb6e7f012a1e4afdd68e` were still running at the last check. Verify their final state before the next release action.
+
+### Next steps
+1. Verify post-merge CI and canonical production alias after the Vercel build completes.
+2. Review migration replay/baseline parity and write a rollback/recovery plan before applying the source-only RLS migration to production.
+3. Continue per-function Security Advisor review and the authenticated phone-first RTL clinical workflow audit.
 

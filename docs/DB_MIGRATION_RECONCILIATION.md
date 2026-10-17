@@ -489,3 +489,7 @@ Policy-expression review found all 40 policies across 10 targeted child tables i
 
 The last documented normalized migration source parity is 92/93; full historical replay remains unproven due to the missing reviewed initial schema baseline and one intentionally redacted identity-link migration. The live Security Advisor returned 20 authenticated-callable SECURITY DEFINER warnings plus one public-schema extension warning; review individually. See the latest live continuation in [the master plan](MASTER_PLAN.md).
 
+## Post-merge status — 2026-10-18
+
+PR [#64](https://github.com/crauch2088-source/roshan-health-hub/pull/64) merged as `580f4a4ef6b8745eaff9eb6e7f012a1e4afdd68e` after 27/27 exact-head checks passed. It adds a source-only RLS migration and synthetic PostgreSQL 17 regression for `insurance_prior_authorizations`; the source branch was deleted. No SQL was applied to Supabase production. The live ledger remains 97 entries through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`, so the three existing prior-authorization policies remain a live branch-isolation gap pending a reviewed production migration. The post-merge CI and Vercel build were still running at the last check. See [MASTER_PLAN.md](MASTER_PLAN.md) for next steps.
+
