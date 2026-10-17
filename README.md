@@ -1,13 +1,12 @@
 # Latest verified status — 2026-10-17
 
-- Production security migrations are applied and read back. Supabase ledger: 96 rows; latest version `20261017125936`.
-- All 44 policies across the 11 targeted child tables now include their expected branch/parent helper.
-- Direct write grants are revoked for authenticated/anon on five finance tables and three insurance ledger tables; authenticated SELECT remains.
-- Insurance claim and coverage RPCs are updated, authenticated-only, and use an empty fixed `search_path`. Claim visit/patient/branch and amount-split checks, coverage service-type and currency-precision checks are present in live definitions.
-- PostgreSQL 17 security and insurance integration suites passed; current stored migration SQL exactly matches all three tracked source files. See [live migration delta](docs/LIVE_MIGRATION_DELTA_2026-10-17.md).
+- Current source includes merged PR #62 (`9404a9b71f8248398663c6ad7b7275208230db15`): desktop quick actions, permission-safe filtering, functional route listeners for patient/visit/invoice dialogs, and a visits-list hint for lab-order shortcuts. Test guard now includes `tests/quick-actions.test.ts`; tested head passed CI and associated PostgreSQL 17 workflows.
+- Production security migrations are applied and read back. Supabase ledger has 96 rows; latest version `20261017125936`.
+- All 44 policies across the 11 targeted child tables include their expected branch/parent helper. Direct write privileges are revoked for authenticated/anon on five finance and three insurance ledger tables; authenticated SELECT remains.
+- Insurance claim and coverage RPCs are updated, authenticated-only, and use an empty fixed `search_path`. Live definitions include invoice/visit patient/branch, amount split, service-type, and currency precision guards.
+- Full evidence: [live migration delta](docs/LIVE_MIGRATION_DELTA_2026-10-17.md), [UX audit](docs/UX_AUDIT_2026-10-17.md), and [master plan](docs/MASTER_PLAN.md).
 - Full historical migration replay remains unproven because the initial schema baseline is missing and one historical identity-link migration is intentionally redacted. No historical replay was attempted.
-- Vercel production is behind current source; latest current-main build check is blocked by the free Hobby build-rate limit. The deployed app commit was verified to use validated finance RPCs. No paid upgrade or forced deploy.
-- This is not a clinical-readiness declaration: live browser smoke tests remain pending deployment availability and authenticated access.
+- Vercel production is behind current source; latest current-main build check is blocked by the free Hobby build-rate limit. No paid upgrade or forced deploy. Screenshot-based full UI audit and live browser smoke tests remain pending, so clinical readiness is not claimed.
 
 ---
 
