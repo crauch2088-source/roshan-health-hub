@@ -63,5 +63,23 @@ BEGIN
      OR has_table_privilege('authenticated','public.supplier_bills','DELETE') THEN
     RAISE EXCEPTION 'finance direct-write privileges unexpectedly remain in combined catalog';
   END IF;
+
+  IF has_table_privilege('authenticated','public.insurance_claims','INSERT')
+     OR has_table_privilege('authenticated','public.insurance_claims','UPDATE')
+     OR has_table_privilege('authenticated','public.insurance_claims','DELETE')
+     OR has_table_privilege('authenticated','public.insurance_claim_items','INSERT')
+     OR has_table_privilege('authenticated','public.insurance_claim_items','UPDATE')
+     OR has_table_privilege('authenticated','public.insurance_claim_items','DELETE')
+     OR has_table_privilege('authenticated','public.insurance_claim_payments','INSERT')
+     OR has_table_privilege('authenticated','public.insurance_claim_payments','UPDATE')
+     OR has_table_privilege('authenticated','public.insurance_claim_payments','DELETE') THEN
+    RAISE EXCEPTION 'insurance direct-write privileges unexpectedly remain in combined catalog';
+  END IF;
+
+  IF NOT has_table_privilege('authenticated','public.insurance_claims','SELECT')
+     OR NOT has_table_privilege('authenticated','public.insurance_claim_items','SELECT')
+     OR NOT has_table_privilege('authenticated','public.insurance_claim_payments','SELECT') THEN
+    RAISE EXCEPTION 'authenticated lost insurance claim read access';
+  END IF;
 END
 $catalog$;
