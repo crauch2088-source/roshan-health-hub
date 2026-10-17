@@ -33,3 +33,12 @@
 - Read `main` ref and repository tree; fetched the master plan, README, security review, branch-isolation handoff, migration reconciliation, applied migration inventory, tooling map, insurance SQL candidate and live issue records.
 - Queried live table schemas, RLS policy expressions, finance table grants, selected function definitions/ACLs/search paths, migration history, Vercel deployments and runtime-error aggregation.
 - No SQL writes, data mutations, paid resources, branch creation, or deployment actions were performed.
+
+
+## Follow-up verification — 2026-10-17 12:45 UTC
+
+- PR [#57](https://github.com/crauch2088-source/roshan-health-hub/pull/57) was merged as `68655eb53680ebef2b1541086ecf6c7e99dd0aba`. It adds `workflow_dispatch` to the security candidate PostgreSQL 17 workflow so the free isolated/combined regression suite can be re-run on demand.
+- The exact canonical security bundle was tested in GitHub Actions on PostgreSQL 17: all six jobs passed, including the combined-schema migration/policy regression and five focused component suites. This materially improves source-level evidence but does not substitute for production-schema compatibility or a clean historical replay baseline.
+- PR [#58](https://github.com/crauch2088-source/roshan-health-hub/pull/58) was merged as `0ab1a85e572897b9aa95e14d7240560e9efbe8a7`. A test-first regression failed against the old candidate because it accepted an invoice linked to a visit with a different patient; the candidate now rejects visit/patient and visit/branch mismatches. The PostgreSQL 17 insurance integration, source-parity manifest, privileged-role guard integration, prescription atomicity integration, and general CI workflows all passed on the tested head.
+- The insurance fix remains source-only. Live Supabase still needs the tracked migration applied and read-back verified after the historical baseline/replay release gate is resolved. Issue #16 remains open; its comment records this distinction.
+- Current `main` is `0ab1a85e572897b9aa95e14d7240560e9efbe8a7`. Vercel still reports build-rate-limit failure for the current source; no production deployment was forced.
