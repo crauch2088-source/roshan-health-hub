@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Verify the frozen 93-entry source-parity snapshot; this is not a live-ledger query."""
+"""Verify the frozen historical hash snapshot plus the separately tracked forward-source delta; this is not a live-ledger query."""
 from __future__ import annotations
 import hashlib, json, re, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "docs/recovered-migrations/source-parity-report.json"
+DELTA = ROOT / "docs/live-migration-delta-2026-10-18.json"
 def normalize(sql: str) -> str:
     # Matches the documented report normalizer; not a SQL parser or semantic proof.
     sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.S)
@@ -43,6 +44,29 @@ def main() -> None:
         matches += 1
     if matches != 92 or placeholders != 1: fail(f"expected 92 matches and one redacted placeholder; got {matches} and {placeholders}")
     if report.get("normalized_content_matches") != matches: fail("match count differs from manifest metadata")
+    delta = json.loads(DELTA.read_text(encoding="utf-8"))
+    delta_entries = delta.get("entries", [])
+    if delta.get("live_ledger_count") != 99 or delta.get("latest_live_version") != "20261017225540":
+        fail("live delta metadata does not match the last verified 99-entry ledger")
+    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 6 or len(delta_entries) != 6:
+        fail("expected the frozen 93-entry snapshot plus six forward-source mappings")
+    delta_versions = [e.get("version") for e in delta_entries]
+    if len(set(delta_versions)) != 6 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
+        fail("forward migration versions must be unique 14-digit strings")
+    if delta_versions != sorted(delta_versions):
+        fail("forward migration delta must be ordered by ledger version")
+    for e in delta_entries:
+        rel = e.get("source_path")
+        path = ROOT / str(rel or "")
+        if not rel or not path.is_file(): fail(f"{e.get('version')}: missing forward source {rel}")
+        if not re.fullmatch(r"[0-9a-f]{40}", str(e.get("source_git_blob_sha"))): fail(f"{e.get('version')}: invalid source Git blob SHA")
+        source_hash = e.get("normalized_source_sql_sha256")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(source_hash)): fail(f"{e.get('version')}: invalid normalized source hash")
+        actual_hash = hashlib.sha256(normalize(path.read_text(encoding="utf-8")).encode("utf-8")).hexdigest()
+        if actual_hash != source_hash: fail(f"{e.get('version')}: forward source hash mismatch ({rel})")
+        if e.get("live_sql_hash_verified") is not False: fail(f"{e.get('version')}: do not overstate live SQL hash verification")
+        if not e.get("verification_evidence"): fail(f"{e.get('version')}: missing evidence note")
+
     replay_safe = ROOT / "docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql"
     if not replay_safe.is_file(): fail("replay-safe policy-only variant is missing")
     replay_sql = replay_safe.read_text(encoding="utf-8")
@@ -51,6 +75,7 @@ def main() -> None:
     if re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", replay_sql, re.I): fail("replay-safe variant contains an identity UUID")
     for policy in ("patients_select", "patients_insert", "patients_update", "patients_delete"):
         if not re.search(r"(?im)^\s*create\s+policy\s+" + policy + r"\b", replay_sql): fail(f"replay-safe variant missing {policy}")
-    print(f"PASS: historical snapshot only — {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder; no database connection made.")
-    print("LIMIT: this frozen snapshot predates three forward migrations applied on 2026-10-17; see docs/LIVE_MIGRATION_DELTA_2026-10-17.md for the live delta. Text parity is not proof of clean-chain replay or semantic equivalence.")
+    print(f"PASS: frozen historical snapshot — {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder.")
+    print(f"PASS: separate forward-source delta — {len(delta_entries)} source files hash-verified; ledger metadata records {delta.get('live_ledger_count')} entries through {delta.get('latest_live_version')}.")
+    print("LIMIT: no live SQL hash or database connection is checked by this workflow. Full historical replay and semantic equivalence remain unproven; see docs/live-migration-delta-2026-10-18.json and docs/DB_MIGRATION_RECONCILIATION.md.")
 if __name__ == "__main__": main()
