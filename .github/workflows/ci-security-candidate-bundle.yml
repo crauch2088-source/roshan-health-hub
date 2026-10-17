@@ -10,6 +10,7 @@ on:
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
       - 'db/tests/*branch_isolation*.sql'
       - 'db/tests/finance_only_rpc_writes_*.sql'
+      - 'db/tests/security_candidate_combined_*.sql'
       - '.github/workflows/ci-security-candidate-bundle.yml'
   push:
     branches:
@@ -69,3 +70,34 @@ jobs:
             -f "$FIXTURE" \
             -f "$MIGRATION" \
             -f "$INTEGRATION"
+
+  combined-schema:
+    name: Combined schema migration and policy regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply shared synthetic fixture and all candidate migrations in order
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
+            -f db/tests/security_candidate_combined_fixture.sql \\
+            -f db/roshan_invoice_item_branch_isolation.sql \\
+            -f db/roshan_parent_branch_isolation.sql \\
+            -f db/roshan_queue_followup_branch_isolation.sql \\
+            -f db/roshan_prescription_lab_child_branch_isolation.sql \\
+            -f db/roshan_phase27_finance_rpc_only_writes.sql \\
+            -f db/tests/security_candidate_combined_integration.sql
