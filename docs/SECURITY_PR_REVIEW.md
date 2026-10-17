@@ -163,3 +163,10 @@ A live compare against current `main` reports all five security drafts as diverg
 ## PR #51 regression test coverage update — 2026-10-17
 
 The parent-branch test suite previously duplicated a certificate `visit_id` reassignment assertion. Commit [`19e91bc`](https://github.com/crauch2088-source/roshan-health-hub/commit/19e91bc38af9f16c2a6d46f8af6249742812ba84) replaces the duplicate with a `patient_id` reassignment check and adds an INSERT check for same-branch but inconsistent patient/visit parents. Dedicated PostgreSQL 17 integration passed in [run #39026202054](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202054). The broader PR workflow was still in progress at last check; no SQL migration was applied.
+
+
+## Live verification refresh — 2026-10-17 10:56 UTC
+- `main` SHA `5cf7eea2037314f7e90bf2f654e05a4d3840e667`: all 14 checks passed; the newest Vercel production deployment is READY on the same SHA and has the canonical `roshan-health-hub.vercel.app` alias.
+- PR #51 head `19e91bc38af9f16c2a6d46f8af6249742812ba84` has passing dedicated PostgreSQL 17 integration and PR-wide CI, including source-parity and replay-safe policy fixture jobs. This is not proof of full-chain replay.
+- Read-only live catalog counts: 44 public + 25 private SECURITY DEFINER functions. Of these, 22 public functions are authenticated-callable and zero public functions are anon-callable; anon lacks USAGE on `private` despite five private EXECUTE grants. No blanket grant changes recommended from counts alone.
+- No production SQL or grants changed. Keep PRs #50–#54 as drafts until clean replay baseline, nullable-link contract, ancestry, and final authorization matrices are resolved.

@@ -212,3 +212,11 @@ The focused SQL and fixture files appear as added files in each comparison, but 
 - Commit: [`19e91bc38af9f16c2a6d46f8af6249742812ba84`](https://github.com/crauch2088-source/roshan-health-hub/commit/19e91bc38af9f16c2a6d46f8af6249742812ba84), on `security/parent-branch-isolation-50-batch`; no candidate SQL changed.
 - Dedicated PostgreSQL 17 integration passed: [run #39026202054](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202054).
 - The pull-request-wide CI run #39026202048 was still in progress at the last check. Main CI passed for `5ca587e`; CodeQL JavaScript/TypeScript analysis was still running at that point.
+
+
+## Live verification refresh — 2026-10-17 10:56 UTC
+- Verified current `main` at `5cf7eea2037314f7e90bf2f654e05a4d3840e667`: all 14 GitHub check runs concluded successfully, including both CodeQL analyses.
+- Verified the newest Vercel production deployment is `READY` on the exact same SHA `5cf7eea`; aliases include `roshan-health-hub.vercel.app` and `roshan-health-hub-git-main-roshan45.vercel.app`. No manual deployment was triggered.
+- PR #51 head `19e91bc38af9f16c2a6d46f8af6249742812ba84` now has both its dedicated PostgreSQL 17 parent-isolation integration ([run #39026202054](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202054)) and PR-wide CI ([run #39026202048](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202048)) successful. The CI included migration source-parity checks and the replay-safe policy fixture; neither substitutes for full historical replay.
+- Read-only live catalog audit: 44 SECURITY DEFINER functions in `public` and 25 in `private`; 22 public functions are authenticated-callable and none are anon-callable. Five private functions show EXECUTE inherited for `anon`, but `anon` lacks USAGE on `private`; do not blindly revoke functions based on Advisor counts.
+- No production SQL, migration, grant, merge, or paid resource was changed. The trusted pre-migration baseline/full 93-entry replay gate remains open.

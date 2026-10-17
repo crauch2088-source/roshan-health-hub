@@ -1242,3 +1242,16 @@ The focused SQL and fixture files appear as added files in each comparison, but 
 - Commit: [`19e91bc38af9f16c2a6d46f8af6249742812ba84`](https://github.com/crauch2088-source/roshan-health-hub/commit/19e91bc38af9f16c2a6d46f8af6249742812ba84), on `security/parent-branch-isolation-50-batch`; no candidate SQL changed.
 - Dedicated PostgreSQL 17 integration passed: [run #39026202054](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202054).
 - The pull-request-wide CI run #39026202048 was still in progress at the last check. Main CI passed for `5ca587e`; CodeQL JavaScript/TypeScript analysis was still running at that point.
+
+
+## Live verification refresh — 2026-10-17 10:56 UTC
+### Verified state
+- `main` SHA `5cf7eea2037314f7e90bf2f654e05a4d3840e667` passed all 14 GitHub checks, including JavaScript/TypeScript and Python CodeQL. The current Vercel production deployment is `READY` on that exact SHA, with `roshan-health-hub.vercel.app` assigned as an alias.
+- PR #51 head `19e91bc38af9f16c2a6d46f8af6249742812ba84`: dedicated PostgreSQL 17 integration and PR-wide CI are green. PR-wide CI includes source-parity and replay-safe policy fixture jobs, not full migration replay.
+- Live read-only function catalog counts: `public` 44 SECURITY DEFINER functions (22 authenticated-callable, 0 anon-callable); `private` 25 SECURITY DEFINER functions (5 EXECUTE grants visible to anon, but anon lacks schema USAGE). Triage individual advisor findings; no blanket revocation.
+- No SQL or grants were changed in Supabase; no security PR merged; no paid environment created.
+### Next gates
+1. Keep PR #50–#54 source-only until their current bases/heads and dependency order are reconciled against `main`.
+2. Recover or reconstruct a reviewed pre-migration baseline and prove the complete ordered 93-entry chain in a zero-cost disposable PostgreSQL environment, retaining the redacted identity migration's privacy boundary.
+3. Decide explicitly whether nullable patient/visit child links are valid product states before adding stricter constraints to PR #51/#52.
+4. Resume per-PR grant, policy, and role × operation × branch review; then rerun CI on the final integrated candidate.
