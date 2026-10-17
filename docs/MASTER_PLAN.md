@@ -26,6 +26,8 @@
 
 ## Security PR review update — 2026-10-17
 
+- Current main snapshot at the latest manifest correction: `838e696d4d7a9d9ce4817e47c4fbcf95dc2b1e4c` (documentation-only). CI/CodeQL checks for later documentation commits must be re-queried; do not inherit a previous SHA’s green status.
+
 - Per-version manifest: [docs/recovered-migrations/source-parity-report.json](recovered-migrations/source-parity-report.json) records 93 live migrations and SHA-256 hashes of normalized SQL; 92 match tracked source, one is intentionally redacted, zero are unmapped.
 - Detailed source review: [docs/SECURITY_PR_REVIEW.md](SECURITY_PR_REVIEW.md). PR #50 needs a parent-changing UPDATE regression; #51 needs null-patient/visit linkage to fail closed, reliable fixture postconditions, and helper grant assertions; #52 needs equivalent null-linkage coverage, super-admin cross-branch DELETE verification, and parent-changing UPDATE tests; #53 needs parent-reassignment UPDATE tests; #54 remains blocked by full replay and exhaustive role × operation × RPC validation.
 - Read-only schema/function inspection confirmed nullable patient/visit columns for followups, queue tickets, patient discounts, and procedure orders. Do not treat this as a demonstrated cross-branch exploit, but resolve the linkage-integrity gap before merging.
