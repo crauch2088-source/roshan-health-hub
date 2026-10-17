@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the public source-parity manifest without connecting to any database."""
+"""Verify the frozen 93-entry source-parity snapshot; this is not a live-ledger query."""
 from __future__ import annotations
 import hashlib, json, re, sys
 from pathlib import Path
@@ -51,6 +51,6 @@ def main() -> None:
     if re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", replay_sql, re.I): fail("replay-safe variant contains an identity UUID")
     for policy in ("patients_select", "patients_insert", "patients_update", "patients_delete"):
         if not re.search(r"(?im)^\s*create\s+policy\s+" + policy + r"\b", replay_sql): fail(f"replay-safe variant missing {policy}")
-    print(f"PASS: {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder; no database connection made.")
-    print("LIMIT: text parity is not proof of clean-chain replay or semantic equivalence.")
+    print(f"PASS: historical snapshot only — {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder; no database connection made.")
+    print("LIMIT: this frozen snapshot predates three forward migrations applied on 2026-10-17; see docs/LIVE_MIGRATION_DELTA_2026-10-17.md for the live delta. Text parity is not proof of clean-chain replay or semantic equivalence.")
 if __name__ == "__main__": main()
