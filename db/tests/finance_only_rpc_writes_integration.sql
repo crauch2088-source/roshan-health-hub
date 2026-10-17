@@ -44,7 +44,7 @@ SET ROLE authenticated;
 DO $test$
 DECLARE t text;
 BEGIN
- FOREACH t IN ARRAY ARRAY['cashbox_transactions','expenses','payments','supplier_bills','supplier_payments'] LOOP
+ FOREACH t IN ARRAY ARRAY['cashbox_transactions','expenses','payments','supplier_bills','supplier_payments','insurance_claims','insurance_claim_items','insurance_claim_payments'] LOOP
   BEGIN EXECUTE format('INSERT INTO public.%I DEFAULT VALUES',t); RAISE EXCEPTION 'direct INSERT allowed on %',t; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN EXECUTE format('UPDATE public.%I SET id=id WHERE false',t); RAISE EXCEPTION 'direct UPDATE allowed on %',t; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN EXECUTE format('DELETE FROM public.%I WHERE false',t); RAISE EXCEPTION 'direct DELETE allowed on %',t; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
