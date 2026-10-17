@@ -49,7 +49,19 @@ BEGIN
   IF _gross_amount IS NULL
      OR _gross_amount::text IN ('NaN', 'Infinity', '-Infinity')
      OR _gross_amount < 0 THEN
-    RAISE EXCEPTION 'gross amount must be finite and non-negative';
+    RAISE EXCEPTION 'gross amount must be finite and non-negative'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF _service_type IS NULL
+     OR _service_type NOT IN ('consultation', 'lab', 'medicine') THEN
+    RAISE EXCEPTION 'unsupported insurance coverage service type'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF _gross_amount <> round(_gross_amount, 2) THEN
+    RAISE EXCEPTION 'gross amount must have at most two decimal places'
+      USING ERRCODE = '22023';
   END IF;
 
   -- A policy is usable only during its validity window and while active.
