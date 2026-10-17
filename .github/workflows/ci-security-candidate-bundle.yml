@@ -1,6 +1,7 @@
 name: Security candidate bundle regression (isolated fixtures)
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'db/roshan_invoice_item_branch_isolation.sql'
