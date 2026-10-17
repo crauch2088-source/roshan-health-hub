@@ -1,11 +1,13 @@
 # Latest verified status — 2026-10-17
 
-- Current main after PR #58: `0ab1a85e572897b9aa95e14d7240560e9efbe8a7`.
-- PR #57 added manual dispatch for the security candidate workflow and is merged. The exact security bundle passed all six PostgreSQL 17 integration jobs.
-- PR #58 added an insurance claim guard for invoice/visit patient and branch consistency. The test reproduced the defect before the fix and passed after; the insurance, source-parity, role-guard, prescription atomicity and general CI workflows passed on the tested head.
-- **Production remains unremediated:** live RLS policy gaps and finance direct-write grants are still present; insurance RPC fix is source-only. SQL application is blocked by the unresolved clean historical migration baseline/replay gate.
-- Vercel production deployment is behind current main, and current-main checks report a Hobby build-rate-limit failure. No paid upgrade, bypass or forced deploy was attempted.
-- Full evidence: [live security audit](docs/LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md) and [master plan](docs/MASTER_PLAN.md).
+- Production security migrations are applied and read back. Supabase ledger: 96 rows; latest version `20261017125936`.
+- All 44 policies across the 11 targeted child tables now include their expected branch/parent helper.
+- Direct write grants are revoked for authenticated/anon on five finance tables and three insurance ledger tables; authenticated SELECT remains.
+- Insurance claim and coverage RPCs are updated, authenticated-only, and use an empty fixed `search_path`. Claim visit/patient/branch and amount-split checks, coverage service-type and currency-precision checks are present in live definitions.
+- PostgreSQL 17 security and insurance integration suites passed; current stored migration SQL exactly matches all three tracked source files. See [live migration delta](docs/LIVE_MIGRATION_DELTA_2026-10-17.md).
+- Full historical migration replay remains unproven because the initial schema baseline is missing and one historical identity-link migration is intentionally redacted. No historical replay was attempted.
+- Vercel production is behind current source; latest current-main build check is blocked by the free Hobby build-rate limit. The deployed app commit was verified to use validated finance RPCs. No paid upgrade or forced deploy.
+- This is not a clinical-readiness declaration: live browser smoke tests remain pending deployment availability and authenticated access.
 
 ---
 
