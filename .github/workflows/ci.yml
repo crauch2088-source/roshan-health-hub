@@ -355,3 +355,13 @@ jobs:
             -f db/roshan_phase22_clinic_local_queue_date.sql \
             -f db/roshan_phase23_legacy_queue_allocator_20261016.sql \
             -f db/tests/clinic_local_queue_date_integration.sql
+
+
+  migration-source-parity:
+    name: Migration source parity manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all 93 migration source mappings and hashes
+        run: python3 scripts/verify-migration-source-parity.py
