@@ -16,6 +16,8 @@ BEGIN
  UPDATE public.followups SET notes='tampered' WHERE id='50000000-0000-0000-0000-000000000002'; GET DIAGNOSTICS affected=ROW_COUNT;
  IF affected<>0 THEN RAISE EXCEPTION 'followups cross-branch UPDATE allowed'; END IF;
  UPDATE public.followups SET notes='updated' WHERE id='50000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT;
+ -- Reparenting an otherwise visible row to a different patient's visit must fail.
+ BEGIN UPDATE public.followups SET visit_id='40000000-0000-0000-0000-000000000003' WHERE id='50000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'followup patient/visit reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF affected<>1 THEN RAISE EXCEPTION 'followups same-branch UPDATE denied'; END IF;
  BEGIN INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','cross'); RAISE EXCEPTION 'followups cross-branch INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','local');
@@ -30,6 +32,8 @@ BEGIN
  UPDATE public.queue_tickets SET status='tampered' WHERE id='60000000-0000-0000-0000-000000000002'; GET DIAGNOSTICS affected=ROW_COUNT;
  IF affected<>0 THEN RAISE EXCEPTION 'queue cross-branch UPDATE allowed'; END IF;
  UPDATE public.queue_tickets SET status='called' WHERE id='60000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT;
+ -- Queue ticket parent reassignment must not bypass the patient/visit invariant.
+ BEGIN UPDATE public.queue_tickets SET visit_id='40000000-0000-0000-0000-000000000003' WHERE id='60000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'queue ticket patient/visit reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF affected<>1 THEN RAISE EXCEPTION 'queue same-branch UPDATE denied'; END IF;
  BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','cross'); RAISE EXCEPTION 'queue cross-branch INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','waiting');
