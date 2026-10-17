@@ -162,3 +162,13 @@ COMMIT;
 ```
 
 **Pre-change production evidence:** at capture time there were zero non-deleted insurance claims and zero insurance-payment-vs-cashbox amount mismatches. No historical rows need repair based on this read-only check.
+
+## Applied-state ledger note — 2026-10-18
+
+The four reviewed forward migrations are now applied and read back from Supabase project `jewzonxplxhogqrnhosl`:
+- `roshan_insurance_prior_authorization_branch_isolation` — `20261017225523`
+- `roshan_post_expense_finite_amount` — `20261017225540`
+- `roshan_post_expense_money_precision` — `20261017230623`
+- `roshan_insurance_claim_money_precision` — `20261017230645`
+
+The live ledger is at 101 entries. The precision migration rollbacks restore the previous finite-only expense guard and the captured prior insurance approval/payment function bodies, respectively. Preflight and postflight found zero claims, payments, expenses, or prior authorizations, and zero existing claim-payment/cashbox mismatches.
