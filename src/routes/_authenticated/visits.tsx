@@ -118,20 +118,22 @@ function VisitsPageInner() {
   const [selectedPatient, setSelectedPatient] = useState<PickedPatient | null>(null);
 
   useEffect(
-    () => listenForQuickAction("new_visit", () => {
-      if (!can("visits.create")) return;
-      setSelectedPatient(null);
-      setForm(emptyForm);
-      setOpen(true);
-    }),
+    () =>
+      listenForQuickAction("new_visit", () => {
+        if (!can("visits.create")) return;
+        setSelectedPatient(null);
+        setForm(emptyForm);
+        setOpen(true);
+      }),
     [can],
   );
 
   useEffect(
-    () => listenForQuickAction("new_lab_order", () => {
-      if (!can("lab.create")) return;
-      toast.info(t("new_lab_order_hint"));
-    }),
+    () =>
+      listenForQuickAction("new_lab_order", () => {
+        if (!can("lab.create")) return;
+        toast.info(t("new_lab_order_hint"));
+      }),
     [can, t],
   );
 
