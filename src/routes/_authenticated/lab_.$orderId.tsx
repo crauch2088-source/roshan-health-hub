@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
+import { isAbnormalLabResult } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
