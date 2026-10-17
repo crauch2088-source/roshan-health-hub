@@ -1,3 +1,16 @@
+# Live production status — 2026-10-17
+
+> **Security release gate remains open.** The security bundle is present in source but has not been applied to production. Live Supabase inspection confirmed that 11 child-table RLS policies still lack expected parent/branch predicates, direct write grants remain on five finance tables, and the insurance-claim RPC is still on its older definition. These are configuration gaps, not evidence of an actual breach.
+
+- Current main at audit start: `5b549663a4d8f26d372a31f19b63ee5d4cdba812`; the live audit documentation has since been committed to main.
+- Supabase `jewzonxplxhogqrnhosl`: ACTIVE_HEALTHY, PostgreSQL 17.6; migration ledger has 93 entries. Source parity is 92/93 with one intentionally redacted identity-link migration; a clean historical bootstrap is not yet proven.
+- Vercel production deployment is READY but behind current main. Current-main status reported a build-rate-limit failure. Do not pay to upgrade or bypass the limit.
+- Full evidence and the exact release gate: [docs/LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md](docs/LIVE_PRODUCTION_SECURITY_AUDIT_2026-10-17.md) and [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md).
+- A new CI-only PR [#57](https://github.com/crauch2088-source/roshan-health-hub/pull/57) adds manual triggering for the PostgreSQL 17 security-bundle regression workflow; do not merge it until checks are green.
+- No production SQL or data was changed during this audit. Do not treat the app as clinically ready until the security migration is safely applied and verified against live state.
+
+---
+
 # Roshan Health Hub
 
 **Purpose:** a real, low-cost medical-center ERP/EMR for Roshan Medical Center in Hay Al-Sadaqa, Al-Hasahisa, Gezira, Sudan. This repository is the single application; do not create a parallel/replacement app.
