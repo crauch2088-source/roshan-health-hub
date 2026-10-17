@@ -518,3 +518,11 @@ Two additional precision migrations were applied after the 99-entry state above:
 - `roshan_insurance_claim_money_precision` version `20261017230645`: approval/payment RPCs reject non-finite and over-precision amounts; payment storage and ledger amounts now use the same validated two-decimal value, and the claim row is selected with an exact row shape before locking.
 
 Read-back confirms **101 ledger entries** through `20261017230645`. The current source-delta JSON and verifier cover eight later source mappings plus the frozen 93-entry hash snapshot. No claims, payments, expenses, or prior authorizations existed at preflight/postflight, and no business rows were modified by these migrations. The delta workflow validates source files and mapping metadata, not persisted SQL hashes. Full historical replay remains unproven because the initial baseline is missing and the environment-specific identity mapping remains intentionally redacted.
+
+## Final live-ledger update — 2026-10-18 (103 entries)
+
+Two additional forward migrations were applied and read back after the 101-entry state above:
+- `roshan_invoice_payment_money_precision` version `20261017231612`: invoice payment RPC rejects non-finite/non-positive/over-precision amounts before writes, preserving branch and idempotency checks.
+- `roshan_pharmacy_batch_money_precision` version `20261017231629`: pharmacy batch receipt rejects invalid quantity and purchase/effective selling price precision before inserting inventory or stock-movement rows.
+
+The live ledger is now **103 entries** through `20261017231629`. The source delta lists ten later source files and retains the frozen 93-entry hash snapshot separately. Payments, inventory batches, stock movements, claims, claim payments, expenses, and prior authorizations remain empty; all nine medicine master price pairs have at most two decimal places. No business rows were changed. Full historical replay remains unproven because the reviewed initial schema baseline is missing and one environment-specific identity mapping is intentionally redacted.
