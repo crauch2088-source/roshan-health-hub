@@ -1188,3 +1188,21 @@ This entry supersedes earlier status snapshots where they conflict. Live sources
 - Do not create a Supabase development branch/project without explicit agreement to the quoted nonzero recurring cost (last quote: US$0.01344/hour).
 - The replay-safe redacted-migration SQL is an isolated test artifact, not a canonical deployment migration.
 - CI success is not production deployment evidence. Use exact SHA equality plus READY/alias checks for release verification.
+
+
+## Finance RPC NULL-direction finding and verified fix — 2026-10-17 10:37 UTC
+
+### Source finding
+Review of PR #54 found a SQL three-valued-logic edge case in `public.post_cashbox_entry`: `IF _direction NOT IN ('deposit','withdrawal')` is not true for a NULL input, allowing NULL to reach the CASE expression and be treated as a withdrawal. This was a defect in a draft migration, not a production database finding.
+
+### Change and test evidence
+- Regression assertion committed first: `ed1c14b218d2dab8c7dc7e862f273e3e990a9e42`.
+- Validation fixed in `53483d87bb30f3bbc6fe4e95f4e266d1f763b96f`: reject NULL explicitly.
+- Added `workflow_dispatch` to the finance integration workflow on branch head `c15d69ab96b3ba7be8c45212bee3511130bd0bcd`; registered the isolated workflow on main in `e4b1a6d0cea31d3e6e3976451a331bd586811ff6` without bringing candidate SQL onto main.
+- PostgreSQL 17 finance integration passed: [run #39025549230](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39025549230). Main CI passed on `e4b1a6d`; CodeQL was still in progress at the last check.
+- PR #54 remains open/draft; the fix is not deployed or applied to Supabase.
+
+### Next
+1. Verify fresh CI/CodeQL for the documentation commit and verify its Vercel state without forcing a deployment.
+2. Continue reviewing draft SQL for NULL validation, idempotency, branch ownership, and direct-write permission gaps.
+3. Preserve the full migration replay gate and do not merge #50–#54 until the base/replay gates are resolved.

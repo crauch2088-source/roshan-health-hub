@@ -136,3 +136,13 @@ Read-only inspection of the connected production project found:
 - Current Supabase Advisor (observed 2026-10-17 10:29 UTC): 22 authenticated-callable public SECURITY DEFINER findings, one `pg_trgm` public-schema warning, and leaked-password protection warning; Performance Advisor reports 90 unused-index findings. This is a triage queue, not authorization to revoke all RPCs or remove indexes.
 - Current production deployment listing: READY SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca`, behind main. No forced deployment and no live database mutation.
 - The clean-replay blocker remains unchanged: no reviewed pre-migration baseline and one intentionally redacted identity-link migration. PRs remain source-only until that gate is satisfied.
+
+
+## PR #54 follow-up — NULL direction validation (2026-10-17)
+
+- **Finding:** The draft `post_cashbox_entry` used `IF _direction NOT IN ('deposit','withdrawal')`, which does not reject NULL in PL/pgSQL's three-valued logic. A NULL direction could fall through the guard and be classified as withdrawal by the CASE expression.
+- **Regression first:** Added the NULL-direction assertion in commit `ed1c14b218d2dab8c7dc7e862f273e3e990a9e42`.
+- **Fix:** Explicit NULL check added in `53483d87bb30f3bbc6fe4e95f4e266d1f763b96f`.
+- **CI wiring:** Added `workflow_dispatch` to the draft branch workflow (`c15d69ab96b3ba7be8c45212bee3511130bd0bcd)); registered the same isolated PostgreSQL 17 workflow on main (`e4b1a6d0cea31d3e6e3976451a331bd586811ff6`). The main change is workflow-only; no finance SQL was added to main.
+- **Evidence:** PostgreSQL 17 finance RPC-only integration passed on the current draft branch head in [run #39025549230](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39025549230). Main CI passed on `e4b1a6d`; CodeQL was in progress at the last check.
+- **Scope:** PR #54 remains draft and source-only. No production SQL or grants changed. Full clean replay remains a hard merge gate.
