@@ -1446,3 +1446,14 @@ After PR [#67](https://github.com/crauch2088-source/roshan-health-hub/pull/67) p
 - Read-only preflight and postflight found zero non-deleted claims, zero claim payments, zero expenses, zero prior authorizations, and zero prior payment-vs-cashbox mismatches. No business rows were changed by these migrations.
 - The live migration delta now maps eight later source files on top of the frozen 93-entry historical hash snapshot. The workflow validates source-file hashes and ledger mapping metadata, **not persisted live SQL hashes**. The missing initial schema baseline and redacted environment-specific identity link still prevent claiming full historical replay.
 - Rollback SQL is documented in [docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md](PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md). Do not roll back these financial guards unless a concrete regression is confirmed; rollback restores the prior silent-rounding behavior.
+
+## Follow-up — invoice and pharmacy precision guards applied — 2026-10-18
+
+Two further tested migrations were applied after the 101-entry state above:
+
+- `roshan_invoice_payment_money_precision` — live version `20261017231612`. `post_invoice_payment` now rejects non-finite, non-positive, and over-precision amounts before idempotency checks or writes. Existing permission checks, branch enforcement, idempotency locking, and authenticated-only execution remain intact.
+- `roshan_pharmacy_batch_money_precision` — live version `20261017231629`. `fn_receive_pharmacy_batch` now rejects non-finite/non-integer quantities and purchase/effective selling prices that are not representable to two decimals before writes. This prevents `pharmacy_inventory numeric(14,2)` prices from diverging from the unconstrained medicine master price.
+- Final live migration ledger: **103 entries** through `20261017231629`; both new entries recorded once. Both RPCs remain `SECURITY DEFINER` with `search_path = ''`, executable by `authenticated` but not `anon`.
+- Read-only preflight/postflight: zero payments, inventory batches, stock movements, claims, claim payments, expenses, prior authorizations, and zero medicine master prices with excess decimal precision. No business rows were modified.
+- Source delta now maps ten forward source files on top of the frozen 93-entry historical hash snapshot. The CI check validates source-file hashes and recorded mapping metadata; it does not query persisted live SQL hashes. The initial schema baseline and intentionally redacted environment-specific identity mapping still block a full historical replay claim.
+- Rollback SQL for both migrations is in [docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md](PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md).
