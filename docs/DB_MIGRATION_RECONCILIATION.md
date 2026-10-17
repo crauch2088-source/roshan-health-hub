@@ -1,12 +1,20 @@
+## Current live ledger state — 2026-10-17 13:00 UTC
+
+The historical inventory below was originally captured at 93 rows before the three forward security/insurance migrations were applied. The current live ledger now has **96 rows**, latest `20261017125936_roshan_insurance_coverage_validity_20261017`. See [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md) for exact stored-source comparisons and post-apply verification.
+
+The current reconciliation is **95/96 exact source matches, one intentionally redacted identity-link migration, zero unmapped versions**: the prior 92 verified matches plus three new migrations whose stored statement text was compared byte-for-byte with the tracked candidate source. The historical 93-row `source-parity-report.json` and its validator remain a frozen snapshot, not a live-ledger export. The full historical chain still has no trustworthy clean-bootstrap baseline; no replay of that chain was attempted.
+
+---
+
 # Supabase migration reconciliation inventory
 
 **Snapshot date:** 2026-10-17  
 **Target:** Connected Roshan Health Hub Supabase project (read-only inventory)  
-**Applied migration rows returned:** 93  
-**Latest verified applied migration:** `20261016222009_roshan_phase25_current_app_profile_20261016` (confirmed by live Supabase migration ledger on 2026-10-17).  
+**Applied migration rows in the original snapshot:** 93 (historical; current live ledger is 96)  
+**Latest migration in original snapshot:** `20261016222009_roshan_phase25_current_app_profile_20261016`; current live latest is `20261017125936_roshan_insurance_coverage_validity_20261017`.  
 **Top-level migration SQL files in `db/` on `main`:** 26  
 **Exact basename matches among the 26 top-level `db/` candidates:** 4  
-**Normalized source-content matches across all 105 tracked candidates:** 92 of 93 applied ledger entries; 1 intentionally redacted environment-specific identity mapping; 0 unmapped ledger entries.  
+**Normalized source-content matches in the original 93-row snapshot:** 92; current live delta adds three exact source matches for 95 of 96 total entries, with 1 intentionally redacted environment-specific identity mapping and 0 unmapped versions.  
 These are distinct measures: basename matching counts names in the top-level directory, while `docs/recovered-migrations/source-parity-report.json` records the per-version content-hash comparison across the timestamped recovery directory and `db/`. The text-level normalization ignores comments and whitespace and is not a SQL-parser semantic proof. No migration was applied, rolled back, or edited in the database during this inventory.
 
 ## Purpose and safety
