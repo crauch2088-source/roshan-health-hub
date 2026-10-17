@@ -110,3 +110,13 @@ test("responsive, focus, dark-mode and print guardrails are present in source", 
   assert.match(css, /@media print/);
   assert.match(css, /:focus-visible/);
 });
+
+test("blank or nonnumeric lab values are not classified as out of range", async () => {
+  const { isAbnormalLabResult } = await import("../src/lib/lab-workflow.ts");
+  assert.equal(isAbnormalLabResult("", 3.5, 5.5), false);
+  assert.equal(isAbnormalLabResult("   ", 3.5, 5.5), false);
+  assert.equal(isAbnormalLabResult("not numeric", 3.5, 5.5), false);
+  assert.equal(isAbnormalLabResult("3.4", 3.5, 5.5), true);
+  assert.equal(isAbnormalLabResult("5.6", 3.5, 5.5), true);
+  assert.equal(isAbnormalLabResult("4.5", 3.5, 5.5), false);
+});

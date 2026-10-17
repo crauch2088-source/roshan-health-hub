@@ -192,12 +192,10 @@ function LabOrderPageInner() {
       itemParameters.filter((parameter) => {
         const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
         if (!value) return false;
-        const numeric = Number(value);
-        if (!Number.isFinite(numeric)) return false;
         const range = rangeFor(s(parameter, "id"));
         const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
         const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-        return (low !== 0 && numeric < low) || (high !== 0 && numeric > high);
+        return isAbnormalLabResult(value, low, high);
       }).length
     );
   }, 0);
@@ -419,11 +417,7 @@ function LabOrderPageInner() {
 
                           const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
 
-                          const num = Number(value);
-
-                          const abnormal =
-                            Number.isFinite(num) &&
-                            ((low !== 0 && num < low) || (high !== 0 && num > high));
+                          const abnormal = isAbnormalLabResult(value, low, high);
 
                           return (
                             <TableRow key={key}>
