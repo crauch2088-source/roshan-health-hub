@@ -14,6 +14,8 @@ CREATE TABLE public.users (
   deleted_at timestamptz
 );
 CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid);
+CREATE TABLE public.patient_insurance (id uuid PRIMARY KEY, patient_id uuid NOT NULL REFERENCES public.patients(id));
+CREATE TABLE public.insurance_prior_authorizations (id uuid PRIMARY KEY, patient_insurance_id uuid NOT NULL REFERENCES public.patient_insurance(id), status text NOT NULL DEFAULT 'pending');
 CREATE TABLE public.visits (id uuid PRIMARY KEY, patient_id uuid, branch_id uuid);
 CREATE TABLE public.invoices (
   id uuid PRIMARY KEY, branch_id uuid, net_amount numeric, total_amount numeric,
@@ -134,6 +136,8 @@ GRANT EXECUTE ON FUNCTION private.app_has_patient_branch(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.app_has_attachment_branch_access(uuid,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.app_has_invoice_branch(uuid) TO authenticated;
 
+ALTER TABLE public.patient_insurance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.insurance_prior_authorizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
@@ -226,6 +230,8 @@ GRANT EXECUTE ON FUNCTION public.add_cashbox_entry(text,numeric,text,text,text,t
 GRANT EXECUTE ON FUNCTION public.post_expense(text,numeric,text,date,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.post_supplier_payment(uuid,numeric,text,text,date,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reverse_cashbox_entry(uuid,text) TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.patient_insurance TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.insurance_prior_authorizations TO authenticated;
 
 CREATE FUNCTION public.test_sync_invoice_paid_amount() RETURNS trigger LANGUAGE plpgsql
 AS $function$ BEGIN UPDATE public.invoices SET paid_amount=COALESCE(paid_amount,0)+NEW.amount WHERE id=NEW.invoice_id; RETURN NEW; END $function$;
@@ -237,6 +243,12 @@ INSERT INTO public.patients VALUES
  ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001'),
  ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002'),
  ('30000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001');
+INSERT INTO public.patient_insurance VALUES
+ ('a1000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001'),
+ ('a1000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002');
+INSERT INTO public.insurance_prior_authorizations VALUES
+ ('a2000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000001','pending'),
+ ('a2000000-0000-0000-0000-000000000002','a1000000-0000-0000-0000-000000000002','pending');
 INSERT INTO public.visits VALUES
  ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001'),
  ('40000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002'),
@@ -294,5 +306,6 @@ SELECT set_config('test.permissions',
  'followups.read|followups.create|followups.update|followups.delete|' ||
  'queue.read|queue.create|queue.update|' ||
  'pharmacy.read|pharmacy.create|pharmacy.update|pharmacy.delete|emr.read|emr.create|emr.update|emr.delete|' ||
- 'lab.read|lab.create|lab.update|lab.delete|cashbox.create|accounting.create|payments.create|debts.create',false);
+ 'lab.read|lab.create|lab.update|lab.delete|insurance.read|insurance.create|insurance.update|' ||
+ 'cashbox.create|accounting.create|payments.create|debts.create',false);
 SELECT set_config('test.super_admin','false',false);

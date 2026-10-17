@@ -10,6 +10,8 @@ on:
       - 'db/roshan_prescription_lab_child_branch_isolation.sql'
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
       - 'db/roshan_security_candidate_bundle_20261017.sql'
+      - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
+      - 'db/tests/insurance_prior_authorization_branch_isolation_integration.sql'
       - 'db/roshan_phase27_revoke_legacy_invoice_number.sql'
       - 'db/tests/*branch_isolation*.sql'
       - 'db/tests/finance_only_rpc_writes_*.sql'
@@ -41,6 +43,10 @@ jobs:
             fixture: db/tests/prescription_lab_child_branch_isolation_fixture.sql
             migration: db/roshan_prescription_lab_child_branch_isolation.sql
             integration: db/tests/prescription_lab_child_branch_isolation_integration.sql
+          - name: Insurance prior-authorization branch isolation
+            fixture: db/tests/security_candidate_combined_fixture.sql
+            migration: db/roshan_insurance_prior_authorization_branch_isolation.sql
+            integration: db/tests/insurance_prior_authorization_branch_isolation_integration.sql
           - name: Finance RPC-only writes and numeric validation
             fixture: db/tests/finance_only_rpc_writes_fixture.sql
             migration: db/roshan_phase27_finance_rpc_only_writes.sql
@@ -97,4 +103,5 @@ jobs:
             -f db/tests/security_candidate_combined_fixture.sql \
             -f db/roshan_security_candidate_bundle_20261017.sql \
             -f db/roshan_phase27_revoke_legacy_invoice_number.sql \
+            -f db/roshan_insurance_prior_authorization_branch_isolation.sql \
             -f db/tests/security_candidate_combined_integration.sql
