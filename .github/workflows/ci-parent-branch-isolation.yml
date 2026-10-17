@@ -1,0 +1,40 @@
+name: Parent branch isolation integration
+
+on:
+  pull_request:
+    paths:
+      - 'db/roshan_parent_branch_isolation.sql'
+      - 'db/tests/parent_branch_isolation_fixture.sql'
+      - 'db/tests/parent_branch_isolation_integration.sql'
+      - '.github/workflows/ci-parent-branch-isolation.yml'
+  push:
+    branches:
+      - 'security/parent-branch-isolation-50-batch'
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL 17 parent branch isolation (50 checks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply isolated fixture, migration and 50-check regression
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/parent_branch_isolation_fixture.sql \
+            -f db/roshan_parent_branch_isolation.sql \
+            -f db/tests/parent_branch_isolation_integration.sql
