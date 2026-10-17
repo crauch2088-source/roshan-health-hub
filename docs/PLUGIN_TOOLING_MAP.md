@@ -161,3 +161,10 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Local isolated simulation passed with 92 matching hashes and one redacted placeholder. Dedicated CI passed on main SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`; all 13 checks on that SHA were successful.
 - Use free GitHub Actions PostgreSQL 17 services for isolated database tests. No paid Supabase branch/project was created. Full historical replay remains blocked by the missing pre-migration baseline and redacted one-time identity link.
 - Detailed evidence: `docs/SECURITY_PR_REVIEW.md` and `docs/DB_MIGRATION_RECONCILIATION.md`.
+
+
+## Replay-safe historical policy test — 2026-10-17
+
+- The redacted historical migration's policy repair is now tested using a separate replay-only variant that omits its environment-specific identity UPDATE. The synthetic PostgreSQL 17 fixture verifies policy replacement and SELECT/INSERT/UPDATE/DELETE behavior; no Supabase connection is used.
+- The new job is part of `.github/workflows/ci.yml` and passed on main SHA `ed1218e35121d9de08845fcc943fb8a3252717a6`. All 14 main checks on that SHA passed.
+- Full 93-migration replay remains blocked by the missing reviewed pre-migration baseline. No paid branch/project was created.

@@ -10,3 +10,11 @@ Recovered on 2026-10-15 from a read-only query against the live Supabase migrati
 - This is a quarantine/recovery artifact only. Production was queried read-only; no SQL was applied and no data was changed.
 
 Next gates: review migration bodies in order; compare to current `db/*.sql` artifacts; inspect environment-specific data and destructive assumptions; test full replay in disposable PostgreSQL 17; then test Supabase-specific auth/RLS/grants in an isolated Supabase environment before deciding on a canonical migration directory.
+
+
+## Replay-safe policy-only variant for the redacted migration
+
+- The original applied migration `20260818191254_fix_patients_rls_and_admin_link` remains redacted in the public source archive. Its one-time Auth-to-app-user identity mapping must not be restored to public source control.
+- `replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql` is a deliberately separate, non-canonical test variant. It removes the identity UPDATE entirely and preserves the four patient RLS policy changes. It includes no environment email or identity UUID.
+- `db/tests/redacted_migration_policy_replay_fixture.sql` and `db/tests/redacted_migration_policy_replay_integration.sql` validate this policy portion on an isolated PostgreSQL 17 fixture through free GitHub Actions. The job passed on `ed1218e35121d9de08845fcc943fb8a3252717a6`.
+- This does not reconstruct the missing pre-migration baseline and does not establish full-chain replay. Do not move the replay-only file into `supabase/migrations` or use it for production deployment.

@@ -1147,3 +1147,11 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - Main commit `1c996bcc906e0739b5c693f2fe3968acdc72b9c6` passed all 13 checks (application CI/integration, source-parity job, and both CodeQL language analyses). This doc-only update requires fresh CI/CodeQL verification before considering its SHA fully green.
 - Vercel's latest status remains the build-rate-limit check failure; latest READY deployment checked is earlier documentation-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. No attempt was made to bypass rate limits or force deployment.
 - No paid resources, production SQL, policies, grants, or rows were changed. Full-chain replay remains a release gate because the trustworthy pre-migration baseline is absent and one identity-link migration is intentionally redacted. Continue with free GitHub Actions fixtures and source-level recovery only; do not invent a baseline.
+
+
+## Replay-safe redacted migration policy validation — 2026-10-17
+
+- Added `docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql`: derived from the stored migration with exactly one environment-specific identity UPDATE omitted; the four patient RLS policies are preserved. The original public source remains intentionally redacted and the replay-safe variant is not a canonical deployment migration.
+- Added `db/tests/redacted_migration_policy_replay_fixture.sql` and `db/tests/redacted_migration_policy_replay_integration.sql`; GitHub Actions PostgreSQL 17 applies the synthetic fixture, runs the policy repair, verifies policy names/commands/permission predicates, tests SELECT/INSERT/UPDATE/DELETE, and asserts the synthetic app user remains unlinked.
+- Main commit `ed1218e35121d9de08845fcc943fb8a3252717a6` passed all 14 checks, including the new isolated replay job, source-parity verifier, application CI, and both CodeQL analyses.
+- Full-chain replay remains blocked by the missing trustworthy pre-migration baseline. Do not claim all 93 migrations replay cleanly and do not use production as a test target. No paid Supabase branch/project was created.

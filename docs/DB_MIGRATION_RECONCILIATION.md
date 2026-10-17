@@ -455,3 +455,12 @@ The live `statements` arrays for the following applied entries were inspected re
 | `20261016183152` | `roshan_phase16_billing_idempotency` | `db/roshan_phase16_billing_idempotency.sql` | 5001 | `e6cb5067237f10e45bb8955a62254cd2` | Exact size match |
 
 Together with the preceding five-entry comparison, this adds source mapping for fourteen recent ledger entries, including the important atomic prescription/invoice and privileged-role guard changes. It still does not reconcile the earlier historical migration sequence or replace a clean disposable replay. Do not replay any migration or promote the proposed RLS candidates on this evidence alone.
+
+
+## Replay-safe validation of the redacted historical migration — 2026-10-17
+
+The public source for `20260818191254_fix_patients_rls_and_admin_link` remains a comment-only placeholder because the applied migration contains a one-time Auth identity mapping. A separate replay-only variant is now tracked at `docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql`. It omits that one-time `UPDATE public.users SET auth_user_id = ...` entirely, contains no email or identity UUID, and preserves the four patient RLS policy definitions.
+
+A free GitHub Actions PostgreSQL 17 job applies this variant to a synthetic fixture and verifies the four policy operations and predicates, fixture DML behavior, and that no identity link is created. The job passed on main commit `ed1218e35121d9de08845fcc943fb8a3252717a6`; all 14 checks on that commit were successful. This is an isolated test of the policy-repair portion, **not** proof that the complete 93-entry migration chain replays cleanly.
+
+The full-chain replay gate remains open because a trustworthy pre-migration schema baseline is still missing. Do not use a guessed baseline or production as a replay target. No paid Supabase resource was created.

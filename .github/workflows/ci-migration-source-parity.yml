@@ -5,6 +5,9 @@ on:
     paths:
       - 'docs/recovered-migrations/source-parity-report.json'
       - 'docs/recovered-migrations/sql/**'
+      - 'db/tests/redacted_migration_policy_replay_integration.sql'
+      - 'db/tests/redacted_migration_policy_replay_fixture.sql'
+      - 'docs/recovered-migrations/replay-safe/**'
       - 'db/roshan_phase*.sql'
       - 'scripts/verify-migration-source-parity.py'
       - '.github/workflows/ci-migration-source-parity.yml'

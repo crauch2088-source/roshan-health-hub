@@ -111,3 +111,11 @@ Read-only inspection of the connected production project found:
 - Main commit `1c996bcc906e0739b5c693f2fe3968acdc72b9c6` passed all 13 checks including source parity and both CodeQL analyses. This documentation-only commit will require its own fresh check run.
 - Vercel check remains blocked by the provider's build-rate-limit response. Last READY deployment inspected is an earlier docs-only SHA; no forced deploy or bypass was attempted.
 - These are isolated test fixtures, not proof of full migration replay. No paid resource or production database change was used. Keep PRs open/draft until the reviewed baseline and redacted migration replay gate are resolved.
+
+
+## Replay-safe redacted migration policy validation — 2026-10-17
+
+- The previously redacted migration has now been split into a public, replay-only variant that removes the environment-specific identity mapping while preserving the four patient RLS policy changes. The source remains redacted; the replay variant is explicitly not a canonical deployment migration.
+- The isolated PostgreSQL 17 workflow verifies stale-policy removal, four authenticated policies and their operation/permission predicates, successful fixture SELECT/INSERT/UPDATE/DELETE, and no Auth-to-app-user identity assignment. The workflow passed on main commit `ed1218e35121d9de08845fcc943fb8a3252717a6`.
+- All 14 checks on that main commit passed, including the replay-safe policy job, source-parity check, application CI and both CodeQL language analyses.
+- This validates only the policy portion of one redacted migration. Full replay remains blocked until a reviewed pre-migration baseline exists; PRs #50–#54 remain open/draft and unmerged pending that release gate.
