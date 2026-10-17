@@ -1435,3 +1435,14 @@ After the PostgreSQL 17 regressions passed and an explicit rollback document was
 2. Confirm main CI and the canonical Vercel deployment after the docs update.
 3. Continue the individual SECURITY DEFINER audit and authenticated phone-first RTL clinical workflow audit.
 4. Keep clinical readiness unclaimed until visual browser testing and end-to-end clinical workflow validation are completed.
+
+## Follow-up — financial precision migrations applied and verified — 2026-10-18
+
+After PR [#67](https://github.com/crauch2088-source/roshan-health-hub/pull/67) passed **22/22 exact-head checks** (including both PostgreSQL 17 regression jobs, source-delta verification, build/typecheck/lint, and CodeQL), two more forward migrations were applied with explicit rollback SQL:
+
+- `roshan_post_expense_money_precision` — live version `20261017230623`. `public.post_expense` now rejects amounts that are non-finite, non-positive, or have more than two decimal places, preventing silent rounding by `expenses.amount numeric(14,2)`.
+- `roshan_insurance_claim_money_precision` — live version `20261017230645`. Claim approval and payment RPCs reject NaN/±Infinity and over-precision amounts; the payment RPC selects the exact claim row before locking, and stored payment amount is guaranteed to equal the amount passed to the ledger RPC. Existing branch guards, `SECURITY DEFINER`, empty fixed search path, and authenticated-only execution remain.
+- Final read-back: migration ledger is **101 entries** through `20261017230645`; all four October 18 fixes appear once. `post_expense`, `update_insurance_claim_status`, and `post_insurance_claim_payment` are still `SECURITY DEFINER` with `search_path = ''`, executable by `authenticated`, not executable by `anon`. Prior-authorization RLS retains permission plus parent-branch checks.
+- Read-only preflight and postflight found zero non-deleted claims, zero claim payments, zero expenses, zero prior authorizations, and zero prior payment-vs-cashbox mismatches. No business rows were changed by these migrations.
+- The live migration delta now maps eight later source files on top of the frozen 93-entry historical hash snapshot. The workflow validates source-file hashes and ledger mapping metadata, **not persisted live SQL hashes**. The missing initial schema baseline and redacted environment-specific identity link still prevent claiming full historical replay.
+- Rollback SQL is documented in [docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md](PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md). Do not roll back these financial guards unless a concrete regression is confirmed; rollback restores the prior silent-rounding behavior.
