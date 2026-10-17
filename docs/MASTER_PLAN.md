@@ -1,13 +1,14 @@
-## Latest verified continuation — 2026-10-17 13:00 UTC
+## Latest verified continuation — 2026-10-17 13:20 UTC
 
-- **Production security migrations applied and read back:** Supabase ledger now contains 96 rows, latest `20261017125936`. Three migrations were applied through the Supabase migration tool and each stored statement was compared byte-for-byte to its tracked source.
-- **Branch isolation:** all 44 policies across the 11 targeted child tables now include the expected parent/branch helper (zero missing helpers in live read-back).
-- **Financial write isolation:** authenticated and anon direct INSERT/UPDATE/DELETE are revoked on the five finance tables and three insurance ledger tables. Authenticated SELECT remains available. The unused legacy `add_cashbox_entry` RPC is no longer executable; validated finance RPCs remain authenticated-only with empty `search_path`.
-- **Insurance:** live `create_insurance_claim` includes invoice/visit patient and branch checks plus amount-split invariants; live coverage RPC rejects unsupported service types and fractional-cent amounts. Both RPCs are authenticated-only and have empty `search_path`.
-- **Evidence:** security candidate suite passed all six PostgreSQL 17 jobs; insurance claim and coverage suites passed after test-first red/green regressions; main CI on tested PR heads passed build/typecheck/lint and integration suites. Exact combined SQL dry-run against the live schema passed with catalog assertions and rollback before applying.
-- **Migration limitation:** the old 93-row source-parity report remains a historical snapshot; current ledger is 95/96 source matched with one redacted identity-link exception and zero unmapped versions. Full historical clean bootstrap remains unproven and was not replayed.
-- **Deployment limitation:** current production deployment is behind main. The deployed app commit was checked and already uses the validated finance RPCs; latest current-main Vercel check is blocked by Hobby build-rate limit. No paid upgrade or forced deploy. No live browser login/write smoke test was performed, so clinical readiness is not claimed.
-- Full post-apply evidence: [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md). Issue #16 is ready for closure after live verification; Issue #25 remains open for alert/security-control follow-up.
+- Production security migrations are applied and read back. Supabase ledger contains 96 rows, latest `20261017125936`; three stored SQL statements match tracked source exactly.
+- Branch isolation: all 44 policies across 11 targeted child tables contain the expected parent/branch helper (zero missing in live read-back).
+- Financial write isolation: authenticated and anon direct mutation privileges are revoked on five finance tables and three insurance ledger tables; authenticated SELECT remains. The legacy `add_cashbox_entry` RPC is no longer executable; validated finance RPCs remain authenticated-only with empty fixed `search_path`.
+- Insurance: live claim RPC contains invoice/visit patient and branch consistency checks plus amount-split invariants; coverage RPC rejects unsupported service types and fractional-cent amounts. Both are authenticated-only and use empty fixed `search_path`.
+- PR #62 merged as `9404a9b71f8248398663c6ad7b7275208230db15`: desktop quick-action menu, permission-safe actions, route listeners that actually open patient/visit/invoice dialogs, and a visits-list hint for lab-order shortcuts. Added `tests/quick-actions.test.ts` to CI; all workflows on the tested head passed.
+- UX audit report: [`docs/UX_AUDIT_2026-10-17.md`](UX_AUDIT_2026-10-17.md). The full screenshot-based route audit remains open because the current-main Vercel build is blocked by the free Hobby build-rate limit and no authenticated browser session was available.
+- Migration limitation: current ledger is 95/96 source matched with one intentionally redacted historical identity-link exception and zero unmapped versions. The old 93-row parity report is a frozen historical snapshot; the full historical clean bootstrap remains unproven and was not replayed.
+- Deployment limitation: production is behind current main; the deployed app commit was checked and already uses validated finance RPCs. No paid upgrade or forced deploy. Clinical readiness is not claimed.
+- Security evidence: [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md). Issue #16 closed after live verification; Issue #25 remains open because Dependabot-alert and extra secret-scanning controls are not available through the connected free actions.
 
 ---
 
