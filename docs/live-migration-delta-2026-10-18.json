@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 101,
-  "latest_live_version": "20261017230645",
+  "live_ledger_count": 103,
+  "latest_live_version": "20261017231629",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 8,
+  "forward_migration_count": 10,
   "entries": [
     {
       "version": "20261017125924",
@@ -75,6 +75,24 @@
       "source_path": "db/roshan_insurance_claim_money_precision.sql",
       "source_git_blob_sha": "7d56a654ae02e45f784a24f3feffd2ca0c663883",
       "normalized_source_sql_sha256": "9bb1a3ae291996dd6d96c2e9b17916e753fc091e8ef215645eb8e16c951d45ab",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted to the Supabase migration API; ledger version/name read back."
+    },
+    {
+      "version": "20261017231612",
+      "name": "roshan_invoice_payment_money_precision",
+      "source_path": "db/roshan_invoice_payment_money_precision.sql",
+      "source_git_blob_sha": "2e50493e244fe41bd15e9e74466a5c0722db46dd",
+      "normalized_source_sql_sha256": "c18f1310458bfde88fa2961a8bffe5796a79e612c54ebefed10175a1de05723a",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted to the Supabase migration API; ledger version/name read back."
+    },
+    {
+      "version": "20261017231629",
+      "name": "roshan_pharmacy_batch_money_precision",
+      "source_path": "db/roshan_pharmacy_batch_money_precision.sql",
+      "source_git_blob_sha": "16beca6c0f6cb014bcfabb9a9856c7367a1e6d0a",
+      "normalized_source_sql_sha256": "be664b3b7c41323c3414106b498d85c58c30fde0f98ee7765469b16e26718979",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact SQL source text was submitted to the Supabase migration API; ledger version/name read back."
     }
