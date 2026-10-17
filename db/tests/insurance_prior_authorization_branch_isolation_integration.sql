@@ -63,8 +63,11 @@ BEGIN
   IF has_function_privilege('anon','private.app_has_prior_authorization_branch_access(uuid)','EXECUTE') THEN
     RAISE EXCEPTION 'anon must not execute the private branch helper';
   END IF;
-  SELECT count(*) INTO visible_count FROM pg_policy
-   WHERE schemaname='public' AND tablename='insurance_prior_authorizations';
+  SELECT count(*) INTO visible_count
+    FROM pg_policy p
+    JOIN pg_class c ON c.oid = p.polrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+   WHERE n.nspname='public' AND c.relname='insurance_prior_authorizations';
   IF visible_count <> 3 THEN RAISE EXCEPTION 'expected 3 prior-authorization policies, got %', visible_count; END IF;
 END
 $test$;
