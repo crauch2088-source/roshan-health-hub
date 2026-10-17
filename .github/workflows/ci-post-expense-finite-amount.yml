@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'db/roshan_post_expense_finite_amount.sql'
+      - 'db/roshan_post_expense_money_precision.sql'
       - 'db/tests/post_expense_finite_amount_integration.sql'
       - 'db/tests/finance_only_rpc_writes_fixture.sql'
       - '.github/workflows/ci-post-expense-finite-amount.yml'
@@ -34,4 +35,5 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/finance_only_rpc_writes_fixture.sql \
             -f db/roshan_post_expense_finite_amount.sql \
+            -f db/roshan_post_expense_money_precision.sql \
             -f db/tests/post_expense_finite_amount_integration.sql
