@@ -1005,6 +1005,10 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 48. The foreign-branch certificate remains unchanged after attempted writes.
 49. The foreign-branch medical certificate remains unchanged after attempted writes.
 50. The foreign-branch procedure result remains unchanged after attempted writes.
+51. A certificate with same-branch patient and visit IDs is rejected if the visit belongs to a different patient.
+52. A procedure order with same-branch patient and visit IDs is rejected if the visit belongs to a different patient.
+53. A rejected mismatched certificate leaves no row behind.
+54. A rejected mismatched procedure order leaves no row behind.
 
 ### Additional invoice-item checks in PR #50
 
@@ -1032,3 +1036,12 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - Vercel team/project inspection currently returns 403 for scope `team_roshan45` with an explicit instruction to grant/re-authorize team access. The current connector cannot verify latest production deployment metadata until this access is restored. Do not substitute a guessed project/team or change deployment settings without access.
 - PR #50 (invoice items), PR #51 (certificates/discounts/procedure child rows), PR #52 (followups/queue) and PR #34 (broader clinical child rows with insurance coupling) remain source-only candidates. No candidate RLS SQL was applied to production. The canonical migration sequence and content-level parity for the 93 live migration ledger entries remain unresolved.
 - Immediate next steps: (1) recover Vercel team access; (2) reconcile the complete live migration ledger with source definitions and an ordered replay plan; (3) split PR #34's insurance-specific policies from clinical child-row isolation and remove redundant overlapping policy candidates; (4) run a complete role × operation × branch authorization matrix against a disposable PostgreSQL fixture; (5) only then package reviewed changes into canonical timestamped migrations with rollback notes.
+
+
+## Continuation verification addendum — 2026-10-17
+
+- PR #53 now isolates prescription and lab-order child-row RLS from the insurance-coupled PR #34. Its PostgreSQL 17 integration passed [run #39017468423](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39017468423), prescription atomicity integration passed [#39017468484](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39017468484), and full application CI passed all 10 jobs [#39017468422](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39017468422). The PR remains draft/source-only because migration parity is still a release gate.
+- PR #52 now tests same-branch patient/visit mismatch in addition to cross-branch authorization. PostgreSQL 17 run [#39016952455](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39016952455) and full CI [#39016952459](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39016952459) passed.
+- Migration reconciliation was advanced in [`docs/DB_MIGRATION_RECONCILIATION.md`](DB_MIGRATION_RECONCILIATION.md): read-only fingerprints and source comparisons now cover ten recent entries through Phase 25. Executable source matches were observed for the listed candidates, with comment-only or trailing-newline differences documented where applicable. The older historical sequence remains unreconciled; do not replay it or apply the RLS candidates.
+- Main documentation CI for the prior reconciliation update passed all 10 application jobs in [run #39017386467](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39017386467); CodeQL [#39017386850](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39017386850) passed.
+- Vercel access is still blocked by 403 scope authorization for `team_roshan45`; the connector explicitly requires team access to be re-granted. No deployment settings or live DB policies were changed.
