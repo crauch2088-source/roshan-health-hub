@@ -1,4 +1,4 @@
--- 50 explicit checks: each of five sensitive tables is tested for
+-- 54 explicit checks: five tables get full branch access matrices plus linkage/grant invariants.
 -- SELECT, cross-branch UPDATE denial, same-branch UPDATE success,
 -- cross-branch INSERT denial, same-branch INSERT success,
 -- cross-branch DELETE denial, same-branch DELETE success, and no residual write.
