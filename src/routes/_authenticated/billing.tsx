@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   Empty,
@@ -41,6 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
+import { listenForQuickAction } from "@/lib/quick-actions";
 import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
@@ -93,6 +94,23 @@ function BillingPageInner() {
   const [lines, setLines] = useState<Line[]>([
     { description: "", quantity: "1", unit_price: "0", item_type: "other" },
   ]);
+
+  useEffect(
+    () => listenForQuickAction("new_invoice", () => {
+      if (!can("billing.create")) return;
+      pendingInvoiceRequestRef.current = null;
+      setPatientId("");
+      setSelectedPatient(null);
+      setVisitId("");
+      setStandaloneInvoice(false);
+      setSeparateInvoice(false);
+      setPartnerId("");
+      setDiscount("0");
+      setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "other" }]);
+      setOpen(true);
+    }),
+    [can],
+  );
 
   const invoices = useRows(["invoices", date], () =>
     supabase
