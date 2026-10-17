@@ -11,7 +11,7 @@ BEGIN
  IF NOT has_function_privilege('authenticated','public.reverse_cashbox_entry(uuid,text)','EXECUTE') THEN RAISE EXCEPTION 'cashbox reversal RPC EXECUTE missing'; END IF;
  IF has_function_privilege('anon','public.post_cashbox_entry(text,numeric,text,text,text,timestamptz)','EXECUTE') OR has_function_privilege('anon','public.post_expense(text,numeric,text,date,text,text)','EXECUTE') OR has_function_privilege('anon','public.post_invoice_payment(uuid,numeric,text,text,text)','EXECUTE') OR has_function_privilege('anon','public.post_supplier_bill(uuid,text,date,date,numeric,numeric,text)','EXECUTE') OR has_function_privilege('anon','public.post_supplier_payment(uuid,numeric,text,text,date,text)','EXECUTE') OR has_function_privilege('anon','public.reverse_cashbox_entry(uuid,text)','EXECUTE') THEN RAISE EXCEPTION 'anon retains EXECUTE on a finance write RPC'; END IF;
  IF EXISTS (SELECT 1 FROM unnest(ARRAY['public.post_cashbox_entry(text,numeric,text,text,text,timestamptz)','public.post_expense(text,numeric,text,date,text,text)','public.post_invoice_payment(uuid,numeric,text,text,text)','public.post_supplier_bill(uuid,text,date,date,numeric,numeric,text)','public.post_supplier_payment(uuid,numeric,text,text,date,text)','public.reverse_cashbox_entry(uuid,text)']) AS signatures(signature) LEFT JOIN pg_proc p ON p.oid=to_regprocedure(signatures.signature)::oid WHERE to_regprocedure(signatures.signature) IS NULL OR NOT COALESCE(p.prosecdef,false) OR NOT EXISTS (SELECT 1 FROM unnest(COALESCE(p.proconfig,ARRAY[]::text[])) AS cfg(setting) WHERE cfg.setting LIKE 'search_path=%')) THEN RAISE EXCEPTION 'finance RPC must exist as SECURITY DEFINER with a fixed search_path'; END IF;
- FOREACH t IN ARRAY ARRAY['cashbox_transactions','expenses','payments','supplier_bills','supplier_payments'] LOOP
+ FOREACH t IN ARRAY ARRAY['cashbox_transactions','expenses','payments','supplier_bills','supplier_payments','insurance_claims','insurance_claim_items','insurance_claim_payments'] LOOP
   IF has_table_privilege('authenticated',format('public.%I',t),'INSERT')
      OR has_table_privilege('authenticated',format('public.%I',t),'UPDATE')
      OR has_table_privilege('authenticated',format('public.%I',t),'DELETE')
@@ -27,6 +27,16 @@ BEGIN
     RAISE EXCEPTION 'anon retains direct mutation privilege on %',t;
   END IF;
  END LOOP;
+END
+$test$;
+
+DO $test$
+BEGIN
+ IF NOT has_table_privilege('authenticated','public.insurance_claims','SELECT')
+    OR NOT has_table_privilege('authenticated','public.insurance_claim_items','SELECT')
+    OR NOT has_table_privilege('authenticated','public.insurance_claim_payments','SELECT') THEN
+   RAISE EXCEPTION 'authenticated lost read access to insurance claim tables';
+ END IF;
 END
 $test$;
 
