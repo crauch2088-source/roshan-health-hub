@@ -145,3 +145,11 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Vercel team/project list access works now and confirms the single canonical `roshan-health-hub` project/domain. Latest production deployment was reported READY, but latest-main Vercel status has shown the build-rate-limit failure link; verify exact deployment SHA and alias before treating main as live. Do not bypass rate limits.
 - Security PR review findings are tracked in `docs/SECURITY_PR_REVIEW.md`; #50–#54 remain open/draft and unapplied.
 - Disposable Supabase branch quote is US$0.01344/hour; do not create until user explicitly approves the recurring cost.
+
+
+## No-cost execution update — 2026-10-17
+
+- Do not create billable Supabase branches or projects; user has explicitly rejected any cost. Use GitHub Actions' isolated PostgreSQL 17 service for focused RLS and RPC integration tests.
+- Existing test workflows on PRs #50, #52, #53, and #54 passed after their latest test updates; PR #51's dedicated parent-branch integration passed, while general CI was still running at last poll. Recheck current heads before merging.
+- The full 93-migration clean replay remains blocked by lack of a reviewed pre-migration baseline and one intentionally redacted identity-link migration. Do not use production or a guessed schema for replay.
+- See `docs/SECURITY_PR_REVIEW.md` for exact findings and commit SHAs.
