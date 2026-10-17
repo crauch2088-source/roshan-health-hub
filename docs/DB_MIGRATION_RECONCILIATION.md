@@ -526,3 +526,15 @@ Two additional forward migrations were applied and read back after the 101-entry
 - `roshan_pharmacy_batch_money_precision` version `20261017231629`: pharmacy batch receipt rejects invalid quantity and purchase/effective selling price precision before inserting inventory or stock-movement rows.
 
 The live ledger is now **103 entries** through `20261017231629`. The source delta lists ten later source files and retains the frozen 93-entry hash snapshot separately. Payments, inventory batches, stock movements, claims, claim payments, expenses, and prior authorizations remain empty; all nine medicine master price pairs have at most two decimal places. No business rows were changed. Full historical replay remains unproven because the reviewed initial schema baseline is missing and one environment-specific identity mapping is intentionally redacted.
+
+## Post-hardening Supabase SQL security advisor review — 2026-10-18
+
+The current SQL advisor returned 21 findings: 20 generic `SECURITY DEFINER`-callable-by-authenticated warnings and one `extension_in_public` warning for `pg_trgm`. This review distinguishes intended RPC exposure from unresolved compatibility work:
+
+- Catalog read-back confirms all 20 authenticated-callable public `SECURITY DEFINER` RPCs have `search_path = ''`; none is executable by `anon`. App-facing functions retain their permission checks and/or explicit self/branch scope. `get_my_app_profile` is self-scoped through `auth.uid()`. `fn_calculate_insurance_coverage` retains permission and patient-branch checks.
+- Repository call-site review found active usage for the atomic billing/patient/visit/lab/prescription workflows; insurance claim/coverage/status/payment flows; `get_my_app_profile`; `get_visit_form_options`; `post_cashbox_entry`; `post_expense`; `post_invoice_payment`; `post_supplier_bill`; `post_supplier_payment`; and `reverse_cashbox_entry`. The new invoice/pharmacy/expense/claim amount guards are covered by PostgreSQL 17 tests.
+- No direct frontend call site was found for legacy `fn_receive_pharmacy_batch` or `fn_dispense_prescription` in the reviewed pharmacy modules; the current UI uses `fn_dispense_prescription_with_invoice`. Do **not** revoke the legacy functions yet: the existing plan gates revocation on complete pharmacy workflow, retry/idempotency, and cleanup verification.
+- `pg_trgm` remains installed in `public`. Existing indexes use `gin_trgm_ops`, and historical migrations contain unqualified operator-class references. Moving the extension without a reviewed baseline and replay-safe source update could break clean replay or future index creation. Defer relocation until that compatibility work is designed and tested; this is a known advisor warning, not an unexamined failure.
+- Paid-only leaked-password protection remains unavailable on the current free plan and is still explicitly unresolved.
+
+The review does not claim full historical replay. The live ledger remains 103 entries through `20261017231629`; the ten-entry source delta verifies source/mapping metadata, not persisted SQL hashes.
