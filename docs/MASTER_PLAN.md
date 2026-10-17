@@ -1295,3 +1295,12 @@ The focused SQL and fixture files appear as added files in each comparison, but 
 - Live migration history returned 93 entries, latest `20261016222009_roshan_phase25_current_app_profile_20261016`. Normalized source parity remains 92/93 with one intentionally redacted identity-link exception; this is not proof of clean replay.
 - All five security PRs remain draft/open and diverged from main; no merge or production SQL/policy/grant change was made. Vercel latest READY production SHA observed remains `5cf7eea2037314f7e90bf2f654e05a4d3840e667`, not current main. No paid resource created.
 - Next: implement and run a combined disposable PostgreSQL 17 integration/replay test against a reviewed baseline before considering any merge or production migration.
+
+
+## Security candidate integration outcome — 2026-10-17
+
+- Created draft [PR #55](https://github.com/crauch2088-source/roshan-health-hub/pull/55) on `security/combined-branch-isolation-regression` to stage the five security candidates together without merging them into main.
+- The five isolated PostgreSQL 17 candidate suites passed 5/5. The purpose-built shared-schema job also passed at code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`: candidate SQL #50, #51, #52, #53, and #54 applied in order; the five existing integration suites then ran in the same database; final catalog assertions checked branch-helper coverage across 11 child tables, the shared patient/visit helper contract, and finance direct-write revocations. The subsequent PR commits only updated documentation.
+- This is meaningful evidence that the candidate migrations are mutually compatible in the synthetic test schema, not proof of full historical replay or equivalence with the production schema. The source migration baseline and the redacted identity-link exception still need independent reconciliation, and application call sites must be audited before production privileges change.
+- PR #55 remains draft/open. No PR was merged, no production SQL/policies/grants were changed, and no paid service was created. The cross-branch RLS gap remains a release blocker before introducing real patient/financial data.
+- The detailed handoff and matrix are in [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](SECURITY_BRANCH_ISOLATION_INTEGRATION.md) on PR #55's branch. Next: audit all application call sites for the affected child tables and finance RPCs, then reconcile migration ancestry/order before any production migration proposal.
