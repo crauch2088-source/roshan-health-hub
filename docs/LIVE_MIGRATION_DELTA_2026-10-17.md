@@ -12,7 +12,11 @@
 | `20261017125934` | `roshan_insurance_claim_amount_integrity_20261017` | `db/roshan_phase5_insurance_claim_amount_integrity.sql` | 7,357 | Yes |
 | `20261017125936` | `roshan_insurance_coverage_validity_20261017` | `db/roshan_phase5_insurance_coverage_validity.sql` | 7,334 | Yes |
 
-For each entry, the stored `supabase_migrations.schema_migrations.statements[1]` was compared directly against the full tracked source string in PostgreSQL; all three comparisons returned `exact_source_match=true`. The migration ledger now has **96 rows**, latest version `20261017125936`. Combined with the previous verified 92 source matches and one intentionally redacted identity-link exception, the current mapping is **95/96 exact source matches, one documented redaction, zero unmapped versions**. The old `source-parity-report.json` remains a frozen 93-row historical snapshot and is not the live delta record.
+| `20261017133157` | `roshan_revoke_legacy_invoice_number_20261017` | `db/roshan_phase27_revoke_legacy_invoice_number.sql` | 256 | Yes |
+
+A follow-up read-only RPC audit found that `public.next_invoice_number()` was still directly executable by `authenticated` despite no client callsite and no branch filter. The function is used internally by the SECURITY DEFINER `create_invoice_atomic`; its owner retains execution. A test-first PostgreSQL 17 regression failed before the revocation and passed afterward. The exact live transaction dry-run passed, the tracked migration was applied, and read-back confirmed authenticated/anon EXECUTE=false while owner EXECUTE=true. The Security Advisor's authenticated SECURITY DEFINER callable count dropped from 21 to 20.
+
+For each entry, the stored `supabase_migrations.schema_migrations.statements[1]` was compared directly against the full tracked source string in PostgreSQL; all three comparisons returned `exact_source_match=true`. The migration ledger now has **97 rows**, latest version `20261017133157`. Combined with the previous verified 92 source matches and one intentionally redacted identity-link exception, the current mapping is **96/97 exact source matches, one documented redaction, zero unmapped versions**. The old `source-parity-report.json` remains a frozen 93-row historical snapshot and is not the live delta record.
 
 ## Production read-back
 
@@ -21,7 +25,7 @@ For each entry, the stored `supabase_migrations.schema_migrations.statements[1]`
 - The legacy `add_cashbox_entry` RPC is no longer executable by `authenticated` or `anon`; the validated finance RPCs remain executable by `authenticated`, not `anon`, and retain an empty fixed `search_path`.
 - `create_insurance_claim(uuid,uuid,jsonb,text)` is SECURITY DEFINER with empty `search_path`; authenticated EXECUTE=true, anon EXECUTE=false. The live definition contains invoice/visit patient and branch consistency guards and the claim item amount-split invariant.
 - `fn_calculate_insurance_coverage(uuid,text,uuid,text,numeric)` is SECURITY DEFINER with empty `search_path`; authenticated EXECUTE=true, anon EXECUTE=false. The live definition rejects unsupported service types and gross amounts with more than two decimal places, and validates policy/plan/company activity and validity windows.
-- Current live security Advisor snapshot reports 21 SECURITY DEFINER callable warnings plus one `pg_trgm`-in-`public` extension warning. These warnings need triage; intended RPC exposure is not automatically a vulnerability, but each function must retain explicit authorization checks.
+- Current live security Advisor snapshot reports 20 SECURITY DEFINER callable warnings (intended authenticated RPCs requiring per-function authorization review), one `pg_trgm`-in-`public` extension warning, and one leaked-password-protection warning. Supabase confirms leaked-password protection requires Pro; no paid upgrade was attempted. These warnings need triage; intended RPC exposure is not automatically a vulnerability, but each function must retain explicit authorization checks.
 - Runtime-error aggregation returned no events in the preceding 24 hours at the time checked. Vercel's production deployment remains behind current source and the latest current-main build check is blocked by the Hobby build-rate limit; no paid upgrade, forced deploy, or bypass was attempted.
 
 ## Test evidence
@@ -37,4 +41,4 @@ For each entry, the stored `supabase_migrations.schema_migrations.statements[1]`
 - The three migrations were applied through Supabase's migration tool. No patient/financial rows were updated or deleted by the migration content; changes were policies, grants, and function definitions.
 - This did **not** replay the historical chain. The missing trustworthy pre-migration baseline and redacted historical identity-link migration remain documented bootstrap limitations; they are not silently reconstructed.
 - No live app login or patient-facing write smoke test was performed because the production deployment is behind current source and build capacity is rate-limited. Database catalog/function read-back and synthetic PostgreSQL 17 integration tests are complete, but this is not a declaration of clinical readiness.
-- Issue #16 may be closed after its live read-back evidence is attached; Issue #25 remains open for alert/security-control follow-up.
+- Issue #16 was closed after live read-back evidence was attached. Issue #25 remains open for alert/security-control follow-up.
