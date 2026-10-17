@@ -93,3 +93,12 @@ Read-only inspection of the connected production project found:
 - PR #54 now checks authenticated EXECUTE and anon denial for all six finance write/reversal RPCs. The focused finance integration passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`; general CI was still in progress at last poll.
 - PRs #50–#53 now exercise parent-changing UPDATE paths. Latest noted PostgreSQL 17 integration suites passed; #51 full CI passed on `70eb7a38e66f448c0a4f5cb2a28d3c1d30207c52`. These are focused fixture tests, not proof of the entire historical migration chain.
 - Keep every PR #50–#54 open/draft until a trustworthy pre-migration baseline and safe replay handling for the redacted one-time identity-link migration are available. Do not guess the baseline or touch production for replay.
+
+
+## Latest regression evidence — 2026-10-17
+
+- PR #51: NULL `patient_id` plus a branch-B visit is rejected for `procedure_orders`; all checks passed on `4af41b893b12427b15577f2312b13e4d92785c20`.
+- PR #52: equivalent NULL-patient branch-B insert attempts for `followups` and `queue_tickets` are rejected and leave no rows; all checks passed on `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`.
+- PR #54: all six finance write/reversal RPC grant assertions are included; finance integration and complete PR CI passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`.
+- Main commit `696e422d959b308c5087339af74b541d941fa205` passed all 13 checks, including the source-parity job and CodeQL for Python and JavaScript/TypeScript. Newer Vercel checks still point to the build-rate-limit page; the last READY deployment inspected is on earlier documentation-only commit `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. No deployment was forced.
+- These isolated fixtures strengthen specific RLS/RPC behaviors but do not establish full historical migration replay. Keep PRs #50–#54 unmerged until the replay baseline and remaining review gates are resolved.

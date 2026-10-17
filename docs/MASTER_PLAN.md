@@ -1129,3 +1129,12 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - All PRs #50–#54 remain open/draft and unmerged. No production SQL, grants, policies, or rows were changed.
 - The 93-entry source comparison remains a text-level parity check, not a clean-chain replay or semantic proof. Full replay is blocked by absence of a reviewed pre-migration baseline and one intentionally redacted environment-specific identity-link migration. Do not invent the baseline or run replay against production.
 - Evidence and limitations: [security review](SECURITY_PR_REVIEW.md), [source parity manifest](recovered-migrations/source-parity-report.json), [migration reconciliation](DB_MIGRATION_RECONCILIATION.md).
+
+
+## Latest no-cost regression results — 2026-10-17
+
+- PR #51 added a NULL-patient/branch-B-visit insert denial for `procedure_orders`; the dedicated parent-branch integration and all PR checks passed on `4af41b893b12427b15577f2312b13e4d92785c20`.
+- PR #52 added equivalent NULL-patient/branch-B-visit denial tests for both `followups` and `queue_tickets`, including postconditions that no denied row remains; all PR checks passed on `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`.
+- PR #54's complete CI and expanded finance RPC privilege integration passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`.
+- Main docs/CI commit `696e422d959b308c5087339af74b541d941fa205` passed all 13 checks: application CI/integration checks, source-parity verifier, and both CodeQL language analyses. Vercel still reports the build-rate-limit check failure for newer docs commits; latest READY deployment checked is earlier docs-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. Do not force deployment.
+- All PRs #50–#54 remain open/draft and unmerged. No paid resources or production SQL/policy/grant/data changes were made. Full-chain replay remains a release gate: no reviewed pre-migration baseline, plus one intentionally redacted environment-specific identity-link migration.

@@ -120,3 +120,12 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 - No paid resources, Supabase branches, production SQL, grants, policies, or production data were changed. PRs #50–#54 remain unmerged pending full replay and remaining review gates.
 - Full replay remains unproven: the pre-migration schema baseline is missing and one identity-link migration is intentionally redacted. Never substitute a guessed baseline or replay against production.
 - Details: [security PR review](docs/SECURITY_PR_REVIEW.md), [master plan](docs/MASTER_PLAN.md), [source parity manifest](docs/recovered-migrations/source-parity-report.json).
+
+
+## Additional no-cost regression pass — 2026-10-17
+
+- PR #51's latest parent-branch integration now also proves a NULL `patient_id` cannot be used to insert a procedure order pointing to a branch-B visit; all five checks passed on `4af41b893b12427b15577f2312b13e4d92785c20`.
+- PR #52's latest queue/follow-up integration now tests the same NULL-patient cross-branch insert case for both tables and asserts no rejected rows remain; all five checks passed on `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`.
+- PR #54's expanded finance RPC grant tests and full PR CI passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`.
+- Latest main documentation commit `696e422d959b308c5087339af74b541d941fa205` passed all 13 checks, including source-parity verification and both CodeQL analyses. Vercel's check points to the build-rate-limit page; the most recent READY deployment is on earlier docs-only commit `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. No deployment was forced.
+- Full-chain replay remains blocked by the missing trustworthy pre-migration baseline and one intentionally redacted identity-link migration. No paid resource or production database mutation was used.
