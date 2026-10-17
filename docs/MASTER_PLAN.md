@@ -1419,3 +1419,19 @@ Read-only verification performed at approximately 2026-10-17 22:18 UTC:
 2. Apply only the two narrow tested forward fixes if the rollback and ledger-tracking preflight passes; read back policies/function body and ledger after each migration.
 3. Continue individual SECURITY DEFINER call-site review and the authenticated phone-first RTL clinical workflow audit.
 4. Keep full historical replay and paid-only leaked-password protection explicitly unresolved until their actual prerequisites are met.
+
+## Live forward fixes applied and verified — 2026-10-18
+
+After the PostgreSQL 17 regressions passed and an explicit rollback document was committed at [docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md](PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md), two narrow forward migrations were applied to the verified Supabase project `jewzonxplxhogqrnhosl`. Both calls returned success and read-back verification confirmed the live catalog changes.
+
+- `roshan_insurance_prior_authorization_branch_isolation` — live migration version `20261017225523`. All three policies now preserve `insurance.read/create/update` and also require `private.app_has_prior_authorization_branch_access(patient_insurance_id)`. The helper is `SECURITY DEFINER` with `search_path = ''`, executable by `authenticated` but not `anon`. The table still has zero rows.
+- `roshan_post_expense_finite_amount` — live migration version `20261017225540`. The live `public.post_expense` now rejects NULL, NaN, positive/negative Infinity, zero, and negative amounts with SQLSTATE `22023`; it retains `SECURITY DEFINER`, empty fixed search path, authenticated execution, and no anon execution. Its permission check and user/branch attribution code were preserved.
+- The live migration ledger now contains **99 entries**, with these two new entries recorded exactly once. These were forward-only changes; no patient or financial rows were inserted, updated, or deleted by the migrations.
+- This resolves the two specific live gaps above, but **does not prove a full historical migration replay**. The initial schema baseline is still missing and one environment-specific identity-link migration remains intentionally redacted. Refresh the migration-source parity workflow against the 99-entry ledger; do not treat the historical JSON parity report as current.
+- The main code commit at the time of applying was `565cd74b7e926f3f458cea85688d9566edc79b71`; its production app remains `https://roshan-health-hub.vercel.app/`. Recheck CI and Vercel after the follow-up documentation commit.
+
+### Immediate next steps
+1. Run the current migration-source parity workflow against all 99 live entries and reconcile any new mismatch without restoring environment-specific secrets.
+2. Confirm main CI and the canonical Vercel deployment after the docs update.
+3. Continue the individual SECURITY DEFINER audit and authenticated phone-first RTL clinical workflow audit.
+4. Keep clinical readiness unclaimed until visual browser testing and end-to-end clinical workflow validation are completed.
