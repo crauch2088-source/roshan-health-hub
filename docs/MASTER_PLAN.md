@@ -1,14 +1,14 @@
 ## Latest verified continuation — 2026-10-17 13:20 UTC
 
-- Production security migrations are applied and read back. Supabase ledger contains 96 rows, latest `20261017125936`; three stored SQL statements match tracked source exactly.
+- Production security migrations are applied and read back. Supabase ledger contains 97 rows, latest `20261017133157`; four stored SQL statements match tracked source exactly.
 - Branch isolation: all 44 policies across 11 targeted child tables contain the expected parent/branch helper (zero missing in live read-back).
-- Financial write isolation: authenticated and anon direct mutation privileges are revoked on five finance tables and three insurance ledger tables; authenticated SELECT remains. The legacy `add_cashbox_entry` RPC is no longer executable; validated finance RPCs remain authenticated-only with empty fixed `search_path`.
+- Financial write isolation: authenticated and anon direct mutation privileges are revoked on five finance tables and three insurance ledger tables; authenticated SELECT remains. The legacy `add_cashbox_entry` and unscoped `next_invoice_number` RPCs are no longer executable by browser roles; validated finance RPCs remain authenticated-only with empty fixed `search_path`.
 - Insurance: live claim RPC contains invoice/visit patient and branch consistency checks plus amount-split invariants; coverage RPC rejects unsupported service types and fractional-cent amounts. Both are authenticated-only and use empty fixed `search_path`.
 - PR #62 merged as `9404a9b71f8248398663c6ad7b7275208230db15`: desktop quick-action menu, permission-safe actions, route listeners that actually open patient/visit/invoice dialogs, and a visits-list hint for lab-order shortcuts. Added `tests/quick-actions.test.ts` to CI; all workflows on the tested head passed.
 - UX audit report: [`docs/UX_AUDIT_2026-10-17.md`](UX_AUDIT_2026-10-17.md). The full screenshot-based route audit remains open because the current-main Vercel build is blocked by the free Hobby build-rate limit and no authenticated browser session was available.
-- Migration limitation: current ledger is 95/96 source matched with one intentionally redacted historical identity-link exception and zero unmapped versions. The old 93-row parity report is a frozen historical snapshot; the full historical clean bootstrap remains unproven and was not replayed.
+- Migration limitation: current ledger is 96/97 source matched with one intentionally redacted historical identity-link exception and zero unmapped versions. The old 93-row parity report is a frozen historical snapshot; the full historical clean bootstrap remains unproven and was not replayed.
 - Deployment limitation: production is behind current main; the deployed app commit was checked and already uses validated finance RPCs. No paid upgrade or forced deploy. Clinical readiness is not claimed.
-- Security evidence: [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md). Issue #16 closed after live verification; Issue #25 remains open because Dependabot-alert and extra secret-scanning controls are not available through the connected free actions.
+- Security evidence: [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md). Issue #16 closed after live verification; Issue #25 remains open: Supabase leaked-password protection requires Pro, and the connected GitHub actions do not expose the needed Dependabot/advanced secret-scanning settings.
 
 ---
 
