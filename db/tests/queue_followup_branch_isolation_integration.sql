@@ -2,6 +2,8 @@ DO $test$
 BEGIN
  IF has_function_privilege('anon','private.app_has_attachment_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon helper EXECUTE must be revoked'; END IF;
  IF NOT has_function_privilege('authenticated','private.app_has_attachment_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated helper EXECUTE missing'; END IF;
+ IF has_function_privilege('anon','private.app_has_patient_visit_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon patient-visit helper EXECUTE must be revoked'; END IF;
+ IF NOT has_function_privilege('authenticated','private.app_has_patient_visit_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated patient-visit helper EXECUTE missing'; END IF;
  IF private.app_has_attachment_branch_access(NULL,NULL) THEN RAISE EXCEPTION 'branchless parent tuple must fail closed'; END IF;
 END
 $test$;
@@ -38,9 +40,11 @@ BEGIN
  IF affected<>0 THEN RAISE EXCEPTION 'queue DELETE should remain super-admin-only'; END IF;
  IF EXISTS (SELECT 1 FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000003') THEN RAISE EXCEPTION 'queue unauthorized insert residue'; END IF;
 
- -- Mixed branch references must fail closed for both entities.
+ -- Mixed-branch and same-branch mismatched patient/visit references must fail closed.
  BEGIN INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002','mixed'); RAISE EXCEPTION 'mixed-branch followup allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002','mixed'); RAISE EXCEPTION 'mixed-branch queue ticket allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatch'); RAISE EXCEPTION 'same-branch mismatched followup allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatch'); RAISE EXCEPTION 'same-branch mismatched queue ticket allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END
 $test$;
 RESET ROLE;
@@ -48,5 +52,7 @@ DO $test$
 BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.followups WHERE id='50000000-0000-0000-0000-000000000002' AND notes='B') THEN RAISE EXCEPTION 'branch-B followup mutated'; END IF;
  IF NOT EXISTS (SELECT 1 FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000002' AND status='waiting') THEN RAISE EXCEPTION 'branch-B queue ticket mutated'; END IF;
+ IF EXISTS (SELECT 1 FROM public.followups WHERE id='50000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION 'mismatched followup residue'; END IF;
+ IF EXISTS (SELECT 1 FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION 'mismatched queue ticket residue'; END IF;
 END
 $test$;
