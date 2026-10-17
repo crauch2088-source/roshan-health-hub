@@ -49,6 +49,8 @@ BEGIN
  BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002','mixed'); RAISE EXCEPTION 'mixed-branch queue ticket allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatch'); RAISE EXCEPTION 'same-branch mismatched followup allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000003','same-branch mismatch'); RAISE EXCEPTION 'same-branch mismatched queue ticket allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN INSERT INTO public.followups VALUES ('50000000-0000-0000-0000-000000000007',NULL,'40000000-0000-0000-0000-000000000002','null patient cross-branch visit'); RAISE EXCEPTION 'null patient_id bypassed follow-up branch isolation'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN INSERT INTO public.queue_tickets VALUES ('60000000-0000-0000-0000-000000000007',NULL,'40000000-0000-0000-0000-000000000002','null patient cross-branch visit'); RAISE EXCEPTION 'null patient_id bypassed queue branch isolation'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END
 $test$;
 RESET ROLE;
@@ -58,5 +60,7 @@ BEGIN
  IF NOT EXISTS (SELECT 1 FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000002' AND status='waiting') THEN RAISE EXCEPTION 'branch-B queue ticket mutated'; END IF;
  IF EXISTS (SELECT 1 FROM public.followups WHERE id='50000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION 'mismatched followup residue'; END IF;
  IF EXISTS (SELECT 1 FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000006') THEN RAISE EXCEPTION 'mismatched queue ticket residue'; END IF;
+ IF EXISTS (SELECT 1 FROM public.followups WHERE id='50000000-0000-0000-0000-000000000007') THEN RAISE EXCEPTION 'null-patient cross-branch follow-up residue'; END IF;
+ IF EXISTS (SELECT 1 FROM public.queue_tickets WHERE id='60000000-0000-0000-0000-000000000007') THEN RAISE EXCEPTION 'null-patient cross-branch queue residue'; END IF;
 END
 $test$;
