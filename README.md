@@ -250,3 +250,11 @@ The focused SQL and fixture files appear as added files in each comparison, but 
 ## Security integration continuation — 2026-10-17
 
 See [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md) for exact-head CI evidence, shared helper overlap, proposed integration order, combined test matrix, and release gates. The five security PRs remain draft/open; no candidate SQL was applied to production. Full migration replay is still blocked by the missing reviewed pre-migration baseline and the intentionally redacted identity-link migration.
+
+
+## Security integration progress — 2026-10-17
+
+- Draft [PR #55](https://github.com/crauch2088-source/roshan-health-hub/pull/55) stages candidate fixes #50–#54 on one integration branch and adds a PostgreSQL 17 aggregate regression workflow.
+- The isolated candidate matrix passed 5/5 jobs. More importantly, the shared-schema integration job passed at code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`: it applied all five candidate migrations in order, ran all five existing regression scripts against one database, and passed policy-catalog and finance-privilege assertions. The subsequent PR commits were documentation-only.
+- The shared-schema fixture is synthetic and is **not** a replay of the entire historical production migration chain. Full baseline/source reconciliation, app RPC call-site audit, and release review remain required. PR #55 is draft/open and no candidate SQL was applied to production.
+- See [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md) on the integration branch / PR #55 for the complete evidence and remaining gates.
