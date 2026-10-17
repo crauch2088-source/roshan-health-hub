@@ -6,6 +6,8 @@ DO $test$
 BEGIN
  IF has_function_privilege('anon','private.app_has_patient_branch(uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon patient helper EXECUTE must be revoked'; END IF;
  IF has_function_privilege('anon','private.app_has_attachment_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon attachment helper EXECUTE must be revoked'; END IF;
+ IF has_function_privilege('anon','private.app_has_patient_visit_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon patient-visit helper EXECUTE must be revoked'; END IF;
+ IF NOT has_function_privilege('authenticated','private.app_has_patient_visit_branch_access(uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated patient-visit helper EXECUTE missing'; END IF;
  IF has_function_privilege('anon','private.app_has_procedure_order_branch_access(uuid)','EXECUTE') THEN RAISE EXCEPTION 'anon procedure helper EXECUTE must be revoked'; END IF;
  IF NOT has_function_privilege('authenticated','private.app_has_procedure_order_branch_access(uuid)','EXECUTE') THEN RAISE EXCEPTION 'authenticated procedure helper EXECUTE missing'; END IF;
  IF private.app_has_procedure_order_branch_access('ffffffff-ffff-ffff-ffff-ffffffffffff') THEN RAISE EXCEPTION 'missing procedure order must fail closed'; END IF;
