@@ -46,10 +46,10 @@ def main() -> None:
     if report.get("normalized_content_matches") != matches: fail("match count differs from manifest metadata")
     delta = json.loads(DELTA.read_text(encoding="utf-8"))
     delta_entries = delta.get("entries", [])
-    if delta.get("live_ledger_count") != 99 or delta.get("latest_live_version") != "20261017225540":
+    if delta.get("live_ledger_count") != 101 or delta.get("latest_live_version") != "20261017230645":
         fail("live delta metadata does not match the last verified 99-entry ledger")
-    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 6 or len(delta_entries) != 6:
-        fail("expected the frozen 93-entry snapshot plus six forward-source mappings")
+    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 8 or len(delta_entries) != 8:
+        fail("expected the frozen 93-entry snapshot plus eight forward-source mappings")
     delta_versions = [e.get("version") for e in delta_entries]
     if len(set(delta_versions)) != 6 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
         fail("forward migration versions must be unique 14-digit strings")
