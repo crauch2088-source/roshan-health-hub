@@ -32,6 +32,7 @@ BEGIN
  IF affected<>0 THEN RAISE EXCEPTION 'cross-branch prescription-item UPDATE allowed'; END IF;
  UPDATE public.prescription_items SET medication_name='updated' WHERE id='60000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT;
  IF affected<>1 THEN RAISE EXCEPTION 'same-branch prescription-item UPDATE denied'; END IF;
+ BEGIN UPDATE public.prescription_items SET prescription_id='50000000-0000-0000-0000-000000000002' WHERE id='60000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'prescription item cross-branch parent reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.prescription_items VALUES ('60000000-0000-0000-0000-000000000003','50000000-0000-0000-0000-000000000002','cross'); RAISE EXCEPTION 'cross-branch prescription-item INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.prescription_items VALUES ('60000000-0000-0000-0000-000000000004','50000000-0000-0000-0000-000000000001','local');
  DELETE FROM public.prescription_items WHERE id='60000000-0000-0000-0000-000000000002'; GET DIAGNOSTICS affected=ROW_COUNT;
@@ -48,6 +49,7 @@ BEGIN
  IF affected<>0 THEN RAISE EXCEPTION 'same-branch mismatched patient/visit lab-order-item UPDATE allowed'; END IF;
  UPDATE public.lab_order_items SET status='updated' WHERE id='80000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT;
  IF affected<>1 THEN RAISE EXCEPTION 'same-branch lab-order-item UPDATE denied'; END IF;
+ BEGIN UPDATE public.lab_order_items SET lab_order_id='70000000-0000-0000-0000-000000000002' WHERE id='80000000-0000-0000-0000-000000000001'; GET DIAGNOSTICS affected=ROW_COUNT; IF affected<>0 THEN RAISE EXCEPTION 'lab-order item cross-branch parent reassignment allowed'; END IF; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.lab_order_items VALUES ('80000000-0000-0000-0000-000000000004','70000000-0000-0000-0000-000000000002','cross'); RAISE EXCEPTION 'cross-branch lab-order-item INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.lab_order_items VALUES ('80000000-0000-0000-0000-000000000005','70000000-0000-0000-0000-000000000003','mismatched'); RAISE EXCEPTION 'mismatched patient/visit lab-order-item INSERT allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.lab_order_items VALUES ('80000000-0000-0000-0000-000000000004','70000000-0000-0000-0000-000000000001','local');
