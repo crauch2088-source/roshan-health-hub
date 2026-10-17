@@ -20,6 +20,7 @@ CREATE TABLE public.test_ledger_posts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), transaction_type text NOT NULL, amount numeric NOT NULL,
   method text, category text, description text, source_type text, source_id uuid, created_at timestamptz, branch_id uuid
 );
+GRANT SELECT ON public.insurance_claims, public.insurance_claim_payments, public.test_ledger_posts TO authenticated;
 
 CREATE FUNCTION public.current_app_user_id() RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT NULLIF(current_setting('test.user_id', true), '')::uuid
