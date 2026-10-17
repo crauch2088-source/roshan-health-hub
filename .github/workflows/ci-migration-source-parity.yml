@@ -1,4 +1,4 @@
-name: Migration source parity manifest
+name: Historical migration hashes and forward-source delta
 
 on:
   pull_request:
@@ -8,7 +8,18 @@ on:
       - 'db/tests/redacted_migration_policy_replay_integration.sql'
       - 'db/tests/redacted_migration_policy_replay_fixture.sql'
       - 'docs/recovered-migrations/replay-safe/**'
+      - 'docs/live-migration-delta-2026-10-18.json'
+      - 'db/roshan_security_candidate_bundle_20261017.sql'
+      - 'db/roshan_phase5_insurance_claim_amount_integrity.sql'
+      - 'db/roshan_phase5_insurance_coverage_validity.sql'
+      - 'db/roshan_phase27_revoke_legacy_invoice_number.sql'
+      - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
+      - 'db/roshan_post_expense_finite_amount.sql'
       - 'db/roshan_phase*.sql'
+      - 'db/roshan_security_candidate_bundle_20261017.sql'
+      - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
+      - 'db/roshan_post_expense_finite_amount.sql'
+      - 'docs/live-migration-delta-2026-10-18.json'
       - 'scripts/verify-migration-source-parity.py'
       - '.github/workflows/ci-migration-source-parity.yml'
   push:
@@ -30,5 +41,5 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - name: Verify 93-entry source parity manifest
+      - name: Verify historical 93-entry hashes and forward-source delta
         run: python3 scripts/verify-migration-source-parity.py
