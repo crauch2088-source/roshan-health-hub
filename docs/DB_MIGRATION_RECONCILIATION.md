@@ -500,3 +500,12 @@ PR [#64](https://github.com/crauch2088-source/roshan-health-hub/pull/64) merged 
 - Live read-only checks show 97 tracked migrations through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`, zero rows in `patient_insurance` and `insurance_prior_authorizations`, and the three prior-authorization policies still permission-only. The live `post_expense` body also remains unchanged. No production SQL was executed for either candidate.
 - Canonical Vercel deployment for `e8b9ada207eca147f586fc360275f3926721f306` reached `READY`/`PROMOTED`, alias assigned with no error.
 - Release gates remain: write/read a rollback plan, reconcile migration naming/order against the live ledger, apply only after exact-target preflight, and then re-read the migration history and live function/policy catalog. Full replay remains unproven because the initial baseline is missing and one environment-specific identity-link migration is deliberately redacted.
+
+## Live forward migrations applied — 2026-10-18
+
+Two tested source candidates were applied to Supabase project `jewzonxplxhogqrnhosl` with explicit rollback SQL and then read back from the live catalog:
+
+- `roshan_insurance_prior_authorization_branch_isolation` version `20261017225523`: three `insurance_prior_authorizations` RLS policies now combine the existing insurance permission with the parent-branch helper. Helper fixed search path is empty; `anon` cannot execute it; `authenticated` can. The affected table remains empty.
+- `roshan_post_expense_finite_amount` version `20261017225540`: live `post_expense` now guards NULL/NaN/±Infinity/zero/negative values and retains its security-definer/search-path/execution posture. No data writes were performed by the migration.
+- The live ledger has 99 entries through version `20261017225540`; both new migration names are recorded once. Rollback SQL and operational verification are in [docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md](PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md).
+- The earlier source-parity report is not current for 99 entries. Rerun the migration source-parity workflow and update the current reconciliation result. Full historical replay remains blocked by the missing reviewed initial baseline and the intentionally redacted environment-specific identity-link migration.
