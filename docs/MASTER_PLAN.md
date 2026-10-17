@@ -1304,3 +1304,14 @@ The focused SQL and fixture files appear as added files in each comparison, but 
 - This is meaningful evidence that the candidate migrations are mutually compatible in the synthetic test schema, not proof of full historical replay or equivalence with the production schema. The source migration baseline and the redacted identity-link exception still need independent reconciliation, and application call sites must be audited before production privileges change.
 - PR #55 remains draft/open. No PR was merged, no production SQL/policies/grants were changed, and no paid service was created. The cross-branch RLS gap remains a release blocker before introducing real patient/financial data.
 - The detailed handoff and matrix are in [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](SECURITY_BRANCH_ISOLATION_INTEGRATION.md) on PR #55's branch. Next: audit all application call sites for the affected child tables and finance RPCs, then reconcile migration ancestry/order before any production migration proposal.
+
+
+## Application compatibility audit for security candidates — 2026-10-17
+
+First-pass source review at main snapshot `0157ff3d74692fa4786b60d4e0917b4d1488f02f` recorded in PR #55's `docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md`:
+- Invoice creation in `visits.tsx` and `ConsultationPage.tsx` uses `create_visit_consultation_invoice_atomic`; billing detail reads `invoice_items`. No direct client invoice-item insert was found in those paths.
+- Queue reads/status updates exist in queue, visits, and consultation pages; follow-up reads/inserts/updates exist in `followups.tsx`; medical-certificate reads/inserts exist in `certificates.tsx`; lab-order detail reads/updates `lab_order_items`; pharmacy/dashboard/patient detail read prescriptions with nested prescription items.
+- Finance/accounting screens read payments, expenses, supplier bills, and cashbox transactions; reviewed writes use the approved finance RPCs. No direct DML to the five finance tables restricted by #54 was found in those reviewed screens. `post_expense` was not found in those screens and remains for a full repository-wide call-site check.
+- This is explicitly a first-pass compatibility inventory, not the exhaustive repository-wide audit. Do not change app code or production grants on this evidence alone; finish the complete direct-write/RPC/server-action search and test actual payload shapes against the combined policy suite.
+
+The combined-schema PostgreSQL 17 test passed at candidate code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`; its test fixture is synthetic and does not replace full historical migration replay/source reconciliation. PR #55 remains draft/open, and production remains unchanged.
