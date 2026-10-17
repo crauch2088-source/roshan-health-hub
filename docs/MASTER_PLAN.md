@@ -1206,3 +1206,18 @@ Review of PR #54 found a SQL three-valued-logic edge case in `public.post_cashbo
 1. Verify fresh CI/CodeQL for the documentation commit and verify its Vercel state without forcing a deployment.
 2. Continue reviewing draft SQL for NULL validation, idempotency, branch ownership, and direct-write permission gaps.
 3. Preserve the full migration replay gate and do not merge #50–#54 until the base/replay gates are resolved.
+
+
+## Live status refresh — 2026-10-17 10:45 UTC
+
+- Current main documentation commit checked: `147e1b2e978bb4a0ee65da92117a5448f1a03863`; GitHub reports 14 check runs and the associated main workflow run concluded successfully. See [main CI run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39025657739) and [CodeQL run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39025657774).
+- All five security draft integration workflows have a successful result on their latest observed branch head:
+  - PR #50 invoice-item branch isolation, SHA `ba5f742a05bb912ec169a056e9c29a0b08967f64`: [run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39021158326).
+  - PR #51 parent-branch isolation, SHA `4af41b893b12427b15577f2312b13e4d92785c20`: [run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39022406414).
+  - PR #52 queue/follow-up isolation, SHA `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`: [run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39022409722).
+  - PR #53 prescription/lab child isolation, SHA `8187d1d95e2b6d485163a8805947abee71ad086e`: [run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39021361272).
+  - PR #54 finance RPC-only writes, SHA `c15d69ab96b3ba7be8c45212bee3511130bd0bcd`: [manual PostgreSQL 17 run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39025549230).
+- These are isolated SQL fixture/integration passes, not evidence of applying candidate migrations to Supabase or of full historical migration replay. Keep all five PRs as drafts until branch ancestry, complete migration-source parity, grants/policies, and the reviewed baseline are reconciled.
+- The five PR API snapshots report different base SHAs; do not assume their diffs are based on the same current main or merge them in a batch. Refresh base/head comparisons immediately before any integration decision.
+- Vercel's latest listed READY production deployment remains SHA `4b4b871b6637bb85703336d3c6f47e4e3f3f0c1f`, behind current main. Do not force deployment while the build-rate-limit failure remains unresolved.
+- No Supabase writes, production migration, PR merge, or paid-resource creation was performed during this refresh.
