@@ -196,3 +196,10 @@ The parent-branch test suite previously duplicated a certificate `visit_id` reas
 - PRs #51 and #52 both define `private.app_has_patient_visit_branch_access(uuid,uuid)`; the two definitions are semantically identical but formatted differently. Preserve a single agreed contract or retain identical definitions when reconciling their migration order.
 - The main migration-inventory documentation commit `b03b3c07f33266b55c60a27c7b7e5a3e154c708e` passed 14/14 checks. The later main documentation commit `4ad258049f25c72fbc757a2782e8d3a908d31f4c` also passed 14/14 checks. Latest verified Vercel production deployment remains READY on older SHA `5cf7eea2037314f7e90bf2f654e05a4d3840e667`; the latest docs-only SHA is not confirmed deployed.
 - No production SQL, RLS policy, grant, or row was changed; no PR merged; no paid resource created. Before real patient data: integrate the branch-isolation remediation after ancestry reconciliation and reviewed migration replay planning, then verify role × operation × branch behavior against the final integrated SQL. The 92/93 normalized source parity result is text-level matching, not semantic proof or full-chain replay.
+
+
+## Integration outcome update — 2026-10-17
+
+Draft [PR #55](https://github.com/crauch2088-source/roshan-health-hub/pull/55) now stages all five security candidates and includes a same-schema PostgreSQL 17 combined regression. At code head `e3bf1f47c3b5bdc96085ce08c907b26cba941dbb`, the combined-schema job passed: migrations #50–#54 applied in order, all five existing regression suites passed in one database, and policy catalog / finance privilege assertions passed. The isolated matrix also passed 5/5. Later commits on that PR were documentation-only.
+
+This is not full historical migration replay. The migration-source baseline and the intentionally redacted identity-link migration still need independent reconciliation, and the exhaustive app call-site audit is incomplete. PR #55 remains draft/open; no production SQL, policy, grant, or row was changed. Do not clear the cross-branch release blocker until those remaining gates pass.
