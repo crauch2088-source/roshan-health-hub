@@ -1138,3 +1138,12 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - PR #54's complete CI and expanded finance RPC privilege integration passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`.
 - Main docs/CI commit `696e422d959b308c5087339af74b541d941fa205` passed all 13 checks: application CI/integration checks, source-parity verifier, and both CodeQL language analyses. Vercel still reports the build-rate-limit check failure for newer docs commits; latest READY deployment checked is earlier docs-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. Do not force deployment.
 - All PRs #50–#54 remain open/draft and unmerged. No paid resources or production SQL/policy/grant/data changes were made. Full-chain replay remains a release gate: no reviewed pre-migration baseline, plus one intentionally redacted environment-specific identity-link migration.
+
+
+## Final no-cost security regression pass — 2026-10-17
+
+- All five security PR heads are still open/draft/unmerged, and every workflow on each latest head is green: #50 `ba5f742a05bb912ec169a056e9c29a0b08967f64`; #51 `4af41b893b12427b15577f2312b13e4d92785c20`; #52 `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`; #53 `8187d1d95e2b6d485163a8805947abee71ad086e`; #54 `670185193a0400634fe49f7e2e004b4223611ce3`.
+- #51/#52 now include negative insert tests where `patient_id IS NULL` but `visit_id` points to branch B; they assert the row is rejected and leaves no residue. #54 verifies grants/denials for all six finance write/reversal RPCs and checks each exists as SECURITY DEFINER with a fixed `search_path`.
+- Main commit `1c996bcc906e0739b5c693f2fe3968acdc72b9c6` passed all 13 checks (application CI/integration, source-parity job, and both CodeQL language analyses). This doc-only update requires fresh CI/CodeQL verification before considering its SHA fully green.
+- Vercel's latest status remains the build-rate-limit check failure; latest READY deployment checked is earlier documentation-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. No attempt was made to bypass rate limits or force deployment.
+- No paid resources, production SQL, policies, grants, or rows were changed. Full-chain replay remains a release gate because the trustworthy pre-migration baseline is absent and one identity-link migration is intentionally redacted. Continue with free GitHub Actions fixtures and source-level recovery only; do not invent a baseline.

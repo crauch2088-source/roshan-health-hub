@@ -129,3 +129,12 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 - PR #54's expanded finance RPC grant tests and full PR CI passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`.
 - Latest main documentation commit `696e422d959b308c5087339af74b541d941fa205` passed all 13 checks, including source-parity verification and both CodeQL analyses. Vercel's check points to the build-rate-limit page; the most recent READY deployment is on earlier docs-only commit `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`. No deployment was forced.
 - Full-chain replay remains blocked by the missing trustworthy pre-migration baseline and one intentionally redacted identity-link migration. No paid resource or production database mutation was used.
+
+
+## Final no-cost regression verification — 2026-10-17
+
+- Latest focused PostgreSQL 17 integration and full CI checks are green on all five open security drafts: #50 `ba5f742a05bb912ec169a056e9c29a0b08967f64`; #51 `4af41b893b12427b15577f2312b13e4d92785c20`; #52 `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`; #53 `8187d1d95e2b6d485163a8805947abee71ad086e`; #54 `670185193a0400634fe49f7e2e004b4223611ce3`.
+- #51/#52 now explicitly reject NULL-patient rows whose visit belongs to another branch. #54 checks all six finance write/reversal RPC grants, anon denial, SECURITY DEFINER status, and pinned search_path.
+- The prior main docs commit `1c996bcc906e0739b5c693f2fe3968acdc72b9c6` passed all 13 CI/CodeQL/source-parity checks. This documentation update will trigger a fresh verification run.
+- Vercel's latest check still points to the build-rate-limit page. The last READY deployment inspected is on earlier docs-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`; no deployment was forced.
+- No paid service or production database mutation was used. All five PRs remain draft/unmerged because full historical replay still lacks a reviewed pre-migration baseline and safe replay treatment for the redacted identity-link migration.
