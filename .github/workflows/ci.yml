@@ -365,3 +365,31 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify all 93 migration source mappings and hashes
         run: python3 scripts/verify-migration-source-parity.py
+
+  
+  redacted-migration-policy-replay:
+    name: Replay redacted migration policy portion (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply synthetic fixture and replay-safe policy migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/redacted_migration_policy_replay_fixture.sql \
+            -f docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql \
+            -f db/tests/redacted_migration_policy_replay_integration.sql
