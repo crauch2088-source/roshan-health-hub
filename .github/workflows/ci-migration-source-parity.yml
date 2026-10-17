@@ -52,6 +52,14 @@ on:
       - '.github/workflows/ci-migration-source-parity.yml'
       - '.github/workflows/ci-post-expense-finite-amount.yml'
       - '.github/workflows/ci-insurance-claim-money-precision.yml'
+      - 'db/roshan_invoice_payment_money_precision.sql'
+      - 'db/roshan_pharmacy_batch_money_precision.sql'
+      - 'db/tests/invoice_payment_money_precision_fixture.sql'
+      - 'db/tests/invoice_payment_money_precision_integration.sql'
+      - 'db/tests/pharmacy_batch_money_precision_fixture.sql'
+      - 'db/tests/pharmacy_batch_money_precision_integration.sql'
+      - '.github/workflows/ci-invoice-payment-money-precision.yml'
+      - '.github/workflows/ci-pharmacy-batch-money-precision.yml'
   workflow_dispatch:
 
 permissions:
