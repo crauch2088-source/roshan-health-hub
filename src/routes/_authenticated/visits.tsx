@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
 import {
@@ -124,6 +125,14 @@ function VisitsPageInner() {
       setOpen(true);
     }),
     [can],
+  );
+
+  useEffect(
+    () => listenForQuickAction("new_lab_order", () => {
+      if (!can("lab.create")) return;
+      toast.info(t("new_lab_order_hint"));
+    }),
+    [can, t],
   );
 
   const canCreate = can("visits.create");
