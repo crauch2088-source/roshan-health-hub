@@ -2,6 +2,18 @@
 
 **Single source of truth:** keep this plan updated until launch. Snapshot date: 2026-10-16. Repository: https://github.com/crauch2088-source/roshan-health-hub
 
+
+
+## Live verification update — 2026-10-17 (session continuation)
+
+- Read in required order from `main`: `README.md`, `docs/MASTER_PLAN.md`, `docs/DB_MIGRATION_RECONCILIATION.md`, and `docs/PLUGIN_TOOLING_MAP.md` before new work.
+- `main` was `4d141ca0805265b8786a570105d4a4ba31a3fbcf` at session start. CodeQL and the 10 application/DB checks reported success on that SHA (11 check runs total); the subsequent doc-only inventory-header fix is `90c30ea600afc876afbe77b5d0c5df07f2e5fdc8`, whose checks were still in progress at the last poll.
+- PRs #50–#54 remain open, draft, and unmerged. They are source-only proposals; none of their SQL was applied to production during this session. Each has dedicated PostgreSQL 17 regression evidence and reported full CI success in PR descriptions, but migration replay parity is still a blocker. Their bases are not all the same/current, so re-evaluate stacked dependencies before merge.
+- Supabase project `jewzonxplxhogqrnhosl` is `ACTIVE_HEALTHY`, PostgreSQL 17.6, region `eu-west-1`. Live ledger contains 93 entries; latest is `20261016222009_roshan_phase25_current_app_profile_20261016`. Security Advisor now reports 22 authenticated-callable SECURITY DEFINER warnings, one `pg_trgm`-in-public-schema warning, and leaked-password protection warning (count/details to be triaged function-by-function); Performance Advisor reports 90 unused-index findings. These are review signals, not grounds for blanket revocation or index deletion.
+- Vercel list access works at this check (the previous 403 scope issue was not reproduced). One linked project `roshan-health-hub` exists. Latest listed production deployment is READY on SHA `710f1232b8c972c0d1a5d9720c2cf8e03c8a96e7`; it does not match the latest documentation commit, and a Vercel check on the docs SHA reports build-rate-limit failure. Do not deploy manually or bypass the limit; verify alias/target before any future release.
+- Corrected the stale migration reconciliation header from 79 to 93 and recorded the exact latest ledger version in commit `90c30ea600afc876afbe77b5d0c5df07f2e5fdc8`. This was documentation-only; no SQL was applied.
+- Next: complete exact historical source mapping for all 93 entries; build and prove a clean replay in a disposable PostgreSQL/Supabase environment; only then resume PR #50–#54 merge decisions. If disposable Supabase branch/project incurs nonzero cost, obtain the quoted cost and explicit agreement before creating it.
+
 ## Operating rules
 - Execute work directly with connected tools. Request any missing integration/permission explicitly.
 - If a specific step repeatedly fails despite reasonable diagnosis, stop looping, ask the user to use Claude for that step, then resume the remaining plan.
