@@ -1233,3 +1233,12 @@ GitHub compare API reports every security draft #50–#54 as **diverged** from c
 - #54: merge base `de28027ac8798e025f22f68a122b132ebf1b6029`, 9 ahead / 42 behind.
 
 The focused SQL and fixture files appear as added files in each comparison, but that does not establish migration-order compatibility or prove clean replay. Treat current successful CI as fixture-level evidence only. Do not merge/rebase these drafts blindly; first reconstruct the dependency/order map and compare each candidate against current migration sources and grants.
+
+
+## Parent/visit consistency regression expansion — 2026-10-17 10:48 UTC
+
+- Reviewed PR #51's parent-branch integration test and found the certificate visit-reassignment assertion duplicated, leaving the patient-side reassignment path untested.
+- Replaced the duplicate with a test that changes `patient_id` while retaining a visit belonging to another patient in the same branch. Added a second test that attempts to INSERT a certificate with same-branch but mismatched patient/visit parents.
+- Commit: [`19e91bc38af9f16c2a6d46f8af6249742812ba84`](https://github.com/crauch2088-source/roshan-health-hub/commit/19e91bc38af9f16c2a6d46f8af6249742812ba84), on `security/parent-branch-isolation-50-batch`; no candidate SQL changed.
+- Dedicated PostgreSQL 17 integration passed: [run #39026202054](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202054).
+- The pull-request-wide CI run #39026202048 was still in progress at the last check. Main CI passed for `5ca587e`; CodeQL JavaScript/TypeScript analysis was still running at that point.

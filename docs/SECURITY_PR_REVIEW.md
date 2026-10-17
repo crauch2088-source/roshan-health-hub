@@ -158,3 +158,8 @@ These results validate only their respective isolated fixtures/workflows. They d
 ## PR ancestry and integration gate — 2026-10-17 10:47 UTC
 
 A live compare against current `main` reports all five security drafts as diverged. They are 42–49 commits behind current main, with merge bases `43afd071` (#50–#52), `710f1232` (#53), and `de28027a` (#54). Candidate files are additive in the compare output, but that does not prove correct migration order or replay compatibility. Keep PRs as drafts; do not batch-rebase or merge without reviewing source parity and migration dependencies. Their successful PostgreSQL jobs remain isolated fixture-level tests, not production schema replay.
+
+
+## PR #51 regression test coverage update — 2026-10-17
+
+The parent-branch test suite previously duplicated a certificate `visit_id` reassignment assertion. Commit [`19e91bc`](https://github.com/crauch2088-source/roshan-health-hub/commit/19e91bc38af9f16c2a6d46f8af6249742812ba84) replaces the duplicate with a `patient_id` reassignment check and adds an INSERT check for same-branch but inconsistent patient/visit parents. Dedicated PostgreSQL 17 integration passed in [run #39026202054](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39026202054). The broader PR workflow was still in progress at last check; no SQL migration was applied.
