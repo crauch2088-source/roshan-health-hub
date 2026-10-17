@@ -96,19 +96,20 @@ function BillingPageInner() {
   ]);
 
   useEffect(
-    () => listenForQuickAction("new_invoice", () => {
-      if (!can("billing.create")) return;
-      pendingInvoiceRequestRef.current = null;
-      setPatientId("");
-      setSelectedPatient(null);
-      setVisitId("");
-      setStandaloneInvoice(false);
-      setSeparateInvoice(false);
-      setPartnerId("");
-      setDiscount("0");
-      setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "other" }]);
-      setOpen(true);
-    }),
+    () =>
+      listenForQuickAction("new_invoice", () => {
+        if (!can("billing.create")) return;
+        pendingInvoiceRequestRef.current = null;
+        setPatientId("");
+        setSelectedPatient(null);
+        setVisitId("");
+        setStandaloneInvoice(false);
+        setSeparateInvoice(false);
+        setPartnerId("");
+        setDiscount("0");
+        setLines([{ description: "", quantity: "1", unit_price: "0", item_type: "other" }]);
+        setOpen(true);
+      }),
     [can],
   );
 
