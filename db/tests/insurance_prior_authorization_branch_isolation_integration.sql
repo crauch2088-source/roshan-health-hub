@@ -37,6 +37,35 @@ BEGIN
   IF private.app_has_prior_authorization_branch_access('a1000000-0000-0000-0000-000000000099') THEN
     RAISE EXCEPTION 'missing parent must fail closed';
   END IF;
+  IF private.app_has_prior_authorization_branch_access(NULL) THEN
+    RAISE EXCEPTION 'NULL parent must fail closed';
+  END IF;
+
+  SELECT count(*) INTO visible_count FROM public.insurance_prior_authorizations;
+  PERFORM set_config('test.permissions','insurance.create|insurance.update',true);
+  SELECT count(*) INTO visible_count FROM public.insurance_prior_authorizations;
+  IF visible_count <> 0 THEN RAISE EXCEPTION 'SELECT must still require insurance.read'; END IF;
+
+  PERFORM set_config('test.permissions','insurance.read|insurance.update',true);
+  BEGIN
+    INSERT INTO public.insurance_prior_authorizations(id,patient_insurance_id,status)
+    VALUES ('a2000000-0000-0000-0000-000000000004','a1000000-0000-0000-0000-000000000001','pending');
+    RAISE EXCEPTION 'INSERT without insurance.create unexpectedly succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+
+  PERFORM set_config('test.permissions','insurance.read|insurance.create',true);
+  UPDATE public.insurance_prior_authorizations
+     SET status='denied'
+   WHERE id='a2000000-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'UPDATE must still require insurance.update'; END IF;
+
+  IF has_function_privilege('anon','private.app_has_prior_authorization_branch_access(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'anon must not execute the private branch helper';
+  END IF;
+  SELECT count(*) INTO visible_count FROM pg_policy
+   WHERE schemaname='public' AND tablename='insurance_prior_authorizations';
+  IF visible_count <> 3 THEN RAISE EXCEPTION 'expected 3 prior-authorization policies, got %', visible_count; END IF;
 END
 $test$;
 
