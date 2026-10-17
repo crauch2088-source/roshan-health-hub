@@ -1163,3 +1163,28 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - The source-parity verifier now enforces that the replay-safe redacted-migration variant contains no email/identity UUID and no identity UPDATE, while preserving all four patient RLS policies.
 - PRs #50–#54 remain open/draft/unmerged; latest head checks are all green. No paid resources or production SQL/grant/policy/data mutations were performed.
 - Full 93-migration replay is still blocked by the absence of a reviewed pre-migration baseline. Vercel's current-main status points to a build-rate-limit failure; do not force deployment. Last READY deployment inspected is earlier docs-only SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`.
+
+
+## Live continuation verification — 2026-10-17 10:30 UTC
+
+This entry supersedes earlier status snapshots where they conflict. Live sources queried: GitHub repository/commits/check runs/PRs, Vercel production deployments, Supabase project/migration history and advisors.
+
+### Verified current baseline
+- Latest `main` observed: `2143f63624993a7d8f9bfbf71c251d129fe0b691`. GitHub check-run endpoint returned **14/14 success** on that exact SHA.
+- Latest READY production deployment observed for Vercel project `roshan-health-hub`: SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca`. This is behind main; no claim that the latest main commit is deployed. Do not force a new deployment during the provider build-rate-limit condition.
+- Supabase `jewzonxplxhogqrnhosl`: `ACTIVE_HEALTHY`, PostgreSQL 17.6, eu-west-1; 93 applied migrations, latest `20261016222009_roshan_phase25_current_app_profile_20261016`.
+- Live Security Advisor at 2026-10-17 10:29 UTC: 22 authenticated-callable public SECURITY DEFINER warnings, one public-schema `pg_trgm` warning, and leaked-password protection warning. Performance Advisor: 90 unused-index findings. Triage individually; do not blanket-revoke RPCs or drop indexes.
+- PR #50–#54 remain open/draft/unmerged. Current heads: #50 `ba5f742a05bb912ec169a056e9c29a0b08967f64`; #51 `4af41b893b12427b15577f2312b13e4d92785c20`; #52 `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`; #53 `8187d1d95e2b6d485163a8805947abee71ad086e`; #54 `670185193a0400634fe49f7e2e004b4223611ce3`. The current PR list returned base SHAs that differ across the five drafts and predate the observed main SHA; treat this as a stale-base/dependency signal and refresh each PR's base and CI before merge decisions.
+- No Supabase SQL, policy/grant change, production data mutation, paid resource creation, or forced deployment was performed.
+
+### Current hard blockers and execution order
+1. Keep the clean-replay release gate closed: 92/93 normalized source matches; the one unmatched source is the intentionally redacted identity-link migration; a reviewed trustworthy pre-migration baseline and full ordered replay proof remain absent.
+2. Inspect each security PR's exact diff, changed-file overlap, commit ancestry, and live CI against current main. Rebase/update bases only when the resulting diff is understood; do not merge drafts automatically.
+3. Continue free isolated PostgreSQL 17 adversarial tests (role × operation × branch, parent reassignment, malformed/null linkage, direct finance DML denial, RPC authorization and retry/idempotency). Keep synthetic fixtures only.
+4. Review advisor findings one by one; no production privilege changes until each function's callers and authorization contract are established.
+5. Continue app/UX acceptance after the security/replay gates, then verify production SHA and smoke-test the canonical domain.
+
+### Cost and environment guardrails
+- Do not create a Supabase development branch/project without explicit agreement to the quoted nonzero recurring cost (last quote: US$0.01344/hour).
+- The replay-safe redacted-migration SQL is an isolated test artifact, not a canonical deployment migration.
+- CI success is not production deployment evidence. Use exact SHA equality plus READY/alias checks for release verification.

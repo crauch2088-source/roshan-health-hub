@@ -126,3 +126,13 @@ Read-only inspection of the connected production project found:
 - The final main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed 15/15 checks, including the new replay-safe policy integration, source-parity checks that reject identity literals/UPDATEs in the replay variant, and both CodeQL analyses.
 - All PRs #50–#54 remain open/draft/unmerged and their latest test heads have passing focused PostgreSQL 17 integration and full CI.
 - No paid resources or production database mutations were used. Full-chain replay remains gated on a trustworthy pre-migration baseline. Vercel's current-main check still points to the build-rate-limit page; no deployment was forced.
+
+
+## Live recheck — 2026-10-17 10:30 UTC
+
+- Live PR inventory confirms #50–#54 are all still open drafts; none has been merged. Latest heads are #50 `ba5f742a05bb912ec169a056e9c29a0b08967f64`, #51 `4af41b893b12427b15577f2312b13e4d92785c20`, #52 `4b72a8761de5ec7dc936f4bc29b348e19fba5bea`, #53 `8187d1d95e2b6d485163a8805947abee71ad086e`, #54 `670185193a0400634fe49f7e2e004b4223611ce3`.
+- The PR listing returned base SHAs that vary across the drafts and are older than the observed current main `2143f63624993a7d8f9bfbf71c251d129fe0b691`. Before merge, refresh the actual base refs, compare each branch's merge-base/diff to main, check for duplicate/stale commits, and rerun the required CI on the final head. Do not interpret the returned state alone as mergeability proof.
+- Current main SHA `2143f63624993a7d8f9bfbf71c251d129fe0b691`: GitHub check-run endpoint reports 14/14 successful.
+- Current Supabase Advisor (observed 2026-10-17 10:29 UTC): 22 authenticated-callable public SECURITY DEFINER findings, one `pg_trgm` public-schema warning, and leaked-password protection warning; Performance Advisor reports 90 unused-index findings. This is a triage queue, not authorization to revoke all RPCs or remove indexes.
+- Current production deployment listing: READY SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca`, behind main. No forced deployment and no live database mutation.
+- The clean-replay blocker remains unchanged: no reviewed pre-migration baseline and one intentionally redacted identity-link migration. PRs remain source-only until that gate is satisfied.
