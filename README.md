@@ -268,3 +268,11 @@ See [docs/SECURITY_BRANCH_ISOLATION_INTEGRATION.md](docs/SECURITY_BRANCH_ISOLATI
 - Added `db/roshan_security_candidate_bundle_20261017.sql` as the ordered artifact; the combined-schema job applies this exact file, then runs the five integration suites and catalog assertions.
 - Main is `627baa6568eebf1b69cd7afa73da7fa7e9fc3da9`; its Vercel status is a build-rate-limit failure, not a passing deployment for this source. Historical migration replay remains unproven: 92/93 normalized source matches, one intentionally redacted identity-link migration, zero unmapped ledger entries.
 - No production SQL or grants have been changed. Merge/release remains blocked until fresh CI and a clean replay from a reviewed baseline.
+
+
+## Supabase Auth password hardening — 2026-10-17
+
+- Verified the Supabase Auth service is ACTIVE_HEALTHY.
+- The live password_min_length was 6; it has been raised to **8** via the Management API, and the subsequent read-back verified 8. This applies to future password setting/change flows; it does not change existing passwords or require an immediate sign-out.
+- Leaked-password protection (password_hibp_enabled) remains **disabled**. An attempted single-setting enable was rejected by Supabase because HaveIBeenPwned protection is available only on Pro plans and above. No upgrade or paid resource was purchased, and no other Auth setting was changed by that attempt.
+- This Advisor finding remains open; do not mark it resolved or bypass the plan restriction. Revisit only if a no-cost supported alternative becomes available or the user explicitly approves a plan change.
