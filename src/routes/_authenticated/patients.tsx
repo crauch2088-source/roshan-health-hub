@@ -93,11 +93,12 @@ function PatientsPageInner() {
   const [form, setForm] = useState(emptyForm());
 
   useEffect(
-    () => listenForQuickAction("new_patient", () => {
-      if (!can("patients.create")) return;
-      setForm(emptyForm());
-      setOpen(true);
-    }),
+    () =>
+      listenForQuickAction("new_patient", () => {
+        if (!can("patients.create")) return;
+        setForm(emptyForm());
+        setOpen(true);
+      }),
     [can],
   );
 
