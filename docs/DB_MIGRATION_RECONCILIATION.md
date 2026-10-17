@@ -1,8 +1,9 @@
 # Supabase migration reconciliation inventory
 
-**Snapshot date:** 2026-10-16  
+**Snapshot date:** 2026-10-17  
 **Target:** Connected Roshan Health Hub Supabase project (read-only inventory)  
-**Applied migration rows returned:** 79  
+**Applied migration rows returned:** 93  
+**Latest verified applied migration:** `20261016222009_roshan_phase25_current_app_profile_20261016` (confirmed by live Supabase migration ledger on 2026-10-17).  
 **Committed SQL files in `db/` on `main`:** 10  
 **Exact basename matches:** 4  
 **Exact basename matches do not prove full semantic equivalence.** No migration was applied, rolled back, or edited in the database during this inventory.
