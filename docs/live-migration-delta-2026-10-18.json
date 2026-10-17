@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 99,
-  "latest_live_version": "20261017225540",
+  "live_ledger_count": 101,
+  "latest_live_version": "20261017230645",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 6,
+  "forward_migration_count": 8,
   "entries": [
     {
       "version": "20261017125924",
@@ -59,7 +59,25 @@
       "normalized_source_sql_sha256": "73884e40f17851d1d6a8d9285240d8085afa66e8ff212d2fced2608d2bac7b5d",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact SQL source text was supplied to the Supabase migration API; ledger version/name were read back. The API does not expose a persisted SQL hash."
+    },
+    {
+      "version": "20261017230623",
+      "name": "roshan_post_expense_money_precision",
+      "source_path": "db/roshan_post_expense_money_precision.sql",
+      "source_git_blob_sha": "a4118d34a19f576aa2018fc46563a2a5f999c159",
+      "normalized_source_sql_sha256": "e9406bfd6fd0e2f4861e3c261ee7123011f07d65ca65cf682153236d741a7c54",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted to the Supabase migration API; ledger version/name read back."
+    },
+    {
+      "version": "20261017230645",
+      "name": "roshan_insurance_claim_money_precision",
+      "source_path": "db/roshan_insurance_claim_money_precision.sql",
+      "source_git_blob_sha": "7d56a654ae02e45f784a24f3feffd2ca0c663883",
+      "normalized_source_sql_sha256": "9bb1a3ae291996dd6d96c2e9b17916e753fc091e8ef215645eb8e16c951d45ab",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted to the Supabase migration API; ledger version/name read back."
     }
   ],
-  "limitations": "This manifest verifies the exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute a live SQL hash; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
+  "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
 }
