@@ -23,3 +23,8 @@ Next gates: review migration bodies in order; compare to current `db/*.sql` arti
 ## Final verification status — 2026-10-17
 
 The replay-safe policy-only variant is covered by a synthetic PostgreSQL 17 integration test. CI verifies the four patient policy operations and confirms the replay variant contains no email/identity UUID and no identity UPDATE. Main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed all 15 checks. The original migration remains redacted; the replay variant is not canonical deployment SQL and does not prove full-chain replay because the pre-migration baseline is still missing.
+
+## Current parity scope — 2026-10-18
+
+The adjacent `source-parity-report.json` is the **historical 93-entry snapshot** (92 normalized source matches, one redacted identity-link migration), generated before four later live-ledger entries were reconciled. The current live ledger has 97 entries and the latest `docs/DB_MIGRATION_RECONCILIATION.md` records 96/97 exact source matches, with zero unmapped versions. This recovered directory and its JSON report are not a replayable canonical migration chain. The pre-migration baseline is still missing, so full replay remains blocked.
+

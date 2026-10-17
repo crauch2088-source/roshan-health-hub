@@ -344,3 +344,7 @@ Read-only verification performed at approximately 2026-10-17 22:18 UTC:
 2. Review migration replay/baseline parity and write a rollback/recovery plan before applying the source-only RLS migration to production.
 3. Continue per-function Security Advisor review and the authenticated phone-first RTL clinical workflow audit.
 
+## Migration parity clarification — 2026-10-18
+
+The original machine-readable `docs/recovered-migrations/source-parity-report.json` describes the historical 93-row snapshot only: 92 normalized text matches and one deliberately redacted identity-link migration. The current live Supabase ledger has 97 entries; the reconciliation notes record 96/97 exact source matches after four subsequent entries were matched. Do not read the 93-row JSON report as a fresh 97-row report. Full-chain replay remains blocked by the missing reviewed pre-migration schema baseline; the redacted identity-link statement must never be restored to public source control.
+

@@ -2,7 +2,7 @@
 
 The historical inventory below was originally captured at 93 rows before the three forward security/insurance migrations were applied. The current live ledger now has **97 rows**, latest `20261017133157_roshan_revoke_legacy_invoice_number_20261017`. See [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md) for exact stored-source comparisons and post-apply verification.
 
-The current reconciliation is **95/96 exact source matches, one intentionally redacted identity-link migration, zero unmapped versions**: the prior 92 verified matches plus three new migrations whose stored statement text was compared byte-for-byte with the tracked candidate source. The historical 93-row `source-parity-report.json` and its validator remain a frozen snapshot, not a live-ledger export. The full historical chain still has no trustworthy clean-bootstrap baseline; no replay of that chain was attempted.
+The current reconciliation is **96/97 exact source matches, one intentionally redacted identity-link migration, zero unmapped versions**: the original 93-row snapshot had 92 normalized matches; four subsequent live-ledger entries have now been matched exactly. The historical 93-row `source-parity-report.json` and its validator remain a frozen snapshot, not a live-ledger export. The full historical chain still has no trustworthy clean-bootstrap baseline; no replay of that chain was attempted.
 
 ---
 
@@ -487,7 +487,7 @@ At the 2026-10-17 22:18 UTC read-only audit, the Supabase migration ledger conta
 
 Policy-expression review found all 40 policies across 10 targeted child tables include parent/branch helper checks. A distinct residual gap remains on `public.insurance_prior_authorizations`: its SELECT, INSERT, and UPDATE policies only call `app_has_perm(...)` and do not check the associated patient's branch. The FK chain is `insurance_prior_authorizations.patient_insurance_id` → `patient_insurance.id` → `patient_insurance.patient_id`; the patient-branch helper exists. This finding is read-only and no SQL was applied to production. Add a tracked source migration and PostgreSQL 17 synthetic cross-branch regression before any production change.
 
-The last documented normalized migration source parity is 92/93; full historical replay remains unproven due to the missing reviewed initial schema baseline and one intentionally redacted identity-link migration. The live Security Advisor returned 20 authenticated-callable SECURITY DEFINER warnings plus one public-schema extension warning; review individually. See the latest live continuation in [the master plan](MASTER_PLAN.md).
+The original 93-row snapshot had 92/93 normalized source matches. The current 97-entry live ledger has 96/97 exact source matches, with the single remaining entry intentionally redacted because it contains an environment-specific Auth identity link. Full historical replay remains unproven because the reviewed initial schema baseline is still missing. The live Security Advisor returned 20 authenticated-callable SECURITY DEFINER warnings plus one public-schema extension warning; review individually. See the latest live continuation in [the master plan](MASTER_PLAN.md).
 
 ## Post-merge status — 2026-10-18
 
