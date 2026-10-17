@@ -1,0 +1,2 @@
+-- Retire direct client access to the global invoice-number allocator.
+-- create_invoice_atomic calls this as SECURITY DEFINER; browser clients do not.
