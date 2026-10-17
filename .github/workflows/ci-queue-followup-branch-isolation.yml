@@ -1,0 +1,40 @@
+name: Queue and follow-up branch isolation integration
+
+on:
+  pull_request:
+    paths:
+      - 'db/roshan_queue_followup_branch_isolation.sql'
+      - 'db/tests/queue_followup_branch_isolation_fixture.sql'
+      - 'db/tests/queue_followup_branch_isolation_integration.sql'
+      - '.github/workflows/ci-queue-followup-branch-isolation.yml'
+  push:
+    branches:
+      - 'security/queue-followup-branch-isolation'
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL 17 queue/follow-up RLS
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run isolated queue/follow-up authorization tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/queue_followup_branch_isolation_fixture.sql \
+            -f db/roshan_queue_followup_branch_isolation.sql \
+            -f db/tests/queue_followup_branch_isolation_integration.sql
