@@ -24,6 +24,13 @@
 - Supabase quoted development-branch cost is **US$0.01344/hour**. No branch was created because nonzero recurring cost requires explicit user agreement. Continue static/source work while waiting; do not use production as replay target.
 - Vercel team/project listing now succeeds, so the old 403 was not reproduced. Project `roshan-health-hub` and canonical domain aliases are visible; latest production deployment reports READY. The newest source commit's Vercel check still points to the build-rate-limit page; do not bypass or force deployment.
 
+## Security PR review update — 2026-10-17
+
+- Per-version manifest: [docs/recovered-migrations/source-parity-report.json](recovered-migrations/source-parity-report.json) records 93 live migrations and SHA-256 hashes of normalized SQL; 92 match tracked source, one is intentionally redacted, zero are unmapped.
+- Detailed source review: [docs/SECURITY_PR_REVIEW.md](SECURITY_PR_REVIEW.md). PR #50 needs a parent-changing UPDATE regression; #51 needs null-patient/visit linkage to fail closed, reliable fixture postconditions, and helper grant assertions; #52 needs equivalent null-linkage coverage, super-admin cross-branch DELETE verification, and parent-changing UPDATE tests; #53 needs parent-reassignment UPDATE tests; #54 remains blocked by full replay and exhaustive role × operation × RPC validation.
+- Read-only schema/function inspection confirmed nullable patient/visit columns for followups, queue tickets, patient discounts, and procedure orders. Do not treat this as a demonstrated cross-branch exploit, but resolve the linkage-integrity gap before merging.
+- Supabase branch cost quote is US$0.01344/hour. No branch was created; nonzero recurring cost needs explicit user agreement. Continue independent source work while replay environment is blocked.
+
 ## Operating rules
 - Execute work directly with connected tools. Request any missing integration/permission explicitly.
 - If a specific step repeatedly fails despite reasonable diagnosis, stop looping, ask the user to use Claude for that step, then resume the remaining plan.
