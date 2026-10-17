@@ -51,6 +51,15 @@ CREATE TABLE public.supplier_bills (
   bill_date date, due_date date, subtotal numeric, discount_amount numeric, total_amount numeric, paid_amount numeric,
   status text, notes text, created_by uuid, deleted_at timestamptz, updated_at timestamptz, updated_by uuid
 );
+CREATE OR REPLACE FUNCTION public.next_invoice_number()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT 'INV-202610-00001'::text
+$function$;
+
 CREATE TABLE public.supplier_payments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, supplier_bill_id uuid, supplier_id uuid,
   amount numeric, payment_method text, reference text, payment_date date, notes text, created_by uuid, deleted_at timestamptz
@@ -199,6 +208,7 @@ GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON
  public.cashbox_transactions,public.expenses,public.payments,public.supplier_bills,public.supplier_payments TO authenticated,anon;
 GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON
  public.insurance_claims,public.insurance_claim_items,public.insurance_claim_payments TO authenticated,anon;
+GRANT EXECUTE ON FUNCTION public.next_invoice_number() TO authenticated;
 
 CREATE FUNCTION public.add_cashbox_entry(_direction text,_amount numeric,_type text,_method text,_category text,_description text,_date timestamptz)
 RETURNS uuid LANGUAGE sql SECURITY DEFINER SET search_path TO ''
