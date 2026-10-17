@@ -480,3 +480,12 @@ The full-chain replay gate remains open because a trustworthy pre-migration sche
 The replay-only policy variant and synthetic PostgreSQL 17 integration are now enforced by CI. The source-parity verifier also rejects an email, identity UUID, or `UPDATE public.users SET auth_user_id` in the replay variant, and checks that all four patient policy definitions remain present. Latest main SHA `ddf7d3b5b72d18bbfd13598472ce4db480c09bca` passed all 15 checks, including both CodeQL language analyses.
 
 This is evidence for the policy portion of the redacted migration only. It does not supply the missing pre-migration baseline or prove a clean replay of the full 93-entry chain. Production remains unchanged and no paid database branch was created.
+
+## Live verification addendum — 2026-10-18
+
+At the 2026-10-17 22:18 UTC read-only audit, the Supabase migration ledger contained 97 entries through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`. The exact current GitHub `main` SHA `868ea341b281f1218de490b603bf8d4632093a35` had 14/14 successful GitHub checks and a matching READY production deployment. Better Stack monitor `5086672` reported UP against `https://roshan-health-hub.vercel.app/`.
+
+Policy-expression review found all 40 policies across 10 targeted child tables include parent/branch helper checks. A distinct residual gap remains on `public.insurance_prior_authorizations`: its SELECT, INSERT, and UPDATE policies only call `app_has_perm(...)` and do not check the associated patient's branch. The FK chain is `insurance_prior_authorizations.patient_insurance_id` → `patient_insurance.id` → `patient_insurance.patient_id`; the patient-branch helper exists. This finding is read-only and no SQL was applied to production. Add a tracked source migration and PostgreSQL 17 synthetic cross-branch regression before any production change.
+
+The last documented normalized migration source parity is 92/93; full historical replay remains unproven due to the missing reviewed initial schema baseline and one intentionally redacted identity-link migration. The live Security Advisor returned 20 authenticated-callable SECURITY DEFINER warnings plus one public-schema extension warning; review individually. See the latest live continuation in [the master plan](MASTER_PLAN.md).
+

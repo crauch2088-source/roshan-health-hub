@@ -1370,3 +1370,25 @@ The combined-schema PostgreSQL 17 test passed at candidate code head `e3bf1f47c3
 - The live password_min_length was 6; it has been raised to **8** via the Management API, and the subsequent read-back verified 8. This applies to future password setting/change flows; it does not change existing passwords or require an immediate sign-out.
 - Leaked-password protection (password_hibp_enabled) remains **disabled**. An attempted single-setting enable was rejected by Supabase because HaveIBeenPwned protection is available only on Pro plans and above. No upgrade or paid resource was purchased, and no other Auth setting was changed by that attempt.
 - This Advisor finding remains open; do not mark it resolved or bypass the plan restriction. Revisit only if a no-cost supported alternative becomes available or the user explicitly approves a plan change.
+
+## Live continuation — verified production and residual insurance policy gap (2026-10-18)
+
+Read-only verification performed at approximately 2026-10-17 22:18 UTC:
+
+- Canonical GitHub `main`: `868ea341b281f1218de490b603bf8d4632093a35` (`docs: record uptime monitor target correction`). GitHub Actions reports 14/14 check runs successful on this exact SHA.
+- Canonical Vercel project `roshan-health-hub`: latest production deployment is `READY` on the same SHA, with alias assignment successful and no alias error. The verified production domain is `https://roshan-health-hub.vercel.app/`.
+- Existing Better Stack monitor `5086672` (`Roshan Health Hub - Production`) is unpaused and now reports `UP`; its latest check at `2026-10-17T22:17:50Z` hit the corrected canonical URL. It retains 180-second checks from EU/Asia, TLS verification, redirects, 15-second timeout, and email alerts. No duplicate monitor or paid resource was created.
+- Supabase project `jewzonxplxhogqrnhosl` currently has 97 migration-ledger entries through `20261017133157_roshan_revoke_legacy_invoice_number_20261017`. This confirms the security bundle and subsequent insurance/invoice hardening migrations are recorded; it does not prove a full clean replay from a reviewed baseline.
+- A fresh catalog audit confirmed branch-helper expressions on all 40 policies across these 10 child tables: `followups`, `invoice_items`, `lab_order_items`, `medical_certificates`, `patient_discounts`, `prescription_items`, `prescriptions`, `procedure_orders`, `procedure_results`, and `queue_tickets`. The queue-ticket DELETE policy remains intentionally super-admin-only and also checks parent/branch access.
+- **Residual gap found:** all 3 existing policies on `public.insurance_prior_authorizations` (`SELECT`, `INSERT`, `UPDATE`) still only check `app_has_perm(...)` and do not enforce the patient/branch context. The table links to `public.patient_insurance` through `patient_insurance_id`; that parent has `patient_id`, so a narrowly scoped parent-branch predicate can be designed. Do not claim branch isolation is complete until this table is covered by a tracked migration and synthetic cross-branch regression tests. No production SQL was run to change policies or grants during this audit.
+- Supabase Security Advisor returned 21 WARN findings: 20 authenticated-callable `SECURITY DEFINER` functions and the `pg_trgm` extension in `public`. These need per-function call-site/privilege review; do not blanket-revoke RPCs or move/drop objects without compatibility tests. PostgreSQL configuration details were not returned by the connected read-only endpoint, so they remain unknown rather than assumed secure.
+- Migration replay remains a release gate: 92/93 normalized source matches in the last documented parity run, with one intentionally redacted environment-specific identity-link migration and no reviewed initial schema baseline. No paid database branch/project was created.
+
+### Next execution order
+1. Add a source-only migration for branch-aware RLS on `insurance_prior_authorizations`, reusing the established patient-branch helper and preserving the existing permission checks.
+2. Extend the disposable PostgreSQL 17 fixture and regression suite to prove same-branch allow, cross-branch SELECT/INSERT/UPDATE denial, mismatched/NULL parent fail-closed behavior, and unchanged permission semantics. Wire the test into free GitHub Actions.
+3. Audit insurance prior-authorization application call sites and review the exact migration order against the 97-entry live ledger; do not apply another production migration until the test and rollback/recovery plan are reviewed.
+4. Continue per-function review of the 20 Advisor warnings, using repository call-site evidence; leave paid-only leaked-password protection unresolved on the current free plan.
+5. Continue the separate authenticated browser/mobile RTL clinical workflow audit. Uptime `UP` and CI green do not establish clinical readiness.
+
+
