@@ -1118,3 +1118,14 @@ The current checklist is 65/156 = 41.7%. The data reset and audit work do not co
 - PR #54 finance-only RPC integration and CI passed on `f002a7944bc219fbca305901434d9ccbd42ed8a9`; exhaustive role × RPC and full-chain replay remain gates.
 - No PR merged and no production SQL/policies/grants/data changed. Full migration replay remains blocked by the missing trustworthy pre-migration baseline and the intentionally redacted one-time identity link. Do not guess a baseline.
 - Detailed findings and check links: [SECURITY_PR_REVIEW.md](SECURITY_PR_REVIEW.md).
+
+
+## No-cost source parity gate — 2026-10-17
+
+- User explicitly disallows any paid service usage. Do not create Supabase branches/projects or incur charges. Focused PostgreSQL 17 tests use free GitHub Actions runners for this public repository.
+- Added `scripts/verify-migration-source-parity.py` and wired it into `.github/workflows/ci.yml`. The verifier reads repository files only and makes no database connection. Its isolated simulation passed: **93 mappings, 92 normalized source hashes verified, one intentionally redacted placeholder**. The dedicated workflow passed; on main commit `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`, all 13 checks were successful, including CodeQL for Python and JavaScript/TypeScript.
+- PR #54 gained authenticated/anon EXECUTE assertions for all six finance write/reversal RPCs. Its dedicated finance integration passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`; general CI was still in progress at last poll. Re-query before merge.
+- Regression updates: #50 parent-changing invoice-item UPDATE; #51 certificate/procedure/discount parent changes plus helper-grant and fixture postconditions; #52 follow-up/queue parent changes; #53 prescription/lab child parent changes. Dedicated PostgreSQL 17 suites passed on their latest noted test heads; PR #51's full CI passed on `70eb7a38e66f448c0a4f5cb2a28d3c1d30207c52`.
+- All PRs #50–#54 remain open/draft and unmerged. No production SQL, grants, policies, or rows were changed.
+- The 93-entry source comparison remains a text-level parity check, not a clean-chain replay or semantic proof. Full replay is blocked by absence of a reviewed pre-migration baseline and one intentionally redacted environment-specific identity-link migration. Do not invent the baseline or run replay against production.
+- Evidence and limitations: [security review](SECURITY_PR_REVIEW.md), [source parity manifest](recovered-migrations/source-parity-report.json), [migration reconciliation](DB_MIGRATION_RECONCILIATION.md).

@@ -153,3 +153,11 @@ Last reviewed: 2026-10-16. Purpose: turn available integrations into repeatable 
 - Existing test workflows on PRs #50, #52, #53, and #54 passed after their latest test updates; PR #51's dedicated parent-branch integration passed, while general CI was still running at last poll. Recheck current heads before merging.
 - The full 93-migration clean replay remains blocked by lack of a reviewed pre-migration baseline and one intentionally redacted identity-link migration. Do not use production or a guessed schema for replay.
 - See `docs/SECURITY_PR_REVIEW.md` for exact findings and commit SHAs.
+
+
+## No-cost source parity verification — 2026-10-17
+
+- Added `scripts/verify-migration-source-parity.py`, a repository-only check for the 93-entry manifest, normalized SQL hashes, mapping completeness, and the redacted placeholder's non-executable status. It is wired into the existing main CI and a focused workflow; it does not connect to Supabase.
+- Local isolated simulation passed with 92 matching hashes and one redacted placeholder. Dedicated CI passed on main SHA `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`; all 13 checks on that SHA were successful.
+- Use free GitHub Actions PostgreSQL 17 services for isolated database tests. No paid Supabase branch/project was created. Full historical replay remains blocked by the missing pre-migration baseline and redacted one-time identity link.
+- Detailed evidence: `docs/SECURITY_PR_REVIEW.md` and `docs/DB_MIGRATION_RECONCILIATION.md`.

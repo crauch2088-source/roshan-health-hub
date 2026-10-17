@@ -84,3 +84,12 @@ Read-only inspection of the connected production project found:
 - No paid Supabase branch/project was created. Isolated PostgreSQL 17 tests run on GitHub Actions public-repository runners.
 - Latest observed passing test heads: #50 `ba5f742a05bb912ec169a056e9c29a0b08967f64`; #52 `2fdb444743603ad383e4c774cc35060f3aea21e7`; #53 `8187d1d95e2b6d485163a8805947abee71ad086e`. #51 parent-branch integration passed on `70eb7a38e66f448c0a4f5cb2a28d3c1d30207c52`; general CI was still in progress at the time of this note. #54 existing finance-only RPC integration and CI passed on `f002a7944bc219fbca305901434d9ccbd42ed8a9`.
 - No production SQL, grants, policies, or rows were modified.
+
+
+## No-cost verification and latest regression work — 2026-10-17
+
+- No paid Supabase resources were created. Focused PostgreSQL 17 regression tests use GitHub Actions runners; the new source-parity verifier checks repository files only.
+- Main commit `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c` passed all 13 checks, including the new migration source parity job and both CodeQL language analyses. The verifier checked all 93 manifest mappings: 92 normalized hashes match and one redacted file is correctly marked non-executable.
+- PR #54 now checks authenticated EXECUTE and anon denial for all six finance write/reversal RPCs. The focused finance integration passed on `d0d818a9988216cdfc52723d7e9ffae7402a50d1`; general CI was still in progress at last poll.
+- PRs #50–#53 now exercise parent-changing UPDATE paths. Latest noted PostgreSQL 17 integration suites passed; #51 full CI passed on `70eb7a38e66f448c0a4f5cb2a28d3c1d30207c52`. These are focused fixture tests, not proof of the entire historical migration chain.
+- Keep every PR #50–#54 open/draft until a trustworthy pre-migration baseline and safe replay handling for the redacted one-time identity-link migration are available. Do not guess the baseline or touch production for replay.

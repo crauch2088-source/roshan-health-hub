@@ -111,3 +111,12 @@ These PRs remain open/draft candidates. Their dedicated PostgreSQL 17 integratio
 - All PRs #50–#54 remain unmerged pending clean migration replay and any outstanding review gates. No production SQL or permissions changed.
 - Full replay is still not proven: 92/93 normalized source matches, one intentionally redacted environment-specific identity-link migration, and no reviewed pre-migration baseline. Do not guess the baseline or replay against production.
 - Details: [security PR review](docs/SECURITY_PR_REVIEW.md), [master plan](docs/MASTER_PLAN.md), [migration reconciliation](docs/DB_MIGRATION_RECONCILIATION.md), [source parity manifest](docs/recovered-migrations/source-parity-report.json).
+
+
+## No-cost migration parity gate — 2026-10-17
+
+- Added `scripts/verify-migration-source-parity.py` and wired it into the existing CI workflow. The new PostgreSQL-independent verifier passed against the complete source archive: 93 mappings, 92 normalized SQL hashes verified, one deliberately redacted non-executable placeholder. The dedicated GitHub Actions job passed on main commit `6f4409b48414fe3fe60ff45ab4b5898e9bc3887c`; all 13 checks on that commit were green, including both CodeQL language analyses.
+- PR #54 was strengthened to check authenticated/anon EXECUTE privileges for all six finance write/reversal RPCs. Its focused finance integration passed on test commit `d0d818a9988216cdfc52723d7e9ffae7402a50d1`; general CI was still running at last poll.
+- No paid resources, Supabase branches, production SQL, grants, policies, or production data were changed. PRs #50–#54 remain unmerged pending full replay and remaining review gates.
+- Full replay remains unproven: the pre-migration schema baseline is missing and one identity-link migration is intentionally redacted. Never substitute a guessed baseline or replay against production.
+- Details: [security PR review](docs/SECURITY_PR_REVIEW.md), [master plan](docs/MASTER_PLAN.md), [source parity manifest](docs/recovered-migrations/source-parity-report.json).
