@@ -88,4 +88,93 @@ BEGIN
   END IF;
 END $idempotency$;
 
+
+DO $receipt_guards$
+DECLARE rejected boolean;
+BEGIN
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'EXPIRED-BATCH',current_date-1,current_date-30,1.00,2.50,NULL,NULL,'guard-expired-batch'
+    );
+    RAISE EXCEPTION 'test failed: expired pharmacy batch was accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN rejected := true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'expired batch guard did not reject the request'; END IF;
+
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'FUTURE-MANUFACTURE',current_date+30,current_date+1,1.00,2.50,NULL,NULL,'guard-future-manufacture'
+    );
+    RAISE EXCEPTION 'test failed: future manufacture date was accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN rejected := true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'future manufacture guard did not reject the request'; END IF;
+
+  UPDATE public.medicines SET active=false WHERE id='30000000-0000-0000-0000-000000000001';
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'INACTIVE-MEDICINE',NULL,NULL,1.00,2.50,NULL,NULL,'guard-inactive-medicine'
+    );
+    RAISE EXCEPTION 'test failed: inactive medicine was accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN rejected := true;
+  END;
+  UPDATE public.medicines SET active=true WHERE id='30000000-0000-0000-0000-000000000001';
+  IF NOT rejected THEN RAISE EXCEPTION 'inactive medicine guard did not reject the request'; END IF;
+
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'INACTIVE-SUPPLIER',NULL,NULL,1.00,2.50,'40000000-0000-0000-0000-000000000001',NULL,'guard-inactive-supplier'
+    );
+    RAISE EXCEPTION 'test failed: inactive supplier was accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN rejected := true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'inactive supplier guard did not reject the request'; END IF;
+
+  UPDATE public.users SET active=false WHERE id='10000000-0000-0000-0000-000000000001';
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'INACTIVE-USER',NULL,NULL,1.00,2.50,NULL,NULL,'guard-inactive-user'
+    );
+    RAISE EXCEPTION 'test failed: inactive application user was accepted';
+  EXCEPTION WHEN SQLSTATE '42501' THEN rejected := true;
+  END;
+  UPDATE public.users SET active=true WHERE id='10000000-0000-0000-0000-000000000001';
+  IF NOT rejected THEN RAISE EXCEPTION 'inactive user guard did not reject the request'; END IF;
+
+  PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000002',true);
+  PERFORM set_config('test.super_admin','true',true);
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'UNASSIGNED-SUPERADMIN',NULL,NULL,1.00,2.50,NULL,NULL,'guard-unassigned-superadmin'
+    );
+    RAISE EXCEPTION 'test failed: unassigned super-admin created an orphan batch';
+  EXCEPTION WHEN SQLSTATE '42501' THEN rejected := true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'unassigned super-admin guard did not reject the request'; END IF;
+  PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
+  PERFORM set_config('test.super_admin','false',true);
+
+  UPDATE public.medicines SET stock_quantity=2147483647 WHERE id='30000000-0000-0000-0000-000000000001';
+  rejected := false;
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '30000000-0000-0000-0000-000000000001',1,'OVERFLOW-BATCH',NULL,NULL,1.00,2.50,NULL,NULL,'guard-stock-overflow'
+    );
+    RAISE EXCEPTION 'test failed: integer stock overflow was accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN rejected := true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'stock overflow guard did not reject the request'; END IF;
+  IF (SELECT count(*) FROM public.pharmacy_inventory)<>2
+     OR (SELECT count(*) FROM public.stock_movements)<>2
+     OR (SELECT stock_quantity FROM public.medicines WHERE id='30000000-0000-0000-0000-000000000001')<>2147483647 THEN
+    RAISE EXCEPTION 'rejected receipt changed inventory, ledger, or stock total';
+  END IF;
+END $receipt_guards$;
+
 RESET ROLE; ROLLBACK;
