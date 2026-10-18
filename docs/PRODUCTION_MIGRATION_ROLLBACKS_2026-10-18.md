@@ -312,3 +312,10 @@ DROP FUNCTION IF EXISTS public.create_medical_certificate(uuid, text, date, date
 ```
 
 If Phase 29 must be rolled back, first roll the application back to a build that does not depend on the new RPC-only path. Restore direct write grants only to `authenticated` (never to `anon` or `PUBLIC`) on the six tables and restore `USAGE, SELECT, UPDATE` on `public.medical_certificates_id_seq`. Preserve SELECT grants, RLS, and all branch-aware policies. Prefer a forward fix over rolling back to direct writes.
+
+
+## Current rollout blocker — 2026-10-18
+
+The additive RPC migration is live under ledger name `roshan_clinical_child_write_rpcs`, version `20261018064638`. PR #74 is merged, but Vercel currently reports `Deployment rate limited — retry in 24 hours` for main commit `cd802b5d0e7ad8fa74212e6579220c3532604b6d`; the last confirmed production deployment is still `bfc34bba1a880b385bc356f3dca1db0fb5068fe1`.
+
+Do **not** apply Phase 29 while the canonical alias may still serve the old UI. Once the deployment is READY and the canonical alias resolves to the merged code, smoke-test certificate creation and lab-item completion through the RPCs, then apply Phase 29. If the deployment remains blocked, leave the direct-write grants intact; this preserves the currently deployed UI.
