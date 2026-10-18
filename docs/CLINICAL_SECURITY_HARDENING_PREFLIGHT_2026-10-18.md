@@ -99,5 +99,5 @@ This command is not executed. Do not use Supabase MCP apply_migration before app
 ## Limitations
 
 - Live schema/duplicate checks were SELECT-only; no function, grant, index, sequence or row was changed in Supabase.
-- The SQL assertion file checks catalog state after migration; behavior smoke tests still require an authenticated deployed frontend and isolated/staging records.
+- The SQL assertion file checks catalog state plus synthetic deleted-user, money-precision, visit/queue, lab-result and certificate behavior in disposable PostgreSQL 17. Real authenticated frontend smoke tests are still required before production rollout.
 - The unique indexes are safe against the observed snapshot only; concurrent writes can introduce duplicates between preflight and DDL. If index creation fails, stop and rerun the duplicate report; clean conflicts only under an approved merge/audit plan. Never delete a patient or claim automatically.
