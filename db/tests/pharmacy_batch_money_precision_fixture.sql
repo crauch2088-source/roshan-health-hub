@@ -10,6 +10,7 @@ GRANT UPDATE ON public.users,public.medicines TO authenticated;
 GRANT INSERT ON public.stock_movements TO authenticated;
 ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY stock_movements_insert ON public.stock_movements FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY stock_movements_select ON public.stock_movements FOR SELECT TO authenticated USING (true);
 CREATE FUNCTION public.current_app_user_id() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('test.user_id',true),'')::uuid $$;
 CREATE FUNCTION public.app_has_perm(p text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT COALESCE(current_setting('test.permissions',true) LIKE '%'||p||'%',false) $$;
 CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT COALESCE(current_setting('test.super_admin',true)='true',false) $$;
