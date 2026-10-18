@@ -212,9 +212,8 @@ BEGIN
 END;
 $constraint$;
 ALTER TABLE public.medical_certificates VALIDATE CONSTRAINT medical_certificates_visit_id_fkey;
--- The live preflight found zero certificate rows. Fail closed if rows appear before rollout;
--- never invent historical visit links to satisfy this invariant.
-ALTER TABLE public.medical_certificates ALTER COLUMN visit_id SET NOT NULL;
+-- Expand phase: keep visit_id nullable until the linked-visit UI is deployed.
+-- The contract migration enforces NOT NULL after the cutover.
 
 CREATE SEQUENCE IF NOT EXISTS public.medical_certificate_number_seq;
 ALTER TABLE public.medical_certificates ADD COLUMN IF NOT EXISTS certificate_number bigint;
@@ -286,11 +285,21 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.create_medical_certificate(uuid,text,date,date) FROM PUBLIC, anon, authenticated;
+-- Fail closed during the expand/deploy window: no certificate may be issued without a linked visit.
+CREATE OR REPLACE FUNCTION public.create_medical_certificate(
+  p_patient_id uuid, p_diagnosis text, p_start_date date, p_end_date date
+)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+BEGIN
+  RAISE EXCEPTION 'certificate issuance requires a linked visit; refresh the application'
+    USING ERRCODE = '55000';
+END;
+$function$;
+
 REVOKE ALL ON FUNCTION public.create_medical_certificate(uuid,text,date,date,uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_medical_certificate(uuid,text,date,date,uuid) TO authenticated;
-REVOKE ALL ON FUNCTION public.fn_dispense_prescription(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.lab_order_items FROM PUBLIC, anon, authenticated;
+-- Block direct inserts during expand; the new RPC remains SECURITY DEFINER and is granted below.
 REVOKE INSERT, UPDATE, DELETE ON TABLE public.medical_certificates FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON SEQUENCE public.medical_certificates_id_seq FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON SEQUENCE public.medical_certificate_number_seq FROM PUBLIC, anon, authenticated;
