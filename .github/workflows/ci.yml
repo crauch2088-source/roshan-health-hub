@@ -420,5 +420,6 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/clinical_security_hardening_fixture.sql \
             -f db/roshan_phase31_clinical_financial_security_hardening.sql \
+            -f db/roshan_phase31_contract_security_cutover.sql \
             -f db/tests/clinical_security_hardening_assertions.sql
 

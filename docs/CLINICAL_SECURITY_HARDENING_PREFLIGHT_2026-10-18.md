@@ -44,7 +44,8 @@ Legacy-name mentions in comments/history are not RPC invocations. The pharmacy U
 
 ## Prepared files
 
-- db/roshan_phase31_clinical_financial_security_hardening.sql
+- db/roshan_phase31_clinical_financial_security_hardening.sql (expand)
+- db/roshan_phase31_contract_security_cutover.sql (contract)
 - db/tests/clinical_security_hardening_assertions.sql
 - src/features/clinic/consultation/ConsultationPage.tsx
 - src/routes/_authenticated/certificates.tsx
@@ -54,14 +55,14 @@ Legacy-name mentions in comments/history are not RPC invocations. The pharmacy U
 
 ## Mandatory rollout gate
 
-This migration revokes direct DML on the clinical tables, revokes the legacy dispense RPC and disables the old four-argument certificate RPC. Therefore:
+The rollout is split into expand/contract because the new frontend requires RPCs that do not exist before the migration, while the old frontend must not continue creating unlinked certificates.
 
-1. Review the branch/PR and wait for CI (typecheck, lint, build, test guards).
-2. Deploy the matching frontend to the canonical production domain.
-3. Authenticated smoke-test invoice-backed pharmacy dispensing, lab result entry/completion, atomic visit/queue completion, and doctor-only visit-linked certificate issuance.
-4. Re-run the duplicate query below immediately before applying.
-5. Obtain explicit approval, then apply once.
-6. Run db/tests/clinical_security_hardening_assertions.sql against the migrated catalog and re-check Supabase security advisors.
+1. Review the branch/PR and wait for CI (typecheck, lint, build, and PostgreSQL 17 behavior tests).
+2. Obtain explicit approval to apply the expand migration: db/roshan_phase31_clinical_financial_security_hardening.sql. It adds the new RPCs/columns/indexes and strengthens helpers, financial validation and lab completion without revoking the legacy pharmacy RPC or lab-item DML.
+3. During the short expand/deploy window, certificate issuance is intentionally paused: the old four-argument RPC raises a clear error and direct certificate-table DML is revoked. Do not leave this window open longer than necessary.
+4. Deploy the matching frontend to the canonical production domain, then smoke-test invoice-backed pharmacy dispensing, lab result entry/completion, atomic visit/queue completion, and doctor-only visit-linked certificate issuance.
+5. Re-run the duplicate preflight queries below. Obtain explicit approval to apply db/roshan_phase31_contract_security_cutover.sql. It enforces visit_id NOT NULL and revokes the old pharmacy RPC and direct clinical-table writes.
+6. Run db/tests/clinical_security_hardening_assertions.sql after both migrations and re-check Supabase security advisors. If the NOT NULL step fails, stop and inspect any new certificate rows; never invent visit links.
 
 ### Read-only duplicate re-check
 
@@ -96,9 +97,12 @@ From a checkout authenticated to project jewzonxplxhogqrnhosl, after reviewing t
 # Do not run until frontend deployment/smoke tests pass and explicit approval is given.
 psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f db/roshan_phase31_clinical_financial_security_hardening.sql
+# Deploy the matching frontend and pass smoke tests; after separate approval, run:
+psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f db/roshan_phase31_contract_security_cutover.sql
 ~~~
 
-This command is not executed. Do not use Supabase MCP apply_migration before approval.
+Neither command is executed. Obtain explicit approval before each production migration; do not use Supabase MCP apply_migration before approval.
 
 ## Limitations
 

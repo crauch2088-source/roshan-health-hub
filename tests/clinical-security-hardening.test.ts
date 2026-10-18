@@ -7,6 +7,7 @@ const consultation = read("../src/features/clinic/consultation/ConsultationPage.
 const certificates = read("../src/routes/_authenticated/certificates.tsx");
 const pharmacy = read("../src/lib/pharmacy.ts");
 const migration = read("../db/roshan_phase31_clinical_financial_security_hardening.sql");
+const contractMigration = read("../db/roshan_phase31_contract_security_cutover.sql");
 const sqlAssertions = read("../db/tests/clinical_security_hardening_assertions.sql");
 const pkg = JSON.parse(read("../package.json")) as { scripts?: Record<string, string> };
 
@@ -58,11 +59,13 @@ test("Phase 31 migration includes the critical database guardrails", () => {
   assert.match(migration, /medical_certificate_number_seq/);
   assert.match(migration, /certificate_number bigint/);
   assert.match(
-    migration,
+    contractMigration,
     /fn_dispense_prescription\(uuid\)[\s\S]*FROM PUBLIC, anon, authenticated/,
   );
-  assert.match(migration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.lab_order_items/);
+  assert.match(contractMigration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.lab_order_items/);
   assert.match(migration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.medical_certificates/);
+  assert.match(contractMigration, /ALTER COLUMN visit_id SET NOT NULL/);
+  assert.match(migration, /certificate issuance requires a linked visit/);
 });
 
 test("catalog assertions are included in the repository and standard test command", () => {
