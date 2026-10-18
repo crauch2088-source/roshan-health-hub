@@ -101,7 +101,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/security_candidate_combined_fixture.sql \
-            -f db/roshan_security_candidate_bundle_20261017.sql \
+            -f db/roshan_security_candidate_bundle_20261017.sql
+            -f db/roshan_invoice_payment_money_precision.sql \
             -f db/roshan_phase27_revoke_legacy_invoice_number.sql \
             -f db/roshan_insurance_prior_authorization_branch_isolation.sql \
             -f db/tests/security_candidate_combined_integration.sql
