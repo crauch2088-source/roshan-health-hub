@@ -6,6 +6,7 @@ CREATE TABLE public.suppliers(id uuid PRIMARY KEY, active boolean NOT NULL DEFAU
 CREATE TABLE public.pharmacy_inventory(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), medicine_id uuid NOT NULL, batch_number text, batch_no text, expiry_date date, manufacture_date date, quantity numeric, quantity_received numeric, quantity_remaining numeric, purchase_price numeric(14,2), selling_price numeric(14,2), supplier_id uuid, invoice_reference text, branch_id uuid, created_by uuid, updated_by uuid);
 CREATE TABLE public.stock_movements(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), medicine_id uuid, batch_id uuid, movement_type text, quantity numeric, reference_id uuid, reference_table text, branch_id uuid, created_by uuid);
 GRANT SELECT ON public.medicines,public.pharmacy_inventory,public.stock_movements TO authenticated;
+GRANT UPDATE ON public.users,public.medicines TO authenticated;
 GRANT INSERT ON public.stock_movements TO authenticated;
 ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY stock_movements_insert ON public.stock_movements FOR INSERT TO authenticated WITH CHECK (true);
