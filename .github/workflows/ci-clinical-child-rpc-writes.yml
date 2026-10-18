@@ -1,0 +1,43 @@
+name: Clinical child RPC-only writes (PostgreSQL 17)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'db/roshan_phase28_clinical_child_write_rpcs.sql'
+      - 'db/roshan_phase29_clinical_child_rpc_only_writes.sql'
+      - 'db/tests/clinical_child_rpc_writes_fixture.sql'
+      - 'db/tests/clinical_child_rpc_writes_integration.sql'
+      - '.github/workflows/ci-clinical-child-rpc-writes.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'db/roshan_phase28_clinical_child_write_rpcs.sql'
+      - 'db/roshan_phase29_clinical_child_rpc_only_writes.sql'
+      - 'db/tests/clinical_child_rpc_writes_fixture.sql'
+      - 'db/tests/clinical_child_rpc_writes_integration.sql'
+      - '.github/workflows/ci-clinical-child-rpc-writes.yml'
+
+jobs:
+  clinical-child-rpc-writes:
+    name: clinical-child-rpc-writes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply fixture, forward RPCs, privilege revocations, and regression
+        env: { PGPASSWORD: postgres }
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/clinical_child_rpc_writes_fixture.sql \
+            -f db/roshan_phase28_clinical_child_write_rpcs.sql \
+            -f db/roshan_phase29_clinical_child_rpc_only_writes.sql \
+            -f db/tests/clinical_child_rpc_writes_integration.sql
