@@ -13,9 +13,9 @@ REVOKE ALL ON FUNCTION public.create_medical_certificate(uuid,text,date,date)
 REVOKE ALL ON FUNCTION public.fn_dispense_prescription(uuid)
   FROM PUBLIC, anon, authenticated;
 
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.lab_order_items
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public.lab_order_items
   FROM PUBLIC, anon, authenticated;
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.medical_certificates
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public.medical_certificates
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON SEQUENCE public.medical_certificates_id_seq
   FROM PUBLIC, anon, authenticated;

@@ -104,6 +104,47 @@ psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
 
 Neither command is executed. Obtain explicit approval before each production migration; do not use Supabase MCP apply_migration before approval.
 
+
+## Register Phase 31 in the Supabase migration ledger
+
+The read-only live preflight on 2026-10-18 confirmed supabase_migrations.schema_migrations contains 109 entries through version 20261018065708. The live table shape is version text NOT NULL, statements text[], name text, and created_by text. After each phase has actually been applied and postconditions pass, register the exact source SQL immediately; these are post-apply bookkeeping commands, not migration commands.
+
+~~~bash
+# AFTER the EXPAND SQL has succeeded; do not run before applying and verifying it.
+EXPAND_VERSION=20261018195500
+EXPAND_SQL="$(cat db/roshan_phase31_clinical_financial_security_hardening.sql)"
+psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -v migration_version="$EXPAND_VERSION" \
+  -v migration_sql="$EXPAND_SQL" \
+  -v migration_name="roshan_phase31_clinical_financial_security_hardening" \
+  -c "INSERT INTO supabase_migrations.schema_migrations(version, statements, name, created_by)
+      VALUES (:'migration_version', ARRAY[:'migration_sql'], :'migration_name', 'manual')
+      ON CONFLICT (version) DO NOTHING;"
+
+psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -v migration_version="$EXPAND_VERSION" -v migration_sql="$EXPAND_SQL" \
+  -c "SELECT version, name, statements[1] = :'migration_sql' AS exact_source_match
+      FROM supabase_migrations.schema_migrations WHERE version = :'migration_version';"
+
+# AFTER frontend deployment/smoke tests AND successful CONTRACT SQL.
+CONTRACT_VERSION=20261018195600
+CONTRACT_SQL="$(cat db/roshan_phase31_contract_security_cutover.sql)"
+psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -v migration_version="$CONTRACT_VERSION" \
+  -v migration_sql="$CONTRACT_SQL" \
+  -v migration_name="roshan_phase31_contract_security_cutover" \
+  -c "INSERT INTO supabase_migrations.schema_migrations(version, statements, name, created_by)
+      VALUES (:'migration_version', ARRAY[:'migration_sql'], :'migration_name', 'manual')
+      ON CONFLICT (version) DO NOTHING;"
+
+psql "$ROSHAN_PRODUCTION_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -v migration_version="$CONTRACT_VERSION" -v migration_sql="$CONTRACT_SQL" \
+  -c "SELECT version, name, statements[1] = :'migration_sql' AS exact_source_match
+      FROM supabase_migrations.schema_migrations WHERE version = :'migration_version';"
+~~~
+
+Each verification query must return exactly one row with exact_source_match = true. If a version already exists, compare the stored SQL first; ON CONFLICT DO NOTHING alone is not proof of source parity. The expected ledger count becomes 110 after Expand registration and 111 after Contract registration. These commands are documentation only; neither migration nor ledger was changed in production.
+
 ## Limitations
 
 - Live schema/duplicate checks were SELECT-only; no function, grant, index, sequence or row was changed in Supabase.

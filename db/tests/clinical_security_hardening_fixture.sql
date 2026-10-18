@@ -20,7 +20,17 @@ CREATE FUNCTION private.current_app_user_id() RETURNS uuid
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT NULL::uuid $body$;
 CREATE FUNCTION private.app_has_perm(_code text) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT true $body$;
+CREATE FUNCTION private.current_role_code() RETURNS text
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT NULL::text $body$;
 CREATE FUNCTION private.is_super_admin() RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$
+  SELECT COALESCE((SELECT private.current_role_code()) = 'super_admin', false)
+$body$;
+CREATE FUNCTION private.app_has_branch_access(uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT false $body$;
+CREATE FUNCTION private.app_has_claim_branch(uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT false $body$;
+CREATE FUNCTION private.app_has_invoice_branch(uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT false $body$;
 CREATE FUNCTION private.app_has_visit_branch_access(uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $$ SELECT true $$;
@@ -61,6 +71,7 @@ CREATE TABLE public.supplier_payments (
 CREATE TABLE public.patients (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, national_id text, deleted_at timestamptz
 );
+CREATE TABLE public.invoices (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.insurance_claims (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), invoice_id uuid, status text NOT NULL DEFAULT 'draft',
   deleted_at timestamptz

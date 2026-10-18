@@ -1,5 +1,5 @@
 -- Phase 31: security and clinical workflow hardening.
--- PRECONDITIONS: deploy the matching frontend first, then run authenticated smoke tests.
+-- Rollout order: (1) apply this EXPAND migration; (2) deploy the matching frontend; (3) pass authenticated smoke tests; (4) apply the separate CONTRACT migration only after explicit approval.
 -- Prepared in Git only; do not apply to production until explicit approval.
 -- Live PostgreSQL 17 schema verified: results are in lab_results; queue_tickets has visit_id/status/completed_at;
 -- medical_certificates has serial integer id; supplier_bills has total_amount/paid_amount.
@@ -33,6 +33,71 @@ AS $function$
         )
       )
   )
+$function$;
+
+
+-- Reject soft-deleted users in identity and branch helpers used by RLS/RPCs.
+CREATE OR REPLACE FUNCTION private.current_role_code()
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT r.code FROM public.users AS u
+  JOIN public.roles AS r ON r.id = u.role_id
+  WHERE u.auth_user_id = auth.uid()
+    AND COALESCE(u.active, true) = true
+    AND u.deleted_at IS NULL
+  ORDER BY u.id LIMIT 1
+$function$;
+
+CREATE OR REPLACE FUNCTION private.app_has_branch_access(_branch_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT COALESCE(private.is_super_admin(), false)
+    OR EXISTS (SELECT 1 FROM public.users AS u
+      WHERE u.auth_user_id = auth.uid()
+        AND COALESCE(u.active, true) = true
+        AND u.deleted_at IS NULL
+        AND u.branch_id = _branch_id)
+$function$;
+
+CREATE OR REPLACE FUNCTION private.app_has_claim_branch(_claim_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT COALESCE(private.is_super_admin(), false)
+    OR EXISTS (
+      SELECT 1 FROM public.insurance_claims AS c
+      JOIN public.invoices AS i ON i.id = c.invoice_id
+      WHERE c.id = _claim_id
+        AND i.branch_id = (SELECT u.branch_id FROM public.users AS u
+          WHERE u.auth_user_id = auth.uid()
+            AND COALESCE(u.active, true) = true
+            AND u.deleted_at IS NULL
+          ORDER BY u.id LIMIT 1))
+$function$;
+
+CREATE OR REPLACE FUNCTION private.app_has_invoice_branch(_invoice_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT COALESCE(private.is_super_admin(), false)
+    OR EXISTS (SELECT 1 FROM public.invoices AS i
+      WHERE i.id = _invoice_id
+        AND i.branch_id = (SELECT u.branch_id FROM public.users AS u
+          WHERE u.auth_user_id = auth.uid()
+            AND COALESCE(u.active, true) = true
+            AND u.deleted_at IS NULL
+          ORDER BY u.id LIMIT 1))
+$function$;
+
+CREATE OR REPLACE FUNCTION private.app_has_patient_branch(_patient_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT COALESCE(private.is_super_admin(), false)
+    OR EXISTS (SELECT 1 FROM public.patients AS p
+      WHERE p.id = _patient_id
+        AND p.branch_id = (SELECT u.branch_id FROM public.users AS u
+          WHERE u.auth_user_id = auth.uid()
+            AND COALESCE(u.active, true) = true
+            AND u.deleted_at IS NULL
+          ORDER BY u.id LIMIT 1))
 $function$;
 
 CREATE OR REPLACE FUNCTION public.post_cashbox_entry(
@@ -144,6 +209,9 @@ BEGIN
   IF v_status = 'cancelled' THEN
     RAISE EXCEPTION 'cancelled visit cannot be completed' USING ERRCODE = '22023';
   END IF;
+  IF v_status = 'completed' THEN
+    RETURN;
+  END IF;
   UPDATE public.visits
   SET status='completed', completed_at=COALESCE(completed_at, pg_catalog.now()),
       updated_by=v_user_id, updated_at=pg_catalog.now()
@@ -177,6 +245,13 @@ BEGIN
   END IF;
   IF NOT private.app_has_lab_order_item_branch_access(v_order_id) THEN
     RAISE EXCEPTION 'cross_branch_access_denied' USING ERRCODE = '42501';
+  END IF;
+  IF v_status = 'completed' THEN
+    RETURN;
+  END IF;
+  IF v_status = 'verified' THEN
+    RAISE EXCEPTION 'verified lab result is immutable; reopen through the correction workflow'
+      USING ERRCODE = '22023';
   END IF;
   IF v_status NOT IN ('pending','ordered','sample_collected','in_progress') THEN
     RAISE EXCEPTION 'invalid lab status transition' USING ERRCODE = '22023';
@@ -235,7 +310,7 @@ CREATE OR REPLACE FUNCTION public.create_medical_certificate(
 )
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $function$
-DECLARE v_user_id uuid; v_certificate_id integer; v_visit_patient_id uuid;
+DECLARE v_user_id uuid; v_certificate_id integer; v_visit_patient_id uuid; v_visit_status text; v_visit_branch_id uuid; v_patient_branch_id uuid;
 BEGIN
   IF NOT public.app_has_perm('certificates.create') THEN
     RAISE EXCEPTION 'certificate create permission required' USING ERRCODE = '42501';
@@ -261,16 +336,23 @@ BEGIN
   IF NULLIF(pg_catalog.btrim(COALESCE(p_diagnosis,'')), '') IS NULL THEN
     RAISE EXCEPTION 'certificate diagnosis is required' USING ERRCODE = '22023';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.patients AS p
-    WHERE p.id=p_patient_id AND p.deleted_at IS NULL
-  ) THEN
+  SELECT p.branch_id INTO v_patient_branch_id
+  FROM public.patients AS p
+  WHERE p.id=p_patient_id AND p.deleted_at IS NULL;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'active patient not found' USING ERRCODE = 'P0002';
   END IF;
-  SELECT v.patient_id INTO v_visit_patient_id
+  SELECT v.patient_id, v.status, v.branch_id
+  INTO v_visit_patient_id, v_visit_status, v_visit_branch_id
   FROM public.visits AS v WHERE v.id=p_visit_id AND v.deleted_at IS NULL;
   IF NOT FOUND OR v_visit_patient_id IS DISTINCT FROM p_patient_id THEN
     RAISE EXCEPTION 'visit does not belong to the selected patient' USING ERRCODE = '22023';
+  END IF;
+  IF v_visit_status = 'cancelled' THEN
+    RAISE EXCEPTION 'cancelled visit cannot be used for a medical certificate' USING ERRCODE = '22023';
+  END IF;
+  IF v_visit_branch_id IS DISTINCT FROM v_patient_branch_id THEN
+    RAISE EXCEPTION 'visit and patient branch mismatch' USING ERRCODE = '42501';
   END IF;
   IF NOT private.app_has_visit_branch_access(p_visit_id)
      OR NOT private.app_has_patient_branch(p_patient_id) THEN

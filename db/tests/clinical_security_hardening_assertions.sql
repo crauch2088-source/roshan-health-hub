@@ -9,6 +9,7 @@ DECLARE
   v_certificate_number bigint;
   v_doctor_role uuid := '00000000-0000-0000-0000-000000000001';
   v_clerk_role uuid := '00000000-0000-0000-0000-000000000002';
+  v_super_admin_role uuid := '00000000-0000-0000-0000-000000000003';
   v_doctor_id uuid := '00000000-0000-0000-0000-000000000011';
   v_deleted_id uuid := '00000000-0000-0000-0000-000000000012';
   v_clerk_id uuid := '00000000-0000-0000-0000-000000000013';
@@ -17,8 +18,13 @@ DECLARE
   v_clerk_auth uuid := '00000000-0000-0000-0000-000000000103';
   v_branch_id uuid := '00000000-0000-0000-0000-000000000201';
   v_patient_id uuid := '00000000-0000-0000-0000-000000000301';
+  v_branch_test_patient_id uuid := '00000000-0000-0000-0000-000000000303';
+  v_invoice_id uuid := '00000000-0000-0000-0000-000000000901';
+  v_claim_id uuid := '00000000-0000-0000-0000-000000000902';
   v_other_patient_id uuid := '00000000-0000-0000-0000-000000000302';
   v_visit_id uuid := '00000000-0000-0000-0000-000000000401';
+  v_visit_no_ticket_id uuid := '00000000-0000-0000-0000-000000000402';
+  v_cancelled_visit_id uuid := '00000000-0000-0000-0000-000000000403';
   v_ticket_id uuid := '00000000-0000-0000-0000-000000000501';
   v_lab_order_id uuid := '00000000-0000-0000-0000-000000000601';
   v_lab_item_id uuid := '00000000-0000-0000-0000-000000000602';
@@ -37,10 +43,16 @@ BEGIN
   IF has_function_privilege('authenticated','public.create_medical_certificate(uuid,text,date,date)','EXECUTE') THEN RAISE EXCEPTION 'legacy certificate RPC remains executable'; END IF;
   IF has_table_privilege('authenticated','public.lab_order_items','INSERT')
      OR has_table_privilege('authenticated','public.lab_order_items','UPDATE')
-     OR has_table_privilege('authenticated','public.lab_order_items','DELETE') THEN RAISE EXCEPTION 'direct DML remains on lab_order_items'; END IF;
+     OR has_table_privilege('authenticated','public.lab_order_items','DELETE')
+     OR has_table_privilege('authenticated','public.lab_order_items','TRUNCATE')
+     OR has_table_privilege('authenticated','public.lab_order_items','REFERENCES')
+     OR has_table_privilege('authenticated','public.lab_order_items','TRIGGER') THEN RAISE EXCEPTION 'direct DML/DDL-like privileges remain on lab_order_items'; END IF;
   IF has_table_privilege('authenticated','public.medical_certificates','INSERT')
      OR has_table_privilege('authenticated','public.medical_certificates','UPDATE')
-     OR has_table_privilege('authenticated','public.medical_certificates','DELETE') THEN RAISE EXCEPTION 'direct DML remains on medical_certificates'; END IF;
+     OR has_table_privilege('authenticated','public.medical_certificates','DELETE')
+     OR has_table_privilege('authenticated','public.medical_certificates','TRUNCATE')
+     OR has_table_privilege('authenticated','public.medical_certificates','REFERENCES')
+     OR has_table_privilege('authenticated','public.medical_certificates','TRIGGER') THEN RAISE EXCEPTION 'direct DML/DDL-like privileges remain on medical_certificates'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname='public' AND indexname='patients_active_national_id_normalized_uq') THEN RAISE EXCEPTION 'national ID unique index missing'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname='public' AND indexname='insurance_claims_one_active_nonrejected_per_invoice_uq') THEN RAISE EXCEPTION 'insurance claim unique index missing'; END IF;
   IF NOT EXISTS (
@@ -58,6 +70,16 @@ BEGIN
   IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'current_app_user_id ignores deleted_at'; END IF;
   v_definition := lower(pg_catalog.pg_get_functiondef('private.app_has_perm(text)'::regprocedure));
   IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'app_has_perm ignores deleted_at'; END IF;
+  v_definition := lower(pg_catalog.pg_get_functiondef('private.current_role_code()'::regprocedure));
+  IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'current_role_code ignores deleted_at'; END IF;
+  v_definition := lower(pg_catalog.pg_get_functiondef('private.app_has_branch_access(uuid)'::regprocedure));
+  IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'app_has_branch_access ignores deleted_at'; END IF;
+  v_definition := lower(pg_catalog.pg_get_functiondef('private.app_has_claim_branch(uuid)'::regprocedure));
+  IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'app_has_claim_branch ignores deleted_at'; END IF;
+  v_definition := lower(pg_catalog.pg_get_functiondef('private.app_has_invoice_branch(uuid)'::regprocedure));
+  IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'app_has_invoice_branch ignores deleted_at'; END IF;
+  v_definition := lower(pg_catalog.pg_get_functiondef('private.app_has_patient_branch(uuid)'::regprocedure));
+  IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'app_has_patient_branch ignores deleted_at'; END IF;
   v_definition := lower(pg_catalog.pg_get_functiondef('public.post_cashbox_entry(text,numeric,text,text,text,timestamptz)'::regprocedure));
   IF position('round(_amount, 2)' IN v_definition)=0 THEN RAISE EXCEPTION 'cashbox precision validation missing'; END IF;
   v_definition := lower(pg_catalog.pg_get_functiondef('public.post_supplier_payment(uuid,numeric,text,text,date,text)'::regprocedure));
@@ -71,7 +93,7 @@ BEGIN
   IF position('r.code=''doctor''' IN v_definition)=0 OR position('p_visit_id' IN v_definition)=0 THEN RAISE EXCEPTION 'certificate role/visit checks missing'; END IF;
 
   -- Synthetic authorization data: deleted users must be rejected even with a matching permission row.
-  INSERT INTO public.roles(id,code) VALUES (v_doctor_role,'doctor'),(v_clerk_role,'clerk');
+  INSERT INTO public.roles(id,code) VALUES (v_doctor_role,'doctor'),(v_clerk_role,'clerk'),(v_super_admin_role,'super_admin');
   INSERT INTO public.permissions(id,code) VALUES
     (v_permission_visits,'visits.update'),
     (v_permission_lab,'lab.update'),
@@ -86,11 +108,22 @@ BEGIN
     (v_clerk_role,v_permission_cert),(v_clerk_role,v_permission_test);
   INSERT INTO public.users(id,auth_user_id,active,deleted_at,branch_id,role_id) VALUES
     (v_doctor_id,v_doctor_auth,true,NULL,v_branch_id,v_doctor_role),
-    (v_deleted_id,v_deleted_auth,true,pg_catalog.now(),v_branch_id,v_clerk_role),
+    (v_deleted_id,v_deleted_auth,true,pg_catalog.now(),v_branch_id,v_super_admin_role),
     (v_clerk_id,v_clerk_auth,true,NULL,v_branch_id,v_clerk_role);
+  INSERT INTO public.patients(id,branch_id,national_id) VALUES (v_branch_test_patient_id,v_branch_id,'CI-ACCESS-TEST');
+  INSERT INTO public.invoices(id,branch_id) VALUES (v_invoice_id,v_branch_id);
+  INSERT INTO public.insurance_claims(id,invoice_id,status) VALUES (v_claim_id,v_invoice_id,'draft');
   PERFORM pg_catalog.set_config('test.auth_uid',v_deleted_auth::text,false);
   IF private.current_app_user_id() IS NOT NULL THEN RAISE EXCEPTION 'soft-deleted user resolved as current user'; END IF;
   IF private.app_has_perm('test.permission') THEN RAISE EXCEPTION 'soft-deleted user retained permission'; END IF;
+  IF private.current_role_code() IS NOT NULL THEN RAISE EXCEPTION 'soft-deleted super-admin retained role code'; END IF;
+  IF private.is_super_admin() OR public.is_super_admin() THEN RAISE EXCEPTION 'soft-deleted super-admin still resolves as super-admin'; END IF;
+  IF private.app_has_branch_access(v_branch_id)
+     OR private.app_has_claim_branch(v_claim_id)
+     OR private.app_has_invoice_branch(v_invoice_id)
+     OR private.app_has_patient_branch(v_branch_test_patient_id) THEN
+    RAISE EXCEPTION 'soft-deleted super-admin retained branch access';
+  END IF;
 
   PERFORM pg_catalog.set_config('test.auth_uid',v_doctor_auth::text,false);
   v_user_id := private.current_app_user_id();
@@ -141,6 +174,16 @@ BEGIN
   IF v_status IS DISTINCT FROM 'completed' THEN RAISE EXCEPTION 'visit was not completed'; END IF;
   SELECT status INTO v_status FROM public.queue_tickets WHERE id=v_ticket_id;
   IF v_status IS DISTINCT FROM 'completed' THEN RAISE EXCEPTION 'queue ticket was not completed'; END IF;
+  UPDATE public.visits SET updated_at='2000-01-01 00:00:00+00' WHERE id=v_visit_id;
+  PERFORM public.complete_visit_atomic(v_visit_id);
+  IF (SELECT updated_at FROM public.visits WHERE id=v_visit_id) <> '2000-01-01 00:00:00+00'::timestamptz THEN
+    RAISE EXCEPTION 'completed visit retry changed updated_at';
+  END IF;
+  INSERT INTO public.visits(id,branch_id,patient_id,status) VALUES (v_visit_no_ticket_id,v_branch_id,v_patient_id,'in_progress');
+  PERFORM public.complete_visit_atomic(v_visit_no_ticket_id);
+  IF (SELECT status FROM public.visits WHERE id=v_visit_no_ticket_id) IS DISTINCT FROM 'completed' THEN
+    RAISE EXCEPTION 'visit without queue ticket did not complete';
+  END IF;
 
   -- Lab completion fails without a result, then succeeds with a numeric result.
   INSERT INTO public.lab_orders(id) VALUES (v_lab_order_id);
@@ -156,12 +199,25 @@ BEGIN
   PERFORM public.complete_lab_order_item(v_lab_item_id);
   SELECT status INTO v_status FROM public.lab_order_items WHERE id=v_lab_item_id;
   IF v_status IS DISTINCT FROM 'completed' THEN RAISE EXCEPTION 'lab item did not complete with a result'; END IF;
+  PERFORM public.complete_lab_order_item(v_lab_item_id);
+  UPDATE public.lab_order_items SET status='verified' WHERE id=v_lab_item_id;
+  BEGIN
+    PERFORM public.complete_lab_order_item(v_lab_item_id);
+    RAISE EXCEPTION 'verified lab item was allowed to transition back to completed';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
 
   -- Certificate issuance links a real visit, uses a unique sequence, and denies non-doctors.
   v_certificate_id := public.create_medical_certificate(v_patient_id,'CI test diagnosis',CURRENT_DATE,CURRENT_DATE,v_visit_id);
   SELECT certificate_number INTO v_certificate_number FROM public.medical_certificates WHERE id=v_certificate_id;
   IF v_certificate_number IS NULL THEN RAISE EXCEPTION 'certificate serial was not assigned'; END IF;
   INSERT INTO public.patients(id,branch_id,national_id) VALUES (v_other_patient_id,v_branch_id,'CI-TEST-002');
+  INSERT INTO public.visits(id,branch_id,patient_id,status) VALUES (v_cancelled_visit_id,v_branch_id,v_patient_id,'cancelled');
+  BEGIN
+    PERFORM public.create_medical_certificate(v_patient_id,'Cancelled visit test',CURRENT_DATE,CURRENT_DATE,v_cancelled_visit_id);
+    RAISE EXCEPTION 'certificate accepted a cancelled visit';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
   BEGIN
     PERFORM public.create_medical_certificate(v_other_patient_id,'Mismatch test',CURRENT_DATE,CURRENT_DATE,v_visit_id);
     RAISE EXCEPTION 'certificate accepted a visit for a different patient';

@@ -85,6 +85,7 @@ function CertificatesPageInner() {
         .select("id,visit_number,visit_date,status,patient_id")
         .eq("patient_id", form.patient_id)
         .is("deleted_at", null)
+        .neq("status", "cancelled")
         .order("visit_date", { ascending: false })
         .limit(50),
     { enabled: Boolean(form.patient_id) },

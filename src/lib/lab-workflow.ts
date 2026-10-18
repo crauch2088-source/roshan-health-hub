@@ -23,3 +23,9 @@ export function isAbnormalLabResult(value: string, low: number, high: number): b
   if (!Number.isFinite(numeric)) return false;
   return (low !== 0 && numeric < low) || (high !== 0 && numeric > high);
 }
+
+
+/** True when the user has at least one non-blank result for a lab order item. */
+export function hasLabItemResultInput(itemId: string, parameterIds: string[], values: Record<string, string>): boolean {
+  return parameterIds.some((parameterId) => (values[itemId + ":" + parameterId] ?? "").trim().length > 0);
+}
