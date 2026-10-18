@@ -18,7 +18,7 @@ CREATE TABLE public.role_permissions (role_id uuid, permission_id uuid);
 
 CREATE FUNCTION private.current_app_user_id() RETURNS uuid
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT NULL::uuid $body$;
-CREATE FUNCTION private.app_has_perm(text) RETURNS boolean
+CREATE FUNCTION private.app_has_perm(_code text) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT true $body$;
 CREATE FUNCTION private.is_super_admin() RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT false $body$;
