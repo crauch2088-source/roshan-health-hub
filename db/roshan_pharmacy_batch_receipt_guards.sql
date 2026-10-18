@@ -202,4 +202,10 @@ GRANT EXECUTE ON FUNCTION public.fn_receive_pharmacy_batch_atomic(
   uuid, numeric, text, date, date, numeric, numeric, uuid, text, text
 ) TO authenticated;
 
+-- The frontend has no remaining call site for the legacy, non-idempotent receive RPC.
+-- Keep its definition for rollback/recovery, but remove it from the authenticated API.
+REVOKE ALL ON FUNCTION public.fn_receive_pharmacy_batch(
+  uuid, numeric, text, date, date, numeric, numeric, uuid, text
+) FROM PUBLIC, anon, authenticated;
+
 COMMIT;
