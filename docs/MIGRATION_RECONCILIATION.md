@@ -5,11 +5,11 @@ Production project ref: `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, eu-west-1)
 
 ## Current verified state — 2026-10-18
 
-- The live Supabase migration ledger contains **105 applied entries**; latest is `20261018062939_roshan_pharmacy_batch_receipt_guards`.
-- The frozen historical snapshot remains 93 entries: 92 normalized SQL matches and one intentionally redacted environment-specific identity mapping. The separate forward delta tracks **12 source mappings**. Source-file hashes are verified against repository content, but the current tools do not expose stored live SQL hashes; do not claim semantic equivalence or a complete clean-bootstrap replay.
+- The live Supabase migration ledger contains **106 applied entries**; latest is `20261018063549_roshan_phase19_invoice_rpc_only_writes`.
+- The frozen historical snapshot remains 93 entries: 92 normalized SQL matches and one intentionally redacted environment-specific identity mapping. The separate forward delta tracks **13 source mappings**. Source-file hashes are verified against repository content, but the current tools do not expose stored live SQL hashes; do not claim semantic equivalence or a complete clean-bootstrap replay.
 - Live catalog verification: **56/56** public base tables have RLS; 45 SECURITY DEFINER functions exist, none lacks a fixed `search_path`, none is executable by `anon`, and 20 are executable by `authenticated` for reviewed application RPCs.
-- Direct `INSERT` to `stock_movements` is denied to `authenticated` and `anon`; the legacy non-idempotent receive RPC is no longer executable by `authenticated`; the atomic idempotent receipt RPC is executable by `authenticated` but not `anon`.
-- Pharmacy inventory batches and stock-movement rows remained at zero before and after the two receipt migrations. The migrations changed schema/function grants only; no business rows were created or updated.
+- Direct `INSERT` to `stock_movements` is denied to `authenticated` and `anon`; the legacy non-idempotent receive RPC is no longer executable by `authenticated`; the atomic idempotent receipt RPC is executable by `authenticated` but not `anon`. Direct DML on `invoices` and `invoice_items` is also denied to `authenticated`, while the reviewed atomic invoice RPCs remain available.
+- Pharmacy inventory batches and stock-movement rows remained at zero before and after the two receipt migrations; invoice and invoice-item row counts were also zero before and after the invoice write migration. The migrations changed schema/function grants only; no business rows were created or updated.
 - The initial schema baseline remains missing and the environment-specific identity mapping remains intentionally redacted. Full historical replay is still unproven.
 
 ---

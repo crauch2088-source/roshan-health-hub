@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 105,
-  "latest_live_version": "20261018062939",
+  "live_ledger_count": 106,
+  "latest_live_version": "20261018063549",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 12,
+  "forward_migration_count": 13,
   "entries": [
     {
       "version": "20261017125924",
@@ -111,6 +111,15 @@
       "source_path": "db/roshan_pharmacy_batch_receipt_guards.sql",
       "source_git_blob_sha": "cd8f0f62c607797123d40ceb6e672cab167c75b2",
       "normalized_source_sql_sha256": "70f7f2917665e3befdc2ac0efb4f77751fc9b43dc2bb043098de377e3fcd629c",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API after PostgreSQL 17 integration passed; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
+    },
+    {
+      "version": "20261018063549",
+      "name": "roshan_phase19_invoice_rpc_only_writes",
+      "source_path": "db/roshan_phase19_invoice_rpc_only_writes.sql",
+      "source_git_blob_sha": "e0b38216b4fdbebae41cd76b0256bfe0f1040e2b",
+      "normalized_source_sql_sha256": "1e8ad14649b61bb30a73381b9426b92c1e4d14ce0e6ff1409a99920af84c532a",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API after PostgreSQL 17 integration passed; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
     }
