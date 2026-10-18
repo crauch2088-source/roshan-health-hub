@@ -1540,12 +1540,12 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - All affected live tables had **0 rows** before and after the migration; no business rows were changed.
 - The forward-source delta now contains 14 source mappings on top of the frozen 93-entry historical snapshot. This still does not prove a clean full historical replay or stored live SQL hash equality.
 
-### Next implementation batch — RPC-only clinical writes
+### Next implementation batch — RPC-only clinical writes (deployment-gated)
 
-1. Revoke direct INSERT/UPDATE/DELETE on `prescriptions` and `prescription_items` only after the existing `create_prescription_atomic` RPC is verified to cover all client write paths and its PostgreSQL integration test proves the wrapper remains callable.
-2. Consider revoking direct INSERT on `lab_order_items` because new order/item creation already uses `create_lab_order_with_invoice_atomic`; retain direct UPDATE for status/result workflows until those paths are moved to an RPC.
-3. Keep direct INSERT on `medical_certificates` until a dedicated validated RPC exists; its current UI creates certificates directly.
-4. Audit `patient_discounts` and `insurance_prior_authorizations` for any direct UI write paths before restricting their DML. Do not revoke privileges merely because a table has a branch-aware RLS policy.
+1. PR #74 is merged and the static source guard now confirms prescription creation, lab-order creation/completion, and medical-certificate creation use their validated RPCs; no direct client DML remains in `src` for the six Phase-29 tables.
+2. The additive RPC migration is live under ledger entry `20261018064638_roshan_clinical_child_write_rpcs`; its two function definitions match repository source after normalization. Do not apply Phase 28 again.
+3. Phase 29 remains unapplied. The latest main commit `cd802b5d0e7ad8fa74212e6579220c3532604b6d` has a Vercel check failure `Deployment rate limited — retry in 24 hours`; the last confirmed production deployment is still `bfc34bba1a880b385bc356f3dca1db0fb5068fe1`.
+4. Do not revoke direct DML until the canonical production alias is confirmed to serve the merged RPC call sites. Once Vercel allows a deployment, verify the deployed commit and run smoke checks, then apply Phase 29 and verify direct DML is denied while RPCs remain callable.
 
 
 ## Execution update — 2026-10-18: clinical child RPC rollout staged and Phase 28 applied
@@ -1553,4 +1553,5 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - The dedicated PostgreSQL 17 regression passed on `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`; it verifies direct-DML denial after Phase 29, retained SELECT/RLS, authenticated-only RPC execution, same-branch success, cross-branch denial, and invalid certificate dates.
 - Applied `roshan_clinical_child_write_rpcs` to production as ledger version `20261018064638`. Read-back confirms both RPCs are `SECURITY DEFINER`, use `search_path = ''`, and are executable by `authenticated` but not `anon`/`PUBLIC`. No business rows were modified; the six target tables remain empty.
 - The current live ledger has **108 entries**; the forward-source delta has **15 mappings** over the frozen 93-entry snapshot. This does not prove stored live SQL hash equality or full historical replay.
-- Frontend code is now being switched to `complete_lab_order_item` and `create_medical_certificate`; Phase 29 remains unapplied until the new app deployment and smoke checks succeed.
+- PR #74 is merged; the source now calls `complete_lab_order_item` and `create_medical_certificate`. Phase 29 remains unapplied until the new app deployment and smoke checks succeed.
+- The Vercel check on main is currently blocked by the free-plan deployment rate limit; production is still serving the earlier main deployment, so applying Phase 29 now would break the old direct-write UI.
