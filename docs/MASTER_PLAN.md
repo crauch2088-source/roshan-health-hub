@@ -1493,3 +1493,26 @@ Two further tested migrations were applied after the 101-entry state above:
 5. Re-run migration-source parity against the current 104-entry live ledger and keep the missing initial schema baseline and intentionally redacted environment-specific identity mapping explicitly unresolved. The source-parity workflow is not proof of full historical replay.
 6. Continue role-by-role phone-first RTL/LTR clinical workflow and visual acceptance tests before declaring clinical launch readiness.
 
+
+
+## Execution update — 2026-10-18: pharmacy receipt guard hardening applied
+
+### Completed and read-back verified
+
+- PostgreSQL 17 regression coverage was expanded test-first and passed for receipt idempotency, precision, expired/future dates, inactive medicine/supplier/user, stock overflow, direct ledger-write denial, legacy RPC retirement, and safe global-admin branch resolution.
+- Production migration `roshan_pharmacy_batch_receipt_guards` was applied as ledger version `20261018062939` after the disposable PostgreSQL 17 workflow passed. The live ledger now has **105 entries**; this migration appears exactly once.
+- The new atomic receipt RPC requires an active application user with `pharmacy.update`, an active medicine, valid optional supplier, valid dates and prices, a concrete branch context, and a stock total that cannot overflow the integer aggregate.
+- For a global super-admin without a profile branch, the RPC uses the sole active branch only when exactly one exists; with zero or multiple active branches it fails closed. This avoids orphan stock now while preserving multi-branch safety later.
+- Authenticated users can execute the atomic RPC; `anon` cannot. The legacy non-idempotent `fn_receive_pharmacy_batch` is no longer executable by `authenticated`. Direct `INSERT` on `stock_movements` and its insert policy were removed after confirming the inventory and pharmacy UI no longer write the ledger directly.
+- Live catalog read-back: **56/56** public base tables have RLS; **45** SECURITY DEFINER functions exist, **0** lack a fixed `search_path`, **0** are executable by `anon`, and **20** are executable by `authenticated` for reviewed app RPCs. Security Advisor now reports 20 authenticated-callable SECURITY DEFINER warnings, one extension-in-public warning, and one plan-gated leaked-password-protection warning.
+- Inventory batches and stock-movement rows remained **0** before and after both migrations. No patient, invoice, pharmacy, or accounting rows were created or changed by this DDL work.
+- The canonical production URL `https://roshan-health-hub.vercel.app/` returned HTTP 200 with the Arabic RTL app shell. This is a route smoke check, not authenticated end-to-end clinical acceptance.
+
+### Current gates
+
+1. Keep the historical 93-entry source-parity snapshot frozen; update the separate forward delta to 12 source mappings for the 105-entry ledger. The live database does not expose stored migration SQL hashes, so the workflow must not claim live SQL hash equality or full historical replay.
+2. Merge PR #71 only after the refreshed source-parity workflow and full CI pass on the final documentation commit.
+3. Close stale draft PR #29 as superseded after PR #71 is merged; its original SQL was not applied. Do not merge its 208-commit-behind branch over the new atomic flow.
+4. Review the stacked finance/invoice and clinical child-row proposals against current `main`; do not merge their old base branches blindly.
+5. Continue role-by-role phone-first RTL/LTR clinical workflow tests and visual/UAT review before declaring clinical launch readiness.
+

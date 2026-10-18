@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 103,
-  "latest_live_version": "20261017231629",
+  "live_ledger_count": 105,
+  "latest_live_version": "20261018062939",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 10,
+  "forward_migration_count": 12,
   "entries": [
     {
       "version": "20261017125924",
@@ -95,6 +95,24 @@
       "normalized_source_sql_sha256": "be664b3b7c41323c3414106b498d85c58c30fde0f98ee7765469b16e26718979",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact SQL source text was submitted to the Supabase migration API; ledger version/name read back."
+    },
+    {
+      "version": "20261018061746",
+      "name": "roshan_pharmacy_batch_receipt_idempotency",
+      "source_path": "db/roshan_pharmacy_batch_receipt_idempotency.sql",
+      "source_git_blob_sha": "9c0d74bc9989904fc1eaa7b6720143fab33d6e16",
+      "normalized_source_sql_sha256": "479bc455bcff15c2fc3c69fd18c70e0b41fc3e5c01488e8c94bb8ace44469bf6",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API before PR #69 merge; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
+    },
+    {
+      "version": "20261018062939",
+      "name": "roshan_pharmacy_batch_receipt_guards",
+      "source_path": "db/roshan_pharmacy_batch_receipt_guards.sql",
+      "source_git_blob_sha": "cd8f0f62c607797123d40ceb6e672cab167c75b2",
+      "normalized_source_sql_sha256": "70f7f2917665e3befdc2ac0efb4f77751fc9b43dc2bb043098de377e3fcd629c",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API after PostgreSQL 17 integration passed; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
     }
   ],
   "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."

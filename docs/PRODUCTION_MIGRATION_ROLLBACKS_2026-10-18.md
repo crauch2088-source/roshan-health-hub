@@ -265,3 +265,14 @@ DROP FUNCTION IF EXISTS public.fn_receive_pharmacy_batch_atomic(
 ```
 
 This intentionally leaves the `idempotency_key` column and its partial unique index in place. Do not drop them if any row has a non-null key. If a later cleanup is explicitly approved, first prove `SELECT count(*) FROM public.pharmacy_inventory WHERE idempotency_key IS NOT NULL` returns zero, verify no deployed client calls the RPC, and separately review the data-retention impact before dropping the index/column. Do not revert the existing `fn_receive_pharmacy_batch` implementation as part of this rollback.
+
+
+## Pharmacy receipt guard migration — 2026-10-18
+
+Applied migration: `roshan_pharmacy_batch_receipt_guards`, ledger version `20261018062939`. It replaces the existing atomic idempotent RPC with stricter eligibility, branch, date, and overflow checks; revokes authenticated execution of the legacy non-idempotent receive RPC; and removes direct authenticated INSERT permission/policy for `stock_movements`.
+
+**Preferred recovery is a forward fix.** Keep the `idempotency_key` column/index, the direct stock-movement INSERT revocation, and the legacy-RPC revocation. Do not roll back to client-side ledger writes.
+
+If a severe regression requires reverting only the new eligibility function body, reapply the reviewed `db/roshan_pharmacy_batch_receipt_idempotency.sql` function definition after verifying the current app still calls the atomic RPC. Do **not** restore `stock_movements` INSERT to `authenticated`, do not recreate `stock_movements_insert`, and do not re-grant `fn_receive_pharmacy_batch` to `authenticated`. This emergency fallback loses the newer medicine/supplier/date/branch/overflow guards, so it should be temporary and followed by a forward fix. Preserve idempotency history and do not drop the column/index.
+
+The global super-admin branch fallback intentionally uses the sole active branch only. If multiple branches are active and a global super-admin has no assigned branch, the RPC fails closed; assign a branch or implement an explicit target-branch selection rather than weakening isolation.
