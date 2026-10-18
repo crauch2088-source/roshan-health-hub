@@ -10,9 +10,7 @@ export type KeyboardShortcutInput = {
 };
 
 export type KeyboardShortcutAction =
-  | { type: "none" }
-  | { type: "search" }
-  | { type: "navigate"; path: string };
+  { type: "none" } | { type: "search" } | { type: "navigate"; path: string };
 
 /**
  * Resolve shortcuts from physical key codes rather than `event.key`, which
@@ -39,12 +37,7 @@ export function resolveKeyboardShortcut(
     return { type: "search" };
   }
 
-  if (
-    input.typing ||
-    !(input.metaKey || input.ctrlKey) ||
-    !input.shiftKey ||
-    input.altKey
-  ) {
+  if (input.typing || !(input.metaKey || input.ctrlKey) || !input.shiftKey || input.altKey) {
     return { type: "none" };
   }
 

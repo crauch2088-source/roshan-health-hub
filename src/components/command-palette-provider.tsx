@@ -31,10 +31,10 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
       const target = e.target as HTMLElement | null;
       const typing = Boolean(
         target &&
-          (target.tagName === "INPUT" ||
-            target.tagName === "TEXTAREA" ||
-            target.tagName === "SELECT" ||
-            target.isContentEditable),
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable),
       );
       const action = resolveKeyboardShortcut(
         {

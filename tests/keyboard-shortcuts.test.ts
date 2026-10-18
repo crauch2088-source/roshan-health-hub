@@ -72,11 +72,19 @@ test("navigation shortcuts do not fire while typing or during IME composition", 
 
 test("unknown and unmodified keys do nothing", () => {
   assert.deepEqual(
-    resolveKeyboardShortcut({ ...baseInput, code: "KeyZ", shiftKey: true }, () => true, permissionForRoute),
+    resolveKeyboardShortcut(
+      { ...baseInput, code: "KeyZ", shiftKey: true },
+      () => true,
+      permissionForRoute,
+    ),
     { type: "none" },
   );
   assert.deepEqual(
-    resolveKeyboardShortcut({ ...baseInput, code: "KeyP", ctrlKey: false }, () => true, permissionForRoute),
+    resolveKeyboardShortcut(
+      { ...baseInput, code: "KeyP", ctrlKey: false },
+      () => true,
+      permissionForRoute,
+    ),
     { type: "none" },
   );
 });

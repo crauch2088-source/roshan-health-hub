@@ -108,7 +108,6 @@ test("falls back when the publishable key is an empty string", () => {
   );
 });
 
-
 test("search trigger label is visible at the breakpoint where the trigger first appears", () => {
   assert.match(
     APP_SHELL_SOURCE,
