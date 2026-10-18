@@ -90,7 +90,7 @@ CREATE TABLE public.medical_certificates (
 
 CREATE FUNCTION public.fn_dispense_prescription(uuid) RETURNS void
 LANGUAGE plpgsql AS $$ BEGIN RETURN; END $$;
-CREATE FUNCTION public.create_medical_certificate(uuid,text,date,date) RETURNS integer
+CREATE FUNCTION public.create_medical_certificate(p_patient_id uuid,p_diagnosis text,p_start_date date,p_end_date date) RETURNS integer
 LANGUAGE sql AS $$ SELECT 1 $$;
 GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_medical_certificate(uuid,text,date,date) TO authenticated;
