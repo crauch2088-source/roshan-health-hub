@@ -285,3 +285,12 @@ Applied migration: `roshan_phase19_invoice_rpc_only_writes`, ledger version `202
 Pre/post counts were **0 rows in `invoices` and 0 in `invoice_items`**. The migration is privilege/policy-only and does not rewrite or delete invoice data.
 
 **Preferred recovery is a forward fix.** If a wrapper RPC regression appears, repair the wrapper and test it in PostgreSQL 17; do not restore direct client INSERT/UPDATE/DELETE on either invoice table. If the SELECT policy itself must be reverted, restore the prior parent-invoice branch helper predicate while retaining the direct-DML revocations and RPC grants. Do not grant invoice-table DML to `authenticated` as a rollback shortcut.
+
+
+## Clinical child-row branch-isolation migration — 2026-10-18
+
+Applied migration: `roshan_phase20_clinical_child_branch_isolation`, ledger version `20261018064139`. It strengthens parent/child branch predicates and same-patient/visit linkage checks across prescriptions, prescription items, lab orders/items, medical certificates, patient discounts, and insurance prior authorizations. It also restricts execution of private branch helpers to the authenticated role required by RLS.
+
+The affected tables had zero rows before and after application. The migration changes function/policy definitions only; it does not alter clinical or financial records.
+
+**Preferred recovery is a forward fix.** Do not broadly revert branch policies to the older permission-only predicates. If a specific policy causes a regression, repair that policy in a forward migration and preserve the parent-branch and same-patient/visit checks. Before any emergency rollback, capture the current `pg_policies` definitions and helper function definitions; no blanket rollback script should be run against these interdependent policies.

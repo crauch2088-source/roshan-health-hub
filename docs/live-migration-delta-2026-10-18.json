@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 106,
-  "latest_live_version": "20261018063549",
+  "live_ledger_count": 107,
+  "latest_live_version": "20261018064139",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 13,
+  "forward_migration_count": 14,
   "entries": [
     {
       "version": "20261017125924",
@@ -122,6 +122,15 @@
       "normalized_source_sql_sha256": "1e8ad14649b61bb30a73381b9426b92c1e4d14ce0e6ff1409a99920af84c532a",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API after PostgreSQL 17 integration passed; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
+    },
+    {
+      "version": "20261018064139",
+      "name": "roshan_phase20_clinical_child_branch_isolation",
+      "source_path": "db/roshan_phase20_clinical_child_branch_isolation.sql",
+      "source_git_blob_sha": "4fe6932f88fb1a7258833d6a41acc6c6bb805f44",
+      "normalized_source_sql_sha256": "2efefaf0827e9b041ccae8a5ee825b589a39f4ac20a884c38f53bf6195584c47",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API after PostgreSQL 17 cross-branch regression passed; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
     }
   ],
   "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
