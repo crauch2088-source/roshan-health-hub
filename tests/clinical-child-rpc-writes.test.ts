@@ -7,6 +7,7 @@ const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
 const certificates = read("../src/routes/_authenticated/certificates.tsx");
 const phase28 = read("../db/roshan_phase28_clinical_child_write_rpcs.sql");
 const phase29 = read("../db/roshan_phase29_clinical_child_rpc_only_writes.sql");
+const phase30 = read("../db/roshan_phase30_clinical_child_rpc_only_writes.sql");
 const fixture = read("../db/tests/clinical_child_rpc_writes_fixture.sql");
 const integration = read("../db/tests/clinical_child_rpc_writes_integration.sql");
 const pkg = JSON.parse(read("../package.json")) as { scripts?: Record<string, string> };
@@ -45,7 +46,11 @@ test("clinical RPC migration enforces permission, branch, fixed search path, and
     phase29,
     /public\.prescriptions[\s\S]*public\.insurance_prior_authorizations[\s\S]*FROM PUBLIC, anon, authenticated/,
   );
-  assert.match(phase29, /REVOKE ALL ON SEQUENCE public\.medical_certificates_id_seq/);
+  assert.match(
+    phase30,
+    /public\.lab_order_items[\s\S]*public\.medical_certificates[\s\S]*FROM PUBLIC, anon, authenticated/,
+  );
+  assert.match(phase30, /REVOKE ALL ON SEQUENCE public\.medical_certificates_id_seq/);
 });
 
 test("PostgreSQL integration covers cross-branch denial and retains RLS/SELECT", () => {

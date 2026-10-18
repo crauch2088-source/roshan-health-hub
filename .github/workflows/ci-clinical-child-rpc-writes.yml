@@ -6,6 +6,7 @@ on:
     paths:
       - 'db/roshan_phase28_clinical_child_write_rpcs.sql'
       - 'db/roshan_phase29_clinical_child_rpc_only_writes.sql'
+      - 'db/roshan_phase30_clinical_child_rpc_only_writes.sql'
       - 'db/tests/clinical_child_rpc_writes_fixture.sql'
       - 'db/tests/clinical_child_rpc_writes_integration.sql'
       - 'src/routes/_authenticated/lab_.$orderId.tsx'
@@ -18,6 +19,7 @@ on:
     paths:
       - 'db/roshan_phase28_clinical_child_write_rpcs.sql'
       - 'db/roshan_phase29_clinical_child_rpc_only_writes.sql'
+      - 'db/roshan_phase30_clinical_child_rpc_only_writes.sql'
       - 'db/tests/clinical_child_rpc_writes_fixture.sql'
       - 'db/tests/clinical_child_rpc_writes_integration.sql'
       - '.github/workflows/ci-clinical-child-rpc-writes.yml'
@@ -44,4 +46,5 @@ jobs:
             -f db/tests/clinical_child_rpc_writes_fixture.sql \
             -f db/roshan_phase28_clinical_child_write_rpcs.sql \
             -f db/roshan_phase29_clinical_child_rpc_only_writes.sql \
+            -f db/roshan_phase30_clinical_child_rpc_only_writes.sql \
             -f db/tests/clinical_child_rpc_writes_integration.sql
