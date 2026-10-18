@@ -68,13 +68,6 @@ BEGIN
      AND p_manufacture_date > p_expiry_date THEN
     RAISE EXCEPTION 'manufacture_after_expiry' USING ERRCODE = '22023';
   END IF;
-  IF p_expiry_date IS NOT NULL AND p_expiry_date < CURRENT_DATE THEN
-    RAISE EXCEPTION 'expired_batch' USING ERRCODE = '22023';
-  END IF;
-  IF p_manufacture_date IS NOT NULL AND p_manufacture_date > CURRENT_DATE THEN
-    RAISE EXCEPTION 'future_manufacture_date' USING ERRCODE = '22023';
-  END IF;
-
   SELECT u.branch_id INTO v_branch
     FROM public.users AS u
    WHERE u.id = v_uid
@@ -90,18 +83,6 @@ BEGIN
   -- target-branch argument.
   IF v_branch IS NULL THEN
     RAISE EXCEPTION 'user_branch_not_configured' USING ERRCODE = '42501';
-  END IF;
-
-  IF p_supplier_id IS NOT NULL THEN
-    PERFORM 1
-      FROM public.suppliers AS s
-     WHERE s.id = p_supplier_id
-       AND s.active IS TRUE
-       AND s.deleted_at IS NULL
-     FOR SHARE;
-    IF NOT FOUND THEN
-      RAISE EXCEPTION 'active_supplier_not_found' USING ERRCODE = '22023';
-    END IF;
   END IF;
 
   PERFORM pg_catalog.pg_advisory_xact_lock(
@@ -128,6 +109,25 @@ BEGIN
         USING ERRCODE = '22023';
     END IF;
     RETURN existing.id;
+  END IF;
+
+  IF p_expiry_date IS NOT NULL AND p_expiry_date < CURRENT_DATE THEN
+    RAISE EXCEPTION 'expired_batch' USING ERRCODE = '22023';
+  END IF;
+  IF p_manufacture_date IS NOT NULL AND p_manufacture_date > CURRENT_DATE THEN
+    RAISE EXCEPTION 'future_manufacture_date' USING ERRCODE = '22023';
+  END IF;
+
+  IF p_supplier_id IS NOT NULL THEN
+    PERFORM 1
+      FROM public.suppliers AS s
+     WHERE s.id = p_supplier_id
+       AND s.active IS TRUE
+       AND s.deleted_at IS NULL
+     FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'active_supplier_not_found' USING ERRCODE = '22023';
+    END IF;
   END IF;
 
   SELECT COALESCE(m.stock_quantity, 0)::bigint,
