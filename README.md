@@ -1,9 +1,10 @@
-## Execution update — 2026-10-18: Arabic-layout keyboard and responsive search fixes
+## Execution update — 2026-10-18: clinical regression trigger hardening
 
-- Current main commit `3e705cd39cd3b4f7f5181e8d71b025740b8411cf` fixes global-search and navigation shortcuts to use physical `KeyboardEvent.code` values, so Ctrl/Cmd+K and permission-gated route shortcuts keep working when the active keyboard layout is Arabic. Navigation shortcuts remain suppressed while typing or during IME composition.
-- The desktop search trigger now shows its text label at the same `sm` breakpoint where the button first appears, avoiding a wide icon-only control on tablet-width layouts. Added `tests/keyboard-shortcuts.test.ts` and a responsive-label assertion in `tests/nav-layout.test.ts`; both are included in `npm run test:guard`.
-- **All 16 exact-head checks passed** on this commit, including CodeQL, typecheck/lint/build, source-parity validation, finance RPC-only regression, and the two-session invoice-payment idempotency test. The source-level UI fix is not yet on production; no screenshot-based full-screen visual audit is claimed.
-- Phase 30 remains intentionally gated. Vercel's free API deployment quota resets at **2026-10-19 08:52 Africa/Khartoum**; the one-time continuation task is scheduled for **09:00**. Do not revoke direct writes on `lab_order_items` or `medical_certificates` until the canonical alias serves current main and both RPC paths are smoke-tested.
+- Current main: `84c3d1fcef1c6213367e59103204d9c0403fc7d5`. Clinical PostgreSQL 17 regression passed on this SHA; overall check set was 17/18 successful at last read, with CodeQL JavaScript/TypeScript still running and no failures reported.
+- Updated `.github/workflows/ci-clinical-child-rpc-writes.yml` so frontend changes to lab completion/certificate creation and related contract tests trigger the PostgreSQL 17 clinical RPC regression on main pushes, not only SQL-file changes.
+- Production Supabase ledger remains 109 entries through `20261018065708_roshan_clinical_child_rpc_only_writes`. Phase 29 is confirmed live on four clinical child tables. Phase 30 remains unapplied.
+- Canonical Vercel production alias remains on old deployment SHA `631abf83415b2c878569d34df1360936f5a9d158`; a pinned deployment attempt hit HTTP 402 `api-deployments-free-per-day` with retry-after 86,400 seconds. No bypass or database mutation was attempted.
+- Security Advisor warnings and unused-index findings are being triaged, not bulk-applied: no broad SECURITY DEFINER revocations, extension relocation, or index drops without function-by-function behavior tests and rollback.
 
 ---
 
