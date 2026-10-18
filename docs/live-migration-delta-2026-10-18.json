@@ -10,10 +10,10 @@
       "version": "20261017125924",
       "name": "roshan_security_candidate_bundle_20261017",
       "source_path": "db/roshan_security_candidate_bundle_20261017.sql",
-      "source_git_blob_sha": "fd5d2862a915a02445be2402d7b56e3e1f42d3dc",
-      "normalized_source_sql_sha256": "92cf7590d8389760bdf4efdb6646cfc89721c54206687b2c3c933dd06503cf34",
+      "source_git_blob_sha": "749344590bac91e9d3f2129a07c7834e961baff4",
+      "normalized_source_sql_sha256": "a1d19df95ee41f5682346850cda8e06741901175df6d77eaa44fb7346d769a5d",
       "live_sql_hash_verified": false,
-      "verification_evidence": "Prior live source-parity audit recorded 96/97 exact matches; this is one of the four non-redacted Oct-17 forward entries."
+      "verification_evidence": "Source changed in PR #77 to retain the precision guard from the dedicated invoice-payment migration; CI validates source-file hash only. No claim is made that the modified bundle matches the already-recorded live ledger SQL."
     },
     {
       "version": "20261017125934",
