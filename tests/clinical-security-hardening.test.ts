@@ -64,7 +64,7 @@ test("Phase 31 migration includes the critical database guardrails", () => {
     contractMigration,
     /fn_dispense_prescription\(uuid\)[\s\S]*FROM PUBLIC, anon, authenticated/,
   );
-  assert.match(contractMigration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.lab_order_items/);
+  assert.match(contractMigration, /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.lab_order_items/);
   assert.match(migration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.medical_certificates/);
   assert.match(contractMigration, /ALTER COLUMN visit_id SET NOT NULL/);
   assert.match(migration, /certificate issuance requires a linked visit/);
