@@ -1,3 +1,14 @@
+## Execution update — 2026-10-18: Phase 31 clinical/security hardening staged
+
+- Draft review PR: [#78](https://github.com/crauch2088-source/roshan-health-hub/pull/78), branch `fix/clinical-security-hardening-20261018`. No merge or production deployment was performed.
+- Read-only live preflight confirmed zero duplicate groups for normalized active patient national IDs and active non-rejected insurance claims per invoice. medical_certificates had 0 rows; visits had 7 rows, all soft-deleted; queue_tickets had 0 rows.
+- Full tracked-source scan of 137 TS/JS files under src/: no exact call to the legacy `fn_dispense_prescription` RPC and no direct write chains to `lab_order_items` or `medical_certificates`. Live privilege checks nevertheless confirmed the legacy dispense RPC is executable by authenticated and authenticated has INSERT/UPDATE grants on both clinical tables.
+- Phase 31 is deliberately split into expand and contract SQL files. Expand adds the new RPCs and guardrails and pauses unlinked certificate issuance; contract is held until the matching frontend is deployed and authenticated smoke tests pass. Both production migrations require explicit approval.
+- The implementation revision `315058d48011d07a1862b747568a04d5553e481c` passed 24/24 checks, including the disposable PostgreSQL 17 migration/behavior replay and install/audit/typecheck/lint/build. This ledger update is documentation-only; check the PR for the latest exact-head status.
+- Preflight evidence and rollout steps: `docs/CLINICAL_SECURITY_HARDENING_PREFLIGHT_2026-10-18.md`. No SQL, grants, indexes, sequences, or business rows were changed in live Supabase.
+
+---
+
 ## Execution update — 2026-10-18 08:00 UTC: clinical regression trigger hardening
 
 - The code/workflow change is commit `84c3d1fcef1c6213367e59103204d9c0403fc7d5`; the clinical PostgreSQL 17 regression passed on that exact commit. Latest main before this documentation refresh: `a32af88c191997b9630b9df0d9e9cf4c9fda2984`. At last poll, 3/16 checks were completed successfully, 13 were running/queued, and none had failed.
