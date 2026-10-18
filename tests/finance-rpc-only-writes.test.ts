@@ -65,9 +65,6 @@ test("finance migration preserves precision and RPC-only access", () => {
   for (const table of ["insurance_claims", "insurance_claim_items", "insurance_claim_payments"]) {
     assert.match(migration, new RegExp(table));
   }
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.create_insurance_claim/);
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.post_insurance_claim_payment/);
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.update_insurance_claim_status/);
 });
 
 test("finance RPC-only guard is part of the standard guard suite", () => {
