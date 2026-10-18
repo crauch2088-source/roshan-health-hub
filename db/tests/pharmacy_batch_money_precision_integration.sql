@@ -65,10 +65,16 @@ BEGIN
   IF NOT rejected THEN RAISE EXCEPTION 'idempotency key payload mismatch was not rejected'; END IF;
 
   SELECT stock_quantity INTO stock FROM public.medicines WHERE id='30000000-0000-0000-0000-000000000001';
-  IF stock <> 3
-     OR (SELECT count(*) FROM public.pharmacy_inventory WHERE idempotency_key='receive-idempotency-1') <> 1
-     OR (SELECT count(*) FROM public.stock_movements) <> 1 THEN
-    RAISE EXCEPTION 'idempotent receipt duplicated stock, batch, or stock movement';
+  IF stock <> 3 THEN
+    RAISE EXCEPTION 'idempotent receipt stock total expected 3, got %', stock;
+  END IF;
+  IF (SELECT count(*) FROM public.pharmacy_inventory WHERE idempotency_key='receive-idempotency-1') <> 1 THEN
+    RAISE EXCEPTION 'idempotent receipt expected one keyed batch, got %',
+      (SELECT count(*) FROM public.pharmacy_inventory WHERE idempotency_key='receive-idempotency-1');
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements) <> 1 THEN
+    RAISE EXCEPTION 'idempotent receipt expected one stock movement, got %',
+      (SELECT count(*) FROM public.stock_movements);
   END IF;
 END $idempotency$;
 
