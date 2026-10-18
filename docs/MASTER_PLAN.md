@@ -1464,3 +1464,32 @@ Two further tested migrations were applied after the 101-entry state above:
 - Source call-site evidence maps the active atomic clinical/billing, insurance, pharmacy dispensing, profile, visit options, expense, cashbox, invoice payment, supplier bill/payment, and reversal flows to their expected RPCs. The legacy `fn_receive_pharmacy_batch` and `fn_dispense_prescription` have no direct call site in the reviewed frontend modules; revocation remains blocked until pharmacy workflow and retry/idempotency E2E coverage is complete.
 - `pg_trgm` remains in `public` intentionally for now: existing indexes depend on `gin_trgm_ops` and historical migration SQL has unqualified references. Relocation is deferred until a reviewed baseline/replay-safe update can prove compatibility. Paid-only leaked-password protection remains unavailable on the free plan.
 - This advisor review changes no production schema. Current live ledger remains 103 entries through `20261017231629`; source parity covers ten later source files plus the separate frozen 93-entry historical hash snapshot, but full replay is still blocked by the missing initial schema baseline and redacted environment-specific identity link.
+
+
+## Execution update — 2026-10-18: atomic pharmacy receipt and production verification
+
+### Shipped and verified
+
+- PR [#69](https://github.com/crauch2088-source/roshan-health-hub/pull/69) was merged into `main` as commit `d9ce989270d53c764afb2ab77bac678f61b11b04`. It routes the inventory receipt UI through the new atomic, precision-guarded RPC and adds durable idempotency-key handling plus regression coverage.
+- The additive migration `roshan_pharmacy_batch_receipt_idempotency` was applied to the verified production Supabase project before merging the application code. Live ledger version: `20261018061746`; migration is recorded exactly once.
+- Post-migration catalog read-back confirmed: `pharmacy_inventory.idempotency_key` exists; `fn_receive_pharmacy_batch_atomic(uuid,numeric,text,date,date,numeric,numeric,uuid,text,text)` exists; authenticated execution is granted; anonymous execution is denied.
+- The production preflight and immediate postflight both reported zero pharmacy inventory batches and zero stock movements. The migration did not create, update, or delete business rows.
+- PR-head checks were green **21/21** before merge, including CodeQL, TypeScript/lint/build, PostgreSQL 17 integration tests, pharmacy precision/idempotency regression, clinical and financial atomicity checks, and migration-source parity. The resulting Vercel production deployment for the merge commit reached `READY`.
+- Vercel runtime-error queries for the last 24 hours and last hour returned no error groups. A historical missing `VITE_SUPABASE_PUBLISHABLE_KEY` error group belongs to an older deployment (last observed 2026-10-14); environment metadata shows that key configured for both production and preview without exposing its value. Continue checking the canonical domain after deployments.
+
+### Live security snapshot after the new RPC
+
+- All **56/56** public base tables have RLS enabled.
+- The catalog reports **45** `SECURITY DEFINER` functions; read-only verification found **0** without an explicit fixed `search_path` and **0** executable by `anon`. **21** are executable by `authenticated`; that is intentional for app RPCs only where function-level permission, branch, and input checks are complete, so continue per-function call-site review rather than blindly revoking all access.
+- Current Supabase Security Advisor reports 21 authenticated-callable `SECURITY DEFINER` warnings, one `pg_trgm`-in-public warning, and one leaked-password-protection warning. `pg_trgm` remains in `public` pending replay-safe index/migration reconciliation. Leaked-password protection is plan-gated on the current free tier; do not upgrade or incur cost without explicit budget approval.
+- Performance Advisor reports many unused-index notices in this low-usage prelaunch environment. Do not drop indexes solely on that signal; reassess after representative query traffic and query-plan review.
+
+### Remaining gates — keep these open
+
+1. Verify the canonical alias `https://roshan-health-hub.vercel.app/` serves the new `main` deployment and smoke-test login, inventory screen load, and the receive-batch form without submitting a real receipt.
+2. Add/verify an end-to-end test of double-submit/retry behavior against a disposable PostgreSQL fixture, including same-key/same-payload returning the same batch and same-key/different-payload rejection. The current PR's PostgreSQL 17 integration and source regression passed; do not imply production receipt behavior has been exercised with business data.
+3. Review PR #29 as a potentially superseded legacy-RPC hardening/UI branch; do not merge it blindly over the now-shipped atomic flow. Decide whether to close as superseded or extract only unique tests/guards.
+4. Continue PR #34 clinical child-row branch isolation and stacked finance/invoice RPC-only-write proposals only after rebasing/checking their dependencies against current `main`; their original bases were not all `main`.
+5. Re-run migration-source parity against the current 104-entry live ledger and keep the missing initial schema baseline and intentionally redacted environment-specific identity mapping explicitly unresolved. The source-parity workflow is not proof of full historical replay.
+6. Continue role-by-role phone-first RTL/LTR clinical workflow and visual acceptance tests before declaring clinical launch readiness.
+
