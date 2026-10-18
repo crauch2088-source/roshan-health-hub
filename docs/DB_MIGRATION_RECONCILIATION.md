@@ -1,16 +1,19 @@
-## Current live ledger state — 2026-10-17 13:00 UTC
+## Current live ledger state — 2026-10-18 06:29 UTC
 
-The historical inventory below was originally captured at 93 rows before the three forward security/insurance migrations were applied. The current live ledger now has **97 rows**, latest `20261017133157_roshan_revoke_legacy_invoice_number_20261017`. See [`docs/LIVE_MIGRATION_DELTA_2026-10-17.md`](LIVE_MIGRATION_DELTA_2026-10-17.md) for exact stored-source comparisons and post-apply verification.
+The live ledger now has **105 rows**, latest `20261018062939_roshan_pharmacy_batch_receipt_guards`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
 
-The current reconciliation is **96/97 exact source matches, one intentionally redacted identity-link migration, zero unmapped versions**: the original 93-row snapshot had 92 normalized matches; four subsequent live-ledger entries have now been matched exactly. The historical 93-row `source-parity-report.json` and its validator remain a frozen snapshot, not a live-ledger export. The full historical chain still has no trustworthy clean-bootstrap baseline; no replay of that chain was attempted.
+The frozen 93-row historical snapshot remains **92 normalized matches plus one intentionally redacted identity-link migration**. The forward-source delta now tracks 12 additional mappings by repository blob/source hashes. The forward-source workflow does not access persisted migration SQL, so it does not prove those 12 files are byte-for-byte or semantically equal to live SQL. Full historical replay remains unproven because the clean-bootstrap baseline is missing.
+
+Post-apply read-back: **56/56** public base tables have RLS; 45 SECURITY DEFINER functions exist, zero lack an explicit fixed `search_path`, zero are executable by `anon`, and 20 are executable by `authenticated`. Direct authenticated/anonymous INSERT into `stock_movements` is denied; its insert policy is absent; the legacy receive RPC is denied to `authenticated`; the atomic idempotent RPC remains available to `authenticated` only. Inventory batches and stock-movement rows remained at zero.
 
 ---
 
-# Supabase migration reconciliation inventory
+# Historical Supabase migration reconciliation inventory (snapshot 2026-10-17)
 
-**Snapshot date:** 2026-10-17  
+
+**Historical snapshot date:** 2026-10-17  
 **Target:** Connected Roshan Health Hub Supabase project (read-only inventory)  
-**Applied migration rows in the original snapshot:** 93 (historical; current live ledger is 96)  
+**Applied migration rows in the original snapshot:** 93 (historical; see the current 105-entry ledger summary above)  
 **Latest migration in original snapshot:** `20261016222009_roshan_phase25_current_app_profile_20261016`; current live latest is `20261017125936_roshan_insurance_coverage_validity_20261017`.  
 **Top-level migration SQL files in `db/` on `main`:** 26  
 **Exact basename matches among the 26 top-level `db/` candidates:** 4  

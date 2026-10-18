@@ -1,11 +1,25 @@
 # Database Migration Reconciliation — Roshan Health Hub
 
-Snapshot: 2026-10-15  
+Current state verified: 2026-10-18 06:29 UTC  
 Production project ref: `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, eu-west-1)
 
-## Verified facts
+## Current verified state — 2026-10-18
 
-- Supabase's migration ledger reports **79 applied migrations**. The newest entry is `20261014164131_roshan_cashbox_reversal_concurrency`. Read-only inspection confirms every row has a non-empty `statements` array (one SQL statement per row), no missing migration names/statements, and approximately **247,724 characters of SQL** are recoverable directly from the live ledger. This is a viable exact-source recovery path, but does not by itself prove the recovered files replay cleanly or match the current schema.
+- The live Supabase migration ledger contains **105 applied entries**; latest is `20261018062939_roshan_pharmacy_batch_receipt_guards`.
+- The frozen historical snapshot remains 93 entries: 92 normalized SQL matches and one intentionally redacted environment-specific identity mapping. The separate forward delta tracks **12 source mappings**. Source-file hashes are verified against repository content, but the current tools do not expose stored live SQL hashes; do not claim semantic equivalence or a complete clean-bootstrap replay.
+- Live catalog verification: **56/56** public base tables have RLS; 45 SECURITY DEFINER functions exist, none lacks a fixed `search_path`, none is executable by `anon`, and 20 are executable by `authenticated` for reviewed application RPCs.
+- Direct `INSERT` to `stock_movements` is denied to `authenticated` and `anon`; the legacy non-idempotent receive RPC is no longer executable by `authenticated`; the atomic idempotent receipt RPC is executable by `authenticated` but not `anon`.
+- Pharmacy inventory batches and stock-movement rows remained at zero before and after the two receipt migrations. The migrations changed schema/function grants only; no business rows were created or updated.
+- The initial schema baseline remains missing and the environment-specific identity mapping remains intentionally redacted. Full historical replay is still unproven.
+
+---
+
+Historical snapshot captured: 2026-10-15  
+Production project ref: `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, eu-west-1)
+
+## Historical snapshot facts
+
+- At the 2026-10-15 snapshot, Supabase's migration ledger reported **79 applied migrations**. The newest entry is `20261014164131_roshan_cashbox_reversal_concurrency`. Read-only inspection confirms every row has a non-empty `statements` array (one SQL statement per row), no missing migration names/statements, and approximately **247,724 characters of SQL** are recoverable directly from the live ledger. This is a viable exact-source recovery path, but does not by itself prove the recovered files replay cleanly or match the current schema.
 - The `main` repository tree has **no `supabase/` directory** and therefore no canonical `supabase/migrations/*.sql` history.
 - The committed `db/` directory instead contains a small set of phase/patch SQL files, including:
   - `roshan_phase1_migration.sql`
@@ -20,7 +34,7 @@ Production project ref: `jewzonxplxhogqrnhosl` (PostgreSQL 17.6, eu-west-1)
   - `roshan_security_privileged_role_guard.sql`
   - plus SQL tests under `db/tests/`.
 - The listed SQL files are not a one-to-one representation of the 79 timestamped migration records. Some may bundle, supersede, or predate multiple applied migrations; file names alone cannot prove parity.
-- Production was only inspected read-only during this reconciliation. No migration, schema change, data repair, or reset was executed.
+- During the 2026-10-15 historical inventory, production was inspected read-only and no migration was executed. Later, the separately documented forward receipt migrations were applied on 2026-10-18; no business rows were changed.
 
 ## Risk
 
@@ -216,7 +230,7 @@ Do not mark a row as covered based only on similar filenames. The migration coun
 - The legacy Medicines tab incremented `medicines.stock_quantity` and inserted a `stock_movements` row as separate client requests, without creating a `pharmacy_inventory` batch. The Batches tab separately inserted the batch, read the current aggregate stock, updated the medicine, and inserted the movement in three requests. Failures could leave these representations inconsistent; FEFO dispensing reads the batch table, so legacy-only stock could appear available in aggregate totals while being unavailable to batch dispensing.
 - Draft PR #29 moves both receive paths to `fn_receive_pharmacy_batch`, makes new medicine creation start with zero stock until a batch is received, and adds a PostgreSQL 17 rollback test. Its proposed SQL hardening also validates finite integer quantity, finite two-decimal prices, active medicine/supplier, branch context, and aggregate integer overflow.
 - The recovered migration `20260911135036` grants authenticated users both SELECT and INSERT on `stock_movements`, and `20260906142803` has an insert policy for pharmacy create/update. After all currently found direct UI insert paths are moved into security-definer workflows, the draft migration removes that direct INSERT privilege/policy so clients cannot create ledger-only stock events without updating a batch. Before release, confirm no external integration depends on direct ledger inserts and provide a dedicated adjustment RPC if manual adjustments are a required workflow.
-- No production SQL was executed; PR #29 remains draft pending CI and migration-history reconciliation.
+- PR #29's own SQL was not applied and its branch remains stale; do not merge it. Its useful eligibility checks were reimplemented on the new atomic idempotent RPC in PR #71 and applied as forward migration `20261018062939_roshan_pharmacy_batch_receipt_guards` after PostgreSQL 17 regression tests passed. PR #71 also removes direct client INSERT access to the stock ledger and retires the legacy non-idempotent receive RPC. Close PR #29 as superseded after PR #71 is merged.
 
 ### Navigation shortcut permission consistency — 2026-10-15
 - `CommandPaletteProvider` looked up shortcut permissions in `flatNavItems()`, which intentionally excludes `HOME_ITEM`. The dashboard shortcut therefore found no permission and did not fail closed as its comment promised. Draft PR #28 adds `navPermissionForRoute()` across Home and module routes and denies shortcuts with no known permission; CI passed on the current head. Route `PermissionGate` and RLS were still the actual security boundaries, so this was a navigation correctness defect rather than a data-access bypass.

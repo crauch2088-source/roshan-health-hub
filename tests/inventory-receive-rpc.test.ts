@@ -8,6 +8,11 @@ const source = readFileSync(
 );
 
 testRunner("inventory receiving uses the atomic guarded pharmacy RPC", () => {
+  assert.doesNotMatch(
+    source,
+    /\.rpc\(["']fn_receive_pharmacy_batch["']/,
+    "the legacy non-idempotent receive RPC must not be called by the client",
+  );
   assert.match(
     source,
     /\.rpc\(["']fn_receive_pharmacy_batch_atomic["']/,

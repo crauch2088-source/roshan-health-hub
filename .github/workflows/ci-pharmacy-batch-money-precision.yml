@@ -6,6 +6,7 @@ on:
     paths:
       - 'db/roshan_pharmacy_batch_money_precision.sql'
       - 'db/roshan_pharmacy_batch_receipt_idempotency.sql'
+      - 'db/roshan_pharmacy_batch_receipt_guards.sql'
       - 'db/tests/pharmacy_batch_money_precision_fixture.sql'
       - 'db/tests/pharmacy_batch_money_precision_integration.sql'
       - '.github/workflows/ci-pharmacy-batch-money-precision.yml'
@@ -30,4 +31,5 @@ jobs:
             -f db/tests/pharmacy_batch_money_precision_fixture.sql \
             -f db/roshan_pharmacy_batch_money_precision.sql \
             -f db/roshan_pharmacy_batch_receipt_idempotency.sql \
+            -f db/roshan_pharmacy_batch_receipt_guards.sql \
             -f db/tests/pharmacy_batch_money_precision_integration.sql
