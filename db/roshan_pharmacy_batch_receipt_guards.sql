@@ -25,6 +25,7 @@ DECLARE
   v_sell numeric;
   v_key text;
   v_existing_stock bigint;
+  v_active_branch_count bigint;
   existing public.pharmacy_inventory;
 BEGIN
   IF v_uid IS NULL THEN
@@ -77,11 +78,30 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'active_application_user_not_found' USING ERRCODE = '42501';
   END IF;
-  -- A receipt without a concrete branch would create an orphan batch that
-  -- branch-scoped dispensing cannot safely consume. Super-admins must also
-  -- operate with an explicitly assigned branch because this RPC has no
-  -- target-branch argument.
+  -- Branch-scoped dispensing must never receive an orphan batch. A global
+  -- super-admin without a profile branch may use the sole active branch; if
+  -- zero or multiple branches are active, fail closed because this RPC has no
+  -- explicit target-branch argument.
+  IF v_branch IS NULL AND public.is_super_admin() THEN
+    SELECT count(*), (array_agg(b.id ORDER BY b.id))[1]
+      INTO v_active_branch_count, v_branch
+      FROM public.branches AS b
+     WHERE COALESCE(b.is_active, b.active, false)
+       AND b.deleted_at IS NULL;
+    IF v_active_branch_count <> 1 THEN
+      v_branch := NULL;
+    END IF;
+  END IF;
   IF v_branch IS NULL THEN
+    RAISE EXCEPTION 'user_branch_not_configured' USING ERRCODE = '42501';
+  END IF;
+
+  PERFORM 1
+    FROM public.branches AS b
+   WHERE b.id = v_branch
+     AND COALESCE(b.is_active, b.active, false)
+     AND b.deleted_at IS NULL;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'user_branch_not_configured' USING ERRCODE = '42501';
   END IF;
 
