@@ -1,11 +1,6 @@
 -- Deterministic lock-hold trigger for the two-session race.
 -- The current finance fixture already declares idempotency_key UNIQUE.
-INSERT INTO public.users(id, branch_id, active)
-VALUES ('10000000-0000-0000-0000-000000000001',
-        '20000000-0000-0000-0000-000000000001', true);
-INSERT INTO public.invoices(id, branch_id, net_amount, total_amount, paid_amount)
-VALUES ('40000000-0000-0000-0000-000000000001',
-        '20000000-0000-0000-0000-000000000001', 10, 10, 0);
+-- The shared finance fixture already seeds the user and invoice IDs used by the race test.
 
 CREATE FUNCTION public.test_pause_payment_insert()
 RETURNS trigger
