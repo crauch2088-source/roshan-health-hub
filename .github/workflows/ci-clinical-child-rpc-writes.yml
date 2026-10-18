@@ -22,6 +22,10 @@ on:
       - 'db/roshan_phase30_clinical_child_rpc_only_writes.sql'
       - 'db/tests/clinical_child_rpc_writes_fixture.sql'
       - 'db/tests/clinical_child_rpc_writes_integration.sql'
+      - 'src/routes/_authenticated/lab_.$orderId.tsx'
+      - 'src/routes/_authenticated/certificates.tsx'
+      - 'tests/clinical-child-rpc-writes.test.ts'
+      - 'package.json'
       - '.github/workflows/ci-clinical-child-rpc-writes.yml'
 
 jobs:
