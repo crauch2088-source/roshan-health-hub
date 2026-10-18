@@ -1513,7 +1513,7 @@ Two further tested migrations were applied after the 101-entry state above:
 1. Keep the historical 93-entry source-parity snapshot frozen; the separate forward delta now records 13 source mappings for the 106-entry ledger. The live database does not expose stored migration SQL hashes, so the workflow must not claim live SQL hash equality or full historical replay.
 2. PR #71 is merged; its pharmacy receipt guard migration is live as ledger version `20261018062939`.
 3. PR #29 is closed as superseded; its original SQL was not applied.
-4. PR #33's stale stacked diff is closed. The clean invoice RPC-only write migration from PR #72 is applied live as `20261018063549`; its final documentation/CI commit is pending merge.
+4. PR #33's stale stacked diff is closed; PR #72's invoice RPC-only write migration is merged and live as `20261018063549`. PR #34's stale branch is closed in favor of clean PR #73.
 5. Continue role-by-role phone-first RTL/LTR clinical workflow tests and visual/UAT review before declaring clinical launch readiness.
 
 
@@ -1528,4 +1528,21 @@ Two further tested migrations were applied after the 101-entry state above:
 
 ### Next security audit — clinical child-table direct-write grants
 
-A read-only live privilege audit still shows authenticated direct DML grants on `prescriptions`, `prescription_items`, `lab_order_items`, `medical_certificates`, `patient_discounts`, and `insurance_prior_authorizations`. Current RLS policies already use branch-aware helper functions on these tables, so do not blindly merge stale PR #34 or revoke all grants without first verifying every current frontend write path and atomic RPC. The next batch should map call sites, test cross-branch SELECT/INSERT/UPDATE/DELETE in PostgreSQL 17, then revoke direct writes only where RPC coverage is complete.
+The clinical child-row branch-isolation migration is now live as `20261018064139`. The next security batch is RPC-only write hardening: a read-only call-site audit found prescription creation and lab-order creation already use atomic RPCs, while lab-order result/status updates and medical-certificate creation still use direct writes. Test each table separately and revoke only the DML operations that have complete RPC coverage.
+
+
+## Execution update — 2026-10-18: clinical child-row branch isolation applied
+
+- Clean PR #73 was tested against PostgreSQL 17 and passed **27/27** checks before production application. The stale PR #34 branch was closed; its source was ported to a clean branch and its outdated comments were corrected.
+- Production migration `roshan_phase20_clinical_child_branch_isolation` was applied and read back once as ledger version `20261018064139`. The live migration ledger now contains **107 entries**.
+- The migration strengthens the parent/child branch checks for prescriptions, prescription items, lab orders/items, medical certificates, patient discounts, and insurance prior authorizations. It adds same-patient/visit linkage checks and makes branchless lab orders fail closed for branch-scoped users.
+- Post-apply verification: the new private helpers are executable by `authenticated` for RLS and not by `anon`; all 56/56 public base tables still have RLS; the Security Advisor's authenticated-callable SECURITY DEFINER warning count remained 20.
+- All affected live tables had **0 rows** before and after the migration; no business rows were changed.
+- The forward-source delta now contains 14 source mappings on top of the frozen 93-entry historical snapshot. This still does not prove a clean full historical replay or stored live SQL hash equality.
+
+### Next implementation batch — RPC-only clinical writes
+
+1. Revoke direct INSERT/UPDATE/DELETE on `prescriptions` and `prescription_items` only after the existing `create_prescription_atomic` RPC is verified to cover all client write paths and its PostgreSQL integration test proves the wrapper remains callable.
+2. Consider revoking direct INSERT on `lab_order_items` because new order/item creation already uses `create_lab_order_with_invoice_atomic`; retain direct UPDATE for status/result workflows until those paths are moved to an RPC.
+3. Keep direct INSERT on `medical_certificates` until a dedicated validated RPC exists; its current UI creates certificates directly.
+4. Audit `patient_discounts` and `insurance_prior_authorizations` for any direct UI write paths before restricting their DML. Do not revoke privileges merely because a table has a branch-aware RLS policy.
