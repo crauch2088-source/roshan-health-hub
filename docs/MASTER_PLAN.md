@@ -18,13 +18,11 @@
 
 ---
 
-## Production uptime monitoring — Better Stack — updated 2026-10-17 15:13 UTC
+## Production uptime monitoring — Better Stack — updated 2026-10-18 07:24 UTC
 
-- Created monitor **Roshan Health Hub - Production**, ID `5086672`, and confirmed it through Better Stack list/detail reads.
-- The initial target `https://roshan-health-hub-hjfy.vercel.app/` returned HTTP 404 `DEPLOYMENT_NOT_FOUND` with response body `The deployment could not be found on Vercel.` Incident `1033415913` was created. Vercel project lookup verified `roshan-health-hub.vercel.app` as the canonical production domain; the project `roshan-health-hub-hjfy` does not exist in the connected Vercel team.
-- Corrected the existing monitor (no duplicate created) to `https://roshan-health-hub.vercel.app/`, preserving its 180-second check frequency, `eu`/`as` regions, 15-second timeout, SSL verification, redirect following, email alerts, 60-second confirmation period, 180-second recovery period, and unpaused state.
-- At 15:13 UTC the monitor still reported `down`; its `last_checked_at` (15:12:47 UTC) was from before the target URL correction, so a successful probe of the corrected URL is **not yet confirmed**. Recheck monitor `5086672` after the next scheduled probe and confirm the incident resolves before marking monitoring healthy.
-- No paid plan/resource or duplicate monitor was created, and no application or patient data was sent to the monitoring provider. HTTP uptime monitoring does not prove authentication, clinical workflows, database health, or clinical readiness.
+- The existing monitor **Roshan Health Hub - Production** (`5086672`) targets the canonical production URL `https://roshan-health-hub.vercel.app/`. Latest read-back: **UP**, unpaused, last check `2026-10-18T07:23:50Z`; 180-second interval, EU/Asia regions, 15-second timeout, SSL verification, redirect following, and email alerts remain enabled.
+- The original incident `1033415913` was caused by the obsolete `https://roshan-health-hub-hjfy.vercel.app/` target returning `404 DEPLOYMENT_NOT_FOUND`; its status is now **Resolved** (`2026-10-17T15:16:54.936Z`). The active-incident query for monitor `5086672` returned no unresolved incidents. No duplicate monitor or paid plan was created.
+- This is HTTP uptime monitoring only. It does not prove login, permissions, database health, clinical workflow correctness, or clinical readiness.
 
 ---
 
