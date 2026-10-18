@@ -55,7 +55,7 @@ function CertificatesPage() {
 }
 function CertificatesPageInner() {
   const { lang } = useLang();
-  const { can, user } = useAuth();
+  const { can } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     patient_id: "",
@@ -93,12 +93,11 @@ function CertificatesPageInner() {
             ? "لياقة طبية"
             : "Medical fitness";
       const diagnosis = [purpose, form.diagnosis.trim()].filter(Boolean).join(" — ");
-      const { error } = await supabase.from("medical_certificates").insert({
-        patient_id: form.patient_id,
-        doctor_id: user?.id ?? null,
-        diagnosis,
-        start_date: form.start_date,
-        end_date: endDate,
+      const { error } = await supabase.rpc("create_medical_certificate", {
+        p_patient_id: form.patient_id,
+        p_diagnosis: diagnosis,
+        p_start_date: form.start_date,
+        p_end_date: endDate,
       });
       if (error) throw new Error(error.message);
       return null;
