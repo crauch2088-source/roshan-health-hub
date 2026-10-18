@@ -1,6 +1,6 @@
 ## Current live ledger state — 2026-10-18 06:29 UTC
 
-The live ledger now has **107 rows**, latest `20261018064139_roshan_phase20_clinical_child_branch_isolation`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
+The live ledger now has **108 rows**, latest `20261018064638_roshan_clinical_child_write_rpcs`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
 
 The frozen 93-row historical snapshot remains **92 normalized matches plus one intentionally redacted identity-link migration**. The forward-source delta now tracks 14 additional mappings by repository blob/source hashes. The forward-source workflow does not access persisted migration SQL, so it does not prove those 12 files are byte-for-byte or semantically equal to live SQL. Full historical replay remains unproven because the clean-bootstrap baseline is missing.
 
@@ -549,3 +549,10 @@ The review does not claim full historical replay. The live ledger remains 103 en
 - The clean clinical child branch-isolation migration is applied and read back. The next staged change is deliberately separate: add two narrowly scoped RPCs first, migrate the frontend to them, then revoke direct client DML only after the deployed UI no longer uses those writes.
 - The new PostgreSQL 17 test workflow for this staged rollout passed on commit `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`. Its fixture verifies same-branch writes, cross-branch denial, permission checks, direct-DML denial, retained SELECT access, and RLS remaining enabled. The production RPC and DML-revocation migrations are still **not applied** at this point.
 - Full historical replay remains unproven because the reviewed initial schema baseline is missing and one environment-specific identity-link migration remains deliberately redacted.
+
+
+## Current live/source reconciliation — after Phase 28, 2026-10-18
+
+- Live Supabase ledger: **108 entries** through `20261018064638_roshan_clinical_child_write_rpcs`. The forward-source delta now contains **15 mappings** over the frozen 93-entry historical snapshot. Source hashes validate repository content; stored live SQL hashes and full historical replay remain unproven.
+- Read-back confirmed both new functions are `SECURITY DEFINER`, use `search_path = ''`, can be executed by `authenticated`, and cannot be executed by `anon` or `PUBLIC`. Both branch helper functions and permission guards are present.
+- Phase 28 creates the RPCs but deliberately leaves direct table grants unchanged. The app still needs to deploy the new lab completion and certificate creation call sites before Phase 29 revokes direct DML. All six affected clinical child tables remain at zero rows and RLS remains enabled.

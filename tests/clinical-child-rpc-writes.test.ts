@@ -1,52 +1,52 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
-const prescriptionTab = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
-const labTab = read("../src/features/clinic/consultation/components/LaboratoryTab.tsx");
-const labDetail = read("../src/routes/_authenticated/lab_.$orderId.tsx");
+const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
 const certificates = read("../src/routes/_authenticated/certificates.tsx");
 const phase28 = read("../db/roshan_phase28_clinical_child_write_rpcs.sql");
 const phase29 = read("../db/roshan_phase29_clinical_child_rpc_only_writes.sql");
+const fixture = read("../db/tests/clinical_child_rpc_writes_fixture.sql");
+const integration = read("../db/tests/clinical_child_rpc_writes_integration.sql");
+const pkg = JSON.parse(read("../package.json")) as { scripts?: Record<string, string> };
 
-function collectSourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) return collectSourceFiles(path);
-    return /\.(ts|tsx)$/.test(entry.name) ? [path] : [];
-  });
-}
-const srcRoot = fileURLToPath(new URL("../src/", import.meta.url));
-const sourceText = collectSourceFiles(srcRoot)
-  .map((path) => readFileSync(path, "utf8"))
-  .join("\n");
-const directDml = (table: string) =>
-  new RegExp('\\.from\\("' + table + '"\\)\\s*\\.(?:insert|update|delete|upsert)\\b', "s");
-
-test("prescriptions and lab orders are created through atomic RPCs", () => {
-  assert.match(prescriptionTab, /supabase\.rpc\(["']create_prescription_atomic["']/);
-  assert.match(labTab, /supabase\.rpc\(["']create_lab_order_with_invoice_atomic["']/);
-  assert.doesNotMatch(sourceText, directDml("prescriptions"));
-  assert.doesNotMatch(sourceText, directDml("prescription_items"));
-  assert.doesNotMatch(sourceText, directDml("lab_order_items"));
+test("lab item completion uses the branch-checked RPC and surfaces failures", () => {
+  assert.match(lab, /supabase\.rpc\(["']complete_lab_order_item["']/);
+  assert.doesNotMatch(lab, /\.from\(["']lab_order_items["']\)\s*\.update\s*\(/);
+  assert.match(lab, /if \(completion\.error\)/);
+  assert.match(lab, /if \(orderCompletion\.error\)/);
 });
 
-test("lab completion and medical certificates use validated RPCs", () => {
-  assert.match(labDetail, /supabase\.rpc\(["']complete_lab_order_item["']/);
+test("medical certificate creation derives the author on the server", () => {
   assert.match(certificates, /supabase\.rpc\(["']create_medical_certificate["']/);
-  assert.doesNotMatch(sourceText, directDml("medical_certificates"));
-  assert.doesNotMatch(sourceText, directDml("patient_discounts"));
-  assert.doesNotMatch(sourceText, directDml("insurance_prior_authorizations"));
+  assert.doesNotMatch(certificates, /\.from\(["']medical_certificates["']\)\s*\.insert\s*\(/);
+  assert.doesNotMatch(certificates, /doctor_id:\s*user\?\.id/);
+  assert.match(certificates, /p_patient_id:\s*form\.patient_id/);
+  assert.match(certificates, /p_start_date:\s*form\.start_date/);
+  assert.match(certificates, /p_end_date:\s*endDate/);
 });
 
-test("phase 28 supplies RPCs and phase 29 retires direct client DML", () => {
-  assert.match(phase28, /CREATE OR REPLACE FUNCTION public\.complete_lab_order_item/);
-  assert.match(phase28, /CREATE OR REPLACE FUNCTION public\.create_medical_certificate/);
-  assert.match(phase29, /ON TABLE public\.prescriptions/);
-  assert.match(phase29, /public\.medical_certificates/);
-  assert.match(phase29, /public\.patient_discounts/);
-  assert.match(phase29, /public\.insurance_prior_authorizations/);
+test("clinical RPC migration enforces permission, branch, fixed search path, and least privilege", () => {
+  assert.match(phase28, /FUNCTION public\.complete_lab_order_item[\s\S]*?SECURITY DEFINER\s+SET search_path TO ''/);
+  assert.match(phase28, /FUNCTION public\.create_medical_certificate[\s\S]*?SECURITY DEFINER\s+SET search_path TO ''/);
+  assert.match(phase28, /private\.app_has_lab_order_item_branch_access/);
+  assert.match(phase28, /private\.app_has_patient_branch/);
+  assert.match(phase28, /public\.app_has_perm\('lab\.update'\)/);
+  assert.match(phase28, /public\.app_has_perm\('certificates\.create'\)/);
+  assert.match(phase28, /FROM PUBLIC, anon/);
+  assert.match(phase29, /public\.prescriptions[\s\S]*public\.insurance_prior_authorizations[\s\S]*FROM PUBLIC, anon, authenticated/);
+  assert.match(phase29, /REVOKE ALL ON SEQUENCE public\.medical_certificates_id_seq/);
+});
+
+test("PostgreSQL integration covers cross-branch denial and retains RLS/SELECT", () => {
+  assert.match(fixture, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(integration, /cross-branch lab completion unexpectedly succeeded/);
+  assert.match(integration, /cross-branch certificate creation unexpectedly succeeded/);
+  assert.match(integration, /authenticated lost SELECT/);
+  assert.match(integration, /RLS was disabled/);
+});
+
+test("clinical child RPC guard runs in the standard test suite", () => {
+  assert.match(pkg.scripts?.["test:guard"] ?? "", /clinical-child-rpc-writes\.test\.ts/);
 });

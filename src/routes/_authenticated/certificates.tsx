@@ -55,7 +55,7 @@ function CertificatesPage() {
 }
 function CertificatesPageInner() {
   const { lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     patient_id: "",

@@ -296,11 +296,11 @@ The affected tables had zero rows before and after application. The migration ch
 **Preferred recovery is a forward fix.** Do not broadly revert branch policies to the older permission-only predicates. If a specific policy causes a regression, repair that policy in a forward migration and preserve the parent-branch and same-patient/visit checks. Before any emergency rollback, capture the current `pg_policies` definitions and helper function definitions; no blanket rollback script should be run against these interdependent policies.
 
 
-## Clinical child RPC rollout — prepared, not yet applied
+## Clinical child RPC rollout — Phase 28 applied, Phase 29 pending
 
-The source-only staged migrations are `db/roshan_phase28_clinical_child_write_rpcs.sql` and `db/roshan_phase29_clinical_child_rpc_only_writes.sql`. The Phase 28 migration creates `public.complete_lab_order_item(uuid)` and `public.create_medical_certificate(uuid,text,date,date)` with fixed empty `search_path`, permission checks, caller-derived author IDs, and parent-branch validation. It intentionally leaves current direct table grants intact so it can be applied before the frontend deployment without disrupting the existing UI.
+Applied migration: `roshan_clinical_child_write_rpcs`, ledger version `20261018064638`. It creates `public.complete_lab_order_item(uuid)` and `public.create_medical_certificate(uuid,text,date,date)` with fixed empty `search_path`, permission checks, caller-derived author IDs, and parent-branch validation. Both functions are executable by `authenticated`, not by `anon` or `PUBLIC`. Direct table grants have **not** been revoked by Phase 28.
 
-**Rollout order:** (1) verify PostgreSQL 17 regression passes; (2) apply Phase 28 and read back function definitions/grants; (3) deploy and verify the frontend calls both RPCs; (4) apply Phase 29 to revoke direct DML on the six audited child tables; (5) verify SELECT remains available, RLS remains enabled, `authenticated` has RPC execution only, and `anon` has no write/execute path. Do not apply Phase 29 until step 3 is complete.
+**Rollout order:** (1) keep the passing PostgreSQL 17 regression; (2) deploy the frontend RPC call sites; (3) verify the canonical production deployment and check both lab completion and certificate creation paths; (4) only then apply Phase 29 to revoke direct DML on the six audited child tables; (5) verify SELECT remains available, RLS remains enabled, `authenticated` has RPC execution only, and `anon` has no write/execute path. Do not apply Phase 29 until steps 2–3 are complete.
 
 If Phase 28 must be rolled back before the new frontend is deployed, the narrow rollback is:
 
@@ -311,4 +311,4 @@ DROP FUNCTION IF EXISTS public.complete_lab_order_item(uuid);
 DROP FUNCTION IF EXISTS public.create_medical_certificate(uuid, text, date, date);
 ```
 
-If Phase 29 must be rolled back, first roll the application back to a build that does not call these RPCs. Restore direct write grants only to `authenticated` (never to `anon` or `PUBLIC`) on the six tables and restore `USAGE, SELECT, UPDATE` on `public.medical_certificates_id_seq`. Preserve SELECT grants, RLS, and all branch-aware policies. Prefer a forward fix over rolling back to direct writes.
+If Phase 29 must be rolled back, first roll the application back to a build that does not depend on the new RPC-only path. Restore direct write grants only to `authenticated` (never to `anon` or `PUBLIC`) on the six tables and restore `USAGE, SELECT, UPDATE` on `public.medical_certificates_id_seq`. Preserve SELECT grants, RLS, and all branch-aware policies. Prefer a forward fix over rolling back to direct writes.

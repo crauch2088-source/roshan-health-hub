@@ -355,3 +355,10 @@ The original machine-readable `docs/recovered-migrations/source-parity-report.js
 - Live Supabase migration ledger: 107 entries through `20261018064139_roshan_phase20_clinical_child_branch_isolation`; the forward-source delta tracks 14 later source mappings on top of the frozen 93-entry historical snapshot. This is not proof of a clean historical replay or persisted live-SQL hash equality.
 - Clinical child branch isolation is applied and read back. A separate PostgreSQL 17 regression workflow for the next RPC-only write rollout passed on `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`.
 - The new clinical write RPC migrations remain source-only until the frontend call sites are migrated and deployed. Direct DML revocation is staged separately to avoid breaking certificate creation or lab completion during rollout.
+
+
+## Latest execution update — 2026-10-18 (Phase 28)
+
+- Live Supabase ledger: **108 entries** through `20261018064638_roshan_clinical_child_write_rpcs`. The two clinical write RPCs are verified with fixed `search_path`, branch and permission checks, and authenticated-only execution.
+- Phase 28 intentionally leaves direct table grants intact. The frontend is being switched to these RPCs; Phase 29 will revoke direct DML only after deployment verification.
+- PostgreSQL 17 regression workflow passed for the staged clinical RPC-only write migration.
