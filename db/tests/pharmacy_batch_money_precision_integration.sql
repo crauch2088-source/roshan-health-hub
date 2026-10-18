@@ -92,6 +92,13 @@ END $idempotency$;
 DO $receipt_guards$
 DECLARE rejected boolean;
 BEGIN
+  IF has_table_privilege('authenticated','public.stock_movements','INSERT') THEN
+    RAISE EXCEPTION 'test failed: authenticated can directly insert stock movements';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='stock_movements' AND cmd IN ('INSERT','ALL')) THEN
+    RAISE EXCEPTION 'test failed: direct stock-movement insert policy remains';
+  END IF;
+
   rejected := false;
   BEGIN
     PERFORM public.fn_receive_pharmacy_batch_atomic(
