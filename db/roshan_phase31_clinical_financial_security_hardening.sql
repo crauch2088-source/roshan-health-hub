@@ -260,6 +260,12 @@ BEGIN
   IF NULLIF(pg_catalog.btrim(COALESCE(p_diagnosis,'')), '') IS NULL THEN
     RAISE EXCEPTION 'certificate diagnosis is required' USING ERRCODE = '22023';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.patients AS p
+    WHERE p.id=p_patient_id AND p.deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'active patient not found' USING ERRCODE = 'P0002';
+  END IF;
   SELECT v.patient_id INTO v_visit_patient_id
   FROM public.visits AS v WHERE v.id=p_visit_id AND v.deleted_at IS NULL;
   IF NOT FOUND OR v_visit_patient_id IS DISTINCT FROM p_patient_id THEN
