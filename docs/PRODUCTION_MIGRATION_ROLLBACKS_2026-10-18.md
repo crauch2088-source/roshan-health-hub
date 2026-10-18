@@ -312,3 +312,10 @@ DROP FUNCTION IF EXISTS public.create_medical_certificate(uuid, text, date, date
 ```
 
 If Phase 29 must be rolled back, first roll the application back to a build that does not call these RPCs. Restore direct write grants only to `authenticated` (never to `anon` or `PUBLIC`) on the six tables and restore `USAGE, SELECT, UPDATE` on `public.medical_certificates_id_seq`. Preserve SELECT grants, RLS, and all branch-aware policies. Prefer a forward fix over rolling back to direct writes.
+
+
+## Clinical child RPC functions — live ledger reconciliation — 2026-10-18
+
+The live ledger contains `20261018064638_roshan_clinical_child_write_rpcs`. This corresponds to repository source `db/roshan_phase28_clinical_child_write_rpcs.sql`, although the ledger name differs from the source filename. Normalized live function-definition comparisons match the repository definitions for `complete_lab_order_item(uuid)` and `create_medical_certificate(uuid,text,date,date)`; stored live migration SQL is not exposed for a full-file hash comparison.
+
+This migration is additive: it creates/grants the RPCs but does **not** revoke direct client DML. Phase 29 remains unapplied. Do not apply phase 29 until the merged UI commit is confirmed live on the canonical production alias.

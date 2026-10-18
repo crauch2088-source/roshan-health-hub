@@ -1534,11 +1534,11 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 ## Execution update — 2026-10-18: clinical child-row branch isolation applied
 
 - Clean PR #73 was tested against PostgreSQL 17 and passed **27/27** checks before production application. The stale PR #34 branch was closed; its source was ported to a clean branch and its outdated comments were corrected.
-- Production migration `roshan_phase20_clinical_child_branch_isolation` was applied and read back once as ledger version `20261018064139`. The live migration ledger now contains **107 entries**.
+- Production migration `roshan_phase20_clinical_child_branch_isolation` was applied and read back once as ledger version `20261018064139`. At this checkpoint, the live migration ledger contained **107 entries**; the current state is recorded below.
 - The migration strengthens the parent/child branch checks for prescriptions, prescription items, lab orders/items, medical certificates, patient discounts, and insurance prior authorizations. It adds same-patient/visit linkage checks and makes branchless lab orders fail closed for branch-scoped users.
 - Post-apply verification: the new private helpers are executable by `authenticated` for RLS and not by `anon`; all 56/56 public base tables still have RLS; the Security Advisor's authenticated-callable SECURITY DEFINER warning count remained 20.
 - All affected live tables had **0 rows** before and after the migration; no business rows were changed.
-- The forward-source delta now contains 14 source mappings on top of the frozen 93-entry historical snapshot. This still does not prove a clean full historical replay or stored live SQL hash equality.
+- At this checkpoint, the forward-source delta contained 14 source mappings on top of the frozen 93-entry historical snapshot; the current state is recorded below. This still does not prove a clean full historical replay or stored live SQL hash equality.
 
 ### Next implementation batch — RPC-only clinical writes
 
@@ -1554,3 +1554,14 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - Added a disposable PostgreSQL 17 fixture/integration test and `.github/workflows/ci-clinical-child-rpc-writes.yml`. The push-triggered run passed on `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`; the test checks direct DML denial, retained SELECT, RLS, authenticated-only RPC execution, same-branch success, cross-branch denial, and invalid certificate dates.
 - The live ledger remains 107 entries through `20261018064139`; the separate forward-source delta has 14 mappings. The current source verifier does not establish stored SQL hash equality or full historical replay.
 - Safe rollout order: apply Phase 28 functions-only migration after verifying rollback; switch the certificate and lab-item completion UI to RPC calls and deploy; smoke-test both paths; only then apply Phase 29 direct-write revocations. Do not revoke `lab_order_items` UPDATE or `medical_certificates` INSERT before the new frontend is deployed.
+
+
+## Live reconciliation update — 2026-10-18: clinical RPC migration and deployment gate
+
+- A further live ledger entry appeared after the clinical RLS migration: version `20261018064638`, name `roshan_clinical_child_write_rpcs`. The ledger name differs from the repository filename `db/roshan_phase28_clinical_child_write_rpcs.sql`.
+- Live `pg_get_functiondef` for `complete_lab_order_item(uuid)` and `create_medical_certificate(uuid,text,date,date)` matches the repository source after normalization. Both RPCs are executable by `authenticated` and not by `anon`. The stored live SQL hash is not exposed, so this does not prove full migration-file equality.
+- The live ledger now contains **108 entries**; the forward delta records **15 source mappings** on top of the frozen 93-entry historical snapshot.
+- PR #74 is merged. It routes lab-item completion and medical-certificate creation through those RPCs and adds a source-level guard against direct client DML on the six phase-29 tables.
+- **Deployment gate remains open:** Vercel reports `Deployment rate limited — retry in 24 hours` for main commit `50c833cdcace1489f87f3b09696a154ec33d79ae`. The last confirmed production deployment is still the earlier main commit `bfc34bba1a880b385bc356f3dca1db0fb5068fe1`. Do not apply phase 29 while the production alias may still serve the old direct-write UI.
+- Once Vercel deploys the merged UI, verify the canonical alias and the commit SHA, then apply `db/roshan_phase29_clinical_child_rpc_only_writes.sql` as a forward migration and confirm direct DML is denied while the RPCs still work. Update the manifest to 109 ledger entries / 16 forward-source mappings only after live read-back.
+

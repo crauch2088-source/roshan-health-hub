@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 107,
-  "latest_live_version": "20261018064139",
+  "live_ledger_count": 108,
+  "latest_live_version": "20261018064638",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 14,
+  "forward_migration_count": 15,
   "entries": [
     {
       "version": "20261017125924",
@@ -131,6 +131,15 @@
       "normalized_source_sql_sha256": "2efefaf0827e9b041ccae8a5ee825b589a39f4ac20a884c38f53bf6195584c47",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact SQL source text was submitted through the Supabase migration API after PostgreSQL 17 cross-branch regression passed; ledger version/name were read back exactly once. Stored live SQL hash is not exposed by the current audit interface."
+    },
+    {
+      "version": "20261018064638",
+      "name": "roshan_clinical_child_write_rpcs",
+      "source_path": "db/roshan_phase28_clinical_child_write_rpcs.sql",
+      "source_git_blob_sha": "bc215f0d8c9b6fe49eda75877b1cddb5bedd1754",
+      "normalized_source_sql_sha256": "72e17c492b9a498f4421403273c8c4d5a900e2e587b3970bf0d09a99277abd4e",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Live function definitions for complete_lab_order_item(uuid) and create_medical_certificate(uuid,text,date,date) match the repository source after normalization; authenticated execute is granted and anon execute is denied. Ledger migration name differs from source filename, and stored live SQL hash is not exposed."
     }
   ],
   "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
