@@ -62,9 +62,7 @@ test("finance migration preserves precision and RPC-only access", () => {
   assert.match(integration, /idempotent retry returned different ID/);
   assert.match(integration, /idempotency key accepted a different payload/);
   assert.match(integration, /fractional minor-unit payment amount was accepted/);
-  for (const table of ["insurance_claims", "insurance_claim_items", "insurance_claim_payments"]) {
-    assert.match(migration, new RegExp(table));
-  }
+  // Insurance claim writes are covered by their own migration and integration suite.
 });
 
 test("finance RPC-only guard is part of the standard guard suite", () => {
