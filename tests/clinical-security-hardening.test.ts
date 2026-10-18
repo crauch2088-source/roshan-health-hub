@@ -64,12 +64,17 @@ test("Phase 31 migration includes the critical database guardrails", () => {
     contractMigration,
     /fn_dispense_prescription\(uuid\)[\s\S]*FROM PUBLIC, anon, authenticated/,
   );
-  assert.match(contractMigration, /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.lab_order_items/);
-  assert.match(migration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.medical_certificates/);
+  assert.match(
+    contractMigration,
+    /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.lab_order_items/,
+  );
+  assert.match(
+    migration,
+    /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.medical_certificates/,
+  );
   assert.match(contractMigration, /ALTER COLUMN visit_id SET NOT NULL/);
   assert.match(migration, /certificate issuance requires a linked visit/);
 });
-
 
 test("lab completion is retry-safe and partial saves skip empty items", () => {
   assert.match(migration, /IF v_status = 'completed' THEN\s+RETURN;\s+END IF;/);
@@ -93,8 +98,16 @@ test("visit completion is idempotent and certificate issuance rejects cancelled 
 });
 
 test("deleted super-admin identity cannot bypass branch helpers", () => {
-  assert.match(migration, /CREATE OR REPLACE FUNCTION private\.current_role_code\(\)[\s\S]*deleted_at IS NULL/);
-  for (const helper of ["app_has_branch_access", "app_has_claim_branch", "app_has_invoice_branch", "app_has_patient_branch"]) {
+  assert.match(
+    migration,
+    /CREATE OR REPLACE FUNCTION private\.current_role_code\(\)[\s\S]*deleted_at IS NULL/,
+  );
+  for (const helper of [
+    "app_has_branch_access",
+    "app_has_claim_branch",
+    "app_has_invoice_branch",
+    "app_has_patient_branch",
+  ]) {
     const start = migration.indexOf("CREATE OR REPLACE FUNCTION private." + helper);
     assert.notEqual(start, -1, helper + " replacement missing");
     const end = migration.indexOf("$function$;", start);
@@ -106,8 +119,14 @@ test("deleted super-admin identity cannot bypass branch helpers", () => {
 });
 
 test("contract migration revokes all direct clinical privileges and ledger docs record both phases", () => {
-  assert.match(contractMigration, /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.lab_order_items/);
-  assert.match(contractMigration, /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.medical_certificates/);
+  assert.match(
+    contractMigration,
+    /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.lab_order_items/,
+  );
+  assert.match(
+    contractMigration,
+    /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE public\.medical_certificates/,
+  );
   assert.match(preflightDoc, /schema_migrations/);
   assert.match(reconciliationDoc, /20261018195500/);
 });
