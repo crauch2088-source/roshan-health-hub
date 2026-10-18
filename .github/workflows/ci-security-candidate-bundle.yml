@@ -2,6 +2,24 @@ name: Security candidate bundle regression (isolated fixtures)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'db/roshan_invoice_item_branch_isolation.sql'
+      - 'db/roshan_parent_branch_isolation.sql'
+      - 'db/roshan_queue_followup_branch_isolation.sql'
+      - 'db/roshan_prescription_lab_child_branch_isolation.sql'
+      - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/roshan_invoice_payment_money_precision.sql'
+      - 'db/roshan_security_candidate_bundle_20261017.sql'
+      - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
+      - 'db/tests/insurance_prior_authorization_branch_isolation_integration.sql'
+      - 'db/roshan_phase27_revoke_legacy_invoice_number.sql'
+      - 'db/tests/*branch_isolation*.sql'
+      - 'db/tests/finance_only_rpc_writes_*.sql'
+      - 'db/tests/security_candidate_combined_*.sql'
+      - '.github/workflows/ci-security-candidate-bundle.yml'
   pull_request:
     paths:
       - 'db/roshan_invoice_item_branch_isolation.sql'

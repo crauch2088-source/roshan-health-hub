@@ -15,6 +15,7 @@ on:
       - '.github/workflows/ci-finance-only-rpc-writes.yml'
   push:
     branches:
+      - 'main'
       - 'test/finance-payment-idempotency-hardening'
 
 jobs:
