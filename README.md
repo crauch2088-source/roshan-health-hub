@@ -348,3 +348,10 @@ Read-only verification performed at approximately 2026-10-17 22:18 UTC:
 
 The original machine-readable `docs/recovered-migrations/source-parity-report.json` describes the historical 93-row snapshot only: 92 normalized text matches and one deliberately redacted identity-link migration. The current live Supabase ledger has 97 entries; the reconciliation notes record 96/97 exact source matches after four subsequent entries were matched. Do not read the 93-row JSON report as a fresh 97-row report. Full-chain replay remains blocked by the missing reviewed pre-migration schema baseline; the redacted identity-link statement must never be restored to public source control.
 
+
+
+## Latest execution status — 2026-10-18
+
+- Live Supabase migration ledger: 107 entries through `20261018064139_roshan_phase20_clinical_child_branch_isolation`; the forward-source delta tracks 14 later source mappings on top of the frozen 93-entry historical snapshot. This is not proof of a clean historical replay or persisted live-SQL hash equality.
+- Clinical child branch isolation is applied and read back. A separate PostgreSQL 17 regression workflow for the next RPC-only write rollout passed on `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`.
+- The new clinical write RPC migrations remain source-only until the frontend call sites are migrated and deployed. Direct DML revocation is staged separately to avoid breaking certificate creation or lab completion during rollout.

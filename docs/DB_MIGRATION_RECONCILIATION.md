@@ -541,3 +541,11 @@ The current SQL advisor returned 21 findings: 20 generic `SECURITY DEFINER`-call
 - Paid-only leaked-password protection remains unavailable on the current free plan and is still explicitly unresolved.
 
 The review does not claim full historical replay. The live ledger remains 103 entries through `20261017231629`; the ten-entry source delta verifies source/mapping metadata, not persisted SQL hashes.
+
+
+## Current live/source reconciliation — 2026-10-18, after Phase 20
+
+- The verified live ledger contains **107 entries** through `20261018064139_roshan_phase20_clinical_child_branch_isolation`. The forward-source delta has **14 mappings** above the frozen 93-entry historical hash snapshot. The source verifier validates repository-file hashes and ledger mapping metadata only; it does not query stored SQL hashes from Supabase.
+- The clean clinical child branch-isolation migration is applied and read back. The next staged change is deliberately separate: add two narrowly scoped RPCs first, migrate the frontend to them, then revoke direct client DML only after the deployed UI no longer uses those writes.
+- The new PostgreSQL 17 test workflow for this staged rollout passed on commit `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`. Its fixture verifies same-branch writes, cross-branch denial, permission checks, direct-DML denial, retained SELECT access, and RLS remaining enabled. The production RPC and DML-revocation migrations are still **not applied** at this point.
+- Full historical replay remains unproven because the reviewed initial schema baseline is missing and one environment-specific identity-link migration remains deliberately redacted.

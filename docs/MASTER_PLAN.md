@@ -1546,3 +1546,11 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 2. Consider revoking direct INSERT on `lab_order_items` because new order/item creation already uses `create_lab_order_with_invoice_atomic`; retain direct UPDATE for status/result workflows until those paths are moved to an RPC.
 3. Keep direct INSERT on `medical_certificates` until a dedicated validated RPC exists; its current UI creates certificates directly.
 4. Audit `patient_discounts` and `insurance_prior_authorizations` for any direct UI write paths before restricting their DML. Do not revoke privileges merely because a table has a branch-aware RLS policy.
+
+
+## Execution update — 2026-10-18: clinical child RPC-only write regression prepared
+
+- Added `db/roshan_phase28_clinical_child_write_rpcs.sql` and `db/roshan_phase29_clinical_child_rpc_only_writes.sql` as **source-only staged candidates**. They are not applied to production.
+- Added a disposable PostgreSQL 17 fixture/integration test and `.github/workflows/ci-clinical-child-rpc-writes.yml`. The push-triggered run passed on `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`; the test checks direct DML denial, retained SELECT, RLS, authenticated-only RPC execution, same-branch success, cross-branch denial, and invalid certificate dates.
+- The live ledger remains 107 entries through `20261018064139`; the separate forward-source delta has 14 mappings. The current source verifier does not establish stored SQL hash equality or full historical replay.
+- Safe rollout order: apply Phase 28 functions-only migration after verifying rollback; switch the certificate and lab-item completion UI to RPC calls and deploy; smoke-test both paths; only then apply Phase 29 direct-write revocations. Do not revoke `lab_order_items` UPDATE or `medical_certificates` INSERT before the new frontend is deployed.
