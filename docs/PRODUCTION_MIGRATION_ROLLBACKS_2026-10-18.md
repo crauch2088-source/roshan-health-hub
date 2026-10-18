@@ -248,3 +248,20 @@ The two final precision migrations are now applied and verified in `jewzonxplxho
 - `roshan_pharmacy_batch_money_precision` — `20261017231629`
 
 The ledger now contains 103 entries. Preflight/postflight confirmed zero payments, pharmacy inventory batches, stock movements, claims, claim payments, expenses, and prior authorizations; all current medicine master prices have at most two decimal places. No business rows were modified by these migrations.
+
+
+## Pharmacy receipt idempotency migration — 2026-10-18
+
+Applied production migration: `roshan_pharmacy_batch_receipt_idempotency`, ledger version `20261018061746`. It adds `pharmacy_inventory.idempotency_key`, a partial unique index, and the atomic RPC `fn_receive_pharmacy_batch_atomic(..., p_idempotency_key)`. The application PR was merged only after the live migration and its grants were read-back verified.
+
+**Preferred response to a regression:** roll the application back to a build that does not call the new RPC, then repair forward. Do not remove the idempotency column/index as a routine rollback: once any receipt has been recorded with a key, deleting that history weakens retry safety. Preserve the additive column/index unless a deliberate, reviewed cleanup is required.
+
+If a rollback is absolutely necessary, first verify the deployed app no longer calls this function and record the current ledger/data state. The narrow RPC rollback is:
+
+```sql
+DROP FUNCTION IF EXISTS public.fn_receive_pharmacy_batch_atomic(
+  uuid, numeric, text, date, date, numeric, numeric, uuid, text, text
+);
+```
+
+This intentionally leaves the `idempotency_key` column and its partial unique index in place. Do not drop them if any row has a non-null key. If a later cleanup is explicitly approved, first prove `SELECT count(*) FROM public.pharmacy_inventory WHERE idempotency_key IS NOT NULL` returns zero, verify no deployed client calls the RPC, and separately review the data-retention impact before dropping the index/column. Do not revert the existing `fn_receive_pharmacy_batch` implementation as part of this rollback.
