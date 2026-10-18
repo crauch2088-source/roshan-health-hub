@@ -6,7 +6,7 @@ CREATE SCHEMA auth;
 CREATE SCHEMA private;
 
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
-AS $ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $;
+AS $auth_uid$ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $auth_uid$;
 
 CREATE TABLE public.roles (id uuid PRIMARY KEY, code text);
 CREATE TABLE public.users (
@@ -17,11 +17,11 @@ CREATE TABLE public.permissions (id uuid PRIMARY KEY, code text);
 CREATE TABLE public.role_permissions (role_id uuid, permission_id uuid);
 
 CREATE FUNCTION private.current_app_user_id() RETURNS uuid
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $ SELECT NULL::uuid $;
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT NULL::uuid $body$;
 CREATE FUNCTION private.app_has_perm(text) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $ SELECT true $;
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT true $body$;
 CREATE FUNCTION private.is_super_admin() RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $ SELECT false $;
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $body$ SELECT false $body$;
 CREATE FUNCTION private.app_has_visit_branch_access(uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $$ SELECT true $$;
 CREATE FUNCTION private.app_has_lab_order_item_branch_access(uuid) RETURNS boolean
@@ -29,11 +29,11 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $$ SELECT true $$;
 CREATE FUNCTION private.app_has_patient_branch(uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $$ SELECT true $$;
 CREATE FUNCTION public.app_has_perm(_code text) RETURNS boolean
-LANGUAGE sql STABLE SET search_path TO '' AS $ SELECT private.app_has_perm(_code) $;
+LANGUAGE sql STABLE SET search_path TO '' AS $body$ SELECT private.app_has_perm(_code) $body$;
 CREATE FUNCTION public.current_app_user_id() RETURNS uuid
-LANGUAGE sql STABLE SET search_path TO '' AS $ SELECT private.current_app_user_id() $;
+LANGUAGE sql STABLE SET search_path TO '' AS $body$ SELECT private.current_app_user_id() $body$;
 CREATE FUNCTION public.is_super_admin() RETURNS boolean
-LANGUAGE sql STABLE SET search_path TO '' AS $ SELECT private.is_super_admin() $;
+LANGUAGE sql STABLE SET search_path TO '' AS $body$ SELECT private.is_super_admin() $body$;
 
 CREATE TABLE public.cashbox_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, transaction_type text NOT NULL,
