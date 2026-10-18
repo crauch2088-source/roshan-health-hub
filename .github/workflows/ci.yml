@@ -393,3 +393,32 @@ jobs:
             -f db/tests/redacted_migration_policy_replay_fixture.sql \
             -f docs/recovered-migrations/replay-safe/20260818191254_fix_patients_rls_and_admin_link.sql \
             -f db/tests/redacted_migration_policy_replay_integration.sql
+
+
+  sql-clinical-security-hardening:
+    name: Clinical security hardening (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replay Phase 31 migration and catalog assertions on disposable PostgreSQL 17
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
+            -f db/tests/clinical_security_hardening_fixture.sql \\
+            -f db/roshan_phase31_clinical_financial_security_hardening.sql \\
+            -f db/tests/clinical_security_hardening_assertions.sql
+
