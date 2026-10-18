@@ -1505,14 +1505,27 @@ Two further tested migrations were applied after the 101-entry state above:
 - For a global super-admin without a profile branch, the RPC uses the sole active branch only when exactly one exists; with zero or multiple active branches it fails closed. This avoids orphan stock now while preserving multi-branch safety later.
 - Authenticated users can execute the atomic RPC; `anon` cannot. The legacy non-idempotent `fn_receive_pharmacy_batch` is no longer executable by `authenticated`. Direct `INSERT` on `stock_movements` and its insert policy were removed after confirming the inventory and pharmacy UI no longer write the ledger directly.
 - Live catalog read-back: **56/56** public base tables have RLS; **45** SECURITY DEFINER functions exist, **0** lack a fixed `search_path`, **0** are executable by `anon`, and **20** are executable by `authenticated` for reviewed app RPCs. Security Advisor now reports 20 authenticated-callable SECURITY DEFINER warnings, one extension-in-public warning, and one plan-gated leaked-password-protection warning.
-- Inventory batches and stock-movement rows remained **0** before and after both migrations. No patient, invoice, pharmacy, or accounting rows were created or changed by this DDL work.
+- The pharmacy receipt migrations left inventory batches and stock-movement rows at **0**; the invoice write migration was applied while invoices and invoice items were both **0**. No business rows were created or updated by these DDL changes.
 - The canonical production URL `https://roshan-health-hub.vercel.app/` returned HTTP 200 with the Arabic RTL app shell. This is a route smoke check, not authenticated end-to-end clinical acceptance.
 
 ### Current gates
 
-1. Keep the historical 93-entry source-parity snapshot frozen; update the separate forward delta to 12 source mappings for the 105-entry ledger. The live database does not expose stored migration SQL hashes, so the workflow must not claim live SQL hash equality or full historical replay.
-2. Merge PR #71 only after the refreshed source-parity workflow and full CI pass on the final documentation commit.
-3. Close stale draft PR #29 as superseded after PR #71 is merged; its original SQL was not applied. Do not merge its 208-commit-behind branch over the new atomic flow.
-4. Review the stacked finance/invoice and clinical child-row proposals against current `main`; do not merge their old base branches blindly.
+1. Keep the historical 93-entry source-parity snapshot frozen; the separate forward delta now records 13 source mappings for the 106-entry ledger. The live database does not expose stored migration SQL hashes, so the workflow must not claim live SQL hash equality or full historical replay.
+2. PR #71 is merged; its pharmacy receipt guard migration is live as ledger version `20261018062939`.
+3. PR #29 is closed as superseded; its original SQL was not applied.
+4. PR #33's stale stacked diff is closed. The clean invoice RPC-only write migration from PR #72 is applied live as `20261018063549`; its final documentation/CI commit is pending merge.
 5. Continue role-by-role phone-first RTL/LTR clinical workflow tests and visual/UAT review before declaring clinical launch readiness.
 
+
+
+## Execution update — 2026-10-18: invoice write-path hardening applied
+
+- A clean replacement branch based on current `main` was used instead of merging the stale stacked PR #33 diff. Its PostgreSQL 17 integration and full CI passed **21/21** checks before the production migration was applied.
+- Production migration `roshan_phase19_invoice_rpc_only_writes` was applied and read back exactly once as ledger version `20261018063549`. The live ledger now has **106 entries**.
+- Authenticated direct INSERT/UPDATE/DELETE on `invoices` and `invoice_items` is now denied. The three reviewed atomic billing, visit-consultation, and lab-invoice RPCs remain executable by `authenticated` and not by `anon`.
+- `invoice_items_select` now checks permission and parent-invoice branch access through `private.app_has_branch_access(i.branch_id)`. Pre- and post-migration counts remained at **0 invoices / 0 invoice items**.
+- The historical 93-entry migration snapshot remains frozen. The forward delta now has 13 source mappings for the 106-entry ledger; this is repository-source verification, not proof that the live database exposes matching stored SQL or that a clean historical replay succeeds.
+
+### Next security audit — clinical child-table direct-write grants
+
+A read-only live privilege audit still shows authenticated direct DML grants on `prescriptions`, `prescription_items`, `lab_order_items`, `medical_certificates`, `patient_discounts`, and `insurance_prior_authorizations`. Current RLS policies already use branch-aware helper functions on these tables, so do not blindly merge stale PR #34 or revoke all grants without first verifying every current frontend write path and atomic RPC. The next batch should map call sites, test cross-branch SELECT/INSERT/UPDATE/DELETE in PostgreSQL 17, then revoke direct writes only where RPC coverage is complete.

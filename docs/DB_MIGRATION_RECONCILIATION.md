@@ -1,10 +1,10 @@
 ## Current live ledger state — 2026-10-18 06:29 UTC
 
-The live ledger now has **105 rows**, latest `20261018062939_roshan_pharmacy_batch_receipt_guards`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
+The live ledger now has **106 rows**, latest `20261018063549_roshan_phase19_invoice_rpc_only_writes`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
 
-The frozen 93-row historical snapshot remains **92 normalized matches plus one intentionally redacted identity-link migration**. The forward-source delta now tracks 12 additional mappings by repository blob/source hashes. The forward-source workflow does not access persisted migration SQL, so it does not prove those 12 files are byte-for-byte or semantically equal to live SQL. Full historical replay remains unproven because the clean-bootstrap baseline is missing.
+The frozen 93-row historical snapshot remains **92 normalized matches plus one intentionally redacted identity-link migration**. The forward-source delta now tracks 13 additional mappings by repository blob/source hashes. The forward-source workflow does not access persisted migration SQL, so it does not prove those 12 files are byte-for-byte or semantically equal to live SQL. Full historical replay remains unproven because the clean-bootstrap baseline is missing.
 
-Post-apply read-back: **56/56** public base tables have RLS; 45 SECURITY DEFINER functions exist, zero lack an explicit fixed `search_path`, zero are executable by `anon`, and 20 are executable by `authenticated`. Direct authenticated/anonymous INSERT into `stock_movements` is denied; its insert policy is absent; the legacy receive RPC is denied to `authenticated`; the atomic idempotent RPC remains available to `authenticated` only. Inventory batches and stock-movement rows remained at zero.
+Post-apply read-back: **56/56** public base tables have RLS; 45 SECURITY DEFINER functions exist, zero lack an explicit fixed `search_path`, zero are executable by `anon`, and 20 are executable by `authenticated`. Direct authenticated/anonymous INSERT into `stock_movements` is denied; its insert policy is absent; the legacy receive RPC is denied to `authenticated`; the atomic idempotent RPC remains available to `authenticated` only. Direct DML on `invoices` and `invoice_items` is also denied to `authenticated`; the three reviewed invoice RPCs remain available to authenticated callers but not anon. Inventory batches, stock-movement rows, invoices, and invoice items remained at zero.
 
 ---
 

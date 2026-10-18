@@ -276,3 +276,12 @@ Applied migration: `roshan_pharmacy_batch_receipt_guards`, ledger version `20261
 If a severe regression requires reverting only the new eligibility function body, reapply the reviewed `db/roshan_pharmacy_batch_receipt_idempotency.sql` function definition after verifying the current app still calls the atomic RPC. Do **not** restore `stock_movements` INSERT to `authenticated`, do not recreate `stock_movements_insert`, and do not re-grant `fn_receive_pharmacy_batch` to `authenticated`. This emergency fallback loses the newer medicine/supplier/date/branch/overflow guards, so it should be temporary and followed by a forward fix. Preserve idempotency history and do not drop the column/index.
 
 The global super-admin branch fallback intentionally uses the sole active branch only. If multiple branches are active and a global super-admin has no assigned branch, the RPC fails closed; assign a branch or implement an explicit target-branch selection rather than weakening isolation.
+
+
+## Invoice RPC-only write migration — 2026-10-18
+
+Applied migration: `roshan_phase19_invoice_rpc_only_writes`, ledger version `20261018063549`. It revokes authenticated direct DML on invoice headers and lines, keeps the reviewed atomic billing/visit/lab RPCs available to `authenticated`, removes anonymous/public execution, and scopes invoice-line reads through the parent invoice's branch.
+
+Pre/post counts were **0 rows in `invoices` and 0 in `invoice_items`**. The migration is privilege/policy-only and does not rewrite or delete invoice data.
+
+**Preferred recovery is a forward fix.** If a wrapper RPC regression appears, repair the wrapper and test it in PostgreSQL 17; do not restore direct client INSERT/UPDATE/DELETE on either invoice table. If the SELECT policy itself must be reverted, restore the prior parent-invoice branch helper predicate while retaining the direct-DML revocations and RPC grants. Do not grant invoice-table DML to `authenticated` as a rollback shortcut.
