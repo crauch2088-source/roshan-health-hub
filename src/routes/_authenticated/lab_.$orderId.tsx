@@ -250,14 +250,10 @@ function LabOrderPageInner() {
           }
         }
 
-        await supabase
-          .from("lab_order_items")
-          .update({
-            status: "completed",
-            completed_at: new Date().toISOString(),
-            updated_by: user?.id ?? null,
-          })
-          .eq("id", s(item, "id"));
+        const { error: completionError } = await supabase.rpc("complete_lab_order_item", {
+          p_order_item_id: s(item, "id"),
+        });
+        if (completionError) throw new Error(completionError.message);
       }
 
       await supabase
