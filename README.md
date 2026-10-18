@@ -1,3 +1,13 @@
+## Execution update — 2026-10-18: finance payment precision and idempotency regression
+
+- PR [#77](https://github.com/crauch2088-source/roshan-health-hub/pull/77) merged as `8530995f8560e2cd050a5e12ea1e1b3cb59ce57f` after **30/30 exact-head checks succeeded**, including CodeQL, install/audit/typecheck/lint/build, source-parity validation, the PostgreSQL 17 finance RPC-only suite, the two-session invoice-payment idempotency race, and the combined security-candidate migration regression.
+- The candidate finance migration now retains the live invoice-payment precision guard. The combined-schema workflow now applies the ordered migrations in a single `psql` command. Source-parity metadata was refreshed for the edited bundle while `live_sql_hash_verified=false` remains explicit; this does not claim persisted live SQL equality or a complete historical replay.
+- Production read-only verification: the migration ledger remains **109 entries**, latest `20261018065708`. Authenticated direct INSERT/UPDATE/DELETE remains denied on `cashbox_transactions` and `payments`; INSERT remains denied on `expenses`, `supplier_bills`, and `supplier_payments`. The validated cashbox, invoice-payment, and supplier-bill RPCs remain executable by `authenticated`, not `anon`. The legacy `add_cashbox_entry` RPC exists but is executable by neither browser role. The live invoice-payment function retains its two-decimal precision guard.
+- **No production SQL or business rows were changed by PR #77.** It adds source/test hardening and repairs CI; do not apply the candidate finance migration merely because it merged.
+- Phase 30 remains deployment-gated: direct DML revocation on `lab_order_items` and `medical_certificates` must wait until the current-main frontend is deployed to the canonical production alias and both RPC-backed paths are smoke-tested. The recorded Vercel free-tier quota window ends at **2026-10-19 08:52 Africa/Khartoum**; recheck the actual deployment state after that time before any revocation.
+
+---
+
 # Production monitoring update — 2026-10-17 15:13 UTC
 
 - Better Stack monitor **Roshan Health Hub - Production** (`5086672`) now targets the Vercel-verified canonical production domain `https://roshan-health-hub.vercel.app/`. The initial `roshan-health-hub-hjfy.vercel.app` target returned HTTP 404 `DEPLOYMENT_NOT_FOUND`; incident `1033415913` was created.
