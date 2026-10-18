@@ -1,3 +1,12 @@
+## Execution update — 2026-10-18: Arabic-layout keyboard and responsive search fixes
+
+- Current main commit `3e705cd39cd3b4f7f5181e8d71b025740b8411cf` fixes global-search and navigation shortcuts to use physical `KeyboardEvent.code` values, so Ctrl/Cmd+K and permission-gated route shortcuts keep working when the active keyboard layout is Arabic. Navigation shortcuts remain suppressed while typing or during IME composition.
+- The desktop search trigger now shows its text label at the same `sm` breakpoint where the button first appears, avoiding a wide icon-only control on tablet-width layouts. Added `tests/keyboard-shortcuts.test.ts` and a responsive-label assertion in `tests/nav-layout.test.ts`; both are included in `npm run test:guard`.
+- **All 16 exact-head checks passed** on this commit, including CodeQL, typecheck/lint/build, source-parity validation, finance RPC-only regression, and the two-session invoice-payment idempotency test. The source-level UI fix is not yet on production; no screenshot-based full-screen visual audit is claimed.
+- Phase 30 remains intentionally gated. Vercel's free API deployment quota resets at **2026-10-19 08:52 Africa/Khartoum**; the one-time continuation task is scheduled for **09:00**. Do not revoke direct writes on `lab_order_items` or `medical_certificates` until the canonical alias serves current main and both RPC paths are smoke-tested.
+
+---
+
 ## Execution update — 2026-10-18: finance payment precision and idempotency regression
 
 - PR [#77](https://github.com/crauch2088-source/roshan-health-hub/pull/77) merged as `8530995f8560e2cd050a5e12ea1e1b3cb59ce57f` after **30/30 exact-head checks succeeded**, including CodeQL, install/audit/typecheck/lint/build, source-parity validation, the PostgreSQL 17 finance RPC-only suite, the two-session invoice-payment idempotency race, and the combined security-candidate migration regression.
