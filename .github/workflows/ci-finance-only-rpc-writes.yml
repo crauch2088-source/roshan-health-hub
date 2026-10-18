@@ -7,10 +7,15 @@ on:
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
       - 'db/tests/finance_only_rpc_writes_fixture.sql'
       - 'db/tests/finance_only_rpc_writes_integration.sql'
+      - 'db/roshan_invoice_payment_money_precision.sql'
+      - 'db/tests/finance_payment_idempotency_concurrency.sh'
+      - 'db/tests/finance_payment_idempotency_concurrency_setup.sql'
+      - 'tests/finance-rpc-only-writes.test.ts'
+      - 'package.json'
       - '.github/workflows/ci-finance-only-rpc-writes.yml'
   push:
     branches:
-      - 'security/finance-only-rpc-writes'
+      - 'test/finance-payment-idempotency-hardening'
 
 jobs:
   postgres-integration:
@@ -39,3 +44,26 @@ jobs:
             -f db/tests/finance_only_rpc_writes_fixture.sql \
             -f db/roshan_phase27_finance_rpc_only_writes.sql \
             -f db/tests/finance_only_rpc_writes_integration.sql
+
+  payment-idempotency-concurrency:
+    name: PostgreSQL 17 invoice-payment idempotency concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Race two identical idempotent payment requests
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/finance_payment_idempotency_concurrency.sh

@@ -81,6 +81,9 @@ BEGIN
  rejected:=false;
  BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001','Infinity'::numeric,'cash','invalid infinity','key-infinity'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
  IF NOT rejected THEN RAISE EXCEPTION 'infinite invoice payment amount was accepted'; END IF;
+ rejected:=false;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',1.001,'cash','fractional minor unit','key-precision'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'fractional minor-unit payment amount was accepted'; END IF;
  first_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000001',3,'cash','test','key-valid');
  retry_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000001',3,'cash','test','key-valid');
  IF first_id IS DISTINCT FROM retry_id THEN RAISE EXCEPTION 'idempotent retry returned different ID'; END IF;

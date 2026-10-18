@@ -9,6 +9,7 @@ on:
       - 'db/roshan_queue_followup_branch_isolation.sql'
       - 'db/roshan_prescription_lab_child_branch_isolation.sql'
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/roshan_invoice_payment_money_precision.sql'
       - 'db/roshan_security_candidate_bundle_20261017.sql'
       - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
       - 'db/tests/insurance_prior_authorization_branch_isolation_integration.sql'
@@ -102,6 +103,7 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/security_candidate_combined_fixture.sql \
             -f db/roshan_security_candidate_bundle_20261017.sql \
+            -f db/roshan_invoice_payment_money_precision.sql \
             -f db/roshan_phase27_revoke_legacy_invoice_number.sql \
             -f db/roshan_insurance_prior_authorization_branch_isolation.sql \
             -f db/tests/security_candidate_combined_integration.sql
