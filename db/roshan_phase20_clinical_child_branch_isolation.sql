@@ -242,7 +242,7 @@ ALTER POLICY lab_order_items_delete ON public.lab_order_items
     AND (SELECT private.app_has_lab_order_branch_access(lab_order_items.order_id))
   );
 
-CREATE OR REPLACE FUNCTION private.app_has_prior_authorization_branch(_patient_insurance_id uuid)
+CREATE OR REPLACE FUNCTION private.app_has_prior_authorization_branch_access(_patient_insurance_id uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -258,8 +258,8 @@ AS $function$
     )
 $function$;
 
-REVOKE ALL ON FUNCTION private.app_has_prior_authorization_branch(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION private.app_has_prior_authorization_branch(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION private.app_has_prior_authorization_branch_access(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.app_has_prior_authorization_branch_access(uuid) TO authenticated;
 
 ALTER POLICY medical_certificates_select ON public.medical_certificates
   USING (
@@ -323,19 +323,19 @@ ALTER POLICY patient_discounts_delete ON public.patient_discounts
 ALTER POLICY insurance_prior_authorizations_sel ON public.insurance_prior_authorizations
   USING (
     (SELECT public.app_has_perm('insurance.read'))
-    AND (SELECT private.app_has_prior_authorization_branch(insurance_prior_authorizations.patient_insurance_id))
+    AND (SELECT private.app_has_prior_authorization_branch_access(insurance_prior_authorizations.patient_insurance_id))
   );
 ALTER POLICY insurance_prior_authorizations_ins ON public.insurance_prior_authorizations
   WITH CHECK (
     (SELECT public.app_has_perm('insurance.create'))
-    AND (SELECT private.app_has_prior_authorization_branch(insurance_prior_authorizations.patient_insurance_id))
+    AND (SELECT private.app_has_prior_authorization_branch_access(insurance_prior_authorizations.patient_insurance_id))
   );
 ALTER POLICY insurance_prior_authorizations_upd ON public.insurance_prior_authorizations
   USING (
     (SELECT public.app_has_perm('insurance.update'))
-    AND (SELECT private.app_has_prior_authorization_branch(insurance_prior_authorizations.patient_insurance_id))
+    AND (SELECT private.app_has_prior_authorization_branch_access(insurance_prior_authorizations.patient_insurance_id))
   )
   WITH CHECK (
     (SELECT public.app_has_perm('insurance.update'))
-    AND (SELECT private.app_has_prior_authorization_branch(insurance_prior_authorizations.patient_insurance_id))
+    AND (SELECT private.app_has_prior_authorization_branch_access(insurance_prior_authorizations.patient_insurance_id))
   );
