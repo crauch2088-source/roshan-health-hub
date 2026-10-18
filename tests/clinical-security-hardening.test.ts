@@ -49,7 +49,7 @@ test("Phase 31 migration includes the critical database guardrails", () => {
   );
   assert.match(
     migration,
-    /complete_lab_order_item[\s\S]*result_value[\s\S]*numeric_value/,
+    /complete_lab_order_item[\s\S]*numeric_value[\s\S]*result_value/,
   );
   assert.match(migration, /invalid lab status transition/);
   assert.match(migration, /r\.code='doctor'[\s\S]*p_visit_id/);
