@@ -28,14 +28,23 @@ test("medical certificate creation derives the author on the server", () => {
 });
 
 test("clinical RPC migration enforces permission, branch, fixed search path, and least privilege", () => {
-  assert.match(phase28, /FUNCTION public\.complete_lab_order_item[\s\S]*?SECURITY DEFINER\s+SET search_path TO ''/);
-  assert.match(phase28, /FUNCTION public\.create_medical_certificate[\s\S]*?SECURITY DEFINER\s+SET search_path TO ''/);
+  assert.match(
+    phase28,
+    /FUNCTION public\.complete_lab_order_item[\s\S]*?SECURITY DEFINER\s+SET search_path TO ''/,
+  );
+  assert.match(
+    phase28,
+    /FUNCTION public\.create_medical_certificate[\s\S]*?SECURITY DEFINER\s+SET search_path TO ''/,
+  );
   assert.match(phase28, /private\.app_has_lab_order_item_branch_access/);
   assert.match(phase28, /private\.app_has_patient_branch/);
   assert.match(phase28, /public\.app_has_perm\('lab\.update'\)/);
   assert.match(phase28, /public\.app_has_perm\('certificates\.create'\)/);
   assert.match(phase28, /FROM PUBLIC, anon/);
-  assert.match(phase29, /public\.prescriptions[\s\S]*public\.insurance_prior_authorizations[\s\S]*FROM PUBLIC, anon, authenticated/);
+  assert.match(
+    phase29,
+    /public\.prescriptions[\s\S]*public\.insurance_prior_authorizations[\s\S]*FROM PUBLIC, anon, authenticated/,
+  );
   assert.match(phase29, /REVOKE ALL ON SEQUENCE public\.medical_certificates_id_seq/);
 });
 
