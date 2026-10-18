@@ -80,7 +80,7 @@ END $idempotency$;
 
 
 DO $receipt_guards$
-DECLARE rejected boolean;
+DECLARE rejected boolean; batch_id uuid;
 BEGIN
   IF NOT has_function_privilege('authenticated','public.fn_receive_pharmacy_batch_atomic(uuid,numeric,text,date,date,numeric,numeric,uuid,text,text)','EXECUTE') THEN
     RAISE EXCEPTION 'test failed: authenticated cannot execute the guarded atomic receipt RPC';
