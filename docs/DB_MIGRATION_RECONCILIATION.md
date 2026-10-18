@@ -1,3 +1,15 @@
+## Current live ledger state — 2026-10-18 08:00 UTC
+
+- Connected production project `jewzonxplxhogqrnhosl` is ACTIVE_HEALTHY on PostgreSQL 17.6. The live migration ledger remains **109 entries**, latest `20261018065708_roshan_clinical_child_rpc_only_writes`.
+- Phase 29 is confirmed live: authenticated direct INSERT/UPDATE/DELETE is denied on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; SELECT remains granted and RLS is enabled.
+- Phase 30 is still staged. `lab_order_items` and `medical_certificates` retain authenticated direct INSERT/UPDATE/DELETE/REFERENCES/TRIGGER; `anon` has no SELECT or write grants. `complete_lab_order_item(uuid)` and `create_medical_certificate(uuid,text,date,date)` are SECURITY DEFINER with fixed empty `search_path`, executable by authenticated and not anon.
+- Clinical PostgreSQL 17 regression passed on commit `84c3d1fcef1c6213367e59103204d9c0403fc7d5`. Workflow push filters now include both RPC frontend routes and their contract tests. Documentation updates are on current main after that commit; verify the current SHA/checks before future release actions.
+- Canonical production alias `https://roshan-health-hub.vercel.app/` remains READY on older deployment commit `631abf83415b2c878569d34df1360936f5a9d158`. Vercel rejected a pinned deployment with HTTP 402 `api-deployments-free-per-day` and retry-after 86,400 seconds. Do not apply Phase 30 until current-main deployment is verified and both workflows pass synthetic-data smoke tests.
+- Security Advisor shows one extension-in-public warning, 22 authenticated-callable SECURITY DEFINER warnings, and Performance Advisor shows 89 unused-index findings. These are not authorization to bulk-revoke functions, move `pg_trgm`, or drop indexes. Classify each item and add behavior regression coverage before any privilege/schema/index change.
+- Full historical replay and persisted live SQL hash parity remain unproven; `live_sql_hash_verified=false` must remain explicit where live SQL cannot be read back.
+
+---
+
 ## Current live ledger state — 2026-10-18 07:20 UTC
 
 The connected live Supabase ledger has **109 rows**, latest `20261018065708_roshan_clinical_child_rpc_only_writes`. The forward-source delta contains **16 mappings** above the frozen 93-row historical snapshot. The verifier checks repository-source/blob hashes and version mappings; it does **not** query persisted SQL hashes from Supabase. Full historical replay remains unproven because the reviewed initial-schema baseline is missing and one environment-specific identity-link migration remains deliberately redacted.
