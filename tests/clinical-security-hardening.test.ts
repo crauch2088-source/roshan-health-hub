@@ -25,6 +25,7 @@ test("certificate issuance requires doctor role and linked visit", () => {
   assert.match(certificates, /user\?\.role_code === ["']doctor["']/);
   assert.match(certificates, /p_visit_id:\s*form\.visit_id/);
   assert.match(certificates, /form\.visit_id/);
+  assert.match(certificates, /disabled=\{create\.isPending \|\| !form\.patient_id \|\| !form\.visit_id\}/);
   assert.match(certificates, /s\(c, ["']certificate_number["']\)/);
   assert.doesNotMatch(certificates, /\.from\(["']medical_certificates["']\)\s*\.(insert|update|upsert|delete)\s*\(/);
 });

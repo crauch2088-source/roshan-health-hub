@@ -319,7 +319,7 @@ function CertificatesPageInner() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              disabled={create.isPending || !form.patient_id}
+              disabled={create.isPending || !form.patient_id || !form.visit_id}
               onClick={() => create.mutate(undefined as never)}
             >
               {create.isPending ? "Saving..." : lang === "ar" ? "إصدار" : "Issue"}

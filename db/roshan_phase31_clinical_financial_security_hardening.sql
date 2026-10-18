@@ -224,6 +224,7 @@ SELECT pg_catalog.setval(
 ALTER TABLE public.medical_certificates
   ALTER COLUMN certificate_number SET DEFAULT nextval('public.medical_certificate_number_seq'::regclass);
 ALTER TABLE public.medical_certificates ALTER COLUMN certificate_number SET NOT NULL;
+ALTER SEQUENCE public.medical_certificate_number_seq OWNED BY public.medical_certificates.certificate_number;
 CREATE UNIQUE INDEX IF NOT EXISTS medical_certificates_certificate_number_uq
   ON public.medical_certificates (certificate_number);
 
