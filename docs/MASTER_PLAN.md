@@ -1585,3 +1585,16 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - The clinical PostgreSQL 17 regression, source-parity check, and standard CI passed on the staged source/test commit. Current live ledger is **109 entries** with **16 forward-source mappings** over the frozen 93-entry snapshot; full historical replay and persisted live SQL hash equality remain unproven.
 - Phase 30 covers `lab_order_items` and `medical_certificates`; it must not be applied until the RPC frontend is deployed to production and both paths are smoke-verified.
 - Read-only global access-control audit: **56/56** public base tables have RLS enabled; **44/56** also force RLS; **0** public base tables grant any privilege to `anon`. The catalog contains **47 public + 34 private SECURITY DEFINER functions**; **0** lack an explicit fixed `search_path`. No public SECURITY DEFINER function is executable by `anon`. Two private functions inherit PUBLIC EXECUTE, but `anon` has no `USAGE` on `private`; one helper is needed by authenticated RLS policies and the other is trigger-only. No change was made because no reachable anonymous path was found and the existing trigger path should not be disturbed without a dedicated regression. The canonical alias remains on the previous deployment because Vercel's free API deployment quota is exhausted until 2026-10-19 08:52 Africa/Khartoum. No preview environment was promoted. A one-time continuation task is scheduled for 09:00 Africa/Khartoum tomorrow.
+
+
+## Phase 31 — production execution record (2026-10-18)
+
+- [x] Production preflight: 0 duplicate normalized active national-ID groups / 0 excess rows; 0 duplicate active non-rejected claim groups / 0 excess rows; medical-certificate table empty before Expand.
+- [x] Apply Expand via Supabase official `apply_migration`; live version `20261018201642`.
+- [x] Verify catalog: identity/branch + finance functions, clinical atomic RPCs, fixed empty `search_path`, validated certificate visit FK, and three unique indexes.
+- [x] Mark PR #78 ready and squash-merge to `main`; merge SHA `9e8430a8109723d6bb8772824828ac82eaa51fac`.
+- [x] Verify Vercel production deployment reached READY for merge SHA and carries `roshan-health-hub.vercel.app`.
+- [x] Apply Contract via official `apply_migration`; live version `20261018201758`; live ledger now 111 entries.
+- [x] Verify legacy `fn_dispense_prescription(uuid)` EXECUTE revoked from `authenticated`; all six direct-write privileges revoked on `lab_order_items` and `medical_certificates`; `medical_certificates.visit_id` is NOT NULL.
+- [ ] Authenticated end-to-end smoke test remains outstanding: the available production scrape returned the loading placeholder, and no authenticated browser session was available. Do not claim this test passed until it is executed.
+- Historical full migration replay and persisted SQL hash equality remain unproven; preserve that caveat.
