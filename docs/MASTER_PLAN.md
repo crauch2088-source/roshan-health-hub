@@ -1,9 +1,10 @@
-## Execution update — 2026-10-18: Arabic-layout keyboard and responsive search fixes
+## Execution update — 2026-10-18: current-main verification and Vercel quota gate
 
-- Current main commit `3e705cd39cd3b4f7f5181e8d71b025740b8411cf` fixes global-search and navigation shortcuts to use physical `KeyboardEvent.code` values, so Ctrl/Cmd+K and permission-gated route shortcuts keep working when the active keyboard layout is Arabic. Navigation shortcuts remain suppressed while typing or during IME composition.
-- The desktop search trigger now shows its text label at the same `sm` breakpoint where the button first appears, avoiding a wide icon-only control on tablet-width layouts. Added `tests/keyboard-shortcuts.test.ts` and a responsive-label assertion in `tests/nav-layout.test.ts`; both are included in `npm run test:guard`.
-- **All 16 exact-head checks passed** on this commit, including CodeQL, typecheck/lint/build, source-parity validation, finance RPC-only regression, and the two-session invoice-payment idempotency test. The source-level UI fix is not yet on production; no screenshot-based full-screen visual audit is claimed.
-- Phase 30 remains intentionally gated. Vercel's free API deployment quota resets at **2026-10-19 08:52 Africa/Khartoum**; the one-time continuation task is scheduled for **09:00**. Do not revoke direct writes on `lab_order_items` or `medical_certificates` until the canonical alias serves current main and both RPC paths are smoke-tested.
+- Current `main` is `08faa7918311cd55fc732faf59813bfc35cc583a` (`docs(monitoring): confirm production uptime restored`). All **16/16 exact-head checks passed**, including CodeQL, install/audit/typecheck/lint/build, migration source-parity validation, PostgreSQL 17 finance RPC-only writes, and invoice-payment idempotency concurrency.
+- Read-only Supabase verification: migration ledger remains **109 entries**, latest `20261018065708_roshan_clinical_child_rpc_only_writes`. Phase 29 is already applied to `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; authenticated direct INSERT/UPDATE/DELETE is denied on all four, with RLS preserved.
+- Phase 30 remains gated on the canonical production deployment and smoke tests for lab completion and medical-certificate creation. The latest known Vercel production deployment is on older commit `631abf83415b2c878569d34df1360936f5a9d158`, not current main `08faa791`.
+- A pinned deployment attempt against the existing canonical Vercel project was rejected with **402 `api-deployments-free-per-day`**, retry-after 86,400 seconds. This is a rolling free API limit, not the previously documented reset time. Do not bypass the limit, upgrade, create another project, or apply Phase 30 before a successful current-main production deployment and both RPC smoke tests.
+- No production SQL or business rows were changed in this continuation. No screenshot-based full-screen visual audit is claimed. Continue safe repo-level audits and update the deployment gate after a real deployment/read-back.
 
 ---
 
