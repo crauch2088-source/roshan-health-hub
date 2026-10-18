@@ -154,17 +154,30 @@ BEGIN
 
   PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000002',true);
   PERFORM set_config('test.super_admin','true',true);
+  batch_id := public.fn_receive_pharmacy_batch_atomic(
+    '30000000-0000-0000-0000-000000000001',1,'SUPERADMIN-SINGLE-BRANCH',NULL,NULL,1.00,2.50,NULL,NULL,'guard-superadmin-single-active-branch'
+  );
+  IF NOT EXISTS (
+    SELECT 1 FROM public.pharmacy_inventory
+     WHERE id=batch_id AND branch_id='20000000-0000-0000-0000-000000000001'
+  ) THEN
+    RAISE EXCEPTION 'global super-admin receipt was not assigned to the sole active branch';
+  END IF;
+
+  UPDATE public.branches SET active=true,is_active=true WHERE id='20000000-0000-0000-0000-000000000002';
   rejected := false;
   BEGIN
     PERFORM public.fn_receive_pharmacy_batch_atomic(
-      '30000000-0000-0000-0000-000000000001',1,'UNASSIGNED-SUPERADMIN',NULL,NULL,1.00,2.50,NULL,NULL,'guard-unassigned-superadmin'
+      '30000000-0000-0000-0000-000000000001',1,'SUPERADMIN-AMBIGUOUS-BRANCH',NULL,NULL,1.00,2.50,NULL,NULL,'guard-superadmin-ambiguous-branches'
     );
-    RAISE EXCEPTION 'test failed: unassigned super-admin created an orphan batch';
+    RAISE EXCEPTION 'test failed: global super-admin received stock with multiple active branches and no target';
   EXCEPTION WHEN SQLSTATE '42501' THEN rejected := true;
   END;
-  IF NOT rejected THEN RAISE EXCEPTION 'unassigned super-admin guard did not reject the request'; END IF;
+  UPDATE public.branches SET active=false,is_active=false WHERE id='20000000-0000-0000-0000-000000000002';
+  IF NOT rejected THEN RAISE EXCEPTION 'ambiguous super-admin branch context was not rejected'; END IF;
   PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
   PERFORM set_config('test.super_admin','false',true);
+
 
   UPDATE public.medicines SET stock_quantity=2147483647 WHERE id='30000000-0000-0000-0000-000000000001';
   rejected := false;
@@ -176,8 +189,8 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '22023' THEN rejected := true;
   END;
   IF NOT rejected THEN RAISE EXCEPTION 'stock overflow guard did not reject the request'; END IF;
-  IF (SELECT count(*) FROM public.pharmacy_inventory)<>1
-     OR (SELECT count(*) FROM public.stock_movements)<>1
+  IF (SELECT count(*) FROM public.pharmacy_inventory)<>2
+     OR (SELECT count(*) FROM public.stock_movements)<>2
      OR (SELECT stock_quantity FROM public.medicines WHERE id='30000000-0000-0000-0000-000000000001')<>2147483647 THEN
     RAISE EXCEPTION 'rejected receipt changed inventory, ledger, or stock total';
   END IF;
