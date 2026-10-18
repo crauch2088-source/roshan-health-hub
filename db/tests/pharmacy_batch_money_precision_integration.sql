@@ -76,6 +76,12 @@ END $idempotency$;
 DO $receipt_guards$
 DECLARE rejected boolean;
 BEGIN
+  IF NOT has_function_privilege('authenticated','public.fn_receive_pharmacy_batch_atomic(uuid,numeric,text,date,date,numeric,numeric,uuid,text,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'test failed: authenticated cannot execute the guarded atomic receipt RPC';
+  END IF;
+  IF has_function_privilege('anon','public.fn_receive_pharmacy_batch_atomic(uuid,numeric,text,date,date,numeric,numeric,uuid,text,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'test failed: anonymous role can execute the guarded atomic receipt RPC';
+  END IF;
   IF has_function_privilege('authenticated','public.fn_receive_pharmacy_batch(uuid,numeric,text,date,date,numeric,numeric,uuid,text)','EXECUTE') THEN
     RAISE EXCEPTION 'test failed: legacy non-idempotent receive RPC remains callable by authenticated';
   END IF;
