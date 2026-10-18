@@ -4,7 +4,6 @@ import { ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loading, StatusBadge } from "@/components/kit";
-import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money } from "@/lib/medical";
@@ -17,7 +16,6 @@ import { HistoryTab } from "./components/HistoryTab";
 
 export function ConsultationPage({ visitId }: { visitId: string }) {
   const { lang } = useLang();
-  const { user } = useAuth();
   const { currency } = useSettings();
   const [tab, setTab] = useState("note");
   const [noteDirty, setNoteDirty] = useState(false);
@@ -51,22 +49,10 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const patient = rel(visit, "patients");
   const finish = useSave(
     async () => {
-      const { error } = await supabase
-        .from("visits")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", visitId);
+      const { error } = await supabase.rpc("complete_visit_atomic", {
+        p_visit_id: visitId,
+      });
       if (error) throw new Error(error.message);
-      // Keep queue in sync so reception does not still see this patient as waiting/in progress.
-      const { error: qErr } = await supabase
-        .from("queue_tickets")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("visit_id", visitId)
-        .in("status", ["waiting", "called", "in_progress"]);
-      if (qErr) throw new Error(qErr.message);
       return null;
     },
     {
