@@ -1,0 +1,51 @@
+name: Clinical security hardening (PostgreSQL 17)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'db/roshan_phase31_clinical_financial_security_hardening.sql'
+      - 'db/tests/clinical_security_hardening_fixture.sql'
+      - 'db/tests/clinical_security_hardening_assertions.sql'
+      - 'src/features/clinic/consultation/ConsultationPage.tsx'
+      - 'src/routes/_authenticated/certificates.tsx'
+      - 'tests/clinical-security-hardening.test.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-clinical-security-hardening.yml'
+
+jobs:
+  clinical-security-hardening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:guard
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - name: Replay Phase 31 SQL and catalog assertions on disposable PostgreSQL 17
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/clinical_security_hardening_fixture.sql \
+            -f db/roshan_phase31_clinical_financial_security_hardening.sql \
+            -f db/tests/clinical_security_hardening_assertions.sql
