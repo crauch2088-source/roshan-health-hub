@@ -585,3 +585,8 @@ The review does not claim full historical replay. The live ledger remains 103 en
 - **56/56** public base tables have RLS enabled; **44/56** also force RLS. No public base table grants SELECT, INSERT, UPDATE, or DELETE to `anon`.
 - The current catalog contains **47 public and 34 private SECURITY DEFINER routines**. All 81 have an explicit fixed `search_path`; no public SECURITY DEFINER routine is executable by `anon`.
 - Two private functions inherit default PUBLIC EXECUTE: `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()`. The `private` schema does not grant USAGE to `anon`, so these are not callable through the anonymous API role. The former is used by authenticated branch-aware policies; the latter is a trigger function. This was a read-only audit; no ACL changes were made to these helpers.
+
+
+## Phase 31 ledger registration procedure (prepared, not applied)
+
+The live preflight confirmed 109 ledger entries through 20261018065708. After Phase 31 Expand succeeds, register its exact source as version 20261018195500; after frontend deployment/smoke tests and successful Contract, register version 20261018195600. The exact post-apply psql commands and source-parity verification are in docs/CLINICAL_SECURITY_HARDENING_PREFLIGHT_2026-10-18.md under **Register Phase 31 in the Supabase migration ledger**. These are instructions only: neither migration nor the live ledger has been changed.

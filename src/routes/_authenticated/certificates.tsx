@@ -60,6 +60,7 @@ function CertificatesPageInner() {
   const [form, setForm] = useState({
     patient_id: "",
     patient_name: "",
+    visit_id: "",
     type: "sick_leave",
     days: "1",
     start_date: todayISO(),
@@ -76,6 +77,20 @@ function CertificatesPageInner() {
       .order("created_at", { ascending: false })
       .limit(200),
   );
+  const visitOptionsQ = useRows<Row[]>(
+    ["certificate-visits", form.patient_id],
+    () =>
+      supabase
+        .from("visits")
+        .select("id,visit_number,visit_date,status,patient_id")
+        .eq("patient_id", form.patient_id)
+        .is("deleted_at", null)
+        .neq("status", "cancelled")
+        .order("visit_date", { ascending: false })
+        .limit(50),
+    { enabled: Boolean(form.patient_id) },
+  );
+  const visitOptions = (visitOptionsQ.data ?? []) as Row[];
 
   const endDate = useMemo(
     () => addDays(form.start_date, Number(form.days) || 1),
@@ -84,6 +99,12 @@ function CertificatesPageInner() {
   const create = useSave(
     async () => {
       if (!form.patient_id) throw new Error(lang === "ar" ? "اختر المريض" : "Select patient");
+      if (!form.visit_id)
+        throw new Error(
+          lang === "ar"
+            ? "اختر الزيارة المرتبطة بالشهادة"
+            : "Select the visit linked to this certificate",
+        );
       const purpose =
         form.type === "sick_leave"
           ? lang === "ar"
@@ -98,6 +119,7 @@ function CertificatesPageInner() {
         p_diagnosis: diagnosis,
         p_start_date: form.start_date,
         p_end_date: endDate,
+        p_visit_id: form.visit_id,
       });
       if (error) throw new Error(error.message);
       return null;
@@ -110,6 +132,7 @@ function CertificatesPageInner() {
         setForm({
           patient_id: "",
           patient_name: "",
+          visit_id: "",
           type: "sick_leave",
           days: "1",
           start_date: todayISO(),
@@ -127,7 +150,7 @@ function CertificatesPageInner() {
         title={lang === "ar" ? "الشهادات الطبية" : "Medical certificates"}
         subtitle={lang === "ar" ? "إصدار وطباعة الشهادات" : "Issue and print medical certificates"}
       >
-        {can("certificates.create") && (
+        {can("certificates.create") && user?.role_code === "doctor" && (
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="size-4" /> {lang === "ar" ? "شهادة جديدة" : "New certificate"}
           </Button>
@@ -143,6 +166,7 @@ function CertificatesPageInner() {
               <Table density="compact">
                 <TableHeader>
                   <TableRow>
+                    <TableHead>{lang === "ar" ? "رقم الشهادة" : "Certificate #"}</TableHead>
                     <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
                     <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
                     <TableHead>{lang === "ar" ? "الفترة" : "Period"}</TableHead>
@@ -158,6 +182,7 @@ function CertificatesPageInner() {
                     const p = rel(c, "patients");
                     return (
                       <TableRow key={s(c, "id")}>
+                        <TableCell dir="ltr">{s(c, "certificate_number") || s(c, "id")}</TableCell>
                         <TableCell dir="ltr">{formatDate(s(c, "created_at"))}</TableCell>
                         <TableCell>
                           <div className="font-medium">{s(p, "full_name")}</div>
@@ -205,9 +230,44 @@ function CertificatesPageInner() {
                     : null
                 }
                 onSelect={(p: PickedPatient | null) =>
-                  setForm({ ...form, patient_id: p?.id ?? "", patient_name: p?.full_name ?? "" })
+                  setForm({
+                    ...form,
+                    patient_id: p?.id ?? "",
+                    patient_name: p?.full_name ?? "",
+                    visit_id: "",
+                  })
                 }
               />
+            </Field>
+            <Field label={`${lang === "ar" ? "الزيارة المرتبطة" : "Linked visit"} *`}>
+              <Select
+                value={form.visit_id}
+                onValueChange={(v) => setForm({ ...form, visit_id: v })}
+                disabled={!form.patient_id || visitOptionsQ.isLoading || visitOptions.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      lang === "ar" ? "اختر زيارة لهذا المريض" : "Select this patient's visit"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {visitOptions.map((visit) => (
+                    <SelectItem key={s(visit, "id")} value={s(visit, "id")}>
+                      {s(visit, "visit_number") || s(visit, "id")} · {s(visit, "status")} ·{" "}
+                      {s(visit, "visit_date")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.patient_id && !visitOptionsQ.isLoading && visitOptions.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "ar"
+                    ? "لا توجد زيارة نشطة لهذا المريض؛ أنشئ زيارة أولاً."
+                    : "No active visit found for this patient. Create a visit first."}
+                </p>
+              )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={lang === "ar" ? "النوع" : "Type"}>
@@ -260,7 +320,7 @@ function CertificatesPageInner() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              disabled={create.isPending || !form.patient_id}
+              disabled={create.isPending || !form.patient_id || !form.visit_id}
               onClick={() => create.mutate(undefined as never)}
             >
               {create.isPending ? "Saving..." : lang === "ar" ? "إصدار" : "Issue"}

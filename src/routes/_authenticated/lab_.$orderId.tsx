@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { isAbnormalLabResult } from "@/lib/lab-workflow";
+import { hasLabItemResultInput, isAbnormalLabResult } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
@@ -202,10 +202,16 @@ function LabOrderPageInner() {
   }, 0);
   const save = useSave(
     async () => {
+      let allItemsCompleted = true;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
         const params = parameters.filter((p) => s(p, "test_id") === s(item, "test_id"));
+        const parameterIds = params.map((parameter) => s(parameter, "id"));
+        if (!hasLabItemResultInput(s(item, "id"), parameterIds, values)) {
+          allItemsCompleted = false;
+          continue;
+        }
 
         for (const p of params) {
           const key = `${s(item, "id")}:${s(p, "id")}`;
@@ -258,16 +264,19 @@ function LabOrderPageInner() {
         }
       }
 
-      const orderCompletion = await supabase
-        .from("lab_orders")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", orderId);
-      if (orderCompletion.error) {
-        throw new Error(orderCompletion.error.message);
+      // Keep a multi-test order open while any item has no entered result.
+      if (allItemsCompleted) {
+        const orderCompletion = await supabase
+          .from("lab_orders")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+            updated_by: user?.id ?? null,
+          })
+          .eq("id", orderId);
+        if (orderCompletion.error) {
+          throw new Error(orderCompletion.error.message);
+        }
       }
 
       return null;
