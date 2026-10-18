@@ -1,3 +1,17 @@
+## Latest execution update — authenticated production route QA (2026-10-18 20:43 UTC)
+
+- Added [`docs/AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md`](AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md) with live browser evidence, exact deployment/commit identity, CI status, advisor findings and explicit limitations.
+- Authenticated read-only browser sweeps covered the core clinical routes, lab/catalog, pharmacy/inventory, finance/accounting/expenses and administration/reporting routes. No visible fatal UI errors were detected in the routes inspected; several administration/reporting pages were only shallowly checked.
+- Current `main` is `451fd13cfd4ffa47dc62841dae07c00619594019`; the canonical Vercel deployment is READY for that exact SHA, and all 17 check runs on that SHA succeeded.
+- Read-only SQL aggregates returned zero active rows in patients, visits, queue tickets, lab orders, medical certificates, invoices and prescriptions. No production business rows were created or changed during this audit.
+- **Do not close full clinical E2E acceptance yet.** There are no active clinical records to exercise lab completion, and the current authenticated browser identity is General Manager rather than a doctor, so certificate issuance could not be tested end-to-end. Use an isolated zero-cost PostgreSQL 17 test environment and doctor-role test identity rather than creating test clinical/financial transactions in production.
+- The browser agent's claim that the New Visit Save button was enabled conflicts with the tracked source's explicit `disabled={!form.patient_id || create.isPending}`. Treat this as an unresolved browser/source observation mismatch and verify the actual DOM `disabled` property before modifying the source.
+- Current Supabase advisor review: 22 authenticated-callable SECURITY DEFINER warnings, one `pg_trgm` public-schema warning, one disabled leaked-password-protection warning; performance advisor shows one unindexed FK (`medical_certificates.visit_id`) and 88 unused-index suggestions. These require focused triage; no blanket revocation or index deletion.
+- CI run: https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39162719194
+- Browser reports: [core clinical smoke test](https://agent.tinyfish.ai/runs/d4126f3f-7fcb-423f-9e59-80a9be71ad0b), [clinical navigation sweep](https://agent.tinyfish.ai/runs/40bd657f-108a-4a48-b0d3-daa4a877d18d), [pharmacy/finance/admin route sweep](https://agent.tinyfish.ai/runs/2fd10ab5-dfce-4f50-ac6a-62f49bc4ff10), [clinical form inspection](https://agent.tinyfish.ai/runs/566be2b2-f048-46b1-85e3-fe433ff9a61b), [visit/certificate state follow-up](https://agent.tinyfish.ai/runs/606e63ad-8076-4a1a-b017-37599f4bfeaa).
+
+---
+
 ## Execution update — 2026-10-18: Phase 31 clinical/security hardening staged
 
 - Draft review PR: [#78](https://github.com/crauch2088-source/roshan-health-hub/pull/78), branch `fix/clinical-security-hardening-20261018`. No merge or production deployment was performed.
