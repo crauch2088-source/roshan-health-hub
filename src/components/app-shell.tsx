@@ -59,7 +59,7 @@ function SearchTrigger() {
       aria-label={t("search_everywhere")}
     >
       <Search className="size-4" aria-hidden />
-      <span className="hidden md:inline">{t("search_everywhere")}</span>
+      <span className="hidden sm:inline">{t("search_everywhere")}</span>
       <kbd className="ms-auto hidden rounded border border-border/70 bg-muted/70 px-1.5 py-0.5 font-mono text-[10px] md:inline">
         Ctrl K
       </kbd>

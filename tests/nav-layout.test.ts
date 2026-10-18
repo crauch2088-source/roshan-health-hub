@@ -1,8 +1,14 @@
 // Regression tests for RTL/LTR tooltip placement and the permission-driven bottom-bar layout.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { bottomBarColumns, railTooltipSide } from "../src/lib/nav-layout.ts";
+
+const APP_SHELL_SOURCE = readFileSync(
+  new URL("../src/components/app-shell.tsx", import.meta.url),
+  "utf8",
+);
 
 test("rail tooltips open towards the content in both directions", () => {
   assert.equal(railTooltipSide("ar"), "left"); // rail is on the right in RTL
@@ -99,5 +105,13 @@ test("falls back when the publishable key is an empty string", () => {
       VITE_SUPABASE_ANON_KEY: "legacy-anon-key",
     }),
     "legacy-anon-key",
+  );
+});
+
+
+test("search trigger label is visible at the breakpoint where the trigger first appears", () => {
+  assert.match(
+    APP_SHELL_SOURCE,
+    /<span className="hidden sm:inline">\{t\("search_everywhere"\)\}<\/span>/,
   );
 });

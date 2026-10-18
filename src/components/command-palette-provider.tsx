@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { GlobalSearchDialog } from "@/components/global-search-dialog";
 import { navPermissionForRoute } from "@/config/nav";
 import { useAuth } from "@/lib/auth";
+import { resolveKeyboardShortcut } from "@/lib/keyboard-shortcuts";
 
 type CommandPaletteContextValue = {
   open: boolean;
@@ -11,17 +12,6 @@ type CommandPaletteContextValue = {
 };
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null);
-
-/** Keyboard shortcut → route. Permission is resolved from the shared nav config. */
-const SHORTCUT_ROUTES: Record<string, string> = {
-  d: "/dashboard",
-  p: "/patients",
-  v: "/visits",
-  a: "/appointments",
-  b: "/billing",
-  l: "/lab",
-  h: "/pharmacy",
-};
 
 /**
  * Mounted once near the root of the authenticated app. Listens for
@@ -38,32 +28,35 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.isComposing || e.repeat) return;
       const target = e.target as HTMLElement | null;
-      const typing =
+      const typing = Boolean(
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
-          target.isContentEditable);
-
-      // Ctrl/Cmd+K — toggle global search
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.tagName === "SELECT" ||
+            target.isContentEditable),
+      );
+      const action = resolveKeyboardShortcut(
+        {
+          code: e.code,
+          ctrlKey: e.ctrlKey,
+          metaKey: e.metaKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+          isComposing: e.isComposing,
+          repeat: e.repeat,
+          typing,
+        },
+        can,
+        navPermissionForRoute,
+      );
+      if (action.type === "none") return;
+      e.preventDefault();
+      if (action.type === "search") {
         setOpen((prev) => !prev);
         return;
       }
-
-      // Navigation shortcuts only when not typing in a field
-      if (typing) return;
-      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
-
-      const path = SHORTCUT_ROUTES[e.key.toLowerCase()];
-      if (!path) return;
-      const perm = navPermissionForRoute(path);
-      if (!perm || !can(perm)) return;
-      e.preventDefault();
-      void navigate({ to: path });
+      void navigate({ to: action.path });
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
