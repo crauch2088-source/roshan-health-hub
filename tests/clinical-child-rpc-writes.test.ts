@@ -24,29 +24,29 @@ const sourceText = collectSourceFiles(srcRoot)
   .map((path) => readFileSync(path, "utf8"))
   .join("\n");
 const directDml = (table: string) =>
-  new RegExp(String.raw\`\\.from\\(["']${table}["']\\)\\s*\\.(?:insert|update|delete|upsert)\\b\`, "s");
+  new RegExp('\\.from\\("' + table + '"\\)\\s*\\.(?:insert|update|delete|upsert)\\b', "s");
 
 test("prescriptions and lab orders are created through atomic RPCs", () => {
-  assert.match(prescriptionTab, /supabase\\.rpc\\(["']create_prescription_atomic["']/);
-  assert.match(labTab, /supabase\\.rpc\\(["']create_lab_order_with_invoice_atomic["']/);
+  assert.match(prescriptionTab, /supabase\.rpc\(["']create_prescription_atomic["']/);
+  assert.match(labTab, /supabase\.rpc\(["']create_lab_order_with_invoice_atomic["']/);
   assert.doesNotMatch(sourceText, directDml("prescriptions"));
   assert.doesNotMatch(sourceText, directDml("prescription_items"));
   assert.doesNotMatch(sourceText, directDml("lab_order_items"));
 });
 
 test("lab completion and medical certificates use validated RPCs", () => {
-  assert.match(labDetail, /supabase\\.rpc\\(["']complete_lab_order_item["']/);
-  assert.match(certificates, /supabase\\.rpc\\(["']create_medical_certificate["']/);
+  assert.match(labDetail, /supabase\.rpc\(["']complete_lab_order_item["']/);
+  assert.match(certificates, /supabase\.rpc\(["']create_medical_certificate["']/);
   assert.doesNotMatch(sourceText, directDml("medical_certificates"));
   assert.doesNotMatch(sourceText, directDml("patient_discounts"));
   assert.doesNotMatch(sourceText, directDml("insurance_prior_authorizations"));
 });
 
 test("phase 28 supplies RPCs and phase 29 retires direct client DML", () => {
-  assert.match(phase28, /CREATE OR REPLACE FUNCTION public\\.complete_lab_order_item/);
-  assert.match(phase28, /CREATE OR REPLACE FUNCTION public\\.create_medical_certificate/);
-  assert.match(phase29, /ON TABLE public\\.prescriptions/);
-  assert.match(phase29, /public\\.medical_certificates/);
-  assert.match(phase29, /public\\.patient_discounts/);
-  assert.match(phase29, /public\\.insurance_prior_authorizations/);
+  assert.match(phase28, /CREATE OR REPLACE FUNCTION public\.complete_lab_order_item/);
+  assert.match(phase28, /CREATE OR REPLACE FUNCTION public\.create_medical_certificate/);
+  assert.match(phase29, /ON TABLE public\.prescriptions/);
+  assert.match(phase29, /public\.medical_certificates/);
+  assert.match(phase29, /public\.patient_discounts/);
+  assert.match(phase29, /public\.insurance_prior_authorizations/);
 });
