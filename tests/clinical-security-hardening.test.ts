@@ -25,9 +25,15 @@ test("certificate issuance requires doctor role and linked visit", () => {
   assert.match(certificates, /user\?\.role_code === ["']doctor["']/);
   assert.match(certificates, /p_visit_id:\s*form\.visit_id/);
   assert.match(certificates, /form\.visit_id/);
-  assert.match(certificates, /disabled=\{create\.isPending \|\| !form\.patient_id \|\| !form\.visit_id\}/);
+  assert.match(
+    certificates,
+    /disabled=\{create\.isPending \|\| !form\.patient_id \|\| !form\.visit_id\}/,
+  );
   assert.match(certificates, /s\(c, ["']certificate_number["']\)/);
-  assert.doesNotMatch(certificates, /\.from\(["']medical_certificates["']\)\s*\.(insert|update|upsert|delete)\s*\(/);
+  assert.doesNotMatch(
+    certificates,
+    /\.from\(["']medical_certificates["']\)\s*\.(insert|update|upsert|delete)\s*\(/,
+  );
 });
 
 test("Phase 31 migration includes the critical database guardrails", () => {
@@ -37,14 +43,23 @@ test("Phase 31 migration includes the critical database guardrails", () => {
   assert.match(migration, /post_supplier_payment[\s\S]*round\(_amount, 2\)/);
   assert.match(migration, /patients_active_national_id_normalized_uq/);
   assert.match(migration, /insurance_claims_one_active_nonrejected_per_invoice_uq/);
-  assert.match(migration, /complete_visit_atomic[\s\S]*private\.app_has_visit_branch_access[\s\S]*queue_tickets/);
-  assert.match(migration, /complete_lab_order_item[\s\S]*result_value[\s\S]*numeric_value[\s\S]*invalid lab status transition/);
+  assert.match(
+    migration,
+    /complete_visit_atomic[\s\S]*private\.app_has_visit_branch_access[\s\S]*queue_tickets/,
+  );
+  assert.match(
+    migration,
+    /complete_lab_order_item[\s\S]*result_value[\s\S]*numeric_value[\s\S]*invalid lab status transition/,
+  );
   assert.match(migration, /r\.code='doctor'[\s\S]*p_visit_id/);
   assert.match(migration, /active patient not found/);
   assert.match(migration, /visit does not belong to the selected patient/);
   assert.match(migration, /medical_certificate_number_seq/);
   assert.match(migration, /certificate_number bigint/);
-  assert.match(migration, /fn_dispense_prescription\(uuid\)[\s\S]*FROM PUBLIC, anon, authenticated/);
+  assert.match(
+    migration,
+    /fn_dispense_prescription\(uuid\)[\s\S]*FROM PUBLIC, anon, authenticated/,
+  );
   assert.match(migration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.lab_order_items/);
   assert.match(migration, /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.medical_certificates/);
 });
