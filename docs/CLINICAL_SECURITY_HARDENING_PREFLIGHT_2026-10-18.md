@@ -28,6 +28,8 @@ The national-ID index normalizes with lower(btrim(national_id)), excluding null/
 
 private.current_app_user_id() and private.app_has_perm(text) did not filter users.deleted_at. post_cashbox_entry rejected non-positive/non-finite values but did not reject excess decimal precision. post_supplier_payment rejected non-positive values but did not reject non-finite values or excess precision.
 
+The live privilege check also confirmed the current exposure: authenticated can execute public.fn_dispense_prescription(uuid); anon cannot. Authenticated currently has INSERT and UPDATE table privileges on both public.lab_order_items and public.medical_certificates. These grants are not being changed during preflight; Phase 31 revokes them only after the matching frontend is deployed and smoke-tested.
+
 ## Full tracked-source scan
 
 At commit 66139e6, scanned 137 tracked TypeScript/JavaScript files under src/. All 137 were fetched successfully. Results:
