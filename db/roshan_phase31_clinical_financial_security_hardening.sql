@@ -256,9 +256,8 @@ BEGIN
   IF p_patient_id IS NULL OR p_visit_id IS NULL THEN
     RAISE EXCEPTION 'patient and visit are required' USING ERRCODE = '22023';
   END IF;
-  IF p_start_date IS NULL OR p_end_date IS NULL OR p_end_date < p_start_date
-     OR p_end_date-p_start_date > 90 THEN
-    RAISE EXCEPTION 'certificate dates are invalid (maximum 91 calendar days)' USING ERRCODE = '22023';
+  IF p_start_date IS NULL OR p_end_date IS NULL OR p_end_date < p_start_date THEN
+    RAISE EXCEPTION 'certificate dates are invalid' USING ERRCODE = '22023';
   END IF;
   IF NULLIF(pg_catalog.btrim(COALESCE(p_diagnosis,'')), '') IS NULL THEN
     RAISE EXCEPTION 'certificate diagnosis is required' USING ERRCODE = '22023';

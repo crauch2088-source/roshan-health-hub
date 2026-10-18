@@ -103,13 +103,37 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
   END;
   BEGIN
+    PERFORM public.post_cashbox_entry('deposit',0);
+    RAISE EXCEPTION 'cashbox accepted a non-positive amount';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
+  BEGIN
     PERFORM public.post_supplier_payment(NULL,10.001);
     RAISE EXCEPTION 'supplier payment accepted more than two decimal places';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.post_supplier_payment(NULL,0);
+    RAISE EXCEPTION 'supplier payment accepted a non-positive amount';
   EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
   END;
 
   -- Atomic visit completion updates the visit and its queue ticket together.
   INSERT INTO public.patients(id,branch_id,national_id) VALUES (v_patient_id,v_branch_id,'CI-TEST-001');
+  BEGIN
+    INSERT INTO public.patients(id,branch_id,national_id)
+    VALUES ('00000000-0000-0000-0000-000000000311',v_branch_id,' ci-test-001 ');
+    RAISE EXCEPTION 'normalized duplicate national ID was accepted';
+  EXCEPTION WHEN unique_violation THEN NULL;
+  END;
+  INSERT INTO public.insurance_claims(id,invoice_id,status)
+  VALUES ('00000000-0000-0000-0000-000000000801','00000000-0000-0000-0000-000000000802','draft');
+  BEGIN
+    INSERT INTO public.insurance_claims(id,invoice_id,status)
+    VALUES ('00000000-0000-0000-0000-000000000803','00000000-0000-0000-0000-000000000802','submitted');
+    RAISE EXCEPTION 'second active insurance claim for one invoice was accepted';
+  EXCEPTION WHEN unique_violation THEN NULL;
+  END;
   INSERT INTO public.visits(id,branch_id,patient_id,status) VALUES (v_visit_id,v_branch_id,v_patient_id,'in_progress');
   INSERT INTO public.queue_tickets(id,visit_id,status) VALUES (v_ticket_id,v_visit_id,'in_progress');
   PERFORM public.complete_visit_atomic(v_visit_id);
