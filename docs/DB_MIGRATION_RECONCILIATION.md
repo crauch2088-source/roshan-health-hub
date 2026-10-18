@@ -561,3 +561,10 @@ The review does not claim full historical replay. The live ledger remains 103 en
 - Phase 28 RPCs remain live with fixed empty `search_path`, permission/branch guards, and authenticated-only execution.
 - Phase 29 is applied and verified: direct INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER privileges are false for `authenticated` on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; SELECT remains true and RLS remains enabled. The four tables remain empty.
 - `lab_order_items` and `medical_certificates` intentionally retain their current authenticated direct-write grants until the new frontend is deployed. The canonical production alias has not been switched because the free Vercel API deployment quota is exhausted; no preview build was promoted because preview environment variables may differ. Phase 30 remains gated.
+
+
+## Read-only global access-control audit — 2026-10-18
+
+- **56/56** public base tables have RLS enabled; **44/56** also force RLS. No public base table grants SELECT, INSERT, UPDATE, or DELETE to `anon`.
+- The current catalog contains **47 public and 34 private SECURITY DEFINER routines**. All 81 have an explicit fixed `search_path`; no public SECURITY DEFINER routine is executable by `anon`.
+- Two private functions inherit default PUBLIC EXECUTE: `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()`. The `private` schema does not grant USAGE to `anon`, so these are not callable through the anonymous API role. The former is used by authenticated branch-aware policies; the latter is a trigger function. This was a read-only audit; no ACL changes were made to these helpers.
