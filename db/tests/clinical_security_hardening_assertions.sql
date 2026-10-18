@@ -43,6 +43,16 @@ BEGIN
      OR has_table_privilege('authenticated','public.medical_certificates','DELETE') THEN RAISE EXCEPTION 'direct DML remains on medical_certificates'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname='public' AND indexname='patients_active_national_id_normalized_uq') THEN RAISE EXCEPTION 'national ID unique index missing'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname='public' AND indexname='insurance_claims_one_active_nonrejected_per_invoice_uq') THEN RAISE EXCEPTION 'insurance claim unique index missing'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_index i
+    WHERE i.indexrelid='public.insurance_claims_one_active_nonrejected_per_invoice_uq'::regclass
+      AND position('is distinct from' IN lower(pg_catalog.pg_get_expr(i.indpred,i.indrelid)))>0
+  ) THEN RAISE EXCEPTION 'insurance claim unique index does not include null statuses'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='medical_certificates'
+      AND column_name='visit_id' AND is_nullable='YES'
+  ) THEN RAISE EXCEPTION 'medical certificate visit_id must be NOT NULL'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname='public' AND indexname='medical_certificates_certificate_number_uq') THEN RAISE EXCEPTION 'certificate serial index missing'; END IF;
   v_definition := lower(pg_catalog.pg_get_functiondef('private.current_app_user_id()'::regprocedure));
   IF position('deleted_at is null' IN v_definition)=0 THEN RAISE EXCEPTION 'current_app_user_id ignores deleted_at'; END IF;

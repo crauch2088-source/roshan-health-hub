@@ -15,7 +15,7 @@ Safety: all production database calls in this preflight were SELECT-only. The Ph
 | visits rows | 7 total / 0 active | All current visit rows are soft-deleted; do not use for smoke tests |
 | queue_tickets rows | 0 total / 0 active | No queue rows in this snapshot |
 
-The national-ID index normalizes with lower(btrim(national_id)), excluding null/blank IDs and soft-deleted patients. The claim index applies to non-null invoice IDs, non-deleted claims and statuses other than rejected.
+The national-ID index normalizes with lower(btrim(national_id)), excluding null/blank IDs and soft-deleted patients. The claim index applies to non-null invoice IDs, non-deleted claims and statuses other than rejected (including a null status, if one exists).
 
 ## Verified live schema names
 
@@ -27,6 +27,8 @@ The national-ID index normalizes with lower(btrim(national_id)), excluding null/
 - queue_tickets: id, visit_id, status, completed_at, updated_by, deleted_at.
 
 private.current_app_user_id() and private.app_has_perm(text) did not filter users.deleted_at. post_cashbox_entry rejected non-positive/non-finite values but did not reject excess decimal precision. post_supplier_payment rejected non-positive values but did not reject non-finite values or excess precision.
+
+The migration makes medical_certificates.visit_id NOT NULL because this snapshot contains zero certificates. If any certificate row exists at rollout time, the migration will stop and roll back rather than invent a visit link; resolve/backfill under explicit review first.
 
 The live privilege check also confirmed the current exposure: authenticated can execute public.fn_dispense_prescription(uuid); anon cannot. Authenticated currently has INSERT and UPDATE table privileges on both public.lab_order_items and public.medical_certificates. These grants are not being changed during preflight; Phase 31 revokes them only after the matching frontend is deployed and smoke-tested.
 
@@ -80,7 +82,7 @@ SELECT 'insurance_claims_invoice_id_active_nonrejected',
 FROM (
   SELECT invoice_id, COUNT(*) AS n
   FROM public.insurance_claims
-  WHERE deleted_at IS NULL AND invoice_id IS NOT NULL AND status <> 'rejected'
+  WHERE deleted_at IS NULL AND invoice_id IS NOT NULL AND status IS DISTINCT FROM 'rejected'
   GROUP BY invoice_id
   HAVING COUNT(*) > 1
 ) d;

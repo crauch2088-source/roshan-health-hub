@@ -120,7 +120,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS patients_active_national_id_normalized_uq
   WHERE deleted_at IS NULL AND national_id IS NOT NULL AND pg_catalog.btrim(national_id) <> '';
 CREATE UNIQUE INDEX IF NOT EXISTS insurance_claims_one_active_nonrejected_per_invoice_uq
   ON public.insurance_claims (invoice_id)
-  WHERE deleted_at IS NULL AND invoice_id IS NOT NULL AND status <> 'rejected';
+  WHERE deleted_at IS NULL AND invoice_id IS NOT NULL AND status IS DISTINCT FROM 'rejected';
 
 CREATE OR REPLACE FUNCTION public.complete_visit_atomic(p_visit_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
@@ -212,6 +212,9 @@ BEGIN
 END;
 $constraint$;
 ALTER TABLE public.medical_certificates VALIDATE CONSTRAINT medical_certificates_visit_id_fkey;
+-- The live preflight found zero certificate rows. Fail closed if rows appear before rollout;
+-- never invent historical visit links to satisfy this invariant.
+ALTER TABLE public.medical_certificates ALTER COLUMN visit_id SET NOT NULL;
 
 CREATE SEQUENCE IF NOT EXISTS public.medical_certificate_number_seq;
 ALTER TABLE public.medical_certificates ADD COLUMN IF NOT EXISTS certificate_number bigint;
