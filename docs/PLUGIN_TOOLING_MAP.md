@@ -1,6 +1,14 @@
+## Execution note — 2026-10-18: Vercel deployment quota
+
+- Current main was verified at `08faa7918311cd55fc732faf59813bfc35cc583a` with 16/16 exact-head checks successful. Documentation-only commits may have advanced main since that check; re-read the live main SHA before any new code/deployment operation.
+- A pinned deployment through the existing canonical Vercel project was rejected with HTTP 402 `api-deployments-free-per-day`, retry-after 86,400 seconds. This is a rolling API limit. Do not bypass it, upgrade, or create another project. Recheck the limit and exact canonical alias before retrying.
+- Supabase Phase 29 is confirmed applied to four clinical child tables. Phase 30 remains blocked until current-main production code is actually served by `https://roshan-health-hub.vercel.app/` and lab-completion plus certificate-creation RPC flows pass smoke tests.
+
+---
+
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-10-17. Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
+Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
