@@ -296,11 +296,11 @@ The affected tables had zero rows before and after application. The migration ch
 **Preferred recovery is a forward fix.** Do not broadly revert branch policies to the older permission-only predicates. If a specific policy causes a regression, repair that policy in a forward migration and preserve the parent-branch and same-patient/visit checks. Before any emergency rollback, capture the current `pg_policies` definitions and helper function definitions; no blanket rollback script should be run against these interdependent policies.
 
 
-## Clinical child RPC rollout — Phase 28 applied; Phase 29/30 split
+## Clinical child RPC rollout — Phase 28 and safe Phase 29 applied; Phase 30 pending
 
-Applied migration: `roshan_clinical_child_write_rpcs`, ledger version `20261018064638`. It creates `public.complete_lab_order_item(uuid)` and `public.create_medical_certificate(uuid,text,date,date)` with fixed empty `search_path`, permission checks, caller-derived author IDs, and parent-branch validation. Both functions are executable by `authenticated`, not by `anon` or `PUBLIC`. Direct table grants remain unchanged by Phase 28.
+Applied migrations: `roshan_clinical_child_write_rpcs` (`20261018064638`) and `roshan_clinical_child_rpc_only_writes` (`20261018065708`). Phase 28 adds `public.complete_lab_order_item(uuid)` and `public.create_medical_certificate(uuid,text,date,date)` with fixed empty `search_path`, permission checks, caller-derived author IDs, and parent-branch validation. Both functions are executable by `authenticated`, not by `anon` or `PUBLIC`.
 
-**Phase 29 — safe subset, ready for application:** revokes direct DML only on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`. Current-main source search found no direct frontend write calls for these four tables; all have branch-aware RLS enabled and SELECT remains available. Rollback, if required, is to restore DML privileges only to `authenticated` (never `anon` or `PUBLIC`):
+**Phase 29 — applied safe subset:** direct DML is revoked on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`. SELECT and existing branch-aware RLS policies are preserved. If rollback is required, restore direct DML only to `authenticated` (never `anon` or `PUBLIC`):
 
 ```sql
 GRANT INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
@@ -308,7 +308,7 @@ GRANT INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
   TO authenticated;
 ```
 
-**Phase 30 — deployment-gated:** revokes direct DML on `lab_order_items` and `medical_certificates` and removes client access to the certificate ID sequence. Do not apply Phase 30 until the production alias serves a READY deployment that contains the RPC call sites and smoke verification succeeds. If Phase 30 must be rolled back, first roll the app back to a build that uses direct writes, then restore only authenticated grants:
+**Phase 30 — deployment-gated:** direct DML is to be revoked on `lab_order_items` and `medical_certificates`, and client access to the certificate ID sequence removed, only after a READY production deployment containing the RPC call sites is verified. If Phase 30 must be rolled back, first roll the app back to a build that uses direct writes, then restore only authenticated grants:
 
 ```sql
 GRANT INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
@@ -316,4 +316,4 @@ GRANT INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
 GRANT USAGE, SELECT, UPDATE ON SEQUENCE public.medical_certificates_id_seq TO authenticated;
 ```
 
-The Vercel API returned HTTP 402 `api-deployments-free-per-day` (100 deployments/day, remaining 0, reset 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or preview-to-production alias workaround will be used because preview builds may contain preview environment variables. A one-time continuation task is scheduled for 2026-10-19 09:00 Africa/Khartoum; it must recheck quota, current main, production alias, and all checks before applying Phase 30.
+Vercel returned HTTP 402 `api-deployments-free-per-day` (100 deployments/day, remaining 0, reset 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or preview-to-production alias workaround will be used because preview builds may contain preview environment variables. A one-time continuation task is scheduled for 2026-10-19 09:00 Africa/Khartoum; it must recheck quota, current main, production alias, and all checks before applying Phase 30.

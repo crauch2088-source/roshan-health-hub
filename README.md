@@ -359,8 +359,10 @@ The original machine-readable `docs/recovered-migrations/source-parity-report.js
 
 
 
-## Latest execution update — 2026-10-18 (clinical child RPC rollout)
 
-- Phase 28 RPCs are live in Supabase under migration `20261018064638_roshan_clinical_child_write_rpcs`; both use fixed `search_path`, permission and branch guards, and authenticated-only execute grants.
-- The PostgreSQL 17 clinical regression and source-parity workflow pass. Phase 29 has been split so four tables without direct frontend write paths can be hardened independently; Phase 30 still requires the new production UI deployment.
-- Vercel's free deployment API quota is exhausted until 2026-10-19 08:52 Africa/Khartoum. The production alias was not switched to a preview build because preview environment variables may differ. A one-time continuation task is scheduled for 09:00 Africa/Khartoum tomorrow.
+
+## Latest execution update — 2026-10-18 (Phase 29 safe subset)
+
+- Live Supabase ledger: **109 entries** through `20261018065708_roshan_clinical_child_rpc_only_writes`; the forward-source delta contains sixteen mappings above the frozen 93-entry historical snapshot.
+- Phase 28 RPCs are live and verified. Phase 29 has revoked direct DML on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; SELECT and RLS remain intact.
+- Phase 30 (revoking direct DML on `lab_order_items` and `medical_certificates`) is intentionally blocked until the new RPC frontend is deployed to the canonical production alias. Vercel's free deployment API quota resets 2026-10-19 08:52 Africa/Khartoum; a one-time continuation task is scheduled for 09:00.

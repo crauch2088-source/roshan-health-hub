@@ -1,6 +1,6 @@
 # Live migration source delta — 2026-10-18
 
-This is a source-mapping supplement to the frozen 93-entry normalized-SQL hash snapshot in `docs/recovered-migrations/source-parity-report.json`. It is based on the live Supabase migration ledger read-back at 108 entries through `20261018064638`; it is **not** a fresh hash of SQL stored by Supabase, because the connected Management API exposes ledger name/version but not persisted migration SQL text.
+This is a source-mapping supplement to the frozen 93-entry normalized-SQL hash snapshot in `docs/recovered-migrations/source-parity-report.json`. It is based on the live Supabase migration ledger read-back at 109 entries through `20261018065708`; it is **not** a fresh hash of SQL stored by Supabase, because the connected Management API exposes ledger name/version but not persisted migration SQL text.
 
 | Live version | Ledger name | Canonical source file | Evidence |
 |---|---|---|---|
@@ -15,9 +15,9 @@ This is a source-mapping supplement to the frozen 93-entry normalized-SQL hash s
 | `20261017231612` | `roshan_invoice_payment_money_precision` | `db/roshan_invoice_payment_money_precision.sql` | Exact source text submitted to the migration API; ledger version/name read back. |
 | `20261017231629` | `roshan_pharmacy_batch_money_precision` | `db/roshan_pharmacy_batch_money_precision.sql` | Exact source text submitted to the migration API; ledger version/name read back. |
 
-The companion JSON contains normalized **source-file** hashes and source Git blob IDs. The CI verifier checks these files have not drifted and that the delta mapping remains fifteen unique ordered entries. It does not assert that the six live SQL hashes were read from Supabase.
+The companion JSON contains normalized **source-file** hashes and source Git blob IDs. The CI verifier checks these files have not drifted and that the delta mapping remains sixteen unique ordered entries. It does not assert that the six live SQL hashes were read from Supabase.
 
-The original 93-entry snapshot still has 92 normalized content matches and one intentionally redacted environment-specific identity mapping. The fifteen later migrations are accounted for separately. The full migration chain remains unreplayable from a reviewed initial schema baseline; this source-mapping check is not a substitute for replay or semantic equivalence.
+The original 93-entry snapshot still has 92 normalized content matches and one intentionally redacted environment-specific identity mapping. The sixteen later migrations are accounted for separately. The full migration chain remains unreplayable from a reviewed initial schema baseline; this source-mapping check is not a substitute for replay or semantic equivalence.
 
 
 ## Additional live migrations verified on 2026-10-18

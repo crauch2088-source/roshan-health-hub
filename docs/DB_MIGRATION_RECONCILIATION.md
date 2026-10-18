@@ -1,6 +1,6 @@
 ## Current live ledger state — 2026-10-18 06:29 UTC
 
-The live ledger now has **108 rows**, latest `20261018064638_roshan_clinical_child_write_rpcs`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
+The live ledger now has **109 rows**, latest `20261018065708_roshan_clinical_child_rpc_only_writes`. See [`docs/live-migration-delta-2026-10-18.json`](live-migration-delta-2026-10-18.json) for the separate forward-source mapping.
 
 The frozen 93-row historical snapshot remains **92 normalized matches plus one intentionally redacted identity-link migration**. The forward-source delta now tracks 15 additional mappings by repository blob/source hashes. The forward-source workflow does not access persisted migration SQL, so it does not prove those 12 files are byte-for-byte or semantically equal to live SQL. Full historical replay remains unproven because the clean-bootstrap baseline is missing.
 
@@ -553,9 +553,11 @@ The review does not claim full historical replay. The live ledger remains 103 en
 
 
 
-## Current live/source reconciliation — after Phase 28, 2026-10-18
 
-- Live Supabase ledger: **108 entries** through `20261018064638_roshan_clinical_child_write_rpcs`. The forward-source delta has **15 mappings** above the frozen 93-entry historical snapshot. Source hashes validate repository files; stored live SQL hash equality and full historical replay remain unproven.
-- Read-back confirmed both new RPCs are `SECURITY DEFINER`, use `search_path = ''`, and are executable by `authenticated` but not `anon`/`PUBLIC`. No business rows were modified.
-- The dedicated PostgreSQL 17 clinical RPC regression passes on `40988b024e7c19ec59327ea6aedcd4475800a05f`. Phase 29 is now split: a safe four-table revocation can be applied before frontend deployment; Phase 30 (lab item/certificate direct writes) must wait until production deploy and smoke verification.
-- Vercel deployment creation was blocked by the free API deployment quota (100/day, zero remaining until 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or unsafe preview promotion was attempted. A one-time continuation task is scheduled for 09:00 Africa/Khartoum tomorrow.
+
+## Current live/source reconciliation — after Phase 29, 2026-10-18
+
+- Live Supabase ledger: **109 entries** through `20261018065708_roshan_clinical_child_rpc_only_writes`. The forward-source delta has **16 mappings** above the frozen 93-entry historical snapshot. Repository-source hashes are verified; the Supabase API does not expose persisted live SQL hashes, and full historical replay remains unproven.
+- Phase 28 RPCs remain live with fixed empty `search_path`, permission/branch guards, and authenticated-only execution.
+- Phase 29 is applied and verified: direct INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER privileges are false for `authenticated` on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; SELECT remains true and RLS remains enabled. The four tables remain empty.
+- `lab_order_items` and `medical_certificates` intentionally retain their current authenticated direct-write grants until the new frontend is deployed. The canonical production alias has not been switched because the free Vercel API deployment quota is exhausted; no preview build was promoted because preview environment variables may differ. Phase 30 remains gated.

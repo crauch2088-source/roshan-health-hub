@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-18",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 108,
-  "latest_live_version": "20261018064638",
+  "live_ledger_count": 109,
+  "latest_live_version": "20261018065708",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 15,
+  "forward_migration_count": 16,
   "entries": [
     {
       "version": "20261017125924",
@@ -140,6 +140,15 @@
       "normalized_source_sql_sha256": "72e17c492b9a498f4421403273c8c4d5a900e2e587b3970bf0d09a99277abd4e",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact migration SQL was submitted through the Supabase migration API; ledger version/name were read back once. The API does not expose a stored live SQL hash."
+    },
+    {
+      "version": "20261018065708",
+      "name": "roshan_clinical_child_rpc_only_writes",
+      "source_path": "db/roshan_phase29_clinical_child_rpc_only_writes.sql",
+      "source_git_blob_sha": "e6c96fcf1885b53ab3b50704b40f25917deba66d",
+      "normalized_source_sql_sha256": "d4fde311fdd3be4c913eed79679cb8eed4c7dca07a5a6fe7e7264d127396b587",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Exact four-table revocation SQL submitted through the Supabase migration API; ledger version/name read back and effective privileges verified. The API does not expose a stored live SQL hash."
     }
   ],
   "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
