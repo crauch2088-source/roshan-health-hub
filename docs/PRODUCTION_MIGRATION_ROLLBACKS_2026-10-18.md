@@ -296,26 +296,24 @@ The affected tables had zero rows before and after application. The migration ch
 **Preferred recovery is a forward fix.** Do not broadly revert branch policies to the older permission-only predicates. If a specific policy causes a regression, repair that policy in a forward migration and preserve the parent-branch and same-patient/visit checks. Before any emergency rollback, capture the current `pg_policies` definitions and helper function definitions; no blanket rollback script should be run against these interdependent policies.
 
 
-## Clinical child RPC rollout — Phase 28 applied, Phase 29 pending
+## Clinical child RPC rollout — Phase 28 applied; Phase 29/30 split
 
-Applied migration: `roshan_clinical_child_write_rpcs`, ledger version `20261018064638`. It creates `public.complete_lab_order_item(uuid)` and `public.create_medical_certificate(uuid,text,date,date)` with fixed empty `search_path`, permission checks, caller-derived author IDs, and parent-branch validation. Both functions are executable by `authenticated`, not by `anon` or `PUBLIC`. Direct table grants have **not** been revoked by Phase 28.
+Applied migration: `roshan_clinical_child_write_rpcs`, ledger version `20261018064638`. It creates `public.complete_lab_order_item(uuid)` and `public.create_medical_certificate(uuid,text,date,date)` with fixed empty `search_path`, permission checks, caller-derived author IDs, and parent-branch validation. Both functions are executable by `authenticated`, not by `anon` or `PUBLIC`. Direct table grants remain unchanged by Phase 28.
 
-**Rollout order:** (1) keep the passing PostgreSQL 17 regression; (2) deploy the frontend RPC call sites; (3) verify the canonical production deployment and check both lab completion and certificate creation paths; (4) only then apply Phase 29 to revoke direct DML on the six audited child tables; (5) verify SELECT remains available, RLS remains enabled, `authenticated` has RPC execution only, and `anon` has no write/execute path. Do not apply Phase 29 until steps 2–3 are complete.
-
-If Phase 28 must be rolled back before the new frontend is deployed, the narrow rollback is:
+**Phase 29 — safe subset, ready for application:** revokes direct DML only on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`. Current-main source search found no direct frontend write calls for these four tables; all have branch-aware RLS enabled and SELECT remains available. Rollback, if required, is to restore DML privileges only to `authenticated` (never `anon` or `PUBLIC`):
 
 ```sql
-REVOKE ALL ON FUNCTION public.complete_lab_order_item(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.create_medical_certificate(uuid, text, date, date) FROM PUBLIC, anon, authenticated;
-DROP FUNCTION IF EXISTS public.complete_lab_order_item(uuid);
-DROP FUNCTION IF EXISTS public.create_medical_certificate(uuid, text, date, date);
+GRANT INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
+  public.prescriptions, public.prescription_items, public.patient_discounts, public.insurance_prior_authorizations
+  TO authenticated;
 ```
 
-If Phase 29 must be rolled back, first roll the application back to a build that does not depend on the new RPC-only path. Restore direct write grants only to `authenticated` (never to `anon` or `PUBLIC`) on the six tables and restore `USAGE, SELECT, UPDATE` on `public.medical_certificates_id_seq`. Preserve SELECT grants, RLS, and all branch-aware policies. Prefer a forward fix over rolling back to direct writes.
+**Phase 30 — deployment-gated:** revokes direct DML on `lab_order_items` and `medical_certificates` and removes client access to the certificate ID sequence. Do not apply Phase 30 until the production alias serves a READY deployment that contains the RPC call sites and smoke verification succeeds. If Phase 30 must be rolled back, first roll the app back to a build that uses direct writes, then restore only authenticated grants:
 
+```sql
+GRANT INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
+  public.lab_order_items, public.medical_certificates TO authenticated;
+GRANT USAGE, SELECT, UPDATE ON SEQUENCE public.medical_certificates_id_seq TO authenticated;
+```
 
-## Current rollout blocker — 2026-10-18
-
-The additive RPC migration is live under ledger name `roshan_clinical_child_write_rpcs`, version `20261018064638`. PR #74 is merged, but Vercel currently reports `Deployment rate limited — retry in 24 hours` for main commit `cd802b5d0e7ad8fa74212e6579220c3532604b6d`; the last confirmed production deployment is still `bfc34bba1a880b385bc356f3dca1db0fb5068fe1`.
-
-Do **not** apply Phase 29 while the canonical alias may still serve the old UI. Once the deployment is READY and the canonical alias resolves to the merged code, smoke-test certificate creation and lab-item completion through the RPCs, then apply Phase 29. If the deployment remains blocked, leave the direct-write grants intact; this preserves the currently deployed UI.
+The Vercel API returned HTTP 402 `api-deployments-free-per-day` (100 deployments/day, remaining 0, reset 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or preview-to-production alias workaround will be used because preview builds may contain preview environment variables. A one-time continuation task is scheduled for 2026-10-19 09:00 Africa/Khartoum; it must recheck quota, current main, production alias, and all checks before applying Phase 30.

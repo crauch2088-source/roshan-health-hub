@@ -1548,10 +1548,10 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 4. Do not revoke direct DML until the canonical production alias is confirmed to serve the merged RPC call sites. Once Vercel allows a deployment, verify the deployed commit and run smoke checks, then apply Phase 29 and verify direct DML is denied while RPCs remain callable.
 
 
-## Execution update — 2026-10-18: clinical child RPC rollout staged and Phase 28 applied
+## Execution update — 2026-10-18: clinical child RPC rollout staged
 
-- The dedicated PostgreSQL 17 regression passed on `ef6858e7eb6d7386a3e962aae4b7f51e020d36dd`; it verifies direct-DML denial after Phase 29, retained SELECT/RLS, authenticated-only RPC execution, same-branch success, cross-branch denial, and invalid certificate dates.
-- Applied `roshan_clinical_child_write_rpcs` to production as ledger version `20261018064638`. Read-back confirms both RPCs are `SECURITY DEFINER`, use `search_path = ''`, and are executable by `authenticated` but not `anon`/`PUBLIC`. No business rows were modified; the six target tables remain empty.
-- The current live ledger has **108 entries**; the forward-source delta has **15 mappings** over the frozen 93-entry snapshot. This does not prove stored live SQL hash equality or full historical replay.
-- PR #74 is merged; the source now calls `complete_lab_order_item` and `create_medical_certificate`. Phase 29 remains unapplied until the new app deployment and smoke checks succeed.
-- The Vercel check on main is currently blocked by the free-plan deployment rate limit; production is still serving the earlier main deployment, so applying Phase 29 now would break the old direct-write UI.
+- Phase 28 (`roshan_clinical_child_write_rpcs`, live version `20261018064638`) is applied. Read-back confirms fixed `search_path`, branch/permission guards, and authenticated-only execution for both RPCs.
+- Current-main frontend calls `complete_lab_order_item` and `create_medical_certificate`; standard CI and the PostgreSQL 17 regression passed on the code path. The latest regression run on commit `40988b024e7c19ec59327ea6aedcd4475800a05f` passed the split Phase 28 → Phase 29 → Phase 30 fixture.
+- The current live ledger has **108 entries** and the forward-source delta has **15 mappings** over the frozen 93-entry snapshot. This does not prove stored live SQL hash equality or full historical replay.
+- Phase 29 is split into a safe four-table direct-DML revocation (`prescriptions`, `prescription_items`, `patient_discounts`, `insurance_prior_authorizations`) with no frontend write call sites; Phase 30 covers `lab_order_items` and `medical_certificates` and must wait for production deployment.
+- Vercel production deployment is blocked by the free API deployment limit (100/day, zero remaining until 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or preview-to-production promotion was attempted because preview environment variables may differ. A one-time continuation task is scheduled for 2026-10-19 09:00 Africa/Khartoum to retry and apply Phase 30 only after production deployment verification.

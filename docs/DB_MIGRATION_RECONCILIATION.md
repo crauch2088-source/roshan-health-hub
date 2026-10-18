@@ -551,8 +551,11 @@ The review does not claim full historical replay. The live ledger remains 103 en
 - Full historical replay remains unproven because the reviewed initial schema baseline is missing and one environment-specific identity-link migration remains deliberately redacted.
 
 
+
+
 ## Current live/source reconciliation — after Phase 28, 2026-10-18
 
-- Live Supabase ledger: **108 entries** through `20261018064638_roshan_clinical_child_write_rpcs`. The forward-source delta now contains **15 mappings** over the frozen 93-entry historical snapshot. Source hashes validate repository content; stored live SQL hashes and full historical replay remain unproven.
-- Read-back confirmed both new functions are `SECURITY DEFINER`, use `search_path = ''`, can be executed by `authenticated`, and cannot be executed by `anon` or `PUBLIC`. Both branch helper functions and permission guards are present.
-- Phase 28 creates the RPCs but deliberately leaves direct table grants unchanged. The app still needs to deploy the new lab completion and certificate creation call sites before Phase 29 revokes direct DML. All six affected clinical child tables remain at zero rows and RLS remains enabled.
+- Live Supabase ledger: **108 entries** through `20261018064638_roshan_clinical_child_write_rpcs`. The forward-source delta has **15 mappings** above the frozen 93-entry historical snapshot. Source hashes validate repository files; stored live SQL hash equality and full historical replay remain unproven.
+- Read-back confirmed both new RPCs are `SECURITY DEFINER`, use `search_path = ''`, and are executable by `authenticated` but not `anon`/`PUBLIC`. No business rows were modified.
+- The dedicated PostgreSQL 17 clinical RPC regression passes on `40988b024e7c19ec59327ea6aedcd4475800a05f`. Phase 29 is now split: a safe four-table revocation can be applied before frontend deployment; Phase 30 (lab item/certificate direct writes) must wait until production deploy and smoke verification.
+- Vercel deployment creation was blocked by the free API deployment quota (100/day, zero remaining until 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or unsafe preview promotion was attempted. A one-time continuation task is scheduled for 09:00 Africa/Khartoum tomorrow.

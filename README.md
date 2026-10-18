@@ -357,8 +357,10 @@ The original machine-readable `docs/recovered-migrations/source-parity-report.js
 - The new clinical write RPC migrations remain source-only until the frontend call sites are migrated and deployed. Direct DML revocation is staged separately to avoid breaking certificate creation or lab completion during rollout.
 
 
-## Latest execution update — 2026-10-18 (Phase 28)
 
-- Live Supabase ledger: **108 entries** through `20261018064638_roshan_clinical_child_write_rpcs`. The two clinical write RPCs are verified with fixed `search_path`, branch and permission checks, and authenticated-only execution.
-- Phase 28 intentionally leaves direct table grants intact. The frontend is being switched to these RPCs; Phase 29 will revoke direct DML only after deployment verification.
-- PostgreSQL 17 regression workflow passed for the staged clinical RPC-only write migration.
+
+## Latest execution update — 2026-10-18 (clinical child RPC rollout)
+
+- Phase 28 RPCs are live in Supabase under migration `20261018064638_roshan_clinical_child_write_rpcs`; both use fixed `search_path`, permission and branch guards, and authenticated-only execute grants.
+- The PostgreSQL 17 clinical regression and source-parity workflow pass. Phase 29 has been split so four tables without direct frontend write paths can be hardened independently; Phase 30 still requires the new production UI deployment.
+- Vercel's free deployment API quota is exhausted until 2026-10-19 08:52 Africa/Khartoum. The production alias was not switched to a preview build because preview environment variables may differ. A one-time continuation task is scheduled for 09:00 Africa/Khartoum tomorrow.
