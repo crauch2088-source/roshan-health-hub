@@ -7562,7 +7562,11 @@ CREATE TRIGGER trg_audit_vitals AFTER INSERT OR DELETE OR UPDATE ON public.vital
 -- Canonical catalog count assertions.
 DO $baseline_assertions$ BEGIN
  IF (SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE') <> 56 THEN RAISE EXCEPTION 'baseline table count mismatch'; END IF;
+ IF (SELECT count(*) FROM pg_constraint con JOIN pg_class t ON t.oid=con.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public') <> 213 THEN RAISE EXCEPTION 'baseline constraint count mismatch'; END IF;
+ IF (SELECT count(*) FROM pg_class i JOIN pg_namespace n ON n.oid=i.relnamespace JOIN pg_index ix ON ix.indexrelid=i.oid JOIN pg_class t ON t.oid=ix.indrelid JOIN pg_namespace tn ON tn.oid=t.relnamespace WHERE n.nspname='public' AND tn.nspname='public' AND NOT EXISTS (SELECT 1 FROM pg_constraint con WHERE con.conindid=i.oid)) <> 163 THEN RAISE EXCEPTION 'baseline non-constraint index count mismatch'; END IF;
+ IF (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','private') AND p.prokind IN ('f','p')) <> 126 THEN RAISE EXCEPTION 'baseline function count mismatch'; END IF;
  IF (SELECT count(*) FROM pg_policies WHERE schemaname='public') <> 203 THEN RAISE EXCEPTION 'baseline RLS policy count mismatch'; END IF;
  IF (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND NOT t.tgisinternal) <> 47 THEN RAISE EXCEPTION 'baseline trigger count mismatch'; END IF;
+ IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='v') <> 5 THEN RAISE EXCEPTION 'baseline view count mismatch'; END IF;
 END $baseline_assertions$;
 COMMIT;
