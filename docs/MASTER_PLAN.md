@@ -1,3 +1,16 @@
+## Latest execution update — Phase 32 performance remediation (2026-10-19 06:14 UTC)
+
+- Per user instruction, clinical end-to-end tests are deferred; no production clinical/financial records were created to simulate test workflows.
+- Addressed the next actionable Supabase Performance Advisor finding: the missing index for `medical_certificates.visit_id`.
+- Added `db/roshan_phase32_medical_certificate_visit_index.sql`, `db/tests/medical_certificate_visit_index_assertions.sql`, and source-level regression coverage in `tests/clinical-security-hardening.test.ts`. Updated `.github/workflows/ci.yml` to install the actual PostgreSQL 16 client binary and replay Phase 31 + Phase 32 on disposable PostgreSQL 17.
+- CI exposed and fixed two issues during this work: the workflow's prior `psql` command lacked a client binary, and the first test assertion/formatting needed correction. Latest tested code revision `ab0e200b91d3fc9c1cf802f908592b3cf0e9069d` passed all 17 checks, including PostgreSQL 17 clinical regression, install/security audit/typecheck/lint/build, migration source parity, CodeQL and finance concurrency workflows.
+- Applied Phase 32 to live Supabase via the official migration API. Ledger now has **112 entries**, latest `20261019061315`. Read-back confirms `medical_certificates_visit_id_idx` exists and is valid/ready. Performance Advisor no longer reports the unindexed certificate-visit foreign key.
+- Performance Advisor still lists 89 unused-index suggestions. Do not delete these in bulk: the app is prelaunch/low traffic and the new index is expected to appear unused until queried. The 22 authenticated-callable SECURITY DEFINER warnings still need function-by-function authorization/branch/fixed-search-path review; no blanket revocations were made. Leaked-password protection remains plan-gated and no paid upgrade was made.
+- Evidence: [Phase 32 migration](../db/roshan_phase32_medical_certificate_visit_index.sql), [index regression assertion](../db/tests/medical_certificate_visit_index_assertions.sql), [database reconciliation](DB_MIGRATION_RECONCILIATION.md), [authenticated route QA report](AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md), [CI run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39208577937).
+- Next non-clinical work: perform a function-by-function triage of the 22 SECURITY DEFINER advisor findings, identifying intended client-callable RPCs versus functions whose grants can safely be narrowed, and add regression coverage before any privilege changes. Keep clinical E2E acceptance explicitly open until a free isolated PostgreSQL 17 test route and doctor-role test identity are available.
+
+---
+
 ## Latest execution update — authenticated production route QA (2026-10-18 20:43 UTC)
 
 - Added [`docs/AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md`](AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md) with live browser evidence, exact deployment/commit identity, CI status, advisor findings and explicit limitations.
