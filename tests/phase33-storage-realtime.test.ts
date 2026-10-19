@@ -24,9 +24,18 @@ test("consultation query failures are visible and retryable and visit state rese
   assert.match(consultation, /<HistoryTab key=\{visitId\}/);
   assert.match(history, /visits\.error/);
   assert.match(history, /visits\.refetch\(\)/);
-  assert.match(read("../src/features/clinic/consultation/components/ClinicalNoteTab.tsx"), /noteQ\.refetch\(\)/);
-  assert.match(read("../src/features/clinic/consultation/components/PrescriptionTab.tsx"), /medsQ\.refetch\(\)/);
-  assert.match(read("../src/features/clinic/consultation/components/LaboratoryTab.tsx"), /testsQ\.refetch\(\)/);
+  assert.match(
+    read("../src/features/clinic/consultation/components/ClinicalNoteTab.tsx"),
+    /noteQ\.refetch\(\)/,
+  );
+  assert.match(
+    read("../src/features/clinic/consultation/components/PrescriptionTab.tsx"),
+    /medsQ\.refetch\(\)/,
+  );
+  assert.match(
+    read("../src/features/clinic/consultation/components/LaboratoryTab.tsx"),
+    /testsQ\.refetch\(\)/,
+  );
   assert.match(lab, /setValues\(\{\}\)/);
 });
 
