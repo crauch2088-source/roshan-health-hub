@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
+import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
 import { hasLabItemResultInput, mapLabResult, selectLabReferenceRange } from "@/lib/lab-workflow";
