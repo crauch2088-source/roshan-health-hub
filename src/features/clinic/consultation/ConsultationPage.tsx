@@ -20,16 +20,16 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const [tab, setTab] = useState("note");
   const [noteDirty, setNoteDirty] = useState(false);
   const [reviewChecks, setReviewChecks] = useState<Record<string, boolean>>({
-  useEffect(() => {
-    setTab("note");
-    setNoteDirty(false);
-    setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
-  }, [visitId]);
     identity: false,
     history: false,
     vitals: false,
     plan: false,
   });
+  useEffect(() => {
+    setTab("note");
+    setNoteDirty(false);
+    setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
+  }, [visitId]);
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
       const message =

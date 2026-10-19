@@ -216,6 +216,18 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
+        {visitQ.error ? (
+          <div role="alert" className="space-y-2">
+            <p>
+              {lang === "ar"
+                ? "تعذّر تحميل بيانات الزيارة."
+                : "Could not load visit details."}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
+            </Button>
+          </div>
+        ) : null}
         <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
