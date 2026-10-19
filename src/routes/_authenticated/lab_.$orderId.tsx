@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { hasLabItemResultInput, isAbnormalLabResult } from "@/lib/lab-workflow";
+import { hasLabItemResultInput, mapLabResult } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
@@ -43,6 +43,16 @@ function LabOrderPage() {
       <LabOrderPageInner />
     </PermissionGate>
   );
+}
+
+function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const raw = row?.[key];
+    if (raw == null || raw === "") continue;
+    const value = Number(raw);
+    if (Number.isFinite(value)) return value;
+  }
+  return null;
 }
 
 function LabOrderPageInner() {
@@ -191,12 +201,19 @@ function LabOrderPageInner() {
     return (
       count +
       itemParameters.filter((parameter) => {
-        const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
-        if (!value) return false;
+        const key = s(item, "id") + ":" + s(parameter, "id");
+        const saved = resultRows.find((row) =>
+          s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(parameter, "id"),
+        );
         const range = rangeFor(s(parameter, "id"));
-        const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-        const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-        return isAbnormalLabResult(value, low, high);
+        const mapped = mapLabResult({
+          value: values[key] ?? "",
+          dataType: s(parameter, "data_type"),
+          lower: firstFiniteBound(range, "lower_limit", "min_value"),
+          upper: firstFiniteBound(range, "upper_limit", "max_value"),
+          flag: s(saved, "flag"),
+        });
+        return mapped.kind === "numeric" && mapped.abnormal;
       }).length
     );
   }, 0);
@@ -219,24 +236,26 @@ function LabOrderPageInner() {
 
           if (!value) continue;
 
-          const numeric = Number(value);
           const range = rangeFor(s(p, "id"));
-
-          const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-
-          const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-
-          const abnormal =
-            Number.isFinite(numeric) &&
-            ((low !== 0 && numeric < low) || (high !== 0 && numeric > high));
-
-          const flag = abnormal ? (low !== 0 && numeric < low ? "low" : "high") : null;
+          const mapped = mapLabResult({
+            value,
+            dataType: s(p, "data_type"),
+            lower: firstFiniteBound(range, "lower_limit", "min_value"),
+            upper: firstFiniteBound(range, "upper_limit", "max_value"),
+            criticalLower: firstFiniteBound(range, "critical_lower_limit"),
+            criticalUpper: firstFiniteBound(range, "critical_upper_limit"),
+          });
+          const numeric = mapped.kind === "numeric" ? mapped.value : null;
+          const abnormal = mapped.kind === "numeric" && mapped.abnormal;
+          const flag = mapped.kind === "numeric" && mapped.flag !== "normal"
+            ? mapped.flag?.replace(/-/g, "_") ?? null
+            : null;
 
           const payload = {
             order_item_id: s(item, "id"),
             parameter_id: s(p, "id"),
             result_value: value,
-            numeric_value: Number.isFinite(numeric) ? numeric : null,
+            numeric_value: numeric,
             flag,
             is_abnormal: abnormal,
             comment: comments[key] || null,
@@ -424,11 +443,19 @@ function LabOrderPageInner() {
 
                           const range = rangeFor(s(p, "id"));
 
-                          const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-
-                          const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-
-                          const abnormal = isAbnormalLabResult(value, low, high);
+                          const mapped = mapLabResult({
+                            value,
+                            dataType: s(p, "data_type"),
+                            lower: firstFiniteBound(range, "lower_limit", "min_value"),
+                            upper: firstFiniteBound(range, "upper_limit", "max_value"),
+                            criticalLower: firstFiniteBound(range, "critical_lower_limit"),
+                            criticalUpper: firstFiniteBound(range, "critical_upper_limit"),
+                            flag: s(resultRows.find((row) =>
+                              s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(p, "id"),
+                            ), "flag"),
+                          });
+                          const abnormal = mapped.kind === "numeric" && mapped.abnormal;
+                          const critical = mapped.kind === "numeric" && mapped.critical;
 
                           return (
                             <TableRow key={key}>
@@ -454,11 +481,21 @@ function LabOrderPageInner() {
                                   }
                                 />
 
-                                {abnormal && (
-                                  <div className="mt-1 text-xs font-medium text-destructive">
-                                    {lang === "ar" ? "خارج المدى" : "Out of range"}
+                                {mapped.kind === "empty" ? (
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    {lang === "ar" ? "بانتظار إدخال النتيجة" : "Pending result"}
                                   </div>
-                                )}
+                                ) : mapped.kind === "pending" ? (
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    {lang === "ar" ? "قيد الانتظار" : "Pending"}
+                                  </div>
+                                ) : abnormal ? (
+                                  <div className={`mt-1 text-xs font-medium ${critical ? "text-destructive" : "text-warning-foreground"}`}>
+                                    {critical
+                                      ? lang === "ar" ? "قيمة حرجة" : "Critical value"
+                                      : lang === "ar" ? "خارج المدى" : "Out of range"}
+                                  </div>
+                                ) : null}
                               </TableCell>
 
                               <TableCell dir="ltr">
@@ -467,7 +504,7 @@ function LabOrderPageInner() {
 
                               <TableCell dir="ltr">
                                 {range
-                                  ? s(range, "text_reference") || `${low || "—"} – ${high || "—"}`
+                                  ? s(range, "text_reference") || `${firstFiniteBound(range, "lower_limit", "min_value") ?? "—"} – ${firstFiniteBound(range, "upper_limit", "max_value") ?? "—"}`
                                   : s(p, "reference_text") || "—"}
                               </TableCell>
 
