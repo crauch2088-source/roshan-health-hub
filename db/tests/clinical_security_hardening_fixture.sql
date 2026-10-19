@@ -6,7 +6,13 @@ CREATE SCHEMA auth;
 CREATE SCHEMA private;
 
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
-AS $auth_uid$ SELECT NULLIF(current_setting('test.auth_uid', true), '')::uuid $auth_uid$;
+AS $auth_uid$
+  SELECT COALESCE(
+    NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid,
+    (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid,
+    NULLIF(current_setting('test.auth_uid', true), '')::uuid
+  )
+$auth_uid$;
 
 CREATE TABLE public.roles (id uuid PRIMARY KEY, code text);
 CREATE TABLE public.users (
@@ -108,3 +114,19 @@ GRANT EXECUTE ON FUNCTION public.create_medical_certificate(uuid,text,date,date)
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.lab_order_items TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.medical_certificates TO authenticated;
 GRANT ALL ON SEQUENCE public.medical_certificates_id_seq TO authenticated;
+
+
+-- Additional disposable-fixture columns for the complete authenticated clinical workflow.
+CREATE TABLE public.branches (id uuid PRIMARY KEY, branch_code text, branch_name text);
+ALTER TABLE public.queue_tickets ADD COLUMN patient_id uuid;
+ALTER TABLE public.lab_orders ADD COLUMN status text NOT NULL DEFAULT 'ordered';
+ALTER TABLE public.lab_orders ADD COLUMN patient_id uuid;
+ALTER TABLE public.lab_orders ADD COLUMN visit_id uuid;
+ALTER TABLE public.lab_orders ADD COLUMN branch_id uuid;
+CREATE TABLE public.lab_parameters (id uuid PRIMARY KEY, code text NOT NULL, name text NOT NULL);
+
+GRANT USAGE ON SCHEMA public, private TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.patients, public.visits, public.queue_tickets,
+  public.lab_orders, public.lab_results, public.lab_parameters, public.branches TO authenticated;
+GRANT SELECT ON public.roles, public.users, public.permissions, public.role_permissions,
+  public.medical_certificates TO authenticated;
