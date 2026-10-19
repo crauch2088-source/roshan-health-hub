@@ -81,6 +81,17 @@ The same live catalog query found these older overloads are **not executable by 
 
 Do not re-grant these legacy overloads. The supported client-callable versions are the request-ID and visit-linked signatures listed above.
 
+## Targeted body verification after catalog triage
+
+The following functions were inspected in full because the short source-text scan did not find a direct branch marker in the top-level wrapper:
+
+- `create_billing_invoice_atomic(..., p_request_id uuid)`: validates the caller and `billing.create`, enforces request-ID idempotency and delegates to the older overload. The linked-visit path reaches `private.create_or_append_visit_invoice_atomic`, which checks user branch against patient branch; the standalone path calls `create_invoice_atomic`, which performs the same branch check.
+- `create_lab_order_with_invoice_atomic(..., p_request_id uuid)`: validates caller, `lab.create`, and request-ID idempotency, then delegates to the legacy overload. That overload checks the user's branch against the patient branch before creating the lab order and invoice.
+- `create_visit_consultation_invoice_atomic(uuid,date)`: validates caller and permission, then delegates invoice creation to `private.create_or_append_visit_invoice_atomic`, which checks user/patient branch before writing invoice items.
+- `create_medical_certificate(uuid,text,date,date,uuid)`: explicitly requires `certificates.create` and an active application user whose role code is `doctor`; validates required diagnosis/dates, active patient, linked active visit ownership, rejects cancelled visits, verifies patient/visit branch consistency and checks branch access before insertion.
+
+These checks support retaining the current authenticated EXECUTE grants for the intended RPCs. They do not replace the deferred end-to-end clinical workflow test, and no grant changes were made.
+
 ## Decision and next work
 
 **No privilege changes are warranted solely from these warnings.** The advisor identifies the presence of SECURITY DEFINER plus authenticated EXECUTE, but does not evaluate the application's custom permission and branch checks. A blanket revoke would break normal clinical, pharmacy and finance workflows.
