@@ -388,3 +388,9 @@ The original machine-readable `docs/recovered-migrations/source-parity-report.js
 - Phase 28 RPCs are live and verified. Phase 29 has revoked direct DML on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; SELECT and RLS remain intact.
 - Global read-only audit: 56/56 public base tables have RLS; zero grant any privilege to `anon`; all 81 `SECURITY DEFINER` routines have fixed `search_path`; no public one is executable by `anon`. Two private helpers inherit PUBLIC EXECUTE but `anon` has no schema USAGE, and they remain unmodified.
 - Phase 30 (revoking direct DML on `lab_order_items` and `medical_certificates`) is intentionally gated until the new RPC frontend is deployed to the canonical production alias. Vercel's free deployment API quota resets 2026-10-19 08:52 Africa/Khartoum; a one-time continuation task is scheduled for 09:00.
+
+
+## Clinical child RPC-only writes — status (2026-10-19)
+
+Phase 30 is accepted as **Superseded & Fulfilled** by the production Phase 31 Contract migration. The live Supabase ledger has 112 entries through `20261019061315_roshan_phase32_medical_certificate_visit_index`. All six clinical child tables retain SELECT and RLS while client direct writes are revoked. The supported certificate RPC is `create_medical_certificate(uuid,text,date,date,uuid)`; the legacy four-argument signature must remain revoked. No production write/rollback test is required; acceptance relies on read-only catalog evidence and isolated PostgreSQL 17 CI coverage. See `docs/DB_MIGRATION_RECONCILIATION.md` and `docs/PRODUCTION_MIGRATION_ROLLBACKS_2026-10-18.md`.
+
