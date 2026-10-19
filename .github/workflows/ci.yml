@@ -421,5 +421,7 @@ jobs:
             -f db/tests/clinical_security_hardening_fixture.sql \
             -f db/roshan_phase31_clinical_financial_security_hardening.sql \
             -f db/roshan_phase31_contract_security_cutover.sql \
+            -f db/roshan_phase32_medical_certificate_visit_index.sql \
             -f db/tests/clinical_security_hardening_assertions.sql
+            -f db/tests/medical_certificate_visit_index_assertions.sql
 
