@@ -5,7 +5,7 @@ import {
   createEmptyPrescriptionDraft,
   validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
-import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
+import { labWorkflowStage, mapLabResult } from "../src/lib/lab-workflow.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -119,4 +119,37 @@ test("blank or nonnumeric lab values are not classified as out of range", async 
   assert.equal(isAbnormalLabResult("3.4", 3.5, 5.5), true);
   assert.equal(isAbnormalLabResult("5.6", 3.5, 5.5), true);
   assert.equal(isAbnormalLabResult("4.5", 3.5, 5.5), false);
+});
+
+
+test("typed lab result mapper distinguishes empty, pending, numeric zero, abnormal, critical, text and coded results", () => {
+  assert.deepEqual(mapLabResult({ value: "" }), { kind: "empty" });
+  assert.deepEqual(mapLabResult({ value: null, status: "pending" }), { kind: "pending" });
+  assert.deepEqual(mapLabResult({ value: 0, dataType: "numeric", lower: 0, upper: 5 }), {
+    kind: "numeric", value: 0, lower: 0, upper: 5, abnormal: false, critical: false, flag: null,
+  });
+  const low = mapLabResult({ value: 2, dataType: "numeric", lower: 3, upper: 5 });
+  assert.equal(low.kind, "numeric");
+  if (low.kind === "numeric") assert.equal(low.abnormal, true);
+  const critical = mapLabResult({ value: 9, dataType: "numeric", upper: 5, criticalUpper: 8 });
+  assert.equal(critical.kind, "numeric");
+  if (critical.kind === "numeric") {
+    assert.equal(critical.critical, true);
+    assert.equal(critical.flag, "critical-high");
+  }
+  assert.deepEqual(mapLabResult({ value: "reactive", dataType: "text" }), { kind: "text", value: "reactive" });
+  assert.deepEqual(mapLabResult({ value: "POS", code: "positive", display: "Positive" }), {
+    kind: "coded", code: "positive", display: "Positive",
+  });
+});
+
+test("consultation visit changes reset local state and expose query-specific retry paths", () => {
+  const ui = read("../src/features/clinic/consultation/ConsultationPage.tsx");
+  assert.match(ui, /useEffect\(\(\) => \{/);
+  assert.match(ui, /\}, \[visitId\]\)/);
+  assert.match(ui, /visitQ\.error/);
+  assert.match(ui, /visitQ\.refetch\(\)/);
+  assert.match(ui, /invoiceQ\.error/);
+  assert.match(ui, /invoiceQ\.refetch\(\)/);
+  assert.match(ui, /key=\{visitId\}/);
 });
