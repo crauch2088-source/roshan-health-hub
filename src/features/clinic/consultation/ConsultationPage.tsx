@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loading, StatusBadge } from "@/components/kit";
+import { ErrorBox, Loading, StatusBadge } from "@/components/kit";
 import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money } from "@/lib/medical";
@@ -113,14 +113,13 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
 
   if (!visit)
     return (
-      <div className="p-6">
-        {visitQ.isLoading ? (
-          <Loading />
-        ) : lang === "ar" ? (
-          "لم يتم العثور على الزيارة"
-        ) : (
-          "Visit not found"
-        )}
+      <div className="space-y-3 p-6">
+        {visitQ.isLoading ? <Loading /> : visitQ.error ? (
+          <div role="alert" className="space-y-2">
+            <ErrorBox error={visitQ.error} />
+            <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>{lang === "ar" ? "إعادة المحاولة" : "Retry visit"}</Button>
+          </div>
+        ) : lang === "ar" ? "لم يتم العثور على الزيارة" : "Visit not found"}
       </div>
     );
   const reviewItems = [
@@ -145,6 +144,12 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
       en: "Review orders, prescription and follow-up plan",
     },
   ];
+  useEffect(() => {
+    setTab("note");
+    setNoteDirty(false);
+    setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
+  }, [visitId]);
+
   const reviewCount = Object.values(reviewChecks).filter(Boolean).length;
 
   const tabs = [
@@ -166,7 +171,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           {/* Billing — three honest states: loading, existing invoice (link to it,
            never create a second one), or none yet (offer to create one from
            the consultation fee already on the visit). */}
-          {invoiceQ.isLoading ? null : existingInvoice ? (
+          {invoiceQ.error ? <div role="alert" className="flex items-center gap-2"><ErrorBox error={invoiceQ.error} /><Button variant="outline" size="sm" onClick={() => void invoiceQ.refetch()}>{lang === "ar" ? "إعادة المحاولة" : "Retry billing"}</Button></div> : invoiceQ.isLoading ? null : existingInvoice ? (
             <Link
               to="/billing/$invoiceId"
               params={{ invoiceId: s(existingInvoice, "id") }}
@@ -335,11 +340,11 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         tabIndex={0}
         className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
       >
-        {tab === "note" && <ClinicalNoteTab visitId={visitId} onDirtyChange={setNoteDirty} />}
-        {tab === "vitals" && <VitalsTab visitId={visitId} />}
-        {tab === "labs" && <LaboratoryTab visitId={visitId} />}
-        {tab === "prescription" && <PrescriptionTab visitId={visitId} />}
-        {tab === "history" && <HistoryTab visitId={visitId} />}
+        {tab === "note" && <ClinicalNoteTab key={visitId} visitId={visitId} onDirtyChange={setNoteDirty} />}
+        {tab === "vitals" && <VitalsTab key={visitId} visitId={visitId} />}
+        {tab === "labs" && <LaboratoryTab key={visitId} visitId={visitId} />}
+        {tab === "prescription" && <PrescriptionTab key={visitId} visitId={visitId} />}
+        {tab === "history" && <HistoryTab key={visitId} visitId={visitId} />}
       </section>
     </div>
   );

@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { hasLabItemResultInput, isAbnormalLabResult } from "@/lib/lab-workflow";
+import { hasLabItemResultInput, mapLabResult } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
@@ -55,6 +55,7 @@ function LabOrderPageInner() {
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
+  useEffect(() => { setValues({}); setComments({}); }, [orderId]);
 
   const orderQ = useRows<Row[]>(["lab-order", orderId], () =>
     supabase
@@ -191,12 +192,11 @@ function LabOrderPageInner() {
     return (
       count +
       itemParameters.filter((parameter) => {
-        const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
-        if (!value) return false;
+        const value = values[s(item, "id") + ":" + s(parameter, "id")] ?? "";
         const range = rangeFor(s(parameter, "id"));
-        const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-        const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-        return isAbnormalLabResult(value, low, high);
+        const saved = resultRows.find((row) => s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(parameter, "id"));
+        const mapped = mapLabResult(value, s(parameter, "data_type"), range, s(saved, "flag"));
+        return mapped.kind === "numeric" && mapped.abnormal;
       }).length
     );
   }, 0);
@@ -219,26 +219,15 @@ function LabOrderPageInner() {
 
           if (!value) continue;
 
-          const numeric = Number(value);
           const range = rangeFor(s(p, "id"));
-
-          const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-
-          const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-
-          const abnormal =
-            Number.isFinite(numeric) &&
-            ((low !== 0 && numeric < low) || (high !== 0 && numeric > high));
-
-          const flag = abnormal ? (low !== 0 && numeric < low ? "low" : "high") : null;
-
+          const mapped = mapLabResult(value, s(p, "data_type"), range);
           const payload = {
             order_item_id: s(item, "id"),
             parameter_id: s(p, "id"),
-            result_value: value,
-            numeric_value: Number.isFinite(numeric) ? numeric : null,
-            flag,
-            is_abnormal: abnormal,
+            result_value: mapped.rawValue,
+            numeric_value: mapped.kind === "numeric" ? mapped.numericValue : null,
+            flag: mapped.kind === "numeric" ? mapped.flag : null,
+            is_abnormal: mapped.kind === "numeric" && mapped.abnormal,
             comment: comments[key] || null,
             entered_by: user?.id ?? null,
           };
@@ -424,11 +413,9 @@ function LabOrderPageInner() {
 
                           const range = rangeFor(s(p, "id"));
 
-                          const low = range ? n(range, "lower_limit") || n(range, "min_value") : 0;
-
-                          const high = range ? n(range, "upper_limit") || n(range, "max_value") : 0;
-
-                          const abnormal = isAbnormalLabResult(value, low, high);
+                          const savedResult = resultRows.find((row) => s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(p, "id"));
+                          const mapped = mapLabResult(value, s(p, "data_type"), range, s(savedResult, "flag"));
+                          const abnormal = mapped.kind === "numeric" && mapped.abnormal;
 
                           return (
                             <TableRow key={key}>
@@ -456,7 +443,7 @@ function LabOrderPageInner() {
 
                                 {abnormal && (
                                   <div className="mt-1 text-xs font-medium text-destructive">
-                                    {lang === "ar" ? "خارج المدى" : "Out of range"}
+                                    {mapped.kind === "numeric" && mapped.critical ? (lang === "ar" ? "قيمة حرجة" : "Critical") : (lang === "ar" ? "خارج المدى" : "Out of range")}
                                   </div>
                                 )}
                               </TableCell>
