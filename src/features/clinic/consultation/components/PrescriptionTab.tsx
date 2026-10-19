@@ -234,7 +234,12 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                   ? "تعذر تحميل نتائج الأدوية. حاول مجدداً."
                   : "Could not load medicines. Please try again."}
               </p>
-              <Button type="button" variant="outline" size="sm" onClick={() => void medsQ.refetch()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void medsQ.refetch()}
+              >
                 {lang === "ar" ? "إعادة المحاولة" : "Retry medicine search"}
               </Button>
             </div>

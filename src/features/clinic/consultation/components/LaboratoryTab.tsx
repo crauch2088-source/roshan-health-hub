@@ -219,9 +219,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         {visitQ.error ? (
           <div role="alert" className="space-y-2">
             <p>
-              {lang === "ar"
-                ? "تعذّر تحميل بيانات الزيارة."
-                : "Could not load visit details."}
+              {lang === "ar" ? "تعذّر تحميل بيانات الزيارة." : "Could not load visit details."}
             </p>
             <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
               {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}

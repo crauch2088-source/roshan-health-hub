@@ -74,7 +74,9 @@ export function mapLabResult(
   const rawValue = String(value).trim();
   const type = (dataType ?? "").trim().toLowerCase();
   const coded = ["coded", "code", "enum", "enumeration", "boolean", "bool"].includes(type);
-  const text = ["text", "string", "varchar", "char", "date", "datetime", "timestamp"].includes(type);
+  const text = ["text", "string", "varchar", "char", "date", "datetime", "timestamp"].includes(
+    type,
+  );
 
   if (coded || text) {
     return {

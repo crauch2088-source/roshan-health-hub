@@ -269,7 +269,10 @@ export function ClinicalNoteTab({
             </div>
           ))}
           <div className="flex justify-end">
-            <Button disabled={save.isPending || Boolean(noteQ.error)} onClick={() => save.mutate(undefined as never)}>
+            <Button
+              disabled={save.isPending || Boolean(noteQ.error)}
+              onClick={() => save.mutate(undefined as never)}
+            >
               {save.isPending
                 ? lang === "ar"
                   ? "جاري الحفظ..."
