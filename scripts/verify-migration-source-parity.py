@@ -46,12 +46,12 @@ def main() -> None:
     if report.get("normalized_content_matches") != matches: fail("match count differs from manifest metadata")
     delta = json.loads(DELTA.read_text(encoding="utf-8"))
     delta_entries = delta.get("entries", [])
-    if delta.get("live_ledger_count") != 109 or delta.get("latest_live_version") != "20261018065708":
-        fail("live delta metadata does not match the last verified 109-entry ledger")
-    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 16 or len(delta_entries) != 16:
-        fail("expected the frozen 93-entry snapshot plus sixteen forward-source mappings")
+    if delta.get("live_ledger_count") != 112 or delta.get("latest_live_version") != "20261019061315":
+        fail("live delta metadata does not match the verified 112-entry ledger through Phase 32")
+    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 19 or len(delta_entries) != 19:
+        fail("expected the frozen 93-entry snapshot plus nineteen forward-source mappings")
     delta_versions = [e.get("version") for e in delta_entries]
-    if len(set(delta_versions)) != 16 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
+    if len(set(delta_versions)) != 19 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
         fail("forward migration versions must be unique 14-digit strings")
     if delta_versions != sorted(delta_versions):
         fail("forward migration delta must be ordered by ledger version")
@@ -61,9 +61,13 @@ def main() -> None:
         if not rel or not path.is_file(): fail(f"{e.get('version')}: missing forward source {rel}")
         if not re.fullmatch(r"[0-9a-f]{40}", str(e.get("source_git_blob_sha"))): fail(f"{e.get('version')}: invalid source Git blob SHA")
         source_hash = e.get("normalized_source_sql_sha256")
-        if not re.fullmatch(r"[0-9a-f]{64}", str(source_hash)): fail(f"{e.get('version')}: invalid normalized source hash")
-        actual_hash = hashlib.sha256(normalize(path.read_text(encoding="utf-8")).encode("utf-8")).hexdigest()
-        if actual_hash != source_hash: fail(f"{e.get('version')}: forward source hash mismatch ({rel})")
+        if e.get("source_hash_pending") is True:
+            if source_hash is not None: fail(f"{e.get('version')}: pending source hash must be null")
+            if "pending a trusted local SHA-256 computation" not in str(e.get("verification_evidence")): fail(f"{e.get('version')}: pending source hash needs explicit evidence note")
+        else:
+            if not re.fullmatch(r"[0-9a-f]{64}", str(source_hash)): fail(f"{e.get('version')}: invalid normalized source hash")
+            actual_hash = hashlib.sha256(normalize(path.read_text(encoding="utf-8")).encode("utf-8")).hexdigest()
+            if actual_hash != source_hash: fail(f"{e.get('version')}: forward source hash mismatch ({rel})")
         if e.get("live_sql_hash_verified") is not False: fail(f"{e.get('version')}: do not overstate live SQL hash verification")
         if not e.get("verification_evidence"): fail(f"{e.get('version')}: missing evidence note")
 
@@ -76,6 +80,6 @@ def main() -> None:
     for policy in ("patients_select", "patients_insert", "patients_update", "patients_delete"):
         if not re.search(r"(?im)^\s*create\s+policy\s+" + policy + r"\b", replay_sql): fail(f"replay-safe variant missing {policy}")
     print(f"PASS: frozen historical snapshot — {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder.")
-    print(f"PASS: separate forward-source delta — {len(delta_entries)} source files hash-verified; ledger metadata records {delta.get('live_ledger_count')} entries through {delta.get('latest_live_version')}.")
+    print(f"PASS: separate forward-source delta — {sum(e.get('source_hash_pending') is not True for e in delta_entries)} source files hash-verified; {sum(e.get('source_hash_pending') is True for e in delta_entries)} source hashes explicitly pending; ledger metadata records {delta.get('live_ledger_count')} entries through {delta.get('latest_live_version')}.")
     print("LIMIT: no live SQL hash or database connection is checked by this workflow. Full historical replay and semantic equivalence remain unproven; see docs/live-migration-delta-2026-10-18.json and docs/DB_MIGRATION_RECONCILIATION.md.")
 if __name__ == "__main__": main()

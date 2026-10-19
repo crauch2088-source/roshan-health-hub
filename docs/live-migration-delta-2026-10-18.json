@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-18",
+  "generated_at": "2026-10-19",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 109,
-  "latest_live_version": "20261018065708",
+  "live_ledger_count": 112,
+  "latest_live_version": "20261019061315",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 16,
+  "forward_migration_count": 19,
   "entries": [
     {
       "version": "20261017125924",
@@ -149,7 +149,37 @@
       "normalized_source_sql_sha256": "d4fde311fdd3be4c913eed79679cb8eed4c7dca07a5a6fe7e7264d127396b587",
       "live_sql_hash_verified": false,
       "verification_evidence": "Exact four-table revocation SQL submitted through the Supabase migration API; ledger version/name read back and effective privileges verified. The API does not expose a stored live SQL hash."
+    },
+    {
+      "version": "20261018201642",
+      "name": "roshan_phase31_clinical_financial_security_hardening",
+      "source_path": "db/roshan_phase31_clinical_financial_security_hardening.sql",
+      "source_git_blob_sha": "1f47a8932a37957de5a466aece9e12fbaa0f20c1",
+      "normalized_source_sql_sha256": null,
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Phase 31 Expand was read back in the production migration ledger; source file is mapped for parity tracking only. Persisted live SQL body/hash is not exposed by the read-only ledger interface, so exact live SQL equality is not claimed. Exact normalized hash is pending a trusted local SHA-256 computation; this mapping is intentionally not counted as hash-verified.",
+      "source_hash_pending": true
+    },
+    {
+      "version": "20261018201758",
+      "name": "roshan_phase31_contract_security_cutover",
+      "source_path": "db/roshan_phase31_contract_security_cutover.sql",
+      "source_git_blob_sha": "27e4cbb44e8127e956188414a5673c5907a6d87b",
+      "normalized_source_sql_sha256": null,
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Phase 31 Contract was read back in the production migration ledger; source file is mapped for parity tracking only. Persisted live SQL body/hash is not exposed by the read-only ledger interface, so exact live SQL equality is not claimed. Exact normalized hash is pending a trusted local SHA-256 computation; this mapping is intentionally not counted as hash-verified.",
+      "source_hash_pending": true
+    },
+    {
+      "version": "20261019061315",
+      "name": "roshan_phase32_medical_certificate_visit_index",
+      "source_path": "db/roshan_phase32_medical_certificate_visit_index.sql",
+      "source_git_blob_sha": "e02434018cfefd543d870e32bb7dab1f58647cc9",
+      "normalized_source_sql_sha256": null,
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Phase 32 was read back in the production migration ledger; source file is mapped for parity tracking only. Persisted live SQL body/hash is not exposed by the read-only ledger interface, so exact live SQL equality is not claimed. Exact normalized hash is pending a trusted local SHA-256 computation; this mapping is intentionally not counted as hash-verified.",
+      "source_hash_pending": true
     }
   ],
-  "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
+  "limitations": "The live ledger contains 112 entries through 20261019061315. The frozen historical 93-entry hash snapshot remains separate; the forward-source delta maps 19 later entries to db/ sources and verifies source file hashes only. It does not query persisted migration SQL or compute live SQL hashes. Full historical replay and semantic equivalence remain unproven. Phase 30 is superseded and fulfilled by the applied Phase 31 Contract cutover: do not reapply Phase 30 or restore the legacy four-argument certificate RPC."
 }

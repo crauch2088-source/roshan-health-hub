@@ -200,3 +200,14 @@ Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable 
 - The original monitor check returned HTTP 404 / `DEPLOYMENT_NOT_FOUND` from the old `roshan-health-hub-hjfy.vercel.app` target. Better Stack incident `1033415913` was created.
 - Updated existing monitor `5086672` to `https://roshan-health-hub.vercel.app/` without creating another monitor. Configuration remains unpaused, 180-second checks, EU/Asia, email alerts, SSL verification, redirects, 15-second timeout.
 - Post-update health is not yet confirmed: monitor state remained `down` immediately after update, and `last_checked_at` predated the URL correction. Check after the next scheduled probe and verify the incident resolves.
+
+
+## Clinical RPC-only rollout status — supersedes 2026-10-18 note (2026-10-19)
+
+- Phase 30 is **Superseded & Fulfilled** by applied Phase 31 Contract; do not apply Phase 30 or restore direct client writes.
+- Live ledger is at 112 entries, latest `20261019061315_roshan_phase32_medical_certificate_visit_index`.
+- Effective grants were verified read-only: SELECT and RLS remain on all six clinical child tables; authenticated direct write privileges are revoked; anon has no write privileges.
+- Supported certificate RPC is `create_medical_certificate(uuid,text,date,date,uuid)` only. Do not re-enable the four-argument legacy signature. Lab completion uses `complete_lab_order_item(uuid)`.
+- No production synthetic write/rollback test is required. Use isolated PostgreSQL 17 CI acceptance plus read-only catalog evidence.
+- The historical deployment-quota note above describes the blocker as of 2026-10-18 and is superseded by the subsequent READY deployment for the exact current main commit.
+
