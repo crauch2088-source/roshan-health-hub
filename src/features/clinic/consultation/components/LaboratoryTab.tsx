@@ -273,14 +273,19 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
             {lang === "ar" ? "جارٍ تحميل قائمة التحاليل…" : "Loading test catalogue…"}
           </p>
         ) : testsQ.error ? (
-          <p
+          <div
             role="alert"
             className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
           >
-            {lang === "ar"
-              ? "تعذّر تحميل قائمة التحاليل. لم يتم إرسال أي طلب؛ حاول مجددًا."
-              : "Could not load the test catalogue. No order was submitted; please retry."}
-          </p>
+            <p>
+              {lang === "ar"
+                ? "تعذّر تحميل قائمة التحاليل. لم يتم إرسال أي طلب؛ حاول مجددًا."
+                : "Could not load the test catalogue. No order was submitted; please retry."}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void testsQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry test catalogue"}
+            </Button>
+          </div>
         ) : null}
         <div className="grid gap-4 lg:grid-cols-2">
           {categories

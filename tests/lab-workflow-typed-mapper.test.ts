@@ -26,10 +26,7 @@ test("reference ranges set low flags without flagging inclusive bounds", () => {
     assert.equal(result.flag, "low");
     assert.equal(result.abnormal, true);
   }
-  assert.equal(
-    mapLabResult("10", "numeric", { lower_limit: 4, upper_limit: 10 }).kind,
-    "numeric",
-  );
+  assert.equal(mapLabResult("10", "numeric", { lower_limit: 4, upper_limit: 10 }).kind, "numeric");
 });
 
 test("critical thresholds and persisted critical flags are retained", () => {

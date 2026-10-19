@@ -15,8 +15,6 @@ SET name = EXCLUDED.name,
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- Validate the branch path before casting; this avoids malformed paths raising
--- UUID errors and avoids depending on caller-visible rows from public.branches.
 CREATE OR REPLACE FUNCTION private.phase33_branch_access_from_path(_path text)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -33,14 +31,91 @@ BEGIN
     WHEN invalid_text_representation THEN
       RETURN false;
   END;
-
   RETURN private.app_has_branch_access(branch_id);
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION private.phase33_storage_access(_bucket_id text, _path text, _action text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+DECLARE
+  allowed boolean := false;
+BEGIN
+  IF _bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments') THEN
+    RETURN true;
+  END IF;
+  IF NOT private.phase33_branch_access_from_path(_path) THEN
+    RETURN false;
+  END IF;
+
+  CASE _bucket_id
+    WHEN 'roshan-lab-reports' THEN
+      allowed := CASE _action
+        WHEN 'select' THEN private.app_has_perm('lab.read')
+        WHEN 'insert' THEN private.app_has_perm('lab.update')
+        WHEN 'update' THEN private.app_has_perm('lab.update')
+        WHEN 'delete' THEN private.app_has_perm('lab.delete')
+        ELSE false
+      END;
+    WHEN 'roshan-medical-certificates' THEN
+      allowed := CASE _action
+        WHEN 'select' THEN private.app_has_perm('certificates.read')
+        WHEN 'insert' THEN private.app_has_perm('certificates.create')
+        WHEN 'update' THEN private.app_has_perm('certificates.update')
+        WHEN 'delete' THEN private.app_has_perm('certificates.delete')
+        ELSE false
+      END;
+    WHEN 'roshan-clinical-attachments' THEN
+      allowed := CASE _action
+        WHEN 'select' THEN private.app_has_perm('emr.read')
+        WHEN 'insert' THEN private.app_has_perm('emr.create') OR private.app_has_perm('emr.update')
+        WHEN 'update' THEN private.app_has_perm('emr.update')
+        WHEN 'delete' THEN private.app_has_perm('emr.delete')
+        ELSE false
+      END;
+  END CASE;
+  RETURN COALESCE(allowed, false);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION private.phase33_realtime_topic_access(_topic text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+DECLARE
+  channel_name text;
+  branch_path text;
+BEGIN
+  IF split_part(_topic, ':', 1) <> 'branch'
+    OR split_part(_topic, ':', 4) <> '' THEN
+    RETURN false;
+  END IF;
+  channel_name := split_part(_topic, ':', 3);
+  branch_path := split_part(_topic, ':', 2);
+  IF channel_name = 'queue' THEN
+    RETURN public.app_has_perm('queue.read')
+      AND private.phase33_branch_access_from_path(branch_path);
+  ELSIF channel_name = 'lab' THEN
+    RETURN public.app_has_perm('lab.read')
+      AND private.phase33_branch_access_from_path(branch_path);
+  END IF;
+  RETURN false;
+END;
+$function$;
+
 REVOKE ALL ON FUNCTION private.phase33_branch_access_from_path(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION private.phase33_branch_access_from_path(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION private.phase33_branch_access_from_path(text) TO service_role;
+REVOKE ALL ON FUNCTION private.phase33_storage_access(text, text, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.phase33_realtime_topic_access(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION private.phase33_branch_access_from_path(text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION private.phase33_storage_access(text, text, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION private.phase33_realtime_topic_access(text) TO authenticated, service_role;
 
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
@@ -75,7 +150,6 @@ BEGIN
         cfg.bucket_id,
         perm
       );
-
       IF cfg.bucket_id = 'roshan-clinical-attachments' AND act = 'insert' THEN
         policy_expr := format(
           'bucket_id = %L AND (public.app_has_perm(''emr.create'') OR public.app_has_perm(''emr.update'')) AND private.phase33_branch_access_from_path(storage.objects.name)',
@@ -84,7 +158,6 @@ BEGIN
       END IF;
 
       EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', policy_name);
-
       IF act IN ('select', 'delete') THEN
         policy_sql := format(
           'CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',
@@ -106,58 +179,70 @@ BEGIN
           policy_expr
         );
       END IF;
-
       EXECUTE policy_sql;
     END LOOP;
   END LOOP;
 END
 $storage_policies$;
 
--- Private Broadcast/Presence subscriptions. Browser clients can receive queue/lab
--- notifications only for their own branch and permission; no browser INSERT policy
--- is created, so clients cannot publish arbitrary clinical events.
-ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
-CREATE POLICY phase33_clinical_realtime_select
-ON realtime.messages
-FOR SELECT
-TO authenticated
+-- Restrictive policies AND with any pre-existing permissive Storage policy,
+-- preventing a broad policy for another bucket from bypassing this boundary.
+DROP POLICY IF EXISTS phase33_storage_select_boundary ON storage.objects;
+CREATE POLICY phase33_storage_select_boundary ON storage.objects AS RESTRICTIVE
+FOR SELECT TO authenticated
 USING (
-  (
-    split_part(realtime.topic(), ':', 1) = 'branch'
-    AND split_part(realtime.topic(), ':', 3) = 'queue'
-    AND public.app_has_perm('queue.read')
-    AND private.phase33_branch_access_from_path(split_part(realtime.topic(), ':', 2))
-  )
-  OR
-  (
-    split_part(realtime.topic(), ':', 1) = 'branch'
-    AND split_part(realtime.topic(), ':', 3) = 'lab'
-    AND public.app_has_perm('lab.read')
-    AND private.phase33_branch_access_from_path(split_part(realtime.topic(), ':', 2))
-  )
+  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
+  OR private.phase33_storage_access(bucket_id, name, 'select')
+);
+DROP POLICY IF EXISTS phase33_storage_insert_boundary ON storage.objects;
+CREATE POLICY phase33_storage_insert_boundary ON storage.objects AS RESTRICTIVE
+FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
+  OR private.phase33_storage_access(bucket_id, name, 'insert')
+);
+DROP POLICY IF EXISTS phase33_storage_update_boundary ON storage.objects;
+CREATE POLICY phase33_storage_update_boundary ON storage.objects AS RESTRICTIVE
+FOR UPDATE TO authenticated
+USING (
+  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
+  OR private.phase33_storage_access(bucket_id, name, 'update')
+)
+WITH CHECK (
+  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
+  OR private.phase33_storage_access(bucket_id, name, 'update')
+);
+DROP POLICY IF EXISTS phase33_storage_delete_boundary ON storage.objects;
+CREATE POLICY phase33_storage_delete_boundary ON storage.objects AS RESTRICTIVE
+FOR DELETE TO authenticated
+USING (
+  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
+  OR private.phase33_storage_access(bucket_id, name, 'delete')
 );
 
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages
+FOR SELECT TO authenticated
+USING (private.phase33_realtime_topic_access(realtime.topic()));
+DROP POLICY IF EXISTS phase33_clinical_realtime_boundary ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_boundary ON realtime.messages AS RESTRICTIVE
+FOR SELECT TO authenticated
+USING (private.phase33_realtime_topic_access(realtime.topic()));
+
 -- Existing source-table RLS remains the row boundary for Postgres Changes.
--- Add tables to the standard publication only if it exists and the table is absent.
 DO $publication$
 BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_catalog.pg_publication WHERE pubname = 'supabase_realtime'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_publication WHERE pubname = 'supabase_realtime') THEN
     IF NOT EXISTS (
       SELECT 1 FROM pg_catalog.pg_publication_tables
-      WHERE pubname = 'supabase_realtime'
-        AND schemaname = 'public'
-        AND tablename = 'queue_tickets'
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'queue_tickets'
     ) THEN
       EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets';
     END IF;
     IF NOT EXISTS (
       SELECT 1 FROM pg_catalog.pg_publication_tables
-      WHERE pubname = 'supabase_realtime'
-        AND schemaname = 'public'
-        AND tablename = 'lab_orders'
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'lab_orders'
     ) THEN
       EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders';
     END IF;

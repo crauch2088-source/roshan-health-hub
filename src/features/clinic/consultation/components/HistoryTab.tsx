@@ -29,11 +29,7 @@ export function HistoryTab({ visitId }: { visitId: string }) {
     return (
       <div role="alert" className="space-y-2">
         <ErrorBox error={visitQ.error} />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void visitQ.refetch()}
-        >
+        <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
           {lang === "ar" ? "إعادة المحاولة" : "Retry patient history"}
         </Button>
       </div>
@@ -44,11 +40,7 @@ export function HistoryTab({ visitId }: { visitId: string }) {
     return (
       <div role="alert" className="space-y-2">
         <ErrorBox error={visits.error} />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void visits.refetch()}
-        >
+        <Button variant="outline" size="sm" onClick={() => void visits.refetch()}>
           {lang === "ar" ? "إعادة المحاولة" : "Retry previous visits"}
         </Button>
       </div>

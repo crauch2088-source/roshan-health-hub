@@ -2,19 +2,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const read = (path: string) =>
-  readFileSync(new URL(path, import.meta.url), "utf8");
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const migration = read("../db/roshan_phase33_storage_and_realtime.sql");
 const fixture = read("../db/tests/phase33_storage_realtime_fixture.sql");
 const integration = read("../db/tests/phase33_storage_realtime_assertions.sql");
 const ci = read("../.github/workflows/ci.yml");
-const consultation = read(
-  "../src/features/clinic/consultation/ConsultationPage.tsx",
-);
-const history = read(
-  "../src/features/clinic/consultation/components/HistoryTab.tsx",
-);
+const consultation = read("../src/features/clinic/consultation/ConsultationPage.tsx");
+const history = read("../src/features/clinic/consultation/components/HistoryTab.tsx");
 const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
 const mapper = read("../src/lib/lab-workflow.ts");
 
@@ -29,6 +24,9 @@ test("consultation query failures are visible and retryable and visit state rese
   assert.match(consultation, /<HistoryTab key=\{visitId\}/);
   assert.match(history, /visits\.error/);
   assert.match(history, /visits\.refetch\(\)/);
+  assert.match(read("../src/features/clinic/consultation/components/ClinicalNoteTab.tsx"), /noteQ\.refetch\(\)/);
+  assert.match(read("../src/features/clinic/consultation/components/PrescriptionTab.tsx"), /medsQ\.refetch\(\)/);
+  assert.match(read("../src/features/clinic/consultation/components/LaboratoryTab.tsx"), /testsQ\.refetch\(\)/);
   assert.match(lab, /setValues\(\{\}\)/);
 });
 

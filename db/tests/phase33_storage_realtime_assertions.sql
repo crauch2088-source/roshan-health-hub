@@ -10,8 +10,8 @@ INSERT INTO public.users(id,auth_user_id,active,deleted_at,branch_id,role_id,ful
 INSERT INTO storage.objects(id,bucket_id,name) VALUES ('00000000-0000-0000-0000-000000003351','roshan-lab-reports','00000000-0000-0000-0000-000000003301/lab/own.pdf'),('00000000-0000-0000-0000-000000003352','roshan-lab-reports','00000000-0000-0000-0000-000000003302/lab/other.pdf'),('00000000-0000-0000-0000-000000003353','roshan-medical-certificates','00000000-0000-0000-0000-000000003301/cert/own.pdf'),('00000000-0000-0000-0000-000000003354','roshan-clinical-attachments','00000000-0000-0000-0000-000000003301/visit/own.pdf');
 RESET ROLE;
 DO $catalog$ DECLARE n integer; BEGIN
-SELECT count(*) INTO n FROM pg_catalog.pg_policies WHERE (schemaname='storage' AND tablename='objects' AND policyname LIKE 'phase33_%') OR (schemaname='realtime' AND tablename='messages' AND policyname='phase33_clinical_realtime_select');
-IF n<>13 THEN RAISE EXCEPTION 'expected 13 Phase 33 policies, got %',n; END IF;
+SELECT count(*) INTO n FROM pg_catalog.pg_policies WHERE (schemaname='storage' AND tablename='objects' AND policyname LIKE 'phase33_%') OR (schemaname='realtime' AND tablename='messages' AND policyname LIKE 'phase33_clinical_realtime_%');
+IF n<>18 THEN RAISE EXCEPTION 'expected 18 Phase 33 policies, got %',n; END IF;
 IF EXISTS(SELECT 1 FROM storage.buckets WHERE id IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') AND public IS DISTINCT FROM false) THEN RAISE EXCEPTION 'clinical bucket unexpectedly public'; END IF;
 END $catalog$;
 SET LOCAL ROLE authenticated;

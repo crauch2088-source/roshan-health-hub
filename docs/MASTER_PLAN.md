@@ -1,9 +1,9 @@
 ## Phase 33 — clinical partial-failure isolation, typed lab results, Storage/Realtime (PR #80)
 
 - Branch `feat/phase33-clinical-ui-storage-realtime` is based on squash-merged PR #79 commit `221139cc9258c8e780d6224a722156f809af8277`.
-- Consultation visit/billing/history/vitals errors are surfaced with local retry controls; visit-keyed sections remount and quick-review state resets on navigation.
+- Consultation visit/billing/note/diagnosis/history/vitals/medication/lab-catalogue query errors are surfaced with section-local retry controls; visit-keyed sections remount and quick-review state resets on navigation.
 - Laboratory results use an explicit mapper for pending/empty, numeric (including zero), text/coded, abnormal and critical values without changing existing database columns.
-- The staged migration defines three private buckets, branch-folder policies using permission and branch helpers, receive-only branch-scoped Realtime topics, and guarded publication membership for queue tickets/lab orders.
+- The staged migration defines three private buckets, bucket-specific permission policies plus restrictive branch boundaries (so older permissive policies cannot bypass them), receive-only branch-scoped Realtime topics with a restrictive boundary, and guarded publication membership for queue tickets/lab orders.
 - Isolated PostgreSQL 17 and unit/source-contract tests are added. No live Supabase migration or production Storage/Realtime configuration is applied in this phase.
 - Completion is gated on exact-head GitHub Actions checks. Vercel quota is not bypassed and no production deployment is requested.
 

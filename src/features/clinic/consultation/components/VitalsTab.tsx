@@ -164,11 +164,7 @@ export function VitalsTab({ visitId }: { visitId: string }) {
         {q.error ? (
           <div role="alert" className="space-y-2">
             <ErrorBox error={q.error} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void q.refetch()}
-            >
+            <Button variant="outline" size="sm" onClick={() => void q.refetch()}>
               {lang === "ar" ? "إعادة المحاولة" : "Retry vitals"}
             </Button>
           </div>

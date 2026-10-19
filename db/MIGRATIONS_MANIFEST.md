@@ -31,7 +31,7 @@ Last verified against production catalog: **2026-10-19**, PostgreSQL **17.6**, m
 
 ## Phase 33 staged Storage/Realtime migration
 
-- Candidate: `db/roshan_phase33_storage_and_realtime.sql`; three private clinical buckets with branch UUID folder scoping and permission checks.
+- Candidate: `db/roshan_phase33_storage_and_realtime.sql`; three private clinical buckets with branch UUID folder scoping, permission checks, and restrictive boundary policies that cannot be bypassed by older permissive policies.
 - Private topics use `branch:<uuid>:queue` and `branch:<uuid>:lab`; browser publishing is intentionally not granted. If `supabase_realtime` exists, queue and lab source tables are added only when missing; existing source-table RLS remains the Postgres Changes row boundary.
 - CI fixture/assertions: `db/tests/phase33_storage_realtime_fixture.sql` and `db/tests/phase33_storage_realtime_assertions.sql`, replayed after the canonical baseline in isolated PostgreSQL 17.
 - This migration is staged in PR #80 only; do not apply it to the live Supabase project as part of this task.

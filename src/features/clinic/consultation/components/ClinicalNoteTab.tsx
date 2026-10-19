@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ErrorBox } from "@/components/kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -194,6 +195,22 @@ export function ClinicalNoteTab({
 
   return (
     <div className="space-y-5" dir="auto">
+      {noteQ.error ? (
+        <div role="alert" className="space-y-2">
+          <ErrorBox error={noteQ.error} />
+          <Button variant="outline" size="sm" onClick={() => void noteQ.refetch()}>
+            {lang === "ar" ? "إعادة المحاولة" : "Retry clinical note"}
+          </Button>
+        </div>
+      ) : null}
+      {diagnosesQ.error ? (
+        <div role="alert" className="space-y-2">
+          <ErrorBox error={diagnosesQ.error} />
+          <Button variant="outline" size="sm" onClick={() => void diagnosesQ.refetch()}>
+            {lang === "ar" ? "إعادة المحاولة" : "Retry diagnoses"}
+          </Button>
+        </div>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
@@ -252,7 +269,7 @@ export function ClinicalNoteTab({
             </div>
           ))}
           <div className="flex justify-end">
-            <Button disabled={save.isPending} onClick={() => save.mutate(undefined as never)}>
+            <Button disabled={save.isPending || Boolean(noteQ.error)} onClick={() => save.mutate(undefined as never)}>
               {save.isPending
                 ? lang === "ar"
                   ? "جاري الحفظ..."

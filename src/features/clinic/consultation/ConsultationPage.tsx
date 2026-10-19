@@ -20,6 +20,11 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const [tab, setTab] = useState("note");
   const [noteDirty, setNoteDirty] = useState(false);
   const [reviewChecks, setReviewChecks] = useState<Record<string, boolean>>({
+  useEffect(() => {
+    setTab("note");
+    setNoteDirty(false);
+    setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
+  }, [visitId]);
     identity: false,
     history: false,
     vitals: false,
@@ -119,11 +124,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         ) : visitQ.error ? (
           <div role="alert" className="space-y-2">
             <ErrorBox error={visitQ.error} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void visitQ.refetch()}
-            >
+            <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
               {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
             </Button>
           </div>
@@ -156,11 +157,6 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
       en: "Review orders, prescription and follow-up plan",
     },
   ];
-  useEffect(() => {
-    setTab("note");
-    setNoteDirty(false);
-    setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
-  }, [visitId]);
 
   const reviewCount = Object.values(reviewChecks).filter(Boolean).length;
 
@@ -186,11 +182,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           {invoiceQ.error ? (
             <div role="alert" className="flex items-center gap-2">
               <ErrorBox error={invoiceQ.error} />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void invoiceQ.refetch()}
-              >
+              <Button variant="outline" size="sm" onClick={() => void invoiceQ.refetch()}>
                 {lang === "ar" ? "إعادة المحاولة" : "Retry billing"}
               </Button>
             </div>
@@ -364,11 +356,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
       >
         {tab === "note" && (
-          <ClinicalNoteTab
-            key={visitId}
-            visitId={visitId}
-            onDirtyChange={setNoteDirty}
-          />
+          <ClinicalNoteTab key={visitId} visitId={visitId} onDirtyChange={setNoteDirty} />
         )}
         {tab === "vitals" && <VitalsTab key={visitId} visitId={visitId} />}
         {tab === "labs" && <LaboratoryTab key={visitId} visitId={visitId} />}

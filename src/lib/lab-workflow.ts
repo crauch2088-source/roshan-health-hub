@@ -73,18 +73,8 @@ export function mapLabResult(
 
   const rawValue = String(value).trim();
   const type = (dataType ?? "").trim().toLowerCase();
-  const coded = ["coded", "code", "enum", "enumeration", "boolean", "bool"].includes(
-    type,
-  );
-  const text = [
-    "text",
-    "string",
-    "varchar",
-    "char",
-    "date",
-    "datetime",
-    "timestamp",
-  ].includes(type);
+  const coded = ["coded", "code", "enum", "enumeration", "boolean", "bool"].includes(type);
+  const text = ["text", "string", "varchar", "char", "date", "datetime", "timestamp"].includes(type);
 
   if (coded || text) {
     return {
@@ -114,14 +104,8 @@ export function mapLabResult(
 
   const lower = finiteBound(range?.["lower_limit"], range?.["min_value"]);
   const upper = finiteBound(range?.["upper_limit"], range?.["max_value"]);
-  const criticalLower = finiteBound(
-    range?.["critical_lower_limit"],
-    range?.["critical_min_value"],
-  );
-  const criticalUpper = finiteBound(
-    range?.["critical_upper_limit"],
-    range?.["critical_max_value"],
-  );
+  const criticalLower = finiteBound(range?.["critical_lower_limit"], range?.["critical_min_value"]);
+  const criticalUpper = finiteBound(range?.["critical_upper_limit"], range?.["critical_max_value"]);
   const persisted = (existingFlag ?? "").trim().toLowerCase();
   let flag: LabResultFlag = null;
 
@@ -152,18 +136,12 @@ export function mapLabResult(
 }
 
 export function labWorkflowStage(status: string): number {
-  const index = LAB_WORKFLOW_STAGES.indexOf(
-    status as (typeof LAB_WORKFLOW_STAGES)[number],
-  );
+  const index = LAB_WORKFLOW_STAGES.indexOf(status as (typeof LAB_WORKFLOW_STAGES)[number]);
   return index < 0 ? 0 : index;
 }
 
 /** Compatibility helper retained for legacy callers. */
-export function isAbnormalLabResult(
-  value: string,
-  low: number,
-  high: number,
-): boolean {
+export function isAbnormalLabResult(value: string, low: number, high: number): boolean {
   const mapped = mapLabResult(value, "numeric", {
     lower_limit: low === 0 ? null : low,
     upper_limit: high === 0 ? null : high,
