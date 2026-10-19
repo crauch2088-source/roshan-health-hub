@@ -1,3 +1,15 @@
+## Current live ledger state — 2026-10-19 06:14 UTC
+
+- Production Supabase project `jewzonxplxhogqrnhosl` is ACTIVE_HEALTHY on PostgreSQL 17.6. Live migration ledger now has **112 entries**, latest `20261019061315_roshan_phase32_medical_certificate_visit_index`.
+- Phase 32 was added as `db/roshan_phase32_medical_certificate_visit_index.sql` and applied through the official Supabase migration API. It adds the non-unique B-tree index `public.medical_certificates_visit_id_idx` on `medical_certificates(visit_id)`, supporting the Phase 31 visit foreign key.
+- Live catalog read-back confirms the index exists, is valid and ready, and is attached to the expected table/column. The prior Performance Advisor warning for an unindexed `medical_certificates.visit_id` foreign key is gone.
+- Regression coverage: `db/tests/medical_certificate_visit_index_assertions.sql`; the existing `tests/clinical-security-hardening.test.ts` now guards the migration and assertion file; the PostgreSQL 17 CI replay applies Phase 31 Expand + Contract followed by Phase 32 and checks the index catalog state.
+- Latest main CI passed on commit `ab0e200b91d3fc9c1cf802f908592b3cf0e9069d`: application install/security audit/typecheck/lint/build, clinical PostgreSQL 17 regression, source parity, and the finance concurrency workflows all passed. Documentation follow-up is recorded separately in the QA report.
+- The Performance Advisor currently reports 89 unused-index suggestions. Do not drop them wholesale; the database has very little clinical traffic/data and the newly added index is expected to appear unused until relevant queries run.
+- The clinical E2E workflow remains deferred by explicit user instruction. No production patient, visit, lab, certificate, inventory, or financial records were created or changed by this migration.
+
+---
+
 ## Current live ledger state — 2026-10-18 08:00 UTC
 
 - Connected production project `jewzonxplxhogqrnhosl` is ACTIVE_HEALTHY on PostgreSQL 17.6. The live migration ledger remains **109 entries**, latest `20261018065708_roshan_clinical_child_rpc_only_writes`.
