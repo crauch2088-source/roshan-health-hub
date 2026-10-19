@@ -1153,6 +1153,82 @@ ALTER TABLE public.visits ADD CONSTRAINT visits_patient_id_fkey FOREIGN KEY (pat
 ALTER TABLE public.vitals ADD CONSTRAINT vitals_visit_id_fkey FOREIGN KEY (visit_id) REFERENCES visits(id);
 
 -- Indexes
+
+-- Views
+CREATE OR REPLACE VIEW public.cashbox_balance AS  SELECT COALESCE(sum(amount), 0::numeric)::numeric(14,2) AS balance,
+    COALESCE(sum(
+        CASE
+            WHEN amount > 0::numeric THEN amount
+            ELSE 0::numeric
+        END), 0::numeric)::numeric(14,2) AS total_in,
+    COALESCE(sum(
+        CASE
+            WHEN amount < 0::numeric THEN - amount
+            ELSE 0::numeric
+        END), 0::numeric)::numeric(14,2) AS total_out
+   FROM cashbox_transactions
+  WHERE deleted_at IS NULL;;
+CREATE OR REPLACE VIEW public.follow_ups AS  SELECT f.id,
+    f.patient_id,
+    f.visit_id,
+    f.followup_date,
+    f.followup_date AS follow_up_date,
+    p.mrn AS patient_number,
+    f.notes,
+    f.status,
+    f.reason,
+    f.completed_at,
+    f.created_at,
+    f.created_by,
+    f.updated_by,
+    f.deleted_at,
+    f.deleted_by
+   FROM followups f
+     LEFT JOIN patients p ON p.id = f.patient_id
+  WHERE f.deleted_at IS NULL;;
+CREATE OR REPLACE VIEW public.followups_with_creator AS  SELECT f.id,
+    f.patient_id,
+    f.visit_id,
+    f.followup_date,
+    f.notes,
+    f.status,
+    f.created_at,
+    f.created_by,
+    f.updated_by,
+    f.deleted_at,
+    f.deleted_by,
+    f.reason,
+    f.completed_at,
+    u.full_name AS creator_full_name
+   FROM followups f
+     LEFT JOIN users u ON u.id = f.created_by;;
+CREATE OR REPLACE VIEW public.v_patient_receivables AS  SELECT i.id AS invoice_id,
+    i.invoice_number,
+    i.invoice_date,
+    i.patient_id,
+    p.full_name AS patient_name,
+    p.mrn,
+    p.phone,
+    COALESCE(i.net_amount, i.total_amount, 0::numeric)::numeric(14,2) AS net_amount,
+    COALESCE(i.paid_amount, 0::numeric)::numeric(14,2) AS paid_amount,
+    GREATEST(COALESCE(i.net_amount, i.total_amount, 0::numeric) - COALESCE(i.paid_amount, 0::numeric), 0::numeric)::numeric(14,2) AS outstanding,
+    COALESCE(i.status, i.payment_status::text, 'unpaid'::text) AS status
+   FROM invoices i
+     LEFT JOIN patients p ON p.id = i.patient_id
+  WHERE i.deleted_at IS NULL AND GREATEST(COALESCE(i.net_amount, i.total_amount, 0::numeric) - COALESCE(i.paid_amount, 0::numeric), 0::numeric) > 0::numeric;;
+CREATE OR REPLACE VIEW public.v_supplier_outstanding AS  SELECT s.id AS supplier_id,
+    s.name,
+    s.phone,
+    count(b.id) FILTER (WHERE b.id IS NOT NULL) AS bills_count,
+    COALESCE(sum(b.total_amount), 0::numeric)::numeric(14,2) AS total_billed,
+    COALESCE(sum(b.paid_amount), 0::numeric)::numeric(14,2) AS total_paid,
+    COALESCE(sum(GREATEST(b.total_amount - b.paid_amount, 0::numeric)), 0::numeric)::numeric(14,2) AS outstanding
+   FROM suppliers s
+     LEFT JOIN supplier_bills b ON b.supplier_id = s.id AND b.deleted_at IS NULL
+  WHERE s.deleted_at IS NULL
+  GROUP BY s.id, s.name, s.phone;;
+
+
 CREATE INDEX appointments_date_active_idx ON public.appointments USING btree (appointment_date) WHERE (deleted_at IS NULL);
 CREATE INDEX audit_logs_created_at_idx ON public.audit_logs USING btree (created_at DESC);
 CREATE INDEX clinical_notes_visit_created_idx ON public.clinical_notes USING btree (visit_id, created_at DESC) WHERE (deleted_at IS NULL);
@@ -7441,81 +7517,6 @@ CREATE POLICY vitals_delete ON public.vitals AS PERMISSIVE FOR DELETE TO authent
 CREATE POLICY vitals_insert ON public.vitals AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK ((( SELECT app_has_perm('emr.create'::text) AS app_has_perm) AND ( SELECT private.app_has_visit_branch_access(vitals.visit_id) AS app_has_visit_branch_access)));
 CREATE POLICY vitals_select ON public.vitals AS PERMISSIVE FOR SELECT TO authenticated USING ((( SELECT app_has_perm('emr.read'::text) AS app_has_perm) AND ( SELECT private.app_has_visit_branch_access(vitals.visit_id) AS app_has_visit_branch_access)));
 CREATE POLICY vitals_update ON public.vitals AS PERMISSIVE FOR UPDATE TO authenticated USING ((( SELECT app_has_perm('emr.update'::text) AS app_has_perm) AND ( SELECT private.app_has_visit_branch_access(vitals.visit_id) AS app_has_visit_branch_access))) WITH CHECK ((( SELECT app_has_perm('emr.update'::text) AS app_has_perm) AND ( SELECT private.app_has_visit_branch_access(vitals.visit_id) AS app_has_visit_branch_access)));
-
--- Views
-CREATE OR REPLACE VIEW public.cashbox_balance AS  SELECT COALESCE(sum(amount), 0::numeric)::numeric(14,2) AS balance,
-    COALESCE(sum(
-        CASE
-            WHEN amount > 0::numeric THEN amount
-            ELSE 0::numeric
-        END), 0::numeric)::numeric(14,2) AS total_in,
-    COALESCE(sum(
-        CASE
-            WHEN amount < 0::numeric THEN - amount
-            ELSE 0::numeric
-        END), 0::numeric)::numeric(14,2) AS total_out
-   FROM cashbox_transactions
-  WHERE deleted_at IS NULL;;
-CREATE OR REPLACE VIEW public.follow_ups AS  SELECT f.id,
-    f.patient_id,
-    f.visit_id,
-    f.followup_date,
-    f.followup_date AS follow_up_date,
-    p.mrn AS patient_number,
-    f.notes,
-    f.status,
-    f.reason,
-    f.completed_at,
-    f.created_at,
-    f.created_by,
-    f.updated_by,
-    f.deleted_at,
-    f.deleted_by
-   FROM followups f
-     LEFT JOIN patients p ON p.id = f.patient_id
-  WHERE f.deleted_at IS NULL;;
-CREATE OR REPLACE VIEW public.followups_with_creator AS  SELECT f.id,
-    f.patient_id,
-    f.visit_id,
-    f.followup_date,
-    f.notes,
-    f.status,
-    f.created_at,
-    f.created_by,
-    f.updated_by,
-    f.deleted_at,
-    f.deleted_by,
-    f.reason,
-    f.completed_at,
-    u.full_name AS creator_full_name
-   FROM followups f
-     LEFT JOIN users u ON u.id = f.created_by;;
-CREATE OR REPLACE VIEW public.v_patient_receivables AS  SELECT i.id AS invoice_id,
-    i.invoice_number,
-    i.invoice_date,
-    i.patient_id,
-    p.full_name AS patient_name,
-    p.mrn,
-    p.phone,
-    COALESCE(i.net_amount, i.total_amount, 0::numeric)::numeric(14,2) AS net_amount,
-    COALESCE(i.paid_amount, 0::numeric)::numeric(14,2) AS paid_amount,
-    GREATEST(COALESCE(i.net_amount, i.total_amount, 0::numeric) - COALESCE(i.paid_amount, 0::numeric), 0::numeric)::numeric(14,2) AS outstanding,
-    COALESCE(i.status, i.payment_status::text, 'unpaid'::text) AS status
-   FROM invoices i
-     LEFT JOIN patients p ON p.id = i.patient_id
-  WHERE i.deleted_at IS NULL AND GREATEST(COALESCE(i.net_amount, i.total_amount, 0::numeric) - COALESCE(i.paid_amount, 0::numeric), 0::numeric) > 0::numeric;;
-CREATE OR REPLACE VIEW public.v_supplier_outstanding AS  SELECT s.id AS supplier_id,
-    s.name,
-    s.phone,
-    count(b.id) FILTER (WHERE b.id IS NOT NULL) AS bills_count,
-    COALESCE(sum(b.total_amount), 0::numeric)::numeric(14,2) AS total_billed,
-    COALESCE(sum(b.paid_amount), 0::numeric)::numeric(14,2) AS total_paid,
-    COALESCE(sum(GREATEST(b.total_amount - b.paid_amount, 0::numeric)), 0::numeric)::numeric(14,2) AS outstanding
-   FROM suppliers s
-     LEFT JOIN supplier_bills b ON b.supplier_id = s.id AND b.deleted_at IS NULL
-  WHERE s.deleted_at IS NULL
-  GROUP BY s.id, s.name, s.phone;;
-
 
 -- Triggers
 CREATE TRIGGER trg_cashbox_immutable BEFORE DELETE OR UPDATE ON public.cashbox_transactions FOR EACH ROW EXECUTE FUNCTION fn_cashbox_immutable();
