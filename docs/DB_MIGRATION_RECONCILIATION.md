@@ -1,3 +1,15 @@
+## Phase 31 final live verification — 2026-10-19 06:25 UTC
+
+- Rechecked production project `jewzonxplxhogqrnhosl` with read-only SQL after Phase 32. The live ledger has **112 entries**, latest `20261019061315_roshan_phase32_medical_certificate_visit_index`; Phase 31 Expand (`20261018201642_roshan_phase31_clinical_financial_security_hardening`), Phase 31 Contract (`20261018201758_roshan_phase31_contract_security_cutover`), and Phase 32 are all present. **Do not rerun either Phase 31 migration**; this section supersedes any older 109-entry/prepared-only status below.
+- Catalog verification: `medical_certificates.visit_id` exists as UUID and is `NOT NULL`. The normalized active-patient national-ID unique index and active non-rejected insurance-claim-per-invoice unique index are both `indisvalid=true` and `indisready=true`; the Phase 32 certificate `visit_id` index is also valid and ready.
+- Function verification: `complete_visit_atomic(uuid)`, `complete_lab_order_item(uuid)`, and the five identity/branch helpers `private.current_role_code()`, `private.app_has_branch_access(uuid)`, `private.app_has_claim_branch(uuid)`, `private.app_has_invoice_branch(uuid)`, and `private.app_has_patient_branch(uuid)` have fixed empty `search_path`. The five helpers and both clinical RPCs contain the expected `deleted_at IS NULL` guard text; the two RPCs are SECURITY DEFINER.
+- Privilege verification using `has_table_privilege`: authenticated retains SELECT but has **none** of INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, or TRIGGER on either `lab_order_items` or `medical_certificates`. `authenticated`, `anon`, and PUBLIC do not have EXECUTE on legacy `fn_dispense_prescription(uuid)` or the unlinked four-argument certificate RPC. Authenticated EXECUTE remains available on the intended five-argument `create_medical_certificate(..., p_visit_id)` RPC.
+- Git/deployment reconciliation: PR [#78](https://github.com/crauch2088-source/roshan-health-hub/pull/78) was squash-merged into `main` as `9e8430a8109723d6bb8772824828ac82eaa51fac`. The canonical production alias `https://roshan-health-hub.vercel.app/` is READY on the later `main` documentation commit `c14b4e0aac86e2aa9da12b5f6816e7aa6064187a`; current source on `main` includes the result-aware lab save and cancelled-visit certificate picker.
+- Main CI evidence for the code/Phase 32 state: all 17 checks passed on `ab0e200b91d3fc9c1cf802f908592b3cf0e9069d`; subsequent main commits inspected here are documentation-only. PR #78's reviewed head had 24/24 checks before merge.
+- Limitation preserved: authenticated clinical end-to-end smoke tests remain deferred by user instruction and were **not** represented as passed. No patient, visit, lab, certificate, inventory, or financial business rows were created or modified by this verification; this was SELECT-only.
+
+---
+
 ## Current live ledger state — 2026-10-19 06:14 UTC
 
 - Production Supabase project `jewzonxplxhogqrnhosl` is ACTIVE_HEALTHY on PostgreSQL 17.6. Live migration ledger now has **112 entries**, latest `20261019061315_roshan_phase32_medical_certificate_visit_index`.
