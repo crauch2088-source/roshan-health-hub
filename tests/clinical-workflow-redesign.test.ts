@@ -5,7 +5,7 @@ import {
   createEmptyPrescriptionDraft,
   validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
-import { labWorkflowStage, mapLabResult } from "../src/lib/lab-workflow.ts";
+import { labWorkflowStage, mapLabResult, selectLabReferenceRange } from "../src/lib/lab-workflow.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -152,4 +152,20 @@ test("consultation visit changes reset local state and expose query-specific ret
   assert.match(ui, /invoiceQ\.error/);
   assert.match(ui, /invoiceQ\.refetch\(\)/);
   assert.match(ui, /key=\{visitId\}/);
+});
+
+
+test("lab reference range selection never falls back to a mismatched age or sex range", () => {
+  const ranges = [
+    { parameter_id: "p1", gender: "female", min_age: 18, max_age: 65, lower_limit: 4, upper_limit: 10 },
+    { parameter_id: "p1", gender: "male", min_age: 18, max_age: 65, lower_limit: 3, upper_limit: 8 },
+    { parameter_id: "p1", gender: null, min_age: null, max_age: null, lower_limit: 2, upper_limit: 12 },
+    { parameter_id: "p2", gender: null, min_age: null, max_age: null, lower_limit: 0, upper_limit: 0 },
+  ];
+  assert.equal(selectLabReferenceRange(ranges, "p1", "male", 30), ranges[1]);
+  assert.equal(selectLabReferenceRange(ranges, "p1", "female", 30), ranges[0]);
+  assert.equal(selectLabReferenceRange(ranges, "p1", "male", 80), ranges[2]);
+  assert.equal(selectLabReferenceRange(ranges, "p1", null, undefined), ranges[2]);
+  assert.equal(selectLabReferenceRange(ranges, "missing", "male", 30), undefined);
+  assert.equal(selectLabReferenceRange(ranges, "p2", null, undefined), ranges[3]);
 });
