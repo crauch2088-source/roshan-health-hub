@@ -1678,3 +1678,15 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - [x] Live ledger reconciled to 112 migrations through `20261019061315_roshan_phase32_medical_certificate_visit_index`; forward-source parity tracks 19 entries above the frozen 93-entry snapshot.
 - [ ] Re-run GitHub Actions on this documentation/parity update and confirm the parity checker passes on the resulting commit. No Supabase writes or deployment required for this documentation-only change.
 
+## Phase 33 execution checkpoint — clinical error handling and lab reference safety (2026-10-19)
+
+- [x] Recovered the corrected Phase 33 change into open PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) after PR #82 was closed with stale PR metadata. Current branch: `feat/phase33-clinical-ui-and-lab-mapper`; latest code head at checkpoint: `8c53a0d7b94031e9674e6b7acc07bb3ee201bb1b`.
+- [x] Read the failed earlier CI log for the typed lab-result mapper. It identified eight Prettier errors in `src/lib/lab-workflow.ts`; formatting was corrected on the PR branch.
+- [x] Added a pure selector for lab reference intervals that matches parameter, known patient gender and age, prefers the most specific compatible interval, and avoids falling back to a known-mismatched demographic range. Added regression tests for sex/age matching, no match, and general-range fallback. Updated the lab order UI to use it and removed the obsolete database helper import.
+- [x] Production Supabase was queried read-only for laboratory catalog readiness: **18 active lab parameters, 14 numeric parameters, 0 active rows in `lab_reference_ranges`, and 0 active parameter `reference_text` values**. No patient-level data was queried and no production data was changed.
+- [ ] **CI not yet verified on current head.** Manual workflow dispatch run [#1119](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39281029482) targets the current head but remained queued at the latest check (2026-10-19 15:55 UTC). Do not merge until the current-head required checks complete successfully. The earlier CI failure belongs to an earlier commit; it is not evidence that the latest code passes or fails.
+- [ ] Reconcile branch against the latest main documentation commits and confirm all required checks against the exact final head; then squash-merge PR #83 and verify deployment identity. Do not manually promote a preview.
+- [ ] Run the isolated PostgreSQL 17 clinical acceptance and authenticated browser E2E. The existing CI SQL fixture is synthetic and rolls back; do not write clinical or financial test records to production.
+- [ ] Clinical release blocker: no lab reference ranges are configured. Do not invent thresholds. A clinician/lab lead must approve and populate ranges with units, age/sex applicability and provenance, followed by acceptance tests before relying on automated abnormal-result indicators.
+- [ ] Update the project health audit and reassess the overall completion estimate only after exact-head CI, merge/deployment identity and isolated clinical acceptance evidence are available.
+
