@@ -427,3 +427,39 @@ jobs:
             -f db/tests/clinical_security_hardening_assertions.sql \
             -f db/tests/medical_certificate_visit_index_assertions.sql
 
+
+  clinical-e2e-acceptance:
+    name: Canonical PG17 baseline replay and authenticated clinical acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical v112 baseline builds from an empty database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h localhost -U postgres roshan_baseline
+          psql -h localhost -U postgres -d roshan_baseline -v ON_ERROR_STOP=1 -f db/baseline/0000_roshan_pg17_baseline_v112.sql
+          psql -h localhost -U postgres -d roshan_baseline -v ON_ERROR_STOP=1 -c "SELECT 1"
+      - name: Execute isolated authenticated clinical E2E workflow
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h localhost -U postgres roshan_clinical
+          psql -h localhost -U postgres -d roshan_clinical -v ON_ERROR_STOP=1 \
+            -f db/tests/clinical_security_hardening_fixture.sql \
+            -f db/roshan_phase31_clinical_financial_security_hardening.sql \
+            -f db/roshan_phase31_contract_security_cutover.sql \
+            -f db/tests/clinical_e2e_acceptance_workflow.sql
