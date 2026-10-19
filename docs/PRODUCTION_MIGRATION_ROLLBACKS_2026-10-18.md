@@ -1,5 +1,17 @@
 # Roshan Health Hub — Production Migration Rollback Plan (2026-10-18)
 
+> **CRITICAL — clinical child write rollout closure (2026-10-19):** Phase 30 is **SUPERSEDED & FULFILLED** by the applied Phase 31 Contract cutover (`20261018201758_roshan_phase31_contract_security_cutover`). Do **not** apply `db/roshan_phase30_clinical_child_rpc_only_writes.sql` and do not execute any historical rollback snippet below that grants direct writes to `lab_order_items` or `medical_certificates` unless a separately reviewed emergency rollback is explicitly approved. In particular, never restore or re-enable the legacy four-argument `public.create_medical_certificate(uuid,text,date,date)` signature; the supported frontend contract is `public.create_medical_certificate(uuid,text,date,date,uuid)`. The old snippets below are historical context, not approved run-now instructions. Keep SELECT and RLS intact; do not grant writes to `anon` or `PUBLIC`.
+
+## Clinical child RPC-only writes — accepted closure
+
+- Accepted evidence: read-only production catalog privileges/RLS plus isolated PostgreSQL 17 CI regression and clinical acceptance coverage. No production synthetic INSERT/ROLLBACK test is required or authorized.
+- Live ledger: 112 entries through `20261019061315_roshan_phase32_medical_certificate_visit_index`.
+- Phase 29 remains applied to `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`.
+- Phase 31 Contract provides the effective write revocations for `lab_order_items` and `medical_certificates`; all six clinical child tables retain SELECT and RLS. Both current RPCs are executable by `authenticated` only; `anon` and `PUBLIC` cannot execute them.
+- The four-argument certificate RPC is revoked. Only `create_medical_certificate(uuid,text,date,date,uuid)` is supported.
+
+
+
 This is the reviewed rollback reference for the applied branch/finite guards and the subsequent monetary-precision candidates in:
 - `db/roshan_insurance_prior_authorization_branch_isolation.sql`
 - `db/roshan_post_expense_finite_amount.sql`
@@ -317,3 +329,4 @@ GRANT USAGE, SELECT, UPDATE ON SEQUENCE public.medical_certificates_id_seq TO au
 ```
 
 Vercel returned HTTP 402 `api-deployments-free-per-day` (100 deployments/day, remaining 0, reset 2026-10-19 08:52 Africa/Khartoum). No paid upgrade or preview-to-production alias workaround will be used because preview builds may contain preview environment variables. A one-time continuation task is scheduled for 2026-10-19 09:00 Africa/Khartoum; it must recheck quota, current main, production alias, and all checks before applying Phase 30.
+
