@@ -1344,7 +1344,7 @@ AS $function$
         )
       )
   END
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_branch_access(_branch_id uuid)
  RETURNS boolean
@@ -1358,7 +1358,7 @@ AS $function$
         AND COALESCE(u.active, true) = true
         AND u.deleted_at IS NULL
         AND u.branch_id = _branch_id)
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_claim_branch(_claim_id uuid)
  RETURNS boolean
@@ -1376,7 +1376,7 @@ AS $function$
             AND COALESCE(u.active, true) = true
             AND u.deleted_at IS NULL
           ORDER BY u.id LIMIT 1))
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_invoice_branch(_invoice_id uuid)
  RETURNS boolean
@@ -1392,7 +1392,7 @@ AS $function$
             AND COALESCE(u.active, true) = true
             AND u.deleted_at IS NULL
           ORDER BY u.id LIMIT 1))
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_lab_order_branch_access(_order_id uuid)
  RETURNS boolean
@@ -1412,7 +1412,7 @@ AS $function$
       -- Super admins retain access through app_has_branch_access().
       AND private.app_has_branch_access(lo.branch_id)
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_lab_order_item_branch_access(_order_id uuid)
  RETURNS boolean
@@ -1433,7 +1433,7 @@ AS $function$
         )
       )
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_lab_result_branch_access(_order_item_id uuid)
  RETURNS boolean
@@ -1450,7 +1450,7 @@ AS $function$
     WHERE loi.id = _order_item_id
       AND private.app_has_branch_access(COALESCE(lo.branch_id, v.branch_id, p.branch_id))
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_patient_branch(_patient_id uuid)
  RETURNS boolean
@@ -1466,7 +1466,7 @@ AS $function$
             AND COALESCE(u.active, true) = true
             AND u.deleted_at IS NULL
           ORDER BY u.id LIMIT 1))
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_patient_visit_branch_access(_patient_id uuid, _visit_id uuid)
  RETURNS boolean
@@ -1483,7 +1483,7 @@ AS $function$
         WHERE v.id = _visit_id AND v.patient_id = _patient_id
       )
     )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_perm(_code text)
  RETURNS boolean
@@ -1505,7 +1505,7 @@ AS $function$
         )
       )
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_prescription_branch_access(_prescription_id uuid)
  RETURNS boolean
@@ -1519,7 +1519,7 @@ AS $function$
     WHERE p.id = _prescription_id
       AND private.app_has_prescription_parent_access(p.patient_id, p.visit_id)
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_prescription_parent_access(_patient_id uuid, _visit_id uuid)
  RETURNS boolean
@@ -1538,7 +1538,7 @@ AS $function$
           AND v.patient_id = _patient_id
       )
     )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_prescription_parent_branch_access(_patient_id uuid, _visit_id uuid)
  RETURNS boolean
@@ -1551,7 +1551,7 @@ AS $function$
       _visit_id IS NULL OR _patient_id IS NULL
       OR EXISTS (SELECT 1 FROM public.visits v WHERE v.id=_visit_id AND v.patient_id=_patient_id)
     )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_prior_authorization_branch_access(_patient_insurance_id uuid)
  RETURNS boolean
@@ -1566,7 +1566,7 @@ AS $function$
       WHERE pi.id = _patient_insurance_id
         AND private.app_has_patient_branch(pi.patient_id)
     )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_procedure_order_branch_access(_order_id uuid)
  RETURNS boolean
@@ -1580,7 +1580,7 @@ AS $function$
     WHERE po.id = _order_id
       AND private.app_has_patient_visit_branch_access(po.patient_id, po.visit_id)
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.app_has_visit_branch_access(_visit_id uuid)
  RETURNS boolean
@@ -1595,7 +1595,7 @@ AS $function$
     WHERE v.id = _visit_id
       AND private.app_has_branch_access(COALESCE(v.branch_id, p.branch_id))
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.create_or_append_visit_invoice_atomic(p_visit_id uuid, p_invoice_date date, p_discount numeric, p_items jsonb, p_separate_invoice boolean)
  RETURNS uuid
@@ -1834,7 +1834,7 @@ BEGIN
   END LOOP;
   RETURN v_invoice_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.create_queue_ticket()
  RETURNS trigger
@@ -1860,7 +1860,7 @@ BEGIN
 
   RETURN new;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.current_app_user_id()
  RETURNS uuid
@@ -1873,7 +1873,7 @@ AS $function$
     AND COALESCE(u.active, true) = true
     AND u.deleted_at IS NULL
   ORDER BY u.id LIMIT 1
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.current_role_code()
  RETURNS text
@@ -1887,7 +1887,7 @@ AS $function$
     AND COALESCE(u.active, true) = true
     AND u.deleted_at IS NULL
   ORDER BY u.id LIMIT 1
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.ensure_visit_queue()
  RETURNS trigger
@@ -1923,7 +1923,7 @@ BEGIN
   new.visit_number := new.queue_number::text;
   RETURN new;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.guard_super_admin_role_permissions()
  RETURNS trigger
@@ -1962,7 +1962,7 @@ begin
     return old;
   end if;
 end
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.guard_super_admin_roles()
  RETURNS trigger
@@ -2000,7 +2000,7 @@ begin
     return old;
   end if;
 end
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.guard_super_admin_users()
  RETURNS trigger
@@ -2050,7 +2050,7 @@ begin
     return old;
   end if;
 end
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.is_super_admin()
  RETURNS boolean
@@ -2059,7 +2059,7 @@ CREATE OR REPLACE FUNCTION private.is_super_admin()
  SET search_path TO ''
 AS $function$
   SELECT COALESCE((SELECT private.current_role_code()) = 'super_admin', false)
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.is_super_admin_role(_role_id uuid)
  RETURNS boolean
@@ -2071,7 +2071,7 @@ AS $function$
     (select r.code = 'super_admin' from public.roles r where r.id = _role_id),
     false
   )
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.is_trusted_role_guard_context()
  RETURNS boolean
@@ -2081,7 +2081,7 @@ CREATE OR REPLACE FUNCTION private.is_trusted_role_guard_context()
 AS $function$
   select coalesce(auth.role() = 'service_role', false)
       or (auth.role() is null and session_user in ('postgres', 'supabase_admin'))
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.lab_order_parent_ids_match(_patient_id uuid, _visit_id uuid)
  RETURNS boolean
@@ -2098,7 +2098,7 @@ AS $function$
         AND (_patient_id IS NULL OR v.patient_id = _patient_id)
     )
   END
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.next_queue_number(_visit_date date)
  RETURNS integer
@@ -2114,7 +2114,7 @@ BEGIN
     FROM public.visits AS v WHERE v.queue_date = _visit_date;
   RETURN next_number;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.next_visit_number(_visit_date date)
  RETURNS text
@@ -2132,7 +2132,7 @@ BEGIN
    WHERE v.visit_date = _visit_date AND v.deleted_at IS NULL;
   RETURN lpad(next_number::text, 3, '0');
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.prevent_locked_visit_mutation()
  RETURNS trigger
@@ -2149,7 +2149,7 @@ begin
 
   return coalesce(new, old);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.setup_required()
  RETURNS boolean
@@ -2158,7 +2158,7 @@ CREATE OR REPLACE FUNCTION private.setup_required()
  SET search_path TO ''
 AS $function$
   SELECT NOT EXISTS (SELECT 1 FROM public.users)
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sync_queue_ticket_number()
  RETURNS trigger
@@ -2195,7 +2195,7 @@ begin
 
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sync_user_role_text()
  RETURNS trigger
@@ -2212,7 +2212,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.add_cashbox_entry(_direction text, _amount numeric, _type text DEFAULT 'adjustment'::text, _method text DEFAULT 'cash'::text, _category text DEFAULT NULL::text, _description text DEFAULT NULL::text, _date timestamp with time zone DEFAULT now())
  RETURNS uuid
@@ -2231,14 +2231,14 @@ begin
   insert into public.cashbox_transactions(branch_id,transaction_type,amount,payment_method,category,description,transaction_date,created_by)
   values(bid,_type,case when _direction='in' then _amount else -_amount end,coalesce(_method,'cash'),_category,_description,coalesce(_date,now()),uid) returning id into txid;
   return txid;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.app_has_perm(_code text)
  RETURNS boolean
  LANGUAGE sql
  STABLE
  SET search_path TO ''
-AS $function$ SELECT private.app_has_perm(_code) $function$
+AS $function$ SELECT private.app_has_perm(_code) $function$;
 
 CREATE OR REPLACE FUNCTION public.audit_row_change()
  RETURNS trigger
@@ -2257,7 +2257,7 @@ begin
     case when tg_op = 'DELETE' then null else to_jsonb(new) end
   );
   return coalesce(new, old);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.bootstrap_super_admin(_full_name text, _email text, _phone text)
  RETURNS uuid
@@ -2278,7 +2278,7 @@ begin
   values (auth.uid(), _full_name, _email, _phone, role_uuid, true)
   returning id into new_id;
   return new_id;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.bootstrap_super_admin(p_auth_user_id uuid, p_full_name text, p_email text)
  RETURNS uuid
@@ -2312,7 +2312,7 @@ AS $function$
 
                                                                                                                                                                                                                     RETURN v_user_id;
                                                                                                                                                                                                                     END;
-                                                                                                                                                                                                                    $function$
+                                                                                                                                                                                                                    $function$;
 
 CREATE OR REPLACE FUNCTION public.complete_lab_order_item(p_order_item_id uuid)
  RETURNS void
@@ -2365,7 +2365,7 @@ BEGIN
     AND status IN ('pending','ordered','sample_collected','in_progress');
   IF NOT FOUND THEN RAISE EXCEPTION 'invalid lab status transition' USING ERRCODE = '22023'; END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.complete_visit_atomic(p_visit_id uuid)
  RETURNS void
@@ -2403,7 +2403,7 @@ BEGIN
   SET status='completed', completed_at=COALESCE(completed_at, pg_catalog.now()), updated_by=v_user_id
   WHERE visit_id=p_visit_id AND deleted_at IS NULL AND status IN ('waiting','called','in_progress');
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_billing_invoice_atomic(p_patient_id uuid, p_visit_id uuid, p_partner_id uuid, p_invoice_date date, p_discount numeric, p_items jsonb, p_separate_invoice boolean)
  RETURNS uuid
@@ -2493,7 +2493,7 @@ BEGIN
 
   RETURN v_invoice_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_billing_invoice_atomic(p_patient_id uuid, p_visit_id uuid, p_partner_id uuid, p_invoice_date date, p_discount numeric, p_items jsonb, p_separate_invoice boolean, p_request_id uuid)
  RETURNS uuid
@@ -2527,7 +2527,7 @@ BEGIN
  UPDATE private.billing_rpc_idempotency SET result_id=v_result WHERE request_id=p_request_id;
  RETURN v_result;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_insurance_claim(_patient_insurance_id uuid, _invoice_id uuid, _items jsonb, _notes text DEFAULT NULL::text)
  RETURNS uuid
@@ -2722,7 +2722,7 @@ BEGIN
 
   RETURN claim_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_invoice_atomic(p_patient_id uuid, p_partner_id uuid, p_invoice_date date, p_discount numeric, p_items jsonb)
  RETURNS uuid
@@ -2861,7 +2861,7 @@ BEGIN
 
   RETURN v_invoice_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_lab_order_with_invoice_atomic(p_visit_id uuid, p_priority text, p_notes text, p_test_ids uuid[], p_separate_invoice boolean)
  RETURNS uuid
@@ -2937,7 +2937,7 @@ BEGIN
   );
   RETURN v_order_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_lab_order_with_invoice_atomic(p_visit_id uuid, p_priority text, p_notes text, p_test_ids uuid[], p_separate_invoice boolean, p_request_id uuid)
  RETURNS uuid
@@ -2961,7 +2961,7 @@ BEGIN
  UPDATE private.billing_rpc_idempotency SET result_id=v_result WHERE request_id=p_request_id;
  RETURN v_result;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_medical_certificate(p_patient_id uuid, p_diagnosis text, p_start_date date, p_end_date date)
  RETURNS integer
@@ -2973,7 +2973,7 @@ BEGIN
   RAISE EXCEPTION 'certificate issuance requires a linked visit; refresh the application'
     USING ERRCODE = '55000';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_medical_certificate(p_patient_id uuid, p_diagnosis text, p_start_date date, p_end_date date, p_visit_id uuid)
  RETURNS integer
@@ -3036,7 +3036,7 @@ BEGIN
   ) RETURNING id INTO v_certificate_id;
   RETURN v_certificate_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_patient_atomic(_full_name text, _gender text, _date_of_birth date, _phone text, _national_id text)
  RETURNS uuid
@@ -3112,7 +3112,7 @@ BEGIN
 
   RETURN patient_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_prescription_atomic(p_visit_id uuid, p_is_external boolean, p_items jsonb)
  RETURNS uuid
@@ -3258,7 +3258,7 @@ BEGIN
 
   RETURN v_rx_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_staff_user(_email text, _password text, _full_name text, _role_code text)
  RETURNS uuid
@@ -3306,7 +3306,7 @@ begin
   returning id into v_user_id;
 
   return v_user_id;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.create_visit_consultation_invoice_atomic(p_visit_id uuid, p_invoice_date date)
  RETURNS uuid
@@ -3345,21 +3345,21 @@ BEGIN
     false
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.current_app_user_id()
  RETURNS uuid
  LANGUAGE sql
  STABLE
  SET search_path TO ''
-AS $function$ SELECT private.current_app_user_id() $function$
+AS $function$ SELECT private.current_app_user_id() $function$;
 
 CREATE OR REPLACE FUNCTION public.current_role_code()
  RETURNS text
  LANGUAGE sql
  STABLE
  SET search_path TO ''
-AS $function$ SELECT private.current_role_code() $function$
+AS $function$ SELECT private.current_role_code() $function$;
 
 CREATE OR REPLACE FUNCTION public.current_role_name()
  RETURNS text
@@ -3372,7 +3372,7 @@ AS $function$
                                 JOIN public.roles r ON u.role_id = r.id
                                     WHERE u.auth_user_id = auth.uid()
                                         LIMIT 1;
-                                        $function$
+                                        $function$;
 
 CREATE OR REPLACE FUNCTION public.enforce_public_system_setting_keys()
  RETURNS trigger
@@ -3402,7 +3402,7 @@ begin
 
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.fn_calculate_insurance_coverage(_patient_insurance_id uuid, _service_type text, _reference_id uuid, _generic_name text, _gross_amount numeric)
  RETURNS TABLE(covered_amount numeric, patient_amount numeric, requires_prior_auth boolean, excluded boolean, coverage_rule_id uuid)
@@ -3602,7 +3602,7 @@ BEGIN
   coverage_rule_id := v_rule_id;
   RETURN NEXT;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.fn_cashbox_immutable()
  RETURNS trigger
@@ -3615,7 +3615,7 @@ begin
     return case when tg_op = 'DELETE' then old else new end;
   end if;
   raise exception 'posted cashbox transactions cannot be % — use reverse_cashbox_entry() instead', lower(tg_op);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_dispense_prescription(p_prescription_id uuid)
  RETURNS TABLE(item_id uuid, medicine_id uuid, medicine_name text, batch_id uuid, batch_number text, expiry_date date, quantity_dispensed numeric, batch_quantity_remaining numeric, source text)
@@ -3689,7 +3689,7 @@ begin
   where p.id=p_prescription_id;
   return;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.fn_dispense_prescription_with_invoice(p_prescription_id uuid, p_separate_invoice boolean)
  RETURNS TABLE(item_id uuid, medicine_id uuid, medicine_name text, batch_id uuid, batch_number text, expiry_date date, quantity_dispensed numeric, batch_quantity_remaining numeric, source text)
@@ -3940,7 +3940,7 @@ BEGIN
 
   RETURN;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.fn_finance_audit()
  RETURNS trigger
@@ -3963,7 +3963,7 @@ begin
     case when tg_op = 'DELETE' then null else to_jsonb(new) end
   );
   return case when tg_op = 'DELETE' then old else new end;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_ledger_from_expense()
  RETURNS trigger
@@ -3977,7 +3977,7 @@ begin
     coalesce(new.category, 'other'), coalesce(new.description, 'Expense'), 'expense', new.id,
     coalesce(new.expense_date::timestamptz, now()), new.branch_id);
   return new;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_ledger_from_payment()
  RETURNS trigger
@@ -3993,7 +3993,7 @@ begin
   );
   return new;
 end
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.fn_ledger_from_supplier_payment()
  RETURNS trigger
@@ -4007,7 +4007,7 @@ begin
     'supplier', coalesce(new.notes, 'Supplier payment'), 'supplier_payment', new.id,
     coalesce(new.payment_date::timestamptz, now()), new.branch_id);
   return new;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_ledger_post(_type text, _amount numeric, _method text, _category text, _description text, _source_type text, _source_id uuid, _date timestamp with time zone, _branch uuid)
  RETURNS uuid
@@ -4035,7 +4035,7 @@ begin
   do nothing
   returning id into new_id;
   return new_id;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_receive_pharmacy_batch(p_medicine_id uuid, p_quantity numeric, p_batch_number text DEFAULT NULL::text, p_expiry_date date DEFAULT NULL::date, p_manufacture_date date DEFAULT NULL::date, p_purchase_price numeric DEFAULT 0, p_selling_price numeric DEFAULT NULL::numeric, p_supplier_id uuid DEFAULT NULL::uuid, p_invoice_reference text DEFAULT NULL::text)
  RETURNS uuid
@@ -4059,7 +4059,7 @@ BEGIN
  UPDATE public.medicines SET stock_quantity=COALESCE(stock_quantity,0)+p_quantity::integer,cost_price=p_purchase_price,selling_price=v_sell,updated_at=pg_catalog.now(),updated_by=v_uid WHERE id=p_medicine_id;
  INSERT INTO public.stock_movements(medicine_id,batch_id,movement_type,quantity,reference_id,reference_table,branch_id,created_by) VALUES(p_medicine_id,v_batch_id,'purchase',p_quantity,v_batch_id,'pharmacy_inventory',v_branch,v_uid);
  RETURN v_batch_id;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_receive_pharmacy_batch_atomic(p_medicine_id uuid, p_quantity numeric, p_batch_number text, p_expiry_date date, p_manufacture_date date, p_purchase_price numeric, p_selling_price numeric, p_supplier_id uuid, p_invoice_reference text, p_idempotency_key text)
  RETURNS uuid
@@ -4257,7 +4257,7 @@ BEGIN
 
   RETURN v_batch_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.fn_recompute_invoice_paid()
  RETURNS trigger
@@ -4280,7 +4280,7 @@ begin
          updated_at = now()
    where id = inv;
   return coalesce(new, old);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fn_recompute_supplier_bill()
  RETURNS trigger
@@ -4302,7 +4302,7 @@ begin
          updated_at = now()
    where id = bill;
   return coalesce(new, old);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.get_current_user_profile()
  RETURNS TABLE(user_id uuid, full_name text, email text, role_code text, role_name text)
@@ -4322,7 +4322,7 @@ AS $function$
                                       left join public.roles r on u.role_id = r.id
                                         where u.auth_user_id = auth.uid();
                                         end;
-                                        $function$
+                                        $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_app_profile()
  RETURNS jsonb
@@ -4400,7 +4400,7 @@ BEGIN
     'permissions', coalesce(v_permissions, '[]'::jsonb)
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_visit_form_options()
  RETURNS jsonb
@@ -4450,104 +4450,104 @@ BEGIN
     'doctors', v_doctors
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gin_extract_query_trgm$function$
+AS '$libdir/pg_trgm', $function$gin_extract_query_trgm$function$;
 
 CREATE OR REPLACE FUNCTION public.gin_extract_value_trgm(text, internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gin_extract_value_trgm$function$
+AS '$libdir/pg_trgm', $function$gin_extract_value_trgm$function$;
 
 CREATE OR REPLACE FUNCTION public.gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)
  RETURNS boolean
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gin_trgm_consistent$function$
+AS '$libdir/pg_trgm', $function$gin_trgm_consistent$function$;
 
 CREATE OR REPLACE FUNCTION public.gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)
  RETURNS "char"
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gin_trgm_triconsistent$function$
+AS '$libdir/pg_trgm', $function$gin_trgm_triconsistent$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_compress(internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_compress$function$
+AS '$libdir/pg_trgm', $function$gtrgm_compress$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_consistent(internal, text, smallint, oid, internal)
  RETURNS boolean
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_consistent$function$
+AS '$libdir/pg_trgm', $function$gtrgm_consistent$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_decompress(internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_decompress$function$
+AS '$libdir/pg_trgm', $function$gtrgm_decompress$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_distance(internal, text, smallint, oid, internal)
  RETURNS double precision
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_distance$function$
+AS '$libdir/pg_trgm', $function$gtrgm_distance$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_in(cstring)
  RETURNS gtrgm
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_in$function$
+AS '$libdir/pg_trgm', $function$gtrgm_in$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_options(internal)
  RETURNS void
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE
-AS '$libdir/pg_trgm', $function$gtrgm_options$function$
+AS '$libdir/pg_trgm', $function$gtrgm_options$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_out(gtrgm)
  RETURNS cstring
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_out$function$
+AS '$libdir/pg_trgm', $function$gtrgm_out$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_penalty(internal, internal, internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_penalty$function$
+AS '$libdir/pg_trgm', $function$gtrgm_penalty$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_picksplit(internal, internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_picksplit$function$
+AS '$libdir/pg_trgm', $function$gtrgm_picksplit$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_same(gtrgm, gtrgm, internal)
  RETURNS internal
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_same$function$
+AS '$libdir/pg_trgm', $function$gtrgm_same$function$;
 
 CREATE OR REPLACE FUNCTION public.gtrgm_union(internal, internal)
  RETURNS gtrgm
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$gtrgm_union$function$
+AS '$libdir/pg_trgm', $function$gtrgm_union$function$;
 
 CREATE OR REPLACE FUNCTION public.is_super_admin()
  RETURNS boolean
  LANGUAGE sql
  STABLE
  SET search_path TO ''
-AS $function$ SELECT private.is_super_admin() $function$
+AS $function$ SELECT private.is_super_admin() $function$;
 
 CREATE OR REPLACE FUNCTION public.next_invoice_number()
  RETURNS text
@@ -4572,7 +4572,7 @@ begin
 
   return 'INV-' || month_key || '-' || pg_catalog.lpad(next_no::text, 5, '0');
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.next_mrn()
  RETURNS text
@@ -4596,19 +4596,19 @@ begin
 
   return 'RMC' || pg_catalog.lpad(next_no::text, 6, '0');
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.next_queue_number(_visit_date date)
  RETURNS integer
  LANGUAGE sql
  SET search_path TO ''
-AS $function$ SELECT private.next_queue_number(_visit_date) $function$
+AS $function$ SELECT private.next_queue_number(_visit_date) $function$;
 
 CREATE OR REPLACE FUNCTION public.next_visit_number(_visit_date date)
  RETURNS text
  LANGUAGE sql
  SET search_path TO ''
-AS $function$ SELECT private.next_visit_number(_visit_date) $function$
+AS $function$ SELECT private.next_visit_number(_visit_date) $function$;
 
 CREATE OR REPLACE FUNCTION public.normalize_medicine_names()
  RETURNS trigger
@@ -4638,7 +4638,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_cashbox_entry(_direction text, _amount numeric, _method text DEFAULT 'cash'::text, _category text DEFAULT 'manual'::text, _description text DEFAULT NULL::text, _date timestamp with time zone DEFAULT now())
  RETURNS uuid
@@ -4674,7 +4674,7 @@ BEGIN
   ) RETURNING id INTO new_id;
   RETURN new_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_expense(_category text, _amount numeric, _description text DEFAULT NULL::text, _expense_date date DEFAULT CURRENT_DATE, _method text DEFAULT 'cash'::text, _paid_to text DEFAULT NULL::text)
  RETURNS uuid
@@ -4719,7 +4719,7 @@ BEGIN
 
   RETURN exp_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_insurance_claim_payment(_claim_id uuid, _amount numeric, _method text DEFAULT 'bank'::text, _reference text DEFAULT NULL::text)
  RETURNS uuid
@@ -4787,7 +4787,7 @@ BEGIN
   );
   RETURN pay_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_invoice_payment(_invoice_id uuid, _amount numeric, _method text DEFAULT 'cash'::text, _reference text DEFAULT NULL::text, _idempotency_key text DEFAULT NULL::text)
  RETURNS uuid
@@ -4833,7 +4833,7 @@ BEGIN
   RETURNING id INTO pay_id;
   RETURN pay_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_supplier_bill(_supplier_id uuid, _invoice_number text, _bill_date date, _due_date date, _subtotal numeric, _discount numeric DEFAULT 0, _notes text DEFAULT NULL::text)
  RETURNS uuid
@@ -4880,7 +4880,7 @@ BEGIN
   ) RETURNING id INTO bill_id;
   RETURN bill_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_supplier_payment(_bill_id uuid, _amount numeric, _method text DEFAULT 'cash'::text, _reference text DEFAULT NULL::text, _payment_date date DEFAULT CURRENT_DATE, _notes text DEFAULT NULL::text)
  RETURNS uuid
@@ -4921,7 +4921,7 @@ BEGIN
   ) RETURNING id INTO pay_id;
   RETURN pay_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.record_cashbox_expense()
  RETURNS trigger
@@ -4936,7 +4936,7 @@ begin
     on conflict (source_type,source_id) where source_type is not null and source_id is not null do nothing;
   end if;
   return new;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.record_cashbox_payment()
  RETURNS trigger
@@ -4951,7 +4951,7 @@ begin
     on conflict (source_type,source_id) where source_type is not null and source_id is not null do nothing;
   end if;
   return new;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.record_cashbox_supplier_payment()
  RETURNS trigger
@@ -4966,7 +4966,7 @@ begin
     on conflict (source_type,source_id) where source_type is not null and source_id is not null do nothing;
   end if;
   return new;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.reverse_cashbox_entry(_transaction_id uuid, _reason text)
  RETURNS uuid
@@ -4991,80 +4991,80 @@ begin
   update public.cashbox_transactions set is_reversed = true, reversal_reason = _reason where id = orig.id;
   perform pg_catalog.set_config('roshan.cashbox_write', 'off', true);
   return new_id;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.set_limit(real)
  RETURNS real
  LANGUAGE c
  STRICT
-AS '$libdir/pg_trgm', $function$set_limit$function$
+AS '$libdir/pg_trgm', $function$set_limit$function$;
 
 CREATE OR REPLACE FUNCTION public.setup_required()
  RETURNS boolean
  LANGUAGE sql
  STABLE
  SET search_path TO ''
-AS $function$ SELECT private.setup_required() $function$
+AS $function$ SELECT private.setup_required() $function$;
 
 CREATE OR REPLACE FUNCTION public.show_limit()
  RETURNS real
  LANGUAGE c
  STABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$show_limit$function$
+AS '$libdir/pg_trgm', $function$show_limit$function$;
 
 CREATE OR REPLACE FUNCTION public.show_trgm(text)
  RETURNS text[]
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$show_trgm$function$
+AS '$libdir/pg_trgm', $function$show_trgm$function$;
 
 CREATE OR REPLACE FUNCTION public.similarity(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$similarity$function$
+AS '$libdir/pg_trgm', $function$similarity$function$;
 
 CREATE OR REPLACE FUNCTION public.similarity_dist(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$similarity_dist$function$
+AS '$libdir/pg_trgm', $function$similarity_dist$function$;
 
 CREATE OR REPLACE FUNCTION public.similarity_op(text, text)
  RETURNS boolean
  LANGUAGE c
  STABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$similarity_op$function$
+AS '$libdir/pg_trgm', $function$similarity_op$function$;
 
 CREATE OR REPLACE FUNCTION public.strict_word_similarity(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$strict_word_similarity$function$
+AS '$libdir/pg_trgm', $function$strict_word_similarity$function$;
 
 CREATE OR REPLACE FUNCTION public.strict_word_similarity_commutator_op(text, text)
  RETURNS boolean
  LANGUAGE c
  STABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$strict_word_similarity_commutator_op$function$
+AS '$libdir/pg_trgm', $function$strict_word_similarity_commutator_op$function$;
 
 CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_commutator_op(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$strict_word_similarity_dist_commutator_op$function$
+AS '$libdir/pg_trgm', $function$strict_word_similarity_dist_commutator_op$function$;
 
 CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_op(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$strict_word_similarity_dist_op$function$
+AS '$libdir/pg_trgm', $function$strict_word_similarity_dist_op$function$;
 
 CREATE OR REPLACE FUNCTION public.strict_word_similarity_op(text, text)
  RETURNS boolean
  LANGUAGE c
  STABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$strict_word_similarity_op$function$
+AS '$libdir/pg_trgm', $function$strict_word_similarity_op$function$;
 
 CREATE OR REPLACE FUNCTION public.sync_medicines_2_stock_columns()
  RETURNS trigger
@@ -5081,7 +5081,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.sync_pharmacy_inventory_legacy_columns()
  RETURNS trigger
@@ -5104,7 +5104,7 @@ begin
   new.updated_at := now();
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.sync_supplier_bill_payment()
  RETURNS trigger
@@ -5122,7 +5122,7 @@ begin
         updated_at=now(), updated_by=coalesce(new.created_by,public.current_app_user_id())
     where id=new.supplier_bill_id;
   return new;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.update_insurance_claim_status(_claim_id uuid, _new_status text, _approved_amount numeric DEFAULT NULL::numeric, _notes text DEFAULT NULL::text)
  RETURNS void
@@ -5178,7 +5178,7 @@ BEGIN
          updated_at = now()
    WHERE id = _claim_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.users(follow_ups)
  RETURNS SETOF users
@@ -5189,38 +5189,37 @@ AS $function$
   SELECT u.*
   FROM public.users AS u
   WHERE u.id = $1.created_by
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.word_similarity(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$word_similarity$function$
+AS '$libdir/pg_trgm', $function$word_similarity$function$;
 
 CREATE OR REPLACE FUNCTION public.word_similarity_commutator_op(text, text)
  RETURNS boolean
  LANGUAGE c
  STABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$word_similarity_commutator_op$function$
+AS '$libdir/pg_trgm', $function$word_similarity_commutator_op$function$;
 
 CREATE OR REPLACE FUNCTION public.word_similarity_dist_commutator_op(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$word_similarity_dist_commutator_op$function$
+AS '$libdir/pg_trgm', $function$word_similarity_dist_commutator_op$function$;
 
 CREATE OR REPLACE FUNCTION public.word_similarity_dist_op(text, text)
  RETURNS real
  LANGUAGE c
  IMMUTABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$word_similarity_dist_op$function$
+AS '$libdir/pg_trgm', $function$word_similarity_dist_op$function$;
 
 CREATE OR REPLACE FUNCTION public.word_similarity_op(text, text)
  RETURNS boolean
  LANGUAGE c
  STABLE PARALLEL SAFE STRICT
-AS '$libdir/pg_trgm', $function$word_similarity_op$function$
-
+AS '$libdir/pg_trgm', $function$word_similarity_op$function$;
 
 -- Function/procedure GRANT and REVOKE state from the live catalog
 REVOKE ALL ON FUNCTION private.app_has_attachment_branch_access(uuid, uuid) FROM PUBLIC, anon, authenticated, service_role;
