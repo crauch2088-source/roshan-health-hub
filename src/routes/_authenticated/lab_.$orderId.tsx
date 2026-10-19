@@ -454,7 +454,7 @@ function LabOrderPageInner() {
 
                               <TableCell dir="ltr">
                                 {range
-                                  ? s(range, "text_reference") || `${low || "—"} – ${high || "—"}`
+                                  ? s(range, "text_reference") || `${mapped.kind === "numeric" ? mapped.lower ?? "—" : "—"} – ${mapped.kind === "numeric" ? mapped.upper ?? "—" : "—"}`
                                   : s(p, "reference_text") || "—"}
                               </TableCell>
 
