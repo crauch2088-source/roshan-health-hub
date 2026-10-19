@@ -218,9 +218,7 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
       <CardContent className="space-y-4 p-4">
         {visitQ.error ? (
           <div role="alert" className="space-y-2">
-            <p>
-              {lang === "ar" ? "تعذّر تحميل بيانات الزيارة." : "Could not load visit details."}
-            </p>
+            <p>{lang === "ar" ? "تعذّر تحميل بيانات الزيارة." : "Could not load visit details."}</p>
             <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
               {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
             </Button>
