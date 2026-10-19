@@ -95,17 +95,8 @@ export function mapLabResult(input: LabResultInput): LabResultMapping {
   return { kind: "text", value };
 }
 
-export interface LabReferenceRangeCandidate extends Record<string, unknown> {
-  parameter_id?: string | null;
-  gender?: string | null;
-  min_age?: number | string | null;
-  max_age?: number | string | null;
-  age_min?: number | string | null;
-  age_max?: number | string | null;
-}
-
 function rangeAgeBound(
-  range: LabReferenceRangeCandidate,
+  range: Record<string, unknown>,
   primary: "min_age" | "max_age",
   alias: "age_min" | "age_max",
 ): number | null {
@@ -120,7 +111,7 @@ function rangeAgeBound(
  * Select only a reference interval compatible with known patient demographics.
  * If no interval matches, return undefined instead of silently using an unrelated range.
  */
-export function selectLabReferenceRange<T extends LabReferenceRangeCandidate>(
+export function selectLabReferenceRange<T extends Record<string, unknown>>(
   ranges: T[],
   parameterId: string,
   patientGender: string | null | undefined,
@@ -130,9 +121,11 @@ export function selectLabReferenceRange<T extends LabReferenceRangeCandidate>(
 
   return ranges
     .map((range, index) => {
-      if (range.parameter_id !== parameterId) return null;
+      if (range["parameter_id"] !== parameterId) return null;
 
-      const rangeGender = (range.gender ?? "").trim().toLowerCase();
+      const rawGender = range["gender"];
+      const rangeGender =
+        rawGender == null ? "" : String(rawGender).trim().toLowerCase();
       if (rangeGender && (!normalizedGender || rangeGender !== normalizedGender)) {
         return null;
       }
