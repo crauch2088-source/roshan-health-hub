@@ -1,3 +1,13 @@
+## Security RPC follow-up — 2026-10-19 06:16 UTC
+
+- Continued beyond the catalog scan by reading the live definitions of the request-ID invoice/lab wrappers, the branch-enforcing invoice helpers, and the certificate-creation RPC.
+- Confirmed that `create_billing_invoice_atomic(..., p_request_id)` delegates branch enforcement to `private.create_or_append_visit_invoice_atomic` for visit-linked invoices and to `create_invoice_atomic` for standalone invoices; `create_lab_order_with_invoice_atomic(..., p_request_id)` delegates to a legacy overload that explicitly checks patient/user branch; `create_visit_consultation_invoice_atomic` delegates to the branch-checking invoice helper.
+- Confirmed `create_medical_certificate(..., p_visit_id)` requires `certificates.create`, active user, doctor role, valid dates/diagnosis, linked patient/visit, non-cancelled visit and matching/access-checked branch.
+- Added the exact body-review evidence to [`docs/SECURITY_DEFINER_ADVISOR_TRIAGE_2026-10-19.md`](SECURITY_DEFINER_ADVISOR_TRIAGE_2026-10-19.md). No privilege changes were made because the generic advisor warning did not establish a concrete unsafe grant.
+- Clinical end-to-end tests remain deferred as requested. Next: review any remaining functions whose authorization depends on delegated helpers against their exact definitions and tests; do not alter grants unless a specific gap is demonstrated.
+
+---
+
 ## Security Advisor triage — 2026-10-19 06:15 UTC
 
 - Completed read-only catalog/source-marker triage of all 22 authenticated-callable SECURITY DEFINER functions. All 22 use an empty fixed `search_path`, are executable by `authenticated`, and are not executable by `anon`. A source-text scan found application permission-helper and branch/actor-context markers in 21 bodies; `get_my_app_profile()` instead binds output to `auth.uid()`. This is triage evidence, not a completed adversarial review of every function body.
