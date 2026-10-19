@@ -1,4 +1,4 @@
-export type LabResultFlag = "low" | "high" | "critical-low" | "critical-high" | "normal" | null;
+export type LabResultFlag = "low" | "high" | "critical" | "critical-low" | "critical-high" | "normal" | null;
 
 export type LabResultMapping =
   | { kind: "empty" }
@@ -26,7 +26,7 @@ function finiteBound(value: number | null | undefined): number | null {
 
 function normalizedFlag(flag: string | null | undefined): LabResultFlag {
   const value = (flag ?? "").trim().toLowerCase().replace(/_/g, "-");
-  if (value === "critical") return "critical-high";
+  if (value === "critical") return "critical";
   if (value === "critical-low") return "critical-low";
   if (value === "critical-high") return "critical-high";
   if (value === "low") return "low";
@@ -69,13 +69,16 @@ export function mapLabResult(input: LabResultInput): LabResultMapping {
     const critical =
       criticalLow ||
       criticalHigh ||
+      explicitFlag === "critical" ||
       explicitFlag === "critical-low" ||
       explicitFlag === "critical-high";
     const flag: LabResultFlag = criticalLow || explicitFlag === "critical-low"
       ? "critical-low"
       : criticalHigh || explicitFlag === "critical-high"
         ? "critical-high"
-        : low || explicitFlag === "low"
+        : explicitFlag === "critical"
+          ? "critical"
+          : low || explicitFlag === "low"
           ? "low"
           : high || explicitFlag === "high"
             ? "high"
