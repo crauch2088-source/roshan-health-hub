@@ -19,9 +19,38 @@ FOR cfg IN SELECT * FROM (VALUES
     perm := CASE act WHEN 'select' THEN cfg.read_perm WHEN 'insert' THEN cfg.insert_perm WHEN 'update' THEN cfg.update_perm ELSE cfg.delete_perm END;
     IF cfg.bucket_id='roshan-clinical-attachments' AND act='insert' THEN perm := 'emr.create'; END IF;
     pol := cfg.prefix || '_' || act;
-    expr := format('bucket_id = %L AND public.app_has_perm(%L) AND EXISTS (SELECT 1 FROM public.branches b WHERE b.id::text = split_part(storage.objects.name, ''/'', 1) AND private.app_has_branch_access(b.id))',cfg.bucket_id,perm);
+    expr := format('bucket_id = %L AND public.app_has_perm(%L) AND CASE WHEN split_part(storage.objects.name, ''/'', 1) ~* ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',cfg.bucket_id,perm);
     IF cfg.bucket_id='roshan-clinical-attachments' AND act='insert' THEN
       expr := format('bucket_id = %L AND (public.app_has_perm(''emr.create'') OR public.app_has_perm(''emr.update'')) AND EXISTS (SELECT 1 FROM public.branches b WHERE b.id::text = split_part(storage.objects.name, ''/'', 1) AND private.app_has_branch_access(b.id))',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND (CASE WHEN split_part(realtime.topic(),':',2) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id,perm);
+    IF cfg.bucket_id='roshan-clinical-attachments' AND act='insert' THEN
+      expr := format('bucket_id = %L AND (public.app_has_perm(''emr.create'') OR public.app_has_perm(''emr.update'')) AND CASE WHEN split_part(storage.objects.name, ''/'', 1) ~* ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',cfg.bucket_id);
     END IF;
     EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
     IF act='select' OR act='delete' THEN
@@ -42,6 +71,247 @@ CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT T
 (split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id)))
 OR
 (split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id)))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+ THEN private.app_has_branch_access(split_part(realtime.topic(),':',2)::uuid) ELSE false END))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND (CASE WHEN split_part(realtime.topic(),':',2) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id,perm);
+    IF cfg.bucket_id='roshan-clinical-attachments' AND act='insert' THEN
+      expr := format('bucket_id = %L AND (public.app_has_perm(''emr.create'') OR public.app_has_perm(''emr.update'')) AND CASE WHEN split_part(storage.objects.name, ''/'', 1) ~* ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id)))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id)))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+ THEN private.app_has_branch_access(split_part(realtime.topic(),':',2)::uuid) ELSE false END)));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id,perm);
+    IF cfg.bucket_id='roshan-clinical-attachments' AND act='insert' THEN
+      expr := format('bucket_id = %L AND (public.app_has_perm(''emr.create'') OR public.app_has_perm(''emr.update'')) AND CASE WHEN split_part(storage.objects.name, ''/'', 1) ~* ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND (CASE WHEN split_part(realtime.topic(),':',2) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id)))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+ THEN private.app_has_branch_access(split_part(realtime.topic(),':',2)::uuid) ELSE false END))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND (CASE WHEN split_part(realtime.topic(),':',2) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id)))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+ THEN private.app_has_branch_access(split_part(realtime.topic(),':',2)::uuid) ELSE false END)));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+' THEN private.app_has_branch_access(split_part(storage.objects.name, ''/'', 1)::uuid) ELSE false END',cfg.bucket_id);
+    END IF;
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects',pol);
+    IF act='select' OR act='delete' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR %s TO authenticated USING (%s)',pol,upper(act),expr);
+    ELSIF act='insert' THEN
+      cmd := format('CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (%s)',pol,expr);
+    ELSE
+      cmd := format('CREATE POLICY %I ON storage.objects FOR UPDATE TO authenticated USING (%s) WITH CHECK (%s)',pol,expr,expr);
+    END IF;
+    EXECUTE cmd;
+  END LOOP;
+END LOOP;
+END $storage_policies$;
+-- Private Broadcast/Presence channels; browser clients can receive but cannot publish arbitrary clinical events.
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
+CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING(
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='queue' AND public.app_has_perm('queue.read') AND (CASE WHEN split_part(realtime.topic(),':',2) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND EXISTS(SELECT 1 FROM public.branches b WHERE b.id::text=split_part(realtime.topic(),':',2) AND private.app_has_branch_access(b.id))));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+ THEN private.app_has_branch_access(split_part(realtime.topic(),':',2)::uuid) ELSE false END))
+OR
+(split_part(realtime.topic(),':',1)='branch' AND split_part(realtime.topic(),':',3)='lab' AND public.app_has_perm('lab.read') AND (CASE WHEN split_part(realtime.topic(),':',2) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}));
+DO $publication$ BEGIN
+IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
+IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='lab_orders') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.lab_orders'; END IF;
+END IF; END $publication$;
+COMMIT;
+ THEN private.app_has_branch_access(split_part(realtime.topic(),':',2)::uuid) ELSE false END)));
 DO $publication$ BEGIN
 IF EXISTS(SELECT 1 FROM pg_catalog.pg_publication WHERE pubname='supabase_realtime') THEN
 IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='queue_tickets') THEN EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.queue_tickets'; END IF;
