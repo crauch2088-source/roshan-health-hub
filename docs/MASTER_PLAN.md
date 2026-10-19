@@ -1,4 +1,4 @@
-## Next phase — isolated clinical E2E and canonical PG17 baseline (PR in progress)
+## Clinical E2E and canonical PG17 baseline — PR #79, CI green
 
 - Work branch: `feat/clinical-e2e-and-pg17-baseline`, based on `main`; no production Supabase writes or migrations were performed.
 - Added `db/tests/clinical_e2e_acceptance_workflow.sql` plus `tests/clinical-e2e-acceptance.test.ts`. The SQL scenario uses synthetic authenticated JWT subjects for receptionist, doctor, lab technician, and pharmacist; covers partial lab save, idempotent item resave, atomic visit/queue completion, sequential visit-linked certificate, pharmacist rejection, and cancelled-visit rejection. The workflow transaction rolls back all test data.
