@@ -413,7 +413,7 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - name: Replay Phase 31 migration and catalog assertions on disposable PostgreSQL 17
+      - name: Replay Phase 31 security and Phase 32 index migrations on disposable PostgreSQL 17
         env:
           PGPASSWORD: postgres
         run: |
