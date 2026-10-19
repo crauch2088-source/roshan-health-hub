@@ -72,19 +72,20 @@ export function mapLabResult(input: LabResultInput): LabResultMapping {
       explicitFlag === "critical" ||
       explicitFlag === "critical-low" ||
       explicitFlag === "critical-high";
-    const flag: LabResultFlag = criticalLow || explicitFlag === "critical-low"
-      ? "critical-low"
-      : criticalHigh || explicitFlag === "critical-high"
-        ? "critical-high"
-        : explicitFlag === "critical"
-          ? "critical"
-          : low || explicitFlag === "low"
-          ? "low"
-          : high || explicitFlag === "high"
-            ? "high"
-            : explicitFlag === "normal"
-              ? "normal"
-              : null;
+    const flag: LabResultFlag =
+      criticalLow || explicitFlag === "critical-low"
+        ? "critical-low"
+        : criticalHigh || explicitFlag === "critical-high"
+          ? "critical-high"
+          : explicitFlag === "critical"
+            ? "critical"
+            : low || explicitFlag === "low"
+              ? "low"
+              : high || explicitFlag === "high"
+                ? "high"
+                : explicitFlag === "normal"
+                  ? "normal"
+                  : null;
     return {
       kind: "numeric",
       value: numeric,
