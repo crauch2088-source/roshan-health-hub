@@ -137,6 +137,18 @@ test("typed lab result mapper distinguishes empty, pending, numeric zero, abnorm
     assert.equal(critical.critical, true);
     assert.equal(critical.flag, "critical-high");
   }
+  const genericCritical = mapLabResult({
+    value: 4,
+    dataType: "numeric",
+    lower: 3,
+    upper: 5,
+    flag: "critical",
+  });
+  assert.equal(genericCritical.kind, "numeric");
+  if (genericCritical.kind === "numeric") {
+    assert.equal(genericCritical.critical, true);
+    assert.equal(genericCritical.flag, "critical");
+  }
   assert.deepEqual(mapLabResult({ value: "reactive", dataType: "text" }), { kind: "text", value: "reactive" });
   assert.deepEqual(mapLabResult({ value: "POS", code: "positive", display: "Positive" }), {
     kind: "coded", code: "positive", display: "Positive",
