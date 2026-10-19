@@ -66,17 +66,30 @@ export function mapLabResult(input: LabResultInput): LabResultMapping {
     const criticalHigh = criticalUpper !== null && numeric > criticalUpper;
     const low = lower !== null && numeric < lower;
     const high = upper !== null && numeric > upper;
-    const critical = criticalLow || criticalHigh || explicitFlag === "critical-low" || explicitFlag === "critical-high";
-    const flag: LabResultFlag =
-      criticalLow || explicitFlag === "critical-low" ? "critical-low" :
-      criticalHigh || explicitFlag === "critical-high" ? "critical-high" :
-      low || explicitFlag === "low" ? "low" :
-      high || explicitFlag === "high" ? "high" :
-      explicitFlag === "normal" ? "normal" : null;
+    const critical =
+      criticalLow ||
+      criticalHigh ||
+      explicitFlag === "critical-low" ||
+      explicitFlag === "critical-high";
+    const flag: LabResultFlag = criticalLow || explicitFlag === "critical-low"
+      ? "critical-low"
+      : criticalHigh || explicitFlag === "critical-high"
+        ? "critical-high"
+        : low || explicitFlag === "low"
+          ? "low"
+          : high || explicitFlag === "high"
+            ? "high"
+            : explicitFlag === "normal"
+              ? "normal"
+              : null;
     return {
-      kind: "numeric", value: numeric, lower, upper,
+      kind: "numeric",
+      value: numeric,
+      lower,
+      upper,
       abnormal: low || high || critical || explicitFlag === "low" || explicitFlag === "high",
-      critical, flag,
+      critical,
+      flag,
     };
   }
   return { kind: "text", value };
@@ -102,7 +115,11 @@ export function labWorkflowStage(status: string): number {
  */
 export function isAbnormalLabResult(value: string, low: number, high: number): boolean {
   // Legacy callers use zero as “no bound”; the typed mapper accepts zero bounds.
-  const mapped = mapLabResult({ value, lower: low === 0 ? null : low, upper: high === 0 ? null : high });
+  const mapped = mapLabResult({
+    value,
+    lower: low === 0 ? null : low,
+    upper: high === 0 ? null : high,
+  });
   return mapped.kind === "numeric" && mapped.abnormal;
 }
 
