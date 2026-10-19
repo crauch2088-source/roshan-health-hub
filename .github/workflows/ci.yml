@@ -413,6 +413,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Replay Phase 31 security and Phase 32 index migrations on disposable PostgreSQL 17
         env:
           PGPASSWORD: postgres
