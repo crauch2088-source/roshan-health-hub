@@ -1,3 +1,13 @@
+## Next phase — isolated clinical E2E and canonical PG17 baseline (PR in progress)
+
+- Work branch: `feat/clinical-e2e-and-pg17-baseline`, based on `main`; no production Supabase writes or migrations were performed.
+- Added `db/tests/clinical_e2e_acceptance_workflow.sql` plus `tests/clinical-e2e-acceptance.test.ts`. The SQL scenario uses synthetic authenticated JWT subjects for receptionist, doctor, lab technician, and pharmacist; covers partial lab save, idempotent item resave, atomic visit/queue completion, sequential visit-linked certificate, pharmacist rejection, and cancelled-visit rejection. The workflow transaction rolls back all test data.
+- Added `db/baseline/0000_roshan_pg17_baseline_v112.sql` from read-only catalog extraction at migration 112: 56 public tables, 213 constraints, 163 non-constraint indexes, 126 public/private functions, 47 triggers, 203 public policies, five views, RLS state, and object ACLs. Supabase platform schemas/services are represented only by minimal auth compatibility shims; this is an application-schema CI baseline, not a production migration or a complete Supabase platform export.
+- Added `db/MIGRATIONS_MANIFEST.md`; CI now has a PostgreSQL 17 job that attempts baseline replay in one empty database and the Phase 31 clinical workflow in a separate disposable database. The clinical test database applies the Phase 31 Expand and Contract SQL only inside the CI service container.
+- Status gate: baseline replay and SQL acceptance are not yet claimed as passing until GitHub Actions reports green on the PR head. No data was inserted into the live project.
+
+---
+
 ## Phase 31 final live verification — 2026-10-19 06:25 UTC
 
 - Rechecked production project `jewzonxplxhogqrnhosl` with read-only SQL after Phase 32. The live ledger has **112 entries**, latest `20261019061315_roshan_phase32_medical_certificate_visit_index`; Phase 31 Expand (`20261018201642_roshan_phase31_clinical_financial_security_hardening`), Phase 31 Contract (`20261018201758_roshan_phase31_contract_security_cutover`), and Phase 32 are all present. **Do not rerun either Phase 31 migration**; this section supersedes any older 109-entry/prepared-only status below.
