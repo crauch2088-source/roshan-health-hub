@@ -18,13 +18,19 @@ test("clinical acceptance SQL is explicitly isolated and uses synthetic authenti
   assert.match(workflow, /'doctor'/);
   assert.match(workflow, /'lab_technician'/);
   assert.match(workflow, /'pharmacist'/);
-  assert.doesNotMatch(workflow, /jewzonxplxhogqrnhosl|supabase\.co|roshan-health-hub\.vercel\.app/i);
+  assert.doesNotMatch(
+    workflow,
+    /jewzonxplxhogqrnhosl|supabase\.co|roshan-health-hub\.vercel\.app/i,
+  );
 });
 
 test("clinical acceptance covers partial lab save, idempotent resave, atomic visit completion, and certificate guards", () => {
   assert.match(workflow, /partial save did not complete item 1/);
   assert.match(workflow, /partial save closed the parent lab order/);
-  assert.match(workflow, /complete_lab_order_item\('00000000-0000-0000-0000-000000001901'\)[\s\S]*complete_lab_order_item\('00000000-0000-0000-0000-000000001901'\)/);
+  assert.match(
+    workflow,
+    /complete_lab_order_item\('00000000-0000-0000-0000-000000001901'\)[\s\S]*complete_lab_order_item\('00000000-0000-0000-0000-000000001901'\)/,
+  );
   assert.match(workflow, /public\.complete_visit_atomic/);
   assert.match(workflow, /queue ticket was not completed atomically/);
   assert.match(workflow, /certificate serial was not generated/);
