@@ -63,6 +63,8 @@ A direct SELECT-only check of the connected production Supabase project found:
 - Active reference-range rows in `lab_reference_ranges`: **0**.
 - Active lab parameters with a non-empty `reference_text`: **0**.
 
+A separate read-only catalog listing also found two qualitative result parameters typed as `numeric`: malaria parasite result (`MP_RESULT`) and pregnancy test result (`UPT_RESULT`). The mapper safely falls back to text for nonnumeric values, but the catalog metadata should be reviewed and corrected only after lab-lead approval.
+
 No patient-level rows or results were queried, and no production data was changed.
 
 **Go-live impact:** numeric lab results currently have no configured database reference intervals or parameter-level reference text to compare against. The UI must not invent or silently infer medical reference ranges. Before routine use, a clinician/lab lead must approve a lab catalog import or data-entry set with units, age/sex applicability and source provenance; then verify selection and display in the isolated workflow. Until then, the lab module may support recording results, but automated out-of-range classification cannot be relied on for these parameters. This is a higher-priority operational readiness gap than cosmetic UX work.
