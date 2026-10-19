@@ -78,3 +78,15 @@ The production alias is assigned to the READY deployment for the exact current-m
 **Full clinical end-to-end acceptance: still open.** The production database had no active patients, visits, lab orders or certificates, and no separate staging database/browser identity for a doctor-role session was available. No real production records were created merely to manufacture test data. Required next step is to provide/use an isolated zero-cost PostgreSQL 17 test environment and a doctor-role test identity, then run the existing SQL regression suite plus browser E2E for patient registration → visit/queue → lab order/result/completion → invoice/pharmacy as applicable → visit-linked medical certificate. Recheck the New Visit button's actual disabled property as part of that run.
 
 No clinical-readiness claim is made by this report.
+
+
+---
+
+## Follow-up — Phase 32 performance finding resolved (2026-10-19 06:14 UTC)
+
+- Added tracked migration `db/roshan_phase32_medical_certificate_visit_index.sql` and regression assertion `db/tests/medical_certificate_visit_index_assertions.sql`.
+- Applied the migration to production using the connected Supabase migration API as `roshan_phase32_medical_certificate_visit_index`; live ledger now has **112** entries, latest version `20261019061315`.
+- Live read-back confirms `public.medical_certificates_visit_id_idx` exists on `medical_certificates(visit_id)`, and PostgreSQL reports `indisvalid=true`, `indisready=true`.
+- Supabase Performance Advisor no longer reports an unindexed foreign key. It now reports 89 unused-index suggestions; this is not evidence that indexes should be removed, especially with the near-empty clinical tables and the new index not yet exercised by production traffic.
+- The disposable PostgreSQL 17 CI job replays Phase 31 plus Phase 32 and passes the catalog assertion. Main CI, typecheck, lint, build, source-parity checks, CodeQL, and finance concurrency checks passed on the code revision before the documentation-only follow-up.
+- No clinical/financial records were created or changed; clinical end-to-end acceptance remains explicitly deferred per user instruction.
