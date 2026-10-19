@@ -7081,6 +7081,48 @@ GRANT UPDATE ON TABLE public.vitals TO authenticator;
 GRANT UPDATE ON TABLE public.vitals TO service_role;
 GRANT UPDATE ON TABLE public.vitals TO supabase_auth_admin;
 
+-- Sequence ownership and effective privileges
+ALTER SEQUENCE public.medical_certificate_number_seq OWNED BY public.medical_certificates.certificate_number;
+ALTER SEQUENCE public.medical_certificates_id_seq OWNED BY public.medical_certificates.id;
+ALTER SEQUENCE public.medicines_2_id_seq OWNED BY public.medicines_2.id;
+GRANT SELECT ON SEQUENCE public.insurance_claim_number_seq TO authenticator;
+GRANT USAGE ON SEQUENCE public.insurance_claim_number_seq TO authenticated;
+GRANT USAGE ON SEQUENCE public.insurance_claim_number_seq TO authenticator;
+GRANT SELECT ON SEQUENCE public.medical_certificate_number_seq TO authenticator;
+GRANT USAGE ON SEQUENCE public.medical_certificate_number_seq TO authenticator;
+GRANT SELECT ON SEQUENCE public.medical_certificates_id_seq TO authenticator;
+GRANT SELECT ON SEQUENCE public.medical_certificates_id_seq TO service_role;
+GRANT UPDATE ON SEQUENCE public.medical_certificates_id_seq TO service_role;
+GRANT USAGE ON SEQUENCE public.medical_certificates_id_seq TO authenticator;
+GRANT USAGE ON SEQUENCE public.medical_certificates_id_seq TO service_role;
+GRANT SELECT ON SEQUENCE public.medicines_2_id_seq TO anon;
+GRANT SELECT ON SEQUENCE public.medicines_2_id_seq TO authenticated;
+GRANT SELECT ON SEQUENCE public.medicines_2_id_seq TO authenticator;
+GRANT SELECT ON SEQUENCE public.medicines_2_id_seq TO service_role;
+GRANT UPDATE ON SEQUENCE public.medicines_2_id_seq TO anon;
+GRANT UPDATE ON SEQUENCE public.medicines_2_id_seq TO authenticated;
+GRANT UPDATE ON SEQUENCE public.medicines_2_id_seq TO service_role;
+GRANT USAGE ON SEQUENCE public.medicines_2_id_seq TO anon;
+GRANT USAGE ON SEQUENCE public.medicines_2_id_seq TO authenticated;
+GRANT USAGE ON SEQUENCE public.medicines_2_id_seq TO authenticator;
+GRANT USAGE ON SEQUENCE public.medicines_2_id_seq TO service_role;
+
+-- Schema privileges from live ACLs
+REVOKE ALL ON SCHEMA public, private, extensions FROM PUBLIC, anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA extensions TO anon;
+GRANT USAGE ON SCHEMA extensions TO authenticated;
+GRANT USAGE ON SCHEMA extensions TO dashboard_user;
+GRANT CREATE ON SCHEMA extensions TO dashboard_user;
+GRANT USAGE ON SCHEMA extensions TO service_role;
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT USAGE ON SCHEMA public TO PUBLIC;
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA public TO authenticator;
+GRANT USAGE ON SCHEMA public TO postgres;
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+
 -- RLS enablement
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments FORCE ROW LEVEL SECURITY;
