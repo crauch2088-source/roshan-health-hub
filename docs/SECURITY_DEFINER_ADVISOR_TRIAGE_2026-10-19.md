@@ -22,48 +22,48 @@ The live catalog query enumerated the exact 22 functions listed by the advisor. 
 - Function configuration fixes `search_path` to the empty string.
 - `authenticated` has EXECUTE.
 - `anon` does not have EXECUTE.
-- The function body contains an application permission guard and branch/actor-context check, **except** `get_my_app_profile()`, which binds its output to the caller via `auth.uid()`. This is appropriate for a self-profile RPC rather than an application permissioned mutation.
+- The source-text scan found application permission-helper markers and branch/actor-context markers in 21 of the 22 function bodies. The exception is `get_my_app_profile()`, which binds its output to the caller via `auth.uid()`. These markers are triage evidence only, not a substitute for a full line-by-line adversarial review of every body.
 
 ### Clinical workflows
 
 | Function | Catalog finding | Decision |
 |---|---|---|
-| `complete_lab_order_item(uuid)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; test suite covers branch/permission and state-transition checks. |
-| `complete_visit_atomic(uuid)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; test suite covers atomic/idempotent visit/queue completion. |
-| `create_billing_invoice_atomic(..., p_request_id uuid)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep current overload; request-id overload is the intended idempotent RPC. |
-| `create_lab_order_with_invoice_atomic(..., p_request_id uuid)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep current overload; request-id overload is the intended idempotent RPC. |
-| `create_medical_certificate(uuid,text,date,date,uuid)` | Permission + branch/actor guard; linked visit; empty fixed search path; authenticated only | Keep client EXECUTE; doctor role, branch, patient/visit consistency and cancelled-visit checks are covered by Phase 31 regression. |
-| `create_patient_atomic(text,text,date,text,text)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; atomic registration and national-ID uniqueness have regression coverage. |
-| `create_prescription_atomic(uuid,boolean,jsonb)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; preserve atomic prescription creation. |
-| `create_visit_consultation_invoice_atomic(uuid,date)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; preserves atomic visit-consultation invoicing. |
+| `complete_lab_order_item(uuid)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; test suite covers branch/permission and state-transition checks. |
+| `complete_visit_atomic(uuid)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; test suite covers atomic/idempotent visit/queue completion. |
+| `create_billing_invoice_atomic(..., p_request_id uuid)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep current overload; request-id overload is the intended idempotent RPC. |
+| `create_lab_order_with_invoice_atomic(..., p_request_id uuid)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep current overload; request-id overload is the intended idempotent RPC. |
+| `create_medical_certificate(uuid,text,date,date,uuid)` | Permission-helper + branch/actor markers; linked visit; empty fixed search path; authenticated only | Keep client EXECUTE; doctor role, branch, patient/visit consistency and cancelled-visit checks are covered by Phase 31 regression. |
+| `create_patient_atomic(text,text,date,text,text)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; atomic registration and national-ID uniqueness have regression coverage. |
+| `create_prescription_atomic(uuid,boolean,jsonb)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; preserve atomic prescription creation. |
+| `create_visit_consultation_invoice_atomic(uuid,date)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; preserves atomic visit-consultation invoicing. |
 | `get_visit_form_options()` | Permission + caller/branch context; empty fixed search path; authenticated only | Keep client EXECUTE; options RPC is required for permission-safe visit forms. |
 
 ### Insurance workflows
 
 | Function | Catalog finding | Decision |
 |---|---|---|
-| `create_insurance_claim(uuid,uuid,jsonb,text)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; claim/invoice consistency checks remain important. |
-| `fn_calculate_insurance_coverage(uuid,text,uuid,text,numeric)` | Permission + caller identity binding; empty fixed search path; authenticated only | Keep client EXECUTE; do not revoke a calculation RPC used by insurance flows. |
-| `post_insurance_claim_payment(uuid,numeric,text,text)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; maintain RPC-only financial writes. |
-| `update_insurance_claim_status(uuid,text,numeric,text)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; maintain claim status and approval invariants. |
+| `create_insurance_claim(uuid,uuid,jsonb,text)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; claim/invoice consistency checks remain important. |
+| `fn_calculate_insurance_coverage(uuid,text,uuid,text,numeric)` | Permission-helper + caller identity binding; empty fixed search path; authenticated only | Keep client EXECUTE; do not revoke a calculation RPC used by insurance flows. |
+| `post_insurance_claim_payment(uuid,numeric,text,text)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; maintain RPC-only financial writes. |
+| `update_insurance_claim_status(uuid,text,numeric,text)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; maintain claim status and approval invariants. |
 
 ### Pharmacy and inventory workflows
 
 | Function | Catalog finding | Decision |
 |---|---|---|
-| `fn_dispense_prescription_with_invoice(uuid,boolean)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; dispense must remain invoice-backed and atomic. |
-| `fn_receive_pharmacy_batch_atomic(...)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; inventory receiving uses an atomic/idempotent RPC. |
+| `fn_dispense_prescription_with_invoice(uuid,boolean)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; dispense must remain invoice-backed and atomic. |
+| `fn_receive_pharmacy_batch_atomic(...)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; inventory receiving uses an atomic/idempotent RPC. |
 
 ### Finance workflows
 
 | Function | Catalog finding | Decision |
 |---|---|---|
-| `post_cashbox_entry(...)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; validated cashbox RPC. |
-| `post_expense(...)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; validated expense RPC. |
-| `post_invoice_payment(...)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; precision/idempotency/concurrency tests remain required. |
-| `post_supplier_bill(...)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; validated supplier-bill RPC. |
-| `post_supplier_payment(...)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; validated supplier-payment RPC. |
-| `reverse_cashbox_entry(uuid,text)` | Permission + branch/actor guard; empty fixed search path; authenticated only | Keep client EXECUTE; reversal reason and two-session concurrency checks remain required. |
+| `post_cashbox_entry(...)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; validated cashbox RPC. |
+| `post_expense(...)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; validated expense RPC. |
+| `post_invoice_payment(...)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; precision/idempotency/concurrency tests remain required. |
+| `post_supplier_bill(...)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; validated supplier-bill RPC. |
+| `post_supplier_payment(...)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; validated supplier-payment RPC. |
+| `reverse_cashbox_entry(uuid,text)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; reversal reason and two-session concurrency checks remain required. |
 
 ### Caller-scoped read helper
 
