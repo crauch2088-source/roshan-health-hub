@@ -1,7 +1,15 @@
 -- Minimal PostgreSQL 17 fixture for Phase 31 migration syntax/catalog regression.
 -- Disposable CI database only. No production connection or data.
-CREATE ROLE anon NOLOGIN;
-CREATE ROLE authenticated NOLOGIN;
+DO $fixture_roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    CREATE ROLE anon NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN;
+  END IF;
+END
+$fixture_roles$;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
 
