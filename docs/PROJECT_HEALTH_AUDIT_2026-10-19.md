@@ -54,6 +54,19 @@ These percentages are estimates, not instrumented metrics or a line-count calcul
 - The catalog-derived baseline records 56 public tables, 213 constraints, 163 non-constraint indexes, 126 public/private functions, 47 public triggers, 203 public policies, and five views. It is an application-schema baseline with minimal auth compatibility shims, **not** a full export of Supabase-managed schemas/services and **not** a production migration.
 - Historical migration replay and full persisted live-SQL hash parity are not yet established. One environment-specific identity-link migration is intentionally redacted, and the original historical bootstrap was previously documented as missing. Keep this limitation visible until a safe, reproducible bootstrap/reconciliation strategy is proven.
 
+### Live laboratory catalog readiness — additional read-only check (2026-10-19)
+
+A direct SELECT-only check of the connected production Supabase project found:
+
+- Active lab parameters: **18**.
+- Numeric/number parameters: **14**.
+- Active reference-range rows in `lab_reference_ranges`: **0**.
+- Active lab parameters with a non-empty `reference_text`: **0**.
+
+No patient-level rows or results were queried, and no production data was changed.
+
+**Go-live impact:** numeric lab results currently have no configured database reference intervals or parameter-level reference text to compare against. The UI must not invent or silently infer medical reference ranges. Before routine use, a clinician/lab lead must approve a lab catalog import or data-entry set with units, age/sex applicability and source provenance; then verify selection and display in the isolated workflow. Until then, the lab module may support recording results, but automated out-of-range classification cannot be relied on for these parameters. This is a higher-priority operational readiness gap than cosmetic UX work.
+
 ### Security and performance advisor state
 
 Live advisor reads on 2026-10-19 returned:
