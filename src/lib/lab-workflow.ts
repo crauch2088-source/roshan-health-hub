@@ -95,6 +95,61 @@ export function mapLabResult(input: LabResultInput): LabResultMapping {
   return { kind: "text", value };
 }
 
+export interface LabReferenceRangeCandidate {
+  parameter_id?: string | null;
+  gender?: string | null;
+  min_age?: number | string | null;
+  max_age?: number | string | null;
+  age_min?: number | string | null;
+  age_max?: number | string | null;
+}
+
+function rangeAgeBound(
+  range: LabReferenceRangeCandidate,
+  primary: "min_age" | "max_age",
+  alias: "age_min" | "age_max",
+): number | null {
+  const raw = range[primary] ?? range[alias];
+  if (raw == null || String(raw).trim() === "") return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value === 0) return null;
+  return value;
+}
+
+/**
+ * Select only a reference interval compatible with known patient demographics.
+ * If no interval matches, return undefined instead of silently using an unrelated range.
+ */
+export function selectLabReferenceRange<T extends LabReferenceRangeCandidate>(
+  ranges: T[],
+  parameterId: string,
+  patientGender: string | null | undefined,
+  age: number | undefined,
+): T | undefined {
+  const normalizedGender = (patientGender ?? "").trim().toLowerCase();
+
+  return ranges
+    .map((range, index) => {
+      if (range.parameter_id !== parameterId) return null;
+
+      const rangeGender = (range.gender ?? "").trim().toLowerCase();
+      if (rangeGender && (!normalizedGender || rangeGender !== normalizedGender)) {
+        return null;
+      }
+
+      const minAge = rangeAgeBound(range, "min_age", "age_min");
+      const maxAge = rangeAgeBound(range, "max_age", "age_max");
+      if (age === undefined && (minAge !== null || maxAge !== null)) return null;
+      if (age !== undefined && minAge !== null && age < minAge) return null;
+      if (age !== undefined && maxAge !== null && age > maxAge) return null;
+
+      const specificity = (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) + (maxAge !== null ? 1 : 0);
+      return { range, index, specificity };
+    })
+    .filter((candidate): candidate is { range: T; index: number; specificity: number } => candidate !== null)
+    .sort((a, b) => b.specificity - a.specificity || a.index - b.index)[0]?.range;
+}
+
 export const LAB_WORKFLOW_STAGES = [
   "ordered",
   "sample_collected",
