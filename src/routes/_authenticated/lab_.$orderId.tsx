@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { hasLabItemResultInput, mapLabResult } from "@/lib/lab-workflow";
+import { hasLabItemResultInput, mapLabResult, selectLabReferenceRange } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
@@ -151,30 +151,7 @@ function LabOrderPageInner() {
   const ranges = (rangeQ.data ?? []) as Row[];
 
   function rangeFor(parameterId: string) {
-    return (
-      ranges.find((r) => {
-        if (s(r, "parameter_id") !== parameterId) return false;
-
-        const gender = s(r, "gender");
-
-        if (gender && gender !== s(patient, "gender")) {
-          return false;
-        }
-
-        const min = n(r, "min_age") || n(r, "age_min");
-        const max = n(r, "max_age") || n(r, "age_max");
-
-        if (age !== undefined && min !== 0 && min && age < min) {
-          return false;
-        }
-
-        if (age !== undefined && max !== 0 && max && age > max) {
-          return false;
-        }
-
-        return true;
-      }) ?? ranges.find((r) => s(r, "parameter_id") === parameterId)
-    );
+    return selectLabReferenceRange(ranges, parameterId, s(patient, "gender"), age);
   }
 
   const resultRows = (actualResultsQ.data ?? []) as Row[];
