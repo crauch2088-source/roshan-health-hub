@@ -35,7 +35,7 @@ The live catalog query enumerated the exact 22 functions listed by the advisor. 
 | `create_medical_certificate(uuid,text,date,date,uuid)` | Permission-helper + branch/actor markers; linked visit; empty fixed search path; authenticated only | Keep client EXECUTE; doctor role, branch, patient/visit consistency and cancelled-visit checks are covered by Phase 31 regression. |
 | `create_patient_atomic(text,text,date,text,text)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; atomic registration and national-ID uniqueness have regression coverage. |
 | `create_prescription_atomic(uuid,boolean,jsonb)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; preserve atomic prescription creation. |
-| `create_visit_consultation_invoice_atomic(uuid,date)` | Permission-helper + branch/actor markers; empty fixed search path; authenticated only | Keep client EXECUTE; preserves atomic visit-consultation invoicing. |
+| `create_visit_consultation_invoice_atomic(uuid,date)` | Permission helper + caller actor; delegates to `private.create_or_append_visit_invoice_atomic`, which checks user/patient branch before writing invoice items | Keep client EXECUTE; preserves atomic visit-consultation invoicing. |
 | `get_visit_form_options()` | Permission + caller/branch context; empty fixed search path; authenticated only | Keep client EXECUTE; options RPC is required for permission-safe visit forms. |
 
 ### Insurance workflows
