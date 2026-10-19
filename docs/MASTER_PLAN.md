@@ -1,3 +1,13 @@
+## Phase 31 production closure — live verification (2026-10-19 06:25 UTC)
+
+- PR [#78](https://github.com/crauch2088-source/roshan-health-hub/pull/78) was squash-merged to `main` at `9e8430a8109723d6bb8772824828ac82eaa51fac`. The canonical Vercel production alias `roshan-health-hub.vercel.app` is READY on current `main` commit `c14b4e0aac86e2aa9da12b5f6816e7aa6064187a`; the deployed source includes the Phase 31 clinical frontend changes. The reviewed PR head passed 24/24 checks; the post-merge main application/regression pipeline passed 17/17 on `ab0e200b91d3fc9c1cf802f908592b3cf0e9069d`, with later main commits limited to documentation updates.
+- Read-only production catalog verification after Phase 32: Supabase ledger is **112 entries**, latest `20261019061315_roshan_phase32_medical_certificate_visit_index`. Phase 31 Expand (`20261018201642`) and Contract (`20261018201758`) are both registered and applied. `medical_certificates.visit_id` is UUID NOT NULL; both Phase 31 unique indexes and the Phase 32 visit index are valid/ready.
+- Confirmed the two clinical RPCs and five identity/branch helpers use a fixed empty `search_path`; the five helpers and two clinical RPCs include the expected soft-delete guard. Authenticated direct privileges INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER are all false on `lab_order_items` and `medical_certificates`; SELECT remains true. Authenticated/anon/PUBLIC EXECUTE on legacy `fn_dispense_prescription(uuid)` is false. The unlinked four-argument certificate RPC is not executable by browser roles; the intended visit-linked five-argument RPC remains executable by authenticated.
+- No further migration application was needed or attempted during this verification because both Phase 31 migrations were already in the live ledger. The catalog/ledger verification was SELECT-only and changed no clinical or financial business data.
+- **Acceptance limitation:** authenticated clinical E2E smoke tests remain deferred at the user's direction; deployment READY and CI green do not substitute for doctor-role certificate issuance and real lab workflow acceptance. Do not mark that acceptance test complete.
+
+---
+
 ## Security RPC follow-up — 2026-10-19 06:16 UTC
 
 - Continued beyond the catalog scan by reading the live definitions of the request-ID invoice/lab wrappers, the branch-enforcing invoice helpers, and the certificate-creation RPC.
