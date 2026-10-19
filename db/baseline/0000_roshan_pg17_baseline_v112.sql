@@ -24,6 +24,8 @@ CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $auth_
 $auth_uid$;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+-- Bootstrap function referenced by table defaults; replaced by the catalog definition below.
+CREATE OR REPLACE FUNCTION public.current_app_user_id() RETURNS uuid LANGUAGE sql STABLE AS $ SELECT NULL::uuid $;
 
 -- Sequences
 CREATE SEQUENCE public.insurance_claim_number_seq AS bigint INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1 NO CYCLE;
