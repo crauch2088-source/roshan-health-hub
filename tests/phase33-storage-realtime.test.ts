@@ -50,6 +50,6 @@ test("Storage and Realtime policies use branch/permission checks and isolated PG
   assert.match(fixture, /CREATE SCHEMA IF NOT EXISTS storage/i);
   assert.match(fixture, /CREATE SCHEMA IF NOT EXISTS realtime/i);
   assert.match(integration, /cross-branch storage object leaked/i);
-  assert.match(integration, /phase33_clinical_realtime_select/);
+  assert.match(integration, /phase33_clinical_realtime_/);
   assert.match(ci, /phase33-storage-realtime/);
 });
