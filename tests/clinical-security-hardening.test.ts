@@ -9,6 +9,8 @@ const certificates = read("../src/routes/_authenticated/certificates.tsx");
 const pharmacy = read("../src/lib/pharmacy.ts");
 const migration = read("../db/roshan_phase31_clinical_financial_security_hardening.sql");
 const contractMigration = read("../db/roshan_phase31_contract_security_cutover.sql");
+const visitIndexMigration = read("../db/roshan_phase32_medical_certificate_visit_index.sql");
+const visitIndexAssertion = read("../db/tests/medical_certificate_visit_index_assertions.sql");
 const sqlAssertions = read("../db/tests/clinical_security_hardening_assertions.sql");
 const labOrderPage = read("../src/routes/_authenticated/lab_.$orderId.tsx");
 const labWorkflow = read("../src/lib/lab-workflow.ts");
@@ -132,4 +134,16 @@ test("catalog assertions are included in the repository and standard test comman
   assert.match(sqlAssertions, /current_app_user_id ignores deleted_at/);
   assert.match(sqlAssertions, /insurance claim unique index missing/);
   assert.match(pkg.scripts?.["test:guard"] ?? "", /clinical-security-hardening\.test\.ts/);
+});
+
+
+test("medical certificate visit foreign key has a valid supporting index", () => {
+  assert.match(
+    visitIndexMigration,
+    /CREATE INDEX IF NOT EXISTS medical_certificates_visit_id_idx\\s+ON public\\.medical_certificates \\(visit_id\\)/,
+  );
+  assert.match(
+    visitIndexAssertion,
+    /medical_certificates_visit_id_idx[\\s\\S]*indisvalid[\\s\\S]*indisready/,
+  );
 });
