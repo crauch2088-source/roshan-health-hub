@@ -6,3 +6,5 @@ CREATE TABLE IF NOT EXISTS realtime.messages(id uuid PRIMARY KEY DEFAULT gen_ran
 CREATE OR REPLACE FUNCTION realtime.topic() RETURNS text LANGUAGE sql STABLE AS $topic$ SELECT NULLIF(current_setting('realtime.topic',true),'') $topic$;
 CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $role$ SELECT COALESCE(NULLIF(current_setting('request.jwt.claim.role',true),''),current_user) $role$;
 GRANT USAGE ON SCHEMA storage,realtime TO authenticated; GRANT SELECT ON storage.buckets,storage.objects,realtime.messages TO authenticated;
+GRANT USAGE ON SCHEMA auth,storage,realtime TO service_role;
+GRANT ALL ON auth.users,storage.buckets,storage.objects,realtime.messages TO service_role;
