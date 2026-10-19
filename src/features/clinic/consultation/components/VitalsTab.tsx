@@ -161,7 +161,18 @@ export function VitalsTab({ visitId }: { visitId: string }) {
   return (
     <Card>
       <CardContent className="space-y-4 p-4">
-        {q.error ? <div role="alert" className="space-y-2"><ErrorBox error={q.error} /><Button variant="outline" size="sm" onClick={() => void q.refetch()}>{lang === "ar" ? "إعادة المحاولة" : "Retry vitals"}</Button></div> : null}
+        {q.error ? (
+          <div role="alert" className="space-y-2">
+            <ErrorBox error={q.error} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void q.refetch()}
+            >
+              {lang === "ar" ? "إعادة المحاولة" : "Retry vitals"}
+            </Button>
+          </div>
+        ) : null}
         {anyDanger ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm font-medium text-destructive">
             {lang === "ar"

@@ -55,7 +55,10 @@ function LabOrderPageInner() {
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
-  useEffect(() => { setValues({}); setComments({}); }, [orderId]);
+  useEffect(() => {
+    setValues({});
+    setComments({});
+  }, [orderId]);
 
   const orderQ = useRows<Row[]>(["lab-order", orderId], () =>
     supabase
@@ -194,7 +197,11 @@ function LabOrderPageInner() {
       itemParameters.filter((parameter) => {
         const value = values[s(item, "id") + ":" + s(parameter, "id")] ?? "";
         const range = rangeFor(s(parameter, "id"));
-        const saved = resultRows.find((row) => s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(parameter, "id"));
+        const saved = resultRows.find(
+          (row) =>
+            s(row, "order_item_id") === s(item, "id") &&
+            s(row, "parameter_id") === s(parameter, "id"),
+        );
         const mapped = mapLabResult(value, s(parameter, "data_type"), range, s(saved, "flag"));
         return mapped.kind === "numeric" && mapped.abnormal;
       }).length
@@ -413,8 +420,17 @@ function LabOrderPageInner() {
 
                           const range = rangeFor(s(p, "id"));
 
-                          const savedResult = resultRows.find((row) => s(row, "order_item_id") === s(item, "id") && s(row, "parameter_id") === s(p, "id"));
-                          const mapped = mapLabResult(value, s(p, "data_type"), range, s(savedResult, "flag"));
+                          const savedResult = resultRows.find(
+                            (row) =>
+                              s(row, "order_item_id") === s(item, "id") &&
+                              s(row, "parameter_id") === s(p, "id"),
+                          );
+                          const mapped = mapLabResult(
+                            value,
+                            s(p, "data_type"),
+                            range,
+                            s(savedResult, "flag"),
+                          );
                           const abnormal = mapped.kind === "numeric" && mapped.abnormal;
 
                           return (
@@ -443,7 +459,13 @@ function LabOrderPageInner() {
 
                                 {abnormal && (
                                   <div className="mt-1 text-xs font-medium text-destructive">
-                                    {mapped.kind === "numeric" && mapped.critical ? (lang === "ar" ? "قيمة حرجة" : "Critical") : (lang === "ar" ? "خارج المدى" : "Out of range")}
+                                    {mapped.kind === "numeric" && mapped.critical
+                                      ? lang === "ar"
+                                        ? "قيمة حرجة"
+                                        : "Critical"
+                                      : lang === "ar"
+                                        ? "خارج المدى"
+                                        : "Out of range"}
                                   </div>
                                 )}
                               </TableCell>
@@ -454,7 +476,7 @@ function LabOrderPageInner() {
 
                               <TableCell dir="ltr">
                                 {range
-                                  ? s(range, "text_reference") || `${mapped.kind === "numeric" ? mapped.lower ?? "—" : "—"} – ${mapped.kind === "numeric" ? mapped.upper ?? "—" : "—"}`
+                                  ? s(range, "text_reference") || `${mapped.kind === "numeric" ? (mapped.lower ?? "—") : "—"} – ${mapped.kind === "numeric" ? (mapped.upper ?? "—") : "—"}`
                                   : s(p, "reference_text") || "—"}
                               </TableCell>
 
