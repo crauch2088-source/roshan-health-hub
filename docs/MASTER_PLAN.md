@@ -1,3 +1,14 @@
+## Security Advisor triage — 2026-10-19 06:15 UTC
+
+- Completed read-only catalog triage of all 22 authenticated-callable SECURITY DEFINER functions. All 22 use an empty fixed `search_path`, are executable by `authenticated`, and are not executable by `anon`. The function bodies contain application permission and branch/actor-context checks, except `get_my_app_profile()`, which binds output to `auth.uid()`.
+- Identified three legacy overloads that remain non-executable by authenticated: invoice creation without request ID, lab-order creation without request ID, and medical certificate creation without linked visit ID. Do not re-grant them.
+- Decision: do not blindly revoke intended client RPCs. Added [`docs/SECURITY_DEFINER_ADVISOR_TRIAGE_2026-10-19.md`](SECURITY_DEFINER_ADVISOR_TRIAGE_2026-10-19.md) with per-function classifications, live grant evidence and requirements for any future privilege change.
+- Remaining advisor items: `pg_trgm` remains in `public` pending operator-class/index dependency analysis; leaked-password protection is plan-gated on the current tier. No paid upgrade or unsafe schema move was attempted.
+- The prior actionable performance warning for the certificate visit FK was fixed in Phase 32, applied live and covered by passing PostgreSQL 17 regression. Clinical E2E remains deferred at the user's direction.
+- Next work: inspect the actual live function bodies and their frontend call sites for any specific missing guard (rather than the generic advisor warning), and only then implement a narrow tested fix if evidence warrants one.
+
+---
+
 ## Latest execution update — Phase 32 performance remediation (2026-10-19 06:14 UTC)
 
 - Per user instruction, clinical end-to-end tests are deferred; no production clinical/financial records were created to simulate test workflows.
