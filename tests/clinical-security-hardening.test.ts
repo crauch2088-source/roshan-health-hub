@@ -138,10 +138,9 @@ test("catalog assertions are included in the repository and standard test comman
 
 
 test("medical certificate visit foreign key has a valid supporting index", () => {
-  assert.match(visitIndexMigration, /CREATE INDEX IF NOT EXISTS medical_certificates_visit_id_idx/);
-  assert.match(visitIndexMigration, /ON public\\.medical_certificates/);
-  assert.match(visitIndexMigration, /\\(visit_id\\)/);
-  assert.match(visitIndexAssertion, /medical_certificates_visit_id_idx/);
-  assert.match(visitIndexAssertion, /indisvalid/);
-  assert.match(visitIndexAssertion, /indisready/);
+  assert.ok(visitIndexMigration.includes("CREATE INDEX IF NOT EXISTS medical_certificates_visit_id_idx"));
+  assert.ok(visitIndexMigration.includes("ON public.medical_certificates (visit_id)"));
+  assert.ok(visitIndexAssertion.includes("medical_certificates_visit_id_idx"));
+  assert.ok(visitIndexAssertion.includes("indisvalid"));
+  assert.ok(visitIndexAssertion.includes("indisready"));
 });
