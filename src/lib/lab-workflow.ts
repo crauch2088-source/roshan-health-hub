@@ -95,7 +95,7 @@ export function mapLabResult(input: LabResultInput): LabResultMapping {
   return { kind: "text", value };
 }
 
-export interface LabReferenceRangeCandidate {
+export interface LabReferenceRangeCandidate extends Record<string, unknown> {
   parameter_id?: string | null;
   gender?: string | null;
   min_age?: number | string | null;
