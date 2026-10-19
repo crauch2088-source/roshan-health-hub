@@ -136,9 +136,10 @@ test("catalog assertions are included in the repository and standard test comman
   assert.match(pkg.scripts?.["test:guard"] ?? "", /clinical-security-hardening\.test\.ts/);
 });
 
-
 test("medical certificate visit foreign key has a valid supporting index", () => {
-  assert.ok(visitIndexMigration.includes("CREATE INDEX IF NOT EXISTS medical_certificates_visit_id_idx"));
+  assert.ok(
+    visitIndexMigration.includes("CREATE INDEX IF NOT EXISTS medical_certificates_visit_id_idx"),
+  );
   assert.ok(visitIndexMigration.includes("ON public.medical_certificates (visit_id)"));
   assert.ok(visitIndexAssertion.includes("medical_certificates_visit_id_idx"));
   assert.ok(visitIndexAssertion.includes("indisvalid"));
