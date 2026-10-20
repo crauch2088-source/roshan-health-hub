@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
@@ -25,6 +25,12 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     vitals: false,
     plan: false,
   });
+  useEffect(() => {
+    setTab("note");
+    setNoteDirty(false);
+    setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
+  }, [visitId]);
+
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
       const message =
@@ -113,9 +119,21 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
 
   if (!visit)
     return (
-      <div className="p-6">
+      <div className="space-y-3 p-6">
         {visitQ.isLoading ? (
           <Loading />
+        ) : visitQ.error ? (
+          <div role="alert" className="space-y-3 rounded-lg border border-destructive/40 p-4">
+            <p className="font-semibold">
+              {lang === "ar" ? "تعذر تحميل بيانات الزيارة" : "Could not load visit details"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {visitQ.error instanceof Error ? visitQ.error.message : String(visitQ.error)}
+            </p>
+            <Button variant="outline" onClick={() => void visitQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry"}
+            </Button>
+          </div>
         ) : lang === "ar" ? (
           "لم يتم العثور على الزيارة"
         ) : (
@@ -166,7 +184,14 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           {/* Billing — three honest states: loading, existing invoice (link to it,
            never create a second one), or none yet (offer to create one from
            the consultation fee already on the visit). */}
-          {invoiceQ.isLoading ? null : existingInvoice ? (
+          {invoiceQ.isLoading ? null : invoiceQ.error ? (
+            <div role="alert" className="flex items-center gap-2 text-xs text-destructive">
+              <span>{lang === "ar" ? "تعذر تحميل الفاتورة" : "Invoice could not be loaded"}</span>
+              <Button variant="outline" size="sm" onClick={() => void invoiceQ.refetch()}>
+                {lang === "ar" ? "إعادة المحاولة" : "Retry"}
+              </Button>
+            </div>
+          ) : existingInvoice ? (
             <Link
               to="/billing/$invoiceId"
               params={{ invoiceId: s(existingInvoice, "id") }}
@@ -329,6 +354,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         </div>
       </div>
       <section
+        key={visitId}
         id={`panel-${tab}`}
         role="tabpanel"
         aria-labelledby={`tab-${tab}`}
