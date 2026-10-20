@@ -682,7 +682,7 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Production inspection used one read-only SELECT against `pg_catalog` and `information_schema`; no DDL or DML was issued to Supabase.
 - PostgreSQL 17 CI replays the v112 canonical baseline and tracked migrations for production ledger entries 113 (Phase 34) and 114 (Phase 36), with disposable shims for Supabase-owned `storage` and `realtime` schemas.
 - Replay assertions cover the 56 public-table baseline, 210 public RLS policies after the seven Phase 34 restrictive policies, verification RPC signature/security, all five Phase 36 visit-link guard triggers, and authenticated clinical read grants.
-- The live manifest response was truncated by the connector output limit. This is not proof of complete object-by-object live catalog parity or persisted SQL byte equality; replay is a structural invariant gate. Exact live-vs-replay digest parity remains open until a compact canonical manifest can be captured without truncation.
+- The initial full-manifest response exceeded the connector output limit; Phase 38 superseded that limitation by computing the compact canonical SHA-256 manifest inside PostgreSQL and verifying all seven category fingerprints against the PostgreSQL 17 replay in PR #91. This establishes parity for the seven explicitly defined categories, not byte-for-byte equality of stored migration SQL.
 - Phase 37 adds automated RTL/LTR, accessibility, clinical Arabic wording, and permission-route source-contract tests. Authenticated browser acceptance and post-merge Vercel deployment checks remain separate release gates.
 
 
@@ -690,7 +690,7 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 
 - docs/live-catalog-fingerprint-v114.json stores seven counts and in-database SHA-256 digests captured from live project jewzonxplxhogqrnhosl at migration 114. The only live operation was a SELECT; no production DDL/DML occurred.
 - CI PostgreSQL 17 replay computes the same canonical rows and requires exact count + digest equality for all seven categories: columns, constraints, indexes, function security/signatures, non-internal triggers, RLS policies, and clinical/financial table privileges.
-- Exact 7/7 parity is conditional pending the CI comparator result. Do not merge or report parity if any category differs; resolve only in disposable baseline/fixtures and preserve the captured production fingerprint.
+- تم إثبات التطابق البنيوي الكامل 7/7 بنجاح عبر مطابقة بصمات SHA-256 في PR #91.
 - Multi-role source-contract tests and the five-minute owner browser checklist cover receptionist, doctor, laboratory, pharmacy, and billing workflow boundaries. Browser-level runtime checks remain manual because CI has no authenticated production test accounts.
 
-- First exact replay comparison found the v112 baseline export omitted `private.billing_rpc_idempotency` and the `authenticated SELECT` grant on `public.v_patient_receivables`. The baseline and replay assertions now restore these snapshot items without any production DDL; the exact 7/7 result remains pending the corrected CI run.
+- The first exact replay comparison identified two snapshot omissions (`private.billing_rpc_idempotency` and the `authenticated SELECT` grant on `public.v_patient_receivables`); the baseline and replay assertions were corrected, and PR #91 verified exact 7/7 SHA-256 parity. No production DDL was performed.
