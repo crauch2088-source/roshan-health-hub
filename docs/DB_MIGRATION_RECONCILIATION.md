@@ -702,3 +702,12 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - The forward delta tracks 22 source mappings above the frozen 93-entry archive and the verifier enforces `historical_snapshot_count + len(forward_migrations) == live_ledger_count` (93 + 22 = 115).
 - Repository normalized source hashes are validated independently. Supabase migration history does not expose persisted SQL bytes, so the source hash is not represented as an independently verified live SQL hash.
 - The v114 seven-category fingerprint remains the last captured catalog snapshot. Exact v115 live digests require an explicitly permitted read-only capture and must not be guessed.
+
+
+## Phase 40 — final release seal and live v115 fingerprint (2026-10-21)
+
+- One read-only SQL statement captured the current live catalog fingerprint and verified migration ledger count **115**, latest version `20261020232033`. No Supabase writes, migrations, or test fixtures were run against production.
+- The same query confirmed `public.permissions` contains `visits.delete` (the check records existence and code/name only).
+- `docs/live-catalog-fingerprint-v115.json` stores the seven in-database SHA-256 category fingerprints. Live results: tables/columns 844; constraints 214; indexes 239; function security 134; triggers 64; RLS policies 210; clinical/financial privileges 109. Only the trigger fingerprint changed from v114, as expected from the seven Phase 39 audit triggers.
+- PostgreSQL 17 CI replays baseline v112 followed by migrations 113, 114 and 115 in order, asserts Phase 39 contracts, then computes the canonical fingerprint and compares every count and SHA-256 against v115. Do not claim 7/7 replay parity unless the Phase 40 exact-head CI comparator passes.
+- Catalog parity is not a claim of live SQL byte parity: Supabase migration history exposes ledger version/name but not persisted migration SQL bytes.
