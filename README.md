@@ -1,3 +1,12 @@
+## Execution update — 2026-10-20: Phase 33 merged; atomic quota-safe workflow
+
+- Phase 33 PR #80 was conflict-resolved while retaining newer main clinical/lab safety fixes, then squash-merged as 20cb49f01b80eab481708f1a0236f9ed17645574.
+- The staged Storage/Realtime migration remains a candidate only; no production Supabase migration, Storage configuration, or clinical/financial records were changed.
+- Exact-head CI must be checked on the post-merge main commit before considering the phase release-ready. Vercel free-plan build-rate limits remain respected; no quota bypass or paid upgrade.
+- New operating rules are canonical in docs/MASTER_PLAN.md, AGENTS.md, and docs/PLUGIN_TOOLING_MAP.md. Documentation-only commits must skip frontend builds; one atomic commit per logical task and squash merges are required.
+
+---
+
 ## Execution update — 2026-10-18: clinical regression trigger hardening
 
 - Current main: `84c3d1fcef1c6213367e59103204d9c0403fc7d5`. Clinical PostgreSQL 17 regression passed on this SHA; overall check set was 17/18 successful at last read, with CodeQL JavaScript/TypeScript still running and no failures reported.
