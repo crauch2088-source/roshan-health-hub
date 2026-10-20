@@ -84,34 +84,45 @@ export function ClinicalAttachmentUploader({
     <section
       className="mt-2 space-y-2 rounded-md border p-3"
       aria-label={arabic ? "مرفقات سريرية" : "Clinical attachments"}
+      dir={arabic ? "rtl" : "ltr"}
+      aria-busy={busy}
     >
-      <label className="block text-sm font-medium">
+      <label htmlFor="clinical-attachment-file" className="block text-sm font-medium">
         {arabic ? "إرفاق تقرير PDF أو صورة" : "Attach PDF report or image"}
-        <input
-          className="mt-1 block w-full text-sm"
-          type="file"
-          accept="application/pdf,image/png,image/jpeg"
-          onChange={(event) => chooseFile(event.currentTarget.files?.[0] ?? null)}
-          disabled={busy}
-        />
       </label>
+      <input
+        id="clinical-attachment-file"
+        aria-label={arabic ? "اختيار ملف المرفق السريري" : "Choose clinical attachment file"}
+        className="mt-1 block w-full text-sm"
+        type="file"
+        dir="ltr"
+        accept="application/pdf,image/png,image/jpeg"
+        onChange={(event) => chooseFile(event.currentTarget.files?.[0] ?? null)}
+        disabled={busy}
+      />
       {file && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground" dir="ltr">
           {file.name} · {(file.size / 1024 / 1024).toFixed(2)} MB
         </p>
       )}
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" aria-live="assertive" className="text-sm text-destructive">
           {error}
         </p>
       )}
       {message && (
-        <p role="status" className="text-sm text-emerald-700">
+        <p role="status" aria-live="polite" className="text-sm text-emerald-700">
           {message}
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button type="button" size="sm" onClick={() => void upload()} disabled={!file || busy}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => void upload()}
+          disabled={!file || busy}
+          aria-busy={busy}
+        >
           {busy
             ? arabic
               ? "جارٍ الرفع..."
