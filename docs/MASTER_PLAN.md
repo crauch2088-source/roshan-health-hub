@@ -1728,3 +1728,10 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - `audit_logs` is append-only: authenticated/anon mutation privileges are revoked and row/truncate triggers reject UPDATE, DELETE and TRUNCATE.
 - Batched live diagnostic on 2026-10-20 found no existing Roshan Storage buckets or Storage-object policies, no tables in `supabase_realtime`, no `verified_by/verified_at` on `lab_orders` or `lab_order_items`, and an existing `audit_logs` table with RLS enabled/forced, a SELECT policy, and no UPDATE/DELETE grants. The migration ledger remains at the last previously recorded version until the release gate completes.
 - CI run `39386731088` failed in the role-guard job because the Phase 33 source-contract test expected `setValues({})` while the current screen restores saved result state via `setValues(v)` and `setComments(c)`. The assertion correction is included in this review bundle; no standalone fix commit was created.
+
+
+## Phase 34 production activation gate — 2026-10-20
+
+- The Supabase migration tool rejected Phase 34 with `must be owner of table objects`. A post-failure batched diagnostic confirmed the operation rolled back: migration ledger remains at v112, the three Phase 34 buckets/policies are absent, `verify_lab_order` is absent, and `lab_orders`/`lab_order_items` still lack `verified_by/verified_at`.
+- Phase 34 SQL is therefore **not applied to production**. Run `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql` as the owning database role in Supabase SQL Editor, as one script, after reviewing the exact merged file. Do not split the SQL into individual statements.
+- Frontend activation is deliberately gated by `VITE_ROSHAN_PHASE34_ENABLED=true`. It defaults off, so realtime subscriptions and the Verify action remain disabled until the SQL migration has succeeded. Only then set this Vercel environment variable and deploy when free build quota permits.

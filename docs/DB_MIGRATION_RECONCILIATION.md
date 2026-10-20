@@ -642,3 +642,10 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - One forward migration consolidates private clinical Storage buckets, strict four-segment branch/entity paths, branch-specific queue/lab/visit Realtime topics, `verify_lab_order(uuid)`, restrictive RLS guards against direct verification and post-verification result mutation, and append-only `audit_logs` protections.
 - Frontend helpers: `src/lib/storage-path.ts` (pure path/MIME/size validation), `src/lib/storage.ts` (upload + expiring signed URL), `src/lib/realtime.ts` (branch-topic subscriptions + quiet fallback), and `verifyLabOrder` in `src/lib/lab-workflow.ts`.
 - The Phase 33 CI source-contract failure on run 39386731088 is included in the same review bundle. No production DDL has been applied as part of preparation; apply only after exact-head CI passes.
+
+
+## Phase 34 production activation gate — 2026-10-20
+
+- The Supabase migration tool rejected Phase 34 with `must be owner of table objects`. A post-failure batched diagnostic confirmed the operation rolled back: migration ledger remains at v112, the three Phase 34 buckets/policies are absent, `verify_lab_order` is absent, and `lab_orders`/`lab_order_items` still lack `verified_by/verified_at`.
+- Phase 34 SQL is therefore **not applied to production**. Run `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql` as the owning database role in Supabase SQL Editor, as one script, after reviewing the exact merged file. Do not split the SQL into individual statements.
+- Frontend activation is deliberately gated by `VITE_ROSHAN_PHASE34_ENABLED=true`. It defaults off, so realtime subscriptions and the Verify action remain disabled until the SQL migration has succeeded. Only then set this Vercel environment variable and deploy when free build quota permits.

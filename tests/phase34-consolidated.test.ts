@@ -86,3 +86,9 @@ test("private storage helper signs short-lived URLs and never returns public URL
   assert.match(storage, /assertClinicalStoragePath/);
   assert.doesNotMatch(storage, /getPublicUrl/);
 });
+
+test("Phase 34 UI activation stays off until the live migration is applied", () => {
+  const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
+  assert.match(lab, /VITE_ROSHAN_PHASE34_ENABLED/);
+  assert.match(lab, /!phase34Enabled/);
+});

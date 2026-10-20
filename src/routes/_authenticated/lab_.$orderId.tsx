@@ -68,6 +68,7 @@ function LabOrderPageInner() {
   });
 
   const { t, lang } = useLang();
+  const phase34Enabled = import.meta.env.VITE_ROSHAN_PHASE34_ENABLED === "true";
   const { can, user } = useAuth();
 
   const [values, setValues] = useState<Record<string, string>>({});
@@ -95,7 +96,7 @@ function LabOrderPageInner() {
   const order = (orderQ.data ?? [])[0] as Row | undefined;
   const patient = rel(order, "patients");
   const items = (itemsQ.data ?? []) as Row[];
-  useBranchRealtime(s(order, "branch_id") || null, orderId);
+  useBranchRealtime(phase34Enabled ? s(order, "branch_id") || null : null, orderId);
 
   const testIds = items.map((i) => s(i, "test_id")).filter(Boolean);
 
@@ -560,10 +561,19 @@ function LabOrderPageInner() {
               </Button>
             )}
 
+            {!phase34Enabled && (
+              <p className="text-sm text-muted-foreground" role="status">
+                {lang === "ar"
+                  ? "اعتماد المختبر والتحديث اللحظي متوقفان حتى تطبيق ترحيل قاعدة البيانات Phase 34."
+                  : "Lab verification and realtime are disabled until the Phase 34 database migration is applied."}
+              </p>
+            )}
+
             {can("lab.verify") && (
               <Button
                 variant="secondary"
                 disabled={
+                  !phase34Enabled ||
                   verify.isPending ||
                   s(order, "status") === "verified" ||
                   items.length === 0 ||
