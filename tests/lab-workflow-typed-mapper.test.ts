@@ -1,55 +1,48 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { mapLabResult, preserveCriticalLabFlag } from "../src/lib/lab-workflow.ts";
 
-import { mapLabResult } from "../src/lib/lab-workflow.ts";
-
-test("blank is pending but numeric zero is a real result", () => {
-  assert.equal(mapLabResult(null, "numeric").kind, "empty");
-  const result = mapLabResult("0", "numeric", {
-    lower_limit: 0,
-    upper_limit: 10,
-  });
+test("blank is empty but numeric zero remains a real result", () => {
+  assert.equal(mapLabResult({ value: null, dataType: "numeric" }).kind, "empty");
+  const result = mapLabResult({ value: "0", dataType: "numeric", lower: 0, upper: 10 });
   assert.equal(result.kind, "numeric");
   if (result.kind === "numeric") {
-    assert.equal(result.numericValue, 0);
+    assert.equal(result.value, 0);
     assert.equal(result.abnormal, false);
   }
 });
 
-test("reference ranges set low flags without flagging inclusive bounds", () => {
-  const result = mapLabResult("3.2", "numeric", {
-    lower_limit: 4,
-    upper_limit: 10,
-  });
+test("reference bounds flag low values but accept inclusive bounds", () => {
+  const result = mapLabResult({ value: "3.2", dataType: "numeric", lower: 4, upper: 10 });
   assert.equal(result.kind, "numeric");
   if (result.kind === "numeric") {
     assert.equal(result.flag, "low");
     assert.equal(result.abnormal, true);
   }
-  assert.equal(mapLabResult("10", "numeric", { lower_limit: 4, upper_limit: 10 }).kind, "numeric");
+  assert.equal(mapLabResult({ value: "10", dataType: "numeric", lower: 4, upper: 10 }).kind, "numeric");
 });
 
-test("critical thresholds and persisted critical flags are retained", () => {
-  const result = mapLabResult("1", "numeric", {
-    lower_limit: 4,
-    critical_lower_limit: 2,
-  });
+test("critical thresholds and unchanged persisted critical flags are retained", () => {
+  const result = mapLabResult({ value: "1", dataType: "numeric", lower: 4, criticalLower: 2 });
   assert.equal(result.kind, "numeric");
   if (result.kind === "numeric") {
-    assert.equal(result.flag, "critical_low");
+    assert.equal(result.flag, "critical-low");
     assert.equal(result.critical, true);
   }
-  const saved = mapLabResult("5", "numeric", undefined, "critical_high");
+  const mapped = mapLabResult({ value: "5", dataType: "numeric", lower: 4, upper: 10 });
+  const saved = preserveCriticalLabFlag(mapped, "5", "5", "critical-high");
   assert.equal(saved.kind, "numeric");
   if (saved.kind === "numeric") assert.equal(saved.critical, true);
 });
 
-test("text and coded values are not coerced", () => {
-  assert.equal(mapLabResult("0", "text").numericValue, null);
-  assert.equal(mapLabResult("NEG", "coded").kind, "coded");
+test("text and coded values are not coerced to numbers", () => {
+  const text = mapLabResult({ value: "0", dataType: "text" });
+  assert.equal(text.kind, "text");
+  if (text.kind === "text") assert.equal(text.value, "0");
+  assert.equal(mapLabResult({ value: "NEG", dataType: "coded", code: "NEG" }).kind, "coded");
 });
 
-test("unknown legacy data types keep numeric strings compatible", () => {
-  assert.equal(mapLabResult("12.5", "legacy_custom_type").kind, "numeric");
-  assert.equal(mapLabResult("Detected", "legacy_custom_type").kind, "text");
+test("unknown legacy data types preserve numeric strings and nonnumeric text", () => {
+  assert.equal(mapLabResult({ value: "12.5", dataType: "legacy_custom_type" }).kind, "numeric");
+  assert.equal(mapLabResult({ value: "Detected", dataType: "legacy_custom_type" }).kind, "text");
 });

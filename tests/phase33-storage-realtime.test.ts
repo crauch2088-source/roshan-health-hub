@@ -43,7 +43,7 @@ test("typed mapper separates empty, numeric, text/coded and critical", () => {
   assert.match(mapper, /kind: "empty"/);
   assert.match(mapper, /kind: "numeric"/);
   assert.match(mapper, /kind: coded \? "coded" : "text"/);
-  assert.match(mapper, /critical_high/);
+  assert.match(mapper, /critical-high/);
   assert.match(lab, /mapLabResult\(value, s\(p, "data_type"\), range\)/);
   assert.doesNotMatch(lab, /isAbnormalLabResult/);
 });
