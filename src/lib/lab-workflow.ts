@@ -1,4 +1,11 @@
-export type LabResultFlag = "low" | "high" | "critical" | "critical-low" | "critical-high" | "normal" | null;
+export type LabResultFlag =
+  | "low"
+  | "high"
+  | "critical"
+  | "critical-low"
+  | "critical-high"
+  | "normal"
+  | null;
 
 export type LabResultMapping =
   | { kind: "empty" }
