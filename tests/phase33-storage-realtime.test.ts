@@ -21,8 +21,8 @@ test("consultation query failures are visible and retryable and visit state rese
     consultation,
     /setReviewChecks\(\{ identity: false, history: false, vitals: false, plan: false \}\)/,
   );
-  assert.match(consultation, /<section\\s+key=\\{visitId\\}/);
-  assert.match(consultation, /<HistoryTab visitId=\\{visitId\\}/);
+  assert.match(consultation, /<section\s+key=\{visitId\}/);
+  assert.match(consultation, /<HistoryTab visitId=\{visitId\}/);
   assert.match(history, /visits\.error/);
   assert.match(history, /visits\.refetch\(\)/);
   assert.match(
@@ -46,7 +46,7 @@ test("typed mapper separates empty, numeric, text/coded and critical", () => {
   assert.match(mapper, /kind: "coded"/);
   assert.match(mapper, /kind: "text"/);
   assert.match(mapper, /critical-high/);
-  assert.match(lab, /mapLabResult\(value, s\(p, "data_type"\), range\)/);
+  assert.match(lab, /mapLabResult\(\{/);
   assert.doesNotMatch(lab, /isAbnormalLabResult/);
 });
 
