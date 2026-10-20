@@ -35,12 +35,8 @@ import {
   verifyLabOrder,
 } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
-import {
-  buildClinicalStoragePath,
-  createClinicalSignedUrl,
-  uploadClinicalFile,
-} from "@/lib/storage";
 import { useBranchRealtime } from "@/lib/realtime";
+import { ClinicalAttachmentUploader } from "@/components/clinical-attachment-uploader";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
   for (const key of keys) {
@@ -51,13 +47,6 @@ function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | nul
   }
   return null;
 }
-
-const directClinicalStorageEnabled =
-  import.meta.env["VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED"] === "true";
-void directClinicalStorageEnabled;
-void buildClinicalStoragePath;
-void createClinicalSignedUrl;
-void uploadClinicalFile;
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
   head: () => ({
@@ -561,6 +550,18 @@ function LabOrderPageInner() {
                 </div>
               );
             })}
+          </div>
+
+          <div className="no-print">
+            {order && s(order, "branch_id") && can("lab.update") && (
+              <ClinicalAttachmentUploader
+                branchId={s(order, "branch_id")}
+                entityId={orderId}
+                bucket="roshan-lab-reports"
+                canUpload={can("lab.update")}
+                lang={lang === "ar" ? "ar" : "en"}
+              />
+            )}
           </div>
 
           <div className="no-print mt-5 flex flex-wrap gap-2">

@@ -34,19 +34,8 @@ import { s, useRows, useSave, type Row, rel } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
-import {
-  buildClinicalStoragePath,
-  createClinicalSignedUrl,
-  uploadClinicalFile,
-} from "@/lib/storage";
 import { useBranchRealtime } from "@/lib/realtime";
-
-const directClinicalStorageEnabled =
-  import.meta.env["VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED"] === "true";
-void directClinicalStorageEnabled;
-void buildClinicalStoragePath;
-void createClinicalSignedUrl;
-void uploadClinicalFile;
+import { ClinicalAttachmentUploader } from "@/components/clinical-attachment-uploader";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
   head: () => ({ meta: [{ title: "Medical Certificates — ROSHAN Medical Center" }] }),
@@ -217,6 +206,15 @@ function CertificatesPageInner() {
                           <Button size="sm" variant="ghost" onClick={() => window.print()}>
                             <Printer className="size-4" />
                           </Button>
+                          {can("certificates.create") && s(c, "branch_id") && (
+                            <ClinicalAttachmentUploader
+                              branchId={s(c, "branch_id")}
+                              entityId={s(c, "id")}
+                              bucket="roshan-medical-certificates"
+                              canUpload={can("certificates.create")}
+                              lang={lang === "ar" ? "ar" : "en"}
+                            />
+                          )}
                         </TableCell>
                       </TableRow>
                     );

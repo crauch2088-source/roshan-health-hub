@@ -74,6 +74,35 @@ jobs:
             -f db/roshan_phase18_dedupe_finance_audit_triggers.sql \
             -f db/tests/finance_audit_trigger_dedup_integration.sql
 
+  phase36-visit-guard-audit-behavior:
+    name: Phase 36 visit guards and audit deduplication (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Create isolated Phase 36 schema fixture
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase36_behavioral_fixture.sql
+      - name: Apply tracked Phase 36 migration and assert behavior
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql -f db/tests/phase36_behavioral_assertions.sql
+
   sql-patient-registration-atomicity:
     name: Atomic patient registration and MRN concurrency
     runs-on: ubuntu-latest
