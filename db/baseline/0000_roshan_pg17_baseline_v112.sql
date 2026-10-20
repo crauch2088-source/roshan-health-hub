@@ -3,12 +3,21 @@
 -- Disposable CI baseline only. Do NOT apply to production: this is a schema snapshot, not a production migration.
 -- Includes the 56 public tables, 213 table constraints, 163 non-constraint indexes, 126 public/private functions,
 -- 47 public triggers, 203 public RLS policies, table grants, and RLS activation.
+-- Phase 38 corrected two omissions from the v112 export: private.billing_rpc_idempotency and the v_patient_receivables SELECT grant.
 -- Platform compatibility shims below are intentionally minimal; Supabase platform schemas/services are not exported.
 BEGIN;
 SET LOCAL check_function_bodies = off;
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS private;
+CREATE TABLE IF NOT EXISTS private.billing_rpc_idempotency (
+  request_id uuid PRIMARY KEY,
+  operation text NOT NULL,
+  actor_id uuid NOT NULL,
+  request_payload jsonb NOT NULL,
+  result_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now()
+);
 DO $roles$ BEGIN
  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
@@ -7577,4 +7586,6 @@ DO $baseline_assertions$ BEGIN
  IF (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND NOT t.tgisinternal) <> 47 THEN RAISE EXCEPTION 'baseline trigger count mismatch'; END IF;
  IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='v') <> 5 THEN RAISE EXCEPTION 'baseline view count mismatch'; END IF;
 END $baseline_assertions$;
+GRANT SELECT ON TABLE public.v_patient_receivables TO authenticated;
+
 COMMIT;

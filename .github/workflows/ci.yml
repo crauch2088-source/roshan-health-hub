@@ -136,6 +136,12 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase37_replay_assertions.sql
+      - name: Compute replayed catalog SHA-256 manifest
+        env:
+          PGPASSWORD: postgres
+        run: psql -XAtq -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase38_catalog_fingerprint.sql > /tmp/roshan-catalog-fingerprint.json
+      - name: Require exact live-v114 versus replayed catalog match (7/7 SHA-256)
+        run: python3 tests/compare_catalog_fingerprint.py /tmp/roshan-catalog-fingerprint.json
 
   sql-patient-registration-atomicity:
     name: Atomic patient registration and MRN concurrency

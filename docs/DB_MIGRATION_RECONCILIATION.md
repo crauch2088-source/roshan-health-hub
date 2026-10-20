@@ -684,3 +684,13 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Replay assertions cover the 56 public-table baseline, 210 public RLS policies after the seven Phase 34 restrictive policies, verification RPC signature/security, all five Phase 36 visit-link guard triggers, and authenticated clinical read grants.
 - The live manifest response was truncated by the connector output limit. This is not proof of complete object-by-object live catalog parity or persisted SQL byte equality; replay is a structural invariant gate. Exact live-vs-replay digest parity remains open until a compact canonical manifest can be captured without truncation.
 - Phase 37 adds automated RTL/LTR, accessibility, clinical Arabic wording, and permission-route source-contract tests. Authenticated browser acceptance and post-merge Vercel deployment checks remain separate release gates.
+
+
+## Phase 38 — Compact live catalog fingerprint (2026-10-20)
+
+- docs/live-catalog-fingerprint-v114.json stores seven counts and in-database SHA-256 digests captured from live project jewzonxplxhogqrnhosl at migration 114. The only live operation was a SELECT; no production DDL/DML occurred.
+- CI PostgreSQL 17 replay computes the same canonical rows and requires exact count + digest equality for all seven categories: columns, constraints, indexes, function security/signatures, non-internal triggers, RLS policies, and clinical/financial table privileges.
+- Exact 7/7 parity is conditional pending the CI comparator result. Do not merge or report parity if any category differs; resolve only in disposable baseline/fixtures and preserve the captured production fingerprint.
+- Multi-role source-contract tests and the five-minute owner browser checklist cover receptionist, doctor, laboratory, pharmacy, and billing workflow boundaries. Browser-level runtime checks remain manual because CI has no authenticated production test accounts.
+
+- First exact replay comparison found the v112 baseline export omitted `private.billing_rpc_idempotency` and the `authenticated SELECT` grant on `public.v_patient_receivables`. The baseline and replay assertions now restore these snapshot items without any production DDL; the exact 7/7 result remains pending the corrected CI run.
