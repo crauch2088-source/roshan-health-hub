@@ -667,3 +667,11 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Source-parity metadata retains the frozen 93-entry historical snapshot plus 18 forward mappings. Repository normalized SQL SHA-256 is checked by CI; persisted live SQL is not exposed by the migration-history interface, so byte-for-byte live SQL parity is not asserted.
 - Frontend candidate adds branch-scoped pharmacy/billing Realtime invalidation and Storage helper imports behind the direct-upload opt-in flag. This candidate is not considered closed until exact-head CI passes and PR #88 is squash-merged.
 - Full historical replay remains unproven; authenticated clinical smoke testing remains unclaimed.
+
+
+
+## Phase 36 functional and behavioral closure candidate — 2026-10-20
+
+- Added a real, permission-gated clinical attachment uploader for lab orders and medical certificates. It validates PDF/PNG/JPEG MIME and bucket size, creates branch-scoped paths, uploads to private Storage, and creates a short-lived signed URL only after successful upload. Local printing remains available and direct upload remains opt-in.
+- Added an isolated PostgreSQL 17 CI job that creates disposable fixture tables, applies the exact tracked Phase 36 migration, and asserts immutable patient/visit links across all five guarded clinical tables, cancelled-visit write rejection, and exactly one audit row per INSERT/UPDATE/DELETE on each of the three Phase 36 audit-covered tables.
+- This closure is conditional on exact-head Standard CI and source parity passing. No production Supabase operations are required or performed by this change.

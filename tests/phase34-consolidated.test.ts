@@ -112,16 +112,35 @@ test("Phase 36 Realtime invalidates pharmacy and billing query keys", () => {
   assert.match(billing, /useBranchRealtime/);
 });
 
-test("Phase 36 lab and certificate screens preserve the opt-in private storage contract", () => {
+test("Phase 36 lab and certificate screens preserve private Storage upload and print fallback", () => {
   const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
   const certificates = read("../src/routes/_authenticated/certificates.tsx");
+  const uploader = read("../src/components/clinical-attachment-uploader.tsx");
   const storage = read("../src/lib/storage.ts");
-  for (const screen of [lab, certificates]) {
-    assert.match(screen, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED/);
-    assert.match(screen, /buildClinicalStoragePath/);
-    assert.match(screen, /createClinicalSignedUrl/);
-    assert.match(screen, /uploadClinicalFile/);
-  }
+  assert.match(lab, /ClinicalAttachmentUploader/);
+  assert.match(certificates, /ClinicalAttachmentUploader/);
+  assert.match(certificates, /window\.print\(\)/);
+  assert.match(uploader, /buildClinicalStoragePath/);
+  assert.match(uploader, /createClinicalSignedUrl/);
+  assert.match(uploader, /uploadClinicalFile/);
   assert.match(storage, /createSignedUrl/);
   assert.match(storage, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED/);
+});
+
+test("Phase 36 clinical attachment UI has guarded upload, validation, status and signed preview", () => {
+  const uploader = read("../src/components/clinical-attachment-uploader.tsx");
+  const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
+  const certificates = read("../src/routes/_authenticated/certificates.tsx");
+  assert.match(uploader, /type="file"/);
+  assert.match(uploader, /application\/pdf,image\/png,image\/jpeg/);
+  assert.match(uploader, /validateClinicalFileMetadata/);
+  assert.match(uploader, /uploadClinicalFile\(/);
+  assert.match(uploader, /createClinicalSignedUrl\(/);
+  assert.match(uploader, /role="alert"/);
+  assert.match(uploader, /role="status"/);
+  assert.match(uploader, /window\.open\(signedUrl/);
+  assert.match(uploader, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED/);
+  assert.match(lab, /ClinicalAttachmentUploader/);
+  assert.match(certificates, /ClinicalAttachmentUploader/);
+  assert.match(certificates, /window\.print\(\)/);
 });
