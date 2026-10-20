@@ -27,11 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import {
-  hasLabItemResultInput,
-  mapLabResult,
-  selectLabReferenceRange,
-} from "@/lib/lab-workflow";
+import { hasLabItemResultInput, mapLabResult, selectLabReferenceRange } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
