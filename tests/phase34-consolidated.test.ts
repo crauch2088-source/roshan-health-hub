@@ -99,3 +99,29 @@ test("Phase 34 lab verification and Realtime default on; direct Storage upload r
   assert.match(storage, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED.*!== "true"/);
   assert.match(storage, /Direct clinical file uploads are disabled/);
 });
+
+test("Phase 36 Realtime invalidates pharmacy and billing query keys", () => {
+  const realtime = read("../src/lib/realtime.ts");
+  const pharmacy = read("../src/routes/_authenticated/pharmacy.tsx");
+  const billing = read("../src/routes/_authenticated/billing.tsx");
+  assert.match(realtime, /subscribe\("pharmacy", "prescriptions"\)/);
+  assert.match(realtime, /subscribe\("billing", "invoices"\)/);
+  assert.match(realtime, /\["pharmacy-queue"\]/);
+  assert.match(realtime, /\["billing"\]/);
+  assert.match(pharmacy, /useBranchRealtime/);
+  assert.match(billing, /useBranchRealtime/);
+});
+
+test("Phase 36 lab and certificate screens preserve the opt-in private storage contract", () => {
+  const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
+  const certificates = read("../src/routes/_authenticated/certificates.tsx");
+  const storage = read("../src/lib/storage.ts");
+  for (const screen of [lab, certificates]) {
+    assert.match(screen, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED/);
+    assert.match(screen, /buildClinicalStoragePath/);
+    assert.match(screen, /createClinicalSignedUrl/);
+    assert.match(screen, /uploadClinicalFile/);
+  }
+  assert.match(storage, /createSignedUrl/);
+  assert.match(storage, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED/);
+});

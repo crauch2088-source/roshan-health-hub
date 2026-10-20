@@ -38,6 +38,7 @@ import { useLang } from "@/lib/i18n";
 import { formatDateTime, money } from "@/lib/medical";
 import { dispensePrescriptionFefo, type DispenseResultRow } from "@/lib/pharmacy";
 import { supabase } from "@/lib/supabase";
+import { useBranchRealtime } from "@/lib/realtime";
 
 export const Route = createFileRoute("/_authenticated/pharmacy")({
   head: () => ({
@@ -73,7 +74,7 @@ function PharmacyPageInner() {
   // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,
   // medicines and stock_movements already keys off pharmacy.create/update,
   // so the UI now checks the same codes instead of two dangling ones.
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
@@ -116,6 +117,8 @@ function PharmacyPageInner() {
       successMessage: t("dispensed"),
     },
   );
+
+  useBranchRealtime((user as Row | null)?.["branch_id"] as string | undefined);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();

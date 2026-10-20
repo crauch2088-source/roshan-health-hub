@@ -47,6 +47,7 @@ import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { validateInvoiceDraft } from "@/lib/invoice-validation";
 import { supabase } from "@/lib/supabase";
+import { useBranchRealtime } from "@/lib/realtime";
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
@@ -78,7 +79,8 @@ function BillingPage() {
 
 function BillingPageInner() {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  useBranchRealtime((user as Row | null)?.["branch_id"] as string | undefined);
   const { currency } = useSettings();
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());

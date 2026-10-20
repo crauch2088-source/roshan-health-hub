@@ -15,7 +15,9 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
     const timers = new Map<string, ReturnType<typeof setInterval>>();
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
-    const invalidate = (table: "queue_tickets" | "lab_orders" | "visits") => {
+    const invalidate = (
+      table: "queue_tickets" | "lab_orders" | "visits" | "prescriptions" | "invoices",
+    ) => {
       if (disposed) return;
       if (table === "queue_tickets") {
         void queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
@@ -27,6 +29,15 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
           void queryClient.invalidateQueries({ queryKey: ["lab-items", orderId] });
           void queryClient.invalidateQueries({ queryKey: ["lab-order-results", orderId] });
         }
+      } else if (table === "prescriptions") {
+        void queryClient.invalidateQueries({ queryKey: ["pharmacy-queue"] });
+        void queryClient.invalidateQueries({ queryKey: ["prescriptions"] });
+        void queryClient.invalidateQueries({ queryKey: ["invoices"] });
+        void queryClient.invalidateQueries({ queryKey: ["consultation-invoice"] });
+      } else if (table === "invoices") {
+        void queryClient.invalidateQueries({ queryKey: ["invoices"] });
+        void queryClient.invalidateQueries({ queryKey: ["consultation-invoice"] });
+        void queryClient.invalidateQueries({ queryKey: ["billing"] });
       } else {
         void queryClient.invalidateQueries({ queryKey: ["visits"] });
         void queryClient.invalidateQueries({ queryKey: ["visit"] });
@@ -38,8 +49,8 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
     };
 
     const subscribe = (
-      topic: "queue" | "lab" | "visits",
-      table: "queue_tickets" | "lab_orders" | "visits",
+      topic: "queue" | "lab" | "visits" | "pharmacy" | "billing",
+      table: "queue_tickets" | "lab_orders" | "visits" | "prescriptions" | "invoices",
     ) => {
       const key = topic + ":" + branchId;
       const fallback = () => {
@@ -79,6 +90,8 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
     subscribe("queue", "queue_tickets");
     subscribe("lab", "lab_orders");
     subscribe("visits", "visits");
+    subscribe("pharmacy", "prescriptions");
+    subscribe("billing", "invoices");
 
     return () => {
       disposed = true;
