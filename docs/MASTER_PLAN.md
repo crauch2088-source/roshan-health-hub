@@ -1678,15 +1678,20 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - [x] Live ledger reconciled to 112 migrations through `20261019061315_roshan_phase32_medical_certificate_visit_index`; forward-source parity tracks 19 entries above the frozen 93-entry snapshot.
 - [ ] Re-run GitHub Actions on this documentation/parity update and confirm the parity checker passes on the resulting commit. No Supabase writes or deployment required for this documentation-only change.
 
-## Phase 33 execution checkpoint — clinical error handling and lab reference safety (2026-10-19)
+## Phase 33 — clinical error handling and lab reference safety (closed, 2026-10-20)
 
-- [x] Recovered the corrected Phase 33 change into open PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) after PR #82 was closed with stale PR metadata. Current branch: `feat/phase33-clinical-ui-and-lab-mapper`; latest code head at checkpoint: `8c53a0d7b94031e9674e6b7acc07bb3ee201bb1b`.
-- [x] Read the failed earlier CI log for the typed lab-result mapper. It identified eight Prettier errors in `src/lib/lab-workflow.ts`; formatting was corrected on the PR branch.
-- [x] Added a pure selector for lab reference intervals that matches parameter, known patient gender and age, prefers the most specific compatible interval, and avoids falling back to a known-mismatched demographic range. Added regression tests for sex/age matching, no match, and general-range fallback. Updated the lab order UI to use it and removed the obsolete database helper import.
-- [x] Production Supabase was queried read-only for laboratory catalog readiness: **18 active lab parameters, 14 numeric parameters, 0 active rows in `lab_reference_ranges`, and 0 active parameter `reference_text` values**. No patient-level data was queried and no production data was changed.
-- [ ] **CI not yet verified on current head.** Manual workflow dispatch run [#1119](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/39281029482) targets the current head but remained queued at the latest check (2026-10-19 15:55 UTC). Do not merge until the current-head required checks complete successfully. The earlier CI failure belongs to an earlier commit; it is not evidence that the latest code passes or fails.
-- [ ] Reconcile branch against the latest main documentation commits and confirm all required checks against the exact final head; then squash-merge PR #83 and verify deployment identity. Do not manually promote a preview.
-- [ ] Run the isolated PostgreSQL 17 clinical acceptance and authenticated browser E2E. The existing CI SQL fixture is synthetic and rolls back; do not write clinical or financial test records to production.
-- [ ] Clinical release blocker: no lab reference ranges are configured. Do not invent thresholds. A clinician/lab lead must approve and populate ranges with units, age/sex applicability and provenance, followed by acceptance tests before relying on automated abnormal-result indicators.
-- [ ] Update the project health audit and reassess the overall completion estimate only after exact-head CI, merge/deployment identity and isolated clinical acceptance evidence are available.
+- [x] Recovered the corrected work into PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) and squash-merged it to `main`.
+- [x] Merge commit: `bf6870df6268b70a61772d1c93350098a55bde06`. PR head tested: `1a0756f087a5ff1bc4fe3d0f143bd70bb4122520`.
+- [x] Exact-head GitHub Actions all green: CI (typecheck, lint, production build, guard tests, isolated PostgreSQL 17 baseline/clinical acceptance), prescription atomicity, clinical child RPC-only writes, insurance claim integrity/UI validation, and privileged-role guard.
+- [x] Vercel preview for the tested PR head reached READY. The merged `main` production deployment also reached READY for the exact merge SHA and carries the canonical alias `roshan-health-hub.vercel.app`.
+- [x] Consultation visit-local state is reset when the active visit changes; visit-query failures and invoice-query failures have separate retry paths.
+- [x] Typed lab result mapping distinguishes empty/pending/numeric/text/coded results, supports numeric zero, and preserves a generic critical flag without assuming high/low direction.
+- [x] Reference-range selection now rejects known demographic mismatches and chooses the most specific compatible interval; regression tests cover age/sex matching and safe fallback.
+- [x] Production Supabase catalog audit was read-only: 18 active lab parameters (14 typed numeric), 0 active rows in `lab_reference_ranges`, and 0 active parameter `reference_text` values. No patient-level data was queried; no production business data or schema was changed.
+- [ ] **Clinical release blocker remains:** the lab reference-range catalog is empty. Do not invent intervals or critical thresholds. A clinician/lab lead must approve ranges, units, age/sex/method applicability, provenance, and escalation policy using `docs/LAB_REFERENCE_RANGE_APPROVAL_TEMPLATE.md`. Two qualitative-result candidates are currently typed numeric and need lab-lead review.
+- [ ] Authenticated production browser smoke tests and staff UAT remain outstanding. Passing isolated PostgreSQL 17 CI is not proof that every production UI route was manually exercised.
+- [ ] Follow-up code audit: verify that saving an existing lab result cannot silently discard an already recorded critical flag, while still recomputing normal/abnormal flags safely when the value changes. Add a focused regression before calling the lab workflow release-ready.
 
+## Immediate next action
+
+Continue with the focused lab-result persistence audit and regression tests, without writing clinical data to production. Keep clinical catalog approval and authenticated production UAT as explicit launch gates; then update this file and the health audit with exact commit/check/deployment evidence.
