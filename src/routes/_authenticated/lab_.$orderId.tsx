@@ -68,7 +68,7 @@ function LabOrderPageInner() {
   });
 
   const { t, lang } = useLang();
-  const phase34Enabled = import.meta.env.VITE_ROSHAN_PHASE34_ENABLED === "true";
+  const phase34Enabled = import.meta.env["VITE_ROSHAN_PHASE34_ENABLED"] === "true";
   const { can, user } = useAuth();
 
   const [values, setValues] = useState<Record<string, string>>({});
