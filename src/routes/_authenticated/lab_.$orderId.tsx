@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { hasLabItemResultInput, mapLabResult, selectLabReferenceRange } from "@/lib/lab-workflow";
+import { hasLabItemResultInput, mapLabResult, preserveCriticalLabFlag, selectLabReferenceRange } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
@@ -218,17 +218,26 @@ function LabOrderPageInner() {
 
           if (!value) continue;
 
-          const numeric = Number(value);
           const range = rangeFor(s(p, "id"));
+          const existing = ((actualResultsQ.data ?? []) as Row[]).find(
+            (r) =>
+              s(r, "order_item_id") === s(item, "id") &&
+              s(r, "parameter_id") === s(p, "id"),
+          );
 
           const lower = firstFiniteBound(range, "lower_limit", "min_value");
           const upper = firstFiniteBound(range, "upper_limit", "max_value");
-          const mapped = mapLabResult({
+          const mapped = preserveCriticalLabFlag(
+            mapLabResult({
+              value,
+              dataType: s(p, "data_type"),
+              lower,
+              upper,
+            }),
+            s(existing, "result_value"),
             value,
-            dataType: s(p, "data_type"),
-            lower,
-            upper,
-          });
+            s(existing, "flag"),
+          );
           const abnormal = mapped.kind === "numeric" && mapped.abnormal;
           const flag = mapped.kind === "numeric" ? mapped.flag : null;
 
@@ -242,10 +251,6 @@ function LabOrderPageInner() {
             comment: comments[key] || null,
             entered_by: user?.id ?? null,
           };
-
-          const existing = ((actualResultsQ.data ?? []) as Row[]).find(
-            (r) => s(r, "order_item_id") === s(item, "id") && s(r, "parameter_id") === s(p, "id"),
-          );
 
           const result = existing
             ? await supabase.from("lab_results").update(payload).eq("id", s(existing, "id"))
