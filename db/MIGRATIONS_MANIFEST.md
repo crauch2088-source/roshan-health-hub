@@ -37,16 +37,10 @@ Last verified against production catalog: **2026-10-19**, PostgreSQL **17.6**, m
 - This migration is staged in PR #80 only; do not apply it to the live Supabase project as part of this task.
 
 
-## Phase 34 consolidated Storage/Realtime/lab verification/audit candidate — 2026-10-20
+## Phase 34 production closure and Phase 35 frontend wiring — 2026-10-20
 
-- Forward migration: `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql`.
-- Supersedes the historical Phase 33 Storage/Realtime candidate for clean-room CI; the CI job replays the canonical v112 application baseline, platform stand-ins, then this single consolidated migration and its isolated assertions.
-- Covers private PDF/PNG/JPEG buckets, branch/entity-scoped object paths, branch-private Realtime topics for `queue_tickets`, `lab_orders`, and `visits`, atomic `verify_lab_order(uuid)`, immutable verified results, and append-only audit logs.
-- Production application status: **candidate only until exact-head CI is 100% green**. Baseline remains v112 until a new production migration is actually applied and verified. No business data is exported or used in CI.
-
-
-## Phase 34 production activation gate — 2026-10-20
-
-- The Supabase migration tool rejected Phase 34 with `must be owner of table objects`. A post-failure batched diagnostic confirmed the operation rolled back: migration ledger remains at v112, the three Phase 34 buckets/policies are absent, `verify_lab_order` is absent, and `lab_orders`/`lab_order_items` still lack `verified_by/verified_at`.
-- Phase 34 SQL is therefore **not applied to production**. Run `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql` as the owning database role in Supabase SQL Editor, as one script, after reviewing the exact merged file. Do not split the SQL into individual statements.
-- Frontend activation is deliberately gated by `VITE_ROSHAN_PHASE34_ENABLED=true`. It defaults off, so realtime subscriptions and the Verify action remain disabled until the SQL migration has succeeded. Only then set this Vercel environment variable and deploy when free build quota permits.
+- Live Supabase ledger: **113 migrations**, latest `20261020090350_roshan_phase34_storage_guard_lab_verify_realtime`.
+- The consolidated SQL uses guarded Storage and Realtime policy DDL and does not attempt to change ownership-controlled `storage.objects` RLS.
+- Read-only live verification confirmed the three private clinical buckets, `public.verify_lab_order(uuid)`, lab verification columns, audit mutation triggers, and publication membership for `queue_tickets`, `lab_orders`, and `visits`.
+- Phase 35 wires branch-scoped Realtime invalidation into consultation, queue, lab list/detail, and certificate screens. Server lab verification and Realtime default on unless `VITE_ROSHAN_PHASE34_ENABLED=false`; direct browser Storage upload remains opt-in via `VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED=true`.
+- No production business data was used. Historical snapshot remains 93 mappings; forward-source delta now tracks 17 migrations through version `20261020090350`.

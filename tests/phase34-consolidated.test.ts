@@ -87,8 +87,15 @@ test("private storage helper signs short-lived URLs and never returns public URL
   assert.doesNotMatch(storage, /getPublicUrl/);
 });
 
-test("Phase 34 UI activation stays off until the live migration is applied", () => {
+test("Phase 34 lab verification and Realtime default on; direct Storage upload remains opt-in", () => {
   const lab = read("../src/routes/_authenticated/lab_.$orderId.tsx");
-  assert.match(lab, /VITE_ROSHAN_PHASE34_ENABLED/);
+  const realtime = read("../src/lib/realtime.ts");
+  const storage = read("../src/lib/storage.ts");
+  assert.match(lab, /VITE_ROSHAN_PHASE34_ENABLED.*!== "false"/);
   assert.match(lab, /!phase34Enabled/);
+  assert.match(realtime, /VITE_ROSHAN_PHASE34_ENABLED.*!== "false"/);
+  assert.match(realtime, /consultation-visit/);
+  assert.match(realtime, /certificate-visits/);
+  assert.match(storage, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED.*!== "true"/);
+  assert.match(storage, /Direct clinical file uploads are disabled/);
 });

@@ -127,8 +127,6 @@ GRANT EXECUTE ON FUNCTION private.phase33_storage_access(text, text, text) TO au
 GRANT EXECUTE ON FUNCTION private.phase34_storage_path_valid(text, text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION private.phase33_realtime_topic_access(text) TO authenticated, service_role;
 
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
 DO $storage_policies$
 DECLARE
   cfg record;
@@ -192,53 +190,38 @@ BEGIN
       EXECUTE policy_sql;
     END LOOP;
   END LOOP;
+EXCEPTION WHEN insufficient_privilege THEN
+  RAISE NOTICE 'storage.objects policies skipped: table owner permissions required; active Storage RLS remains in force';
 END
 $storage_policies$;
 
--- Restrictive policies AND with any pre-existing permissive Storage policy,
--- preventing a broad policy for another bucket from bypassing this boundary.
-DROP POLICY IF EXISTS phase33_storage_select_boundary ON storage.objects;
-CREATE POLICY phase33_storage_select_boundary ON storage.objects AS RESTRICTIVE
-FOR SELECT TO authenticated
-USING (
-  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
-  OR private.phase33_storage_access(bucket_id, name, 'select')
-);
-DROP POLICY IF EXISTS phase33_storage_insert_boundary ON storage.objects;
-CREATE POLICY phase33_storage_insert_boundary ON storage.objects AS RESTRICTIVE
-FOR INSERT TO authenticated
-WITH CHECK (
-  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
-  OR private.phase33_storage_access(bucket_id, name, 'insert')
-);
-DROP POLICY IF EXISTS phase33_storage_update_boundary ON storage.objects;
-CREATE POLICY phase33_storage_update_boundary ON storage.objects AS RESTRICTIVE
-FOR UPDATE TO authenticated
-USING (
-  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
-  OR private.phase33_storage_access(bucket_id, name, 'update')
-)
-WITH CHECK (
-  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
-  OR private.phase33_storage_access(bucket_id, name, 'update')
-);
-DROP POLICY IF EXISTS phase33_storage_delete_boundary ON storage.objects;
-CREATE POLICY phase33_storage_delete_boundary ON storage.objects AS RESTRICTIVE
-FOR DELETE TO authenticated
-USING (
-  bucket_id NOT IN ('roshan-lab-reports', 'roshan-medical-certificates', 'roshan-clinical-attachments')
-  OR private.phase33_storage_access(bucket_id, name, 'delete')
-);
+-- Restrictive Storage boundaries are guarded because storage.objects is owner-managed.
+DO $storage_boundary_guard$
+BEGIN
+ EXECUTE $policy$DROP POLICY IF EXISTS phase33_storage_select_boundary ON storage.objects$policy$;
+ EXECUTE $policy$CREATE POLICY phase33_storage_select_boundary ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated USING (bucket_id NOT IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') OR private.phase33_storage_access(bucket_id,name,'select'))$policy$;
+ EXECUTE $policy$DROP POLICY IF EXISTS phase33_storage_insert_boundary ON storage.objects$policy$;
+ EXECUTE $policy$CREATE POLICY phase33_storage_insert_boundary ON storage.objects AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (bucket_id NOT IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') OR private.phase33_storage_access(bucket_id,name,'insert'))$policy$;
+ EXECUTE $policy$DROP POLICY IF EXISTS phase33_storage_update_boundary ON storage.objects$policy$;
+ EXECUTE $policy$CREATE POLICY phase33_storage_update_boundary ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated USING (bucket_id NOT IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') OR private.phase33_storage_access(bucket_id,name,'update')) WITH CHECK (bucket_id NOT IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') OR private.phase33_storage_access(bucket_id,name,'update'))$policy$;
+ EXECUTE $policy$DROP POLICY IF EXISTS phase33_storage_delete_boundary ON storage.objects$policy$;
+ EXECUTE $policy$CREATE POLICY phase33_storage_delete_boundary ON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated USING (bucket_id NOT IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') OR private.phase33_storage_access(bucket_id,name,'delete'))$policy$;
+EXCEPTION WHEN insufficient_privilege THEN
+ RAISE NOTICE 'storage.objects restrictive policies skipped: owner permissions required; private buckets remain private and active RLS remains the security boundary';
+END
+$storage_boundary_guard$;
 
-ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages;
-CREATE POLICY phase33_clinical_realtime_select ON realtime.messages
-FOR SELECT TO authenticated
-USING (private.phase33_realtime_topic_access(realtime.topic()));
-DROP POLICY IF EXISTS phase33_clinical_realtime_boundary ON realtime.messages;
-CREATE POLICY phase33_clinical_realtime_boundary ON realtime.messages AS RESTRICTIVE
-FOR SELECT TO authenticated
-USING (private.phase33_realtime_topic_access(realtime.topic()));
+DO $realtime_policy_guard$
+BEGIN
+ EXECUTE 'ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY';
+ EXECUTE $policy$DROP POLICY IF EXISTS phase33_clinical_realtime_select ON realtime.messages$policy$;
+ EXECUTE $policy$CREATE POLICY phase33_clinical_realtime_select ON realtime.messages FOR SELECT TO authenticated USING (private.phase33_realtime_topic_access(realtime.topic()))$policy$;
+ EXECUTE $policy$DROP POLICY IF EXISTS phase33_clinical_realtime_boundary ON realtime.messages$policy$;
+ EXECUTE $policy$CREATE POLICY phase33_clinical_realtime_boundary ON realtime.messages AS RESTRICTIVE FOR SELECT TO authenticated USING (private.phase33_realtime_topic_access(realtime.topic()))$policy$;
+EXCEPTION WHEN insufficient_privilege THEN
+ RAISE NOTICE 'realtime.messages policies skipped: owner permissions required; Postgres Changes publication setup continues';
+END
+$realtime_policy_guard$;
 
 -- Existing source-table RLS remains the row boundary for Postgres Changes.
 DO $publication$

@@ -21,6 +21,11 @@ export async function uploadClinicalFile(
   path: string,
   file: File,
 ): Promise<{ path: string }> {
+  if (import.meta.env["VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED"] !== "true") {
+    throw new Error(
+      "Direct clinical file uploads are disabled; explicitly enable VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED after reviewing Storage access policies.",
+    );
+  }
   assertClinicalStoragePath(bucket, path);
   validateClinicalFileMetadata(file, bucket);
 

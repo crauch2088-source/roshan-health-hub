@@ -23,6 +23,9 @@ SELECT count(*) INTO n FROM pg_catalog.pg_policies WHERE (schemaname='storage' A
 IF n<>18 THEN RAISE EXCEPTION 'expected 18 Phase 33 policies, got %',n; END IF;
 IF EXISTS(SELECT 1 FROM storage.buckets WHERE id IN ('roshan-lab-reports','roshan-medical-certificates','roshan-clinical-attachments') AND public IS DISTINCT FROM false) THEN RAISE EXCEPTION 'clinical bucket unexpectedly public'; END IF;
 IF has_table_privilege('authenticated','public.audit_logs','UPDATE') OR has_table_privilege('authenticated','public.audit_logs','DELETE') OR has_table_privilege('authenticated','public.audit_logs','TRUNCATE') OR has_table_privilege('anon','public.audit_logs','UPDATE') OR has_table_privilege('anon','public.audit_logs','DELETE') OR has_table_privilege('anon','public.audit_logs','TRUNCATE') THEN RAISE EXCEPTION 'anon/authenticated retains audit mutation privileges'; END IF;
+IF to_regprocedure('public.verify_lab_order(uuid)') IS NULL THEN RAISE EXCEPTION 'verify_lab_order(uuid) is missing'; END IF;
+IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='lab_orders' AND column_name='verified_by') OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='lab_orders' AND column_name='verified_at') THEN RAISE EXCEPTION 'lab_orders verification audit columns are missing'; END IF;
+IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='lab_order_items' AND column_name='verified_by') OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='lab_order_items' AND column_name='verified_at') THEN RAISE EXCEPTION 'lab_order_items verification audit columns are missing'; END IF;
 END $catalog$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003341',true);
