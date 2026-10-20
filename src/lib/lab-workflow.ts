@@ -221,3 +221,13 @@ export function hasLabItemResultInput(
     (parameterId) => (values[itemId + ":" + parameterId] ?? "").trim().length > 0,
   );
 }
+
+/** Invoke the server-side atomic lab verification RPC; never write verified status from the browser. */
+export async function verifyLabOrder(
+  orderId: string,
+  rpc: (args: { p_order_id: string }) => PromiseLike<{ error: { message: string } | null }>,
+): Promise<void> {
+  if (!orderId.trim()) throw new Error("Lab order ID is required for verification.");
+  const { error } = await rpc({ p_order_id: orderId });
+  if (error) throw new Error(error.message || "Lab order verification failed.");
+}

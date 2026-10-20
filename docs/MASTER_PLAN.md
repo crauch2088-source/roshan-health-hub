@@ -1717,3 +1717,21 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 ## Immediate next action
 
 Prioritize lab-lead approval of the catalog and an authenticated production smoke-test session for critical routes. Keep all production clinical/financial writes out of verification; use isolated synthetic PostgreSQL/browser fixtures. Continue only with code-only safety and UX work that does not require inventing clinical policy.
+
+
+## Phase 34 consolidated Storage, Realtime, lab verification and audit hardening — 2026-10-20
+
+- Consolidated candidate: `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql`. It supersedes the historical Phase 33 candidate and is not applied to production until the exact review head passes CI and the release gate is approved.
+- Storage buckets remain private; only PDF/PNG/JPEG are allowed. File paths are branch/entity scoped, validated against bucket entity type, and served with short-lived signed URLs.
+- Realtime covers queue tickets, lab orders and visits using separate branch topics and active/non-deleted branch membership checks. The frontend invalidates targeted TanStack Query keys and falls back to quiet 45-second refreshes when a channel is unavailable.
+- `verify_lab_order(uuid)` is SECURITY DEFINER with an empty search path; it validates `lab.verify`, active user, branch, order state, completed items and required active parameter results, then marks order/items/results verified atomically. Restrictive RLS policies prevent direct REST verification and post-verification result changes.
+- `audit_logs` is append-only: authenticated/anon mutation privileges are revoked and row/truncate triggers reject UPDATE, DELETE and TRUNCATE.
+- Batched live diagnostic on 2026-10-20 found no existing Roshan Storage buckets or Storage-object policies, no tables in `supabase_realtime`, no `verified_by/verified_at` on `lab_orders` or `lab_order_items`, and an existing `audit_logs` table with RLS enabled/forced, a SELECT policy, and no UPDATE/DELETE grants. The migration ledger remains at the last previously recorded version until the release gate completes.
+- CI run `39386731088` failed in the role-guard job because the Phase 33 source-contract test expected `setValues({})` while the current screen restores saved result state via `setValues(v)` and `setComments(c)`. The assertion correction is included in this review bundle; no standalone fix commit was created.
+
+
+## Phase 34 production activation gate — 2026-10-20
+
+- The Supabase migration tool rejected Phase 34 with `must be owner of table objects`. A post-failure batched diagnostic confirmed the operation rolled back: migration ledger remains at v112, the three Phase 34 buckets/policies are absent, `verify_lab_order` is absent, and `lab_orders`/`lab_order_items` still lack `verified_by/verified_at`.
+- Phase 34 SQL is therefore **not applied to production**. Run `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql` as the owning database role in Supabase SQL Editor, as one script, after reviewing the exact merged file. Do not split the SQL into individual statements.
+- Frontend activation is deliberately gated by `VITE_ROSHAN_PHASE34_ENABLED=true`. It defaults off, so realtime subscriptions and the Verify action remain disabled until the SQL migration has succeeded. Only then set this Vercel environment variable and deploy when free build quota permits.

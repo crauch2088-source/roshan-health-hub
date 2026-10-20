@@ -19,7 +19,10 @@ test("reference bounds flag low values but accept inclusive bounds", () => {
     assert.equal(result.flag, "low");
     assert.equal(result.abnormal, true);
   }
-  assert.equal(mapLabResult({ value: "10", dataType: "numeric", lower: 4, upper: 10 }).kind, "numeric");
+  assert.equal(
+    mapLabResult({ value: "10", dataType: "numeric", lower: 4, upper: 10 }).kind,
+    "numeric",
+  );
 });
 
 test("critical thresholds and unchanged persisted critical flags are retained", () => {
