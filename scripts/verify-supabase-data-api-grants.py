@@ -15,7 +15,6 @@ def main():
         sql = path.read_text(encoding='utf-8')
         for table in CREATE.findall(sql):
             checked += 1
-            # Require grants naming the created table and each intended API role.
             for role in ('authenticated', 'service_role'):
                 found = False
                 for grant in re.finditer(r'\bgrant\s+([^;]+?)\s+on\s+(?:table\s+)?([^;]+?)\s+to\s+([^;]+);', sql, re.I | re.S):
