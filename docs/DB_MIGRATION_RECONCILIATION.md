@@ -635,3 +635,10 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Contract applied through official `apply_migration`; live ledger registration: version `20261018201758`, name `roshan_phase31_contract_security_cutover`. Final read-back: 111 ledger rows; latest version `20261018201758`; `medical_certificates.visit_id` is NOT NULL; `authenticated` has no EXECUTE on legacy `fn_dispense_prescription(uuid)`; all six requested table privileges (INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER) are false for `authenticated` on both `lab_order_items` and `medical_certificates`.
 - Limitation: unauthenticated HTTP scrape of the production alias returned the Arabic loading placeholder and application metadata; no authenticated end-to-end login/workflow smoke test was possible through the available tool context. Do not record authenticated smoke tests as passed. CI evidence from the PR was 24/24 checks on the reviewed head; the post-merge combined status should be checked separately if needed.
 - Historical full replay and persisted SQL hash parity remain unproven; this closure records live catalog/ledger evidence, not proof of complete historical replay.
+
+
+## Phase 34 consolidated candidate — 2026-10-20
+
+- One forward migration consolidates private clinical Storage buckets, strict four-segment branch/entity paths, branch-specific queue/lab/visit Realtime topics, `verify_lab_order(uuid)`, restrictive RLS guards against direct verification and post-verification result mutation, and append-only `audit_logs` protections.
+- Frontend helpers: `src/lib/storage-path.ts` (pure path/MIME/size validation), `src/lib/storage.ts` (upload + expiring signed URL), `src/lib/realtime.ts` (branch-topic subscriptions + quiet fallback), and `verifyLabOrder` in `src/lib/lab-workflow.ts`.
+- The Phase 33 CI source-contract failure on run 39386731088 is included in the same review bundle. No production DDL has been applied as part of preparation; apply only after exact-head CI passes.

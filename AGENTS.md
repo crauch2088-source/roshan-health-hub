@@ -22,3 +22,10 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+
+## Phase 34 release gate
+
+- Keep all Phase 34 SQL, TypeScript, tests, and docs in one atomic tree commit on `feat/phase34-consolidated-realtime-storage-lab-verify`.
+- Do not apply the candidate to production unless the exact PR head passes all GitHub Actions checks. Keep behavior tests isolated on disposable PostgreSQL 17; no production test data.
+- Never use direct table writes to mark lab orders verified. Use `verify_lab_order(uuid)` only. Preserve the append-only audit contract.

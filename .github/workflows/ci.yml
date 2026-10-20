@@ -492,5 +492,5 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
             -f db/tests/phase33_storage_realtime_fixture.sql \
-            -f db/roshan_phase33_storage_and_realtime.sql \
+            -f db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql \
             -f db/tests/phase33_storage_realtime_assertions.sql

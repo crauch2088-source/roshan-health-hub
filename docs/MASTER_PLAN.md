@@ -1717,3 +1717,14 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 ## Immediate next action
 
 Prioritize lab-lead approval of the catalog and an authenticated production smoke-test session for critical routes. Keep all production clinical/financial writes out of verification; use isolated synthetic PostgreSQL/browser fixtures. Continue only with code-only safety and UX work that does not require inventing clinical policy.
+
+
+## Phase 34 consolidated Storage, Realtime, lab verification and audit hardening — 2026-10-20
+
+- Consolidated candidate: `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql`. It supersedes the historical Phase 33 candidate and is not applied to production until the exact review head passes CI and the release gate is approved.
+- Storage buckets remain private; only PDF/PNG/JPEG are allowed. File paths are branch/entity scoped, validated against bucket entity type, and served with short-lived signed URLs.
+- Realtime covers queue tickets, lab orders and visits using separate branch topics and active/non-deleted branch membership checks. The frontend invalidates targeted TanStack Query keys and falls back to quiet 45-second refreshes when a channel is unavailable.
+- `verify_lab_order(uuid)` is SECURITY DEFINER with an empty search path; it validates `lab.verify`, active user, branch, order state, completed items and required active parameter results, then marks order/items/results verified atomically. Restrictive RLS policies prevent direct REST verification and post-verification result changes.
+- `audit_logs` is append-only: authenticated/anon mutation privileges are revoked and row/truncate triggers reject UPDATE, DELETE and TRUNCATE.
+- Batched live diagnostic on 2026-10-20 found no existing Roshan Storage buckets or Storage-object policies, no tables in `supabase_realtime`, no `verified_by/verified_at` on `lab_orders` or `lab_order_items`, and an existing `audit_logs` table with RLS enabled/forced, a SELECT policy, and no UPDATE/DELETE grants. The migration ledger remains at the last previously recorded version until the release gate completes.
+- CI run `39386731088` failed in the role-guard job because the Phase 33 source-contract test expected `setValues({})` while the current screen restores saved result state via `setValues(v)` and `setComments(c)`. The assertion correction is included in this review bundle; no standalone fix commit was created.
