@@ -225,8 +225,7 @@ function LabOrderPageInner() {
 
           const range = rangeFor(s(p, "id"));
           const existing = ((actualResultsQ.data ?? []) as Row[]).find(
-            (r) => s(r, "order_item_id") === s(item, "id") &&
-              s(r, "parameter_id") === s(p, "id"),
+            (r) => s(r, "order_item_id") === s(item, "id") && s(r, "parameter_id") === s(p, "id"),
           );
 
           const lower = firstFiniteBound(range, "lower_limit", "min_value");
