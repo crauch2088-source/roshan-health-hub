@@ -45,6 +45,30 @@ function normalizedFlag(flag: string | null | undefined): LabResultFlag {
 }
 
 /** Map legacy string-backed rows without ever coercing an empty value to zero. */
+/**
+ * Keep a persisted critical classification when the same result value is saved again.
+ * A changed value must be reclassified rather than inheriting a stale critical flag.
+ */
+export function preserveCriticalLabFlag(
+  mapped: LabResultMapping,
+  previousValue: string | null | undefined,
+  currentValue: string,
+  previousFlag: string | null | undefined,
+): LabResultMapping {
+  if (mapped.kind !== "numeric") return mapped;
+
+  const priorFlag = normalizedFlag(previousFlag);
+  const unchanged = (previousValue ?? "").trim() === currentValue.trim();
+  if (!unchanged || !priorFlag?.startsWith("critical")) return mapped;
+
+  return {
+    ...mapped,
+    abnormal: true,
+    critical: true,
+    flag: priorFlag,
+  };
+}
+
 export function mapLabResult(input: LabResultInput): LabResultMapping {
   if ((input.status ?? "").trim().toLowerCase() === "pending") return { kind: "pending" };
   const raw = input.value;

@@ -9,6 +9,7 @@ import {
   labWorkflowStage,
   mapLabResult,
   selectLabReferenceRange,
+  preserveCriticalLabFlag,
 } from "../src/lib/lab-workflow.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -221,4 +222,30 @@ test("lab reference range selection never falls back to a mismatched age or sex 
   assert.equal(selectLabReferenceRange(ranges, "p1", null, undefined), ranges[2]);
   assert.equal(selectLabReferenceRange(ranges, "missing", "male", 30), undefined);
   assert.equal(selectLabReferenceRange(ranges, "p2", null, undefined), ranges[3]);
+});
+
+test("resaving an unchanged critical lab result preserves its critical flag", async () => {
+  const mapped = mapLabResult({
+    value: "4.2",
+    dataType: "numeric",
+    lower: 3.5,
+    upper: 5.5,
+  });
+  assert.equal(mapped.kind, "numeric");
+  if (mapped.kind !== "numeric") return;
+
+  const unchanged = preserveCriticalLabFlag(mapped, "4.2", "4.2", "critical-high");
+  assert.equal(unchanged.kind, "numeric");
+  if (unchanged.kind === "numeric") {
+    assert.equal(unchanged.critical, true);
+    assert.equal(unchanged.abnormal, true);
+    assert.equal(unchanged.flag, "critical-high");
+  }
+
+  const changed = preserveCriticalLabFlag(mapped, "4.1", "4.2", "critical-high");
+  assert.equal(changed.kind, "numeric");
+  if (changed.kind === "numeric") {
+    assert.equal(changed.critical, false);
+    assert.equal(changed.flag, null);
+  }
 });
