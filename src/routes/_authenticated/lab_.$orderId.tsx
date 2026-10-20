@@ -159,6 +159,13 @@ function LabOrderPageInner() {
     return selectLabReferenceRange(ranges, parameterId, s(patient, "gender"), age);
   }
 
+  const unconfiguredNumericReferenceCount = parameters.filter((parameter) => {
+    const dataType = s(parameter, "data_type").trim().toLowerCase();
+    if (dataType !== "numeric" && dataType !== "number") return false;
+    if (s(parameter, "reference_text").trim()) return false;
+    return !rangeFor(s(parameter, "id"));
+  }).length;
+
   const resultRows = (actualResultsQ.data ?? []) as Row[];
   const hasUnsavedResultEdits = items.some((item) =>
     parameters
@@ -361,6 +368,25 @@ function LabOrderPageInner() {
           orderQ.error ?? itemsQ.error ?? actualResultsQ.error ?? parametersQ.error ?? rangeQ.error
         }
       />
+
+      {unconfiguredNumericReferenceCount > 0 ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-500/35 bg-amber-500/5 p-4 text-sm"
+        >
+          <p className="font-semibold">
+            {lang === "ar"
+              ? "تنبيه: لا توجد مديات مرجعية معتمدة لبعض الفحوص."
+              : "Lab reference intervals are missing for some tests."}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {lang === "ar"
+              ? `عدد المعاملات الرقمية التي لا تملك مدى مرجعياً متوافقاً: ${unconfiguredNumericReferenceCount}. لا تتوفر لهذه الفحوص تنبيهات آلية موثوقة للقيم غير الطبيعية. استخدم المرجع المخبري المعتمد وراجع مسؤول المختبر قبل اعتماد النتائج.`
+              : `${unconfiguredNumericReferenceCount} numeric parameter(s) have no compatible approved reference interval. Automated abnormal flags are unavailable for these tests. Use the approved lab reference source and consult the lab lead before verification.`}
+          </p>
+        </div>
+      ) : null}
 
       {abnormalResultCount > 0 ? (
         <div
