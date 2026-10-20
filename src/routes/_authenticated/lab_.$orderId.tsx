@@ -27,7 +27,11 @@ import { useAuth } from "@/lib/auth";
 import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { hasLabItemResultInput, mapLabResult, selectLabReferenceRange } from "@/lib/lab-workflow";
+import {
+  hasLabItemResultInput,
+  mapLabResult,
+  selectLabReferenceRange,
+} from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
@@ -186,10 +190,14 @@ function LabOrderPageInner() {
           dataType: s(parameter, "data_type"),
           lower: firstFiniteBound(range, "lower_limit", "min_value"),
           upper: firstFiniteBound(range, "upper_limit", "max_value"),
-          flag: s(resultRows.find((row) =>
-            s(row, "order_item_id") === s(item, "id") &&
-            s(row, "parameter_id") === s(parameter, "id")
-          ), "flag"),
+          flag: s(
+            resultRows.find(
+              (row) =>
+                s(row, "order_item_id") === s(item, "id") &&
+                s(row, "parameter_id") === s(parameter, "id"),
+            ),
+            "flag",
+          ),
         });
         return mapped.kind === "numeric" && mapped.abnormal;
       }).length
@@ -467,8 +475,13 @@ function LabOrderPageInner() {
                                   </div>
                                 )}
                                 {mapped.kind === "numeric" && mapped.critical && (
-                                  <div role="alert" className="mt-1 text-xs font-semibold text-destructive">
-                                    {lang === "ar" ? "قيمة حرجة — اتبع بروتوكول التصعيد" : "Critical value — follow escalation protocol"}
+                                  <div
+                                    role="alert"
+                                    className="mt-1 text-xs font-semibold text-destructive"
+                                  >
+                                    {lang === "ar"
+                                      ? "قيمة حرجة — اتبع بروتوكول التصعيد"
+                                      : "Critical value — follow escalation protocol"}
                                   </div>
                                 )}
                                 {abnormal && !mapped.critical && (
@@ -484,7 +497,8 @@ function LabOrderPageInner() {
 
                               <TableCell dir="ltr">
                                 {range
-                                  ? s(range, "text_reference") || `${lower ?? "—"} – ${upper ?? "—"}`
+                                  ? s(range, "text_reference") ||
+                                    `${lower ?? "—"} – ${upper ?? "—"}`
                                   : s(p, "reference_text") || "—"}
                               </TableCell>
 
