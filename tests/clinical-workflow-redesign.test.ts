@@ -5,7 +5,11 @@ import {
   createEmptyPrescriptionDraft,
   validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
-import { labWorkflowStage, mapLabResult, selectLabReferenceRange } from "../src/lib/lab-workflow.ts";
+import {
+  labWorkflowStage,
+  mapLabResult,
+  selectLabReferenceRange,
+} from "../src/lib/lab-workflow.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -121,12 +125,17 @@ test("blank or nonnumeric lab values are not classified as out of range", async 
   assert.equal(isAbnormalLabResult("4.5", 3.5, 5.5), false);
 });
 
-
 test("typed lab result mapper distinguishes empty, pending, numeric zero, abnormal, critical, text and coded results", () => {
   assert.deepEqual(mapLabResult({ value: "" }), { kind: "empty" });
   assert.deepEqual(mapLabResult({ value: null, status: "pending" }), { kind: "pending" });
   assert.deepEqual(mapLabResult({ value: 0, dataType: "numeric", lower: 0, upper: 5 }), {
-    kind: "numeric", value: 0, lower: 0, upper: 5, abnormal: false, critical: false, flag: null,
+    kind: "numeric",
+    value: 0,
+    lower: 0,
+    upper: 5,
+    abnormal: false,
+    critical: false,
+    flag: null,
   });
   const low = mapLabResult({ value: 2, dataType: "numeric", lower: 3, upper: 5 });
   assert.equal(low.kind, "numeric");
@@ -149,9 +158,14 @@ test("typed lab result mapper distinguishes empty, pending, numeric zero, abnorm
     assert.equal(genericCritical.critical, true);
     assert.equal(genericCritical.flag, "critical");
   }
-  assert.deepEqual(mapLabResult({ value: "reactive", dataType: "text" }), { kind: "text", value: "reactive" });
+  assert.deepEqual(mapLabResult({ value: "reactive", dataType: "text" }), {
+    kind: "text",
+    value: "reactive",
+  });
   assert.deepEqual(mapLabResult({ value: "POS", code: "positive", display: "Positive" }), {
-    kind: "coded", code: "positive", display: "Positive",
+    kind: "coded",
+    code: "positive",
+    display: "Positive",
   });
 });
 
@@ -166,13 +180,40 @@ test("consultation visit changes reset local state and expose query-specific ret
   assert.match(ui, /key=\{visitId\}/);
 });
 
-
 test("lab reference range selection never falls back to a mismatched age or sex range", () => {
   const ranges = [
-    { parameter_id: "p1", gender: "female", min_age: 18, max_age: 65, lower_limit: 4, upper_limit: 10 },
-    { parameter_id: "p1", gender: "male", min_age: 18, max_age: 65, lower_limit: 3, upper_limit: 8 },
-    { parameter_id: "p1", gender: null, min_age: null, max_age: null, lower_limit: 2, upper_limit: 12 },
-    { parameter_id: "p2", gender: null, min_age: null, max_age: null, lower_limit: 0, upper_limit: 0 },
+    {
+      parameter_id: "p1",
+      gender: "female",
+      min_age: 18,
+      max_age: 65,
+      lower_limit: 4,
+      upper_limit: 10,
+    },
+    {
+      parameter_id: "p1",
+      gender: "male",
+      min_age: 18,
+      max_age: 65,
+      lower_limit: 3,
+      upper_limit: 8,
+    },
+    {
+      parameter_id: "p1",
+      gender: null,
+      min_age: null,
+      max_age: null,
+      lower_limit: 2,
+      upper_limit: 12,
+    },
+    {
+      parameter_id: "p2",
+      gender: null,
+      min_age: null,
+      max_age: null,
+      lower_limit: 0,
+      upper_limit: 0,
+    },
   ];
   assert.equal(selectLabReferenceRange(ranges, "p1", "male", 30), ranges[1]);
   assert.equal(selectLabReferenceRange(ranges, "p1", "female", 30), ranges[0]);
