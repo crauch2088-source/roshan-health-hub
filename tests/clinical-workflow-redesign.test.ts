@@ -224,7 +224,6 @@ test("lab reference range selection never falls back to a mismatched age or sex 
   assert.equal(selectLabReferenceRange(ranges, "p2", null, undefined), ranges[3]);
 });
 
-
 test("resaving an unchanged critical lab result preserves its critical flag", async () => {
   const mapped = mapLabResult({
     value: "4.2",
