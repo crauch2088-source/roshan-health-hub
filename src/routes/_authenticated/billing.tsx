@@ -220,6 +220,7 @@ function BillingPageInner() {
         <Input
           type="date"
           dir="ltr"
+          aria-label={lang === "ar" ? "تاريخ الفواتير" : "Invoice date"}
           value={date}
           onChange={(e) => setDate(e.target.value)}
           className="w-40"

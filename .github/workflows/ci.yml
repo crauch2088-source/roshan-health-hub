@@ -103,6 +103,40 @@ jobs:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql -f db/tests/phase36_behavioral_assertions.sql
 
+  phase37-baseline-forward-replay:
+    name: Phase 37 baseline plus forward replay and catalog contract (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Replay canonical v112 baseline, platform shims, and migrations 113–114
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/tests/phase33_storage_realtime_fixture.sql \
+            -f db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql \
+            -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql
+      - name: Assert replayed catalog structure and critical clinical security contracts
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase37_replay_assertions.sql
+
   sql-patient-registration-atomicity:
     name: Atomic patient registration and MRN concurrency
     runs-on: ubuntu-latest

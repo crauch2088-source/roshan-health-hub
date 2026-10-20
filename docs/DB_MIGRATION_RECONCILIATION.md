@@ -675,3 +675,12 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Added a real, permission-gated clinical attachment uploader for lab orders and medical certificates. It validates PDF/PNG/JPEG MIME and bucket size, creates branch-scoped paths, uploads to private Storage, and creates a short-lived signed URL only after successful upload. Local printing remains available and direct upload remains opt-in.
 - Added an isolated PostgreSQL 17 CI job that creates disposable fixture tables, applies the exact tracked Phase 36 migration, and asserts immutable patient/visit links across all five guarded clinical tables, cancelled-visit write rejection, and exactly one audit row per INSERT/UPDATE/DELETE on each of the three Phase 36 audit-covered tables.
 - This closure is conditional on exact-head Standard CI and source parity passing. No production Supabase operations are required or performed by this change.
+
+
+## Phase 37 — Baseline and forward replay evidence (2026-10-20)
+
+- Production inspection used one read-only SELECT against `pg_catalog` and `information_schema`; no DDL or DML was issued to Supabase.
+- PostgreSQL 17 CI replays the v112 canonical baseline and tracked migrations for production ledger entries 113 (Phase 34) and 114 (Phase 36), with disposable shims for Supabase-owned `storage` and `realtime` schemas.
+- Replay assertions cover the 56 public-table baseline, 210 public RLS policies after the seven Phase 34 restrictive policies, verification RPC signature/security, all five Phase 36 visit-link guard triggers, and authenticated clinical read grants.
+- The live manifest response was truncated by the connector output limit. This is not proof of complete object-by-object live catalog parity or persisted SQL byte equality; replay is a structural invariant gate. Exact live-vs-replay digest parity remains open until a compact canonical manifest can be captured without truncation.
+- Phase 37 adds automated RTL/LTR, accessibility, clinical Arabic wording, and permission-route source-contract tests. Authenticated browser acceptance and post-merge Vercel deployment checks remain separate release gates.
