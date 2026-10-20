@@ -78,6 +78,17 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Expected authenticated clinical read grants are missing';
   END IF;
+  IF to_regclass('private.billing_rpc_idempotency') IS NULL THEN
+    RAISE EXCEPTION 'Canonical baseline is missing private.billing_rpc_idempotency';
+  END IF;
+  IF (SELECT count(*) FROM information_schema.columns
+      WHERE table_schema='private' AND table_name='billing_rpc_idempotency') <> 6 THEN
+    RAISE EXCEPTION 'billing_rpc_idempotency must have exactly six columns';
+  END IF;
+  IF NOT has_table_privilege('authenticated','public.v_patient_receivables','SELECT') THEN
+    RAISE EXCEPTION 'authenticated SELECT grant on public.v_patient_receivables is missing';
+  END IF;
+
 END
 $phase37_catalog_contract$;
 ROLLBACK;
