@@ -9,6 +9,7 @@
 
 ---
 
+
 ## Clinical E2E and canonical PG17 baseline — PR #79, CI green
 
 - Work branch: `feat/clinical-e2e-and-pg17-baseline`, based on `main`; no production Supabase writes or migrations were performed.
@@ -1677,3 +1678,28 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - [x] Verify legacy `fn_dispense_prescription(uuid)` EXECUTE revoked from `authenticated`; all six direct-write privileges revoked on `lab_order_items` and `medical_certificates`; `medical_certificates.visit_id` is NOT NULL.
 - [ ] Authenticated end-to-end smoke test remains outstanding: the available production scrape returned the loading placeholder, and no authenticated browser session was available. Do not claim this test passed until it is executed.
 - Historical full migration replay and persisted SQL hash equality remain unproven; preserve that caveat.
+
+
+## Clinical child RPC-only write rollout — closed (2026-10-19)
+
+- [x] Phase 29 confirmed applied to prescriptions, prescription_items, patient_discounts, and insurance_prior_authorizations.
+- [x] Phase 30 accepted as **Superseded & Fulfilled** by the production-applied Phase 31 Contract cutover; do not reapply Phase 30.
+- [x] Six clinical child tables are RPC-only for client writes: SELECT remains available, RLS remains enabled, authenticated has no direct INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER, and anon has no write privileges.
+- [x] Preserve only `public.create_medical_certificate(uuid,text,date,date,uuid)`; never re-enable the legacy four-argument signature. Lab completion remains `public.complete_lab_order_item(uuid)`.
+- [x] Production write/rollback testing waived by user; acceptance is based on read-only catalog evidence and isolated PostgreSQL 17 CI regression/clinical E2E tests.
+- [x] Live ledger reconciled to 112 migrations through `20261019061315_roshan_phase32_medical_certificate_visit_index`; forward-source parity tracks 19 entries above the frozen 93-entry snapshot.
+- [ ] Re-run GitHub Actions on this documentation/parity update and confirm the parity checker passes on the resulting commit. No Supabase writes or deployment required for this documentation-only change.
+
+## Phase 33 — clinical workflow and lab safety follow-ups (verified through 2026-10-20)
+
+- [x] PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) squash-merged as `bf6870df6268b70a61772d1c93350098a55bde06`. Exact-head CI, isolated PostgreSQL 17 clinical acceptance, atomicity/security workflows, insurance UI/integrity checks and Vercel preview all passed; production deployment for the merge SHA reached READY.
+- [x] PR [#84](https://github.com/crauch2088-source/roshan-health-hub/pull/84) squash-merged as `7313adb0f4b58d845bea0326c59c1860ea4e2f98`. The save path now preserves an existing critical flag when an unchanged numeric result is resaved, but recalculates when the result value changes. Typecheck, lint, build, guard tests, PostgreSQL 17/security/atomicity workflows and Vercel preview passed; production deployment reached READY.
+- [x] PR [#85](https://github.com/crauch2088-source/roshan-health-hub/pull/85) squash-merged as `f425e2893c753d5f6ff984b1fd2aa169e7857db1`. The lab order page now shows a bilingual warning when numeric parameters have no compatible reference interval. Exact-head CI, typecheck, lint, build, guard tests, PostgreSQL 17/security/atomicity workflows and Vercel preview passed; production deployment for this merge SHA reached READY.
+- [x] The exact `main` merge SHA for PR #85 has green CI and PostgreSQL 17 child-write / finance-write isolation checks. Vercel production deployment is READY and carries the canonical `roshan-health-hub.vercel.app` alias.
+- [x] All three PRs made no schema migrations and no production patient/financial record writes.
+- [ ] **Clinical release blocker remains:** read-only catalog audit found 18 active lab parameters (14 typed numeric), 0 active rows in `lab_reference_ranges`, and 0 active parameter `reference_text` values. Two qualitative-result candidates are typed numeric and require lab-lead review. Do not invent reference intervals, units, or critical thresholds. Use `docs/LAB_REFERENCE_RANGE_APPROVAL_TEMPLATE.md` for clinician/lab-lead sign-off.
+- [ ] Authenticated production browser smoke tests and staff UAT remain outstanding. Passing isolated CI and a READY deployment does not prove every production route or clinical workflow was manually exercised.
+
+## Immediate next action
+
+Prioritize lab-lead approval of the catalog and an authenticated production smoke-test session for critical routes. Keep all production clinical/financial writes out of verification; use isolated synthetic PostgreSQL/browser fixtures. Continue only with code-only safety and UX work that does not require inventing clinical policy.

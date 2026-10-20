@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ErrorBox, Loading, StatusBadge } from "@/components/kit";
+import { Loading, StatusBadge } from "@/components/kit";
 import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money } from "@/lib/medical";
@@ -30,6 +30,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     setNoteDirty(false);
     setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
   }, [visitId]);
+
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
       const message =
@@ -122,10 +123,15 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         {visitQ.isLoading ? (
           <Loading />
         ) : visitQ.error ? (
-          <div role="alert" className="space-y-2">
-            <ErrorBox error={visitQ.error} />
-            <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
-              {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
+          <div role="alert" className="space-y-3 rounded-lg border border-destructive/40 p-4">
+            <p className="font-semibold">
+              {lang === "ar" ? "تعذر تحميل بيانات الزيارة" : "Could not load visit details"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {visitQ.error instanceof Error ? visitQ.error.message : String(visitQ.error)}
+            </p>
+            <Button variant="outline" onClick={() => void visitQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry"}
             </Button>
           </div>
         ) : lang === "ar" ? (
@@ -157,7 +163,6 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
       en: "Review orders, prescription and follow-up plan",
     },
   ];
-
   const reviewCount = Object.values(reviewChecks).filter(Boolean).length;
 
   const tabs = [
@@ -179,14 +184,14 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           {/* Billing — three honest states: loading, existing invoice (link to it,
            never create a second one), or none yet (offer to create one from
            the consultation fee already on the visit). */}
-          {invoiceQ.error ? (
-            <div role="alert" className="flex items-center gap-2">
-              <ErrorBox error={invoiceQ.error} />
+          {invoiceQ.isLoading ? null : invoiceQ.error ? (
+            <div role="alert" className="flex items-center gap-2 text-xs text-destructive">
+              <span>{lang === "ar" ? "تعذر تحميل الفاتورة" : "Invoice could not be loaded"}</span>
               <Button variant="outline" size="sm" onClick={() => void invoiceQ.refetch()}>
-                {lang === "ar" ? "إعادة المحاولة" : "Retry billing"}
+                {lang === "ar" ? "إعادة المحاولة" : "Retry"}
               </Button>
             </div>
-          ) : invoiceQ.isLoading ? null : existingInvoice ? (
+          ) : existingInvoice ? (
             <Link
               to="/billing/$invoiceId"
               params={{ invoiceId: s(existingInvoice, "id") }}
@@ -349,19 +354,18 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         </div>
       </div>
       <section
+        key={visitId}
         id={`panel-${tab}`}
         role="tabpanel"
         aria-labelledby={`tab-${tab}`}
         tabIndex={0}
         className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
       >
-        {tab === "note" && (
-          <ClinicalNoteTab key={visitId} visitId={visitId} onDirtyChange={setNoteDirty} />
-        )}
-        {tab === "vitals" && <VitalsTab key={visitId} visitId={visitId} />}
-        {tab === "labs" && <LaboratoryTab key={visitId} visitId={visitId} />}
-        {tab === "prescription" && <PrescriptionTab key={visitId} visitId={visitId} />}
-        {tab === "history" && <HistoryTab key={visitId} visitId={visitId} />}
+        {tab === "note" && <ClinicalNoteTab visitId={visitId} onDirtyChange={setNoteDirty} />}
+        {tab === "vitals" && <VitalsTab visitId={visitId} />}
+        {tab === "labs" && <LaboratoryTab visitId={visitId} />}
+        {tab === "prescription" && <PrescriptionTab visitId={visitId} />}
+        {tab === "history" && <HistoryTab visitId={visitId} />}
       </section>
     </div>
   );

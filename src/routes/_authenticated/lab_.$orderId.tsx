@@ -24,11 +24,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, s, useRows, useSave, type Row } from "@/lib/db";
+import { rel, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge } from "@/lib/medical";
-import { hasLabItemResultInput, mapLabResult } from "@/lib/lab-workflow";
+import {
+  hasLabItemResultInput,
+  mapLabResult,
+  preserveCriticalLabFlag,
+  selectLabReferenceRange,
+} from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
+
+function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const raw = row?.[key];
+    if (raw == null || String(raw).trim() === "") continue;
+    const value = Number(raw);
+    if (Number.isFinite(value)) return value;
+  }
+  return null;
+}
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
   head: () => ({
@@ -55,10 +70,6 @@ function LabOrderPageInner() {
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
-  useEffect(() => {
-    setValues({});
-    setComments({});
-  }, [orderId]);
 
   const orderQ = useRows<Row[]>(["lab-order", orderId], () =>
     supabase
@@ -145,31 +156,15 @@ function LabOrderPageInner() {
   const ranges = (rangeQ.data ?? []) as Row[];
 
   function rangeFor(parameterId: string) {
-    return (
-      ranges.find((r) => {
-        if (s(r, "parameter_id") !== parameterId) return false;
-
-        const gender = s(r, "gender");
-
-        if (gender && gender !== s(patient, "gender")) {
-          return false;
-        }
-
-        const min = n(r, "min_age") || n(r, "age_min");
-        const max = n(r, "max_age") || n(r, "age_max");
-
-        if (age !== undefined && min !== 0 && min && age < min) {
-          return false;
-        }
-
-        if (age !== undefined && max !== 0 && max && age > max) {
-          return false;
-        }
-
-        return true;
-      }) ?? ranges.find((r) => s(r, "parameter_id") === parameterId)
-    );
+    return selectLabReferenceRange(ranges, parameterId, s(patient, "gender"), age);
   }
+
+  const unconfiguredNumericReferenceCount = parameters.filter((parameter) => {
+    const dataType = s(parameter, "data_type").trim().toLowerCase();
+    if (dataType !== "numeric" && dataType !== "number") return false;
+    if (s(parameter, "reference_text").trim()) return false;
+    return !rangeFor(s(parameter, "id"));
+  }).length;
 
   const resultRows = (actualResultsQ.data ?? []) as Row[];
   const hasUnsavedResultEdits = items.some((item) =>
@@ -195,14 +190,23 @@ function LabOrderPageInner() {
     return (
       count +
       itemParameters.filter((parameter) => {
-        const value = values[s(item, "id") + ":" + s(parameter, "id")] ?? "";
+        const value = (values[s(item, "id") + ":" + s(parameter, "id")] ?? "").trim();
+        if (!value) return false;
         const range = rangeFor(s(parameter, "id"));
-        const saved = resultRows.find(
-          (row) =>
-            s(row, "order_item_id") === s(item, "id") &&
-            s(row, "parameter_id") === s(parameter, "id"),
-        );
-        const mapped = mapLabResult(value, s(parameter, "data_type"), range, s(saved, "flag"));
+        const mapped = mapLabResult({
+          value,
+          dataType: s(parameter, "data_type"),
+          lower: firstFiniteBound(range, "lower_limit", "min_value"),
+          upper: firstFiniteBound(range, "upper_limit", "max_value"),
+          flag: s(
+            resultRows.find(
+              (row) =>
+                s(row, "order_item_id") === s(item, "id") &&
+                s(row, "parameter_id") === s(parameter, "id"),
+            ),
+            "flag",
+          ),
+        });
         return mapped.kind === "numeric" && mapped.abnormal;
       }).length
     );
@@ -227,21 +231,36 @@ function LabOrderPageInner() {
           if (!value) continue;
 
           const range = rangeFor(s(p, "id"));
-          const mapped = mapLabResult(value, s(p, "data_type"), range);
-          const payload = {
-            order_item_id: s(item, "id"),
-            parameter_id: s(p, "id"),
-            result_value: mapped.rawValue,
-            numeric_value: mapped.kind === "numeric" ? mapped.numericValue : null,
-            flag: mapped.kind === "numeric" ? mapped.flag : null,
-            is_abnormal: mapped.kind === "numeric" && mapped.abnormal,
-            comment: comments[key] || null,
-            entered_by: user?.id ?? null,
-          };
-
           const existing = ((actualResultsQ.data ?? []) as Row[]).find(
             (r) => s(r, "order_item_id") === s(item, "id") && s(r, "parameter_id") === s(p, "id"),
           );
+
+          const lower = firstFiniteBound(range, "lower_limit", "min_value");
+          const upper = firstFiniteBound(range, "upper_limit", "max_value");
+          const mapped = preserveCriticalLabFlag(
+            mapLabResult({
+              value,
+              dataType: s(p, "data_type"),
+              lower,
+              upper,
+            }),
+            s(existing, "result_value"),
+            value,
+            s(existing, "flag"),
+          );
+          const abnormal = mapped.kind === "numeric" && mapped.abnormal;
+          const flag = mapped.kind === "numeric" ? mapped.flag : null;
+
+          const payload = {
+            order_item_id: s(item, "id"),
+            parameter_id: s(p, "id"),
+            result_value: value,
+            numeric_value: mapped.kind === "numeric" ? mapped.value : null,
+            flag,
+            is_abnormal: abnormal,
+            comment: comments[key] || null,
+            entered_by: user?.id ?? null,
+          };
 
           const result = existing
             ? await supabase.from("lab_results").update(payload).eq("id", s(existing, "id"))
@@ -350,6 +369,25 @@ function LabOrderPageInner() {
         }
       />
 
+      {unconfiguredNumericReferenceCount > 0 ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-500/35 bg-amber-500/5 p-4 text-sm"
+        >
+          <p className="font-semibold">
+            {lang === "ar"
+              ? "تنبيه: لا توجد مديات مرجعية معتمدة لبعض الفحوص."
+              : "Lab reference intervals are missing for some tests."}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {lang === "ar"
+              ? `عدد المعاملات الرقمية التي لا تملك مدى مرجعياً متوافقاً: ${unconfiguredNumericReferenceCount}. لا تتوفر لهذه الفحوص تنبيهات آلية موثوقة للقيم غير الطبيعية. استخدم المرجع المخبري المعتمد وراجع مسؤول المختبر قبل اعتماد النتائج.`
+              : `${unconfiguredNumericReferenceCount} numeric parameter(s) have no compatible approved reference interval. Automated abnormal flags are unavailable for these tests. Use the approved lab reference source and consult the lab lead before verification.`}
+          </p>
+        </div>
+      ) : null}
+
       {abnormalResultCount > 0 ? (
         <div
           role="alert"
@@ -420,17 +458,21 @@ function LabOrderPageInner() {
 
                           const range = rangeFor(s(p, "id"));
 
+                          const lower = firstFiniteBound(range, "lower_limit", "min_value");
+                          const upper = firstFiniteBound(range, "upper_limit", "max_value");
                           const savedResult = resultRows.find(
                             (row) =>
                               s(row, "order_item_id") === s(item, "id") &&
                               s(row, "parameter_id") === s(p, "id"),
                           );
-                          const mapped = mapLabResult(
+                          const mapped = mapLabResult({
                             value,
-                            s(p, "data_type"),
-                            range,
-                            s(savedResult, "flag"),
-                          );
+                            dataType: s(p, "data_type"),
+                            status: !value && s(item, "status") === "pending" ? "pending" : null,
+                            lower,
+                            upper,
+                            flag: s(savedResult, "flag"),
+                          });
                           const abnormal = mapped.kind === "numeric" && mapped.abnormal;
 
                           return (
@@ -457,15 +499,24 @@ function LabOrderPageInner() {
                                   }
                                 />
 
-                                {abnormal && (
+                                {mapped.kind === "pending" && (
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    {lang === "ar" ? "قيد الانتظار" : "Pending"}
+                                  </div>
+                                )}
+                                {mapped.kind === "numeric" && mapped.critical && (
+                                  <div
+                                    role="alert"
+                                    className="mt-1 text-xs font-semibold text-destructive"
+                                  >
+                                    {lang === "ar"
+                                      ? "قيمة حرجة — اتبع بروتوكول التصعيد"
+                                      : "Critical value — follow escalation protocol"}
+                                  </div>
+                                )}
+                                {abnormal && !mapped.critical && (
                                   <div className="mt-1 text-xs font-medium text-destructive">
-                                    {mapped.kind === "numeric" && mapped.critical
-                                      ? lang === "ar"
-                                        ? "قيمة حرجة"
-                                        : "Critical"
-                                      : lang === "ar"
-                                        ? "خارج المدى"
-                                        : "Out of range"}
+                                    {lang === "ar" ? "خارج المدى" : "Out of range"}
                                   </div>
                                 )}
                               </TableCell>
@@ -477,7 +528,7 @@ function LabOrderPageInner() {
                               <TableCell dir="ltr">
                                 {range
                                   ? s(range, "text_reference") ||
-                                    `${mapped.kind === "numeric" ? (mapped.lower ?? "—") : "—"} – ${mapped.kind === "numeric" ? (mapped.upper ?? "—") : "—"}`
+                                    `${lower ?? "—"} – ${upper ?? "—"}`
                                   : s(p, "reference_text") || "—"}
                               </TableCell>
 

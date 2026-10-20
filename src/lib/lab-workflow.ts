@@ -1,3 +1,188 @@
+export type LabResultFlag =
+  "low" | "high" | "critical" | "critical-low" | "critical-high" | "normal" | null;
+
+export type LabResultMapping =
+  | { kind: "empty" }
+  | { kind: "pending" }
+  | {
+      kind: "numeric";
+      value: number;
+      lower: number | null;
+      upper: number | null;
+      abnormal: boolean;
+      critical: boolean;
+      flag: LabResultFlag;
+    }
+  | { kind: "text"; value: string }
+  | { kind: "coded"; code: string; display: string };
+
+export interface LabResultInput {
+  value?: string | number | null;
+  dataType?: string | null;
+  status?: string | null;
+  code?: string | null;
+  display?: string | null;
+  lower?: number | null;
+  upper?: number | null;
+  criticalLower?: number | null;
+  criticalUpper?: number | null;
+  flag?: string | null;
+}
+
+function finiteBound(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function normalizedFlag(flag: string | null | undefined): LabResultFlag {
+  const value = (flag ?? "").trim().toLowerCase().replace(/_/g, "-");
+  if (value === "critical") return "critical";
+  if (value === "critical-low") return "critical-low";
+  if (value === "critical-high") return "critical-high";
+  if (value === "low") return "low";
+  if (value === "high") return "high";
+  if (value === "normal") return "normal";
+  return null;
+}
+
+/** Map legacy string-backed rows without ever coercing an empty value to zero. */
+/**
+ * Keep a persisted critical classification when the same result value is saved again.
+ * A changed value must be reclassified rather than inheriting a stale critical flag.
+ */
+export function preserveCriticalLabFlag(
+  mapped: LabResultMapping,
+  previousValue: string | null | undefined,
+  currentValue: string,
+  previousFlag: string | null | undefined,
+): LabResultMapping {
+  if (mapped.kind !== "numeric") return mapped;
+
+  const priorFlag = normalizedFlag(previousFlag);
+  const unchanged = (previousValue ?? "").trim() === currentValue.trim();
+  if (!unchanged || !priorFlag?.startsWith("critical")) return mapped;
+
+  return {
+    ...mapped,
+    abnormal: true,
+    critical: true,
+    flag: priorFlag,
+  };
+}
+
+export function mapLabResult(input: LabResultInput): LabResultMapping {
+  if ((input.status ?? "").trim().toLowerCase() === "pending") return { kind: "pending" };
+  const raw = input.value;
+  const value = raw == null ? "" : String(raw).trim();
+  if (!value) return { kind: "empty" };
+
+  const dataType = (input.dataType ?? "").trim().toLowerCase();
+  const explicitFlag = normalizedFlag(input.flag);
+  if (dataType === "coded" || input.code != null) {
+    return {
+      kind: "coded",
+      code: (input.code ?? value).trim(),
+      display: input.display?.trim() || value,
+    };
+  }
+  if (dataType === "text" || dataType === "string" || dataType === "qualitative") {
+    return { kind: "text", value };
+  }
+
+  const numeric = typeof raw === "number" ? raw : Number(value);
+  if (dataType === "numeric" || dataType === "number" || Number.isFinite(numeric)) {
+    if (!Number.isFinite(numeric)) return { kind: "text", value };
+    const lower = finiteBound(input.lower);
+    const upper = finiteBound(input.upper);
+    const criticalLower = finiteBound(input.criticalLower);
+    const criticalUpper = finiteBound(input.criticalUpper);
+    const criticalLow = criticalLower !== null && numeric < criticalLower;
+    const criticalHigh = criticalUpper !== null && numeric > criticalUpper;
+    const low = lower !== null && numeric < lower;
+    const high = upper !== null && numeric > upper;
+    const critical =
+      criticalLow ||
+      criticalHigh ||
+      explicitFlag === "critical" ||
+      explicitFlag === "critical-low" ||
+      explicitFlag === "critical-high";
+    const flag: LabResultFlag =
+      criticalLow || explicitFlag === "critical-low"
+        ? "critical-low"
+        : criticalHigh || explicitFlag === "critical-high"
+          ? "critical-high"
+          : explicitFlag === "critical"
+            ? "critical"
+            : low || explicitFlag === "low"
+              ? "low"
+              : high || explicitFlag === "high"
+                ? "high"
+                : explicitFlag === "normal"
+                  ? "normal"
+                  : null;
+    return {
+      kind: "numeric",
+      value: numeric,
+      lower,
+      upper,
+      abnormal: low || high || critical || explicitFlag === "low" || explicitFlag === "high",
+      critical,
+      flag,
+    };
+  }
+  return { kind: "text", value };
+}
+
+function rangeAgeBound(
+  range: Record<string, unknown>,
+  primary: "min_age" | "max_age",
+  alias: "age_min" | "age_max",
+): number | null {
+  const raw = range[primary] ?? range[alias];
+  if (raw == null || String(raw).trim() === "") return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value === 0) return null;
+  return value;
+}
+
+/**
+ * Select only a reference interval compatible with known patient demographics.
+ * If no interval matches, return undefined instead of silently using an unrelated range.
+ */
+export function selectLabReferenceRange<T extends Record<string, unknown>>(
+  ranges: T[],
+  parameterId: string,
+  patientGender: string | null | undefined,
+  age: number | undefined,
+): T | undefined {
+  const normalizedGender = (patientGender ?? "").trim().toLowerCase();
+
+  return ranges
+    .map((range, index) => {
+      if (range["parameter_id"] !== parameterId) return null;
+
+      const rawGender = range["gender"];
+      const rangeGender = rawGender == null ? "" : String(rawGender).trim().toLowerCase();
+      if (rangeGender && (!normalizedGender || rangeGender !== normalizedGender)) {
+        return null;
+      }
+
+      const minAge = rangeAgeBound(range, "min_age", "age_min");
+      const maxAge = rangeAgeBound(range, "max_age", "age_max");
+      if (age === undefined && (minAge !== null || maxAge !== null)) return null;
+      if (age !== undefined && minAge !== null && age < minAge) return null;
+      if (age !== undefined && maxAge !== null && age > maxAge) return null;
+
+      const specificity =
+        (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) + (maxAge !== null ? 1 : 0);
+      return { range, index, specificity };
+    })
+    .filter(
+      (candidate): candidate is { range: T; index: number; specificity: number } =>
+        candidate !== null,
+    )
+    .sort((a, b) => b.specificity - a.specificity || a.index - b.index)[0]?.range;
+}
+
 export const LAB_WORKFLOW_STAGES = [
   "ordered",
   "sample_collected",
@@ -6,151 +191,27 @@ export const LAB_WORKFLOW_STAGES = [
   "verified",
 ] as const;
 
-export type LabResultFlag = "low" | "high" | "critical_low" | "critical_high" | null;
-
-export type LabMappedResult =
-  | {
-      kind: "empty";
-      status: "pending";
-      rawValue: "";
-      numericValue: null;
-      abnormal: false;
-      critical: false;
-      flag: null;
-    }
-  | {
-      kind: "numeric";
-      status: "result";
-      rawValue: string;
-      numericValue: number;
-      lower: number | null;
-      upper: number | null;
-      abnormal: boolean;
-      critical: boolean;
-      flag: LabResultFlag;
-    }
-  | {
-      kind: "text" | "coded";
-      status: "result";
-      rawValue: string;
-      numericValue: null;
-      abnormal: false;
-      critical: false;
-      flag: null;
-    };
-
-export type LabResultRange = Record<string, unknown>;
-
-function finiteBound(...values: unknown[]): number | null {
-  for (const value of values) {
-    if (value === null || value === undefined || String(value).trim() === "") {
-      continue;
-    }
-    const numeric = Number(value);
-    if (Number.isFinite(numeric)) return numeric;
-  }
-  return null;
-}
-
-/** Maps persisted result strings without conflating blank with numeric zero. */
-export function mapLabResult(
-  value: string | number | null | undefined,
-  dataType: string | null | undefined,
-  range?: LabResultRange | null,
-  existingFlag?: string | null,
-): LabMappedResult {
-  if (value === null || value === undefined || String(value).trim() === "") {
-    return {
-      kind: "empty",
-      status: "pending",
-      rawValue: "",
-      numericValue: null,
-      abnormal: false,
-      critical: false,
-      flag: null,
-    };
-  }
-
-  const rawValue = String(value).trim();
-  const type = (dataType ?? "").trim().toLowerCase();
-  const coded = ["coded", "code", "enum", "enumeration", "boolean", "bool"].includes(type);
-  const text = ["text", "string", "varchar", "char", "date", "datetime", "timestamp"].includes(
-    type,
-  );
-
-  if (coded || text) {
-    return {
-      kind: coded ? "coded" : "text",
-      status: "result",
-      rawValue,
-      numericValue: null,
-      abnormal: false,
-      critical: false,
-      flag: null,
-    };
-  }
-
-  const parsed = Number(rawValue);
-  // Unknown legacy data types preserve numeric strings, falling back to text otherwise.
-  if (!Number.isFinite(parsed)) {
-    return {
-      kind: "text",
-      status: "result",
-      rawValue,
-      numericValue: null,
-      abnormal: false,
-      critical: false,
-      flag: null,
-    };
-  }
-
-  const lower = finiteBound(range?.["lower_limit"], range?.["min_value"]);
-  const upper = finiteBound(range?.["upper_limit"], range?.["max_value"]);
-  const criticalLower = finiteBound(range?.["critical_lower_limit"], range?.["critical_min_value"]);
-  const criticalUpper = finiteBound(range?.["critical_upper_limit"], range?.["critical_max_value"]);
-  const persisted = (existingFlag ?? "").trim().toLowerCase();
-  let flag: LabResultFlag = null;
-
-  if (["low", "high", "critical_low", "critical_high"].includes(persisted)) {
-    flag = persisted as LabResultFlag;
-  } else if (criticalLower !== null && parsed < criticalLower) {
-    flag = "critical_low";
-  } else if (criticalUpper !== null && parsed > criticalUpper) {
-    flag = "critical_high";
-  } else if (lower !== null && parsed < lower) {
-    flag = "low";
-  } else if (upper !== null && parsed > upper) {
-    flag = "high";
-  }
-
-  const critical = flag === "critical_low" || flag === "critical_high";
-  return {
-    kind: "numeric",
-    status: "result",
-    rawValue,
-    numericValue: parsed,
-    lower,
-    upper,
-    abnormal: flag !== null,
-    critical,
-    flag,
-  };
-}
-
+/** Maps persisted workflow states to a stable, display-only progress step. */
 export function labWorkflowStage(status: string): number {
   const index = LAB_WORKFLOW_STAGES.indexOf(status as (typeof LAB_WORKFLOW_STAGES)[number]);
   return index < 0 ? 0 : index;
 }
 
-/** Compatibility helper retained for legacy callers. */
+/**
+ * Returns true only for a non-empty, numeric result outside a configured bound.
+ * Blank inputs must not be coerced to zero and displayed as abnormal.
+ */
 export function isAbnormalLabResult(value: string, low: number, high: number): boolean {
-  const mapped = mapLabResult(value, "numeric", {
-    lower_limit: low === 0 ? null : low,
-    upper_limit: high === 0 ? null : high,
+  // Legacy callers use zero as “no bound”; the typed mapper accepts zero bounds.
+  const mapped = mapLabResult({
+    value,
+    lower: low === 0 ? null : low,
+    upper: high === 0 ? null : high,
   });
   return mapped.kind === "numeric" && mapped.abnormal;
 }
 
+/** True when the user has at least one non-blank result for a lab order item. */
 export function hasLabItemResultInput(
   itemId: string,
   parameterIds: string[],
