@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "project_id": "jewzonxplxhogqrnhosl",
+  "captured_at": "2026-10-21",
+  "migration_version": 115,
+  "latest_live_version": "20261020232033",
+  "live_ledger_count": 115,
+  "source": "Single read-only SELECT against pg_catalog and information_schema; SHA-256 computed inside PostgreSQL. No production DDL or DML.",
+  "scope": [
+    "public",
+    "private"
+  ],
+  "canonicalization": "Rows are pipe-delimited, newline-joined, ordered lexicographically by the exact row representation, UTF-8 encoded, then SHA-256 hashed.",
+  "permission_checks": {
+    "public.permissions": {
+      "code": "visits.delete",
+      "exists": true,
+      "name": "Visits delete"
+    }
+  },
+  "categories": {
+    "tables_columns": {
+      "count": 844,
+      "sha256": "73d89abd575547a6c51c7e0b2c24c92fda484696c6103334b0fc572af15829b8"
+    },
+    "constraints": {
+      "count": 214,
+      "sha256": "1d960127317150212f4e751e8a0186ab2b917388bf2793941c279e903cbb495e"
+    },
+    "indexes": {
+      "count": 239,
+      "sha256": "8c8cd5b0746fd8e346534dbf45d575d7bc6af4589224b586d66da47ac9ba2ae2"
+    },
+    "functions_security": {
+      "count": 134,
+      "sha256": "afdef827caead03340c49f9d0e26ea7a54cd3f27e0b30d92d3d085bc40449040"
+    },
+    "triggers": {
+      "count": 64,
+      "sha256": "604ef38ed58004dfb08ba59108056b46e3c6f0efeda5334255342c0136a9fdc9"
+    },
+    "rls_policies": {
+      "count": 210,
+      "sha256": "a367516ac6986b0de821c2c11fef23213b29ceab0e69073b92ce541a6cdeed52"
+    },
+    "clinical_financial_privileges": {
+      "count": 109,
+      "sha256": "d0bdfab9fd40e6de8b2da225aa900188d2a8255ee2fa8acbeb344c15eda29cc7"
+    }
+  }
+}

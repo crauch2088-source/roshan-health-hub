@@ -1798,3 +1798,11 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Corrected the diagnosis report, unified SPA rewrites and build-ignore configuration, made the Supabase URL environment-configurable, and removed forced private Realtime channel configuration so Postgres Changes relies on table RLS.
 - Added parameter and reference-range management to the lab catalog and restored the project health audit and reference-range approval template from Git history.
 - The v114 fingerprint remains the historical capture. Exact v115 live catalog hashes are not fabricated while Supabase calls are prohibited; the v115 seven-category fingerprint is still a release gate.
+
+
+## Phase 40 — Final Release Seal & v115 Catalog Fingerprint Stamp (2026-10-21)
+
+- A single read-only SQL query against production project `jewzonxplxhogqrnhosl` confirmed ledger count 115/latest version `20261020232033` and confirmed `public.permissions.code = 'visits.delete'` exists.
+- Captured the seven canonical category counts and SHA-256 digests in `docs/live-catalog-fingerprint-v115.json`; the trigger category is 64 (57 at v114 plus the seven Phase 39 audit triggers). The other six categories retain their v114 digest/count.
+- CI replay must apply v112 baseline, Phase 34 / migration 113, Phase 36 / migration 114, then Phase 39 / migration 115 before comparing the exact fingerprint. The comparator checks all seven categories and refuses any count or digest mismatch.
+- Do not claim the seal until the Phase 40 exact-head CI result explicitly reports 7/7 matches. This catalog fingerprint proves parity for the seven defined categories, not byte-for-byte equality of stored live migration SQL or authenticated browser workflow acceptance.

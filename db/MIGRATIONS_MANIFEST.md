@@ -1,6 +1,6 @@
 # Database migration manifest
 
-Last captured catalog fingerprint: **2026-10-20**, PostgreSQL **17.6**, schema snapshot at migration **114** (20261020111126_roshan_phase36_audit_coverage_and_visit_lifecycle_guards). The task owner reports live migration ledger version **115** (20261020232033_roshan_phase39_permissions_lab_catalog_and_audit_closure); an exact v115 catalog fingerprint has not been captured in this source-only round.
+Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema snapshot at migration **115** (`20261020232033_roshan_phase39_permissions_lab_catalog_and_audit_closure`). The seven-category SHA-256 fingerprint is recorded in `docs/live-catalog-fingerprint-v115.json`; clean-room CI replays migrations 113–115 and requires exact count + digest matches.
 
 ## Canonical clean-room baseline
 
@@ -52,3 +52,17 @@ Last captured catalog fingerprint: **2026-10-20**, PostgreSQL **17.6**, schema s
 - Tracked source: `db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql`. It adds audit coverage on insurance prior authorizations, medical certificates, and patient discounts; clinical parent-link/cancelled-visit guards on five tables; and publication membership for prescriptions and invoices.
 - The forward delta retains the frozen 93-entry historical snapshot and tracks 18 forward-source mappings. CI verifies normalized repository SQL SHA-256; the Supabase migration-history interface does not expose stored SQL, so independent live SQL hash equality is not claimed.
 - Frontend Realtime invalidates pharmacy/billing query keys. Direct clinical Storage remains opt-in; print remains available when the feature flag is off.
+
+
+## Phase 39 — migration 115 and catalog closure
+
+- Live ledger: 115 migrations, latest version `20261020232033`.
+- The read-only production query confirmed `public.permissions` contains `visits.delete`; the captured row was reduced to the permission code/name in documentation, with no user or patient data involved.
+- The seven-category in-database SHA-256 fingerprint is stored in `docs/live-catalog-fingerprint-v115.json`. Compared with v114, the trigger category advances from 57 to 64 objects, matching the seven Phase 39 audit triggers; other six category fingerprints remain unchanged.
+- CI applies the canonical v112 baseline, migration 113 (Phase 34), migration 114 (Phase 36), and migration 115 (Phase 39) in order on disposable PostgreSQL 17 before computing the fingerprint. Production is read-only and is never used for replay.
+- The live migration ledger does not expose persisted migration SQL bytes; the tracked normalized source hash is not claimed as a byte-for-byte live SQL hash.
+
+## Phase 40 — final release seal
+
+- Captured the v115 fingerprint with one read-only PostgreSQL SELECT that computes all seven SHA-256 digests in the database.
+- Release seal is complete only when the exact replay comparator reports `exact_match: true`, `matched_categories: 7`, `total_categories: 7` on the Phase 40 PR head and the PR is squash-merged.

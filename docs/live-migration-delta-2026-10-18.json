@@ -202,7 +202,7 @@
       "source_git_blob_sha": "72875833745f580ad7e3cb063aa1d6d04d7d8daa",
       "normalized_source_sql_sha256": "aab407408bbfa61587622c2528ace996c1a6778850508f4b6fae54a5ed527b82",
       "live_sql_hash_verified": false,
-      "verification_evidence": "Tracks the source file associated with the successful live migration version/name; this is a repository-source normalized hash, not an independently verified hash of stored live SQL bytes."
+      "verification_evidence": "Repository normalized source hash is tracked; the Supabase ledger does not expose persisted migration SQL bytes. Live catalog structure was independently captured in docs/live-catalog-fingerprint-v115.json with one read-only in-database SHA-256 query; clean-room CI must verify exact seven-category parity."
     }
   ],
   "limitations": "Frozen 93-entry historical source snapshot plus 22 forward-source mappings (93 + 22 = 115). Repository normalized source hashes are checked; persisted live SQL bytes/hashes are not exposed by migration history, so live_sql_hash_verified remains false. v114 catalog fingerprint remains historical; exact v115 live catalog digests were not fabricated because this round prohibits Supabase calls."

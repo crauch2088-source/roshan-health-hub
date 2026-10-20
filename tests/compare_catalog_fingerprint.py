@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Compare replayed PostgreSQL catalog with the captured live v114 manifest."""
+"""Compare replayed PostgreSQL catalog with the captured live v115 manifest."""
 import json
 import pathlib
 import sys
 
-expected = json.loads(pathlib.Path("docs/live-catalog-fingerprint-v114.json").read_text(encoding="utf-8"))["categories"]
+manifest = json.loads(pathlib.Path("docs/live-catalog-fingerprint-v115.json").read_text(encoding="utf-8"))
+if manifest.get("migration_version") != 115 or manifest.get("project_id") != "jewzonxplxhogqrnhosl":
+    raise SystemExit("Expected the captured v115 fingerprint for project jewzonxplxhogqrnhosl.")
+expected = manifest["categories"]
 raw = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "/tmp/roshan-catalog-fingerprint.json").read_text(encoding="utf-8").strip()
 actual = None
 for line in reversed(raw.splitlines()):
