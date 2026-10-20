@@ -32,10 +32,8 @@ import {
   mapLabResult,
   preserveCriticalLabFlag,
   selectLabReferenceRange,
-  verifyLabOrder,
 } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
-import { useBranchRealtime } from "@/lib/realtime";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
   for (const key of keys) {
@@ -77,7 +75,7 @@ function LabOrderPageInner() {
     supabase
       .from("lab_orders")
       .select(
-        "id,status,branch_id,verified_by,verified_at,created_at,ordered_at,patient_id,patients(id,full_name,mrn,gender,date_of_birth),users!lab_orders_ordered_by_fkey(full_name)",
+        "id,status,created_at,ordered_at,patient_id,patients(id,full_name,mrn,gender,date_of_birth),users!lab_orders_ordered_by_fkey(full_name)",
       )
       .eq("id", orderId)
       .limit(1),
@@ -86,7 +84,7 @@ function LabOrderPageInner() {
   const itemsQ = useRows<Row[]>(["lab-items", orderId], () =>
     supabase
       .from("lab_order_items")
-      .select("id,status,verified_by,verified_at,test_id,price,lab_tests(id,name,name_ar)")
+      .select("id,status,test_id,price,lab_tests(id,name,name_ar)")
       .eq("order_id", orderId)
       .is("deleted_at", null)
       .order("created_at"),
@@ -95,7 +93,6 @@ function LabOrderPageInner() {
   const order = (orderQ.data ?? [])[0] as Row | undefined;
   const patient = rel(order, "patients");
   const items = (itemsQ.data ?? []) as Row[];
-  useBranchRealtime(s(order, "branch_id") || null, orderId);
 
   const testIds = items.map((i) => s(i, "test_id")).filter(Boolean);
 
@@ -312,16 +309,30 @@ function LabOrderPageInner() {
 
   const verify = useSave(
     async () => {
-      await verifyLabOrder(orderId, (args) => supabase.rpc("verify_lab_order", args));
+      const { error } = await supabase
+        .from("lab_results")
+        .update({
+          verified_by: user?.id ?? null,
+          verified_at: new Date().toISOString(),
+        })
+        .in(
+          "order_item_id",
+          items.map((i) => s(i, "id")),
+        );
+
+      if (error) throw new Error(error.message);
+
+      const { error: e } = await supabase
+        .from("lab_orders")
+        .update({ status: "verified" })
+        .eq("id", orderId);
+
+      if (e) throw new Error(e.message);
+
       return null;
     },
     {
-      invalidate: [
-        ["lab-order", orderId],
-        ["lab-items", orderId],
-        ["lab-order-results", orderId],
-        ["lab-orders"],
-      ],
+      invalidate: [["lab-order", orderId], ["lab-order-results", orderId], ["lab-orders"]],
       successMessage: t("saved"),
     },
   );
@@ -354,7 +365,7 @@ function LabOrderPageInner() {
 
       <ErrorBox
         error={
-          orderQ.error ?? itemsQ.error ?? actualResultsQ.error ?? parametersQ.error ?? rangeQ.error ?? save.error ?? verify.error
+          orderQ.error ?? itemsQ.error ?? actualResultsQ.error ?? parametersQ.error ?? rangeQ.error
         }
       />
 
@@ -546,7 +557,7 @@ function LabOrderPageInner() {
 
           <div className="no-print mt-5 flex flex-wrap gap-2">
             {can("lab.update") && (
-              <Button disabled={save.isPending || s(order, "status") === "verified"} onClick={() => save.mutate(undefined as never)}>
+              <Button disabled={save.isPending} onClick={() => save.mutate(undefined as never)}>
                 {save.isPending ? t("saving") : t("save_results")}
               </Button>
             )}
@@ -556,9 +567,6 @@ function LabOrderPageInner() {
                 variant="secondary"
                 disabled={
                   verify.isPending ||
-                  s(order, "status") === "verified" ||
-                  items.length === 0 ||
-                  items.some((item) => s(item, "status") !== "completed") ||
                   actualResultsQ.isLoading ||
                   parametersQ.isLoading ||
                   rangeQ.isLoading

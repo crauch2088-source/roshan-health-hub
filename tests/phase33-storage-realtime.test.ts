@@ -16,14 +16,26 @@ test("consultation query failures are visible and retryable and visit state rese
   assert.match(consultation, /visitQ\.error/);
   assert.match(consultation, /visitQ\.refetch\(\)/);
   assert.match(consultation, /invoiceQ\.refetch\(\)/);
-  assert.match(consultation, /setReviewChecks\(\{ identity: false, history: false, vitals: false, plan: false \}\)/);
+  assert.match(
+    consultation,
+    /setReviewChecks\(\{ identity: false, history: false, vitals: false, plan: false \}\)/,
+  );
   assert.match(consultation, /<section\s+key=\{visitId\}/);
   assert.match(consultation, /<HistoryTab visitId=\{visitId\}/);
   assert.match(history, /visits\.error/);
   assert.match(history, /visits\.refetch\(\)/);
-  assert.match(read("../src/features/clinic/consultation/components/ClinicalNoteTab.tsx"), /noteQ\.refetch\(\)/);
-  assert.match(read("../src/features/clinic/consultation/components/PrescriptionTab.tsx"), /medsQ\.refetch\(\)/);
-  assert.match(read("../src/features/clinic/consultation/components/LaboratoryTab.tsx"), /testsQ\.refetch\(\)/);
+  assert.match(
+    read("../src/features/clinic/consultation/components/ClinicalNoteTab.tsx"),
+    /noteQ\.refetch\(\)/,
+  );
+  assert.match(
+    read("../src/features/clinic/consultation/components/PrescriptionTab.tsx"),
+    /medsQ\.refetch\(\)/,
+  );
+  assert.match(
+    read("../src/features/clinic/consultation/components/LaboratoryTab.tsx"),
+    /testsQ\.refetch\(\)/,
+  );
   assert.match(lab, /setValues\(v\)/);
   assert.match(lab, /setComments\(c\)/);
 });
@@ -36,7 +48,10 @@ test("typed mapper and server verification contract stay aligned", () => {
   assert.match(mapper, /critical-high/);
   assert.match(mapper, /verifyLabOrder/);
   assert.match(lab, /supabase\.rpc\("verify_lab_order"/);
-  assert.doesNotMatch(lab, /\.from\("lab_orders"\)\s*\.update\(\{\s*status:\s*"verified"/);
+  assert.doesNotMatch(
+    lab,
+    /\.from\("lab_orders"\)\s*\.update\(\{\s*status:\s*"verified"/,
+  );
 });
 
 test("Phase 34 consolidates Storage, Realtime, verification and audit boundaries", () => {
