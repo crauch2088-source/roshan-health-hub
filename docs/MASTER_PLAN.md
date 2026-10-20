@@ -1783,3 +1783,10 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Claim 7/7 SHA-256 match only if the CI comparison passes. If baseline/replay differs from production, fix disposable baseline/fixtures or report the mismatch; never weaken comparison or rewrite the live fingerprint to make it pass.
 
 - Initial exact fingerprint CI exposed omissions in the canonical v112 snapshot: `private.billing_rpc_idempotency` (six columns, PK/index) and the `authenticated SELECT` grant on `public.v_patient_receivables`. These are corrected in the disposable baseline; production remains unchanged. Final 7/7 status is still gated on the new exact-head CI result.
+
+## Phase 39 — Supabase Data API explicit grants readiness (2026-10-20)
+
+- Read-only production catalog check: 56 public tables, all 56 with RLS enabled and authenticated SELECT. One existing table lacks service_role SELECT and one existing view lacks authenticated SELECT; neither ACL was changed because these may be intentional.
+- The postgres owner's public-schema default table privileges do not automatically grant anon/authenticated/service_role access. This restrictive posture is retained; no broad default grants or production DDL/DML were applied.
+- Added docs/SUPABASE_DATA_API_EXPLICIT_GRANTS.md and scripts/verify-supabase-data-api-grants.py, wired into the existing CI workflow. The guard checks timestamped SQL migrations dated 2026-10-30 onward for explicit SELECT grants to authenticated/service_role and RLS enablement on created tables.
+- CI must pass on this PR head before merging. The guard is a focused safety net, not a SQL parser; review each new table's complete intended grants and RLS policies. Do not grant anon or broad direct-write permissions by default.
