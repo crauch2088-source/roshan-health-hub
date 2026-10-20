@@ -249,3 +249,10 @@ test("resaving an unchanged critical lab result preserves its critical flag", as
     assert.equal(changed.flag, null);
   }
 });
+
+test("lab order warns when numeric parameters have no compatible reference interval", () => {
+  const ui = read("../src/routes/_authenticated/lab_.$orderId.tsx");
+  assert.match(ui, /unconfiguredNumericReferenceCount/);
+  assert.match(ui, /Automated abnormal flags are unavailable/);
+  assert.match(ui, /لا توجد مديات مرجعية معتمدة/);
+});
