@@ -7,7 +7,8 @@ import { resolveSupabaseKey } from "@/lib/supabase-key";
  * The publishable/anon key is safe in client code; database access is still
  * protected by RLS policies (see db/roshan_phase1_migration.sql).
  */
-export const SUPABASE_URL = "https://jewzonxplxhogqrnhosl.supabase.co";
+export const SUPABASE_URL =
+  import.meta.env["VITE_SUPABASE_URL"] || "https://jewzonxplxhogqrnhosl.supabase.co";
 export const SUPABASE_PUBLISHABLE_KEY = resolveSupabaseKey({
   VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
   VITE_SUPABASE_ANON_KEY: import.meta.env["VITE_SUPABASE_ANON_KEY"],

@@ -1,6 +1,6 @@
 # Database migration manifest
 
-Last verified against production catalog: **2026-10-20**, PostgreSQL **17.6**, migration ledger version **114** (20261020111126_roshan_phase36_audit_coverage_and_visit_lifecycle_guards).
+Last captured catalog fingerprint: **2026-10-20**, PostgreSQL **17.6**, schema snapshot at migration **114** (20261020111126_roshan_phase36_audit_coverage_and_visit_lifecycle_guards). The task owner reports live migration ledger version **115** (20261020232033_roshan_phase39_permissions_lab_catalog_and_audit_closure); an exact v115 catalog fingerprint has not been captured in this source-only round.
 
 ## Canonical clean-room baseline
 

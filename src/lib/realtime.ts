@@ -62,7 +62,7 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
       };
 
       const channel = supabase
-        .channel("branch:" + branchId + ":" + topic, { config: { private: true } })
+        .channel("branch:" + branchId + ":" + topic)
         .on(
           "postgres_changes",
           {

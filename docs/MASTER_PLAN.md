@@ -1790,3 +1790,11 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - The postgres owner's public-schema default table privileges do not automatically grant anon/authenticated/service_role access. This restrictive posture is retained; no broad default grants or production DDL/DML were applied.
 - Added docs/SUPABASE_DATA_API_EXPLICIT_GRANTS.md and scripts/verify-supabase-data-api-grants.py, wired into the existing CI workflow. The guard checks timestamped SQL migrations dated 2026-10-30 onward for explicit SELECT grants to authenticated/service_role and RLS enablement on created tables.
 - CI must pass on this PR head before merging. The guard is a focused safety net, not a SQL parser; review each new table's complete intended grants and RLS policies. Do not grant anon or broad direct-write permissions by default.
+
+
+## Phase 39 — forensic source closure (2026-10-21)
+
+- Added the tracked source associated with live migration 115 (`20261020232033`) and the three missing Phase 31 Expand/Contract and Phase 32 mappings; source parity enforces the ledger equation 93 + 22 = 115.
+- Corrected the diagnosis report, unified SPA rewrites and build-ignore configuration, made the Supabase URL environment-configurable, and removed forced private Realtime channel configuration so Postgres Changes relies on table RLS.
+- Added parameter and reference-range management to the lab catalog and restored the project health audit and reference-range approval template from Git history.
+- The v114 fingerprint remains the historical capture. Exact v115 live catalog hashes are not fabricated while Supabase calls are prohibited; the v115 seven-category fingerprint is still a release gate.
