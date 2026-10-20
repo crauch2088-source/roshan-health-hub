@@ -1735,3 +1735,13 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - The Supabase migration tool rejected Phase 34 with `must be owner of table objects`. A post-failure batched diagnostic confirmed the operation rolled back: migration ledger remains at v112, the three Phase 34 buckets/policies are absent, `verify_lab_order` is absent, and `lab_orders`/`lab_order_items` still lack `verified_by/verified_at`.
 - Phase 34 SQL is therefore **not applied to production**. Run `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql` as the owning database role in Supabase SQL Editor, as one script, after reviewing the exact merged file. Do not split the SQL into individual statements.
 - Frontend activation is deliberately gated by `VITE_ROSHAN_PHASE34_ENABLED=true`. It defaults off, so realtime subscriptions and the Verify action remain disabled until the SQL migration has succeeded. Only then set this Vercel environment variable and deploy when free build quota permits.
+
+
+## Phase 34 live closure + Phase 35 branch-scoped Realtime — 2026-10-20
+
+- Live Supabase ledger is confirmed at **113 entries**, latest `20261020090350_roshan_phase34_storage_guard_lab_verify_realtime`. Do not rerun this migration.
+- The source migration retains guarded Storage and Realtime policy blocks and does not attempt `ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY` under the non-owning migration role.
+- Lab verification RPC and Realtime default on unless `VITE_ROSHAN_PHASE34_ENABLED=false`; browser Storage uploads remain opt-in behind `VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED=true`.
+- Phase 35 invalidates consultation, queue, lab, and certificate queries. Existing polling remains a fallback when a screen has no branch-bearing rows.
+- Migration parity is the 93-entry frozen snapshot plus 17 forward-source mappings through `20261020090350`. This proves repository-source hash consistency, not persisted live SQL hash read-back.
+- No production data was written. Authenticated clinical smoke tests and deployment verification remain separate gates.

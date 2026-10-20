@@ -8,6 +8,7 @@ import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
+import { useBranchRealtime } from "@/lib/realtime";
 import { ClinicalNoteTab } from "./components/ClinicalNoteTab";
 import { VitalsTab } from "./components/VitalsTab";
 import { LaboratoryTab } from "./components/LaboratoryTab";
@@ -46,12 +47,13 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     supabase
       .from("visits")
       .select(
-        "id,visit_number,status,visit_date,patient_id,doctor_id,department_id,consultation_fee,patients(id,full_name,mrn,gender,date_of_birth),departments(name,name_ar),users!visits_doctor_id_fkey(full_name)",
+        "id,branch_id,visit_number,status,visit_date,patient_id,doctor_id,department_id,consultation_fee,patients(id,full_name,mrn,gender,date_of_birth),departments(name,name_ar),users!visits_doctor_id_fkey(full_name)",
       )
       .eq("id", visitId)
       .limit(1),
   );
   const visit = (visitQ.data ?? [])[0] as Row | undefined;
+  useBranchRealtime(s(visit, "branch_id") || null);
   const patient = rel(visit, "patients");
   const finish = useSave(
     async () => {

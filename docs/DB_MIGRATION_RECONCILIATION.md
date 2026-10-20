@@ -649,3 +649,12 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - The Supabase migration tool rejected Phase 34 with `must be owner of table objects`. A post-failure batched diagnostic confirmed the operation rolled back: migration ledger remains at v112, the three Phase 34 buckets/policies are absent, `verify_lab_order` is absent, and `lab_orders`/`lab_order_items` still lack `verified_by/verified_at`.
 - Phase 34 SQL is therefore **not applied to production**. Run `db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql` as the owning database role in Supabase SQL Editor, as one script, after reviewing the exact merged file. Do not split the SQL into individual statements.
 - Frontend activation is deliberately gated by `VITE_ROSHAN_PHASE34_ENABLED=true`. It defaults off, so realtime subscriptions and the Verify action remain disabled until the SQL migration has succeeded. Only then set this Vercel environment variable and deploy when free build quota permits.
+
+
+## Phase 34 live cutover and Phase 35 frontend follow-through — 2026-10-20
+
+- **Supersedes earlier Phase 34 activation-gate notes above.** No further Supabase DDL is needed. Live project `jewzonxplxhogqrnhosl` has 113 migration ledger entries; latest `20261020090350_roshan_phase34_storage_guard_lab_verify_realtime`.
+- Read-only checks confirmed `public.verify_lab_order(uuid)`, lab verification columns, append-only `audit_logs` triggers, the three private clinical buckets, and `queue_tickets`, `lab_orders`, and `visits` in `supabase_realtime`.
+- Source parity validates normalized repository SQL and ledger mapping. Supabase history does not expose persisted SQL/hash, so no independent live byte-for-byte hash read-back is claimed.
+- Phase 35 defaults server verification and branch-scoped Realtime on unless `VITE_ROSHAN_PHASE34_ENABLED=false`; direct browser uploads remain opt-in via `VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED=true`.
+- No production test data was written. Authenticated clinical smoke testing remains unclaimed.

@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { rel, s, useRows, type Row } from "@/lib/db";
+import { useBranchRealtime } from "@/lib/realtime";
 import { useLang } from "@/lib/i18n";
 import { formatDateTime } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -155,7 +156,7 @@ function LabPageInner() {
       let q = supabase
         .from("lab_orders")
         .select(
-          "id,status,created_at,ordered_at,priority,visit_id,patients(id,full_name,mrn,phone),users!lab_orders_ordered_by_fkey(full_name),lab_order_items(id,status,price,lab_tests(id,name,name_ar))",
+          "id,branch_id,status,created_at,ordered_at,priority,visit_id,patients(id,full_name,mrn,phone),users!lab_orders_ordered_by_fkey(full_name),lab_order_items(id,status,price,lab_tests(id,name,name_ar))",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -165,6 +166,9 @@ function LabPageInner() {
     },
     { refetchInterval: 15000, keepPrevious: true },
   );
+
+  const realtimeBranchId = s((orders.data ?? [])[0] as Row | undefined, "branch_id") || null;
+  useBranchRealtime(realtimeBranchId);
 
   if (orders.isLoading || orderCounts.isLoading) return <PageSkeleton />;
   const all = (orders.data ?? []) as Row[];

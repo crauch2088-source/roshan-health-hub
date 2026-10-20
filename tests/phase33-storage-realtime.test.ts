@@ -56,6 +56,16 @@ test("Phase 34 consolidates Storage, Realtime, verification and audit boundaries
   assert.match(migration, /private\.app_has_branch_access/);
   assert.match(migration, /public\.app_has_perm/);
   assert.match(migration, /storage\.objects/);
+  assert.match(migration, /DO \$storage_policies\$[\s\S]*EXCEPTION WHEN insufficient_privilege/);
+  assert.match(
+    migration,
+    /DO \$storage_boundary_guard\$[\s\S]*EXCEPTION WHEN insufficient_privilege/,
+  );
+  assert.match(
+    migration,
+    /DO \$realtime_policy_guard\$[\s\S]*EXCEPTION WHEN insufficient_privilege/,
+  );
+  assert.doesNotMatch(migration, /ALTER TABLE storage\.objects ENABLE ROW LEVEL SECURITY/i);
   assert.match(migration, /realtime\.messages/);
   assert.match(migration, /public\.visits/);
   assert.match(migration, /supabase_realtime/);
@@ -71,4 +81,17 @@ test("Phase 34 consolidates Storage, Realtime, verification and audit boundaries
   assert.match(integration, /audit log UPDATE was not blocked/);
   assert.match(ci, /phase33-storage-realtime/);
   assert.match(ci, /roshan_phase34_consolidated_storage_realtime_and_lab_verify\.sql/);
+  assert.match(consultation, /useBranchRealtime\(s\(visit, "branch_id"\)/);
+  assert.match(
+    read("../src/routes/_authenticated/queue.tsx"),
+    /useBranchRealtime\(realtimeBranchId\)/,
+  );
+  assert.match(
+    read("../src/routes/_authenticated/lab.tsx"),
+    /useBranchRealtime\(realtimeBranchId\)/,
+  );
+  assert.match(
+    read("../src/routes/_authenticated/certificates.tsx"),
+    /useBranchRealtime\(realtimeBranchId\)/,
+  );
 });

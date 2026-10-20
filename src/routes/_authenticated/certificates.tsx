@@ -34,6 +34,7 @@ import { s, useRows, useSave, type Row, rel } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
+import { useBranchRealtime } from "@/lib/realtime";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
   head: () => ({ meta: [{ title: "Medical Certificates — ROSHAN Medical Center" }] }),
@@ -82,7 +83,7 @@ function CertificatesPageInner() {
     () =>
       supabase
         .from("visits")
-        .select("id,visit_number,visit_date,status,patient_id")
+        .select("id,branch_id,visit_number,visit_date,status,patient_id")
         .eq("patient_id", form.patient_id)
         .is("deleted_at", null)
         .neq("status", "cancelled")
@@ -91,6 +92,11 @@ function CertificatesPageInner() {
     { enabled: Boolean(form.patient_id) },
   );
   const visitOptions = (visitOptionsQ.data ?? []) as Row[];
+  const realtimeBranchId =
+    s(visitOptions[0] as Row | undefined, "branch_id") ||
+    s((list.data ?? [])[0] as Row | undefined, "branch_id") ||
+    null;
+  useBranchRealtime(realtimeBranchId);
 
   const endDate = useMemo(
     () => addDays(form.start_date, Number(form.days) || 1),

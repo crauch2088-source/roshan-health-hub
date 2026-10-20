@@ -38,6 +38,7 @@ import { s, rel, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
+import { useBranchRealtime } from "@/lib/realtime";
 
 export const Route = createFileRoute("/_authenticated/queue")({
   head: () => ({ meta: [{ title: "Queue — ROSHAN Medical Center" }] }),
@@ -104,7 +105,7 @@ function QueuePageInner() {
       let q = supabase
         .from("queue_tickets")
         .select(
-          "id,visit_id,queue_number,status,created_at,called_at,completed_at,visits(id,visit_number,patient_id,department_id,status,consultation_fee,patients(id,full_name,mrn),departments(id,name,name_ar),users!visits_doctor_id_fkey(full_name))",
+          "id,branch_id,visit_id,queue_number,status,created_at,called_at,completed_at,visits(id,branch_id,visit_number,patient_id,department_id,status,consultation_fee,patients(id,full_name,mrn),departments(id,name,name_ar),users!visits_doctor_id_fkey(full_name))",
         )
         .eq("visit_date", date)
         .is("deleted_at", null)
@@ -114,6 +115,11 @@ function QueuePageInner() {
     },
     { refetchInterval: 10000 },
   );
+
+  const realtimeRow = (queue.data ?? [])[0] as Row | undefined;
+  const realtimeBranchId =
+    s(realtimeRow, "branch_id") || s(rel(realtimeRow, "visits"), "branch_id") || null;
+  useBranchRealtime(realtimeBranchId);
 
   const update = useSave<{ id: string; status: string }>(
     async ({ id, status }) => {

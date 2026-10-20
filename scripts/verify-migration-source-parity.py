@@ -46,12 +46,12 @@ def main() -> None:
     if report.get("normalized_content_matches") != matches: fail("match count differs from manifest metadata")
     delta = json.loads(DELTA.read_text(encoding="utf-8"))
     delta_entries = delta.get("entries", [])
-    if delta.get("live_ledger_count") != 109 or delta.get("latest_live_version") != "20261018065708":
-        fail("live delta metadata does not match the last verified 109-entry ledger")
-    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 16 or len(delta_entries) != 16:
-        fail("expected the frozen 93-entry snapshot plus sixteen forward-source mappings")
+    if delta.get("live_ledger_count") != 113 or delta.get("latest_live_version") != "20261020090350":
+        fail("live delta metadata does not match the verified 113-entry ledger")
+    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 17 or len(delta_entries) != 17:
+        fail("expected the frozen 93-entry snapshot plus seventeen forward-source mappings")
     delta_versions = [e.get("version") for e in delta_entries]
-    if len(set(delta_versions)) != 16 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
+    if len(set(delta_versions)) != 17 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
         fail("forward migration versions must be unique 14-digit strings")
     if delta_versions != sorted(delta_versions):
         fail("forward migration delta must be ordered by ledger version")

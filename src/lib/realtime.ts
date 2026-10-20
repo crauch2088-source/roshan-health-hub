@@ -6,9 +6,10 @@ import { supabase } from "./supabase";
 /** Branch-scoped subscriptions plus a quiet polling fallback; RLS remains the security boundary. */
 export function useBranchRealtime(branchId: string | null | undefined, orderId?: string): void {
   const queryClient = useQueryClient();
+  const phase34Enabled = import.meta.env["VITE_ROSHAN_PHASE34_ENABLED"] !== "false";
 
   useEffect(() => {
-    if (!branchId) return;
+    if (!phase34Enabled || !branchId) return;
 
     let disposed = false;
     const timers = new Map<string, ReturnType<typeof setInterval>>();
@@ -29,6 +30,10 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
       } else {
         void queryClient.invalidateQueries({ queryKey: ["visits"] });
         void queryClient.invalidateQueries({ queryKey: ["visit"] });
+        void queryClient.invalidateQueries({ queryKey: ["consultation-visit"] });
+        void queryClient.invalidateQueries({ queryKey: ["clinic-visits"] });
+        void queryClient.invalidateQueries({ queryKey: ["certificates"] });
+        void queryClient.invalidateQueries({ queryKey: ["certificate-visits"] });
       }
     };
 
@@ -81,5 +86,5 @@ export function useBranchRealtime(branchId: string | null | undefined, orderId?:
       timers.clear();
       for (const channel of channels) void supabase.removeChannel(channel);
     };
-  }, [branchId, orderId, queryClient]);
+  }, [branchId, orderId, phase34Enabled, queryClient]);
 }
