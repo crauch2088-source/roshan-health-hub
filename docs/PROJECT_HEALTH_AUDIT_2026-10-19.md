@@ -208,8 +208,8 @@ This report combines direct repository file/commit comparisons, Vercel deploymen
 - [Security Advisor triage (2026-10-19)](SECURITY_DEFINER_ADVISOR_TRIAGE_2026-10-19.md)
 - [Authenticated production route QA (2026-10-18)](AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md)
 - [PR #79 — PostgreSQL 17 baseline and isolated clinical acceptance](https://github.com/crauch2088-source/roshan-health-hub/pull/79)
-- [PR #82 — clinical query error isolation and typed lab-result mapping](https://github.com/crauch2088-source/roshan-health-hub/pull/82)
-- [Latest observed production deployment](https://vercel.com/roshan45/roshan-health-hub/8dCbmC2y5NVdnBNi72VBf3eEWzjW)
+- [PR #83 — clinical query error isolation and typed lab-result mapping (merged 2026-10-20)](https://github.com/crauch2088-source/roshan-health-hub/pull/83)
+- [Latest observed production deployment](https://vercel.com/roshan45/roshan-health-hub/Fc3Awofc45hsptP1jHYGfNoQVPCd)
 - [Supabase extension-in-public remediation guidance](https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public)
 - [Supabase SECURITY DEFINER remediation guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
 - [Supabase unused-index guidance](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)
@@ -219,3 +219,12 @@ This report combines direct repository file/commit comparisons, Vercel deploymen
 ## Immediate next action
 
 Resolve the closed-but-unmerged PR #82 decision, then reconcile exact main/production SHA and run the isolated clinical E2E gate. These are higher-value release steps than starting another broad feature batch.
+
+
+## Execution addendum — Phase 33 merged and deployed (2026-10-20)
+
+- PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) was squash-merged as `bf6870df6268b70a61772d1c93350098a55bde06` after all exact-head GitHub Actions checks passed, including typecheck, lint, production build, guard tests, isolated PostgreSQL 17 clinical acceptance, prescription atomicity, clinical child RPC-only writes, insurance integrity/UI validation, and privileged-role guard.
+- Vercel production deployment for that exact merge SHA reached `READY` and carries the canonical alias `roshan-health-hub.vercel.app`. This confirms deployment identity/readiness, not authenticated end-to-end clinical acceptance.
+- Clinical workflow improvements: visit-local state reset, distinct retry paths for visit and linked-invoice failures, typed lab-result mapping, generic critical-flag handling, and demographic-compatible reference-range selection.
+- Read-only catalog audit remains unchanged: 18 active lab parameters, 14 numeric, zero active reference-range rows, and zero active parameter-level reference text. Two qualitative-result candidates are typed numeric and need laboratory-lead review. No production patient-level data or business records were read or written for this work.
+- Release blockers remain: clinician/lab-lead approval and population of reference ranges/units/critical thresholds, plus authenticated production route smoke tests and staff UAT. Do not infer full launch readiness from CI or Vercel `READY` alone.
