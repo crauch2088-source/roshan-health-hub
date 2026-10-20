@@ -1,6 +1,6 @@
 # Database migration manifest
 
-Last verified against production catalog: **2026-10-19**, PostgreSQL **17.6**, migration ledger version **112** (20261019061315_roshan_phase32_medical_certificate_visit_index).
+Last verified against production catalog: **2026-10-20**, PostgreSQL **17.6**, migration ledger version **114** (20261020111126_roshan_phase36_audit_coverage_and_visit_lifecycle_guards).
 
 ## Canonical clean-room baseline
 
@@ -44,3 +44,11 @@ Last verified against production catalog: **2026-10-19**, PostgreSQL **17.6**, m
 - Read-only live verification confirmed the three private clinical buckets, `public.verify_lab_order(uuid)`, lab verification columns, audit mutation triggers, and publication membership for `queue_tickets`, `lab_orders`, and `visits`.
 - Phase 35 wires branch-scoped Realtime invalidation into consultation, queue, lab list/detail, and certificate screens. Server lab verification and Realtime default on unless `VITE_ROSHAN_PHASE34_ENABLED=false`; direct browser Storage upload remains opt-in via `VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED=true`.
 - No production business data was used. Historical snapshot remains 93 mappings; forward-source delta now tracks 17 migrations through version `20261020090350`.
+
+
+## Phase 36 live-ledger update — 2026-10-20
+
+- Verified live migration ledger: **114 entries**, latest `20261020111126_roshan_phase36_audit_coverage_and_visit_lifecycle_guards`.
+- Tracked source: `db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql`. It adds audit coverage on insurance prior authorizations, medical certificates, and patient discounts; clinical parent-link/cancelled-visit guards on five tables; and publication membership for prescriptions and invoices.
+- The forward delta retains the frozen 93-entry historical snapshot and tracks 18 forward-source mappings. CI verifies normalized repository SQL SHA-256; the Supabase migration-history interface does not expose stored SQL, so independent live SQL hash equality is not claimed.
+- Frontend Realtime invalidates pharmacy/billing query keys. Direct clinical Storage remains opt-in; print remains available when the feature flag is off.

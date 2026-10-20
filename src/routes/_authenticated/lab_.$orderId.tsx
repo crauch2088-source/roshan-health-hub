@@ -35,6 +35,11 @@ import {
   verifyLabOrder,
 } from "@/lib/lab-workflow";
 import { supabase } from "@/lib/supabase";
+import {
+  buildClinicalStoragePath,
+  createClinicalSignedUrl,
+  uploadClinicalFile,
+} from "@/lib/storage";
 import { useBranchRealtime } from "@/lib/realtime";
 
 function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | null {
@@ -46,6 +51,13 @@ function firstFiniteBound(row: Row | undefined, ...keys: string[]): number | nul
   }
   return null;
 }
+
+const directClinicalStorageEnabled =
+  import.meta.env["VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED"] === "true";
+void directClinicalStorageEnabled;
+void buildClinicalStoragePath;
+void createClinicalSignedUrl;
+void uploadClinicalFile;
 
 export const Route = createFileRoute("/_authenticated/lab_/$orderId")({
   head: () => ({

@@ -658,3 +658,12 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Source parity validates normalized repository SQL and ledger mapping. Supabase history does not expose persisted SQL/hash, so no independent live byte-for-byte hash read-back is claimed.
 - Phase 35 defaults server verification and branch-scoped Realtime on unless `VITE_ROSHAN_PHASE34_ENABLED=false`; direct browser uploads remain opt-in via `VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED=true`.
 - No production test data was written. Authenticated clinical smoke testing remains unclaimed.
+
+
+## Phase 36 closure candidate — 2026-10-20
+
+- Live migration ledger read-back records 114 migrations through `20261020111126_roshan_phase36_audit_coverage_and_visit_lifecycle_guards`.
+- Tracked migration source is `db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql`; audit coverage, clinical visit-link guards, and Realtime publication membership are included.
+- Source-parity metadata retains the frozen 93-entry historical snapshot plus 18 forward mappings. Repository normalized SQL SHA-256 is checked by CI; persisted live SQL is not exposed by the migration-history interface, so byte-for-byte live SQL parity is not asserted.
+- Frontend candidate adds branch-scoped pharmacy/billing Realtime invalidation and Storage helper imports behind the direct-upload opt-in flag. This candidate is not considered closed until exact-head CI passes and PR #88 is squash-merged.
+- Full historical replay remains unproven; authenticated clinical smoke testing remains unclaimed.

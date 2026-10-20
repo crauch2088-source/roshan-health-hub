@@ -1,10 +1,10 @@
 {
   "generated_at": "2026-10-20",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 113,
-  "latest_live_version": "20261020090350",
+  "live_ledger_count": 114,
+  "latest_live_version": "20261020111126",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 17,
+  "forward_migration_count": 18,
   "entries": [
     {
       "version": "20261017125924",
@@ -158,6 +158,15 @@
       "normalized_source_sql_sha256": "7beadadea6028d956750777b238f996f5fb8bdb0b1351f7416b090c6eff2b246",
       "live_sql_hash_verified": false,
       "verification_evidence": "Repository source is aligned to the guarded Phase 34 migration submitted successfully to the live Supabase ledger. Supabase migration history exposes version/name but not persisted SQL text/hash; CI verifies normalized repository-source consistency without claiming independent live SQL hash read-back."
+    },
+    {
+      "version": "20261020111126",
+      "name": "roshan_phase36_audit_coverage_and_visit_lifecycle_guards",
+      "source_path": "db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql",
+      "source_git_blob_sha": "c52c65cdd50767a71298de47682294ad45ffed89",
+      "normalized_source_sql_sha256": "6f23e723209f38ab0511734d7201635a7721e46d7176b5c5e6e076eade843ad2",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Migration source text is tracked from the submitted SQL; ledger version/name and catalog objects were read back. Supabase migration history does not expose persisted SQL text/hash, so independent live SQL hash equality is not claimed."
     }
   ],
   "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
