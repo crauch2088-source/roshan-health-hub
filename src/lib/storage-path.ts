@@ -1,12 +1,8 @@
 export type ClinicalStorageBucket =
-  | "roshan-lab-reports"
-  | "roshan-medical-certificates"
-  | "roshan-clinical-attachments";
+  "roshan-lab-reports" | "roshan-medical-certificates" | "roshan-clinical-attachments";
 
 export type ClinicalStorageEntityType =
-  | "lab-reports"
-  | "medical-certificates"
-  | "clinical-attachments";
+  "lab-reports" | "medical-certificates" | "clinical-attachments";
 
 export interface ClinicalFileMetadata {
   type: string;
@@ -62,11 +58,7 @@ export function buildClinicalStoragePath(input: {
     .replace(/\.{2,}/g, ".")
     .replace(/^\.+/, "");
 
-  if (
-    !filename ||
-    filename.length > 255 ||
-    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(filename)
-  ) {
+  if (!filename || filename.length > 255 || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(filename)) {
     throw new Error("Invalid clinical storage filename.");
   }
 
@@ -102,10 +94,7 @@ export function assertClinicalStoragePath(bucket: ClinicalStorageBucket, path: s
   }
 
   safeSegment(entityId, "entity ID");
-  if (
-    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(filename) ||
-    filename.startsWith("..")
-  ) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(filename) || filename.startsWith("..")) {
     throw new Error("Invalid clinical storage filename.");
   }
 }

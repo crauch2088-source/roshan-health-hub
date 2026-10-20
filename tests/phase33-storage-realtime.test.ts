@@ -48,10 +48,7 @@ test("typed mapper and server verification contract stay aligned", () => {
   assert.match(mapper, /critical-high/);
   assert.match(mapper, /verifyLabOrder/);
   assert.match(lab, /supabase\.rpc\("verify_lab_order"/);
-  assert.doesNotMatch(
-    lab,
-    /\.from\("lab_orders"\)\s*\.update\(\{\s*status:\s*"verified"/,
-  );
+  assert.doesNotMatch(lab, /\.from\("lab_orders"\)\s*\.update\(\{\s*status:\s*"verified"/);
 });
 
 test("Phase 34 consolidates Storage, Realtime, verification and audit boundaries", () => {

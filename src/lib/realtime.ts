@@ -4,10 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 
 /** Branch-scoped subscriptions plus a quiet polling fallback; RLS remains the security boundary. */
-export function useBranchRealtime(
-  branchId: string | null | undefined,
-  orderId?: string,
-): void {
+export function useBranchRealtime(branchId: string | null | undefined, orderId?: string): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -65,11 +62,7 @@ export function useBranchRealtime(
             const timer = timers.get(key);
             if (timer) clearInterval(timer);
             timers.delete(key);
-          } else if (
-            status === "CHANNEL_ERROR" ||
-            status === "TIMED_OUT" ||
-            status === "CLOSED"
-          ) {
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             fallback();
           }
         });

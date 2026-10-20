@@ -18,10 +18,7 @@ test("storage paths encode branch, typed entity and safe filename", () => {
     entityId: "00000000-0000-0000-0000-000000003361",
     filename: "CBC report.pdf",
   });
-  assert.equal(
-    path,
-    branchId + "/lab-reports/00000000-0000-0000-0000-000000003361/CBC-report.pdf",
-  );
+  assert.equal(path, branchId + "/lab-reports/00000000-0000-0000-0000-000000003361/CBC-report.pdf");
   assertClinicalStoragePath("roshan-lab-reports", path);
   assert.throws(() =>
     buildClinicalStoragePath({
@@ -46,10 +43,7 @@ test("clinical storage helper rejects unsafe MIME types and oversized files", ()
   validateClinicalFileMetadata({ type: "application/pdf", size: 1024 }, "roshan-lab-reports");
   validateClinicalFileMetadata({ type: "image/jpeg", size: 1024 }, "roshan-clinical-attachments");
   assert.throws(() =>
-    validateClinicalFileMetadata(
-      { type: "image/webp", size: 100 },
-      "roshan-clinical-attachments",
-    ),
+    validateClinicalFileMetadata({ type: "image/webp", size: 100 }, "roshan-clinical-attachments"),
   );
   assert.throws(() =>
     validateClinicalFileMetadata(
@@ -70,7 +64,10 @@ test("lab verification calls only the atomic RPC and surfaces server errors", as
     verifyLabOrder("order-1", async () => ({ error: { message: "permission denied" } })),
     /permission denied/,
   );
-  await assert.rejects(verifyLabOrder(" ", async () => ({ error: null })), /required/);
+  await assert.rejects(
+    verifyLabOrder(" ", async () => ({ error: null })),
+    /required/,
+  );
 });
 
 test("Realtime hook uses branch topics, targeted invalidation and quiet fallback", () => {

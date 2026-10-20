@@ -41,15 +41,13 @@ export async function createClinicalSignedUrl(
 ): Promise<string> {
   assertClinicalStoragePath(bucket, path);
 
-  if (
-    !Number.isInteger(expiresInSeconds) ||
-    expiresInSeconds < 30 ||
-    expiresInSeconds > 3600
-  ) {
+  if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 30 || expiresInSeconds > 3600) {
     throw new Error("Signed URL expiry must be between 30 and 3600 seconds.");
   }
 
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresInSeconds);
   if (error || !data?.signedUrl) {
     throw new Error(error?.message || "Could not create a signed clinical file URL.");
   }
