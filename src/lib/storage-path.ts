@@ -39,7 +39,15 @@ export function validateClinicalFileMetadata(file: ClinicalFileMetadata, bucket:
 }
 export function assertClinicalStoragePath(bucket: ClinicalStorageBucket, path: string): void {
   const parts = path.split("/");
-  if (parts.length !== 4 || !UUID.test(parts[0]) || parts[1] !== BUCKET_ENTITY[bucket]) throw new Error("Clinical storage path does not match its private bucket.");
-  safeSegment(parts[2], "entity ID");
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(parts[3]) || parts[3].startsWith("..")) throw new Error("Invalid clinical storage filename.");
+  const branch = parts[0] ?? "";
+  const entityType = parts[1] ?? "";
+  const entityId = parts[2] ?? "";
+  const filename = parts[3] ?? "";
+  if (parts.length !== 4 || !UUID.test(branch) || entityType !== BUCKET_ENTITY[bucket]) {
+    throw new Error("Clinical storage path does not match its private bucket.");
+  }
+  safeSegment(entityId, "entity ID");
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(filename) || filename.startsWith("..")) {
+    throw new Error("Invalid clinical storage filename.");
+  }
 }

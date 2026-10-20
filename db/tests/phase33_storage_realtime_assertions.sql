@@ -46,8 +46,8 @@ SELECT status,verified_by,verified_at INTO v_status,v_by,v_at FROM public.lab_or
 IF v_status <> 'verified' OR v_by <> '00000000-0000-0000-0000-000000003331'::uuid OR v_at IS NULL THEN RAISE EXCEPTION 'verify_lab_order did not atomically mark the order'; END IF;
 SELECT status INTO v_item_status FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000003369'; IF v_item_status <> 'verified' THEN RAISE EXCEPTION 'lab item not verified atomically'; END IF;
 SELECT verified_by INTO v_result_by FROM public.lab_results WHERE id='00000000-0000-0000-0000-000000003370'; IF v_result_by <> '00000000-0000-0000-0000-000000003331'::uuid THEN RAISE EXCEPTION 'lab result verifier not recorded'; END IF;
-UPDATE public.lab_results SET result_value='999' WHERE id='00000000-0000-0000-0000-000000003370'; IF (SELECT result_value FROM public.lab_results WHERE id='00000000-0000-0000-0000-000000003370') <> '5' THEN RAISE EXCEPTION 'verified result was modified directly'; END IF;
-UPDATE public.lab_order_items SET status='completed' WHERE id='00000000-0000-0000-0000-000000003369'; IF (SELECT status FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000003369') <> 'verified' THEN RAISE EXCEPTION 'verified lab item was modified directly'; END IF;
+BEGIN UPDATE public.lab_results SET result_value='999' WHERE id='00000000-0000-0000-0000-000000003370'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; IF (SELECT result_value FROM public.lab_results WHERE id='00000000-0000-0000-0000-000000003370') <> '5' THEN RAISE EXCEPTION 'verified result was modified directly'; END IF;
+BEGIN UPDATE public.lab_order_items SET status='completed' WHERE id='00000000-0000-0000-0000-000000003369'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; IF (SELECT status FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000003369') <> 'verified' THEN RAISE EXCEPTION 'verified lab item was modified directly'; END IF;
 END $verified_state$;
 RESET ROLE;
 DO $audit_immutable$ DECLARE v_blocked boolean; BEGIN
