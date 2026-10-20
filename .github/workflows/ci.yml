@@ -36,7 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
       - name: Create isolated schema and apply reversal function
         env:
           PGPASSWORD: postgres
@@ -463,3 +463,34 @@ jobs:
             -f db/roshan_phase31_clinical_financial_security_hardening.sql \
             -f db/roshan_phase31_contract_security_cutover.sql \
             -f db/tests/clinical_e2e_acceptance_workflow.sql
+
+
+  phase33-storage-realtime:
+    name: Phase 33 private Storage and branch-scoped Realtime integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      - name: Replay canonical schema and Phase 33 integration assertions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/tests/phase33_storage_realtime_fixture.sql \
+            -f db/roshan_phase33_storage_and_realtime.sql \
+            -f db/tests/phase33_storage_realtime_assertions.sql

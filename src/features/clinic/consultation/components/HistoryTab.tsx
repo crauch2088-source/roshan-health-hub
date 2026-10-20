@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Empty, Loading, StatusBadge } from "@/components/kit";
+import { Empty, ErrorBox, Loading, StatusBadge } from "@/components/kit";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { s, useRows, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate } from "@/lib/medical";
@@ -24,7 +25,26 @@ export function HistoryTab({ visitId }: { visitId: string }) {
       .order("visit_date", { ascending: false })
       .limit(30),
   );
+  if (visitQ.error)
+    return (
+      <div role="alert" className="space-y-2">
+        <ErrorBox error={visitQ.error} />
+        <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
+          {lang === "ar" ? "إعادة المحاولة" : "Retry patient history"}
+        </Button>
+      </div>
+    );
+  if (visitQ.isLoading) return <Loading />;
   if (visits.isLoading) return <Loading />;
+  if (visits.error)
+    return (
+      <div role="alert" className="space-y-2">
+        <ErrorBox error={visits.error} />
+        <Button variant="outline" size="sm" onClick={() => void visits.refetch()}>
+          {lang === "ar" ? "إعادة المحاولة" : "Retry previous visits"}
+        </Button>
+      </div>
+    );
   const rows = (visits.data ?? []) as Row[];
   return (
     <div className="space-y-3">

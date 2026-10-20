@@ -216,6 +216,14 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
+        {visitQ.error ? (
+          <div role="alert" className="space-y-2">
+            <p>{lang === "ar" ? "تعذّر تحميل بيانات الزيارة." : "Could not load visit details."}</p>
+            <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
+            </Button>
+          </div>
+        ) : null}
         <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -273,14 +281,19 @@ export function LaboratoryTab({ visitId }: { visitId: string }) {
             {lang === "ar" ? "جارٍ تحميل قائمة التحاليل…" : "Loading test catalogue…"}
           </p>
         ) : testsQ.error ? (
-          <p
+          <div
             role="alert"
             className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
           >
-            {lang === "ar"
-              ? "تعذّر تحميل قائمة التحاليل. لم يتم إرسال أي طلب؛ حاول مجددًا."
-              : "Could not load the test catalogue. No order was submitted; please retry."}
-          </p>
+            <p>
+              {lang === "ar"
+                ? "تعذّر تحميل قائمة التحاليل. لم يتم إرسال أي طلب؛ حاول مجددًا."
+                : "Could not load the test catalogue. No order was submitted; please retry."}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void testsQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry test catalogue"}
+            </Button>
+          </div>
         ) : null}
         <div className="grid gap-4 lg:grid-cols-2">
           {categories

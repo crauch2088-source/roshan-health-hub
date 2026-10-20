@@ -156,6 +156,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
+        {visitQ.error ? (
+          <div role="alert" className="space-y-2">
+            <p>{lang === "ar" ? "تعذّر تحميل بيانات الزيارة." : "Could not load visit details."}</p>
+            <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
+            </Button>
+          </div>
+        ) : null}
         {isPediatric ? (
           <div
             role="alert"
@@ -172,6 +180,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : lang === "ar"
                   ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
                   : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
+            {vitalsQ.error ? (
+              <Button variant="outline" size="sm" onClick={() => void vitalsQ.refetch()}>
+                {lang === "ar" ? "إعادة المحاولة" : "Retry weight"}
+              </Button>
+            ) : null}
           </div>
         ) : null}
         <div
@@ -214,13 +227,23 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               {lang === "ar" ? "جارٍ البحث عن الأدوية..." : "Searching medicines..."}
             </p>
           )}
-          {medsQ.error && search !== form.name && (
-            <p role="alert" className="mt-1 text-xs text-destructive">
-              {lang === "ar"
-                ? "تعذر تحميل نتائج الأدوية. حاول مجدداً."
-                : "Could not load medicines. Please try again."}
-            </p>
-          )}
+          {medsQ.error && search !== form.name ? (
+            <div role="alert" className="mt-1 space-y-1 text-xs text-destructive">
+              <p>
+                {lang === "ar"
+                  ? "تعذر تحميل نتائج الأدوية. حاول مجدداً."
+                  : "Could not load medicines. Please try again."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void medsQ.refetch()}
+              >
+                {lang === "ar" ? "إعادة المحاولة" : "Retry medicine search"}
+              </Button>
+            </div>
+          ) : null}
           {search.trim().length >= 2 &&
             search !== form.name &&
             !medsQ.isLoading &&
