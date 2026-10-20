@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-20",
+  "generated_at": "2026-10-21",
   "project_ref": "jewzonxplxhogqrnhosl",
-  "live_ledger_count": 114,
-  "latest_live_version": "20261020111126",
+  "live_ledger_count": 115,
+  "latest_live_version": "20261020232033",
   "historical_snapshot_count": 93,
-  "forward_migration_count": 18,
+  "forward_migration_count": 22,
   "entries": [
     {
       "version": "20261017125924",
@@ -151,6 +151,33 @@
       "verification_evidence": "Exact four-table revocation SQL submitted through the Supabase migration API; ledger version/name read back and effective privileges verified. The API does not expose a stored live SQL hash."
     },
     {
+      "version": "20261018201642",
+      "name": "roshan_phase31_clinical_financial_security_hardening",
+      "source_path": "db/roshan_phase31_clinical_financial_security_hardening.sql",
+      "source_git_blob_sha": "1f47a8932a37957de5a466aece9e12fbaa0f20c1",
+      "normalized_source_sql_sha256": "d8633afca844bdf05574c553480384533e70595dd0e3ad71b4a1e70d941aef64",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Tracked historical migration source mapped to live ledger version/name; stored live SQL bytes are not exposed, so independent live hash equality is not claimed."
+    },
+    {
+      "version": "20261018201758",
+      "name": "roshan_phase31_contract_security_cutover",
+      "source_path": "db/roshan_phase31_contract_security_cutover.sql",
+      "source_git_blob_sha": "27e4cbb44e8127e956188414a5673c5907a6d87b",
+      "normalized_source_sql_sha256": "cd4466c63d21bb6f2c1d6556a467f5ece1d0b903f9cead0a50b56a9cad603e16",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Tracked historical migration source mapped to live ledger version/name; stored live SQL bytes are not exposed, so independent live hash equality is not claimed."
+    },
+    {
+      "version": "20261019061315",
+      "name": "roshan_phase32_medical_certificate_visit_index",
+      "source_path": "db/roshan_phase32_medical_certificate_visit_index.sql",
+      "source_git_blob_sha": "e02434018cfefd543d870e32bb7dab1f58647cc9",
+      "normalized_source_sql_sha256": "25443df87111c3c6732a5b9404aa65389a18717308384df3f8cfc3d17c43f44b",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Tracked historical migration source mapped to live ledger version/name; stored live SQL bytes are not exposed, so independent live hash equality is not claimed."
+    },
+    {
       "version": "20261020090350",
       "name": "roshan_phase34_storage_guard_lab_verify_realtime",
       "source_path": "db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql",
@@ -167,7 +194,16 @@
       "normalized_source_sql_sha256": "6f23e723209f38ab0511734d7201635a7721e46d7176b5c5e6e076eade843ad2",
       "live_sql_hash_verified": false,
       "verification_evidence": "Migration source text is tracked from the submitted SQL; ledger version/name and catalog objects were read back. Supabase migration history does not expose persisted SQL text/hash, so independent live SQL hash equality is not claimed."
+    },
+    {
+      "version": "20261020232033",
+      "name": "roshan_phase39_permissions_lab_catalog_and_audit_closure",
+      "source_path": "db/roshan_phase39_permissions_lab_catalog_and_audit_closure.sql",
+      "source_git_blob_sha": "72875833745f580ad7e3cb063aa1d6d04d7d8daa",
+      "normalized_source_sql_sha256": "aab407408bbfa61587622c2528ace996c1a6778850508f4b6fae54a5ed527b82",
+      "live_sql_hash_verified": false,
+      "verification_evidence": "Tracks the source file associated with the successful live migration version/name; this is a repository-source normalized hash, not an independently verified hash of stored live SQL bytes."
     }
   ],
-  "limitations": "This manifest verifies exact source files and records their mapping to the live ledger as observed through Supabase read-only migration history. It does not query persisted migration SQL or compute live SQL hashes; the frozen 93-entry hash snapshot remains separate. Full historical replay is still unproven because the reviewed initial schema baseline is missing and the environment-specific identity mapping is intentionally redacted."
+  "limitations": "Frozen 93-entry historical source snapshot plus 22 forward-source mappings (93 + 22 = 115). Repository normalized source hashes are checked; persisted live SQL bytes/hashes are not exposed by migration history, so live_sql_hash_verified remains false. v114 catalog fingerprint remains historical; exact v115 live catalog digests were not fabricated because this round prohibits Supabase calls."
 }

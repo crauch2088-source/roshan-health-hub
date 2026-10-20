@@ -46,12 +46,14 @@ def main() -> None:
     if report.get("normalized_content_matches") != matches: fail("match count differs from manifest metadata")
     delta = json.loads(DELTA.read_text(encoding="utf-8"))
     delta_entries = delta.get("entries", [])
-    if delta.get("live_ledger_count") != 114 or delta.get("latest_live_version") != "20261020111126":
-        fail("live delta metadata does not match the verified 114-entry ledger")
-    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 18 or len(delta_entries) != 18:
-        fail("expected the frozen 93-entry snapshot plus eighteen forward-source mappings")
+    if delta.get("live_ledger_count") != 115 or delta.get("latest_live_version") != "20261020232033":
+        fail("live delta metadata does not match the verified 115-entry ledger")
+    if delta.get("historical_snapshot_count") != 93 or delta.get("forward_migration_count") != 22 or len(delta_entries) != 22:
+        fail("expected the frozen 93-entry snapshot plus twenty-two forward-source mappings")
+    if delta.get("historical_snapshot_count") + len(delta_entries) != delta.get("live_ledger_count"):
+        fail("strict ledger arithmetic failed: historical_snapshot_count + len(forward_migrations) must equal live_ledger_count")
     delta_versions = [e.get("version") for e in delta_entries]
-    if len(set(delta_versions)) != 18 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
+    if len(set(delta_versions)) != 22 or any(not re.fullmatch(r"\d{14}", str(v)) for v in delta_versions):
         fail("forward migration versions must be unique 14-digit strings")
     if delta_versions != sorted(delta_versions):
         fail("forward migration delta must be ordered by ledger version")
@@ -76,6 +78,6 @@ def main() -> None:
     for policy in ("patients_select", "patients_insert", "patients_update", "patients_delete"):
         if not re.search(r"(?im)^\s*create\s+policy\s+" + policy + r"\b", replay_sql): fail(f"replay-safe variant missing {policy}")
     print(f"PASS: frozen historical snapshot — {len(entries)} mappings; {matches} normalized SQL hashes verified; {placeholders} redacted placeholder.")
-    print(f"PASS: separate forward-source delta — {len(delta_entries)} source files hash-verified; ledger metadata records {delta.get('live_ledger_count')} entries through {delta.get('latest_live_version')}.")
+    print(f"PASS: separate forward-source delta — {len(delta_entries)} source files hash-verified; strict arithmetic 93 + {len(delta_entries)} = {delta.get('live_ledger_count')} through {delta.get('latest_live_version')}.")
     print("LIMIT: no live SQL hash or database connection is checked by this workflow. Full historical replay and semantic equivalence remain unproven; see docs/live-migration-delta-2026-10-18.json and docs/DB_MIGRATION_RECONCILIATION.md.")
 if __name__ == "__main__": main()

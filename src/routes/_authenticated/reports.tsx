@@ -80,8 +80,8 @@ function ReportsPageInner() {
 
   const diagnoses = useRows(["rep-dx", from, to], () =>
     supabase
-      .from("medical_records")
-      .select("id, diagnosis, created_at")
+      .from("diagnoses")
+      .select("id, diagnosis_name, created_at")
       .gte("created_at", from)
       .lte("created_at", `${to}T23:59:59`)
       .is("deleted_at", null),
@@ -114,7 +114,7 @@ function ReportsPageInner() {
 
   const byDiagnosis: Record<string, number> = {};
   for (const d of dxRows) {
-    const key = s(d, "diagnosis").trim();
+    const key = s(d, "diagnosis_name").trim();
     if (!key) continue;
     byDiagnosis[key] = (byDiagnosis[key] ?? 0) + 1;
   }

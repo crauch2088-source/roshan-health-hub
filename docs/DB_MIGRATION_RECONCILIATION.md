@@ -694,3 +694,11 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Multi-role source-contract tests and the five-minute owner browser checklist cover receptionist, doctor, laboratory, pharmacy, and billing workflow boundaries. Browser-level runtime checks remain manual because CI has no authenticated production test accounts.
 
 - The first exact replay comparison identified two snapshot omissions (`private.billing_rpc_idempotency` and the `authenticated SELECT` grant on `public.v_patient_receivables`); the baseline and replay assertions were corrected, and PR #91 verified exact 7/7 SHA-256 parity. No production DDL was performed.
+
+
+## Phase 39 — migration 115 source reconciliation (2026-10-21)
+
+- The task owner confirms live ledger version `20261020232033` and 115 total entries; no Supabase tools were used in this source-only round.
+- The forward delta tracks 22 source mappings above the frozen 93-entry archive and the verifier enforces `historical_snapshot_count + len(forward_migrations) == live_ledger_count` (93 + 22 = 115).
+- Repository normalized source hashes are validated independently. Supabase migration history does not expose persisted SQL bytes, so the source hash is not represented as an independently verified live SQL hash.
+- The v114 seven-category fingerprint remains the last captured catalog snapshot. Exact v115 live digests require an explicitly permitted read-only capture and must not be guessed.
