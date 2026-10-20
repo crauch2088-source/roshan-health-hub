@@ -1,4 +1,5 @@
-export type LabResultFlag = "low" | "high" | "critical" | "critical-low" | "critical-high" | "normal" | null;
+export type LabResultFlag =
+  "low" | "high" | "critical" | "critical-low" | "critical-high" | "normal" | null;
 
 export type LabResultMapping =
   | { kind: "empty" }
@@ -148,8 +149,7 @@ export function selectLabReferenceRange<T extends Record<string, unknown>>(
       if (age !== undefined && maxAge !== null && age > maxAge) return null;
 
       const specificity =
-        (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) +
-        (maxAge !== null ? 1 : 0);
+        (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) + (maxAge !== null ? 1 : 0);
       return { range, index, specificity };
     })
     .filter(
