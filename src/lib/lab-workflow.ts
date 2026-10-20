@@ -1,11 +1,4 @@
-export type LabResultFlag =
-  | "low"
-  | "high"
-  | "critical"
-  | "critical-low"
-  | "critical-high"
-  | "normal"
-  | null;
+export type LabResultFlag = "low" | "high" | "critical" | "critical-low" | "critical-high" | "normal" | null;
 
 export type LabResultMapping =
   | { kind: "empty" }
@@ -143,8 +136,7 @@ export function selectLabReferenceRange<T extends Record<string, unknown>>(
       if (range["parameter_id"] !== parameterId) return null;
 
       const rawGender = range["gender"];
-      const rangeGender =
-        rawGender == null ? "" : String(rawGender).trim().toLowerCase();
+      const rangeGender = rawGender == null ? "" : String(rawGender).trim().toLowerCase();
       if (rangeGender && (!normalizedGender || rangeGender !== normalizedGender)) {
         return null;
       }
@@ -155,7 +147,8 @@ export function selectLabReferenceRange<T extends Record<string, unknown>>(
       if (age !== undefined && minAge !== null && age < minAge) return null;
       if (age !== undefined && maxAge !== null && age > maxAge) return null;
 
-      const specificity = (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) + (maxAge !== null ? 1 : 0);
+      const specificity = (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) +
+        (maxAge !== null ? 1 : 0);
       return { range, index, specificity };
     })
     .filter(
@@ -175,9 +168,7 @@ export const LAB_WORKFLOW_STAGES = [
 
 /** Maps persisted workflow states to a stable, display-only progress step. */
 export function labWorkflowStage(status: string): number {
-  const index = LAB_WORKFLOW_STAGES.indexOf(
-    status as (typeof LAB_WORKFLOW_STAGES)[number],
-  );
+  const index = LAB_WORKFLOW_STAGES.indexOf(status as (typeof LAB_WORKFLOW_STAGES)[number]);
   return index < 0 ? 0 : index;
 }
 
