@@ -147,7 +147,8 @@ export function selectLabReferenceRange<T extends Record<string, unknown>>(
       if (age !== undefined && minAge !== null && age < minAge) return null;
       if (age !== undefined && maxAge !== null && age > maxAge) return null;
 
-      const specificity = (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) +
+      const specificity =
+        (rangeGender ? 2 : 0) + (minAge !== null ? 1 : 0) +
         (maxAge !== null ? 1 : 0);
       return { range, index, specificity };
     })
