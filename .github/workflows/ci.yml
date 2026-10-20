@@ -16,6 +16,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  supabase-data-api-explicit-grants:
+    name: Supabase Data API explicit grants for new tables
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check grants and RLS in migrations dated 2026-10-30 onward
+        run: python3 scripts/verify-supabase-data-api-grants.py
+
   cashbox-reversal-two-session:
     name: Cashbox reversal two-session concurrency integration
     runs-on: ubuntu-latest
