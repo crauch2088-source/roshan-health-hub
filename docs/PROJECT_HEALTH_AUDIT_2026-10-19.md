@@ -209,7 +209,7 @@ This report combines direct repository file/commit comparisons, Vercel deploymen
 - [Authenticated production route QA (2026-10-18)](AUTHENTICATED_PRODUCTION_ROUTE_QA_2026-10-18.md)
 - [PR #79 — PostgreSQL 17 baseline and isolated clinical acceptance](https://github.com/crauch2088-source/roshan-health-hub/pull/79)
 - [PR #83 — clinical query error isolation and typed lab-result mapping (merged 2026-10-20)](https://github.com/crauch2088-source/roshan-health-hub/pull/83)
-- [Latest observed production deployment](https://vercel.com/roshan45/roshan-health-hub/Fc3Awofc45hsptP1jHYGfNoQVPCd)
+- [Latest observed production deployment](https://vercel.com/roshan45/roshan-health-hub/8vHNLnBxPMhXD3mmWamDRtRWSmjz)
 - [Supabase extension-in-public remediation guidance](https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public)
 - [Supabase SECURITY DEFINER remediation guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
 - [Supabase unused-index guidance](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)
@@ -228,3 +228,12 @@ Resolve the closed-but-unmerged PR #82 decision, then reconcile exact main/produ
 - Clinical workflow improvements: visit-local state reset, distinct retry paths for visit and linked-invoice failures, typed lab-result mapping, generic critical-flag handling, and demographic-compatible reference-range selection.
 - Read-only catalog audit remains unchanged: 18 active lab parameters, 14 numeric, zero active reference-range rows, and zero active parameter-level reference text. Two qualitative-result candidates are typed numeric and need laboratory-lead review. No production patient-level data or business records were read or written for this work.
 - Release blockers remain: clinician/lab-lead approval and population of reference ranges/units/critical thresholds, plus authenticated production route smoke tests and staff UAT. Do not infer full launch readiness from CI or Vercel `READY` alone.
+
+
+## Execution addendum — lab safety follow-ups merged and deployed (2026-10-20)
+
+- PR [#84](https://github.com/crauch2088-source/roshan-health-hub/pull/84) merged as `7313adb0f4b58d845bea0326c59c1860ea4e2f98`. It preserves an existing critical lab classification when the same numeric result is resaved, while reclassifying changed values. Exact-head CI and all related integration/security workflows passed; the production deployment reached READY.
+- PR [#85](https://github.com/crauch2088-source/roshan-health-hub/pull/85) merged as `f425e2893c753d5f6ff984b1fd2aa169e7857db1`. The lab order screen now warns in Arabic and English when numeric parameters lack a compatible reference interval. Exact-head CI, typecheck, lint, build, isolated PostgreSQL 17 and related integration/security workflows passed. The production deployment for this SHA reached READY.
+- No schema migration or production clinical/financial data write was made. The canonical production alias is attached to the READY deployment.
+- Catalog blocker remains: 18 active lab parameters, 14 typed numeric, no active reference ranges, and no parameter-level reference text; two qualitative-result candidates need lab-lead review. The new warning improves visibility but does not replace approved ranges or clinical sign-off.
+- Authenticated production browser smoke tests and staff UAT remain open; deployment readiness is not clinical acceptance.

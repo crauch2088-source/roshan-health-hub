@@ -1678,20 +1678,16 @@ The clinical child-row branch-isolation migration is now live as `20261018064139
 - [x] Live ledger reconciled to 112 migrations through `20261019061315_roshan_phase32_medical_certificate_visit_index`; forward-source parity tracks 19 entries above the frozen 93-entry snapshot.
 - [ ] Re-run GitHub Actions on this documentation/parity update and confirm the parity checker passes on the resulting commit. No Supabase writes or deployment required for this documentation-only change.
 
-## Phase 33 — clinical error handling and lab reference safety (closed, 2026-10-20)
+## Phase 33 — clinical workflow and lab safety follow-ups (verified through 2026-10-20)
 
-- [x] Recovered the corrected work into PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) and squash-merged it to `main`.
-- [x] Merge commit: `bf6870df6268b70a61772d1c93350098a55bde06`. PR head tested: `1a0756f087a5ff1bc4fe3d0f143bd70bb4122520`.
-- [x] Exact-head GitHub Actions all green: CI (typecheck, lint, production build, guard tests, isolated PostgreSQL 17 baseline/clinical acceptance), prescription atomicity, clinical child RPC-only writes, insurance claim integrity/UI validation, and privileged-role guard.
-- [x] Vercel preview for the tested PR head reached READY. The merged `main` production deployment also reached READY for the exact merge SHA and carries the canonical alias `roshan-health-hub.vercel.app`.
-- [x] Consultation visit-local state is reset when the active visit changes; visit-query failures and invoice-query failures have separate retry paths.
-- [x] Typed lab result mapping distinguishes empty/pending/numeric/text/coded results, supports numeric zero, and preserves a generic critical flag without assuming high/low direction.
-- [x] Reference-range selection now rejects known demographic mismatches and chooses the most specific compatible interval; regression tests cover age/sex matching and safe fallback.
-- [x] Production Supabase catalog audit was read-only: 18 active lab parameters (14 typed numeric), 0 active rows in `lab_reference_ranges`, and 0 active parameter `reference_text` values. No patient-level data was queried; no production business data or schema was changed.
-- [ ] **Clinical release blocker remains:** the lab reference-range catalog is empty. Do not invent intervals or critical thresholds. A clinician/lab lead must approve ranges, units, age/sex/method applicability, provenance, and escalation policy using `docs/LAB_REFERENCE_RANGE_APPROVAL_TEMPLATE.md`. Two qualitative-result candidates are currently typed numeric and need lab-lead review.
-- [ ] Authenticated production browser smoke tests and staff UAT remain outstanding. Passing isolated PostgreSQL 17 CI is not proof that every production UI route was manually exercised.
-- [ ] Follow-up code audit: verify that saving an existing lab result cannot silently discard an already recorded critical flag, while still recomputing normal/abnormal flags safely when the value changes. Add a focused regression before calling the lab workflow release-ready.
+- [x] PR [#83](https://github.com/crauch2088-source/roshan-health-hub/pull/83) squash-merged as `bf6870df6268b70a61772d1c93350098a55bde06`. Exact-head CI, isolated PostgreSQL 17 clinical acceptance, atomicity/security workflows, insurance UI/integrity checks and Vercel preview all passed; production deployment for the merge SHA reached READY.
+- [x] PR [#84](https://github.com/crauch2088-source/roshan-health-hub/pull/84) squash-merged as `7313adb0f4b58d845bea0326c59c1860ea4e2f98`. The save path now preserves an existing critical flag when an unchanged numeric result is resaved, but recalculates when the result value changes. Typecheck, lint, build, guard tests, PostgreSQL 17/security/atomicity workflows and Vercel preview passed; production deployment reached READY.
+- [x] PR [#85](https://github.com/crauch2088-source/roshan-health-hub/pull/85) squash-merged as `f425e2893c753d5f6ff984b1fd2aa169e7857db1`. The lab order page now shows a bilingual warning when numeric parameters have no compatible reference interval. Exact-head CI, typecheck, lint, build, guard tests, PostgreSQL 17/security/atomicity workflows and Vercel preview passed; production deployment for this merge SHA reached READY.
+- [x] The exact `main` merge SHA for PR #85 has green CI and PostgreSQL 17 child-write / finance-write isolation checks. Vercel production deployment is READY and carries the canonical `roshan-health-hub.vercel.app` alias.
+- [x] All three PRs made no schema migrations and no production patient/financial record writes.
+- [ ] **Clinical release blocker remains:** read-only catalog audit found 18 active lab parameters (14 typed numeric), 0 active rows in `lab_reference_ranges`, and 0 active parameter `reference_text` values. Two qualitative-result candidates are typed numeric and require lab-lead review. Do not invent reference intervals, units, or critical thresholds. Use `docs/LAB_REFERENCE_RANGE_APPROVAL_TEMPLATE.md` for clinician/lab-lead sign-off.
+- [ ] Authenticated production browser smoke tests and staff UAT remain outstanding. Passing isolated CI and a READY deployment does not prove every production route or clinical workflow was manually exercised.
 
 ## Immediate next action
 
-Continue with the focused lab-result persistence audit and regression tests, without writing clinical data to production. Keep clinical catalog approval and authenticated production UAT as explicit launch gates; then update this file and the health audit with exact commit/check/deployment evidence.
+Prioritize lab-lead approval of the catalog and an authenticated production smoke-test session for critical routes. Keep all production clinical/financial writes out of verification; use isolated synthetic PostgreSQL/browser fixtures. Continue only with code-only safety and UX work that does not require inventing clinical policy.
