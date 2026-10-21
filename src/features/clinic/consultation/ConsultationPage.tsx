@@ -297,9 +297,14 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
           </div>
           <div className="col-span-full grid gap-3 border-t pt-3 sm:grid-cols-3">
             <div className="min-w-0">
-              <div className="roshan-field-label">{lang === "ar" ? "الحساسية / Allergies" : "Allergies / الحساسية"}</div>
+              <div className="roshan-field-label">
+                {lang === "ar" ? "الحساسية / Allergies" : "Allergies / الحساسية"}
+              </div>
               {allergyText ? (
-                <div role="alert" className="mt-1 inline-flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/15 px-3 py-2 text-sm font-semibold text-destructive">
+                <div
+                  role="alert"
+                  className="mt-1 inline-flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/15 px-3 py-2 text-sm font-semibold text-destructive"
+                >
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                   <span>{allergyText}</span>
                 </div>
@@ -309,8 +314,24 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
                 </div>
               )}
             </div>
-            {chronicText ? <div className="min-w-0"><div className="roshan-field-label">{lang === "ar" ? "الأمراض المزمنة" : "Chronic conditions"}</div><div className="mt-1 break-words text-sm font-medium">{chronicText}</div></div> : null}
-            {bloodGroup ? <div className="min-w-0"><div className="roshan-field-label">{lang === "ar" ? "فصيلة الدم / Blood group" : "Blood group / فصيلة الدم"}</div><div className="mt-1 font-mono text-sm font-semibold" dir="ltr">{bloodGroup}</div></div> : null}
+            {chronicText ? (
+              <div className="min-w-0">
+                <div className="roshan-field-label">
+                  {lang === "ar" ? "الأمراض المزمنة" : "Chronic conditions"}
+                </div>
+                <div className="mt-1 break-words text-sm font-medium">{chronicText}</div>
+              </div>
+            ) : null}
+            {bloodGroup ? (
+              <div className="min-w-0">
+                <div className="roshan-field-label">
+                  {lang === "ar" ? "فصيلة الدم / Blood group" : "Blood group / فصيلة الدم"}
+                </div>
+                <div className="mt-1 font-mono text-sm font-semibold" dir="ltr">
+                  {bloodGroup}
+                </div>
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -364,7 +385,12 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
               tabIndex={tab === item.key ? 0 : -1}
               onClick={() => changeTab(item.key)}
               onKeyDown={(event) => {
-                const targetIndex = resolveTabKeyNavigation(event.key, index, tabs.length, lang === "ar" ? "rtl" : "ltr");
+                const targetIndex = resolveTabKeyNavigation(
+                  event.key,
+                  index,
+                  tabs.length,
+                  lang === "ar" ? "rtl" : "ltr",
+                );
                 if (targetIndex >= 0) {
                   event.preventDefault();
                   const next = tabs[targetIndex];

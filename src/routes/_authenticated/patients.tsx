@@ -119,8 +119,10 @@ function PatientsPageInner() {
       // Allocate the MRN and insert the patient in one database transaction.
       // Separate next_mrn() + INSERT calls can race and leave one registration failing.
       const newPatientId = await rpc<string>("create_patient_atomic", {
-        _full_name: form.full_name.trim(), _gender: form.gender,
-        _date_of_birth: form.date_of_birth || null, _phone: form.phone.trim() || null,
+        _full_name: form.full_name.trim(),
+        _gender: form.gender,
+        _date_of_birth: form.date_of_birth || null,
+        _phone: form.phone.trim() || null,
         _national_id: form.national_id.trim() || null,
       });
       return { patientId: newPatientId, openVisit };
@@ -132,7 +134,9 @@ function PatientsPageInner() {
         const outcome = result as { patientId: string; openVisit: boolean };
         setOpen(false);
         setForm(emptyForm());
-        if (outcome.openVisit) void navigate({ to: "/visits", search: { patient: outcome.patientId } });
+        if (outcome.openVisit) {
+          void navigate({ to: "/visits", search: { patient: outcome.patientId } });
+        }
       },
     },
   );
@@ -214,7 +218,10 @@ function PatientsPageInner() {
                   {create.isPending ? t("saving") : t("save")}
                 </Button>
                 {can("visits.create") ? (
-                  <Button disabled={!form.full_name.trim() || !form.gender || create.isPending} onClick={() => create.mutate({ openVisit: true })}>
+                  <Button
+                    disabled={!form.full_name.trim() || !form.gender || create.isPending}
+                    onClick={() => create.mutate({ openVisit: true })}
+                  >
                     {create.isPending ? t("saving") : t("save_and_new_visit")}
                   </Button>
                 ) : null}

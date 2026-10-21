@@ -118,7 +118,8 @@ function PharmacyPageInner() {
     },
   );
 
-  const realtimeBranchId = s(((list.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
+  const realtimeBranchId =
+    s(((list.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
   useBranchRealtime(realtimeBranchId);
 
   const rows = useMemo(() => {

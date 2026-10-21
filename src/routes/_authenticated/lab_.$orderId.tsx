@@ -190,7 +190,10 @@ function LabOrderPageInner() {
   );
   useEffect(() => {
     if (!hasUnsavedResultEdits) return;
-    const warnBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
     window.addEventListener("beforeunload", warnBeforeUnload);
     return () => window.removeEventListener("beforeunload", warnBeforeUnload);
   }, [hasUnsavedResultEdits]);
@@ -524,7 +527,10 @@ function LabOrderPageInner() {
                                   </div>
                                 )}
                                 {abnormal && !mapped.critical && (
-                                  <div className="mt-1 text-xs font-medium text-destructive" dir="ltr">
+                                  <div
+                                    className="mt-1 text-xs font-medium text-destructive"
+                                    dir="ltr"
+                                  >
                                     {lang === "ar" ? "خارج المدى" : "Out of range"}
                                   </div>
                                 )}

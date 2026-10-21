@@ -94,18 +94,30 @@ export function NavPreferencesProvider({ children }: { children: ReactNode }) {
     // Only the path and current user should re-trigger this.
   }, [location.pathname, userId, loadedUserId]);
 
-  const toggleFavorite = useCallback((to: string) => {
-    if (!userId || loadedUserId !== userId) return;
-    setFavorites((prev) => {
-      const next = prev.includes(to) ? prev.filter((f) => f !== to) : [...prev, to];
-      writeList(favoritesKey(userId), next);
-      return next;
-    });
-  }, [userId, loadedUserId]);
+  const toggleFavorite = useCallback(
+    (to: string) => {
+      if (!userId || loadedUserId !== userId) return;
+      setFavorites((prev) => {
+        const next = prev.includes(to) ? prev.filter((f) => f !== to) : [...prev, to];
+        writeList(favoritesKey(userId), next);
+        return next;
+      });
+    },
+    [userId, loadedUserId],
+  );
 
-  const visibleFavorites = userId && loadedUserId === userId ? favorites : [];
-  const visibleRecents = userId && loadedUserId === userId ? recents : [];
-  const isFavorite = useCallback((to: string) => visibleFavorites.includes(to), [visibleFavorites]);
+  const visibleFavorites = useMemo(
+    () => (userId && loadedUserId === userId ? favorites : []),
+    [userId, loadedUserId, favorites],
+  );
+  const visibleRecents = useMemo(
+    () => (userId && loadedUserId === userId ? recents : []),
+    [userId, loadedUserId, recents],
+  );
+  const isFavorite = useCallback(
+    (to: string) => visibleFavorites.includes(to),
+    [visibleFavorites],
+  );
 
   const value = useMemo(
     () => ({ favorites: visibleFavorites, recents: visibleRecents, toggleFavorite, isFavorite }),

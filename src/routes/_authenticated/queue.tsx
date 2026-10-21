@@ -127,17 +127,30 @@ function QueuePageInner() {
       const ticket = ((queue.data ?? []) as Row[]).find((r) => s(r, "id") === id);
       const visitId = s(ticket, "visit_id") || s(rel(ticket, "visits"), "id");
       if (status === "completed" && visitId) {
-        const { error: visitError } = await supabase.rpc("complete_visit_atomic", { p_visit_id: visitId });
+        const { error: visitError } = await supabase.rpc("complete_visit_atomic", {
+          p_visit_id: visitId,
+        });
         if (visitError) throw new Error(visitError.message);
       } else if (visitId) {
-        const visitStatus = status === "called" ? "in_progress" : status === "cancelled" ? "cancelled" : "waiting";
-        const { error: visitError } = await supabase.from("visits").update({ status: visitStatus }).eq("id", visitId);
+        const visitStatus =
+          status === "called"
+            ? "in_progress"
+            : status === "cancelled"
+              ? "cancelled"
+              : "waiting";
+        const { error: visitError } = await supabase
+          .from("visits")
+          .update({ status: visitStatus })
+          .eq("id", visitId);
         if (visitError) throw new Error(visitError.message);
       }
       const patch: Row = { status };
       if (status === "called") patch["called_at"] = new Date().toISOString();
       if (status === "completed") patch["completed_at"] = new Date().toISOString();
-      const { error: ticketError } = await supabase.from("queue_tickets").update(patch).eq("id", id);
+      const { error: ticketError } = await supabase
+        .from("queue_tickets")
+        .update(patch)
+        .eq("id", id);
       if (ticketError) throw new Error(ticketError.message);
       return null;
     },
@@ -298,7 +311,15 @@ function QueuePageInner() {
                         </Button>
                       )}
                       {can("visits.read") && s(visit, "id") ? (
-                        <Link to="/clinic/$visitId" params={{ visitId: s(visit, "id") }} className={buttonVariants({ variant: "outline", size: "sm", className: "min-h-10 flex-1" })}>
+                        <Link
+                          to="/clinic/$visitId"
+                          params={{ visitId: s(visit, "id") }}
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                            className: "min-h-10 flex-1",
+                          })}
+                        >
                           {lang === "ar" ? "فتح العيادة" : "Clinic"}
                         </Link>
                       ) : null}
@@ -386,7 +407,11 @@ function QueuePageInner() {
                               </Button>
                             )}
                             {can("visits.read") && s(visit, "id") ? (
-                              <Link to="/clinic/$visitId" params={{ visitId: s(visit, "id") }} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                              <Link
+                                to="/clinic/$visitId"
+                                params={{ visitId: s(visit, "id") }}
+                                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                              >
                                 {lang === "ar" ? "فتح العيادة" : "Clinic"}
                               </Link>
                             ) : null}

@@ -125,7 +125,8 @@ function BillingPageInner() {
       .order("created_at", { ascending: false }),
   );
 
-  const realtimeBranchId = s(((invoices.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
+  const realtimeBranchId =
+    s(((invoices.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
   useBranchRealtime(realtimeBranchId);
 
   const partners = useRows(["partners"], () =>
