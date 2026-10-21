@@ -1,4 +1,5 @@
 import { useLocation } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth";
 import {
   createContext,
   useCallback,
@@ -9,8 +10,10 @@ import {
   type ReactNode,
 } from "react";
 
-const FAVORITES_KEY = "roshan:nav:favorites";
-const RECENTS_KEY = "roshan:nav:recents";
+const LEGACY_FAVORITES_KEY = "roshan:nav:favorites";
+const LEGACY_RECENTS_KEY = "roshan:nav:recents";
+const favoritesKey = (userId: string) => `roshan:nav:favorites:${userId}`;
+const recentsKey = (userId: string) => `roshan:nav:recents:${userId}`;
 const MAX_RECENTS = 6;
 
 export type RecentPage = { to: string; visitedAt: number };
@@ -50,39 +53,63 @@ function writeList<T>(key: string, value: T) {
  */
 export function NavPreferencesProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const [favorites, setFavorites] = useState<string[]>(() =>
-    readList(FAVORITES_KEY, [] as string[]),
-  );
-  const [recents, setRecents] = useState<RecentPage[]>(() =>
-    readList(RECENTS_KEY, [] as RecentPage[]),
-  );
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [recents, setRecents] = useState<RecentPage[]>([]);
 
   useEffect(() => {
+    try {
+      window.localStorage.removeItem(LEGACY_FAVORITES_KEY);
+      window.localStorage.removeItem(LEGACY_RECENTS_KEY);
+    } catch {
+      // Storage may be unavailable; user-scoped state remains empty until loaded.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setFavorites([]);
+      setRecents([]);
+      setLoadedUserId(null);
+      return;
+    }
+    setFavorites(readList(favoritesKey(userId), [] as string[]));
+    setRecents(readList(recentsKey(userId), [] as RecentPage[]));
+    setLoadedUserId(userId);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || loadedUserId !== userId) return;
     const to = location.pathname;
     setRecents((prev) => {
       const next = [{ to, visitedAt: Date.now() }, ...prev.filter((r) => r.to !== to)].slice(
         0,
         MAX_RECENTS,
       );
-      writeList(RECENTS_KEY, next);
+      writeList(recentsKey(userId), next);
       return next;
     });
-    // Only the path should re-trigger this, not a new `location` object.
-  }, [location.pathname]);
+    // Only the path and current user should re-trigger this.
+  }, [location.pathname, userId, loadedUserId]);
 
   const toggleFavorite = useCallback((to: string) => {
+    if (!userId || loadedUserId !== userId) return;
     setFavorites((prev) => {
       const next = prev.includes(to) ? prev.filter((f) => f !== to) : [...prev, to];
-      writeList(FAVORITES_KEY, next);
+      writeList(favoritesKey(userId), next);
       return next;
     });
-  }, []);
+  }, [userId, loadedUserId]);
 
-  const isFavorite = useCallback((to: string) => favorites.includes(to), [favorites]);
+  const visibleFavorites = userId && loadedUserId === userId ? favorites : [];
+  const visibleRecents = userId && loadedUserId === userId ? recents : [];
+  const isFavorite = useCallback((to: string) => visibleFavorites.includes(to), [visibleFavorites]);
 
   const value = useMemo(
-    () => ({ favorites, recents, toggleFavorite, isFavorite }),
-    [favorites, recents, toggleFavorite, isFavorite],
+    () => ({ favorites: visibleFavorites, recents: visibleRecents, toggleFavorite, isFavorite }),
+    [visibleFavorites, visibleRecents, toggleFavorite, isFavorite],
   );
 
   return <NavPreferencesContext.Provider value={value}>{children}</NavPreferencesContext.Provider>;

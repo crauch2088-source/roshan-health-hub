@@ -188,6 +188,13 @@ function LabOrderPageInner() {
         );
       }),
   );
+  useEffect(() => {
+    if (!hasUnsavedResultEdits) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasUnsavedResultEdits]);
+
   const abnormalResultCount = items.reduce((count, item) => {
     const itemParameters = parameters.filter(
       (parameter) => s(parameter, "test_id") === s(item, "test_id"),
@@ -340,7 +347,7 @@ function LabOrderPageInner() {
     <div className="space-y-4">
       <PageHeader
         title={lang === "ar" ? "طلب المختبر" : "Laboratory order"}
-        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${t("age")}: ${age ?? "—"}`}
+        subtitle={<span>{s(patient, "full_name")} · {t("mrn")}: <bdi dir="ltr">{s(patient, "mrn")}</bdi> · {t("age")}: <bdi dir="ltr">{age ?? "—"}</bdi></span>}
       >
         <StatusBadge status={s(order, "status")} />
 
@@ -483,7 +490,7 @@ function LabOrderPageInner() {
                                 )}
                               </TableCell>
 
-                              <TableCell className="w-40">
+                              <TableCell className="w-40" dir="ltr">
                                 <Input
                                   dir="ltr"
                                   disabled={!can("lab.update")}
@@ -497,7 +504,7 @@ function LabOrderPageInner() {
                                 />
 
                                 {mapped.kind === "pending" && (
-                                  <div className="mt-1 text-xs text-muted-foreground">
+                                  <div className="mt-1 text-xs text-muted-foreground" dir="ltr">
                                     {lang === "ar" ? "قيد الانتظار" : "Pending"}
                                   </div>
                                 )}
@@ -505,6 +512,7 @@ function LabOrderPageInner() {
                                   <div
                                     role="alert"
                                     className="mt-1 text-xs font-semibold text-destructive"
+                                    dir="ltr"
                                   >
                                     {lang === "ar"
                                       ? "قيمة حرجة — اتبع بروتوكول التصعيد"
@@ -512,7 +520,7 @@ function LabOrderPageInner() {
                                   </div>
                                 )}
                                 {abnormal && !mapped.critical && (
-                                  <div className="mt-1 text-xs font-medium text-destructive">
+                                  <div className="mt-1 text-xs font-medium text-destructive" dir="ltr">
                                     {lang === "ar" ? "خارج المدى" : "Out of range"}
                                   </div>
                                 )}

@@ -1,10 +1,12 @@
 import type { Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -60,12 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [perms, setPerms] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [permissionsReady, setPermissionsReady] = useState(false);
+  const queryClient = useQueryClient();
+  const lastAuthUserId = useRef<string | null>(null);
 
   const clearProfile = useCallback(() => {
+    queryClient.clear();
     setUser(null);
     setPerms(new Set());
     setPermissionsReady(false);
-  }, []);
+  }, [queryClient]);
 
   const loadProfile = useCallback(
     async (authUserId: string | undefined) => {
@@ -162,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setSession(data.session);
+      lastAuthUserId.current = data.session?.user?.id ?? null;
 
       if (data.session?.user?.id) {
         await loadProfile(data.session.user.id);
@@ -181,6 +187,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
 
+      const nextAuthUserId = nextSession?.user?.id ?? null;
+      const previousAuthUserId = lastAuthUserId.current;
+      if (
+        event === "SIGNED_OUT" ||
+        (previousAuthUserId && nextAuthUserId && previousAuthUserId !== nextAuthUserId)
+      ) {
+        clearProfile();
+      }
+      lastAuthUserId.current = nextAuthUserId;
       setSession(nextSession);
 
       /*
@@ -195,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === "SIGNED_OUT") {
-        clearProfile();
+        // clearProfile above clears the profile and React Query cache.
       }
     });
 
@@ -236,9 +251,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const nextAuthUserId = data.session?.user?.id ?? null;
+    const previousAuthUserId = lastAuthUserId.current;
+    if (previousAuthUserId && nextAuthUserId && previousAuthUserId !== nextAuthUserId) {
+      clearProfile();
+    }
+    lastAuthUserId.current = nextAuthUserId;
     setSession(data.session);
     await loadProfile(data.session?.user?.id);
-  }, [loadProfile]);
+  }, [clearProfile, loadProfile]);
 
   /*
    * SECURITY:

@@ -79,8 +79,9 @@ function BillingPage() {
 
 function BillingPageInner() {
   const { t, lang } = useLang();
-  const { can, user } = useAuth();
-  useBranchRealtime((user as Row | null)?.["branch_id"] as string | undefined);
+  const { can } = useAuth();
+  const realtimeBranchId = s(((invoices.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
+  useBranchRealtime(realtimeBranchId);
   const { currency } = useSettings();
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
@@ -119,7 +120,7 @@ function BillingPageInner() {
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, patients(full_name, mrn), partners(name)",
+        "id, branch_id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, patients(full_name, mrn), partners(name)",
       )
       .eq("invoice_date", date)
       .is("deleted_at", null)

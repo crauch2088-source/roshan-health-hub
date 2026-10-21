@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loading, StatusBadge } from "@/components/kit";
 import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { calcAge, money } from "@/lib/medical";
+import { calcAge, money, todayISO } from "@/lib/medical";
+import { resolveTabKeyNavigation } from "@/lib/keyboard-shortcuts";
 import { supabase } from "@/lib/supabase";
 import { useBranchRealtime } from "@/lib/realtime";
 import { ClinicalNoteTab } from "./components/ClinicalNoteTab";
@@ -32,6 +33,16 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
   }, [visitId]);
 
+  useEffect(() => {
+    if (!noteDirty) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [noteDirty]);
+
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
       const message =
@@ -47,7 +58,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     supabase
       .from("visits")
       .select(
-        "id,branch_id,visit_number,status,visit_date,patient_id,doctor_id,department_id,consultation_fee,patients(id,full_name,mrn,gender,date_of_birth),departments(name,name_ar),users!visits_doctor_id_fkey(full_name)",
+        "id,branch_id,visit_number,status,visit_date,patient_id,doctor_id,department_id,consultation_fee,patients(id,full_name,mrn,gender,date_of_birth,allergies,chronic_conditions,blood_group),departments(name,name_ar),users!visits_doctor_id_fkey(full_name)",
       )
       .eq("id", visitId)
       .limit(1),
@@ -55,6 +66,15 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
   const visit = (visitQ.data ?? [])[0] as Row | undefined;
   useBranchRealtime(s(visit, "branch_id") || null);
   const patient = rel(visit, "patients");
+  const rawAllergies = patient?.["allergies"];
+  const allergyText = Array.isArray(rawAllergies)
+    ? rawAllergies.map(String).filter(Boolean).join(", ")
+    : String(rawAllergies ?? "").trim();
+  const chronicConditions = patient?.["chronic_conditions"];
+  const chronicText = Array.isArray(chronicConditions)
+    ? chronicConditions.map(String).filter(Boolean).join(", ")
+    : String(chronicConditions ?? "").trim();
+  const bloodGroup = s(patient, "blood_group").trim();
   const finish = useSave(
     async () => {
       const { error } = await supabase.rpc("complete_visit_atomic", {
@@ -108,7 +128,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
         );
       const { error } = await supabase.rpc("create_visit_consultation_invoice_atomic", {
         p_visit_id: visitId,
-        p_invoice_date: new Date().toISOString().slice(0, 10),
+        p_invoice_date: todayISO(),
       });
       if (error) throw new Error(error.message);
       return null;
@@ -175,7 +195,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     { key: "history", ar: "السجل السابق", en: "History" },
   ] as const;
   return (
-    <div className="mx-auto max-w-[1440px] space-y-5" dir="auto">
+    <div className="mx-auto max-w-[1440px] space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="flex flex-wrap items-center gap-3">
         <Link to="/clinic" className={buttonVariants({ variant: "outline", size: "sm" })}>
           <ArrowLeft className="size-4" /> {lang === "ar" ? "العيادة" : "Clinic"}
@@ -275,6 +295,23 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
             <div className="roshan-field-label">{lang === "ar" ? "الطبيب" : "Doctor"}</div>
             <div>{s(rel(visit, "users"), "full_name") || "—"}</div>
           </div>
+          <div className="col-span-full grid gap-3 border-t pt-3 sm:grid-cols-3">
+            <div className="min-w-0">
+              <div className="roshan-field-label">{lang === "ar" ? "الحساسية / Allergies" : "Allergies / الحساسية"}</div>
+              {allergyText ? (
+                <div role="alert" className="mt-1 inline-flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/15 px-3 py-2 text-sm font-semibold text-destructive">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <span>{allergyText}</span>
+                </div>
+              ) : (
+                <div role="status" className="mt-1 text-sm font-medium text-muted-foreground">
+                  {lang === "ar" ? "غير مسجل / Not recorded" : "Not recorded / غير مسجل"}
+                </div>
+              )}
+            </div>
+            {chronicText ? <div className="min-w-0"><div className="roshan-field-label">{lang === "ar" ? "الأمراض المزمنة" : "Chronic conditions"}</div><div className="mt-1 break-words text-sm font-medium">{chronicText}</div></div> : null}
+            {bloodGroup ? <div className="min-w-0"><div className="roshan-field-label">{lang === "ar" ? "فصيلة الدم / Blood group" : "Blood group / فصيلة الدم"}</div><div className="mt-1 font-mono text-sm font-semibold" dir="ltr">{bloodGroup}</div></div> : null}
+          </div>
         </CardContent>
       </Card>
       <details className="roshan-surface px-4 py-3">
@@ -327,18 +364,7 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
               tabIndex={tab === item.key ? 0 : -1}
               onClick={() => changeTab(item.key)}
               onKeyDown={(event) => {
-                const backwards = event.key === "ArrowLeft" || event.key === "ArrowUp";
-                const forwards = event.key === "ArrowRight" || event.key === "ArrowDown";
-                const targetIndex =
-                  event.key === "Home"
-                    ? 0
-                    : event.key === "End"
-                      ? tabs.length - 1
-                      : backwards
-                        ? (index - 1 + tabs.length) % tabs.length
-                        : forwards
-                          ? (index + 1) % tabs.length
-                          : -1;
+                const targetIndex = resolveTabKeyNavigation(event.key, index, tabs.length, lang === "ar" ? "rtl" : "ltr");
                 if (targetIndex >= 0) {
                   event.preventDefault();
                   const next = tabs[targetIndex];

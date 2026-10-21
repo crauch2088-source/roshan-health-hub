@@ -74,7 +74,7 @@ function PharmacyPageInner() {
   // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,
   // medicines and stock_movements already keys off pharmacy.create/update,
   // so the UI now checks the same codes instead of two dangling ones.
-  const { can, user } = useAuth();
+  const { can } = useAuth();
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
@@ -87,7 +87,7 @@ function PharmacyPageInner() {
       let q = supabase
         .from("prescriptions")
         .select(
-          "id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
+          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -118,7 +118,8 @@ function PharmacyPageInner() {
     },
   );
 
-  useBranchRealtime((user as Row | null)?.["branch_id"] as string | undefined);
+  const realtimeBranchId = s(((list.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
+  useBranchRealtime(realtimeBranchId);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -1,3 +1,17 @@
+export type TabNavigationDirection = "ltr" | "rtl";
+
+/** Return the next tab index for an ARIA tablist key, or -1 when unhandled. */
+export function resolveTabKeyNavigation(key: string, index: number, count: number, dir: TabNavigationDirection): number {
+  if (count <= 0 || index < 0 || index >= count) return -1;
+  if (key === "Home") return 0;
+  if (key === "End") return count - 1;
+  if (key === "ArrowUp") return (index - 1 + count) % count;
+  if (key === "ArrowDown") return (index + 1) % count;
+  if (key === "ArrowLeft") return dir === "rtl" ? (index + 1) % count : (index - 1 + count) % count;
+  if (key === "ArrowRight") return dir === "rtl" ? (index - 1 + count) % count : (index + 1) % count;
+  return -1;
+}
+
 export type KeyboardShortcutInput = {
   code: string;
   ctrlKey: boolean;
