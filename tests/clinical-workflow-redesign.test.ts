@@ -31,7 +31,8 @@ test("consultation tabs expose accessible tab semantics, bilingual labels and ar
   assert.match(ui, /role="tab"/);
   assert.match(ui, /aria-selected=\{tab === item\.key\}/);
   assert.match(ui, /role="tabpanel"/);
-  assert.match(ui, /event\.key === "ArrowLeft"/);
+  assert.match(ui, /resolveTabKeyNavigation/);
+  assert.match(ui, /lang === "ar" \? "rtl" : "ltr"/);
   assert.match(ui, /lang === "ar" \? item\.ar : item\.en/);
 });
 

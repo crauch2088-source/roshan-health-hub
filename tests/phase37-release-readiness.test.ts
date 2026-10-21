@@ -41,7 +41,7 @@ test("medical certificate UI preserves authenticated access, Arabic wording and 
 
 test("consultation workflow exposes accessible tabs, errors, LTR clinical identifiers and clear Arabic states", () => {
   const consultation = read("../src/features/clinic/consultation/ConsultationPage.tsx");
-  assert.match(consultation, /dir="auto"/);
+  assert.match(consultation, /dir=\{lang === "ar" \? "rtl" : "ltr"\}/);
   assert.match(consultation, /role="tablist"/);
   assert.match(consultation, /aria-label=/);
   assert.match(consultation, /aria-controls=/);
