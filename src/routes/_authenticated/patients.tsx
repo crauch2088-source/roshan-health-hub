@@ -110,8 +110,9 @@ function PatientsPageInner() {
     PAGE_SIZE,
   );
 
-  const create = useSave<{ openVisit: boolean }>(
-    async ({ openVisit }) => {
+  const create = useSave(
+    async (options: { openVisit: boolean }) => {
+      const { openVisit } = options;
       if (!form.full_name.trim()) throw new Error(t("full_name"));
       if (!form.gender) throw new Error(t("gender"));
 

@@ -80,8 +80,6 @@ function BillingPage() {
 function BillingPageInner() {
   const { t, lang } = useLang();
   const { can } = useAuth();
-  const realtimeBranchId = s(((invoices.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
-  useBranchRealtime(realtimeBranchId);
   const { currency } = useSettings();
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
@@ -126,6 +124,9 @@ function BillingPageInner() {
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
   );
+
+  const realtimeBranchId = s(((invoices.data ?? []) as Row[])[0] as Row | undefined, "branch_id") || null;
+  useBranchRealtime(realtimeBranchId);
 
   const partners = useRows(["partners"], () =>
     supabase.from("partners").select("id, name, discount_percent").is("deleted_at", null),
