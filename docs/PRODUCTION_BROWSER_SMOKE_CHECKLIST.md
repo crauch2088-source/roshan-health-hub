@@ -1,21 +1,50 @@
-# Production browser smoke checklist — five minutes
+# UX acceptance checklist — production read-only and isolated workflow gates
 
-**Purpose:** owner-operated release check. Use a dedicated synthetic test patient and a non-production/test account where possible. Never enter real patient data solely for this check. Automated PostgreSQL 17 tests use disposable data and do not connect to production.
+**Release issue:** [#95 — UX release gate](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
+**Purpose:** inspect the current UI without turning production into a test database. This checklist separates production visual inspection from synthetic workflow acceptance.
 
-## Before you start (30 seconds)
-- Open the canonical production URL and sign in with a role-specific test account.
-- Open browser DevTools → Console; clear it. Record the deployed commit SHA.
-- Set the viewport to a phone-sized **390 × 844 px**.
+## 1. Establish the exact build (required)
 
-## Five-minute workflow
-1. **Language and layout (45 sec):** switch Arabic → English → Arabic. Confirm direction changes between RTL and LTR; navigation and dialogs stay in viewport; IDs, MRNs, invoice numbers, dates, lab values and reference ranges remain legible left-to-right.
-2. **Reception (45 sec):** search a synthetic patient, create/open a visit, and verify the queue ticket appears once. Use only the assigned branch.
-3. **Doctor and laboratory (90 sec):** open the visit, save a synthetic clinical note and order a test. As the lab role, save a result and use Verify only after checking value, unit and age/sex-appropriate reference range. Confirm verified values become read-only where intended.
-4. **Certificate and pharmacy (60 sec):** issue a certificate linked to that visit and open print preview (cancel printing if this is only a smoke test). Dispense a test prescription only if the account and stock are explicitly marked for testing.
-5. **Billing and attachment (60 sec):** confirm the linked invoice; create/record a test payment only in a designated test workflow. If direct upload is enabled, upload a synthetic PDF/PNG/JPEG and open the signed URL; otherwise confirm local print fallback remains available.
-6. **Finish (30 sec):** confirm no unexpected console.error, no unhandledrejection, no duplicate invoice/queue ticket, and no visible data from another branch. Sign out.
+- Record current main SHA, production deployment ID, deployment state, and deployed Git SHA.
+- If production is not a READY deployment for the exact main SHA, record the mismatch as a release blocker. You may inspect the deployed build read-only, but must not claim acceptance for current main.
+- Do not force a deployment, create another Vercel project, or bypass free-tier build limits to satisfy this gate.
 
-## Pass/fail and safety
-- Mark PASS only if relevant steps succeed without runtime errors or cross-branch data exposure. Record failing screen, role, language, viewport and timestamp; redact patient identifiers before sharing.
-- Do not use production patient records, real prescriptions, real payments, or clinical actions unless the owner explicitly designated a safe synthetic operational test record and approved those side effects.
-- Green CI and a Vercel READY deployment do not prove this live authenticated browser check has been completed.
+## 2. Phone viewport matrix
+
+At every width, inspect the application shell, header, breadcrumbs, search, quick actions, bottom navigation/More sheet, dialogs, tables/cards, horizontal overflow, focus visibility, and bottom safe-area clearance.
+
+| Viewport | Required check |
+| --- | --- |
+| 320 × 640 CSS px | Smallest supported phone width; check clipped actions, long Arabic labels, dialogs and keyboard overlap. |
+| 360 × 800 CSS px | Common compact phone; check navigation balance and form control widths. |
+| 390 × 844 CSS px | Reference phone viewport; inspect all major screen classes and RTL/LTR. |
+| 430 × 932 CSS px | Large phone; check stretching, whitespace, table/card width and fixed controls. |
+
+For each viewport, check English LTR and Arabic RTL. Verify that machine identifiers, MRNs, invoice numbers, dates, lab values and reference ranges remain readable LTR inside the surrounding direction.
+
+## 3. Production pass is strictly read-only
+
+Allowed: sign in with an already-authorized role, navigate to permitted screens, inspect the shell and non-identifying UI states, and observe console/runtime errors. Do not capture or paste patient, clinical, user, or financial details into the report.
+
+**Never create or mutate production records.** Do not submit forms or perform any create, save, update, delete, complete, verify, issue, dispense, receive-stock, claim, payment, reversal, or upload action in production—even with synthetic values. Do not create a synthetic patient, visit, clinical note, lab order/result, certificate, prescription, invoice, payment, inventory movement, insurance claim, or attachment in production.
+
+If a route's details require opening a real person's record or would expose sensitive information, mark that check blocked and move on. A route loading successfully is not sufficient evidence to mark it PASS.
+
+## 4. Isolated synthetic workflow pass — currently deferred
+
+Clinical end-to-end acceptance tests remain deferred until an isolated zero-cost test environment and synthetic doctor identity are available. Do not use the production database as a substitute, and do not create a paid Supabase branch/project.
+
+When the required environment exists, use synthetic identities and data to test the visit → consultation → lab order/result/verification → certificate/print → prescription/dispensing → invoice/payment path, plus role-denial and cross-branch isolation. Keep PostgreSQL 17 CI fixtures isolated; passing fixtures do not prove authenticated browser acceptance.
+
+## 5. Route-by-route evidence and pass/fail
+
+- Use the UX route inventory (UX_ROUTE_INVENTORY.md). Every authenticated route must have an explicit status.
+- For each route, record the path, role, language, viewport, deployed SHA, observed state, expected/actual result, severity, reproducible steps, and a redacted screenshot only when it contains no sensitive data.
+- Inspect loading, empty, error, validation, dialog, keyboard/focus, permission-denial, and successful read-only states where they can be observed safely. Do not manufacture production state to force a condition.
+- Mark PASS only for the specific behavior actually observed. Use NOT VERIFIED or BLOCKED when no browser evidence exists; do not infer acceptance from source checks, a route load, green CI, or a READY deployment.
+
+## 6. Finish safely
+
+- Confirm no unexpected console.error, unhandled promise rejection, horizontal clipping, inaccessible controls, permission leaks, or cross-branch data exposure.
+- Never attach unredacted screenshots, user details, patient identifiers, clinical notes, tokens, or financial data to GitHub issues/PRs.
+- No clinical-readiness claim is made by this checklist. Do not move to the next project workstream until issue #95 acceptance criteria are met or remaining blockers are explicitly owned and documented.

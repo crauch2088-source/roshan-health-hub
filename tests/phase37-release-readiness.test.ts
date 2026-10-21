@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -64,4 +64,40 @@ test("queue, pharmacy and billing keep machine-readable values LTR and retain la
   assert.match(billing, /dir="ltr"/);
   assert.match(billing, /aria-label=/);
   assert.match(billing, /فاتورة مستقلة/);
+});
+
+
+test("UX route inventory covers every authenticated route file without claiming visual acceptance", () => {
+  const inventory = read("../docs/UX_ROUTE_INVENTORY.md");
+  const actualRoutes = readdirSync(new URL("../src/routes/_authenticated/", import.meta.url))
+    .filter((file) => file.endsWith(".tsx"))
+    .map((file) => "src/routes/_authenticated/" + file)
+    .sort();
+  const recordedRoutes = inventory
+    .split("\n")
+    .filter((line) => line.startsWith("| src/routes/_authenticated/") && line.endsWith(".tsx |"))
+    .map((line) => line.split("|")[1].trim())
+    .sort();
+
+  assert.deepEqual(recordedRoutes, actualRoutes);
+  assert.match(inventory, /#95/);
+  assert.match(inventory, /NOT VERIFIED/);
+  assert.match(inventory, /No route is marked PASS merely because it loads/i);
+});
+
+test("production UX checks stay read-only and cover the requested phone viewport matrix", () => {
+  const guide = read("../docs/PRODUCTION_BROWSER_SMOKE_CHECKLIST.md");
+  for (const viewport of ["320 × 640", "360 × 800", "390 × 844", "430 × 932"]) {
+    assert.ok(guide.includes(viewport), "missing required viewport: " + viewport);
+  }
+  assert.match(guide, /Production pass is strictly read-only/i);
+  assert.match(guide, /Never create or mutate production records/i);
+  assert.match(
+    guide,
+    /Clinical end-to-end acceptance tests remain deferred until an isolated zero-cost test environment and synthetic doctor identity are available/i,
+  );
+  assert.doesNotMatch(
+    guide,
+    /unless the owner explicitly designated a safe synthetic operational test record/i,
+  );
 });
