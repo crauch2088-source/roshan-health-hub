@@ -347,8 +347,12 @@ function LabOrderPageInner() {
     <div className="space-y-4">
       <PageHeader
         title={lang === "ar" ? "طلب المختبر" : "Laboratory order"}
-        subtitle={<span>{s(patient, "full_name")} · {t("mrn")}: <bdi dir="ltr">{s(patient, "mrn")}</bdi> · {t("age")}: <bdi dir="ltr">{age ?? "—"}</bdi></span>}
+        subtitle={s(patient, "full_name")}
       >
+        <div className="text-xs text-muted-foreground" dir="ltr">
+          {t("mrn")}: <bdi dir="ltr">{s(patient, "mrn")}</bdi> · {t("age")}:{" "}
+          <bdi dir="ltr">{age ?? "—"}</bdi>
+        </div>
         <StatusBadge status={s(order, "status")} />
 
         <PrintButton />
