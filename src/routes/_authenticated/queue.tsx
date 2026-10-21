@@ -133,11 +133,7 @@ function QueuePageInner() {
         if (visitError) throw new Error(visitError.message);
       } else if (visitId) {
         const visitStatus =
-          status === "called"
-            ? "in_progress"
-            : status === "cancelled"
-              ? "cancelled"
-              : "waiting";
+          status === "called" ? "in_progress" : status === "cancelled" ? "cancelled" : "waiting";
         const { error: visitError } = await supabase
           .from("visits")
           .update({ status: visitStatus })

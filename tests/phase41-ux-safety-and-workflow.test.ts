@@ -91,10 +91,7 @@ test("patient registration can save and open a visit with permission", () => {
   assert.match(patients, /openVisit: true/);
   assert.match(patients, /can\("visits\.create"\)/);
   assert.match(patients, /to: "\/visits", search: \{ patient: outcome\.patientId \}/);
-  assert.match(
-    i18n,
-    /save_and_new_visit: \{ ar: "حفظ وفتح زيارة", en: "Save & create visit" \}/,
-  );
+  assert.match(i18n, /save_and_new_visit: \{ ar: "حفظ وفتح زيارة", en: "Save & create visit" \}/);
 });
 
 test("lab results warn before unload and display identifiers and numeric fields LTR", () => {

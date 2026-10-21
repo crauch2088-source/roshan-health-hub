@@ -114,10 +114,7 @@ export function NavPreferencesProvider({ children }: { children: ReactNode }) {
     () => (userId && loadedUserId === userId ? recents : []),
     [userId, loadedUserId, recents],
   );
-  const isFavorite = useCallback(
-    (to: string) => visibleFavorites.includes(to),
-    [visibleFavorites],
-  );
+  const isFavorite = useCallback((to: string) => visibleFavorites.includes(to), [visibleFavorites]);
 
   const value = useMemo(
     () => ({ favorites: visibleFavorites, recents: visibleRecents, toggleFavorite, isFavorite }),
