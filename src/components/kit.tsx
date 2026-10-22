@@ -24,6 +24,15 @@ import { csvExport, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
+/** Stable left-to-right rendering for identifiers, codes and numeric tokens in either UI language. */
+export function LtrText({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span dir="ltr" className={cn("inline-block font-mono tabular-nums", className)}>
+      {children}
+    </span>
+  );
+}
+
 export function PageHeader({
   title,
   subtitle,
@@ -656,7 +665,9 @@ export function DetailHeader({
           {facts.map((f) => (
             <div key={f.label} className="min-w-0">
               <dt className="text-xs font-medium text-muted-foreground">{f.label}</dt>
-              <dd className="mt-0.5 truncate text-sm font-semibold text-foreground">{f.value}</dd>
+              <dd className="mt-0.5 break-words text-sm font-semibold text-foreground">
+                {f.value}
+              </dd>
             </div>
           ))}
         </dl>

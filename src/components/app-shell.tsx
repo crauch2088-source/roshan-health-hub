@@ -210,10 +210,12 @@ function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col pb-[calc(7.5rem+env(safe-area-inset-bottom))] lg:pb-0">
-        <header className="no-print sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-border/80 bg-card/85 px-3 shadow-sm backdrop-blur-xl sm:gap-3 sm:px-5 lg:px-7">
+        <header className="no-print sticky top-0 z-20 flex h-16 min-w-0 items-center gap-1.5 border-b border-border/80 bg-card/85 px-2 shadow-sm backdrop-blur-xl sm:gap-3 sm:px-5 lg:px-7">
           <img src="/roshan-logo.png" alt="" className="size-7 shrink-0 object-contain lg:hidden" />
-          <BreadcrumbNav />
-          <div className="min-w-0 flex-1" />
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <BreadcrumbNav />
+          </div>
+          <div className="hidden min-w-0 flex-1 sm:block" />
           <DesktopQuickActions />
           <SearchTrigger />
           <MobileSearchButton />
@@ -226,7 +228,9 @@ function Shell({ children }: { children: ReactNode }) {
             <Languages className="size-4" />
             <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
           </Button>
-          <AccountMenu onSignOut={handleSignOut} />
+          <div className="shrink-0">
+            <AccountMenu onSignOut={handleSignOut} />
+          </div>
         </header>
 
         <main

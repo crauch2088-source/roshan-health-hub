@@ -249,7 +249,7 @@ function ClinicPageInner() {
                               {s(patient, "full_name") || "—"}
                             </p>
                             <p className="break-words text-xs text-muted-foreground">
-                              <span dir="ltr">{s(patient, "mrn") || "—"}</span> · {deptName(visit)}
+                              <bdi dir="ltr">{s(patient, "mrn") || "—"}</bdi> · {deptName(visit)}
                               {ageVal !== null
                                 ? ` · ${ageVal} ${lang === "ar" ? "سنة" : "yrs"}`
                                 : ""}
