@@ -43,7 +43,14 @@ function SetupPage() {
   useEffect(() => {
     rpc<boolean>("setup_required")
       .then((need) => setRequired(Boolean(need)))
-      .catch((e: Error) => setError(e.message))
+      .catch((e: Error) => {
+        if (/permission denied/i.test(e.message)) {
+          // The setup RPC is intentionally unavailable to anon after initialization.
+          setRequired(false);
+          return;
+        }
+        setError(e.message);
+      })
       .finally(() => setChecking(false));
   }, []);
 
@@ -91,78 +98,89 @@ function SetupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-accent/40 to-background px-4 py-10">
-      <div className="w-full max-w-lg">
-        <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <img src="/roshan-logo.png" alt={t("app_name")} className="h-20 object-contain" />
-          <h1 className="text-xl font-bold">{t("first_run_setup")}</h1>
-        </div>
+    <>
+      <a
+        href="#setup-card"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground"
+      >
+        {t("skip_to_content")}
+      </a>
+      <main
+        id="setup-card"
+        className="flex min-h-screen items-center justify-center bg-gradient-to-b from-accent/40 to-background px-4 py-10"
+      >
+        <div className="w-full max-w-lg">
+          <div className="mb-6 flex flex-col items-center gap-3 text-center">
+            <img src="/roshan-logo.png" alt={t("app_name")} className="h-20 object-contain" />
+            <h1 className="text-xl font-bold">{t("first_run_setup")}</h1>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("create_super_admin")}</CardTitle>
-            <CardDescription>
-              {lang === "ar"
-                ? "يتم إنشاء حساب واحد فقط. بعد ذلك يقوم المدير العام بإنشاء بقية المستخدمين."
-                : "Only one account is created here. The Super Admin then creates all other users."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ErrorBox error={error} />
-            {checking ? (
-              <p className="text-sm text-muted-foreground">{t("loading")}</p>
-            ) : !required ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-success">
-                  <CheckCircle2 className="size-4" /> {t("setup_done")}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("create_super_admin")}</CardTitle>
+              <CardDescription>
+                {lang === "ar"
+                  ? "يتم إنشاء حساب واحد فقط. بعد ذلك يقوم المدير العام بإنشاء بقية المستخدمين."
+                  : "Only one account is created here. The Super Admin then creates all other users."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ErrorBox error={error} />
+              {checking ? (
+                <p className="text-sm text-muted-foreground">{t("loading")}</p>
+              ) : !required ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-success">
+                    <CheckCircle2 className="size-4" /> {t("setup_done")}
+                  </div>
+                  <Button className="w-full" onClick={() => void navigate({ to: "/auth" })}>
+                    {t("sign_in")}
+                  </Button>
                 </div>
-                <Button className="w-full" onClick={() => void navigate({ to: "/auth" })}>
-                  {t("sign_in")}
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={submit} className="space-y-4">
-                <Field label={t("full_name")}>
-                  <Input
-                    required
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("email")}>
-                  <Input
-                    type="email"
-                    dir="ltr"
-                    required
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("phone")}>
-                  <Input
-                    dir="ltr"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("password")}>
-                  <Input
-                    type="password"
-                    dir="ltr"
-                    required
-                    minLength={8}
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  />
-                </Field>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? t("saving") : t("create_super_admin")}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              ) : (
+                <form method="POST" onSubmit={submit} className="space-y-4">
+                  <Field label={t("full_name")}>
+                    <Input
+                      required
+                      value={form.full_name}
+                      onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={t("email")}>
+                    <Input
+                      type="email"
+                      dir="ltr"
+                      required
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={t("phone")}>
+                    <Input
+                      dir="ltr"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={t("password")}>
+                    <Input
+                      type="password"
+                      dir="ltr"
+                      required
+                      minLength={8}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    />
+                  </Field>
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    {busy ? t("saving") : t("create_super_admin")}
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </>
   );
 }

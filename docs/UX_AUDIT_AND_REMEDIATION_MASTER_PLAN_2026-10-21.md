@@ -1,11 +1,11 @@
 # Roshan Health Hub — الخطة الشاملة لتدقيق وإصلاح تجربة الاستخدام والواجهات
 
-> **نوع الوثيقة:** خطة تنفيذ ومعايير قبول ملزمة لهذه المرحلة  
-> **آخر تنقيح:** 2026-10-22  
-> **الحالة الحالية (2026-10-22):** Phase 41 و42 مدمجتان؛ Phase 43 وثّقت فحص الإنتاج العام، لكن بوابة القبول ما زالت مفتوحة بسبب عوائق موثقة في القسم 13  
-> **المستودع:** https://github.com/crauch2088-source/roshan-health-hub  
-> **بوابة التتبع:** [Issue #95 — UX release gate](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
-> **الإنتاج القانوني:** https://roshan-health-hub.vercel.app/  
+> **نوع الوثيقة:** خطة تنفيذ ومعايير قبول ملزمة لهذه المرحلة
+> **آخر تنقيح:** 2026-10-22
+> **الحالة الحالية (2026-10-22):** Phase 41 و42 مدمجتان؛ Phase 43 وثّقت فحص الإنتاج العام، لكن بوابة القبول ما زالت مفتوحة بسبب عوائق موثقة في القسم 13
+> **المستودع:** https://github.com/crauch2088-source/roshan-health-hub
+> **بوابة التتبع:** [Issue #95 — UX release gate](https://github.com/crauch2088-source/roshan-health-hub/issues/95)
+> **الإنتاج القانوني:** https://roshan-health-hub.vercel.app/
 > **النطاق:** تدقيق شامل للشاشات والتنقل وتجربة الهاتف، مع إصلاحات آمنة واختبارات وإثباتات قابلة للمراجعة.
 
 ---
@@ -507,19 +507,19 @@
 
 تمت مراجعة المصادر العامة التالية لتحديث مبادئ الخطة. تُستخدم لتوجيه التقييم، ولا تُعامل كدليل على سلوك Roshan نفسه:
 
-1. **ONC — 2025 SAFER Guides**: https://healthit.gov/clinical-quality-and-safety/safer-guides  
+1. **ONC — 2025 SAFER Guides**: https://healthit.gov/clinical-quality-and-safety/safer-guides
    توجّه تقييم سلامة السجلات الإلكترونية، تحديد هوية المريض، إدخال الأوامر، متابعة نتائج المختبر، الاتصالات السريرية، والتخطيط عند تعطل النظام.
-2. **ONC — Usability and Provider Burden**: https://healthit.gov/usability-and-provider-burden/  
+2. **ONC — Usability and Provider Burden**: https://healthit.gov/usability-and-provider-burden/
    يؤكد أن قابلية استخدام السجل الإلكتروني مرتبطة بالسلامة والأمان والموثوقية، وليست تلميعًا بصريًا فقط.
-3. **ONC — Using Health IT**: https://healthit.gov/clinical-quality-and-safety/safer-guides/using-health-it/  
+3. **ONC — Using Health IT**: https://healthit.gov/clinical-quality-and-safety/safer-guides/using-health-it/
    يوضح أهمية توافق التقنية مع سير العمل الفعلي والتواصل ومتابعة الطلبات والنتائج وإدارة الدواء.
-4. **Microsoft Playwright — Accessibility testing**: https://github.com/microsoft/playwright/blob/main/docs/src/accessibility-testing-js.md  
+4. **Microsoft Playwright — Accessibility testing**: https://github.com/microsoft/playwright/blob/main/docs/src/accessibility-testing-js.md
    يوصي بفحوص آلية مع فحص يدوي؛ لا يمكن للأدوات الآلية كشف كل مشكلات الإتاحة.
-5. **Primer React — Visual regression and accessibility tests**: https://github.com/primer/react/blob/main/contributor-docs/testing.md  
+5. **Primer React — Visual regression and accessibility tests**: https://github.com/primer/react/blob/main/contributor-docs/testing.md
    مثال على دمج اختبارات الانحدار البصري وفحوص الإتاحة في CI.
-6. **Medplum documentation**: https://www.medplum.com/docs  
+6. **Medplum documentation**: https://www.medplum.com/docs
    مرجع لتخطيط التدفقات السريرية وإدارة السجلات والطلبات والصلاحيات، لا قالبًا يجب نسخ بنيته حرفيًا.
-7. **OpenMRS O3**: https://o3-docs.openmrs.org/en-US/docs/introduction/  
+7. **OpenMRS O3**: https://o3-docs.openmrs.org/en-US/docs/introduction/
    مرجع للتصميم المعياري وإعادة استخدام المكونات وتجربة نقطة الرعاية.
 
 ### ثلاث جولات تنقيح للخطة قبل اعتمادها
@@ -567,11 +567,11 @@
 - [x] صُحح الاستنتاج الأمني الأولي الخاص بنموذج الدخول: مصدر `src/routes/auth.tsx` يستخدم React `onSubmit` مع `e.preventDefault()` ثم يستدعي `signIn(email.trim(), password)`؛ لذلك لا يوجد دليل من المصدر على إرسال بيانات الاعتماد في query string. ملاحظة المتصفح عن `method=GET` ليست أساسًا صالحًا لتقرير ثغرة.
 - [ ] **فحص 320/360/390/430px و1280px في RTL/LTR:** الأداة لم تستطع ضبط viewport إلى القياسات المطلوبة. لا توجد قيم DOM رقمية موثقة لـ`document.documentElement.scrollWidth` و`clientWidth`.
 - [ ] **انعدام الانسياب الأفقي:** لم يُثبت على القياسات المطلوبة؛ عدم رؤية شريط أفقي في viewport الافتراضي لا يساوي اختبارًا رقميًا.
-- [ ] **الإتاحة العامة:** لم يُعثر على رابط تخطٍ إلى `#main-content` في صفحات `/auth` و`/setup`. حارس Phase 42 يثبت وجود الرابط في `app-shell` للمسارات التي تستخدم ذلك الغلاف، ولا يثبت أن صفحات المصادقة العامة تتضمنه.
+- [x] **الإتاحة العامة — إصلاح الكود:** أضيف رابط تخطٍ مترجم ووسم `<main>` دلالي إلى `/auth` و`/setup` في Phase 44، مع اختبار انحدار. يبقى التحقق المرئي بلوحة المفاتيح مستقلاً وغير مكتمل.
 - [ ] **التركيز ولوحة المفاتيح:** لم يُتحقق بصريًا من focus ring بالتنقل بلوحة المفاتيح. لم يثبت `Ctrl+K` في الصفحات العامة؛ يجب فحصه في shell المصادق عليه حيث يُتوقع البحث.
 - [ ] **المسارات المحمية وتدفقات الأدوار:** غير مختبرة في متصفح الإنتاج لعدم توفر جلسة QA مصرح بها. حراس المصدر لا تثبت تعيينات الأدوار الفعلية أو رفض الخلفية لكل عملية.
 - [ ] **حالات الواجهة والتدفقات السريرية/المالية:** نجاح اختبارات CI المعزولة لا يعادل walkthrough مرئيًا لتسجيل مريض، زيارة، طابور، عيادة، طلب/نتيجة مختبر، صرف دواء، وفاتورة.
-- [ ] **خلل عام ظاهر يحتاج triage:** في `/setup` ظهرت رسالة `permission denied for function setup_required` بالتزامن مع `Setup complete`. المصدر يمسك فشل RPC ويعرض رسالة الخطأ، ثم قد يعرض واجهة اكتمال الإعداد عندما تبقى `required=false`. صنّف هذا كعيب مرئي يحتاج إصلاحًا/تحققًا منفصلًا، ولا تُجرِ أي تعديل على قاعدة الإنتاج لحله.
+- [x] **خلل `/setup` — إصلاح الكود:** Phase 44 يتعامل مع `permission denied` من `setup_required` كدليل على إغلاق الإعداد بعد التهيئة (`setRequired(false)`) دون عرض خطأ مضلل؛ الأخطاء الأخرى ما زالت تظهر. أضيف اختبار انحدار. لا تغيير في قاعدة الإنتاج.
 - [ ] لا يُعلن `P0/P1 = 0`؛ لا يمكن تأكيد ذلك قبل فرز خلل `/setup` وإكمال التدفقات المحمية.
 - [ ] لا تُغلق Issue #95 الآن. القرار الحالي `BLOCKED — awaiting viewport + authenticated clinical QA and setup-state triage`، مع إبقاء المهمة مفتوحة حتى إرفاق الأدلة الناقصة وإعادة التحقق.
 
@@ -653,3 +653,6 @@ The Phase 42 guard checks public route files, discovers every authenticated page
 | Date | Phase | Work log / evidence |
 |---|---|---|
 | 2026-10-22 | Phase 42 — Mobile, RTL/LTR, accessibility and route inventory | Added 320px More-sheet grid, shared LtrText, non-truncating detail facts, compact header constraints, bilingual dialog close name, route/translation/source guards and this route ledger. Runtime mobile visual QA and role-by-role authenticated browser coverage remain separate release-gate checks. |
+
+
+| 2026-10-22 | Phase 44 — Public setup/auth polish and release-gate evidence | Fixed expected `permission denied` from `setup_required` so initialized installations show the secure completed state without a false error; retained errors for other failures. Added explicit POST methods, translated skip links, and semantic main landmarks to both public pages. Added Phase 44 regression coverage for both forms and secure denial handling. Production Supabase remains untouched. CI/production route evidence is still required before closing Issue #95; viewport and authenticated clinical workflow checks remain explicitly open. |

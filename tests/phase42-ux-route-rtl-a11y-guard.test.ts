@@ -106,3 +106,24 @@ test("primary clinical and financial pages explicitly handle LTR identifiers", (
     );
   }
 });
+
+test("Phase 44 public auth/setup pages use POST forms, skip links, semantic main landmarks and secure setup-denial handling", () => {
+  const authPage = read("../src/routes/auth.tsx");
+  const setupPage = read("../src/routes/setup.tsx");
+
+  for (const [page, id] of [
+    [authPage, "auth-card"],
+    [setupPage, "setup-card"],
+  ] as const) {
+    assert.match(page, /<form method="POST" onSubmit=\{submit\}/);
+    assert.match(page, /href="#/);
+    assert.match(page, /skip_to_content/);
+    assert.match(page, new RegExp('<main\\s+id="' + id + '"'));
+  }
+
+  assert.match(
+    setupPage,
+    /permission denied\/i\.test\(e\.message\)[\s\S]*?setRequired\(false\)[\s\S]*?return;[\s\S]*?setError\(e\.message\)/,
+    "permission-denied from setup_required must mark setup as not required without exposing an error",
+  );
+});
