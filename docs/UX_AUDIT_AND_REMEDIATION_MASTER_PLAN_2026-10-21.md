@@ -618,3 +618,47 @@
 7. لا تنتقل إلى مسار تطوير جديد قبل حسم بوابة Issue #95 أو توثيق العائق بدقة مع الدليل والخطوة اللازمة لرفعه.
 
 **المعيار النهائي:** تجربة استخدام واضحة وسريعة وآمنة ومترجمة ومناسبة للهاتف، مثبتة بأدلة قابلة للتكرار، مع الحفاظ على قواعد المجال والخصوصية والصلاحيات والتكلفة المنخفضة.
+
+
+### Phase 42 — Route & Permission Coverage Ledger (source-derived)
+
+The current repository contains **30 page routes**: 3 public routes and 27 authenticated page files (excluding the authenticated layout wrapper). This differs from the planning estimate of 25, so the guard inventories every actual page file instead of silently omitting routes. Runtime role-to-permission assignments are resolved by the application; a role is allowed only when its permission map grants the listed permission, and denied otherwise. This ledger does not hard-code role names that cannot be verified from UI source alone.
+
+| Route | Source file | Permission guard / nav permission | Allowed roles | Denied roles | Loading / Empty / Error + Retry / Forbidden | Automated guard |
+|---|---|---|---|---|---|---|
+| / | src/routes/index.tsx | Public entry/auth redirect | Signed-out entry; signed-in redirect | No session-specific content access | Redirect / session-dependent | PASS — Phase 42 inventory |
+| /auth | src/routes/auth.tsx | Public authentication route | Signed-out users | Authenticated-only modules remain gated | Form errors / submitting | PASS — Phase 42 inventory |
+| /setup | src/routes/setup.tsx | First-run setup guard | Authorized setup only | Other users when setup unavailable | Loading / ErrorBox | PASS — Phase 42 inventory |
+| /dashboard | src/routes/_authenticated/dashboard.tsx | dashboard.read | Roles granted dashboard.read | Roles without dashboard.read | Page states / parent auth guard | PASS — Phase 42 route-permission guard |
+| /patients | src/routes/_authenticated/patients.tsx | patients.read | Roles granted patients.read | Roles without patients.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
+| /visits | src/routes/_authenticated/visits.tsx | visits.read | Roles granted visits.read | Roles without visits.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
+| /queue | src/routes/_authenticated/queue.tsx | queue.read | Roles granted queue.read | Roles without queue.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /clinic | src/routes/_authenticated/clinic.tsx | visits.read | Roles granted visits.read | Roles without visits.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
+| /appointments | src/routes/_authenticated/appointments.tsx | appointments.read | Roles granted appointments.read | Roles without appointments.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /followups | src/routes/_authenticated/followups.tsx | followups.read | Roles granted followups.read | Roles without followups.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /certificates | src/routes/_authenticated/certificates.tsx | certificates.read | Roles granted certificates.read | Roles without certificates.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
+| /pharmacy | src/routes/_authenticated/pharmacy.tsx | pharmacy.read | Roles granted pharmacy.read | Roles without pharmacy.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /inventory | src/routes/_authenticated/inventory.tsx | pharmacy.read | Roles granted pharmacy.read | Roles without pharmacy.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /lab | src/routes/_authenticated/lab.tsx | lab.read | Roles granted lab.read | Roles without lab.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
+| /lab-catalog | src/routes/_authenticated/lab-catalog.tsx | lab_admin.read | Roles granted lab_admin.read | Roles without lab_admin.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /billing | src/routes/_authenticated/billing.tsx | billing.read | Roles granted billing.read | Roles without billing.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
+| /finance | src/routes/_authenticated/finance.tsx | cashbox.read | Roles granted cashbox.read | Roles without cashbox.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /accounting | src/routes/_authenticated/accounting.tsx | accounting.read | Roles granted accounting.read | Roles without accounting.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /expenses | src/routes/_authenticated/expenses.tsx | accounting.read | Roles granted accounting.read | Roles without accounting.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /partners | src/routes/_authenticated/partners.tsx | partners.read | Roles granted partners.read | Roles without partners.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /reports | src/routes/_authenticated/reports.tsx | reports.read | Roles granted reports.read | Roles without reports.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /analytics | src/routes/_authenticated/analytics.tsx | reports.read | Roles granted reports.read | Roles without reports.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /insurance | src/routes/_authenticated/insurance.tsx | insurance.read | Roles granted insurance.read | Roles without insurance.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /users | src/routes/_authenticated/users.tsx | users.read | Roles granted users.read | Roles without users.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /audit | src/routes/_authenticated/audit.tsx | audit.read | Roles granted audit.read | Roles without audit.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /settings | src/routes/_authenticated/settings.tsx | settings.read | Roles granted settings.read | Roles without settings.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
+| /patients/$patientId | src/routes/_authenticated/patients_.$patientId.tsx | patients.read | Roles granted patients.read | Roles without patients.read | Loading / ErrorBox / PermissionGate | PASS — Phase 42 detail-route inventory |
+| /billing/$invoiceId | src/routes/_authenticated/billing_.$invoiceId.tsx | billing.read | Roles granted billing.read | Roles without billing.read | Loading / Empty / ErrorBox / PermissionGate | PASS — Phase 42 detail-route inventory |
+| /lab/$orderId | src/routes/_authenticated/lab_.$orderId.tsx | lab.read | Roles granted lab.read | Roles without lab.read | Loading / ErrorBox / PermissionGate | PASS — Phase 42 detail-route inventory |
+| /clinic/$visitId | src/routes/_authenticated/clinic_.$visitId.tsx | visits.read | Roles granted visits.read | Roles without visits.read | Page-specific states / PermissionGate | PASS — Phase 42 detail-route inventory |
+
+The Phase 42 guard checks public route files, discovers every authenticated page file, verifies each navigation route against its PermissionGate permission, validates Arabic/English nav and quick-action labels, and protects narrow mobile navigation, skip link, LTR token and dialog close-label contracts. These source checks are not authenticated browser acceptance and do not prove runtime role assignments. The state column is a source-ledger summary, not a claim that every state has been exercised in a browser.
+
+| Date | Phase | Work log / evidence |
+|---|---|---|
+| 2026-10-22 | Phase 42 — Mobile, RTL/LTR, accessibility and route inventory | Added 320px More-sheet grid, shared LtrText, non-truncating detail facts, compact header constraints, bilingual dialog close name, route/translation/source guards and this route ledger. Runtime mobile visual QA and role-by-role authenticated browser coverage remain separate release-gate checks. |

@@ -65,6 +65,7 @@ const DialogContent = React.forwardRef<
       {children}
 
       <DialogPrimitive.Close
+        aria-label="Close dialog / إغلاق النافذة"
         className={cn(
           "absolute end-3 top-3 flex size-9 items-center justify-center",
           "rounded-sm opacity-70",
@@ -79,7 +80,6 @@ const DialogContent = React.forwardRef<
         )}
       >
         <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
