@@ -165,7 +165,6 @@ export function clampText(value: string | null | undefined, max = 2000): string 
 /** Reads rows or returns [] — used for optional context the model can do without. */
 export async function readRows(
   access: AppAccess,
-  table: string,
   build: (client: SupabaseClient) => PromiseLike<{ data: unknown; error: unknown }>,
 ): Promise<Row[]> {
   try {

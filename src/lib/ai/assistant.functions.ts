@@ -10,9 +10,10 @@
  * Rules enforced here, in code:
  * - The caller is revalidated with Supabase Auth and must hold the module's
  *   read permission (fail closed).
- * - Records are read with the caller's own token, so RLS applies.
- * - Nothing is ever written: no insert, update, delete or rpc that mutates.
+ * - Records are read with the caller's own token, so RLS applies unchanged.
+ * - Nothing is ever written: no insert, update, delete or mutating rpc.
  *   The clinician decides what reaches the record.
+ * - Gateway failures come back as a safe message, never a raw provider error.
  */
 
 import { createServerFn } from "@tanstack/react-start";
@@ -26,8 +27,6 @@ export type AiResult = {
   /** Record labels the answer was built from, e.g. ["V1","L2"]. */
   sources?: string[];
 };
-
-const OK = "ok";
 
 /** Section keys the clinical note form understands. */
 export const NOTE_SECTION_KEYS = [
@@ -53,8 +52,9 @@ const SECTION_HEADINGS: Record<string, string[]> = {
 };
 
 /**
- * Splits the model's reply on `## <heading>` markers. Unknown headings are
- * ignored so a stray section can never write into an unexpected field.
+ * Splits the model's reply on `## <heading>` markers. Headings the form does
+ * not know are dropped, so a stray section can never write into an unexpected
+ * field.
  */
 export function parseNoteSections(text: string): Record<string, string> {
   const sections: Record<string, string> = {};
@@ -146,8 +146,14 @@ function failure(error: unknown): AiResult {
 
 /** Keeps a prompt from growing without bound as a patient's history grows. */
 function withinBudget(parts: string[], maxChars: number): string {
-  const joined = parts.join("\n\n");
+  const joined = parts.filter(Boolean).join("\n\n");
   return joined.length > maxChars ? `${joined.slice(0, maxChars)}\n(truncated)` : joined;
+}
+
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
+function asRows(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
 }
 
 // ---------------------------------------------------------------------------
@@ -205,21 +211,23 @@ export const draftClinicalNote = createServerFn({ method: "POST" })
       access.supabase
         .from("visits")
         .select("visit_date, status, chief_complaint, departments(name)")
-        .eq("patient_id", patientId ?? "00000000-0000-0000-0000-000000000000")
+        .eq("patient_id", patientId ?? NIL_UUID)
         .neq("id", data.visitId)
         .order("visit_date", { ascending: false })
         .limit(3),
       access.supabase
         .from("lab_orders")
         .select("status, created_at, lab_order_items(status, lab_tests(name))")
-        .eq("patient_id", patientId ?? "00000000-0000-0000-0000-000000000000")
+        .eq("patient_id", patientId ?? NIL_UUID)
         .order("created_at", { ascending: false })
         .limit(3),
     ]);
 
-    const currentNote = Array.isArray(note?.data) ? (note!.data as Record<string, unknown>[])[0] : null;
+    const currentNote = asRows(note?.data)[0] ?? null;
     const existing = currentNote
-      ? NOTE_SECTION_KEYS.map((key) => `${key}: ${clampText(String(currentNote[key] ?? ""), 400) || "(empty)"}`).join("\n")
+      ? NOTE_SECTION_KEYS.map(
+          (key) => `${key}: ${clampText(String(currentNote[key] ?? ""), 400) || "(empty)"}`,
+        ).join("\n")
       : "(no note saved yet for this visit)";
 
     const prompt = withinBudget(
@@ -229,7 +237,6 @@ export const draftClinicalNote = createServerFn({ method: "POST" })
           "visit_type",
           "status",
           "chief_complaint",
-          "priority",
         ]),
         renderOne("Patient", patientRow as Record<string, unknown> | null, [
           "full_name",
@@ -239,22 +246,13 @@ export const draftClinicalNote = createServerFn({ method: "POST" })
           "chronic_conditions",
           "allergies",
         ]),
-        renderRows("Vitals this visit", (vitals?.data as Record<string, unknown>[]) ?? [], {
-          prefix: "W",
-          maxRows: 1,
-        }),
-        renderRows("Diagnoses already recorded", (diagnoses?.data as Record<string, unknown>[]) ?? [], {
+        renderRows("Vitals this visit", asRows(vitals?.data), { prefix: "W", maxRows: 1 }),
+        renderRows("Diagnoses already recorded", asRows(diagnoses?.data), {
           prefix: "D",
           maxRows: 8,
         }),
-        renderRows("Earlier visits", (priorVisits?.data as Record<string, unknown>[]) ?? [], {
-          prefix: "V",
-          maxRows: 3,
-        }),
-        renderRows("Recent lab orders", (labs?.data as Record<string, unknown>[]) ?? [], {
-          prefix: "L",
-          maxRows: 3,
-        }),
+        renderRows("Earlier visits", asRows(priorVisits?.data), { prefix: "V", maxRows: 3 }),
+        renderRows("Recent lab orders", asRows(labs?.data), { prefix: "L", maxRows: 3 }),
         `Note already in the form:\n${existing}`,
         "Draft the note for this visit now.",
       ],
@@ -307,7 +305,7 @@ export const askAboutPatient = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!patientRow) return { text: null, error: "This patient is not available to you." };
 
-    const sets = await Promise.all([
+    const [visitsQ, labsQ, invoicesQ, prescriptionsQ, followupsQ, claimsQ] = await Promise.all([
       access.supabase
         .from("visits")
         .select("visit_date, status, chief_complaint, departments(name), users(full_name)")
@@ -340,29 +338,27 @@ export const askAboutPatient = createServerFn({ method: "POST" })
         .limit(5),
       access.supabase
         .from("insurance_claims")
-        .select("claim_number, status, submitted_amount, created_at")
-        .eq("patient_insurance", data.patientId)
+        .select(
+          "claim_number, status, submitted_amount, created_at, patient_insurance!inner(patient_id)",
+        )
+        .eq("patient_insurance.patient_id", data.patientId)
         .order("created_at", { ascending: false })
         .limit(4),
     ]);
 
-    const [visitsQ, labsQ, invoicesQ, prescriptionsQ, followupsQ, claimsQ] = sets;
-    const rows = (query: { data: unknown }) =>
-      Array.isArray(query?.data) ? (query.data as Record<string, unknown>[]) : [];
-
     const rendered = [
-      renderRows("Visits", rows(visitsQ), { prefix: "V", maxRows: 8 }),
-      renderRows("Lab orders", rows(labsQ), { prefix: "L", maxRows: 8 }),
-      renderRows("Invoices", rows(invoicesQ), { prefix: "I", maxRows: 8 }),
-      renderRows("Prescriptions", rows(prescriptionsQ), { prefix: "P", maxRows: 5 }),
-      renderRows("Follow-ups", rows(followupsQ), { prefix: "F", maxRows: 5 }),
-      renderRows("Insurance claims", rows(claimsQ), { prefix: "C", maxRows: 4 }),
+      renderRows("Visits", asRows(visitsQ?.data), { prefix: "V", maxRows: 8 }),
+      renderRows("Lab orders", asRows(labsQ?.data), { prefix: "L", maxRows: 8 }),
+      renderRows("Invoices", asRows(invoicesQ?.data), { prefix: "I", maxRows: 8 }),
+      renderRows("Prescriptions", asRows(prescriptionsQ?.data), { prefix: "P", maxRows: 5 }),
+      renderRows("Follow-ups", asRows(followupsQ?.data), { prefix: "F", maxRows: 5 }),
+      renderRows("Insurance claims", asRows(claimsQ?.data), { prefix: "C", maxRows: 4 }),
     ];
 
     const sources = rendered.flatMap((entry) => entry.legend);
     const historyText = data.history.length
       ? `Earlier in this conversation:\n${data.history
-          .map((turn, i) => `Q${i + 1}: ${turn.question}\nA${i + 1}: ${turn.answer}`)
+          .map((turn, index) => `Q${index + 1}: ${turn.question}\nA${index + 1}: ${turn.answer}`)
           .join("\n")}`
       : "";
 
@@ -415,38 +411,41 @@ export const explainLabOrder = createServerFn({ method: "POST" })
 
     const { data: order } = await access.supabase
       .from("lab_orders")
-      .select("id, status, created_at, ordered_at, verified_at, patients(full_name, gender, date_of_birth)")
+      .select(
+        "id, status, created_at, ordered_at, verified_at, patients(full_name, gender, date_of_birth)",
+      )
       .eq("id", data.orderId)
       .maybeSingle();
     if (!order) return { text: null, error: "This lab order is not available to you." };
 
-    const items = await access.supabase
+    const itemsQ = await access.supabase
       .from("lab_order_items")
       .select("id, status, test_id, lab_tests(name, name_ar)")
       .eq("order_id", data.orderId);
-    const itemRows = Array.isArray(items?.data) ? (items.data as Record<string, unknown>[]) : [];
-    const itemIds = itemRows.map((row) => String(row["id"])).filter(Boolean);
+    const itemRows = asRows(itemsQ?.data);
+    const testIds = itemRows.map((row) => String(row["test_id"])).filter(Boolean);
 
-    const [results, parameters, ranges] = await Promise.all([
-      readRows(access, "lab_results", (client) =>
-        client
-          .from("lab_results")
-          .select("*")
-          .in("item_id", itemIds.length ? itemIds : ["00000000-0000-0000-0000-000000000000"]),
-      ),
-      readRows(access, "lab_parameters", (client) =>
-        client
-          .from("lab_parameters")
-          .select("id, name, code, unit, data_type, reference_text")
-          .in("test_id", itemRows.map((row) => String(row["test_id"])).filter(Boolean)),
-      ),
-      readRows(access, "lab_reference_ranges", (client) =>
-        client
-          .from("lab_reference_ranges")
-          .select("parameter_id, gender, min_age, max_age, lower_limit, upper_limit, text_reference")
-          .in("parameter_id", itemRows.map((row) => String(row["test_id"])).filter(Boolean)),
-      ),
-    ]);
+    const results = await readRows(access, (client) =>
+      client
+        .from("lab_results")
+        .select("*")
+        .in("item_id", itemRows.map((row) => String(row["id"])).filter(Boolean).length
+          ? itemRows.map((row) => String(row["id"])).filter(Boolean)
+          : [NIL_UUID]),
+    );
+    const parameters = await readRows(access, (client) =>
+      client
+        .from("lab_parameters")
+        .select("id, name, code, unit, data_type, reference_text")
+        .in("test_id", testIds.length ? testIds : [NIL_UUID]),
+    );
+    const parameterIds = parameters.map((row) => String(row["id"])).filter(Boolean);
+    const ranges = await readRows(access, (client) =>
+      client
+        .from("lab_reference_ranges")
+        .select("parameter_id, gender, min_age, max_age, lower_limit, upper_limit, text_reference")
+        .in("parameter_id", parameterIds.length ? parameterIds : [NIL_UUID]),
+    );
 
     const prompt = withinBudget(
       [
@@ -456,11 +455,16 @@ export const explainLabOrder = createServerFn({ method: "POST" })
           "ordered_at",
           "verified_at",
         ]),
-        renderOne("Patient", (order as Record<string, unknown>)["patients"] as Record<string, unknown>, [
-          "gender",
-          "date_of_birth",
-        ]),
-        renderRows("Requested tests", itemRows, { prefix: "T", maxRows: 30, columns: ["status", "lab_tests"] }),
+        renderOne(
+          "Patient",
+          (order as Record<string, unknown>)["patients"] as Record<string, unknown> | undefined,
+          ["gender", "date_of_birth"],
+        ),
+        renderRows("Requested tests", itemRows, {
+          prefix: "T",
+          maxRows: 30,
+          columns: ["status", "lab_tests"],
+        }),
         renderRows("Result values", results, { prefix: "R", maxRows: 60 }),
         renderRows("Parameters", parameters, { prefix: "M", maxRows: 60 }),
         renderRows("Reference ranges", ranges, { prefix: "N", maxRows: 60 }),
@@ -471,7 +475,7 @@ export const explainLabOrder = createServerFn({ method: "POST" })
 
     try {
       const text = await completeAiText({ instructions: LAB_INSTRUCTIONS, prompt });
-      return { text, error: null, sources: results.map((_, i) => `R${i + 1}`).slice(0, 60) };
+      return { text, error: null, sources: results.map((_, index) => `R${index + 1}`).slice(0, 60) };
     } catch (error) {
       return { text: null, error: describeAiFailure(error) };
     }
@@ -500,23 +504,25 @@ export const reviewInvoice = createServerFn({ method: "POST" })
 
     const { data: invoice } = await access.supabase
       .from("invoices")
-      .select("id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, patients(full_name, mrn)")
+      .select(
+        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, patients(full_name, mrn)",
+      )
       .eq("id", data.invoiceId)
       .maybeSingle();
     if (!invoice) return { text: null, error: "This invoice is not available to you." };
 
     const [items, payments, claims] = await Promise.all([
-      readRows(access, "invoice_items", (client) =>
+      readRows(access, (client) =>
         client.from("invoice_items").select("*").eq("invoice_id", data.invoiceId),
       ),
-      readRows(access, "payments", (client) =>
+      readRows(access, (client) =>
         client
           .from("payments")
           .select("amount, payment_method, payment_date, created_at")
           .eq("invoice_id", data.invoiceId)
           .order("payment_date"),
       ),
-      readRows(access, "insurance_claims", (client) =>
+      readRows(access, (client) =>
         client
           .from("insurance_claims")
           .select("claim_number, status, submitted_amount, created_at, submitted_at")
@@ -545,10 +551,8 @@ export const reviewInvoice = createServerFn({ method: "POST" })
 
     try {
       const text = await completeAiText({ instructions: BILLING_INSTRUCTIONS, prompt });
-      return { text, error: null, sources: claims.map((_, i) => `C${i + 1}`) };
+      return { text, error: null, sources: claims.map((_, index) => `C${index + 1}`) };
     } catch (error) {
       return { text: null, error: describeAiFailure(error) };
     }
   });
-
-export const AI_OK = OK;
