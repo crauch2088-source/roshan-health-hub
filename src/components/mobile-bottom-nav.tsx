@@ -177,7 +177,7 @@ export function MobileBottomNav() {
                     <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground rtl:text-xs rtl:normal-case rtl:tracking-normal">
                       {t(group.group)}
                     </p>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-2 min-[360px]:grid-cols-4">
                       {items.map((item) => {
                         const Icon = getNavIcon(item.icon);
                         const active = isNavItemActive(location.pathname, item.to);

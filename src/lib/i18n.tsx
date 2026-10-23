@@ -213,6 +213,7 @@ const dict: Record<string, { ar: string; en: string }> = {
 
   // common
   save: { ar: "حفظ", en: "Save" },
+  save_and_new_visit: { ar: "حفظ وفتح زيارة", en: "Save & create visit" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
   cancel: { ar: "إلغاء", en: "Cancel" },
   add: { ar: "إضافة", en: "Add" },

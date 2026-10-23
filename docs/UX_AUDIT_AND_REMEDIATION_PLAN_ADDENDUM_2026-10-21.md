@@ -166,3 +166,16 @@
 7. لا تبدأ إصلاحات شكلية واسعة قبل تثبيت الجرد والهوية والدليل.
 
 **معيار النجاح النهائي:** لا يوجد P0 مفتوح؛ لا توجد P1 غير معتمدة؛ كل route معروف له حالة؛ الأدلة صحيحة وخالية من البيانات الحساسة؛ وتكون النتيجة النهائية صريحة PASS أو BLOCKED، لا ادعاءً عامًا بأن «التطبيق مكتمل».
+
+
+## 14. Reconciliation with current main — 2026-10-23
+
+This is a dated state snapshot, not a claim that the UX release gate has passed.
+
+- Reconciled against `main` at `75161cea594f5541fa31560aa144fc6b03638390` and the canonical production alias `https://roshan-health-hub.vercel.app/`.
+- Phases 41 and 42 are merged; Phase 43's audit record is merged; Phase 44 public auth/setup fixes are merged. These code milestones do not by themselves close Issue #95.
+- Phase 45 PR #101 remains open with a candidate fix for retry-safe visit/queue completion, plus CI-blocker fixes found while validating the latest source: npm lockfile synchronization, AI assistant TypeScript/prompt formatting, and recursive redaction of direct/internal identifiers from prompt context.
+- Isolated PostgreSQL 17 assertions for queue retry repair and timestamp preservation passed on the pre-formatting-fix head. Exact-head CI and focused regression checks must pass on the final candidate SHA before the code milestone is accepted.
+- The Phase 45 migration remains **candidate-only and unapplied to production**. No production test records, financial writes, or AI provider calls were used for these changes.
+- The only remaining release gate that cannot be completed by source review/CI alone is the authorized comprehensive usability walkthrough: required viewport widths, RTL/LTR, authenticated clinical/role paths, and visual/keyboard evidence. Keep Issue #95 **BLOCKED** until that single end-of-work acceptance session is performed and documented; do not substitute source guards or CI for the human workflow check.
+- User-requested execution sequence: finish all code-only work and automated validation first, then run one comprehensive acceptance session with the user/staff rather than repeating partial manual tests after every code change.

@@ -333,7 +333,7 @@ function PatientChart() {
         eyebrow={t("patients")}
         name={s(record, "full_name")}
         facts={[
-          { label: t("mrn"), value: <span dir="ltr">{s(record, "mrn") || "—"}</span> },
+          { label: t("mrn"), value: <bdi dir="ltr">{s(record, "mrn") || "—"}</bdi> },
           { label: t("age"), value: calcAge(s(record, "date_of_birth")) ?? "—" },
           { label: t("gender"), value: s(record, "gender") ? t(s(record, "gender")) : "—" },
           { label: t("phone"), value: <span dir="ltr">{s(record, "phone") || "—"}</span> },

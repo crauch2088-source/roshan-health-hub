@@ -1,8 +1,9 @@
 # Roshan Health Hub — الخطة الشاملة لتدقيق وإصلاح تجربة الاستخدام والواجهات
 
 > **نوع الوثيقة:** خطة تنفيذ ومعايير قبول ملزمة لهذه المرحلة  
-> **آخر تنقيح:** 2026-10-21  
+> **آخر تنقيح:** 2026-10-23  
 > **الحالة عند إعداد الخطة:** خطة عمل؛ لا تعني أن التدقيق أو الإصلاح أو القبول قد اكتمل  
+> **آخر reconciliation:** `main` SHA `75161cea594f5541fa31560aa144fc6b03638390` on 2026-10-23; this remains a plan, not acceptance evidence  
 > **المستودع:** https://github.com/crauch2088-source/roshan-health-hub  
 > **بوابة التتبع:** [Issue #95 — UX release gate](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
 > **الإنتاج القانوني:** https://roshan-health-hub.vercel.app/  

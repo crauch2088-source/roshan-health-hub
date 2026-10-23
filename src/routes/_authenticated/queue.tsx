@@ -124,24 +124,30 @@ function QueuePageInner() {
   const update = useSave<{ id: string; status: string }>(
     async ({ id, status }) => {
       if (!canUpdate) throw new Error("Not authorized");
+      const ticket = ((queue.data ?? []) as Row[]).find((r) => s(r, "id") === id);
+      const visitId = s(ticket, "visit_id") || s(rel(ticket, "visits"), "id");
+      if (status === "completed" && visitId) {
+        const { error: visitError } = await supabase.rpc("complete_visit_atomic", {
+          p_visit_id: visitId,
+        });
+        if (visitError) throw new Error(visitError.message);
+      } else if (visitId) {
+        const visitStatus =
+          status === "called" ? "in_progress" : status === "cancelled" ? "cancelled" : "waiting";
+        const { error: visitError } = await supabase
+          .from("visits")
+          .update({ status: visitStatus })
+          .eq("id", visitId);
+        if (visitError) throw new Error(visitError.message);
+      }
       const patch: Row = { status };
       if (status === "called") patch["called_at"] = new Date().toISOString();
       if (status === "completed") patch["completed_at"] = new Date().toISOString();
-      const { error } = await supabase.from("queue_tickets").update(patch).eq("id", id);
-      if (error) throw new Error(error.message);
-      const ticket = ((queue.data ?? []) as Row[]).find((r) => s(r, "id") === id);
-      const visitId = s(ticket, "visit_id") || s(rel(ticket, "visits"), "id");
-      if (visitId) {
-        const visitStatus =
-          status === "called"
-            ? "in_progress"
-            : status === "completed"
-              ? "completed"
-              : status === "cancelled"
-                ? "cancelled"
-                : "waiting";
-        await supabase.from("visits").update({ status: visitStatus }).eq("id", visitId);
-      }
+      const { error: ticketError } = await supabase
+        .from("queue_tickets")
+        .update(patch)
+        .eq("id", id);
+      if (ticketError) throw new Error(ticketError.message);
       return null;
     },
     {
@@ -300,17 +306,19 @@ function QueuePageInner() {
                           {lang === "ar" ? "إنهاء" : "Complete"}
                         </Button>
                       )}
-                      <Link
-                        to="/clinic/$visitId"
-                        params={{ visitId: s(visit, "id") }}
-                        className={buttonVariants({
-                          variant: "outline",
-                          size: "sm",
-                          className: "min-h-10 flex-1",
-                        })}
-                      >
-                        {t("clinic")}
-                      </Link>
+                      {can("visits.read") && s(visit, "id") ? (
+                        <Link
+                          to="/clinic/$visitId"
+                          params={{ visitId: s(visit, "id") }}
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                            className: "min-h-10 flex-1",
+                          })}
+                        >
+                          {lang === "ar" ? "فتح العيادة" : "Clinic"}
+                        </Link>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -394,13 +402,15 @@ function QueuePageInner() {
                                 {lang === "ar" ? "إنهاء" : "Complete"}
                               </Button>
                             )}
-                            <Link
-                              to="/clinic/$visitId"
-                              params={{ visitId: s(visit, "id") }}
-                              className={buttonVariants({ variant: "ghost", size: "sm" })}
-                            >
-                              {t("clinic")}
-                            </Link>
+                            {can("visits.read") && s(visit, "id") ? (
+                              <Link
+                                to="/clinic/$visitId"
+                                params={{ visitId: s(visit, "id") }}
+                                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                              >
+                                {lang === "ar" ? "فتح العيادة" : "Clinic"}
+                              </Link>
+                            ) : null}
                           </div>
                         </TableCell>
                       </TableRow>
