@@ -1,11 +1,12 @@
 # Roshan Health Hub — الخطة الشاملة لتدقيق وإصلاح تجربة الاستخدام والواجهات
 
-> **نوع الوثيقة:** خطة تنفيذ ومعايير قبول ملزمة لهذه المرحلة
-> **آخر تنقيح:** 2026-10-22
-> **الحالة الحالية (2026-10-22):** Phase 41 و42 مدمجتان؛ Phase 43 وثّقت فحص الإنتاج العام، لكن بوابة القبول ما زالت مفتوحة بسبب عوائق موثقة في القسم 13
-> **المستودع:** https://github.com/crauch2088-source/roshan-health-hub
-> **بوابة التتبع:** [Issue #95 — UX release gate](https://github.com/crauch2088-source/roshan-health-hub/issues/95)
-> **الإنتاج القانوني:** https://roshan-health-hub.vercel.app/
+> **نوع الوثيقة:** خطة تنفيذ ومعايير قبول ملزمة لهذه المرحلة  
+> **آخر تنقيح:** 2026-10-23  
+> **الحالة عند إعداد الخطة:** خطة عمل؛ لا تعني أن التدقيق أو الإصلاح أو القبول قد اكتمل  
+> **آخر reconciliation:** `main` SHA `d8f494be773ab766bf6781d4a8297a4d581153e7` on 2026-10-23; this remains a plan, not acceptance evidence  
+> **المستودع:** https://github.com/crauch2088-source/roshan-health-hub  
+> **بوابة التتبع:** [Issue #95 — UX release gate](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
+> **الإنتاج القانوني:** https://roshan-health-hub.vercel.app/  
 > **النطاق:** تدقيق شامل للشاشات والتنقل وتجربة الهاتف، مع إصلاحات آمنة واختبارات وإثباتات قابلة للمراجعة.
 
 ---
@@ -507,19 +508,19 @@
 
 تمت مراجعة المصادر العامة التالية لتحديث مبادئ الخطة. تُستخدم لتوجيه التقييم، ولا تُعامل كدليل على سلوك Roshan نفسه:
 
-1. **ONC — 2025 SAFER Guides**: https://healthit.gov/clinical-quality-and-safety/safer-guides
+1. **ONC — 2025 SAFER Guides**: https://healthit.gov/clinical-quality-and-safety/safer-guides  
    توجّه تقييم سلامة السجلات الإلكترونية، تحديد هوية المريض، إدخال الأوامر، متابعة نتائج المختبر، الاتصالات السريرية، والتخطيط عند تعطل النظام.
-2. **ONC — Usability and Provider Burden**: https://healthit.gov/usability-and-provider-burden/
+2. **ONC — Usability and Provider Burden**: https://healthit.gov/usability-and-provider-burden/  
    يؤكد أن قابلية استخدام السجل الإلكتروني مرتبطة بالسلامة والأمان والموثوقية، وليست تلميعًا بصريًا فقط.
-3. **ONC — Using Health IT**: https://healthit.gov/clinical-quality-and-safety/safer-guides/using-health-it/
+3. **ONC — Using Health IT**: https://healthit.gov/clinical-quality-and-safety/safer-guides/using-health-it/  
    يوضح أهمية توافق التقنية مع سير العمل الفعلي والتواصل ومتابعة الطلبات والنتائج وإدارة الدواء.
-4. **Microsoft Playwright — Accessibility testing**: https://github.com/microsoft/playwright/blob/main/docs/src/accessibility-testing-js.md
+4. **Microsoft Playwright — Accessibility testing**: https://github.com/microsoft/playwright/blob/main/docs/src/accessibility-testing-js.md  
    يوصي بفحوص آلية مع فحص يدوي؛ لا يمكن للأدوات الآلية كشف كل مشكلات الإتاحة.
-5. **Primer React — Visual regression and accessibility tests**: https://github.com/primer/react/blob/main/contributor-docs/testing.md
+5. **Primer React — Visual regression and accessibility tests**: https://github.com/primer/react/blob/main/contributor-docs/testing.md  
    مثال على دمج اختبارات الانحدار البصري وفحوص الإتاحة في CI.
-6. **Medplum documentation**: https://www.medplum.com/docs
+6. **Medplum documentation**: https://www.medplum.com/docs  
    مرجع لتخطيط التدفقات السريرية وإدارة السجلات والطلبات والصلاحيات، لا قالبًا يجب نسخ بنيته حرفيًا.
-7. **OpenMRS O3**: https://o3-docs.openmrs.org/en-US/docs/introduction/
+7. **OpenMRS O3**: https://o3-docs.openmrs.org/en-US/docs/introduction/  
    مرجع للتصميم المعياري وإعادة استخدام المكونات وتجربة نقطة الرعاية.
 
 ### ثلاث جولات تنقيح للخطة قبل اعتمادها
@@ -556,103 +557,67 @@
 
 ## 13. بوابة القبول النهائية (لا انتقال قبلها)
 
-**قرار Phase 43 بتاريخ 2026-10-22: BLOCKED — لا تُغلق Issue #95 بعد.** الأدلة المصدرية وCI جيدة، لكن فحص الإنتاج العام كشف حالة خطأ متناقضة في `/setup`، ولم تسمح أداة المتصفح بقياس العروض الدقيقة أو قيم DOM المطلوبة، كما لم تتوفر جلسة مصرح بها لاختبار المسارات المحمية. هذا قرار قائم على الأدلة لا ينفي إنجاز Phase 41/42.
+يُسمح بإغلاق هذه المرحلة فقط عندما تتحقق جميع النقاط التالية أو يُسجل استثناء واضح ومقبول لا يخفي خطرًا:
 
-- [x] هوية التطبيق المنشور مثبتة: alias القانوني `https://roshan-health-hub.vercel.app/` على Vercel Production READY، وSHA التطبيق المنشور `589272c48c0bbd803789259d43f5619570e03f96` يطابق `main` عند بدء Phase 43. تحديث التوثيق في هذه الدفعة لا يغيّر ملفات التطبيق؛ يُسجل SHA التوثيق النهائي منفصلًا بعد الدمج ولا يُفترض أنه نشر تطبيق جديد.
-- [x] جرد المصدر يسرد 30 مسار صفحة فعليًا: 3 عامة و27 ضمن `_authenticated`. هذه تغطية جرد وحراس مصدر، وليست ادعاءً بأن المسارات الثلاثين فُتحت في المتصفح.
-- [x] فحوص Phase 42 المصدرية موجودة في `tests/phase42-ux-route-rtl-a11y-guard.test.ts`، وتتحقق من وجود ملفات المسارات، وحراسة صلاحيات عناصر التنقل، ومفاتيح العربية/الإنجليزية، وبعض عقود الهاتف وLTR والإتاحة.
-- [x] اجتاز `test:guard` عدد 204/204 اختبارًا على PR #98؛ واجتازت فحوص CI الموثقة TypeScript (`tsc --noEmit`)، وESLint، وBuild، وPostgreSQL 17، وCodeQL على رأس PR، ثم نجح CI بعد الدمج.
-- [x] التحقق من عدم إجراء أي كتابة أو ترحيل أو إدخال بيانات اختبار في Supabase الإنتاجية خلال Phase 41/42/43.
-- [x] فُحصت الصفحات العامة `/` و`/auth` و`/setup` على الإنتاج في جلسة قراءة فقط. سجل المتصفح: [Phase 43 browser run](https://agent.tinyfish.ai/runs/7f98f991-450b-4fba-8cfd-5caa9ad6bd42).
-- [x] صُحح الاستنتاج الأمني الأولي الخاص بنموذج الدخول: مصدر `src/routes/auth.tsx` يستخدم React `onSubmit` مع `e.preventDefault()` ثم يستدعي `signIn(email.trim(), password)`؛ لذلك لا يوجد دليل من المصدر على إرسال بيانات الاعتماد في query string. ملاحظة المتصفح عن `method=GET` ليست أساسًا صالحًا لتقرير ثغرة.
-- [ ] **فحص 320/360/390/430px و1280px في RTL/LTR:** الأداة لم تستطع ضبط viewport إلى القياسات المطلوبة. لا توجد قيم DOM رقمية موثقة لـ`document.documentElement.scrollWidth` و`clientWidth`.
-- [ ] **انعدام الانسياب الأفقي:** لم يُثبت على القياسات المطلوبة؛ عدم رؤية شريط أفقي في viewport الافتراضي لا يساوي اختبارًا رقميًا.
-- [x] **الإتاحة العامة — إصلاح الكود:** أضيف رابط تخطٍ مترجم ووسم `<main>` دلالي إلى `/auth` و`/setup` في Phase 44، مع اختبار انحدار. يبقى التحقق المرئي بلوحة المفاتيح مستقلاً وغير مكتمل.
-- [ ] **التركيز ولوحة المفاتيح:** لم يُتحقق بصريًا من focus ring بالتنقل بلوحة المفاتيح. لم يثبت `Ctrl+K` في الصفحات العامة؛ يجب فحصه في shell المصادق عليه حيث يُتوقع البحث.
-- [ ] **المسارات المحمية وتدفقات الأدوار:** غير مختبرة في متصفح الإنتاج لعدم توفر جلسة QA مصرح بها. حراس المصدر لا تثبت تعيينات الأدوار الفعلية أو رفض الخلفية لكل عملية.
-- [ ] **حالات الواجهة والتدفقات السريرية/المالية:** نجاح اختبارات CI المعزولة لا يعادل walkthrough مرئيًا لتسجيل مريض، زيارة، طابور، عيادة، طلب/نتيجة مختبر، صرف دواء، وفاتورة.
-- [x] **خلل `/setup` — إصلاح الكود:** Phase 44 يتعامل مع `permission denied` من `setup_required` كدليل على إغلاق الإعداد بعد التهيئة (`setRequired(false)`) دون عرض خطأ مضلل؛ الأخطاء الأخرى ما زالت تظهر. أضيف اختبار انحدار. لا تغيير في قاعدة الإنتاج.
-- [ ] لا يُعلن `P0/P1 = 0`؛ لا يمكن تأكيد ذلك قبل فرز خلل `/setup` وإكمال التدفقات المحمية.
-- [ ] لا تُغلق Issue #95 الآن. القرار الحالي `BLOCKED — awaiting viewport + authenticated clinical QA and setup-state triage`، مع إبقاء المهمة مفتوحة حتى إرفاق الأدلة الناقصة وإعادة التحقق.
+- [ ] رأس `main` وهوية النشر النهائيان موثقان، وأي فرق بينهما مفهوم.
+- [ ] لكل route محمي معروف حالة فحص نهائية، ولا توجد مسارات غير مدرجة.
+- [ ] الشاشات الرئيسية موثقة على 320/360/390/430px وعلى RTL/LTR.
+- [ ] لا يوجد overflow أو قص أو تراكب حرج مفتوح في مسارات العمل الأساسية.
+- [ ] التنقل، البحث، الإجراءات السريعة، والروابط العميقة تعمل حسب الصلاحية.
+- [ ] حالات loading/empty/error/retry/disabled/submitting مفحوصة حيث تنطبق.
+- [ ] لا يوجد P0 مفتوح.
+- [ ] لا يوجد P1 مفتوح إلا باستثناء مكتوب وموافقة صريحة، مع بديل آمن وخطة معالجة؛ لا يُقبل استثناء لثغرة خصوصية أو إسناد مريض أو فساد مالي.
+- [ ] اختبارات الصلاحيات تشمل رفض الإجراء من الخلفية، لا إخفاء الأزرار فقط.
+- [ ] تدفقات الاختبار المتاحة تمت في بيئة معزولة ببيانات اصطناعية، ولا توجد كتابات اختبارية في الإنتاج.
+- [ ] اختبارات الرجوع وCI ناجحة على SHA موثق؛ حالات الاختبار غير المشمولة محددة.
+- [ ] الفحص اليدوي للوحة المفاتيح والتركيز أُنجز للشاشات الأساسية أو بقيت بوابته صراحة مفتوحة.
+- [ ] صور الشاشة والسجلات لا تكشف بيانات أو أسرارًا حقيقية.
+- [ ] التقرير يذكر المخاطر والعوائق والقرارات المطلوبة من المستخدم/الطبيب.
+- [ ] Issue #95 محدثة بالأدلة والنتيجة، مع قرار واضح: ACCEPTED أو BLOCKED، وليس «انتهى» بلا دليل.
 
-### قرار الخروج
-لا تستخدم `ACCEPTED / CLOSED` ولا `RESOLVED — Ready for Clinical Staff Sign-off` في هذه الجولة. السبب ليس نقص إصلاحات Phase 41/42، بل وجود تناقض مرئي في صفحة إعداد المدير وعدم اكتمال قياس viewport/DOM والمراجعة المصادق عليها المطلوبة في معايير القبول الأصلية.
+### متى تكون النتيجة BLOCKED؟
+إذا لم تتوفر جلسة مصرح بها لمسارات محمية، أو دور ضروري، أو بيئة كتابة معزولة، أو deployment يمكن ربطه برأس المصدر، فتوثّق الفحوص التي نجحت وتُترك البوابة المحجوبة مفتوحة. لا يُستبدل الدليل الناقص بعبارات عامة مثل «كل شيء يعمل».
+
+---
 
 ## 14. مخرجات التسليم المطلوبة
 
-### ملخص التسليم النهائي — Phase 41/42/43 (2026-10-22)
+عند إنهاء التنفيذ، يجب أن تكون المستندات التالية موجودة أو محدثة:
 
-- **Phase 41 / PR #97:** [الرابط](https://github.com/crauch2088-source/roshan-health-hub/pull/97). إصلاحات أمان وسير عمل P0/P1: عزل React Query عند الخروج/تبدل المستخدم، تفضيلات التنقل لكل مستخدم، إظهار الحساسية/الأمراض المزمنة/فصيلة الدم، تصحيح اتجاه التبويبات وتاريخ الفرع، تحذير الملاحظات غير المحفوظة، سلامة إكمال الزيارة والطابور، نطاق Realtime حسب الفرع، «حفظ وإنشاء زيارة»، وتحذيرات نتائج المختبر. رأس PR قبل الدمج `4bb3ef2f7b6844d5af6b71d05f9ffd5f5d3de4ef`، ودمج `main` = `0d8aa7f5fd53e8d5ba07c621e13b9562e487ac5c`. اجتاز 200 اختبار `test:guard` وفحوص CI وVercel Preview.
-- **Phase 42 / PR #98:** [الرابط](https://github.com/crauch2088-source/roshan-health-hub/pull/98). تحسين شبكة التنقل على 320px، مكوّن `LtrText`/حدود `bdi`، منع قص حقول التفاصيل، تضييق ترويسة التطبيق، تسمية إغلاق نافذة ثنائية اللغة، وحراس جرد المسارات والترجمة. دمج `main` = `589272c48c0bbd803789259d43f5619570e03f96`. نجح `test:guard` بعدد 204/204، وفحوص CI على الرأس شملت typecheck وlint وbuild وPostgreSQL 17 وCodeQL؛ كما نجح CI بعد الدمج. نشر Vercel Production READY على SHA التطبيق نفسه.
-- **Phase 43 / هذا التسليم:** فحص متصفح قراءة فقط للصفحات العامة، والتحقق من هوية النشر، ومراجعة مصدر صفحة الدخول والإعداد، وتحديث سجل القبول. أداة المتصفح لم توفر viewport قابلًا للضبط ولا تنفيذ JavaScript للحصول على قياسات DOM؛ لم تتوفر جلسة دخول مصرح بها للمسارات المحمية. سجل التنفيذ: [TinyFish browser run](https://agent.tinyfish.ai/runs/7f98f991-450b-4fba-8cfd-5caa9ad6bd42).
-- **المسارات:** الجرد المصدرّي يحتوي 30 صفحة (3 عامة + 27 محمية). اختبار Phase 42 يتحقق من الملفات الفعلية، ومن `PermissionGate` لمسارات التنقل المدرجة، ومن مفاتيح الترجمة للعربية والإنجليزية. لا يعني ذلك أن كل مسار فُحص في المتصفح أو أن كل دور/حالة قد اختُبر.
-- **الإنتاج وقاعدة البيانات:** لم تُجرَ أي كتابة/ترحيل/بيانات اصطناعية في Supabase `jewzonxplxhogqrnhosl`. تحديث هذه الوثيقة وحده لا يتطلب نشر تطبيق جديد؛ يجب أن يظل إعداد `ignoreCommand` الوثائقي متوافقًا مع سياسة توفير حصة Vercel.
-- **نتيجة البوابة:** `BLOCKED` وليس `ACCEPTED`: تعارض `/setup`، وقياسات viewport/DOM غير المتاحة، وغياب جلسة QA مصادق عليها، وفحص لوحة المفاتيح اليدوي لا تزال تمنع الإغلاق. الخطوة التالية هي معالجة حالة الإعداد في الكود ضمن دفعة منفصلة، ثم إجراء viewport/browser QA وجلسة تدفقات معزولة، وتحديث هذه الوثيقة وIssue #95 بالأدلة الجديدة.
+1. **تقرير التدقيق النهائي**: SHA المصدر/النشر، نطاق التغطية، النتائج حسب الخطورة، القيود.
+2. **سجل تغطية المسارات**: كل route وحالات الفحص والأدوار واللغات والعروض.
+3. **سجل العيوب**: رابط issue لكل عيب يحتاج عملًا أو وصف واضح للإصلاحات المنفذة.
+4. **دليل الصور**: صور قبل/بعد ذات أسماء واضحة، دون بيانات شخصية، مع viewport/لغة/route.
+5. **ملخص الاختبارات**: الأوامر/الوظائف التي شغلت، النتائج، SHA، والاختبارات غير المنفذة.
+6. **ملخص الإصلاحات**: السبب الجذري، الملفات المتأثرة، اختبار الرجوع، وأي أثر على السلوك.
+7. **حالة النشر**: هل النشر الحالي يطابق المصدر؟ رابط deployment وSHA، أو توضيح سبب عدم النشر.
+8. **القرار النهائي**: إغلاق البوابة أو إبقاؤها BLOCKED مع المالك والخطوة التالية.
+
+لا تضف تقريرًا ثانيًا يناقض مستندًا سابقًا؛ حدّث الوثيقة المرجعية أو اربط التقرير الجديد بالتاريخ والرأس الصحيح.
+
+---
 
 ## 15. سجل العمل
 
-| التاريخ | المرحلة | النشاط والنتيجة |
+| التاريخ | النشاط | النتيجة |
 |---|---|---|
-| 2026-10-21 | Phase 41 / PR #97 | إصلاحات أمان وسير عمل P0/P1؛ 200/200 `test:guard`؛ رأس PR `4bb3ef2f7b6844d5af6b71d05f9ffd5f5d3de4ef`؛ دمج `main` `0d8aa7f5fd53e8d5ba07c621e13b9562e487ac5c`؛ Preview READY. لا كتابة على Supabase الإنتاجية. |
-| 2026-10-22 | Phase 42 / PR #98 | تحسينات 320px وRTL/LTR والإتاحة المصدرية وجرد 30 route؛ 204/204 `test:guard`؛ CI على PR نجح؛ دمج `main` `589272c48c0bbd803789259d43f5619570e03f96`؛ Production READY على SHA نفسه. |
-| 2026-10-22 | Phase 43 / Browser & DOM audit | فُحصت الصفحات العامة `/`, `/auth`, `/setup` قراءة فقط. العربية/الإنجليزية ظهرتا على صفحة الدخول. لم يمكن ضبط viewport أو استخراج scrollWidth/clientWidth أو التحقق من focus ring؛ المسارات المحمية غير مختبرة لعدم توفر جلسة مصرح بها. رُصد خطأ `setup_required` متزامن مع `Setup complete`. [دليل المتصفح](https://agent.tinyfish.ai/runs/7f98f991-450b-4fba-8cfd-5caa9ad6bd42). |
-| 2026-10-22 | Phase 43 / Acceptance decision | قرار `BLOCKED`: لا إغلاق لـIssue #95 قبل triage لخلل `/setup`، وفحص viewport/DOM دقيق، واختبار shell والمسارات المحمية والأدوار في جلسة QA مصرح بها. لا كتابات أو ترحيلات أو بيانات اختبار في Supabase الإنتاجية. |
-| 2026-10-22 | Phase 43 / Documentation-only commit | تحديث القسم 13 (معايير القبول والحواجز)، القسم 14 (التسليم وPR #97/#98 ونتائج CI)، والقسم 15 (سجل المراحل). هذا commit توثيقي ولا يُفترض أن ينتج deployment جديدًا إذا تجاوزته `ignoreCommand`. |
+| 2026-10-21 | إعداد الخطة وتنقيحها عبر ثلاث جولات مراجعة: السلامة السريرية، التغطية الهندسية، التنفيذ والتكلفة | خطة تنفيذ؛ لا يُدّعى اكتمال التدقيق أو الإصلاح |
+| TBD | تثبيت SHA الحالي وهوية النشر | Pending |
+| TBD | إكمال route inventory | Pending |
+| TBD | تدقيق المتصفح/الهاتف/RTL-LTR | Pending |
+| TBD | إصلاحات مرتبة حسب الخطورة | Pending |
+| TBD | إعادة التحقق وبوابة القبول | Pending |
+
+---
 
 ## 16. تعليمات التنفيذ التالية
 
-1. لا تغلق Issue #95 بناءً على نجاح الاختبارات المصدرية وحدها.
-2. فرز وإصلاح تناقض حالة `/setup` في فرع/PR مستقل مع اختبار رجوع، دون أي تعديل على Supabase الإنتاجية.
-3. أعد فحص صفحات الواجهة العامة والمحمية عبر أداة متصفح قادرة على ضبط 320/360/390/430/1280px، وتسجيل قياسات `scrollWidth` و`clientWidth` ولقطات RTL/LTR.
-4. أعد استخدام جلسة QA مصرح بها إن توفرت؛ اختبر فقط الأدوار والبيانات الاصطناعية في بيئة معزولة. لا تطلب كلمة مرور في المحادثة ولا تستخدم سجلات مرضى حقيقية.
-5. اختبر keyboard focus وskip links و`Ctrl+K` والنوافذ والحالات الأساسية؛ افصل ما فُحص في الإنتاج العام عما فُحص في المعاينة/البيئة المعزولة.
-6. بعد وجود أدلة نجاح فعلية، حدّث Issue #95 والبوابة بهذه الأدلة وقرار قبول لا يتجاوز ما تثبته الاختبارات.
+1. ابدأ بقراءة هذه الوثيقة ووثائق المرجعية من `main` الحالي؛ تحقق من أن هذا الملف ما زال متسقًا مع أحدث commits.
+2. افحص حالة Issue #95، أحدث SHA لـ`main`، CI، ونشر Vercel قبل أي تعديل.
+3. لا تبدأ إصلاحًا بصريًا واسعًا قبل إكمال الجرد الأولي وتحديد العيوب الأعلى خطورة.
+4. ابدأ بالمرحلة 0 ثم 1، واحفظ النتائج في سجل تغطية واضح. إذا توفر ملف QA المصرح به، أعد استخدامه؛ لا تطلب أو تكشف كلمة مرور في الوثائق.
+5. نفّذ الإصلاحات في دفعات منطقية مع اختبارات، ملتزمًا بسياسة commit/CI/النشر في `docs/MASTER_PLAN.md`.
+6. لا تعتبر هذه الخطة أو رفعها للمستودع دليلًا على إنجاز أي مرحلة من مراحلها.
+7. لا تنتقل إلى مسار تطوير جديد قبل حسم بوابة Issue #95 أو توثيق العائق بدقة مع الدليل والخطوة اللازمة لرفعه.
 
 **المعيار النهائي:** تجربة استخدام واضحة وسريعة وآمنة ومترجمة ومناسبة للهاتف، مثبتة بأدلة قابلة للتكرار، مع الحفاظ على قواعد المجال والخصوصية والصلاحيات والتكلفة المنخفضة.
-
-
-### Phase 42 — Route & Permission Coverage Ledger (source-derived)
-
-The current repository contains **30 page routes**: 3 public routes and 27 authenticated page files (excluding the authenticated layout wrapper). This differs from the planning estimate of 25, so the guard inventories every actual page file instead of silently omitting routes. Runtime role-to-permission assignments are resolved by the application; a role is allowed only when its permission map grants the listed permission, and denied otherwise. This ledger does not hard-code role names that cannot be verified from UI source alone.
-
-| Route | Source file | Permission guard / nav permission | Allowed roles | Denied roles | Loading / Empty / Error + Retry / Forbidden | Automated guard |
-|---|---|---|---|---|---|---|
-| / | src/routes/index.tsx | Public entry/auth redirect | Signed-out entry; signed-in redirect | No session-specific content access | Redirect / session-dependent | PASS — Phase 42 inventory |
-| /auth | src/routes/auth.tsx | Public authentication route | Signed-out users | Authenticated-only modules remain gated | Form errors / submitting | PASS — Phase 42 inventory |
-| /setup | src/routes/setup.tsx | First-run setup guard | Authorized setup only | Other users when setup unavailable | Loading / ErrorBox | PASS — Phase 42 inventory |
-| /dashboard | src/routes/_authenticated/dashboard.tsx | dashboard.read | Roles granted dashboard.read | Roles without dashboard.read | Page states / parent auth guard | PASS — Phase 42 route-permission guard |
-| /patients | src/routes/_authenticated/patients.tsx | patients.read | Roles granted patients.read | Roles without patients.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
-| /visits | src/routes/_authenticated/visits.tsx | visits.read | Roles granted visits.read | Roles without visits.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
-| /queue | src/routes/_authenticated/queue.tsx | queue.read | Roles granted queue.read | Roles without queue.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /clinic | src/routes/_authenticated/clinic.tsx | visits.read | Roles granted visits.read | Roles without visits.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
-| /appointments | src/routes/_authenticated/appointments.tsx | appointments.read | Roles granted appointments.read | Roles without appointments.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /followups | src/routes/_authenticated/followups.tsx | followups.read | Roles granted followups.read | Roles without followups.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /certificates | src/routes/_authenticated/certificates.tsx | certificates.read | Roles granted certificates.read | Roles without certificates.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
-| /pharmacy | src/routes/_authenticated/pharmacy.tsx | pharmacy.read | Roles granted pharmacy.read | Roles without pharmacy.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /inventory | src/routes/_authenticated/inventory.tsx | pharmacy.read | Roles granted pharmacy.read | Roles without pharmacy.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /lab | src/routes/_authenticated/lab.tsx | lab.read | Roles granted lab.read | Roles without lab.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
-| /lab-catalog | src/routes/_authenticated/lab-catalog.tsx | lab_admin.read | Roles granted lab_admin.read | Roles without lab_admin.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /billing | src/routes/_authenticated/billing.tsx | billing.read | Roles granted billing.read | Roles without billing.read | Loading / Empty / ErrorBox + Retry / PermissionGate | PASS — Phase 42 route-permission guard |
-| /finance | src/routes/_authenticated/finance.tsx | cashbox.read | Roles granted cashbox.read | Roles without cashbox.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /accounting | src/routes/_authenticated/accounting.tsx | accounting.read | Roles granted accounting.read | Roles without accounting.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /expenses | src/routes/_authenticated/expenses.tsx | accounting.read | Roles granted accounting.read | Roles without accounting.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /partners | src/routes/_authenticated/partners.tsx | partners.read | Roles granted partners.read | Roles without partners.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /reports | src/routes/_authenticated/reports.tsx | reports.read | Roles granted reports.read | Roles without reports.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /analytics | src/routes/_authenticated/analytics.tsx | reports.read | Roles granted reports.read | Roles without reports.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /insurance | src/routes/_authenticated/insurance.tsx | insurance.read | Roles granted insurance.read | Roles without insurance.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /users | src/routes/_authenticated/users.tsx | users.read | Roles granted users.read | Roles without users.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /audit | src/routes/_authenticated/audit.tsx | audit.read | Roles granted audit.read | Roles without audit.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /settings | src/routes/_authenticated/settings.tsx | settings.read | Roles granted settings.read | Roles without settings.read | Page states / PermissionGate | PASS — Phase 42 route-permission guard |
-| /patients/$patientId | src/routes/_authenticated/patients_.$patientId.tsx | patients.read | Roles granted patients.read | Roles without patients.read | Loading / ErrorBox / PermissionGate | PASS — Phase 42 detail-route inventory |
-| /billing/$invoiceId | src/routes/_authenticated/billing_.$invoiceId.tsx | billing.read | Roles granted billing.read | Roles without billing.read | Loading / Empty / ErrorBox / PermissionGate | PASS — Phase 42 detail-route inventory |
-| /lab/$orderId | src/routes/_authenticated/lab_.$orderId.tsx | lab.read | Roles granted lab.read | Roles without lab.read | Loading / ErrorBox / PermissionGate | PASS — Phase 42 detail-route inventory |
-| /clinic/$visitId | src/routes/_authenticated/clinic_.$visitId.tsx | visits.read | Roles granted visits.read | Roles without visits.read | Page-specific states / PermissionGate | PASS — Phase 42 detail-route inventory |
-
-The Phase 42 guard checks public route files, discovers every authenticated page file, verifies each navigation route against its PermissionGate permission, validates Arabic/English nav and quick-action labels, and protects narrow mobile navigation, skip link, LTR token and dialog close-label contracts. These source checks are not authenticated browser acceptance and do not prove runtime role assignments. The state column is a source-ledger summary, not a claim that every state has been exercised in a browser.
-
-| Date | Phase | Work log / evidence |
-|---|---|---|
-| 2026-10-22 | Phase 42 — Mobile, RTL/LTR, accessibility and route inventory | Added 320px More-sheet grid, shared LtrText, non-truncating detail facts, compact header constraints, bilingual dialog close name, route/translation/source guards and this route ledger. Runtime mobile visual QA and role-by-role authenticated browser coverage remain separate release-gate checks. |
-
-
-| 2026-10-22 | Phase 44 — Public setup/auth polish and release-gate evidence | Fixed expected `permission denied` from `setup_required` so initialized installations show the secure completed state without a false error; retained errors for other failures. Added explicit POST methods, translated skip links, and semantic main landmarks to both public pages. Added Phase 44 regression coverage for both forms and secure denial handling. Production Supabase remains untouched. CI/production route evidence is still required before closing Issue #95; viewport and authenticated clinical workflow checks remain explicitly open. |
