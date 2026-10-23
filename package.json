@@ -17,6 +17,7 @@
     "test:guard": "node --test --experimental-strip-types tests/role-guard.test.ts tests/runtime-engine.test.ts tests/nav-active.test.ts tests/search-core.test.ts tests/nav-layout.test.ts tests/nav-permissions.test.ts tests/search-memory.test.ts tests/paging.test.ts tests/dashboard-metrics.test.ts tests/ssr-log-redaction.test.ts tests/patient-snapshot.test.ts tests/expenses-rpc-write-path.test.ts tests/finance-audit-trigger-dedup.test.ts tests/patient-registration-atomicity.test.ts tests/invoice-atomicity.test.ts tests/invoice-validation.test.ts tests/visit-invoice-consolidation.test.ts tests/pharmacy-dispense-invoice.test.ts tests/manual-billing-consolidation.test.ts tests/clinic-local-queue-date.test.ts tests/visit-form-options.test.ts tests/auth-profile-rpc.test.ts tests/clinical-workflow-redesign.test.ts tests/quick-actions.test.ts tests/inventory-receive-rpc.test.ts tests/invoice-rpc-only-writes.test.ts tests/clinical-rls.test.ts tests/clinical-child-rpc-writes.test.ts tests/clinical-security-hardening.test.ts tests/finance-rpc-only-writes.test.ts tests/keyboard-shortcuts.test.ts tests/clinical-e2e-acceptance.test.ts tests/lab-workflow-typed-mapper.test.ts tests/phase33-storage-realtime.test.ts tests/phase34-consolidated.test.ts tests/phase37-release-readiness.test.ts tests/phase38-multirole-smoke.test.ts tests/insurance-claim-validation.test.ts tests/prescription-atomicity.test.ts tests/privileged-role-guard-sql.test.ts tests/phase39-permissions-and-schema-consistency.test.ts tests/phase41-ux-safety-and-workflow.test.ts tests/phase42-ux-route-rtl-a11y-guard.test.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.99",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -50,6 +51,7 @@
     "@tanstack/react-router": "1.170.42",
     "@tanstack/react-start": "1.168.61",
     "@tanstack/router-plugin": "1.168.38",
+    "ai": "^7.0.148",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
