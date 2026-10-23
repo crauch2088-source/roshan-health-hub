@@ -12,6 +12,10 @@ const contractMigration = read("../db/roshan_phase31_contract_security_cutover.s
 const visitIndexMigration = read("../db/roshan_phase32_medical_certificate_visit_index.sql");
 const visitIndexAssertion = read("../db/tests/medical_certificate_visit_index_assertions.sql");
 const sqlAssertions = read("../db/tests/clinical_security_hardening_assertions.sql");
+const queue = read("../src/routes/_authenticated/queue.tsx");
+const completionRetryMigration = read(
+  "../db/roshan_phase45_atomic_visit_queue_completion_retry.sql",
+);
 const labOrderPage = read("../src/routes/_authenticated/lab_.$orderId.tsx");
 const labWorkflow = read("../src/lib/lab-workflow.ts");
 const preflightDoc = read("../docs/CLINICAL_SECURITY_HARDENING_PREFLIGHT_2026-10-18.md");
@@ -22,6 +26,21 @@ test("visit completion calls one atomic RPC instead of browser table writes", ()
   assert.match(consultation, /supabase\.rpc\(["']complete_visit_atomic["']/);
   assert.doesNotMatch(consultation, /\.from\(["']visits["']\)\s*\.update\s*\(/);
   assert.doesNotMatch(consultation, /\.from\(["']queue_tickets["']\)\s*\.update\s*\(/);
+});
+
+test("queue completion delegates ticket status and timestamps to the atomic visit RPC", () => {
+  const handler = queue.slice(
+    queue.indexOf("const update = useSave"),
+    queue.indexOf("invalidate: ["),
+  );
+  assert.match(
+    handler,
+    /if \(status === "completed" && visitId\) \{[\s\S]*supabase\.rpc\(["']complete_visit_atomic["'][\s\S]*return null;/,
+  );
+  assert.match(
+    completionRetryMigration,
+    /IF v_status = 'completed' THEN[\s\S]*IF v_completed_at IS NULL THEN[\s\S]*completed visit missing completion timestamp; manual repair required[\s\S]*UPDATE public\.queue_tickets[\s\S]*completed_at = v_completed_at[\s\S]*RETURN;/,
+  );
 });
 
 test("pharmacy UI invokes only the invoice-backed dispense RPC", () => {

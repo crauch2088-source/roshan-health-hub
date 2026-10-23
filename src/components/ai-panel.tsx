@@ -71,7 +71,9 @@ export function AiPanel({
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <CircleAlert className="size-3.5 shrink-0" />
-            {isArabic ? "للمراجعة فقط — لا يُحفظ أي شيء تلقائياً" : "For review only — nothing is saved"}
+            {isArabic
+              ? "للمراجعة فقط — لا يُحفظ أي شيء تلقائياً"
+              : "For review only — nothing is saved"}
           </span>
           <Button
             type="button"
@@ -80,13 +82,7 @@ export function AiPanel({
             onClick={() => void start()}
             disabled={disabled || running}
           >
-            {running ? (
-              isArabic ?
-                "جارٍ التحضير…"
-              : "Working…"
-            ) : (
-              ctaLabel
-            )}
+            {running ? (isArabic ? "جارٍ التحضير…" : "Working…") : ctaLabel}
           </Button>
         </div>
 
