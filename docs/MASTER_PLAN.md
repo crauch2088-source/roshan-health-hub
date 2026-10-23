@@ -1806,3 +1806,12 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Captured the seven canonical category counts and SHA-256 digests in `docs/live-catalog-fingerprint-v115.json`; the trigger category is 64 (57 at v114 plus the seven Phase 39 audit triggers). The other six categories retain their v114 digest/count.
 - CI replay must apply v112 baseline, Phase 34 / migration 113, Phase 36 / migration 114, then Phase 39 / migration 115 before comparing the exact fingerprint. The comparator checks all seven categories and refuses any count or digest mismatch.
 - Do not claim the seal until the Phase 40 exact-head CI result explicitly reports 7/7 matches. This catalog fingerprint proves parity for the seven defined categories, not byte-for-byte equality of stored live migration SQL or authenticated browser workflow acceptance.
+
+
+## Phase 45 — atomic visit/queue completion retry candidate (2026-10-23)
+
+- Verified starting `main`: `5b217d57322acdaed361bbf26e48ff93cb0ddcbf`. Existing exact-head CI `39822712137` and finance RPC isolation `39822712061` were green; Issue #95 remains open and the older documentation PR #96 is stale/diverged.
+- Source finding: the queue screen called `complete_visit_atomic` and then wrote `queue_tickets` again from the browser, while the RPC returned early for an already-completed visit before repairing a still-active ticket.
+- Candidate patch adds Phase 45 migration, removes the redundant linked-visit browser write, extends the isolated PostgreSQL 17 assertion to cover retry repair and timestamp preservation, adds source regression coverage, and wires only the targeted PG17 security-hardening job. Full clinical E2E acceptance remains explicitly deferred until an isolated free test environment and suitable synthetic doctor identity are available.
+- Candidate is not production-applied. Exact branch/commit/PR/check evidence must be recorded after CI completes; do not merge or apply the migration unless all targeted tests pass and the migration release gate is reviewed.
+- **Next task:** inspect exact-head GitHub Actions for the candidate PR; fix only demonstrated failures, then review migration parity and release gates. Keep Issue #95 blocked until authorized browser viewport/RTL/LTR and role QA evidence exists.

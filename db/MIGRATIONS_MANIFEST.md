@@ -66,3 +66,12 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 
 - Captured the v115 fingerprint with one read-only PostgreSQL SELECT that computes all seven SHA-256 digests in the database.
 - Release seal is complete only when the exact replay comparator reports `exact_match: true`, `matched_categories: 7`, `total_categories: 7` on the Phase 40 PR head and the PR is squash-merged.
+
+
+## Phase 45 candidate — atomic visit/queue completion retry
+
+- Candidate source: `db/roshan_phase45_atomic_visit_queue_completion_retry.sql`.
+- Fixes idempotent retry behavior so an already-completed visit can repair a still-active queue ticket without rewriting the visit's original `updated_at` or completion timestamp.
+- The queue UI now returns after successful `complete_visit_atomic` and does not issue a second browser update that can replace the server timestamp.
+- PostgreSQL 17 isolated CI applies this candidate before the security-hardening assertions, which deliberately reactivates a synthetic ticket and verifies retry repair and timestamp preservation.
+- **Release status: candidate only; not applied to production.** Production migration requires review of the exact PR head, green isolated PostgreSQL 17 checks, migration parity review, and the documented release gate.

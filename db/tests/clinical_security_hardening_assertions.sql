@@ -179,6 +179,15 @@ BEGIN
   IF (SELECT updated_at FROM public.visits WHERE id=v_visit_id) <> '2000-01-01 00:00:00+00'::timestamptz THEN
     RAISE EXCEPTION 'completed visit retry changed updated_at';
   END IF;
+  UPDATE public.queue_tickets SET status='waiting', completed_at=NULL WHERE id=v_ticket_id;
+  PERFORM public.complete_visit_atomic(v_visit_id);
+  IF (SELECT status FROM public.queue_tickets WHERE id=v_ticket_id) IS DISTINCT FROM 'completed' THEN
+    RAISE EXCEPTION 'completed visit retry did not repair active queue ticket';
+  END IF;
+  IF (SELECT completed_at FROM public.queue_tickets WHERE id=v_ticket_id)
+      IS DISTINCT FROM (SELECT completed_at FROM public.visits WHERE id=v_visit_id) THEN
+    RAISE EXCEPTION 'completed visit retry did not preserve server completion timestamp';
+  END IF;
   INSERT INTO public.visits(id,branch_id,patient_id,status) VALUES (v_visit_no_ticket_id,v_branch_id,v_patient_id,'in_progress');
   PERFORM public.complete_visit_atomic(v_visit_no_ticket_id);
   IF (SELECT status FROM public.visits WHERE id=v_visit_no_ticket_id) IS DISTINCT FROM 'completed' THEN

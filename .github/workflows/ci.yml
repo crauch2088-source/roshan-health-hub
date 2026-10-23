@@ -500,7 +500,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Replay Phase 31 security and Phase 32 index migrations on disposable PostgreSQL 17
+      - name: Replay Phase 31, Phase 45 retry guard, and Phase 32 index migrations on disposable PostgreSQL 17
         env:
           PGPASSWORD: postgres
         run: |
@@ -508,6 +508,7 @@ jobs:
             -f db/tests/clinical_security_hardening_fixture.sql \
             -f db/roshan_phase31_clinical_financial_security_hardening.sql \
             -f db/roshan_phase31_contract_security_cutover.sql \
+            -f db/roshan_phase45_atomic_visit_queue_completion_retry.sql \
             -f db/roshan_phase32_medical_certificate_visit_index.sql \
             -f db/tests/clinical_security_hardening_assertions.sql \
             -f db/tests/medical_certificate_visit_index_assertions.sql

@@ -711,3 +711,12 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - `docs/live-catalog-fingerprint-v115.json` stores the seven in-database SHA-256 category fingerprints. Live results: tables/columns 844; constraints 214; indexes 239; function security 134; triggers 64; RLS policies 210; clinical/financial privileges 109. Only the trigger fingerprint changed from v114, as expected from the seven Phase 39 audit triggers.
 - PostgreSQL 17 CI replays baseline v112 followed by migrations 113, 114 and 115 in order, asserts Phase 39 contracts, then computes the canonical fingerprint and compares every count and SHA-256 against v115. Do not claim 7/7 replay parity unless the Phase 40 exact-head CI comparator passes.
 - Catalog parity is not a claim of live SQL byte parity: Supabase migration history exposes ledger version/name but not persisted migration SQL bytes.
+
+
+## Phase 45 candidate — atomic visit/queue completion retry (2026-10-23)
+
+- Base snapshot verified before work: `main` at `5b217d57322acdaed361bbf26e48ff93cb0ddcbf`.
+- Source review found that `complete_visit_atomic(uuid)` returned immediately for an already-completed visit, leaving an active queue ticket unrepaired, while `queue.tsx` performed a second direct ticket update after the RPC and replaced the server timestamp with the browser clock.
+- Candidate migration `db/roshan_phase45_atomic_visit_queue_completion_retry.sql` repairs active tickets on retry while preserving the visit row and original visit completion timestamp. The route returns after the successful RPC for linked visits; other queue transitions retain their existing path.
+- Isolated PostgreSQL 17 regression assertions reactivate a synthetic queue ticket after initial completion, retry the RPC, and assert ticket repair, server timestamp consistency, and unchanged visit `updated_at`. CI wiring is limited to the targeted security-hardening integration job; the deferred clinical E2E acceptance workflow is unchanged.
+- **No production database change was made.** PR/commit/check evidence will be appended after the candidate branch has been committed and its exact-head CI completes.
