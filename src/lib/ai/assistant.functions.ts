@@ -18,6 +18,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { withinBudget } from "./prompt-utils.ts";
 
 export type AiResult = {
   text: string | null;
@@ -70,11 +71,11 @@ export function parseNoteSections(text: string): Record<string, string> {
     const heading = /^#{1,3}\s*(.+?)\s*$/i.exec(line.trim());
     if (heading) {
       flush();
-      const wanted = heading[1].toLowerCase().replace(/[*_]/g, "").trim();
+      const wanted = (heading[1] ?? "").toLowerCase().replace(/[*_]/g, "").trim();
       current =
-        Object.keys(SECTION_HEADINGS).find((key) =>
-          SECTION_HEADINGS[key].some((alias) => wanted === alias || wanted.includes(alias)),
-        ) ?? null;
+        Object.entries(SECTION_HEADINGS).find(([, aliases]) =>
+          aliases.some((alias) => wanted === alias || wanted.includes(alias)),
+        )?.[0] ?? null;
       continue;
     }
     if (current) buffer.push(line);
@@ -142,12 +143,6 @@ const BILLING_INSTRUCTIONS = [
 function failure(error: unknown): AiResult {
   const message = error instanceof Error ? error.message : "The assistant could not run.";
   return { text: null, error: message };
-}
-
-/** Keeps a prompt from growing without bound as a patient's history grows. */
-function withinBudget(parts: string[], maxChars: number): string {
-  const joined = parts.filter(Boolean).join("\n\n");
-  return joined.length > maxChars ? `${joined.slice(0, maxChars)}\n(truncated)` : joined;
 }
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";

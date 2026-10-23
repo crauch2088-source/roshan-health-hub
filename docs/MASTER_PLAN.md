@@ -1815,3 +1815,10 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Candidate migration preserves an already-completed visit's original completion timestamp and `updated_at`, repairs linked active queue tickets, and uses one timestamp for first completion. A completed visit missing its completion timestamp fails closed for manual repair rather than silently inventing one or mutating a potentially locked visit.
 - PostgreSQL 17 isolated assertions and source guards cover retry repair and timestamp consistency. No production migration or test data is permitted.
 - Issue #95 remains open until exact-width browser/RTL/LTR evidence and authenticated clinical/role acceptance are complete. This phase does not replace that gate.
+
+
+## AI gateway build and prompt-privacy hardening (2026-10-23)
+
+- Exact-head CI after npm lockfile synchronization exposed TypeScript errors in note-heading narrowing, prompt assembly from `renderRows` objects, and the TanStack request-header import. The implementation now narrows optional heading captures, formats prompt parts through a tested pure helper, and imports `getRequestHeader` from `@tanstack/react-start/server`.
+- Prompt serialization recursively removes direct personal/contact identifiers and internal record/user/branch IDs, including identifiers nested in relation objects. Clinical context fields such as allergies and blood group remain available to the assistant.
+- Added unit coverage for prompt formatting, truncation, and recursive identifier redaction. No AI provider calls, secrets, production data writes, or database migrations are part of this code-only fix. Provider cost, retention, and consent remain separate release controls; do not configure a paid key without explicit approval.
