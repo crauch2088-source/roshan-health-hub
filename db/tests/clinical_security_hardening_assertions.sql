@@ -25,7 +25,9 @@ DECLARE
   v_visit_id uuid := '00000000-0000-0000-0000-000000000401';
   v_visit_no_ticket_id uuid := '00000000-0000-0000-0000-000000000402';
   v_cancelled_visit_id uuid := '00000000-0000-0000-0000-000000000403';
+  v_visit_missing_ts_id uuid := '00000000-0000-0000-0000-000000000404';
   v_ticket_id uuid := '00000000-0000-0000-0000-000000000501';
+  v_ticket_missing_ts_id uuid := '00000000-0000-0000-0000-000000000502';
   v_lab_order_id uuid := '00000000-0000-0000-0000-000000000601';
   v_lab_item_id uuid := '00000000-0000-0000-0000-000000000602';
   v_permission_visits uuid := '00000000-0000-0000-0000-000000000701';
@@ -193,6 +195,18 @@ BEGIN
   END IF;
   IF (SELECT updated_at FROM public.visits WHERE id=v_visit_id) <> '2000-01-01 00:00:00+00'::timestamptz THEN
     RAISE EXCEPTION 'ticket repair changed visit updated_at';
+  END IF;
+  INSERT INTO public.visits(id,branch_id,patient_id,status,completed_at)
+  VALUES (v_visit_missing_ts_id,v_branch_id,v_patient_id,'completed',NULL);
+  INSERT INTO public.queue_tickets(id,visit_id,status)
+  VALUES (v_ticket_missing_ts_id,v_visit_missing_ts_id,'waiting');
+  BEGIN
+    PERFORM public.complete_visit_atomic(v_visit_missing_ts_id);
+    RAISE EXCEPTION 'completed visit with missing timestamp was accepted';
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
+  IF (SELECT status FROM public.queue_tickets WHERE id=v_ticket_missing_ts_id) IS DISTINCT FROM 'waiting' THEN
+    RAISE EXCEPTION 'missing-timestamp retry partially mutated queue ticket';
   END IF;
   INSERT INTO public.visits(id,branch_id,patient_id,status) VALUES (v_visit_no_ticket_id,v_branch_id,v_patient_id,'in_progress');
   PERFORM public.complete_visit_atomic(v_visit_no_ticket_id);

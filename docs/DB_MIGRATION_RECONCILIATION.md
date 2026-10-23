@@ -716,6 +716,6 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 ## Phase 45 candidate — atomic visit/queue completion retry (2026-10-23)
 
 - Source review found that the queue UI performed a second direct ticket update after `complete_visit_atomic`, and an idempotent retry could leave an active ticket unrepaired.
-- Candidate migration uses one authoritative server-side timestamp for first completion and repairs active tickets on retry, including replacing stale ticket timestamps while preserving the visit's original completion timestamp and `updated_at`.
+- Candidate migration uses one authoritative server-side timestamp for first completion and repairs active tickets on retry, including replacing stale ticket timestamps while preserving the visit's original completion timestamp and `updated_at`. A completed visit with a missing completion timestamp fails closed for manual repair, avoiding writes to potentially locked visits.
 - Isolated PostgreSQL 17 assertions cover retry repair and timestamp alignment; source guards ensure the browser does not perform a duplicate write.
 - The migration is a candidate only and has **not** been applied to production. Do not claim clinical E2E or UX acceptance from these automated checks.

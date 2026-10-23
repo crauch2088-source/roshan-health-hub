@@ -40,13 +40,14 @@ BEGIN
   END IF;
 
   IF v_status = 'completed' THEN
-    -- Idempotent retry: keep the visit's original completion timestamp and
-    -- repair every active queue ticket to that authoritative timestamp.
-    v_completed_at := COALESCE(v_completed_at, pg_catalog.now());
-    UPDATE public.visits AS visit
-    SET completed_at = COALESCE(visit.completed_at, v_completed_at)
-    WHERE visit.id = p_visit_id AND visit.deleted_at IS NULL;
+    -- A completed visit must already have its authoritative timestamp. Fail
+    -- closed rather than mutating a possibly locked visit or inventing one.
+    IF v_completed_at IS NULL THEN
+      RAISE EXCEPTION 'completed visit missing completion timestamp; manual repair required'
+        USING ERRCODE = '22023';
+    END IF;
 
+    -- Idempotent retry repairs active tickets without rewriting the visit row.
     UPDATE public.queue_tickets AS ticket
     SET status = 'completed',
         completed_at = v_completed_at,

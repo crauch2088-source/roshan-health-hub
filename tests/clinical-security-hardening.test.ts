@@ -39,7 +39,7 @@ test("queue completion delegates ticket status and timestamps to the atomic visi
   );
   assert.match(
     completionRetryMigration,
-    /IF v_status = 'completed' THEN[\s\S]*v_completed_at := COALESCE\(v_completed_at, pg_catalog\.now\(\)\)[\s\S]*UPDATE public\.queue_tickets[\s\S]*completed_at = v_completed_at[\s\S]*RETURN;/,
+    /IF v_status = 'completed' THEN[\s\S]*IF v_completed_at IS NULL THEN[\s\S]*completed visit missing completion timestamp; manual repair required[\s\S]*UPDATE public\.queue_tickets[\s\S]*completed_at = v_completed_at[\s\S]*RETURN;/,
   );
 });
 

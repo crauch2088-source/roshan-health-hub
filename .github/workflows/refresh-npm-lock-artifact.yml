@@ -1,4 +1,4 @@
-name: Temporary npm lockfile refresh artifact
+name: Temporary npm lockfile refresh
 on:
   pull_request:
     paths:
@@ -6,25 +6,30 @@ on:
       - "package-lock.json"
       - ".github/workflows/refresh-npm-lock-artifact.yml"
 permissions:
-  contents: read
+  contents: write
 jobs:
   refresh-lockfile:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Regenerate package-lock from the merged package manifest
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Validate the generated lockfile
-        continue-on-error: true
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: generated-package-lock
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit the generated lockfile and remove this temporary helper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm .github/workflows/refresh-npm-lock-artifact.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .github/workflows/refresh-npm-lock-artifact.yml
+          git commit -m "fix(deps): synchronize npm lockfile with package manifest"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"

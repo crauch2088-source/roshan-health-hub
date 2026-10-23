@@ -1812,6 +1812,6 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 
 - Production `main` snapshot integrated: `75161cea594f5541fa31560aa144fc6b03638390`; this phase includes the review fix that aligns stale queue-ticket timestamps to the visit's authoritative server timestamp.
 - Queue UI delegates linked visit completion to `complete_visit_atomic` and returns after success; no second browser update may overwrite the completion timestamp or fail after the visit commits.
-- Candidate migration preserves an already-completed visit's original completion timestamp and `updated_at`, repairs linked active queue tickets, and uses one timestamp for first completion.
+- Candidate migration preserves an already-completed visit's original completion timestamp and `updated_at`, repairs linked active queue tickets, and uses one timestamp for first completion. A completed visit missing its completion timestamp fails closed for manual repair rather than silently inventing one or mutating a potentially locked visit.
 - PostgreSQL 17 isolated assertions and source guards cover retry repair and timestamp consistency. No production migration or test data is permitted.
 - Issue #95 remains open until exact-width browser/RTL/LTR evidence and authenticated clinical/role acceptance are complete. This phase does not replace that gate.
