@@ -179,3 +179,12 @@ This is a dated state snapshot, not a claim that the UX release gate has passed.
 - The Phase 45 migration remains **candidate-only and unapplied to production**. No production test records, financial writes, or AI provider calls were used for these changes.
 - The only remaining release gate that cannot be completed by source review/CI alone is the authorized comprehensive usability walkthrough: required viewport widths, RTL/LTR, authenticated clinical/role paths, and visual/keyboard evidence. Keep Issue #95 **BLOCKED** until that single end-of-work acceptance session is performed and documented; do not substitute source guards or CI for the human workflow check.
 - User-requested execution sequence: finish all code-only work and automated validation first, then run one comprehensive acceptance session with the user/staff rather than repeating partial manual tests after every code change.
+
+
+## 15. Current status after Phase 45 merge — 2026-10-23
+
+- Phase 45 PR #101 was squash-merged to `main` as `d8f494be773ab766bf6781d4a8297a4d581153e7`. The merged changes include retry-safe visit/queue completion, npm lockfile synchronization, AI assistant TypeScript/lint repairs, and recursive prompt-identifier redaction.
+- Exact-head CI passed, including PostgreSQL 17 clinical/security/migration replay suites, the focused insurance-claim UI validation workflow, and the Vercel preview check. Production deployment status was still pending at snapshot time.
+- The Phase 45 migration is present in source but remains **unapplied to production**. Read-only Supabase ledger check still showed 115 applied migrations, latest `20261020232033_roshan_phase39_permissions_lab_catalog_and_audit_closure`; no Phase 45 migration or synthetic patient/financial rows were written.
+- Issue #95 remains **BLOCKED**. Source-level and automated work is not equivalent to a staff usability acceptance. The outstanding acceptance evidence is the single comprehensive session covering the required viewport widths, RTL/LTR, authenticated clinical/role paths, and visual/keyboard behavior.
+- The comprehensive manual session must use an isolated environment with suitable synthetic identities for any write workflow. Do not use production for synthetic clinical, lab, prescription, inventory, or financial transactions, and do not configure or call the AI gateway as part of this test without separate explicit approval.

@@ -1806,3 +1806,19 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Captured the seven canonical category counts and SHA-256 digests in `docs/live-catalog-fingerprint-v115.json`; the trigger category is 64 (57 at v114 plus the seven Phase 39 audit triggers). The other six categories retain their v114 digest/count.
 - CI replay must apply v112 baseline, Phase 34 / migration 113, Phase 36 / migration 114, then Phase 39 / migration 115 before comparing the exact fingerprint. The comparator checks all seven categories and refuses any count or digest mismatch.
 - Do not claim the seal until the Phase 40 exact-head CI result explicitly reports 7/7 matches. This catalog fingerprint proves parity for the seven defined categories, not byte-for-byte equality of stored live migration SQL or authenticated browser workflow acceptance.
+
+
+## Phase 45 — atomic visit/queue completion retry candidate (2026-10-23)
+
+- Production `main` snapshot integrated: `75161cea594f5541fa31560aa144fc6b03638390`; this phase includes the review fix that aligns stale queue-ticket timestamps to the visit's authoritative server timestamp.
+- Queue UI delegates linked visit completion to `complete_visit_atomic` and returns after success; no second browser update may overwrite the completion timestamp or fail after the visit commits.
+- Candidate migration preserves an already-completed visit's original completion timestamp and `updated_at`, repairs linked active queue tickets, and uses one timestamp for first completion. A completed visit missing its completion timestamp fails closed for manual repair rather than silently inventing one or mutating a potentially locked visit.
+- PostgreSQL 17 isolated assertions and source guards cover retry repair and timestamp consistency. No production migration or test data is permitted.
+- Issue #95 remains open until exact-width browser/RTL/LTR evidence and authenticated clinical/role acceptance are complete. This phase does not replace that gate.
+
+
+## AI gateway build and prompt-privacy hardening (2026-10-23)
+
+- Exact-head CI after npm lockfile synchronization exposed TypeScript errors in note-heading narrowing, prompt assembly from `renderRows` objects, and the TanStack request-header import. The implementation now narrows optional heading captures, formats prompt parts through a tested pure helper, and imports `getRequestHeader` from `@tanstack/react-start/server`.
+- Prompt serialization recursively removes direct personal/contact identifiers and internal record/user/branch IDs, including identifiers nested in relation objects. Clinical context fields such as allergies and blood group remain available to the assistant.
+- Added unit coverage for prompt formatting, truncation, and recursive identifier redaction. No AI provider calls, secrets, production data writes, or database migrations are part of this code-only fix. Provider cost, retention, and consent remain separate release controls; do not configure a paid key without explicit approval.

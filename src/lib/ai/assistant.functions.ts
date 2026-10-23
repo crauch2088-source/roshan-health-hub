@@ -18,6 +18,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { withinBudget } from "./prompt-utils.ts";
 
 export type AiResult = {
   text: string | null;
@@ -43,7 +44,12 @@ export const NOTE_SECTION_KEYS = [
 const SECTION_HEADINGS: Record<string, string[]> = {
   chief_complaint: ["chief complaint", "chief_complaint", "الشكوى الرئيسية"],
   hpi: ["history of present illness", "hpi", "تاريخ المرض الحالي"],
-  past_medical_history: ["past medical history", "pmh", "past_medical_history", "التاريخ المرضي السابق"],
+  past_medical_history: [
+    "past medical history",
+    "pmh",
+    "past_medical_history",
+    "التاريخ المرضي السابق",
+  ],
   drug_history: ["drug history", "medications", "drug_history", "الأدوية الحالية"],
   allergy_history: ["allergies", "allergy history", "allergy_history", "الحساسيات"],
   examination: ["examination", "physical examination", "examination", "الفحص السريري"],
@@ -70,11 +76,11 @@ export function parseNoteSections(text: string): Record<string, string> {
     const heading = /^#{1,3}\s*(.+?)\s*$/i.exec(line.trim());
     if (heading) {
       flush();
-      const wanted = heading[1].toLowerCase().replace(/[*_]/g, "").trim();
+      const wanted = (heading[1] ?? "").toLowerCase().replace(/[*_]/g, "").trim();
       current =
-        Object.keys(SECTION_HEADINGS).find((key) =>
-          SECTION_HEADINGS[key].some((alias) => wanted === alias || wanted.includes(alias)),
-        ) ?? null;
+        Object.entries(SECTION_HEADINGS).find(([, aliases]) =>
+          aliases.some((alias) => wanted === alias || wanted.includes(alias)),
+        )?.[0] ?? null;
       continue;
     }
     if (current) buffer.push(line);
@@ -144,12 +150,6 @@ function failure(error: unknown): AiResult {
   return { text: null, error: message };
 }
 
-/** Keeps a prompt from growing without bound as a patient's history grows. */
-function withinBudget(parts: string[], maxChars: number): string {
-  const joined = parts.filter(Boolean).join("\n\n");
-  return joined.length > maxChars ? `${joined.slice(0, maxChars)}\n(truncated)` : joined;
-}
-
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
 function asRows(value: unknown): Record<string, unknown>[] {
@@ -165,9 +165,8 @@ const noteInput = z.object({ visitId: z.string().min(1), lang: z.enum(["ar", "en
 export const draftClinicalNote = createServerFn({ method: "POST" })
   .inputValidator(noteInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, clampText } = await import(
-      "./data-access.server.ts"
-    );
+    const { requireAppAccess, renderOne, renderRows, clampText } =
+      await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
@@ -397,9 +396,8 @@ const labInput = z.object({ orderId: z.string().min(1), lang: z.enum(["ar", "en"
 export const explainLabOrder = createServerFn({ method: "POST" })
   .inputValidator(labInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, readRows } = await import(
-      "./data-access.server.ts"
-    );
+    const { requireAppAccess, renderOne, renderRows, readRows } =
+      await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
@@ -429,9 +427,12 @@ export const explainLabOrder = createServerFn({ method: "POST" })
       client
         .from("lab_results")
         .select("*")
-        .in("item_id", itemRows.map((row) => String(row["id"])).filter(Boolean).length
-          ? itemRows.map((row) => String(row["id"])).filter(Boolean)
-          : [NIL_UUID]),
+        .in(
+          "item_id",
+          itemRows.map((row) => String(row["id"])).filter(Boolean).length
+            ? itemRows.map((row) => String(row["id"])).filter(Boolean)
+            : [NIL_UUID],
+        ),
     );
     const parameters = await readRows(access, (client) =>
       client
@@ -475,7 +476,11 @@ export const explainLabOrder = createServerFn({ method: "POST" })
 
     try {
       const text = await completeAiText({ instructions: LAB_INSTRUCTIONS, prompt });
-      return { text, error: null, sources: results.map((_, index) => `R${index + 1}`).slice(0, 60) };
+      return {
+        text,
+        error: null,
+        sources: results.map((_, index) => `R${index + 1}`).slice(0, 60),
+      };
     } catch (error) {
       return { text: null, error: describeAiFailure(error) };
     }
@@ -490,9 +495,8 @@ const invoiceInput = z.object({ invoiceId: z.string().min(1), lang: z.enum(["ar"
 export const reviewInvoice = createServerFn({ method: "POST" })
   .inputValidator(invoiceInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, readRows } = await import(
-      "./data-access.server.ts"
-    );
+    const { requireAppAccess, renderOne, renderRows, readRows } =
+      await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;

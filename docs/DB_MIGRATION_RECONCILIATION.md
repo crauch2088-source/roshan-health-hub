@@ -711,3 +711,11 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - `docs/live-catalog-fingerprint-v115.json` stores the seven in-database SHA-256 category fingerprints. Live results: tables/columns 844; constraints 214; indexes 239; function security 134; triggers 64; RLS policies 210; clinical/financial privileges 109. Only the trigger fingerprint changed from v114, as expected from the seven Phase 39 audit triggers.
 - PostgreSQL 17 CI replays baseline v112 followed by migrations 113, 114 and 115 in order, asserts Phase 39 contracts, then computes the canonical fingerprint and compares every count and SHA-256 against v115. Do not claim 7/7 replay parity unless the Phase 40 exact-head CI comparator passes.
 - Catalog parity is not a claim of live SQL byte parity: Supabase migration history exposes ledger version/name but not persisted migration SQL bytes.
+
+
+## Phase 45 candidate — atomic visit/queue completion retry (2026-10-23)
+
+- Source review found that the queue UI performed a second direct ticket update after `complete_visit_atomic`, and an idempotent retry could leave an active ticket unrepaired.
+- Candidate migration uses one authoritative server-side timestamp for first completion and repairs active tickets on retry, including replacing stale ticket timestamps while preserving the visit's original completion timestamp and `updated_at`. A completed visit with a missing completion timestamp fails closed for manual repair, avoiding writes to potentially locked visits.
+- Isolated PostgreSQL 17 assertions cover retry repair and timestamp alignment; source guards ensure the browser does not perform a duplicate write.
+- The migration is a candidate only and has **not** been applied to production. Do not claim clinical E2E or UX acceptance from these automated checks.

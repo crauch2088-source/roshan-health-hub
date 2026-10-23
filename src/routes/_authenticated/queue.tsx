@@ -131,6 +131,9 @@ function QueuePageInner() {
           p_visit_id: visitId,
         });
         if (visitError) throw new Error(visitError.message);
+        // The RPC atomically completes the visit and linked tickets; avoid a
+        // second browser write that can overwrite the server timestamp.
+        return null;
       } else if (visitId) {
         const visitStatus =
           status === "called" ? "in_progress" : status === "cancelled" ? "cancelled" : "waiting";

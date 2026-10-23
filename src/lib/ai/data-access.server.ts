@@ -12,7 +12,8 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getRequestHeader } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { isSensitivePromptColumn, sanitizePromptValue } from "./prompt-utils.ts";
 
 import { resolveSupabaseKey } from "@/lib/supabase-key";
 
@@ -30,23 +31,10 @@ export type AppAccess = {
 const PROJECT_URL_FALLBACK = "https://jewzonxplxhogqrnhosl.supabase.co";
 
 /**
- * Contact identifiers the assistant has no clinical use for. Clinical content
- * itself is passed through — a clinician approved full record access, with
- * every answer reviewed before it is used.
+ * Direct personal identifiers and internal record IDs are removed before
+ * prompt serialization. Clinical context is still limited by the caller's RLS
+ * permissions and is reviewed by the clinician before it is used.
  */
-const CONTACT_KEYS = new Set([
-  "phone",
-  "mobile",
-  "email",
-  "address",
-  "national_id",
-  "nationality",
-  "emergency_contact",
-  "emergency_phone",
-  "photo",
-  "signature",
-]);
-
 const MAX_FIELD_CHARS = 600;
 
 function dataApiConfig(): { url: string; key: string } {
@@ -115,15 +103,18 @@ export async function requireAppAccess(permission: string): Promise<AppAccess> {
   return { supabase, userId: userData.user.id, roleCode, isSuperAdmin, can };
 }
 
-/** Row → plain text, dropping contact identifiers and truncating long prose. */
+/** Row → plain text, dropping direct/internal identifiers and truncating long prose. */
 export function renderRow(row: Row, columns?: string[]): string {
   const entries = columns ? columns.map((c) => [c, row[c]] as const) : Object.entries(row);
   const parts: string[] = [];
   for (const [column, value] of entries) {
-    if (CONTACT_KEYS.has(column)) continue;
+    if (isSensitivePromptColumn(column)) continue;
     if (value === null || value === undefined || value === "") continue;
-    const text = typeof value === "object" ? JSON.stringify(value) : String(value);
-    parts.push(`${column}=${text.length > MAX_FIELD_CHARS ? `${text.slice(0, MAX_FIELD_CHARS)}…` : text}`);
+    const text =
+      typeof value === "object" ? JSON.stringify(sanitizePromptValue(value)) : String(value);
+    parts.push(
+      `${column}=${text.length > MAX_FIELD_CHARS ? `${text.slice(0, MAX_FIELD_CHARS)}…` : text}`,
+    );
   }
   return parts.join(" | ");
 }
