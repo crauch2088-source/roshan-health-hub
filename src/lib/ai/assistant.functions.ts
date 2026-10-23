@@ -44,7 +44,12 @@ export const NOTE_SECTION_KEYS = [
 const SECTION_HEADINGS: Record<string, string[]> = {
   chief_complaint: ["chief complaint", "chief_complaint", "الشكوى الرئيسية"],
   hpi: ["history of present illness", "hpi", "تاريخ المرض الحالي"],
-  past_medical_history: ["past medical history", "pmh", "past_medical_history", "التاريخ المرضي السابق"],
+  past_medical_history: [
+    "past medical history",
+    "pmh",
+    "past_medical_history",
+    "التاريخ المرضي السابق",
+  ],
   drug_history: ["drug history", "medications", "drug_history", "الأدوية الحالية"],
   allergy_history: ["allergies", "allergy history", "allergy_history", "الحساسيات"],
   examination: ["examination", "physical examination", "examination", "الفحص السريري"],
@@ -160,9 +165,7 @@ const noteInput = z.object({ visitId: z.string().min(1), lang: z.enum(["ar", "en
 export const draftClinicalNote = createServerFn({ method: "POST" })
   .inputValidator(noteInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, clampText } = await import(
-      "./data-access.server.ts"
-    );
+    const { requireAppAccess, renderOne, renderRows, clampText } = await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
@@ -392,9 +395,7 @@ const labInput = z.object({ orderId: z.string().min(1), lang: z.enum(["ar", "en"
 export const explainLabOrder = createServerFn({ method: "POST" })
   .inputValidator(labInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, readRows } = await import(
-      "./data-access.server.ts"
-    );
+    const { requireAppAccess, renderOne, renderRows, readRows } = await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
@@ -424,9 +425,12 @@ export const explainLabOrder = createServerFn({ method: "POST" })
       client
         .from("lab_results")
         .select("*")
-        .in("item_id", itemRows.map((row) => String(row["id"])).filter(Boolean).length
-          ? itemRows.map((row) => String(row["id"])).filter(Boolean)
-          : [NIL_UUID]),
+        .in(
+          "item_id",
+          itemRows.map((row) => String(row["id"])).filter(Boolean).length
+            ? itemRows.map((row) => String(row["id"])).filter(Boolean)
+            : [NIL_UUID],
+        ),
     );
     const parameters = await readRows(access, (client) =>
       client
@@ -470,7 +474,11 @@ export const explainLabOrder = createServerFn({ method: "POST" })
 
     try {
       const text = await completeAiText({ instructions: LAB_INSTRUCTIONS, prompt });
-      return { text, error: null, sources: results.map((_, index) => `R${index + 1}`).slice(0, 60) };
+      return {
+        text,
+        error: null,
+        sources: results.map((_, index) => `R${index + 1}`).slice(0, 60),
+      };
     } catch (error) {
       return { text: null, error: describeAiFailure(error) };
     }

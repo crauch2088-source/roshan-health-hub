@@ -103,15 +103,20 @@ export async function requireAppAccess(permission: string): Promise<AppAccess> {
   return { supabase, userId: userData.user.id, roleCode, isSuperAdmin, can };
 }
 
-/** Row → plain text, dropping contact identifiers and truncating long prose. */
+/** Row → plain text, dropping direct/internal identifiers and truncating long prose. */
 export function renderRow(row: Row, columns?: string[]): string {
   const entries = columns ? columns.map((c) => [c, row[c]] as const) : Object.entries(row);
   const parts: string[] = [];
   for (const [column, value] of entries) {
     if (isSensitivePromptColumn(column)) continue;
     if (value === null || value === undefined || value === "") continue;
-    const text = typeof value === "object" ? JSON.stringify(sanitizePromptValue(value)) : String(value);
-    parts.push(`${column}=${text.length > MAX_FIELD_CHARS ? `${text.slice(0, MAX_FIELD_CHARS)}…` : text}`);
+    const text =
+      typeof value === "object"
+        ? JSON.stringify(sanitizePromptValue(value))
+        : String(value);
+    parts.push(
+      `${column}=${text.length > MAX_FIELD_CHARS ? `${text.slice(0, MAX_FIELD_CHARS)}…` : text}`,
+    );
   }
   return parts.join(" | ");
 }
