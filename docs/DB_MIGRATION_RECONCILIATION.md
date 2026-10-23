@@ -715,8 +715,7 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 
 ## Phase 45 candidate — atomic visit/queue completion retry (2026-10-23)
 
-- Base snapshot verified before work: `main` at `5b217d57322acdaed361bbf26e48ff93cb0ddcbf`.
-- Source review found that `complete_visit_atomic(uuid)` returned immediately for an already-completed visit, leaving an active queue ticket unrepaired, while `queue.tsx` performed a second direct ticket update after the RPC and replaced the server timestamp with the browser clock.
-- Candidate migration `db/roshan_phase45_atomic_visit_queue_completion_retry.sql` repairs active tickets on retry, overwrites stale ticket timestamps with the visit's authoritative completion timestamp, and preserves the visit's original completion timestamp and `updated_at`. The route returns after the successful RPC for linked visits; other queue transitions retain their existing path.
-- Isolated PostgreSQL 17 regression assertions reactivate a synthetic queue ticket after initial completion, retry the RPC, and assert ticket repair, server timestamp consistency, and unchanged visit `updated_at`. CI wiring is limited to the targeted security-hardening integration job; the deferred clinical E2E acceptance workflow is unchanged.
-- **No production database change was made.** PR/commit/check evidence will be appended after the candidate branch has been committed and its exact-head CI completes.
+- Source review found that the queue UI performed a second direct ticket update after `complete_visit_atomic`, and an idempotent retry could leave an active ticket unrepaired.
+- Candidate migration uses one authoritative server-side timestamp for first completion and repairs active tickets on retry, including replacing stale ticket timestamps while preserving the visit's original completion timestamp and `updated_at`.
+- Isolated PostgreSQL 17 assertions cover retry repair and timestamp alignment; source guards ensure the browser does not perform a duplicate write.
+- The migration is a candidate only and has **not** been applied to production. Do not claim clinical E2E or UX acceptance from these automated checks.

@@ -71,7 +71,7 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 ## Phase 45 candidate — atomic visit/queue completion retry
 
 - Candidate source: `db/roshan_phase45_atomic_visit_queue_completion_retry.sql`.
-- Fixes idempotent retry behavior so an already-completed visit can repair a still-active queue ticket without rewriting the visit's original `updated_at` or completion timestamp.
-- The queue UI now returns after successful `complete_visit_atomic` and does not issue a second browser update that can replace the server timestamp.
-- PostgreSQL 17 isolated CI applies this candidate before the security-hardening assertions, which deliberately reactivates a synthetic ticket and verifies retry repair and timestamp preservation.
-- **Release status: candidate only; not applied to production.** Production migration requires review of the exact PR head, green isolated PostgreSQL 17 checks, migration parity review, and the documented release gate.
+- First completion assigns one server-side timestamp to the visit and linked queue tickets; retry repairs active tickets using the visit's authoritative timestamp, even if the ticket carries a stale completion time.
+- The UI delegates linked visit completion to `complete_visit_atomic` and performs no second browser-side ticket update.
+- PostgreSQL 17 isolated CI asserts retry repair, timestamp alignment, and preservation of the visit's original completion timestamp and `updated_at`.
+- **Candidate only; not applied to production.** Production migration remains gated on exact-head CI, migration review, and explicit release approval.

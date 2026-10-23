@@ -179,7 +179,7 @@ BEGIN
   IF (SELECT updated_at FROM public.visits WHERE id=v_visit_id) <> '2000-01-01 00:00:00+00'::timestamptz THEN
     RAISE EXCEPTION 'completed visit retry changed updated_at';
   END IF;
-  -- Simulate a stale timestamp on an active ticket; retry must align it to the visit.
+  -- Simulate an active ticket with a stale completion timestamp; retry repairs it.
   UPDATE public.queue_tickets
   SET status='waiting', completed_at='1999-01-01 00:00:00+00'::timestamptz
   WHERE id=v_ticket_id;
@@ -189,7 +189,10 @@ BEGIN
   END IF;
   IF (SELECT completed_at FROM public.queue_tickets WHERE id=v_ticket_id)
       IS DISTINCT FROM (SELECT completed_at FROM public.visits WHERE id=v_visit_id) THEN
-    RAISE EXCEPTION 'completed visit retry did not preserve server completion timestamp';
+    RAISE EXCEPTION 'completed visit retry did not align stale ticket timestamp';
+  END IF;
+  IF (SELECT updated_at FROM public.visits WHERE id=v_visit_id) <> '2000-01-01 00:00:00+00'::timestamptz THEN
+    RAISE EXCEPTION 'ticket repair changed visit updated_at';
   END IF;
   INSERT INTO public.visits(id,branch_id,patient_id,status) VALUES (v_visit_no_ticket_id,v_branch_id,v_patient_id,'in_progress');
   PERFORM public.complete_visit_atomic(v_visit_no_ticket_id);

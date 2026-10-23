@@ -1810,8 +1810,8 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 
 ## Phase 45 — atomic visit/queue completion retry candidate (2026-10-23)
 
-- Verified starting `main`: `5b217d57322acdaed361bbf26e48ff93cb0ddcbf`. Existing exact-head CI `39822712137` and finance RPC isolation `39822712061` were green; Issue #95 remains open and the older documentation PR #96 is stale/diverged.
-- Source finding: the queue screen called `complete_visit_atomic` and then wrote `queue_tickets` again from the browser, while the RPC returned early for an already-completed visit before repairing a still-active ticket.
-- Candidate patch adds Phase 45 migration, removes the redundant linked-visit browser write, extends isolated PostgreSQL 17 assertions to cover retry repair even when the active ticket has a stale completion timestamp, preserves the visit's original completion timestamp and `updated_at`, adds source regression coverage, and wires only the targeted PG17 security-hardening job. Full clinical E2E acceptance remains explicitly deferred until an isolated free test environment and suitable synthetic doctor identity are available.
-- Candidate is not production-applied. Exact branch/commit/PR/check evidence must be recorded after CI completes; do not merge or apply the migration unless all targeted tests pass and the migration release gate is reviewed.
-- **Next task:** inspect exact-head GitHub Actions for the candidate PR; fix only demonstrated failures, then review migration parity and release gates. Keep Issue #95 blocked until authorized browser viewport/RTL/LTR and role QA evidence exists.
+- Production `main` snapshot integrated: `75161cea594f5541fa31560aa144fc6b03638390`; this phase includes the review fix that aligns stale queue-ticket timestamps to the visit's authoritative server timestamp.
+- Queue UI delegates linked visit completion to `complete_visit_atomic` and returns after success; no second browser update may overwrite the completion timestamp or fail after the visit commits.
+- Candidate migration preserves an already-completed visit's original completion timestamp and `updated_at`, repairs linked active queue tickets, and uses one timestamp for first completion.
+- PostgreSQL 17 isolated assertions and source guards cover retry repair and timestamp consistency. No production migration or test data is permitted.
+- Issue #95 remains open until exact-width browser/RTL/LTR evidence and authenticated clinical/role acceptance are complete. This phase does not replace that gate.
