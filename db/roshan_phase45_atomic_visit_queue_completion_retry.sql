@@ -40,11 +40,16 @@ BEGIN
   END IF;
 
   IF v_status = 'completed' THEN
-    -- Idempotent retry: do not rewrite the visit or its original completion time,
-    -- but repair any queue ticket left active by an earlier partial workflow.
+    -- Idempotent retry: keep the visit's original completion timestamp and
+    -- repair every active queue ticket to that authoritative timestamp.
+    v_completed_at := COALESCE(v_completed_at, pg_catalog.now());
+    UPDATE public.visits AS visit
+    SET completed_at = COALESCE(visit.completed_at, v_completed_at)
+    WHERE visit.id = p_visit_id AND visit.deleted_at IS NULL;
+
     UPDATE public.queue_tickets AS ticket
     SET status = 'completed',
-        completed_at = COALESCE(ticket.completed_at, v_completed_at, pg_catalog.now()),
+        completed_at = v_completed_at,
         updated_by = v_user_id
     WHERE ticket.visit_id = p_visit_id
       AND ticket.deleted_at IS NULL
@@ -52,16 +57,19 @@ BEGIN
     RETURN;
   END IF;
 
+  -- A first completion uses one server-side timestamp for the visit and every
+  -- linked queue ticket; stale ticket timestamps must not survive completion.
+  v_completed_at := pg_catalog.now();
   UPDATE public.visits
   SET status = 'completed',
-      completed_at = COALESCE(completed_at, pg_catalog.now()),
+      completed_at = v_completed_at,
       updated_by = v_user_id,
       updated_at = pg_catalog.now()
   WHERE id = p_visit_id AND deleted_at IS NULL;
 
   UPDATE public.queue_tickets AS ticket
   SET status = 'completed',
-      completed_at = COALESCE(ticket.completed_at, pg_catalog.now()),
+      completed_at = v_completed_at,
       updated_by = v_user_id
   WHERE ticket.visit_id = p_visit_id
     AND ticket.deleted_at IS NULL
