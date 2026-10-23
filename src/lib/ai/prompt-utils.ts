@@ -31,7 +31,10 @@ const SENSITIVE_PROMPT_COLUMNS = new Set([
 ]);
 
 function normalizeColumnName(column: string): string {
-  return column.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/[-\s]/g, "_").toLowerCase();
+  return column
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]/g, "_")
+    .toLowerCase();
 }
 
 export function isSensitivePromptColumn(column: string): boolean {

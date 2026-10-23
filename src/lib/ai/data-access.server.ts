@@ -31,9 +31,9 @@ export type AppAccess = {
 const PROJECT_URL_FALLBACK = "https://jewzonxplxhogqrnhosl.supabase.co";
 
 /**
- * Contact identifiers the assistant has no clinical use for. Clinical content
- * itself is passed through — a clinician approved full record access, with
- * every answer reviewed before it is used.
+ * Direct personal identifiers and internal record IDs are removed before
+ * prompt serialization. Clinical context is still limited by the caller's RLS
+ * permissions and is reviewed by the clinician before it is used.
  */
 const MAX_FIELD_CHARS = 600;
 
@@ -111,9 +111,7 @@ export function renderRow(row: Row, columns?: string[]): string {
     if (isSensitivePromptColumn(column)) continue;
     if (value === null || value === undefined || value === "") continue;
     const text =
-      typeof value === "object"
-        ? JSON.stringify(sanitizePromptValue(value))
-        : String(value);
+      typeof value === "object" ? JSON.stringify(sanitizePromptValue(value)) : String(value);
     parts.push(
       `${column}=${text.length > MAX_FIELD_CHARS ? `${text.slice(0, MAX_FIELD_CHARS)}…` : text}`,
     );

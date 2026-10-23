@@ -165,7 +165,8 @@ const noteInput = z.object({ visitId: z.string().min(1), lang: z.enum(["ar", "en
 export const draftClinicalNote = createServerFn({ method: "POST" })
   .inputValidator(noteInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, clampText } = await import("./data-access.server.ts");
+    const { requireAppAccess, renderOne, renderRows, clampText } =
+      await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
@@ -395,7 +396,8 @@ const labInput = z.object({ orderId: z.string().min(1), lang: z.enum(["ar", "en"
 export const explainLabOrder = createServerFn({ method: "POST" })
   .inputValidator(labInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, readRows } = await import("./data-access.server.ts");
+    const { requireAppAccess, renderOne, renderRows, readRows } =
+      await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
