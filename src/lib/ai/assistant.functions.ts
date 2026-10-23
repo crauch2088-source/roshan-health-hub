@@ -495,9 +495,8 @@ const invoiceInput = z.object({ invoiceId: z.string().min(1), lang: z.enum(["ar"
 export const reviewInvoice = createServerFn({ method: "POST" })
   .inputValidator(invoiceInput)
   .handler(async ({ data }): Promise<AiResult> => {
-    const { requireAppAccess, renderOne, renderRows, readRows } = await import(
-      "./data-access.server.ts"
-    );
+    const { requireAppAccess, renderOne, renderRows, readRows } =
+      await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
 
     let access;
