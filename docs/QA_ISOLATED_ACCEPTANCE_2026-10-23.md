@@ -8,9 +8,9 @@ This branch and backend exist only to prepare the single comprehensive Roshan He
 - Supabase QA project: `roshan-health-hub-qa`
 - Supabase project ref: `hopfohcnrtbiqjkgeukz`
 - Region: `eu-west-1`
-- Vercel environment: Preview only, branch-scoped to this branch.
-- QA browser variables: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`; both are scoped to this branch's Preview deployment.
+- Vercel environment variables: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, Preview-only and branch-scoped to this branch.
 - Production Supabase project `jewzonxplxhogqrnhosl` and production environment variables were not modified.
+- QA Auth email auto-confirm was briefly toggled for a standard-signup capability check, no accounts were created, and the original `mailer_autoconfirm=false` setting was restored.
 
 ## QA schema setup completed
 
@@ -19,32 +19,50 @@ Applied to QA only:
 2. Phase 34 storage/realtime/lab verification migration.
 3. Phase 36 audit and visit-lifecycle guards.
 4. Phase 39 permissions/lab catalog/audit closure.
-5. Phase 31 contract security cutover to ensure direct browser writes to `lab_order_items` and `medical_certificates` are revoked.
+5. Phase 31 contract security cutover to revoke direct browser writes to `lab_order_items` and `medical_certificates`.
 6. Phase 45 atomic visit/queue completion retry candidate.
+7. ACL reconciliation using read-only production catalog metadata, plus matching PostgreSQL default privileges for the `postgres` role in `public`.
 
-The first baseline application attempt failed on C-language function permissions and rolled back cleanly; the adapted baseline then succeeded. Read-only checks confirm the real platform `auth.uid()` remains present, `pg_trgm` is installed, 56 public tables and 210 public RLS policies exist, Phase 45's `complete_visit_atomic(uuid)` function exists, and authenticated direct INSERT/UPDATE/DELETE on `lab_order_items` is denied.
+The first baseline application attempt failed on C-language function permissions and rolled back cleanly; the adapted baseline then succeeded. Read-only checks confirm the real platform `auth.uid()` remains present, `pg_trgm` is installed, Phase 45's `complete_visit_atomic(uuid)` function exists with retry repair and fail-closed missing-timestamp logic, and authenticated direct INSERT/UPDATE/DELETE on `lab_order_items` is denied.
 
-## Remaining schema-parity gate
+## Catalog comparison
 
-The QA catalog currently reports 838 public columns, 213 constraints, and 238 indexes, while the repository's v115 production fingerprint records 844 columns, 214 constraints, and 239 indexes. Do not claim exact structural parity or proceed to authenticated clinical acceptance until the six-column/one-constraint/one-index delta is explained from trusted source. Do not guess missing historical SQL.
+A direct, read-only comparison between current production and QA returned **zero differences** in the normalized arrays for:
+- public column names/types/nullability/defaults;
+- public constraints and definitions;
+- public index names/definitions;
+- public/private function signatures, SECURITY DEFINER flags, and search-path configuration;
+- non-internal public triggers and definitions;
+- public RLS policies and expressions;
+- table ACLs, sequence ACLs, function ACLs, and public-schema default ACLs for the compared roles.
 
-The legacy `db/tests/clinical_security_hardening_assertions.sql` is not directly portable to this Supabase QA project: it assumes older fixture column requirements and a CI-specific auth test setting. Its execution was wrapped in a transaction and failed before commit; the transaction rolled back. No synthetic patient/visit/financial fixture rows persisted. Adapt the test harness to the actual Supabase schema and use a supported Auth user-provisioning path before rerunning.
+Counts from that comparison match on both sides: 838 public columns, 213 constraints, 238 indexes, 134 public/private functions, 64 non-internal public triggers, and 210 public RLS policies.
+
+**Outstanding reconciliation note:** the stored `docs/live-catalog-fingerprint-v115.json` reports 844 columns, 214 constraints, and 239 indexes. That stored fingerprint's count definition/result does not match the direct metadata query above. Do not claim a fresh canonical 7/7 SHA-256 fingerprint comparison until the counting/query discrepancy is reconciled; do not guess missing SQL.
+
+## Automated test evidence and limitation
+
+- Phase 45 source and PostgreSQL 17 retry assertions passed the exact-head CI checks on PR #101 before merge.
+- The legacy `db/tests/clinical_security_hardening_assertions.sql` is not directly portable to this Supabase QA project: it assumes older fixture column requirements and a CI-specific auth test setting. Its execution was wrapped in a transaction and failed before commit; the transaction rolled back. No synthetic patient/visit/financial fixture rows persisted.
+- The standard signup API capability check was blocked by the available tool's safety controls. No direct writes were made to Supabase-managed Auth tables and no passwords or service-role secrets were retrieved. A supported Auth user-provisioning method is still required.
 
 ## Current QA data state
 
 - Auth users: 0.
 - Patient rows: 0.
 - Visit rows: 0.
+- Lab-order rows: 0.
+- Prescription rows: 0.
 - Invoice rows: 0.
 - Queue-ticket rows: 0.
-- No staff/test accounts have been provisioned yet.
 - Phase 45 is applied to QA only and remains unapplied to production.
+- The Vercel branch-scoped variables are configured, but no new QA Preview build was triggered; the branch change is documentation-only and quota protection says to skip unnecessary builds.
 
 ## Required next steps
 
-1. Reconcile the catalog delta from the exact tracked baseline/migration sources, without inventing SQL.
-2. Create synthetic QA-only Auth users using a supported Supabase Auth provisioning method and link their application roles.
-3. Trigger a branch-scoped Preview deployment only after the QA schema gate is resolved; avoid unnecessary Vercel builds.
+1. Reconcile the stored fingerprint count discrepancy, retaining the direct comparison evidence above.
+2. Create synthetic QA-only Auth users through an approved, supported provisioning method and link application roles.
+3. Trigger a branch-scoped Preview deployment when the QA Auth path is ready; avoid unnecessary Vercel builds.
 4. Run automated smoke checks, then do the one comprehensive staff/user acceptance session with the user.
 5. Keep Issue #95 open until that session passes and evidence is recorded.
 
