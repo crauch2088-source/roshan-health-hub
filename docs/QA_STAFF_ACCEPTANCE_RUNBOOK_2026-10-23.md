@@ -1,7 +1,7 @@
 # Roshan Health Hub — QA Staff Acceptance Runbook
 
 **Date:** 2026-10-23  
-**Status:** Prepared; execution not yet started  
+**Status:** Partially prepared; synthetic staff identities provisioned; authenticated execution blocked  
 **Tracking issue:** [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
 **Production project:** `jewzonxplxhogqrnhosl` — read-only for this acceptance  
 **Isolated QA project:** `hopfohcnrtbiqjkgeukz`  
@@ -20,6 +20,25 @@
 
 **Important:** a green CI run, a READY Vercel deployment, or a successful SQL query is not equivalent to authenticated end-to-end acceptance.
 
+### Latest identity provisioning status — 2026-10-23
+
+Five synthetic QA identities were created through the Supabase Dashboard UI and linked to active `public.users` records in the isolated project only:
+
+| Persona | Synthetic login | Mapped role | QA link verified |
+|---|---|---|---|
+| Reception | `roshan.qa.reception@example.com` | `receptionist` | Yes |
+| General physician | `roshan.qa.gp@example.com` | `doctor` / General Practice | Yes |
+| Laboratory | `roshan.qa.lab@example.com` | `lab_tech` / Laboratory | Yes |
+| Pharmacy | `roshan.qa.pharmacy@example.com` | `pharmacist` / Pharmacy | Yes |
+| Admin/billing | `roshan.qa.adminbilling@example.com` | `admin` | Yes |
+
+Observed role-permission link counts: receptionist 20, doctor 26, lab_tech 7, pharmacist 14, admin 109. These counts are configuration evidence only, not proof of effective authorization.
+
+**Authentication blocker:** the Dashboard UI has no direct set-password action after creation, and the connected Supabase toolset has no supported Auth Admin update-user/password action. An Auth Admin mutation attempt was blocked by the execution layer. Passwords generated during account creation were not captured. Do not set password hashes with SQL or bypass the approved execution boundary. Therefore `AUTH-02` and all authenticated workflow/role tests remain `NOT RUN`. The official supported Auth Admin user-update path must be enabled before testing can proceed.
+
+No patient, visit, queue, lab, prescription, stock, invoice, payment, or other clinical/financial fixture rows were created. Production project remains unchanged. Issue #95 remains open.
+
+
 ## Current baseline and prerequisites
 
 Record fresh values before the session; do not assume historical counts remain current.
@@ -27,9 +46,9 @@ Record fresh values before the session; do not assume historical counts remain c
 | Prerequisite | Expected | Observed before session |
 |---|---|---|
 | QA Supabase project | `hopfohcnrtbiqjkgeukz`, healthy | Healthy at last check |
-| QA Auth users | Dedicated synthetic users for each tested role | 0 at last verified count |
-| QA app-user links | Each Auth ID maps to one active `public.users` row | 0 at last verified count |
-| QA Preview | Deployment READY from `qa/isolated-acceptance-20261023` | Not confirmed READY; recent attempts were cancelled/ignored |
+| QA Auth users | Dedicated synthetic users for each tested role | 5 created and email-confirmed via QA Dashboard UI; passwords were not captured for subsequent login testing |
+| QA app-user links | Each Auth ID maps to one active `public.users` row | 5 verified linked, active, expected role/department, branch `ROS-MAIN` |
+| QA Preview | Deployment READY from `qa/isolated-acceptance-20261023` | NOT READY: four recent Vercel deployments for docs-only commits were CANCELED/ignored; no QA preview build confirmed |
 | Production writes | None during acceptance | Required invariant |
 | Staff UAT | Completed with evidence | Not run |
 
