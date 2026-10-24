@@ -92,6 +92,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify historical 93-entry hashes and forward-source delta
         run: python3 scripts/verify-migration-source-parity.py
