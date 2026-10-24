@@ -1,7 +1,7 @@
 # Roshan Health Hub — QA Staff Acceptance Runbook
 
-**Date:** 2026-10-23  
-**Status:** Partially prepared; synthetic staff identities provisioned; authenticated execution blocked  
+**Date:** 2026-10-24  
+**Status:** QA Preview READY; synthetic staff identities provisioned; authenticated execution blocked  
 **Tracking issue:** [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
 **Production project:** `jewzonxplxhogqrnhosl` — read-only for this acceptance  
 **Isolated QA project:** `hopfohcnrtbiqjkgeukz`  
@@ -38,6 +38,19 @@ Observed role-permission link counts: receptionist 20, doctor 26, lab_tech 7, ph
 
 No patient, visit, queue, lab, prescription, stock, invoice, payment, or other clinical/financial fixture rows were created. Production project remains unchanged. Issue #95 remains open.
 
+### Latest QA Preview status — 2026-10-24
+
+- **Status:** READY.
+- **Deployment URL:** https://roshan-health-ay58tt7s5-roshan45.vercel.app
+- **QA branch alias:** https://roshan-health-hub-git-qa-isolated-acceptance-20261023-roshan45.vercel.app
+- **Deployment ID:** `dpl_7gMHifmgUJjNEbkLURHA83TneKCG`
+- **Source:** branch ref `qa/isolated-acceptance-20261023`, commit `d8f494be773ab766bf6781d4a8297a4d581153e7`.
+- The QA branch head `9ae90871bcfd5694b7dd0275007c3e5156612499` differs from the deployed source only in documentation files; the application source/build inputs are unchanged between those commits.
+- Vercel metadata confirms `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are Preview-only and scoped to this QA branch. Secret/environment values were not retrieved or exposed.
+- The deployment built successfully without changing the project-wide ignored-build configuration or production deployment settings. Vercel SSO protection remains enabled; no protection bypass was used.
+- **Important limitation:** a READY preview does not resolve the unknown-password blocker. Login, role enforcement, and all workflow acceptance rows remain `NOT RUN` until supported QA credentials can be used.
+
+
 
 ## Current baseline and prerequisites
 
@@ -48,7 +61,7 @@ Record fresh values before the session; do not assume historical counts remain c
 | QA Supabase project | `hopfohcnrtbiqjkgeukz`, healthy | Healthy at last check |
 | QA Auth users | Dedicated synthetic users for each tested role | 5 created and email-confirmed via QA Dashboard UI; passwords were not captured for subsequent login testing |
 | QA app-user links | Each Auth ID maps to one active `public.users` row | 5 verified linked, active, expected role/department, branch `ROS-MAIN` |
-| QA Preview | Deployment READY from `qa/isolated-acceptance-20261023` | NOT READY: four recent Vercel deployments for docs-only commits were CANCELED/ignored; no QA preview build confirmed |
+| QA Preview | Deployment READY from `qa/isolated-acceptance-20261023` | READY: deployment `dpl_7gMHifmgUJjNEbkLURHA83TneKCG`; QA-only branch-scoped Preview variables confirmed; authenticated tests still blocked by unknown passwords |
 | Production writes | None during acceptance | Required invariant |
 | Staff UAT | Completed with evidence | Not run |
 
