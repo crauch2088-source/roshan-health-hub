@@ -31,3 +31,12 @@
 ## Second exact-head CI result — 2026-10-24
 
 - PR #104 head `74163ce5dfee29e89109b4d9b8b088db05c77026`, run [40074308442](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40074308442): `npm audit` still reported **0 vulnerabilities** and `test:guard` passed **213/213**. Lint had one remaining Prettier-only line-break complaint in `getLockedVersions`; the expression formatting is corrected in the next candidate commit.
+
+
+## Merge and exact-head verification — 2026-10-24
+
+- PR [#104](https://github.com/crauch2088-source/roshan-health-hub/pull/104) was squash-merged. The verified candidate head was `926065b92c9670eb36ff879360511621de28c851`; the resulting `main` commit is `6e66793b425ec871b91152e285f2dc85cfb4c775` ([commit](https://github.com/crauch2088-source/roshan-health-hub/commit/6e66793b425ec871b91152e285f2dc85cfb4c775)).
+- Candidate checks: **29/29 successful** on the exact head. CI [run 40074517658](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40074517658) completed successfully, including install from lockfile, patched-version enforcement, security audit, guard tests, typecheck, lint, and build. The job log confirms `npm audit` found **0 vulnerabilities** and `test:guard` passed **213 tests**. PostgreSQL 17 integration [run 40074517840](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40074517840) passed.
+- Vercel reported the PR preview deployment as **Ignored/Skipped**; no manual deployment or quota workaround was attempted. No production DB/Auth configuration or clinical/financial records were changed.
+- Post-merge main checks were still queued/in progress at evidence capture: [CI run 40075092505](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40075092505), [finance-only RPC write isolation run 40075092448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40075092448), and [clinical-child RPC-only run 40075092590](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40075092590). Recheck these exact-SHA runs before claiming merged main is fully green.
+- **Next:** confirm post-merge CI conclusions, then resume the non-authenticated portion of Issue #95. Authenticated staff login and clinical E2E remain deferred/blocked until an authorized QA identity and supported login path are available.
