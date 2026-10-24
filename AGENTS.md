@@ -35,3 +35,11 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 - Supabase MCP migration application returned `must be owner of table objects`; a batched post-failure read-only query confirmed no partial Phase 34 schema or migration-ledger changes.
 - Do not enable `VITE_ROSHAN_PHASE34_ENABLED` until the full consolidated SQL file has been executed successfully by the table-owning role in Supabase SQL Editor and a read-only post-apply diagnostic confirms the buckets, publication membership, verification columns/RPC and audit protections.
+
+## Graphify knowledge-graph workflow
+
+- Graphify is an **optional local developer/agent aid**, not a runtime dependency of the Roshan application. Do not add it to the frontend package dependencies or production deployment.
+- For repository-wide architecture questions, consult the generated Graphify graph first when `graphify-out/graph.json` exists; then verify important conclusions against source files, migrations, and tests. Treat graph edges marked inferred as hypotheses, not facts.
+- Build or refresh the graph locally using `docs/GRAPHIFY_INTEGRATION.md`. Never commit generated graph output by default, and never upload real patient data, credentials, `.env` files, private keys, or production exports to Graphify or any model.
+- Keep the graph scoped to source, migrations, schemas, documentation, and safe configuration examples. Exclude secrets, local environment files, build output, dependency directories, backups, and any real clinical/financial records.
+- Graphify does not replace TypeScript checks, tests, migration-parity checks, RLS/security review, or read-only verification against Supabase. Do not run its generation in every CI job or trigger a Vercel deployment solely to refresh the graph.
