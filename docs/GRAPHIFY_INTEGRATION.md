@@ -1,51 +1,60 @@
 # Graphify integration for Roshan Health Hub
 
-Status: repository integration prepared; local CLI installation and graph generation must be completed in a development environment with shell access.
+Status: repository integration prepared; isolated CLI smoke test passed; full Roshan repository graph generation and cross-layer acceptance review remain pending in a trusted shell-enabled development environment.
 
 ## Purpose
 
-Graphify creates a queryable local knowledge graph across source code and supported project documents. Roshan can use it to navigate cross-layer relationships among React/TypeScript UI, RPCs, SQL migrations, schema, tests, and architecture documentation.
-
-This is a developer/agent workflow only. It does not change application runtime behavior, Supabase schema, authentication, or production deployment.
+Graphify can help navigate relationships among React/TypeScript UI, RPCs, SQL migrations, schema, tests, and architecture documentation. It is a developer/agent navigation aid, not an authoritative source of truth and not a runtime dependency.
 
 ## Install locally
 
-Requirements: Python 3.10+ and the `uv` tool.
+Requirements: Python 3.10+ and `uv`.
 
 ```sh
 uv tool install graphifyy
 graphify --version
 graphify install --platform codex --project
-graphify .
 ```
 
-Official project: https://github.com/Graphify-Labs/graphify
-Official install guide: https://graphiffy.com/docs/install
+The PyPI distribution is named `graphifyy` (two trailing `y` characters); the installed CLI is `graphify`. Official project: https://github.com/Graphify-Labs/graphify. Official installation guide: https://graphiffy.com/docs/install.
 
-The PyPI distribution name is `graphifyy` (two trailing y characters); the installed CLI command is `graphify`. Codex invokes the skill as `$graphify` where supported.
+## First graph and acceptance checks
 
-## First-run acceptance checks
+Run from the repository root in an isolated developer environment. Keep production data, patient identifiers, clinical notes, financial exports, credentials, tokens, private keys, `.env` files, and local secret stores out of the indexed corpus.
 
-1. Confirm `graphify --version` works and the command is from the expected isolated environment.
-2. Confirm generation creates `graphify-out/graph.json`, `graphify-out/GRAPH_REPORT.md`, and `graphify-out/graph.html`.
-3. Ask at least three known-answer questions:
-   - Trace laboratory result verification from UI to RPC, SQL definition, authorization boundary, and tests.
-   - Trace invoice/payment writes and their atomicity/security checks.
-   - Identify the migration, policies, and tests protecting a selected clinical workflow.
-4. Manually verify each answer against the exact source paths and current tests. Record missed edges, unsupported file types, false inferred relationships, and the time needed to answer versus targeted search.
-5. Keep generated files local and do not upload them to public services or commit them by default. Review `.gitignore` before the first run and make sure `graphify-out/` and any generated cache are ignored; do not blindly rewrite existing ignore rules.
+```sh
+graphify .
+graphify cluster-only .
+graphify query "lab result verification"
+graphify query "invoice payment writes"
+graphify query "clinical child table policies"
+```
+
+Important CLI behavior verified with `graphifyy` 0.9.95:
+
+- `graphify .` extracts code and writes `graphify-out/graph.json` plus analysis/manifest files.
+- `graphify cluster-only .` then clusters the existing graph and generates `graphify-out/GRAPH_REPORT.md` and `graphify-out/graph.html` as well as updating `graph.json`.
+- `graphify query` performs graph traversal from terms matched to nodes; it is not a guaranteed semantic question-answering engine. Treat results as navigation leads and verify important claims against source paths and tests.
+- Without a configured model backend, community labels may remain generic. Do not add a paid API key solely to make this optional integration work.
+
+Before accepting the first real project graph:
+
+1. Confirm the CLI version and command execution in the expected isolated environment.
+2. Confirm the files above are generated locally and remain untracked unless separately reviewed.
+3. Review `.gitignore` before running; do not blindly overwrite existing ignore rules. Ensure `graphify-out/` and generated caches are ignored.
+4. Inspect graph nodes/edges and manually trace at least three cross-layer paths: lab-result verification from UI through RPC/schema/tests; invoice/payment write paths and atomicity/security checks; a clinical workflow's migrations, policies, and tests.
+5. Record missing edges, false inferences, unsupported file types, and time-to-answer versus targeted source search. Verify each important claim against source code and current tests.
 
 ## Security and scope
 
-- Never include production data exports, patient identifiers, clinical notes, billing records, credentials, tokens, private keys, or `.env` files.
-- Prefer code, tracked SQL migrations, schema definitions, tests, and reviewed documentation. Do not point the tool at the whole home directory or other unrelated folders.
-- Graphify's local deterministic parsing of code does not imply that every supported document-processing path is local. If a document type requires a model, review the processing route before including it.
-- Treat inferred graph edges as leads. Verify critical relationships in source and tests.
+- Prefer tracked source code, SQL migrations, schema definitions, tests, and reviewed documentation. Do not point Graphify at the entire home directory or unrelated folders.
+- Code parsing can be local and deterministic, but supported document-processing paths may use a model or remote service. Review processing behavior before including non-code documents.
+- Inferred graph edges are hypotheses, not proof of a relationship.
 - Graphify does not replace CI, TypeScript checks, security review, migration-source parity checks, or read-only Supabase verification.
 
 ## Operating policy
 
-- No production dependency, database extension, Vercel deployment, hosted graph database, or paid service is required.
-- Do not run graph generation on every CI job. Refresh locally after meaningful cross-layer changes and query the graph when it helps.
-- Keep generated graph artifacts out of commits unless a future, separately reviewed decision establishes a concrete need.
-- If the first-run checks show little value beyond existing search/docs, leave Graphify optional rather than making it mandatory for every task.
+- No production dependency, database extension, hosted graph database, Vercel deployment, or paid service is required.
+- Do not run graph generation on every CI job. Refresh locally after meaningful cross-layer changes and use it when it helps.
+- Keep generated graph artifacts local by default; commit them only after a separate review establishes a concrete, safe use case.
+- If the first-run review adds little value beyond source search and existing docs, keep Graphify optional rather than making it mandatory for every task.

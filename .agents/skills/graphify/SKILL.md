@@ -1,45 +1,48 @@
 ---
 name: graphify
-description: Query and build a local knowledge graph for the Roshan Health Hub codebase, linking source code, SQL migrations, schema, tests, and docs. Use for architecture questions and cross-layer impact analysis.
+description: Query and build a local knowledge graph for the Roshan Health Hub codebase, linking source code, SQL migrations, schema, tests, and docs for architecture questions and cross-layer impact analysis.
 ---
 
 # Graphify for Roshan Health Hub
 
 Use Graphify as a navigation aid for understanding this repository, not as the authority of record.
 
-## Setup
+## Setup and first run
 
-1. Install Python 3.10+ and the `uv` tool using a trusted official distribution.
+1. Install Python 3.10+ and `uv` from trusted official sources.
 2. Install Graphify in an isolated tool environment:
    ```sh
    uv tool install graphifyy
+   graphify --version
    ```
 3. From the repository root, install the project-scoped Codex skill:
    ```sh
    graphify install --platform codex --project
    ```
-   This integration is checked into `.agents/skills/graphify/SKILL.md`; do not overwrite it blindly. If the installer reports these files already exist, compare generated files and preserve Roshan-specific security and workflow instructions.
-4. Build the first graph locally from the repository root:
+   This skill is checked in at `.agents/skills/graphify/SKILL.md`. Do not blindly overwrite it if the installer reports an existing file; compare output and preserve Roshan-specific safety rules.
+4. Build and prepare the graph:
    ```sh
    graphify .
+   graphify cluster-only .
    ```
-5. Query it, for example:
+   `graphify .` extracts nodes/edges to `graphify-out/graph.json`; `graphify cluster-only .` generates `GRAPH_REPORT.md` and `graph.html` too. Generated files should stay local by default.
+5. Use traversal queries as leads, for example:
    ```sh
-   graphify query "Which UI, RPCs, SQL tables, migrations, and tests participate in lab-result verification?"
-   graphify query "What code paths write invoices and how are they protected?"
-   graphify query "Which policies and tests protect clinical child tables?"
+   graphify query "lab result verification"
+   graphify query "invoice payment writes"
+   graphify query "clinical child table policies"
    ```
-6. Inspect `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.json`, and `graphify-out/graph.html`. Verify each important claim against the cited source and current tests.
+   The query command traverses nodes matched by terms; it is not guaranteed semantic Q&A. Check source paths, call sites, SQL definitions, RLS policies, and current tests before trusting a conclusion.
 
 ## Roshan-specific safety rules
 
-- Start with source code, migrations, schema definitions, docs, and tests only. Do not include production data dumps, patient files, real clinical notes, financial exports, credentials, tokens, `.env` files, or local secret stores.
-- Graphify's deterministic source parsing is not the same as proving every relationship. Mark inferred relationships as unverified and check the actual call sites, SQL definitions, and policies.
-- Never use a graph result alone to authorize a database write, migration, permission change, clinical decision, or release.
-- Do not add Graphify as an application dependency, server runtime, Supabase extension, or paid hosted service. Keep its executable and generated output outside production.
-- Do not add a graph-generation step to every CI run. Refresh locally when architecture changes materially; generated output is local by default and must not be committed unless a later explicit review establishes a safe, useful reason.
-- If processing PDFs or other non-code material requires a model or remote service, skip that content unless its sensitivity and processing route have been reviewed first.
+- Start with source code, migrations, schema definitions, docs, and tests only. Never include production data dumps, patient files, real clinical notes, financial exports, credentials, tokens, `.env` files, or local secret stores.
+- Deterministic source parsing does not mean every document-processing path is local. Skip PDFs and other non-code material until the processing route and sensitivity have been reviewed.
+- Mark inferred relationships as unverified; confirm actual call sites, SQL definitions, and policies.
+- Never use graph output alone to authorize a database write, migration, permission change, clinical decision, or release.
+- Do not add Graphify as an application dependency, server runtime, Supabase extension, or paid hosted service.
+- Do not add graph generation to every CI run. Refresh locally after meaningful architecture changes; generated output remains uncommitted unless separately reviewed for a concrete safe use case.
 
 ## When to use it
 
-Use `graphify query` before broad source searching for cross-layer questions, impact analysis, or locating related implementation and tests. Then use targeted file reads and the repository's documented verification commands. For simple symbol lookups, a normal search is sufficient.
+Use `graphify query` before broad source searching for cross-layer impact questions, then open the identified source files and run the repository's documented verification commands. For simple symbol lookups, ordinary code search is sufficient.
