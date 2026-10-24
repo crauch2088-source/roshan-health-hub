@@ -26,3 +26,8 @@
 - PR: [#104](https://github.com/crauch2088-source/roshan-health-hub/pull/104), candidate head `8a0cce45328a8c29a0557d96a73d99a2ba6645e3`.
 - CI run [40074050483](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40074050483): `npm audit` reported **0 vulnerabilities** and the guard suite passed **213/213**. The `Lint` step failed on `tests/dependency-security.test.ts` because of explicit `any` types and Prettier violations (job `120813505369`).
 - This follow-up removes explicit `any` by typing the lockfile package records and formats the affected assertions. Recheck the exact new head before considering merge.
+
+
+## Second exact-head CI result — 2026-10-24
+
+- PR #104 head `74163ce5dfee29e89109b4d9b8b088db05c77026`, run [40074308442](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40074308442): `npm audit` still reported **0 vulnerabilities** and `test:guard` passed **213/213**. Lint had one remaining Prettier-only line-break complaint in `getLockedVersions`; the expression formatting is corrected in the next candidate commit.

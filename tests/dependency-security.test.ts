@@ -27,8 +27,7 @@ function compareVersions(left: string, right: string): number {
 function getLockedVersions(packageName: string): string[] {
   return Object.entries(lockfile.packages).flatMap(([path, entry]) => {
     const matches =
-      path === `node_modules/${packageName}` ||
-      path.endsWith(`/node_modules/${packageName}`);
+      path === `node_modules/${packageName}` || path.endsWith(`/node_modules/${packageName}`);
     return matches && typeof entry.version === "string" ? [entry.version] : [];
   });
 }
