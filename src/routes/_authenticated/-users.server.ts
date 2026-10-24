@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 import { canAssignRole, SUPER_ADMIN_ROLE_CODE } from "@/lib/role-guard";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
