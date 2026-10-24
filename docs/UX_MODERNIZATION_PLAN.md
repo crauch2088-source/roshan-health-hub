@@ -1,194 +1,180 @@
-# Roshan Health Hub — Visual UX Modernization & Workflow Redesign Plan
+# Roshan Health Hub — Unified UX, Clinical Workflow & Visual Modernization Plan
 
-**Status:** Approved direction; implementation not yet audited against live screens in this phase  
-**Owner:** Roshan engineering  
-**Last reviewed:** 2026-10-24  
-**Scope:** Internal clinic operations product (reception, clinicians, laboratory, pharmacy, finance, administration), not a consumer appointment-booking app.
+**Canonical source of truth for this workstream.** Last reconciled: 2026-10-24.  
+**Status:** Phase 0 started. Inventory generated from main SHA 82c9a8306e4f611bcd593eeb5b192fd15b693265. This is not visual acceptance and does not claim production matches main.
 
-## 1. Executive intent
+## 1. Objective
 
-Raise Roshan's visual quality and ease of use to the standard of the supplied reference video while preserving Roshan's distinct purpose, clinical workflows, authorization model, and low-cost operating constraints. The reference is inspiration for polish and coherence, not a specification to copy.
+Use the supplied reference video as inspiration for a polished, coherent mobile-first experience—not as a product specification to clone. Roshan is an internal clinic operations system for reception, clinicians, laboratory, pharmacy, finance and administration, not a consumer appointment-booking app. Improve visual identity and reduce task friction while preserving clinical/business logic, role permissions, branch context, auditability and low-cost constraints.
 
-Success means staff can complete common work with fewer navigation decisions and less ambiguity, on a phone and on modest devices, without compromising clinical safety, data integrity, accessibility, or auditability.
+Target a calm, modern clinical workspace: clear hierarchy, restrained semantic color, consistent surfaces/spacing/typography, useful status cues, responsive layouts, accessible controls, explicit loading/error/empty/saved states, and a distinct Roshan identity. Teal/ink is a direction to evaluate, not permission to recolor blindly. Reuse current components and dependencies unless evidence demonstrates they are insufficient.
 
-## 2. Non-negotiable constraints
+## 2. One plan; previous plans reconciled
 
-- No paid services, paid testing platforms, new recurring infrastructure, or new production projects.
-- Do not use real patient data for screenshots, fixtures, demonstrations, or automated tests. Use synthetic, clearly identified data in isolated test environments only.
-- No direct production schema/data/auth changes as part of visual redesign. Any later database requirement must be justified, separately reviewed, migration-backed, and approved.
-- Preserve existing clinical/business behavior unless a specific defect is documented and regression-tested.
-- Preserve role-based permissions, audit trails, visit lifecycle guards, RLS, and existing database invariants. Do not weaken security to make a UI easier.
-- Keep the work on a feature branch and use one atomic Git tree commit per coherent batch; do not commit directly to main. Avoid repeated pushes/builds and unnecessary CI/Vercel quota consumption.
-- Follow `docs/MASTER_PLAN.md`, `AGENTS.md`, `docs/DB_MIGRATION_RECONCILIATION.md`, `docs/PLUGIN_TOOLING_MAP.md`, `docs/SECURITY_PR_REVIEW.md`, and existing UX audit evidence. This plan supplements rather than replaces those sources of truth.
-- Existing system is not yet in operational use at the active branch; records in the system are manually entered test workflow data, not actual patient records. Confirm current state before any future claim about production usage.
+This plan consolidates:
+- docs/UX_AUDIT_2026-10-17.md — code audit of navigation/quick actions; not a complete visual audit.
+- docs/REDESIGN_40_ITEM_PLAN.md — historical record of the 40-item source implementation and its outstanding release evidence.
+- docs/UX_AUDIT_AND_REMEDIATION_MASTER_PLAN_2026-10-21.md — route coverage, evidence rules, risk model, workflow and release gates.
+- docs/UX_AUDIT_AND_REMEDIATION_PLAN_ADDENDUM_2026-10-21.md — assumptions, S×L×E ranking, clinical, network, privacy and acceptance checks.
+- The October 24 modernization draft — design system and phased modernization.
+- docs/MASTER_PLAN.md, AGENTS.md, docs/DB_MIGRATION_RECONCILIATION.md, docs/PLUGIN_TOOLING_MAP.md and docs/SECURITY_PR_REVIEW.md remain governing engineering/security sources; this plan does not override them.
 
-## 3. Research synthesis and design principles
+Older docs are historical evidence, not separate active plans. Their unique requirements are incorporated below. Old CI, screenshot and deployment results do not prove acceptance for the current SHA/deployment.
 
-The research points to a small set of durable principles:
+## 3. Non-negotiable constraints
 
-1. **Design around tasks, not decorative dashboards.** NHS service guidance emphasizes making complex healthcare journeys simpler, testing with real/potential users, and consistency across devices.
-2. **Accessible by construction.** Target WCAG 2.2 AA as the design/test baseline where applicable: semantic headings and landmarks, keyboard operation, visible focus, sufficient contrast, labelled inputs, associated error messages, and no color-only status cues. Do not bolt on an accessibility overlay as a substitute for accessible implementation.
-3. **Clinical data entry needs context and recovery.** Use explicit labels, concise hints, validation close to the relevant field, meaningful error summaries, safe draft/pending states, and prevent accidental loss of work.
-4. **Low-connectivity resilience is a product requirement, not a visual effect.** Make loading, empty, stale, offline, retry, and save-confirmation states explicit. Do not claim offline write support unless implemented and tested end-to-end.
-5. **One design system, role-aware workspaces.** Shared tokens/components should make reception, clinician, lab, pharmacy, finance and admin feel like one product; each role should see the next useful action without exposing unauthorized functions.
-6. **Measure outcomes.** Assess task steps, completion, error/recovery rate, responsive behavior, accessibility findings, performance and regression results rather than declaring success from screenshots alone.
+1. No paid services, paid testing platforms, recurring infrastructure, or duplicate production projects.
+2. Never write test data to production. Production Supabase diagnostics are SELECT-only. Write workflows run only in isolated PostgreSQL 17/disposable QA environments with clearly synthetic data.
+3. No schema/migration/RLS/role/auth change as a visual shortcut. Preserve RPC contracts, atomic financial/clinical operations, idempotency, audit protections, visit/patient/branch linkage and soft-delete rules.
+4. Do not invent clinical doses, reference ranges, critical thresholds or protocols. Never imply an unmeasured vital is normal. Clinical rules/wording requiring governance remain pending clinical review.
+5. Never expose secrets, tokens, patient identifiers or real clinical/financial data in screenshots, logs, traces, reports, fixtures or PRs. Use authorized QA access; never bypass authentication.
+6. Preserve Arabic RTL, English LTR, mixed-direction identifiers, keyboard/focus behavior, reduced motion, dark/light and print styles where supported.
+7. Insurance remains deferred except for checking existing routes do not regress. Do not expand insurance scope without a separate decision.
+8. Preserve the existing app; no parallel app, sweeping rewrite or dependency addition without demonstrated need.
+9. Follow AGENTS.md: one atomic commit per coherent batch, one CI run per completed stage, squash-merge PRs, protect free Vercel quota, no force-push/rewrite of published history, no redundant diagnostics/build retries.
+10. Verify current main, PRs, CI and deployment identity before each implementation batch. Evidence is valid only for the exact source SHA, deployment, role, environment and scope it describes.
 
-### Research references
+## 4. Research principles
 
-- NHS Service Manual — make the service simple to use: https://service-manual.nhs.uk/standards-and-technology/service-standard-points/4-make-the-service-simple-to-use
-- NHS Service Manual — accessibility design: https://service-manual.nhs.uk/accessibility/design
-- NHS Service Manual — design system: https://service-manual.nhs.uk/design-system/index
-- Google Open Health Stack — design guidelines, data capture and offline/sync: https://developers.google.com/open-health-stack/design
-- GOV.UK Design System — form structure and user-centered data collection: https://www.gov.uk/service-manual/design/form-structure
-- Supabase — database testing and RLS testing: https://supabase.com/docs/guides/database/testing
-- Supabase — testing overview: https://supabase.com/docs/guides/local-development/testing/overview
-- Playwright — testing best practices: https://playwright.dev/docs/best-practices
-- MDN — mobile accessibility checklist: https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Mobile_accessibility_checklist
+- Healthcare usability and safety: ONC 2025 SAFER Guides, especially patient identification, computerized provider order entry, test-result reporting/follow-up and contingency planning: https://healthit.gov/clinical-quality-and-safety/safer-guides/
+- Accessibility: WCAG 2.2 AA as practical design/test baseline; W3C mobile guidance, visible focus, keyboard access, contrast, reflow, target size, labels and error associations: https://www.w3.org/TR/wcag2mobile-22/ and https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/
+- Task simplicity and consistency: NHS Service Manual: https://service-manual.nhs.uk/standards-and-technology/service-standard-points/4-make-the-service-simple-to-use and https://service-manual.nhs.uk/design-system/index
+- Data entry and low-connectivity design: Google Open Health Stack: https://developers.google.com/open-health-stack/design; GOV.UK forms: https://www.gov.uk/service-manual/design/form-structure
+- Test discipline: Supabase testing guidance https://supabase.com/docs/guides/database/testing and Playwright best practices https://playwright.dev/docs/best-practices
+- Mobile accessibility: MDN checklist https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Mobile_accessibility_checklist
 
-These are design and engineering references, not proof of legal compliance in Sudan or a substitute for local clinical governance.
+These sources guide evaluation; they do not certify Roshan's compliance, clinical readiness or legal status in Sudan.
 
-## 4. Product experience target
+## 5. Evidence/status vocabulary
 
-### Visual language
-- Calm, modern clinical identity; teal/green may be explored as an accent, not assumed as a final palette before contrast and existing brand review.
-- Neutral surfaces, restrained semantic colors, clear typography, consistent spacing/radii/elevation, purposeful icons, and low-noise layouts.
-- No decorative medical cross requirement; retain Roshan's independent identity.
-- Strong visual hierarchy for patient identity, active visit, critical alerts, workflow state and primary action.
-- Light and dark themes only if existing architecture supports them without duplicating styling debt; do not make them a prerequisite for MVP.
+Use exactly one state for each finding/criterion:
+- PASS — evidence proves the criterion for the recorded scope.
+- FAIL — defect reproduced or criterion not met.
+- BLOCKED — a named prerequisite prevents the check; record the next action.
+- NOT TESTED — no valid check occurred.
+- N/A — genuinely inapplicable, with rationale.
 
-### Navigation and responsive behavior
-- Phone-first layouts with clear role-appropriate primary navigation and safe access to secondary functions.
-- Desktop/tablet can use wider workspaces and denser tables without changing business semantics.
-- Keep global identity, branch context, active patient/visit context and save status visible where relevant.
-- Avoid excessive nested menus, ambiguous icon-only actions, horizontal overflow, and modals that trap essential workflows on small screens.
-- Arabic RTL and English LTR must be tested separately; do not assume mirroring CSS alone resolves bidirectional content, tables, icons, dates, or mixed clinical notation.
+Evidence strength is bounded: source inspection proves code structure; unit tests prove tested logic; CI proves checks run at a specific SHA; READY proves deployment-platform readiness; browser evidence proves only the observed route/session/viewport; staff/clinical review proves only the reviewed task. None substitutes for another. Never claim the whole app is tested from a smoke test or green CI alone.
 
-### Workflow-specific outcomes
-- **Reception:** find/register patient, identify possible duplicates, open visit, assign queue token (Q001 pattern), route to service, see payment/eligibility state without needless navigation.
-- **Clinician:** identify active patient and visit, review history, record vitals, document encounter, select ICD-10 diagnosis, prescribe using supported medication/formulation instructions, order tests, save drafts, finalize safely.
-- **Laboratory:** see pending orders, track sample/status, enter/validate results, flag abnormal values with text plus visual cue, review and release results with auditability.
-- **Pharmacy:** review prescription, check formulation/instructions and availability, dispense/record partial availability where supported, maintain stock/expiry and clear exceptions.
-- **Finance/reception:** clear invoice/receipt/payment status, support configured payment methods (including Bankak where already supported), explain failed/partial operations and prevent duplicate submissions.
-- **Admin:** manage staff/roles, service catalog, settings and branch context with least privilege.
-- **Specialists/dentistry:** preserve the shared encounter model while exposing specialty-specific fields only where supported by the current product and schema.
+## 6. Risk-based prioritization
 
-Do not invent new capabilities during a visual pass. Mark gaps for separate implementation and review.
+Record consequence/severity S, likelihood L and exposure E (each 1–5) to rank defects using S×L×E; this score never overrides severity rules.
+- P0 critical: wrong-patient attribution, privacy exposure/authorization bypass, financial corruption or duplicate transaction, unintended clinical order, or essential workflow blocked without a safe alternative.
+- P1 high: essential task blocked, likely loss of entered work, materially misleading clinical/financial state, or broken core mobile workflow.
+- P2 medium: recurring navigation/friction/display defect with a safe workaround.
+- P3 low: cosmetic/text refinement with negligible task or safety impact.
 
-## 5. Delivery phases and gates
+Fix P0 then P1 before polish. No P0 may remain at acceptance. P1 exceptions require explicit documented product-owner approval and a safe alternative; identity, privacy and financial-integrity risks are never waived.
 
-### Phase 0 — Repository and runtime baseline (first)
-- Read required project docs and current UX audit, then map routes/layouts, shared components, theme tokens, navigation, forms, dialogs, tables and role gates.
-- Inspect current main/PR/CI state before branching. Confirm available free tools and existing test scripts; do not infer from stale summaries.
-- Capture baseline screenshots at representative phone and desktop widths using synthetic data only, if the existing preview/test environment permits.
-- Deliverable: route/component inventory, prioritized issue list, baseline test and performance evidence.
+## 7. Phased execution
 
-**Gate:** no code changes until the current structure and relevant security/workflow constraints are understood.
+### Phase 0 — Current source/deployment baseline (in progress)
+- Pin main SHA; inspect open PRs, CI, branch policies and latest deployment for canonical alias https://roshan-health-hub.vercel.app/.
+- Compare deployment SHA/status with main; do not infer production behavior from source or an older preview.
+- Read governing docs and UX records; record environment/access limitations without storing credentials.
+- Generate a source-derived route inventory. Current pinned main lists 27 authenticated TSX page routes and four public/root TSX route files; see docs/UX_ROUTE_COVERAGE_2026-10-24.md. This is not proof routes were visually tested.
 
-### Phase 1 — UX audit and task maps
-- Audit the actual screens against the earlier UX audit; record findings with route, role, viewport, severity, reproducible steps, and proposed fix.
-- Map critical tasks from start to finish; identify redundant clicks, hidden status, confusing terminology, validation failures and loss-of-work risks.
-- Separate cosmetic defects, interaction defects, workflow gaps and data/security risks.
-- Deliverable: prioritized backlog scored by user impact, clinical/business risk, frequency, and effort.
+Gate: no visual acceptance claims until source/deployment identity and evidence scope are recorded.
 
-**Gate:** no broad redesign based only on a reference image or assumed component structure.
+### Phase 1 — Route, navigation and task audit
+- Inventory routes, screens, dialogs/drawers, forms, command palette and quick actions; map route to component, role/permission, data source, next action and destination.
+- Audit direct entry/refresh, navigation, stale draft reset, permission-gated visibility and handler checks, empty/error/loading/submitting states, back/cancel behavior and dead ends.
+- Treat prior quick-action fixes and the 40-item batch as completed source-level work unless current evidence reveals a regression; do not reimplement them merely because visual acceptance remains open.
+- For every defect, record steps, expected/observed result, severity/confidence, evidence, root cause, regression test and retest SHA.
 
-### Phase 2 — Design system foundation
-- Define semantic color tokens (surface/text/border/primary/success/warning/danger/info), typography, spacing, radius, shadows, focus ring, breakpoints, motion and density.
-- Audit contrast for normal/large text and interactive controls; validate semantic statuses with text/icons in addition to color.
-- Establish reusable page header, navigation, buttons, inputs, select/autocomplete, cards, status badges, empty/loading/error states, tables, confirmation dialogs, toasts and field-level validation.
-- Verify RTL/LTR, keyboard, focus, reduced motion, touch target size and zoom/reflow.
-- Deliverable: documented tokens and shared components with targeted tests.
+### Phase 2 — Visual baseline and reference translation
+- Capture valid screenshots of the current app using authorized browser access and a deployment/preview whose identity is known; inspect each saved screenshot before accepting it.
+- Review shell/navigation, dashboard, patient lookup/profile, visit/consultation, lab order/result, prescription/pharmacy, billing/payment and settings/role administration.
+- Required widths: 320, 360, 390, 430 CSS px and desktop where applicable; test Arabic RTL and English LTR. Record theme, browser, viewport, role and SHA.
+- Translate the reference video's quality into a distinct Roshan visual language. Do not copy its business purpose or add decorative assets that slow the product.
+- If authenticated visual capture is unavailable, mark protected routes BLOCKED; continue source/unit work without claiming visual acceptance.
 
-**Gate:** do not migrate all screens until shared patterns are validated and no regressions are introduced.
+### Phase 3 — Design system and shell
+- Audit semantic tokens, typography, spacing, radius, shadows, focus ring, density, status colors, motion and safe-area behavior.
+- Reuse existing primitives for headers, navigation, buttons, inputs, select/autocomplete, cards, tables, status labels, loading/empty/error states, dialogs, toasts and field errors.
+- Confirm contrast, zoom/reflow, keyboard navigation, focus restoration, reduced motion, RTL/LTR and print before broad adoption.
+- Role-aware visibility is not the security boundary; server/RPC/RLS remain authoritative.
 
-### Phase 3 — App shell and navigation
-- Rework app shell, role-aware landing/workspace, mobile navigation, page titles/breadcrumbs where useful, global search if already supported, branch indicator and contextual actions.
-- Make permission-driven visibility consistent with backend authorization; UI visibility is never the security boundary.
-- Remove redundant navigation only after route and deep-link coverage is confirmed.
-- Deliverable: coherent responsive shell and route smoke tests.
+### Phase 4 — High-frequency workflows
+Fix only defects proven by audit, in this dependency order:
+1. Reception: patient search/registration, duplicate awareness, visit creation, queue token and service routing.
+2. Clinician: patient/visit context, history, vitals, note draft, ICD-10, supported prescription entry and lab ordering.
+3. Laboratory: active-visit order, sample/order status, result entry/save/review/verification, numeric zero versus empty/text/coded values, abnormal acknowledgement.
+4. Pharmacy: prescription identity/formulation/instructions, stock/expiry, dispensing and atomic inventory/invoice effects where supported.
+5. Finance: invoice, payment/receipt, cashbox/expense/accounting, duplicate submit and reversal.
+6. Administration/reporting and specialist routes.
 
-### Phase 4 — High-frequency operational workflows
-Implement in this order, based on likely daily use and cross-workflow dependency:
-1. Reception and patient lookup/registration/queue.
-2. Clinician workspace and encounter documentation.
-3. Laboratory orders, samples and results.
-4. Prescription and pharmacy dispense.
-5. Invoices, payment and receipts.
-6. Admin/settings and less frequent specialist flows.
+For each workflow verify loading, empty, success, error/retry, invalid input, disabled/submitting, cancellation, permission-denied and narrow-viewport states where applicable. Do not add unsupported product capabilities as part of a visual pass.
 
-For each workflow: document current behavior; improve layout and error states; preserve permissions and transactions; test success, empty, loading, validation, cancellation, retry, permission-denied and narrow viewport states.
+### Phase 5 — Clinical safety, roles and reliability
+- Confirm patient/MRN/visit/branch context before sensitive actions; switching patients/branches must not leak stale queries, drafts, results or cache.
+- Show saved/draft/verified/completed only after correct server confirmation; prevent silent loss on navigation/session expiry.
+- Verify role × route × action allow/deny in isolated environments, including server/RPC/RLS denial of unauthorized sensitive actions.
+- Exercise slow/stale reads, timeout, interrupted writes, retry/double-click, session expiry and relevant 401/403/409/422/429/5xx behavior without stale context or duplicate writes.
+- Do not claim offline writes or add local storage of sensitive clinical data without separately reviewed design and end-to-end proof.
 
-**Gate:** no workflow is marked complete until automated tests and a focused manual walkthrough both pass.
+### Phase 6 — Accessibility, performance and regression
+- Use existing scripts first: npm run test:guard, npm run typecheck, npm run lint, npm run build; Node 22.x is required. Re-check package.json at the implementation SHA.
+- Write a failing regression test before behavior changes. Prefer unit tests; add focused component/browser tests for visible behavior and a small number of synthetic-data E2E paths for critical flows.
+- Use available free automated accessibility checks if compatible; manual keyboard/focus/screen-reader review remains separate.
+- Measure baseline and after-change task steps/time, re-entry, validation failures, request/console errors and bundle/runtime impact where tools permit. Do not invent targets before baseline.
+- Protect CI/Vercel quota: finish a coherent batch, use focused checks during development, then one consolidated check per stage. No forced/repeated deployment.
 
-### Phase 5 — Reliability, accessibility and performance
-- Add or extend Playwright end-to-end coverage for critical tasks and responsive layouts; add axe-core or an equivalent free automated accessibility scan if compatible with existing tooling.
-- Use existing unit/component test framework; do not introduce overlapping paid platforms.
-- Check console/network failures, duplicate submits, save-state clarity, keyboard-only use, contrast, focus order, RTL/LTR, zoom/reflow and reduced-motion behavior.
-- Measure bundle/runtime impact with existing free tooling; avoid unnecessary animation, large images and new dependencies.
-- Verify offline/poor-network states. Any offline persistence must be explicitly scoped, threat-modelled and tested; do not cache sensitive clinical data casually.
+### Phase 7 — Final comprehensive acceptance
+- After non-staff work stabilizes, conduct one comprehensive staff walkthrough rather than many partial sessions.
+- Cover critical role workflows, required widths, RTL/LTR, keyboard/focus and visual behavior with synthetic identities in an isolated environment.
+- Record any role/environment still blocked. Issue #95 stays open until current evidence exists; close only with explicit ACCEPTED or BLOCKED decision, source/deployment identity, linked evidence, no open P0 and no unapproved P1.
 
-### Phase 6 — Review, preview and acceptance
-- Run the smallest useful targeted checks during iteration, then one consolidated suite per coherent batch to protect CI/build quotas.
-- Verify current commit's checks only; inspect deployment preview only if a build is warranted.
-- Review for security/clinical regressions and confirm no production schema/data changes.
-- Present one consolidated acceptance checklist and one end-to-end staff walkthrough when the code is ready. User requested a single comprehensive staff test near completion, so defer staff-dependent validation until the non-staff work is complete.
-- Merge only after review, required checks, and explicit merge approval when required by project policy.
+## 8. Minimum test matrix
 
-## 6. Prioritization rubric
+| Dimension | Required coverage |
+|---|---|
+| Routes | Direct entry/refresh and every real route classified; dialogs/subviews inventoried |
+| UI states | Loading, success, empty, error/retry, disabled, submitting, permission denied, saved/unsaved |
+| Viewports | 320/360/390/430 CSS px and relevant desktop widths |
+| Languages | Arabic RTL and English LTR; mixed-direction MRNs, IDs, codes, dates, numbers and currency |
+| Accessibility | Tab/Shift+Tab, Enter/Space/Escape, tab arrows/Home/End, visible/restored focus, semantic labels/state, zoom/reflow, contrast, reduced motion; manual screen-reader review where available |
+| Identity | Correct patient/visit/branch context; no stale response/draft when context changes |
+| Laboratory | Empty/whitespace/nonnumeric/zero/numeric values, save/reopen, abnormal acknowledgement, block verification before save, idempotent retry |
+| Prescription/pharmacy | Completeness, formulation clarity, stock failure, retry/double-submit, atomic dispense/inventory/invoice, no auto-dosing |
+| Finance | Valid/invalid/zero/negative/decimal values, duplicate submissions, atomicity, reversal/cancellation, no false success |
+| Permissions | UI visibility and server/RPC/RLS allow/deny for sensitive actions by actual roles in isolated QA |
+| Reliability/privacy | Slow/stale/error/session states; screenshots/traces/logs checked for secrets and patient data |
 
-Score each finding 1–5 for: frequency, user friction, operational/clinical risk, and confidence; subtract an effort penalty (1–3). Fix high-risk correctness/accessibility issues before cosmetic polish. Do not let a visually striking but low-impact change outrank a broken patient/visit workflow.
+Pairwise coverage may reduce low-risk combinations, never identity, medication, results, authorization or financial-integrity tests.
 
-P0: data/security/clinical correctness regression or task blocker.  
-P1: frequent workflow friction, lost work, serious mobile/accessibility barrier.  
-P2: consistency and clarity improvements.  
-P3: decorative polish with negligible task impact.
+## 9. Ready / done definitions
 
-## 7. Acceptance criteria
+Ready: defect reproducible or requirement precise; expected/actual behavior, severity, source/deployment identity and environment recorded; regression check selected; no unauthorized schema/security change assumed.
 
-- No unintended changes to clinical business logic, database schema, RLS, permissions or audit behavior.
-- All critical routes load for authorized roles; unauthorized actions remain denied server-side.
-- Core reception → visit → clinician → lab/pharmacy/finance paths retain existing invariants.
-- No real patient data in fixtures, screenshots, logs or test artifacts.
-- Arabic RTL and English LTR verified on phone and desktop widths.
-- No known critical/serious accessibility blocker in tested flows; WCAG 2.2 AA checks documented with exceptions.
-- Forms have persistent labels, useful hints, field-associated errors and safe recovery from invalid submissions.
-- Loading, empty, error, offline/stale and saved/unsaved states are distinguishable.
-- Targeted tests and the consolidated CI suite pass for the exact head commit; no unreviewed production deployment.
-- Performance is no worse without documented justification; no paid services introduced.
-- Before/after screenshots and task walkthrough notes are stored without patient identifiers.
-- Staff-dependent final acceptance is performed once, comprehensively, after implementation stabilizes.
+Done: root cause fixed; regression check proves intended behavior; connected high-risk flows retested; affected role/language/direction/viewport checked; no unintended RPC/RLS/domain contract change; evidence privacy-safe and SHA-linked; session log and issue updated. A source fix without runtime proof may be “FIXED — AWAITING VISUAL VERIFICATION”, never “VERIFIED”.
 
-## 8. Execution and quota discipline
+## 10. Acceptance criteria
 
-- Use the connected Composio/GitHub/Supabase/Vercel tools where available; use Context7 for current library APIs and existing repo graph tooling for code navigation when it adds value.
-- First inspect available tool contracts and existing project docs; do not assume a plugin has the needed permission.
-- Prefer source-grounded repository changes over advice-only responses.
-- One coherent atomic commit per implementation batch; no per-file commits.
-- Avoid production DB changes, repeated deployment triggers, duplicate CI runs and paid resources.
-- If a tool fails, inspect its error and use a supported alternative once; do not repeatedly retry identical failed actions.
-- Maintain a short progress log: session date, evidence inspected, files changed, commit/PR, checks, blockers, next action. Never label unverified work complete.
+- Every actual route inventoried with explicit status; no unsupported blanket claims.
+- Source and deployment identities recorded; production is not assumed to match main.
+- Core screens have valid visual evidence at required widths and both languages, or are BLOCKED with next action.
+- Zero open P0; no unapproved P1; no silent data loss, false saved/verified state or duplicate sensitive write in tested cases.
+- Existing permissions, RLS, atomic RPCs, audit trail, branch/patient context and database contracts remain intact.
+- No real patient data/secrets in test artifacts; no production test writes.
+- Automated checks pass for exact SHA; manual keyboard/screen-reader and staff review reported separately.
+- No paid service or unnecessary deployment/build retry.
+- Issue #95 has an evidence-backed ACCEPTED or BLOCKED decision.
 
-## 9. Session reporting format
+## 11. Previously implemented source work — avoid duplication
 
-After each work session, report:
-1. **Done** — only verified actions and artifact links.
-2. **Evidence** — commit/PR/check result and tests actually run.
-3. **Not done / blockers** — exact limitation, not optimistic inference.
-4. **Progress** — phase and acceptance criteria, with a percentage only when backed by a defined checklist.
-5. **Next session** — one bounded set of actions.
-6. **User help needed** — only a concrete decision or access permission that cannot be inferred.
+The 40-item report records source-level implementation of: semantic teal/ink tokens and surfaces; shell/desktop rail/mobile navigation; safe-area, focus, selected-state, reduced-motion/dark/print guards; bilingual accessible consultation tabs and keyboard navigation; patient/visit context hierarchy and unsaved-note warnings; lab search debounce/sanitization/loading/error, selected-test totals, supported active-visit ordering, idempotent atomic order/invoice RPC, persisted five-stage worklist, abnormal-result acknowledgement and unsaved-result verification guard; prescription completeness validation, no-auto-dosing text and pediatric age/weight warnings without dose calculation. It records the empty lab result → zero coercion fix and regression tests.
 
-## 10. Initial next actions
+PR #62 records quick-action destination handling, read+create permission gates, supported lab-order routing, desktop quick actions and draft reset. The October 21 plan reports later phases through Phase 45 merged by 2026-10-23, including route/RTL/accessibility guards. These are historical/source-level facts, not proof of current deployment or full visual acceptance. Re-read current source/tests before touching these areas.
 
-1. Complete Phase 0 by reading the complete required docs and mapping the actual UI/routes/components; the prior audit is a starting point, not a substitute.
-2. Inspect the latest current CI/deployment state and branch protection.
-3. Create a ranked audit issue list with evidence.
-4. Implement the design token/component foundation only after audit; do not start a sweeping rewrite.
-5. Deliver a first progress report with a precise scope, evidence, and next batch.
+## 12. Current baseline and next actions
 
-## 11. Progress log
+- Current main verified in this session: 82c9a8306e4f611bcd593eeb5b192fd15b693265 (2026-10-24). This supersedes older dated SHAs for current-session work.
+- Exact-head GitHub check query returned 24 runs with successful conclusions. Combined status reports Vercel successful because the build was canceled by the ignored-build-step rule; this is not a fresh production deployment or visual pass.
+- Source inventory lists 27 authenticated page route files and four public/root TSX route files. All browser-facing rows start NOT TESTED until evidence is captured.
+- Issue #95 was not found via pull-request endpoint because it is an issue; check through issue search/endpoint before modifying it.
+- Next: verify canonical Vercel deployment SHA/status and authorized QA browser access; complete source-to-role/action mapping; capture first valid screenshots; then implement the highest-priority reproducible defect test-first in one atomic code/test/docs batch.
 
-### 2026-10-24 — Plan authored
-- Researched official NHS, Open Health Stack, GOV.UK, Supabase, Playwright and MDN guidance.
-- Defined scope, non-negotiable safety/engineering constraints, phased delivery, acceptance gates and session reporting format.
-- Implementation status: **planning documented; Phase 0 verification and UI code changes remain pending**.
+## 13. References
+
+ONC 2025 SAFER Guides, W3C WCAG 2.2/mobile guidance, NHS Service Manual, Google Open Health Stack, GOV.UK form design, Supabase testing guidance, Playwright best practices and MDN mobile accessibility checklist. See Section 4. Existing Roshan docs remain the primary evidence for project-specific decisions.
