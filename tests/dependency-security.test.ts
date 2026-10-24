@@ -3,8 +3,16 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { z } from "zod/v3";
 
-const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-const lockfile = JSON.parse(readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"));
+type LockPackage = { version?: string };
+type Lockfile = { packages: Record<string, LockPackage> };
+type PackageManifest = { dependencies: { zod: string } };
+
+const packageJson = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as PackageManifest;
+const lockfile = JSON.parse(
+  readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"),
+) as Lockfile;
 
 function compareVersions(left: string, right: string): number {
   const a = left.split(".").map(Number);
@@ -16,21 +24,32 @@ function compareVersions(left: string, right: string): number {
   return 0;
 }
 
+function getLockedVersions(packageName: string): string[] {
+  return Object.entries(lockfile.packages).flatMap(([path, entry]) => {
+    const matches =
+      path === `node_modules/${packageName}` ||
+      path.endsWith(`/node_modules/${packageName}`);
+    return matches && typeof entry.version === "string" ? [entry.version] : [];
+  });
+}
+
 test("all locked Zod packages include the memory-exhaustion security fix", () => {
   assert.equal(packageJson.dependencies.zod, "^4.6.7");
-  const versions = Object.entries(lockfile.packages)
-    .filter(([path, entry]: [string, any]) => entry.version && (path === "node_modules/zod" || path.endsWith("/node_modules/zod")))
-    .map(([, entry]: [string, any]) => entry.version as string);
+  const versions = getLockedVersions("zod");
   assert.ok(versions.length >= 1, "expected at least one locked Zod package");
-  assert.ok(versions.every((version) => compareVersions(version, "4.6.6") >= 0), `vulnerable Zod version found: ${versions.join(", ")}`);
+  assert.ok(
+    versions.every((version) => compareVersions(version, "4.6.6") >= 0),
+    `vulnerable Zod version found: ${versions.join(", ")}`,
+  );
 });
 
 test("all locked fast-uri packages include the URI parsing security fixes", () => {
-  const versions = Object.entries(lockfile.packages)
-    .filter(([path, entry]: [string, any]) => entry.version && (path === "node_modules/fast-uri" || path.endsWith("/node_modules/fast-uri")))
-    .map(([, entry]: [string, any]) => entry.version as string);
+  const versions = getLockedVersions("fast-uri");
   assert.ok(versions.length >= 1, "expected at least one locked fast-uri package");
-  assert.ok(versions.every((version) => compareVersions(version, "3.1.9") >= 0), `vulnerable fast-uri version found: ${versions.join(", ")}`);
+  assert.ok(
+    versions.every((version) => compareVersions(version, "3.1.9") >= 0),
+    `vulnerable fast-uri version found: ${versions.join(", ")}`,
+  );
 });
 
 test("existing server validators retain Zod v3 behavior through the supported v3 entry point", () => {
@@ -43,7 +62,10 @@ test("existing server validators retain Zod v3 behavior through the supported v3
     email: "clinic@example.test",
   });
   assert.equal(typeof schema["~standard"].validate, "function");
-  for (const path of ["../src/routes/_authenticated/-users.server.ts", "../src/lib/ai/assistant.functions.ts"]) {
+  for (const path of [
+    "../src/routes/_authenticated/-users.server.ts",
+    "../src/lib/ai/assistant.functions.ts",
+  ]) {
     const source = readFileSync(new URL(path, import.meta.url), "utf8");
     assert.match(source, /from ["']zod\/v3["']/);
   }
