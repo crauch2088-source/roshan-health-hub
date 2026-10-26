@@ -48,3 +48,10 @@
 - Dependabot PR #111 (head `11ef1e196b1b32db2f56dd93767f8f9b367b58e9`, CI `40077928497`) failed `npm ci`: it selects TypeScript `7.0.2`, while locked `typescript-eslint@8.71.1` declares peer TypeScript `>=4.8.4 <6.1.0`. Dependabot now ignores TypeScript semver-major updates until the lint toolchain advertises support; minor/patch updates remain enabled. A source regression guard protects this policy.
 - This change does not modify application dependencies or clinical/financial behavior. It does not make existing Dependabot PRs safe to merge automatically; PR #111 remains blocked until closed or regenerated without TypeScript 7, and #109/#110 need exact-head checks after rebasing onto the guard fix.
 - **Next:** run exact-head CI for this atomic config/test/docs patch. If green, squash-merge it, then ask Dependabot to rebase #109/#110 and inspect all checks before merging either. Keep broad major upgrades out of production until each candidate passes the full suite.
+
+## Post-merge verification and next gate — 2026-10-26
+
+- PR #113 merged at `519884818e871aa79ae6232aa978b79bdb668184` after exact-head `865c237476c348f8aca905963609bc411b26ed78` passed 26/26 checks. Main CI `40281547079`, finance isolation `40281547073`, and push-on-main/CodeQL `40281547181` succeeded.
+- PR #110 was rebased onto the guard fix at `d1588e5eb50fc180e3018376f39f22e9b718076a`; its CI `40281734787`, finance isolation `40281734763`, and clinical-child RPC-only `40281734788` all passed. The 23 check runs were 22 successful and one neutral. It was squash-merged at `5adfa01a6a96bd2060014a8529741bf9f7525440`.
+- PR #111 closed unmerged by Dependabot after TypeScript semver-major updates were ignored. PR #109 remains open/stale at head `c41c3af9e8858e04984ee5db41e312f658092c35`; a rebase was requested but no new head had appeared at capture. Do not merge it until rebased exact-head CI is green.
+- Main post-merge CI `40281870267` and push-on-main `40281870285` were still in progress at capture; finance `40281870288` and clinical-child RPC-only `40281870350` passed. Next verify these checks on the latest main head and then re-evaluate PR #109.
