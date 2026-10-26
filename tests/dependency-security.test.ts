@@ -80,4 +80,3 @@ test("Dependabot defers TypeScript major updates until the lint toolchain suppor
     /ignore:\s*\n\s+- dependency-name:\s*typescript\s*\n\s+update-types:\s*\n\s+- "version-update:semver-major"/,
   );
 });
-
