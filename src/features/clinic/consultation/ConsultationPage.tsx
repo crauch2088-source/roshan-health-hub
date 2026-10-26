@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useBlocker } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Receipt } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { calcAge, money, todayISO } from "@/lib/medical";
 import { resolveTabKeyNavigation } from "@/lib/keyboard-shortcuts";
+import { shouldBlockUnsavedClinicalNoteNavigation } from "@/lib/clinical-navigation-guard";
 import { supabase } from "@/lib/supabase";
 import { useBranchRealtime } from "@/lib/realtime";
 import { ClinicalNoteTab } from "./components/ClinicalNoteTab";
@@ -33,15 +34,21 @@ export function ConsultationPage({ visitId }: { visitId: string }) {
     setReviewChecks({ identity: false, history: false, vitals: false, plan: false });
   }, [visitId]);
 
-  useEffect(() => {
-    if (!noteDirty) return;
-    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warnBeforeUnload);
-    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [noteDirty]);
+  const unsavedNoteMessage =
+    lang === "ar"
+      ? "لديك تغييرات غير محفوظة في الملاحظات السريرية. هل تريد مغادرة هذه الزيارة وفقدانها؟"
+      : "You have unsaved clinical note changes. Leave this visit and discard them?";
+
+  useBlocker({
+    shouldBlockFn: ({ current, next }) =>
+      shouldBlockUnsavedClinicalNoteNavigation(
+        noteDirty,
+        `${current.pathname}?${JSON.stringify(current.search)}`,
+        `${next.pathname}?${JSON.stringify(next.search)}`,
+        () => window.confirm(unsavedNoteMessage),
+      ),
+    enableBeforeUnload: () => noteDirty,
+  });
 
   const changeTab = (nextTab: string) => {
     if (tab === "note" && noteDirty && nextTab !== "note") {
