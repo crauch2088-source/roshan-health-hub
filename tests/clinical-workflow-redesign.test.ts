@@ -64,15 +64,10 @@ test("unsaved clinical notes block route changes and share one unload guard", ()
     true,
   );
   assert.equal(
-    shouldBlockUnsavedClinicalNoteNavigation(
-      true,
-      "/clinic/visit-1?{}",
-      "/patients?{}",
-      () => {
-        confirmations += 1;
-        return true;
-      },
-    ),
+    shouldBlockUnsavedClinicalNoteNavigation(true, "/clinic/visit-1?{}", "/patients?{}", () => {
+      confirmations += 1;
+      return true;
+    }),
     false,
   );
   assert.equal(confirmations, 2);
