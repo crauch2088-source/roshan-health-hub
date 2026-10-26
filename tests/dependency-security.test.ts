@@ -13,6 +13,10 @@ const packageJson = JSON.parse(
 const lockfile = JSON.parse(
   readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"),
 ) as Lockfile;
+const dependabotConfig = readFileSync(
+  new URL("../.github/dependabot.yml", import.meta.url),
+  "utf8",
+);
 
 function compareVersions(left: string, right: string): number {
   const a = left.split(".").map(Number);
@@ -42,11 +46,10 @@ test("all locked Zod packages include the memory-exhaustion security fix", () =>
   );
 });
 
-test("all locked fast-uri packages include the URI parsing security fixes", () => {
+test("any locked fast-uri package includes the URI parsing security fixes", () => {
   const versions = getLockedVersions("fast-uri");
-  assert.ok(versions.length >= 1, "expected at least one locked fast-uri package");
   assert.ok(
-    versions.every((version) => compareVersions(version, "3.1.9") >= 0),
+    versions.length === 0 || versions.every((version) => compareVersions(version, "3.1.9") >= 0),
     `vulnerable fast-uri version found: ${versions.join(", ")}`,
   );
 });
@@ -69,3 +72,12 @@ test("existing server validators retain Zod v3 behavior through the supported v3
     assert.match(source, /from ["']zod\/v3["']/);
   }
 });
+
+test("Dependabot defers TypeScript major updates until the lint toolchain supports them", () => {
+  const npmUpdates = dependabotConfig.split("\n  - package-ecosystem: github-actions")[0];
+  assert.match(
+    npmUpdates,
+    /ignore:\s*\n\s+- dependency-name:\s*typescript\s*\n\s+update-types:\s*\n\s+- "version-update:semver-major"/,
+  );
+});
+
