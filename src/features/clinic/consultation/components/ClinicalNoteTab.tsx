@@ -116,8 +116,6 @@ export function ClinicalNoteTab({
     onDirtyChange?.(JSON.stringify(form) !== initialFormRef.current);
   }, [form, onDirtyChange]);
 
-
-
   const save = useSave(
     async () => {
       const existing = ((noteQ.data ?? []) as Row[])[0];
