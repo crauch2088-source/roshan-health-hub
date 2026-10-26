@@ -6,6 +6,7 @@ import {
   validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
 import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
+import { shouldBlockUnsavedClinicalNoteNavigation } from "../src/lib/clinical-navigation-guard.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -34,6 +35,50 @@ test("consultation tabs expose accessible tab semantics, bilingual labels and ar
   assert.match(ui, /resolveTabKeyNavigation/);
   assert.match(ui, /lang === "ar" \? "rtl" : "ltr"/);
   assert.match(ui, /lang === "ar" \? item\.ar : item\.en/);
+});
+
+test("unsaved clinical notes block route changes and share one unload guard", () => {
+  let confirmations = 0;
+  const decline = () => {
+    confirmations += 1;
+    return false;
+  };
+
+  assert.equal(
+    shouldBlockUnsavedClinicalNoteNavigation(false, "/clinic/visit-1", "/patients", decline),
+    false,
+  );
+  assert.equal(confirmations, 0);
+  assert.equal(
+    shouldBlockUnsavedClinicalNoteNavigation(
+      true,
+      "/clinic/visit-1?{}",
+      "/clinic/visit-1?{}",
+      decline,
+    ),
+    false,
+  );
+  assert.equal(confirmations, 0);
+  assert.equal(
+    shouldBlockUnsavedClinicalNoteNavigation(true, "/clinic/visit-1?{}", "/patients?{}", decline),
+    true,
+  );
+  assert.equal(
+    shouldBlockUnsavedClinicalNoteNavigation(true, "/clinic/visit-1?{}", "/patients?{}", () => {
+      confirmations += 1;
+      return true;
+    }),
+    false,
+  );
+  assert.equal(confirmations, 2);
+
+  const page = read("../src/features/clinic/consultation/ConsultationPage.tsx");
+  const note = read("../src/features/clinic/consultation/components/ClinicalNoteTab.tsx");
+  assert.match(page, /useBlocker\(/);
+  assert.match(page, /enableBeforeUnload:\s*\(\)\s*=>\s*noteDirty/);
+  assert.match(page, /shouldBlockUnsavedClinicalNoteNavigation/);
+  assert.doesNotMatch(page, /window\.addEventListener\(["']beforeunload["']/);
+  assert.doesNotMatch(note, /window\.addEventListener\(["']beforeunload["']/);
 });
 
 test("lab ordering debounces and sanitizes catalogue search and explains loading/error states", () => {

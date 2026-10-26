@@ -39,7 +39,8 @@ test("consultation uses clinic-local date, explicit direction and unsaved-note g
   assert.match(consultation, /p_invoice_date: todayISO\(\)/);
   assert.doesNotMatch(consultation, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
   assert.match(consultation, /dir=\{lang === "ar" \? "rtl" : "ltr"\}/);
-  assert.match(consultation, /beforeunload/);
+  assert.match(consultation, /useBlocker\(/);
+  assert.match(consultation, /enableBeforeUnload:\s*\(\)\s*=>\s*noteDirty/);
 });
 
 test("horizontal tab arrows follow LTR ordering", () => {
