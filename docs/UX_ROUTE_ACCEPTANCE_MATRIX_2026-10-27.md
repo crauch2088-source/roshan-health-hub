@@ -3,9 +3,9 @@
 ## Scope and evidence identity
 
 - Inventory source: current repository tree and `src/config/nav.ts`.
-- Source baseline refreshed: `main` `123bc8b92ddbc64ef236d50c6c822d030b38d390`.
-- Current production deployment: `dpl_HSXd9Ss53pMX5uvnKKBEnHLBwq2f`, state `READY`, source SHA exactly `123bc8b92ddbc64ef236d50c6c822d030b38d390`, alias `roshan-health-hub.vercel.app`, `aliasError: null`.
-- Exact-main GitHub Actions all succeeded: CI `40464623894`, finance-only RPC isolation `40464623888`, clinical-child RPC-only writes `40464623978`, push-on-main/CodeQL `40464663442`, Dependabot dynamic workflow `40464733500`. PR #118 merged the 34-package production patch/minor batch on this SHA after the `npm ci` mitigation; this does not imply browser/clinical acceptance.
+- Source baseline refreshed: `main` `e54892d7158c85c1832afe361ec7f81e0f05f87c`; this merge changes the route-contract test and acceptance documentation only, not application runtime.
+- Current production deployment: `dpl_HSXd9Ss53pMX5uvnKKBEnHLBwq2f`, state `READY`, application source SHA `123bc8b92ddbc64ef236d50c6c822d030b38d390`, alias `roshan-health-hub.vercel.app`, `aliasError: null`. The source/runtime difference consists of later test/documentation-only commits.
+- Production dependency batch PR #118 is merged on application SHA `123bc8b...`; exact application CI and Vercel deployment evidence is recorded in the master plan. This does not imply browser/clinical acceptance.
 - Inventory contains **27 authenticated page routes** (23 top-level navigation destinations plus four detail routes) and **3 public page routes**. The authenticated layout `/_authenticated` and root layout are structural routes, not counted as pages.
 
 ## Status vocabulary
@@ -86,3 +86,12 @@
 - The prior matrix understated these source guards as `SOURCE-INVENTORIED` and did not list the expected permissions. This candidate updates those rows and extends the Phase 42 regression test to require the exact guard and matrix permission for every detail route.
 - This is a source-contract check only. It does not prove runtime/server authorization, correct data scoping, browser rendering, or an authenticated workflow. All four routes remain `NOT TESTED` for browser/visual/keyboard acceptance and `BLOCKED/DEFERRED` for role/workflow acceptance until the authorized QA session.
 - No runtime code, dependency manifests, database migrations, Supabase Auth settings, or production data are changed. Exact-head CI evidence is pending on the candidate PR.
+
+
+## Detail-route source-guard test — merged verification (2026-10-27 07:21 UTC)
+
+- PR [#123](https://github.com/crauch2088-source/roshan-health-hub/pull/123) merged as `e54892d7158c85c1832afe361ec7f81e0f05f87c`, final tested head `7b0dd708a07c99ca550fd829367a56c2fd2f7c1f`.
+- Exact-head CI `40466473738`, dynamic PR workflow `40466470524`, insurance-claim UI validation `40466475532`, insurance-claim integrity `40466473616`, privileged-role guard `40466473558`, and prescription atomicity `40466473693` all succeeded. Final combined Vercel status was success; no new production app deployment was needed for this test/docs-only change.
+- The Phase 42 regression test asserts explicit `PermissionGate` read permissions for patient chart, visit consultation, lab order, and invoice detail. The matrix records `patients.read`, `visits.read`, `lab.read`, and `billing.read` and marks these rows `SOURCE-GUARDED`.
+- Post-merge main CI `40466624118`, finance isolation `40466624144`, and push-on-main/CodeQL `40466623836` passed on merge SHA `e54892d...`. The production app remains READY on `123bc8b...` because the merged commit does not alter watched runtime/build paths.
+- These are source-level assertions only. All protected-route visual/keyboard/viewport checks remain `NOT TESTED`; role and clinical workflows remain `BLOCKED/DEFERRED`. Keep Issue #95 open.
