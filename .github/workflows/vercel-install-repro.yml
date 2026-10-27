@@ -1,0 +1,65 @@
+name: Vercel npm install reproduction
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/vercel-install-repro.yml
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce-vercel-install:
+    name: Reproduce npm install for blocked Dependabot candidate
+    if: github.event.pull_request.head.ref == 'diagnose/vercel-npm-install-20261027'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch and verify the exact blocked candidate
+        env:
+          CANDIDATE_SHA: 72efefa2185a9a0c56bf1b655e2ee64239264bf3
+          CANDIDATE_BRANCH: dependabot/npm_and_yarn/npm-production-patch-minor-a4d483b8e2
+        run: |
+          git fetch --no-tags --depth=1 origin "$CANDIDATE_BRANCH"
+          FETCHED_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$FETCHED_SHA" = "$CANDIDATE_SHA"
+          mkdir -p "$RUNNER_TEMP/roshan-vercel-install"
+          git show "$CANDIDATE_SHA:package.json" > "$RUNNER_TEMP/roshan-vercel-install/package.json"
+          git show "$CANDIDATE_SHA:package-lock.json" > "$RUNNER_TEMP/roshan-vercel-install/package-lock.json"
+          {
+            echo "### Candidate install reproduction"
+            echo "- Candidate SHA: `$CANDIDATE_SHA`"
+            echo "- Branch: `$CANDIDATE_BRANCH`"
+            echo "- Node: `$(node --version)`"
+            echo "- npm: `$(npm --version)`"
+            echo "- Working directory: isolated temporary directory containing only package.json and package-lock.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reproduce the platform install command with verbose diagnostics
+        working-directory: ${{ runner.temp }}/roshan-vercel-install
+        env:
+          npm_config_loglevel: verbose
+        run: npm install
+
+      - name: Print npm debug log on failure
+        if: failure()
+        run: |
+          shopt -s nullglob
+          logs=( "$HOME"/.npm/_logs/*debug-0.log )
+          if (( ${#logs[@]} )); then
+            latest="${logs[-1]}"
+            echo "Printing latest npm debug log: $latest"
+            cat "$latest"
+          else
+            echo "No npm debug log was found in the runner home."
+          fi
