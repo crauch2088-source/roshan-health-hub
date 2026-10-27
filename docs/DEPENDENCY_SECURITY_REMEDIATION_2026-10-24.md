@@ -63,3 +63,14 @@
 - Main `3f8403d2f9fae9d479e5477015853d9f2e8787b9` passed 22/22 checks in `40281990606`; finance isolation `40281990671` and push-on-main/CodeQL `40281990948` passed.
 - PR #114 contains ten remaining npm major updates without TypeScript 7; it is still open and had no CI run at the latest check. Treat it as unapproved pending exact-head checks and review.
 - Next: inspect the supported TanStack Start server-function validator API and either split the TanStack package family out of general production patch/minor updates or implement a narrow tested compatibility migration. Do not merge PR #109 or #114 while their exact-head release gates are incomplete.
+
+
+## TanStack Start server-function validator compatibility — 2026-10-27 (candidate)
+
+- Start-of-run baseline verified from GitHub: `main` at `9cd8d0da48974c18dad8d5cbccc49ef8fde68b9b`; CI run `40369335545`, finance-only RPC isolation `40369335403`, and push-on-main/CodeQL `40369335604` all completed successfully on that exact SHA.
+- Rechecked Dependabot PR #109 at head `f95bc60bfb7204bd5406d6f50805c0876c6dd9b5`. Its CI `40281962439` fails the Typecheck job: four calls in `src/lib/ai/assistant.functions.ts` use `.inputValidator()`, removed in `@tanstack/react-start@1.169.0`; finance and clinical-child RPC-only integrations passed but do not waive TypeScript failure.
+- Official TanStack Start release notes identify the breaking change: `.inputValidator()` was removed from server functions and middleware; `.validator()` accepts the same validator. See https://github.com/TanStack/router/releases/tag/%40tanstack%2Freact-start%401.169.0 and https://tanstack.com/start/latest/docs/framework/react/guide/server-functions.
+- Candidate changes only the four AI read-only server-function builders from `.inputValidator()` to `.validator()`, preserving the existing Zod v3 schemas, validation constraints, authentication checks, read-only query behavior, and handler bodies. A regression test asserts all four builders use the supported method and none retain the removed method.
+- This is a source/test/doc candidate on a dedicated branch. No dependency lockfile change, production database/Auth change, patient/financial record, or deployment action is included. PR #109 remains unmerged until the exact updated dependency candidate passes its full check matrix.
+- **Status at candidate creation:** PR/check evidence pending. Keep the release blocked until exact-head typecheck, lint, build, and integration checks pass.
+- **Next:** run the focused guard suite and exact-head GitHub Actions; then rebase/retest PR #109 only after this compatibility fix is merged.

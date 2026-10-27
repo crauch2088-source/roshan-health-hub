@@ -1885,3 +1885,14 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Vercel deployment `dpl_CD8196CrYw3zV5WfygABzKZbcMZH` is `READY`, target `production`, source commit exactly `a62f2c2cbf426e48a7aea5e9a89abba8f2e30023`, with canonical alias `roshan-health-hub.vercel.app`.
 - No database migrations, Auth/Storage configuration changes, production data writes, or patient/financial records were involved. Automated CI and deployment success do **not** prove authenticated clinician browser acceptance. Issue #95 remains open, and clinical E2E/staff usability acceptance remains deferred until the isolated QA environment and synthetic clinician identity are available.
 - **Next:** use the isolated QA environment for a practical route-change check (dirty note → cancel navigation; dirty note → confirm discard; clean note → navigate) when the authorized test identity is available. Do not close Issue #95 on the strength of source tests or deployment readiness alone.
+
+
+## TanStack Start server-function validator compatibility — 2026-10-27 (candidate)
+
+- Start-of-run baseline verified from GitHub: `main` at `9cd8d0da48974c18dad8d5cbccc49ef8fde68b9b`; CI run `40369335545`, finance-only RPC isolation `40369335403`, and push-on-main/CodeQL `40369335604` all completed successfully on that exact SHA.
+- Rechecked Dependabot PR #109 at head `f95bc60bfb7204bd5406d6f50805c0876c6dd9b5`. Its CI `40281962439` fails the Typecheck job: four calls in `src/lib/ai/assistant.functions.ts` use `.inputValidator()`, removed in `@tanstack/react-start@1.169.0`; finance and clinical-child RPC-only integrations passed but do not waive TypeScript failure.
+- Official TanStack Start release notes identify the breaking change: `.inputValidator()` was removed from server functions and middleware; `.validator()` accepts the same validator. See https://github.com/TanStack/router/releases/tag/%40tanstack%2Freact-start%401.169.0 and https://tanstack.com/start/latest/docs/framework/react/guide/server-functions.
+- Candidate changes only the four AI read-only server-function builders from `.inputValidator()` to `.validator()`, preserving the existing Zod v3 schemas, validation constraints, authentication checks, read-only query behavior, and handler bodies. A regression test asserts all four builders use the supported method and none retain the removed method.
+- This is a source/test/doc candidate on a dedicated branch. No dependency lockfile change, production database/Auth change, patient/financial record, or deployment action is included. PR #109 remains unmerged until the exact updated dependency candidate passes its full check matrix.
+- **Status at candidate creation:** PR/check evidence pending. Keep the release blocked until exact-head typecheck, lint, build, and integration checks pass.
+- **Next:** run the focused guard suite and exact-head GitHub Actions; then rebase/retest PR #109 only after this compatibility fix is merged.

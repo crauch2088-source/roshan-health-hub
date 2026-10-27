@@ -163,7 +163,7 @@ function asRows(value: unknown): Record<string, unknown>[] {
 const noteInput = z.object({ visitId: z.string().min(1), lang: z.enum(["ar", "en"]) });
 
 export const draftClinicalNote = createServerFn({ method: "POST" })
-  .inputValidator(noteInput)
+  .validator(noteInput)
   .handler(async ({ data }): Promise<AiResult> => {
     const { requireAppAccess, renderOne, renderRows, clampText } =
       await import("./data-access.server.ts");
@@ -285,7 +285,7 @@ const askInput = z.object({
 });
 
 export const askAboutPatient = createServerFn({ method: "POST" })
-  .inputValidator(askInput)
+  .validator(askInput)
   .handler(async ({ data }): Promise<AiResult> => {
     const { requireAppAccess, renderOne, renderRows } = await import("./data-access.server.ts");
     const { completeAiText, describeAiFailure } = await import("./gateway.server.ts");
@@ -394,7 +394,7 @@ export const askAboutPatient = createServerFn({ method: "POST" })
 const labInput = z.object({ orderId: z.string().min(1), lang: z.enum(["ar", "en"]) });
 
 export const explainLabOrder = createServerFn({ method: "POST" })
-  .inputValidator(labInput)
+  .validator(labInput)
   .handler(async ({ data }): Promise<AiResult> => {
     const { requireAppAccess, renderOne, renderRows, readRows } =
       await import("./data-access.server.ts");
@@ -493,7 +493,7 @@ export const explainLabOrder = createServerFn({ method: "POST" })
 const invoiceInput = z.object({ invoiceId: z.string().min(1), lang: z.enum(["ar", "en"]) });
 
 export const reviewInvoice = createServerFn({ method: "POST" })
-  .inputValidator(invoiceInput)
+  .validator(invoiceInput)
   .handler(async ({ data }): Promise<AiResult> => {
     const { requireAppAccess, renderOne, renderRows, readRows } =
       await import("./data-access.server.ts");
