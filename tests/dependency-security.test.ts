@@ -17,6 +17,10 @@ const dependabotConfig = readFileSync(
   new URL("../.github/dependabot.yml", import.meta.url),
   "utf8",
 );
+const aiAssistantFunctions = readFileSync(
+  new URL("../src/lib/ai/assistant.functions.ts", import.meta.url),
+  "utf8",
+);
 
 function compareVersions(left: string, right: string): number {
   const a = left.split(".").map(Number);
@@ -71,6 +75,19 @@ test("existing server validators retain Zod v3 behavior through the supported v3
     const source = readFileSync(new URL(path, import.meta.url), "utf8");
     assert.match(source, /from ["']zod\/v3["']/);
   }
+});
+
+test("AI server functions use TanStack Start's supported validator API", () => {
+  assert.equal(
+    (aiAssistantFunctions.match(/\.validator\(/g) ?? []).length,
+    4,
+    "all four read-only assistant functions must validate input",
+  );
+  assert.doesNotMatch(
+    aiAssistantFunctions,
+    /\.inputValidator\(/,
+    "TanStack Start 1.169 removes the deprecated inputValidator method",
+  );
 });
 
 test("Dependabot defers TypeScript major updates until the lint toolchain supports them", () => {
