@@ -12,10 +12,10 @@ permissions:
 
 jobs:
   reproduce-vercel-install:
-    name: Reproduce npm install for blocked Dependabot candidate
+    name: Compare clean install with production-cache transition
     if: github.event.pull_request.head.ref == 'diagnose/vercel-npm-install-20261027'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout diagnostic branch
         uses: actions/checkout@v4
@@ -25,31 +25,55 @@ jobs:
         with:
           node-version: 22
 
-      - name: Fetch and verify the exact blocked candidate
+      - name: Fetch and verify exact production and candidate commits
         env:
           CANDIDATE_SHA: 72efefa2185a9a0c56bf1b655e2ee64239264bf3
           CANDIDATE_BRANCH: dependabot/npm_and_yarn/npm-production-patch-minor-a4d483b8e2
+          PRODUCTION_SHA: 224e0f7bc4aa02292571b6cee5a2716502e70acf
         run: |
+          git fetch --no-tags --depth=100 origin main
           git fetch --no-tags --depth=1 origin "$CANDIDATE_BRANCH"
-          FETCHED_SHA="$(git rev-parse FETCH_HEAD)"
-          test "$FETCHED_SHA" = "$CANDIDATE_SHA"
-          mkdir -p "$RUNNER_TEMP/roshan-vercel-install"
-          git show "$CANDIDATE_SHA:package.json" > "$RUNNER_TEMP/roshan-vercel-install/package.json"
-          git show "$CANDIDATE_SHA:package-lock.json" > "$RUNNER_TEMP/roshan-vercel-install/package-lock.json"
+          FETCHED_CANDIDATE_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$FETCHED_CANDIDATE_SHA" = "$CANDIDATE_SHA"
+          git cat-file -e "$PRODUCTION_SHA^{commit}"
+          mkdir -p "$RUNNER_TEMP/roshan-install-clean" "$RUNNER_TEMP/roshan-install-warm" "$RUNNER_TEMP/roshan-install-input"
+          git show "$CANDIDATE_SHA:package.json" > "$RUNNER_TEMP/roshan-install-input/candidate-package.json"
+          git show "$CANDIDATE_SHA:package-lock.json" > "$RUNNER_TEMP/roshan-install-input/candidate-package-lock.json"
+          git show "$PRODUCTION_SHA:package.json" > "$RUNNER_TEMP/roshan-install-warm/package.json"
+          git show "$PRODUCTION_SHA:package-lock.json" > "$RUNNER_TEMP/roshan-install-warm/package-lock.json"
+          cp "$RUNNER_TEMP/roshan-install-input/candidate-package.json" "$RUNNER_TEMP/roshan-install-clean/package.json"
+          cp "$RUNNER_TEMP/roshan-install-input/candidate-package-lock.json" "$RUNNER_TEMP/roshan-install-clean/package-lock.json"
           {
-            echo "### Candidate install reproduction"
-            echo "- Candidate SHA: `$CANDIDATE_SHA`"
-            echo "- Branch: `$CANDIDATE_BRANCH`"
-            echo "- Node: `$(node --version)`"
-            echo "- npm: `$(npm --version)`"
-            echo "- Working directory: isolated temporary directory containing only package.json and package-lock.json"
+            printf '### Vercel npm install reproduction\n'
+            printf -- '- Candidate SHA: `%s`\n' "$CANDIDATE_SHA"
+            printf -- '- Production cache source SHA: `%s`\n' "$PRODUCTION_SHA"
+            printf -- '- Candidate branch: `%s`\n' "$CANDIDATE_BRANCH"
+            printf -- '- Node: `%s`\n' "$(node --version)"
+            printf -- '- npm: `%s`\n' "$(npm --version)"
+            printf -- '- Test A: clean candidate install\n'
+            printf -- '- Test B: install production dependency tree, then transition that directory to candidate lockfile\n'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Reproduce the platform install command with verbose diagnostics
-        working-directory: ${{ runner.temp }}/roshan-vercel-install
+      - name: Test A — install candidate from a clean directory
+        working-directory: ${{ runner.temp }}/roshan-install-clean
         env:
           npm_config_loglevel: verbose
         run: npm install
+
+      - name: Test B1 — install the production dependency tree to seed a warm directory
+        working-directory: ${{ runner.temp }}/roshan-install-warm
+        env:
+          npm_config_loglevel: verbose
+        run: npm install
+
+      - name: Test B2 — transition warm production tree to the exact candidate lockfile
+        working-directory: ${{ runner.temp }}/roshan-install-warm
+        env:
+          npm_config_loglevel: verbose
+        run: |
+          cp "$RUNNER_TEMP/roshan-install-input/candidate-package.json" package.json
+          cp "$RUNNER_TEMP/roshan-install-input/candidate-package-lock.json" package-lock.json
+          npm install
 
       - name: Print npm debug log on failure
         if: failure()
