@@ -1951,3 +1951,13 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Added a Phase 42 regression test that fails if a future route file, public page, or configured navigation destination is absent from `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md`. It also requires the matrix to retain explicit `NOT TESTED` and `BLOCKED/DEFERRED` states so a generated inventory cannot silently imply browser/clinical acceptance.
 - This is a test/documentation-only candidate; it does not change application runtime, database/Auth state, or production records. Issue #95 remains open.
 - **Next:** run exact-head guard suite, typecheck, lint, build, and integration checks. Merge only if the matrix contract test passes; then keep the browser/role acceptance gate open.
+
+
+## Route matrix drift guard — merged verification (2026-10-27)
+
+- PR [#119](https://github.com/crauch2088-source/roshan-health-hub/pull/119) merged as `329f10553e2b38ea99b19af5a7065083beff95c8`; exact PR head `b7e2e726716c171fc44ed2f0fae5fcdee81847d3`.
+- Exact-head workflows all succeeded: CI `40461425709`, insurance-claim UI validation `40461425666`, privileged-role guard `40461425693`, insurance-claim integrity `40461425714`, prescription atomicity `40461425658`, and PR workflow `40461424312`. Vercel preview status was success.
+- Post-merge main workflows on `329f10553e2b38ea99b19af5a7065083beff95c8) all succeeded: CI `40461576783`, finance-only RPC write isolation `40461576803`, and push-on-main/CodeQL `40461576268`.
+- The merged test now guards the route inventory against source drift: all authenticated route files, public page files, and configured navigation destinations must be represented, and explicit `NOT TESTED` / `BLOCKED/DEFERRED` markers must remain. It is an inventory regression guard, not browser or clinical acceptance.
+- Production deployment for the code commit `224e0f7bc4aa02292571b6cee5a2716502e70acf` remains the latest READY code deployment. The `329f1055...` commit is tests/docs only and Vercel canceled its production deployment under the configured build-ignore rule.
+- **Next:** keep Issue #95 open; proceed with non-authenticated source-level UX review and prepare one comprehensive browser acceptance session. Do not use metered browser sessions without approval, and do not claim the 320/360/390/430 viewport, English LTR, keyboard, role, or clinical workflows passed. Separately, PR #118's 36-package update remains blocked by reproducible Vercel `npm install` failure despite green GitHub CI; diagnose that discrepancy before any dependency batch is merged.
