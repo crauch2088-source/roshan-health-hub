@@ -1,9 +1,10 @@
 {
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src/ public/ index.html package.json package-lock.json vite.config.ts tsconfig*.json",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src/ public/ index.html package.json package-lock.json vercel.json vite.config.ts tsconfig*.json",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "installCommand": "npm ci"
 }
