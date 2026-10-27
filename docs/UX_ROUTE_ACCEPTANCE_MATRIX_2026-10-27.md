@@ -51,9 +51,9 @@
 
 | Route | Source file | Existing source evidence | Browser / visual / keyboard | Status |
 |---|---|---|---|---|
-| `/` | `src/routes/index.tsx` | Route exists; this matrix makes no behavioral claim | NOT TESTED | NOT TESTED |
-| `/auth` | `src/routes/auth.tsx` | Phase 42 tests assert POST form, skip link, and semantic main landmark | NOT TESTED | NOT TESTED |
-| `/setup` | `src/routes/setup.tsx` | Phase 42 tests assert POST form, skip link, semantic main landmark, and setup permission-denial handling | NOT TESTED | NOT TESTED |
+| `/` | `src/routes/index.tsx` | Redirects to `/auth` in the production fetch | PUBLIC SMOKE PASS (redirect) | NOT TESTED |
+| `/auth` | `src/routes/auth.tsx` | Arabic sign-in title, skip link, email/password fields, closed public registration notice, English toggle visible | PUBLIC SMOKE PASS (Arabic) | NOT TESTED |
+| `/setup` | `src/routes/setup.tsx` | Arabic completed-setup state and sign-in link; no form submitted | PUBLIC SMOKE PASS (completed state) | NOT TESTED |
 
 ## Coverage gaps and next acceptance session
 
@@ -62,3 +62,11 @@
 3. Authenticated clinical E2E and staff acceptance remain **BLOCKED/DEFERRED** until the free isolated QA environment has a supported login path and suitable synthetic clinician identity. Do not create production fixtures or treat a route rendering as acceptance.
 4. During the authorized comprehensive session, capture route + viewport + language + role + action + expected/actual result for each finding, with redacted screenshots. Record PASS only after the relevant interaction is exercised.
 5. Keep Issue #95 open until this matrix's NOT TESTED/BLOCKED entries are resolved or explicitly accepted under the documented release gate.
+
+
+## Public route smoke supplement — 2026-10-27 06:24 UTC
+
+- Used TinyFish's free public fetch/extraction endpoint on the canonical production alias for `/`, `/auth`, and `/setup`. All three fetches returned without per-URL errors.
+- `/` redirected to `/auth`; the sign-in page returned Arabic content, `width=device-width, initial-scale=1` viewport metadata, email/password fields, the closed-registration notice, skip-to-content text, and the English toggle.
+- `/setup` returned the Arabic completed-setup state and a sign-in link. No login, form submission, or mutation was attempted.
+- This is a public-content/metadata smoke only. The fetch tool does not prove interactive behavior, viewport rendering at 320/360/390/430px, English LTR behavior, keyboard focus, or visual accessibility. Those entries remain **NOT TESTED**.

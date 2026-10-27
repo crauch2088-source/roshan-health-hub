@@ -1926,3 +1926,11 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - All visual/browser/keyboard entries remain **NOT TESTED**. Authenticated clinical E2E/staff acceptance remains **BLOCKED/DEFERRED** until a supported isolated QA login path and suitable synthetic clinician identity are available. Issue #95 remains open.
 - Dependency PR #109 was closed unmerged by Dependabot after rebase. Although GitHub CI `40460576126` and the related isolated integration jobs passed on head `b6d827a2d5dbb91f0ea91a7f1cd817ea99b8cf1e`, its Vercel preview failed during `npm install` with `ERR_INVALID_ARG_TYPE`. The 35-package batch is not in main and must not be re-created until this install-path discrepancy is understood.
 - **Next:** continue the non-authenticated source-level UX audit and prepare one comprehensive browser acceptance session; separately diagnose the Vercel install failure before attempting another dependency batch. Do not close Issue #95 or claim clinical acceptance.
+
+
+## Public-route smoke evidence for UX gate — 2026-10-27
+
+- TinyFish's free public fetch endpoint read `/`, `/auth`, and `/setup` from `https://roshan-health-hub.vercel.app`; all three completed without fetch errors. The root redirected to `/auth`. The Arabic sign-in content included the skip link, email/password fields, public-registration-closed notice, and English toggle. Setup returned the completed-setup state and a sign-in link.
+- This was read-only: no login, form submit, or data mutation. Metadata included `width=device-width, initial-scale=1`. It is not an interactive screenshot, keyboard test, viewport matrix, or English LTR acceptance.
+- Updated `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md` with these public smoke observations. Protected-route browser/role tests remain NOT TESTED/BLOCKED; Issue #95 stays open.
+- **Next:** when an authorized interactive browser connection is available at no cost, run the planned viewport/RTL-LTR/keyboard audit. Browser Use managed sessions are metered and were not started. Continue only safe source-level review meanwhile.
