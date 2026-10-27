@@ -112,3 +112,12 @@
 - Read-only lockfile comparison found six nested optional WASM package entries without `resolved`/integrity fields in both current main and the candidate; this is **not candidate-specific evidence** and does not explain the Vercel failure. No root cause has been proven.
 - PR #118 remains open and **must not be merged** until the Vercel install path is diagnosed and a READY preview exists for the exact head. GitHub `npm ci` passing is insufficient because Vercel uses `npm install` during its build.
 - **Next:** reproduce the Vercel install failure in a controlled, no-cost Node/npm environment using the exact candidate lockfile and capture the full npm error stack. Do not mutate production dependencies or retry deployment blindly.
+
+
+## Verified closure of production patch/minor dependency batch — 2026-10-27 07:10 UTC
+
+- PR #118 merged at `2026-10-27T07:01:41Z` into `main` commit `123bc8b92ddbc64ef236d50c6c822d030b38d390`; it is not an open blocker. The commit updated 34 direct production dependencies and the lockfile after PR #121 changed Vercel installation to `npm ci`.
+- Exact-main GitHub Actions runs passed: CI `40464623894`, finance isolation `40464623888`, clinical-child RPC-only `40464623978`, push-on-main/CodeQL `40464663442`, Dependabot dynamic workflow `40464733500`. Vercel production deployment `dpl_HSXd9Ss53pMX5uvnKKBEnHLBwq2f` is READY on that exact SHA, canonical alias `roshan-health-hub.vercel.app`, alias error null.
+- PR #109 remains closed unmerged. The previous `ERR_INVALID_ARG_TYPE` Vercel install failure is resolved for the merged PR #118 path; do not generalize that result to other dependency batches.
+- PR #114 remains open at `9e783981e13993ee03669efc459a563c1c3c216b` and fails exact-head Typecheck in run `40465003880`: `react-day-picker` major update removes `ClassNames.table`; Recharts major update changes tooltip prop typings in `src/components/ui/chart.tsx`. Guard tests (220) and PostgreSQL integration jobs pass, but lint/build are skipped after typecheck failure. Do not merge until these API breaks are addressed or the incompatible majors are excluded and regenerated, with green exact-head checks.
+- Next: prioritize Issue #95 source-level UX audit; keep the major-update PR isolated and unmerged. No production DB/Auth change or clinical/financial record was created.
