@@ -1896,3 +1896,12 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - This is a source/test/doc candidate on a dedicated branch. No dependency lockfile change, production database/Auth change, patient/financial record, or deployment action is included. PR #109 remains unmerged until the exact updated dependency candidate passes its full check matrix.
 - **Status at candidate creation:** PR/check evidence pending. Keep the release blocked until exact-head typecheck, lint, build, and integration checks pass.
 - **Next:** run the focused guard suite and exact-head GitHub Actions; then rebase/retest PR #109 only after this compatibility fix is merged.
+
+
+## TanStack validator migration — exact candidate verification (2026-10-27)
+
+- PR [#117](https://github.com/crauch2088-source/roshan-health-hub/pull/117) source/test commit `16ea4c90f4e81cc808121a8e02d0452420fc8013` passed its exact-head CI matrix. Main CI run `40459881437`, insurance-claim integrity `40459881399`, prescription atomicity `40459881523`, privileged-role guard `40459881375`, insurance-claim UI validation `40459881536`, and dynamic PR workflow `40459879974` all completed with conclusion `success`. Vercel preview status for this candidate is `success`.
+- The install/audit/typecheck/lint/build job succeeded, including the new regression assertion that the four AI server functions use `.validator()` and none use `.inputValidator()`. PostgreSQL integration workflows also succeeded; they are regression checks, not clinical acceptance.
+- The exact tested source commit changes only the validator method name, preserves the same Zod v3 schemas and handler bodies, and adds the source-contract test. No lockfile, database, Auth, production data, or deployment configuration changed.
+- **Merge gate:** the passing evidence above belongs to source/test commit `16ea4c90...`. This follow-up updates evidence documentation only; the final PR head must still complete its own checks before merge.
+- **Next:** verify exact-head checks after this documentation follow-up, then merge PR #117 only if all required checks remain green. Rebase and re-evaluate PR #109 afterward; do not merge its 35-package batch without its own full passing checks.
