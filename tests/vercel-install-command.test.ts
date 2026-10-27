@@ -14,6 +14,10 @@ const ciWorkflow = readFileSync(
   new URL("../.github/workflows/ci.yml", import.meta.url),
   "utf8",
 );
+const workflowDispatchBlock =
+  ciWorkflow.split("  workflow_dispatch:")[1]?.split(/^jobs:/m)[0] ?? "";
+const clinicalE2EJobBlock =
+  ciWorkflow.split("  clinical-e2e-acceptance:")[1]?.split(/^  [a-z0-9_-]+:/m)[0] ?? "";
 
 test("Vercel installs from the lockfile with a clean npm ci", () => {
   assert.equal(vercelConfig.installCommand, "npm ci");
@@ -28,12 +32,9 @@ test("Vercel's ignore guard rebuilds when vercel.json changes", () => {
 });
 
 test("clinical E2E remains manually gated until QA readiness is explicitly enabled", () => {
+  assert.match(workflowDispatchBlock, /run_clinical_e2e_acceptance:[\s\S]*?default:\s*false/);
   assert.match(
-    ciWorkflow,
-    /workflow_dispatch:\s*inputs:\s*run_clinical_e2e_acceptance:[\s\S]*?default:\s*false/,
-  );
-  assert.match(
-    ciWorkflow,
-    /clinical-e2e-acceptance:\s*\n\s+name:[^\n]*\n\s+if:\s*github\.event_name == 'workflow_dispatch' && inputs\.run_clinical_e2e_acceptance == true && vars\.CLINICAL_E2E_QA_READY == 'true'/,
+    clinicalE2EJobBlock,
+    /if:\s*github\.event_name == 'workflow_dispatch' && inputs\.run_clinical_e2e_acceptance == true && vars\.CLINICAL_E2E_QA_READY == 'true'/,
   );
 });
