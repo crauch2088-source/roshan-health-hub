@@ -3,9 +3,9 @@
 ## Scope and evidence identity
 
 - Inventory source: current repository tree and `src/config/nav.ts`.
-- Source baseline inspected: `main` `5c92e2fa921d7de86e2f9b1e45ba8bf92fb301c0`.
-- Latest production code deployment verified at this snapshot: `dpl_9NgLmr4sGFvcVbcWHawKAFFo8ZHN`, state `READY`, source SHA `224e0f7bc4aa02292571b6cee5a2716502e70acf`, alias `roshan-health-hub.vercel.app`. The newer `main` commit is documentation-only; its Vercel deployment was canceled by the configured build-ignore rule.
-- Exact-main checks for documentation SHA `5c92e2fa...`: CI `40460461471`, finance-only RPC isolation `40460461379`, and push-on-main `40460460823` all succeeded.
+- Source baseline refreshed: `main` `123bc8b92ddbc64ef236d50c6c822d030b38d390`.
+- Current production deployment: `dpl_HSXd9Ss53pMX5uvnKKBEnHLBwq2f`, state `READY`, source SHA exactly `123bc8b92ddbc64ef236d50c6c822d030b38d390`, alias `roshan-health-hub.vercel.app`, `aliasError: null`.
+- Exact-main GitHub Actions all succeeded: CI `40464623894`, finance-only RPC isolation `40464623888`, clinical-child RPC-only writes `40464623978`, push-on-main/CodeQL `40464663442`, Dependabot dynamic workflow `40464733500`. PR #118 merged the 34-package production patch/minor batch on this SHA after the `npm ci` mitigation; this does not imply browser/clinical acceptance.
 - Inventory contains **27 authenticated page routes** (23 top-level navigation destinations plus four detail routes) and **3 public page routes**. The authenticated layout `/_authenticated` and root layout are structural routes, not counted as pages.
 
 ## Status vocabulary
@@ -70,3 +70,11 @@
 - `/` redirected to `/auth`; the sign-in page returned Arabic content, `width=device-width, initial-scale=1` viewport metadata, email/password fields, the closed-registration notice, skip-to-content text, and the English toggle.
 - `/setup` returned the Arabic completed-setup state and a sign-in link. No login, form submission, or mutation was attempted.
 - This is a public-content/metadata smoke only. The fetch tool does not prove interactive behavior, viewport rendering at 320/360/390/430px, English LTR behavior, keyboard focus, or visual accessibility. Those entries remain **NOT TESTED**.
+
+
+## Baseline refresh after PR #118 merge — 2026-10-27 07:10 UTC
+
+- The route inventory itself did not change. This refresh only binds the acceptance matrix to current `main` `123bc8b92ddbc64ef236d50c6c822d030b38d390` and the exact production deployment `dpl_HSXd9Ss53pMX5uvnKKBEnHLBwq2f`, both on the same SHA. Exact-main CI, finance isolation, clinical-child RPC-only, push-on-main/CodeQL, and Dependabot dynamic workflow are green (runs `40464623894`, `40464623888`, `40464623978`, `40464663442`, `40464733500`).
+- The previous public route smoke evidence predates this deployment and was a non-interactive fetch; it is not a fresh browser pass for this SHA. Every authenticated route remains **NOT TESTED** for viewport/RTL/LTR/keyboard acceptance and **BLOCKED/DEFERRED** for role/workflow acceptance. Do not infer UI compatibility from a dependency-only production deploy or green source tests.
+- PR #114's major-update candidate currently fails Typecheck on `react-day-picker`/Recharts API breaks (run `40465003880`); it is not merged and does not describe the deployed application.
+- Next: continue the non-authenticated source-level UX review and prepare the authorized interactive acceptance session; keep Issue #95 open. Clinical E2E stays deferred until the isolated free QA login and suitable synthetic clinician identity are available.
