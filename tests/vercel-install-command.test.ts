@@ -10,10 +10,7 @@ type VercelConfig = {
 const vercelConfig = JSON.parse(
   readFileSync(new URL("../vercel.json", import.meta.url), "utf8"),
 ) as VercelConfig;
-const ciWorkflow = readFileSync(
-  new URL("../.github/workflows/ci.yml", import.meta.url),
-  "utf8",
-);
+const ciWorkflow = readFileSync(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 const workflowDispatchBlock =
   ciWorkflow.split("  workflow_dispatch:")[1]?.split(/^jobs:/m)[0] ?? "";
 const clinicalE2EJobBlock =
