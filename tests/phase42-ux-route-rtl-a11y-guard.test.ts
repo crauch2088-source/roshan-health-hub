@@ -20,6 +20,13 @@ const entries = [...nav.matchAll(/to:\s*"([^"]+)",\s*key:\s*"([^"]+)",\s*perm:\s
   (match) => ({ to: match[1], key: match[2], perm: match[3] }),
 );
 
+const detailRoutes = [
+  { to: "/patients/$patientId", file: "patients_.$patientId.tsx", permission: "patients.read" },
+  { to: "/clinic/$visitId", file: "clinic_.$visitId.tsx", permission: "visits.read" },
+  { to: "/lab/$orderId", file: "lab_.$orderId.tsx", permission: "lab.read" },
+  { to: "/billing/$invoiceId", file: "billing_.$invoiceId.tsx", permission: "billing.read" },
+] as const;
+
 function sourceForRoute(to: string) {
   if (to === "/dashboard") return "../src/routes/_authenticated/dashboard.tsx";
   const name = to.slice(1).replace(/\/\$/g, "_.$").replaceAll("/", "-");
@@ -73,6 +80,27 @@ test("Phase 42 inventories all real page routes and verifies nav permission gate
     );
   }
   assert.match(read("../src/routes/_authenticated/route.tsx"), /useAuth|redirect|beforeLoad/);
+});
+
+test("detail routes enforce explicit read permissions and the acceptance matrix documents each guard", () => {
+  for (const detail of detailRoutes) {
+    const source = read("../src/routes/_authenticated/" + detail.file);
+    assert.match(
+      source,
+      new RegExp('<PermissionGate\\s+perm="' + detail.permission + '"'),
+      detail.to + " must enforce " + detail.permission,
+    );
+    const row = routeMatrix.split("\n").find((line) => line.startsWith("| `" + detail.to + "` |"));
+    assert.ok(row, "Acceptance matrix is missing detail route " + detail.to);
+    assert.ok(
+      row.includes("`" + detail.permission + "`"),
+      detail.to + " must list its configured permission",
+    );
+    assert.ok(
+      row.includes("SOURCE-GUARDED"),
+      detail.to + " must be marked SOURCE-GUARDED after the source assertion",
+    );
+  }
 });
 
 test("navigation and quick-action keys have distinct, non-empty Arabic and English translations", () => {
