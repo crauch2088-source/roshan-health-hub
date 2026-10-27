@@ -144,7 +144,7 @@ test("consultation quick review is optional, local-only and non-blocking", () =>
 
 test("pediatric prescriptions prompt for weight-based review and unknown age without calculating a dose", () => {
   const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
-  assert.match(ui, /patients\\(id,full_name,date_of_birth\\)/);
+  assert.match(ui, /patients\(id,full_name,date_of_birth\)/);
   assert.match(ui, /clinic-vitals-weight/);
   assert.match(ui, /Pediatric safety: no current visit weight is recorded/);
   assert.match(ui, /Could not verify the recorded weight/);
