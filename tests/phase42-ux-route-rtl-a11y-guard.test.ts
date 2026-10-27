@@ -90,12 +90,16 @@ test("detail routes enforce explicit read permissions and the acceptance matrix 
       new RegExp('<PermissionGate\\s+perm="' + detail.permission + '"'),
       detail.to + " must enforce " + detail.permission,
     );
-    const row = routeMatrix
-      .split("\n")
-      .find((line) => line.startsWith("| `" + detail.to + "` |"));
+    const row = routeMatrix.split("\n").find((line) => line.startsWith("| `" + detail.to + "` |"));
     assert.ok(row, "Acceptance matrix is missing detail route " + detail.to);
-    assert.ok(row.includes("`" + detail.permission + "`"), detail.to + " must list its configured permission");
-    assert.ok(row.includes("SOURCE-GUARDED"), detail.to + " must be marked SOURCE-GUARDED after the source assertion");
+    assert.ok(
+      row.includes("`" + detail.permission + "`"),
+      detail.to + " must list its configured permission",
+    );
+    assert.ok(
+      row.includes("SOURCE-GUARDED"),
+      detail.to + " must be marked SOURCE-GUARDED after the source assertion",
+    );
   }
 });
 
