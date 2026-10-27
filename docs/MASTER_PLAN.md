@@ -1943,3 +1943,11 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Read-only lockfile comparison found six nested optional WASM package entries without `resolved`/integrity fields in both current main and the candidate; this is **not candidate-specific evidence** and does not explain the Vercel failure. No root cause has been proven.
 - PR #118 remains open and **must not be merged** until the Vercel install path is diagnosed and a READY preview exists for the exact head. GitHub `npm ci` passing is insufficient because Vercel uses `npm install` during its build.
 - **Next:** reproduce the Vercel install failure in a controlled, no-cost Node/npm environment using the exact candidate lockfile and capture the full npm error stack. Do not mutate production dependencies or retry deployment blindly.
+
+
+## UX acceptance matrix drift guard — candidate (2026-10-27)
+
+- Base `main` at `928b2017b1dcabb6b73a8fff74d06472d251ae4b`. The route acceptance matrix currently lists 27 authenticated page files, four detail routes, 23 navigation destinations, and three public pages.
+- Added a Phase 42 regression test that fails if a future route file, public page, or configured navigation destination is absent from `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md`. It also requires the matrix to retain explicit `NOT TESTED` and `BLOCKED/DEFERRED` states so a generated inventory cannot silently imply browser/clinical acceptance.
+- This is a test/documentation-only candidate; it does not change application runtime, database/Auth state, or production records. Issue #95 remains open.
+- **Next:** run exact-head guard suite, typecheck, lint, build, and integration checks. Merge only if the matrix contract test passes; then keep the browser/role acceptance gate open.
