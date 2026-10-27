@@ -116,17 +116,6 @@ export function ClinicalNoteTab({
     onDirtyChange?.(JSON.stringify(form) !== initialFormRef.current);
   }, [form, onDirtyChange]);
 
-  useEffect(() => {
-    const dirty = JSON.stringify(form) !== initialFormRef.current;
-    if (!dirty) return;
-    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warnBeforeUnload);
-    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [form]);
-
   const save = useSave(
     async () => {
       const existing = ((noteQ.data ?? []) as Row[])[0];
