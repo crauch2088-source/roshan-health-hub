@@ -214,3 +214,11 @@ Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable 
 - The original monitor check returned HTTP 404 / `DEPLOYMENT_NOT_FOUND` from the old `roshan-health-hub-hjfy.vercel.app` target. Better Stack incident `1033415913` was created.
 - Updated existing monitor `5086672` to `https://roshan-health-hub.vercel.app/` without creating another monitor. Configuration remains unpaused, 180-second checks, EU/Asia, email alerts, SSL verification, redirects, 15-second timeout.
 - Post-update health is not yet confirmed: monitor state remained `down` immediately after update, and `last_checked_at` predated the URL correction. Check after the next scheduled probe and verify the incident resolves.
+
+
+## Vercel npm install cache-transition — verified reproduction and safe install policy (2026-10-27)
+
+- Vercel preview for Dependabot candidate `72efefa2185a9a0c56bf1b655e2ee64239264bf3` failed in `npm install` after restoring production build cache. A clean Node 22/npm 10.9.9 install passed; a controlled warm-tree transition from production dependency versions to the same candidate reproduced the same npm Arborist `rollbackMoveBackRetiredUnchanged` / `reify.js:1298` stack.
+- Preferred mitigation is version-controlled `vercel.json` `installCommand: "npm ci"`, not clearing caches by hand, regenerating the lockfile blindly, changing package managers, or retrying deployment. Keep `vercel.json` in `ignoreCommand`'s watched path list so install configuration changes actually trigger a preview.
+- Clinical E2E CI remains deferred by default: it now requires a manual `workflow_dispatch` boolean and `vars.CLINICAL_E2E_QA_READY == 'true'`. Keep the repository variable unset until the free isolated QA environment and suitable synthetic clinician identity are confirmed.
+- **Release rule:** do not merge the dependency batch or declare the fix successful until a READY Vercel preview matches the exact candidate SHA and relevant GitHub checks are green. The install reproduction is not browser or clinical acceptance.
