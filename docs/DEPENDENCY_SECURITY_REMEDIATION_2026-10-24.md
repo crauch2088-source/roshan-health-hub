@@ -103,3 +103,12 @@
 - The Vercel preview for the closed head failed at deployment `dpl_DVAXprPabMFRmMmHFnPKujiEXmav`: `npm install` exited with `ERR_INVALID_ARG_TYPE`, “The \"from\" argument must be of type string. Received undefined.” This failure is distinct from GitHub CI's successful `npm ci`; it is a release-reliability blocker, not proof that the update is safe to ship.
 - Do not reopen or recreate the 35-package batch blindly. First reproduce/diagnose the Vercel `npm install` failure against the exact lockfile and determine why Vercel's install path differs from `npm ci`. Keep the dependency updates unapplied until both CI and Vercel preview pass on the exact head.
 - This dependency failure does not roll back the separately merged `.validator()` source fix. Production code deployment for main's source commit `224e0f7bc4aa02292571b6cee5a2716502e70acf` is READY; the later main commit `5c92e2fa...` changes docs only and its deployment was canceled by the configured build-ignore rule.
+
+
+## Dependabot replacement PR #118 — repeated Vercel install failure (2026-10-27)
+
+- Dependabot opened replacement PR [#118](https://github.com/crauch2088-source/roshan-health-hub/pull/118), head `72efefa2185a9a0c56bf1b655e2ee64239264bf3`, with 36 production patch/minor updates. Exact-head GitHub CI `40460693105`, finance isolation `40460693071`, and clinical-child RPC-only `40460693076` all passed.
+- Vercel preview deployment `dpl_CH8PhqNxyy7R1AXQYUKffaYJ6jGA` is `ERROR` on the same SHA. Build events show `npm install` exits with `ERR_INVALID_ARG_TYPE: The "from" argument must be of type string. Received undefined`. The same error occurred on closed, unmerged PR #109 (`dpl_DVAXprPabMFRmMmHFnPKujiEXmav`). A blocker comment was added to PR #118 (comment `6435338565`).
+- Read-only lockfile comparison found six nested optional WASM package entries without `resolved`/integrity fields in both current main and the candidate; this is **not candidate-specific evidence** and does not explain the Vercel failure. No root cause has been proven.
+- PR #118 remains open and **must not be merged** until the Vercel install path is diagnosed and a READY preview exists for the exact head. GitHub `npm ci` passing is insufficient because Vercel uses `npm install` during its build.
+- **Next:** reproduce the Vercel install failure in a controlled, no-cost Node/npm environment using the exact candidate lockfile and capture the full npm error stack. Do not mutate production dependencies or retry deployment blindly.

@@ -1934,3 +1934,12 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - This was read-only: no login, form submit, or data mutation. Metadata included `width=device-width, initial-scale=1`. It is not an interactive screenshot, keyboard test, viewport matrix, or English LTR acceptance.
 - Updated `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md` with these public smoke observations. Protected-route browser/role tests remain NOT TESTED/BLOCKED; Issue #95 stays open.
 - **Next:** when an authorized interactive browser connection is available at no cost, run the planned viewport/RTL-LTR/keyboard audit. Browser Use managed sessions are metered and were not started. Continue only safe source-level review meanwhile.
+
+
+## Dependabot replacement PR #118 — repeated Vercel install failure (2026-10-27)
+
+- Dependabot opened replacement PR [#118](https://github.com/crauch2088-source/roshan-health-hub/pull/118), head `72efefa2185a9a0c56bf1b655e2ee64239264bf3`, with 36 production patch/minor updates. Exact-head GitHub CI `40460693105`, finance isolation `40460693071`, and clinical-child RPC-only `40460693076` all passed.
+- Vercel preview deployment `dpl_CH8PhqNxyy7R1AXQYUKffaYJ6jGA` is `ERROR` on the same SHA. Build events show `npm install` exits with `ERR_INVALID_ARG_TYPE: The "from" argument must be of type string. Received undefined`. The same error occurred on closed, unmerged PR #109 (`dpl_DVAXprPabMFRmMmHFnPKujiEXmav`). A blocker comment was added to PR #118 (comment `6435338565`).
+- Read-only lockfile comparison found six nested optional WASM package entries without `resolved`/integrity fields in both current main and the candidate; this is **not candidate-specific evidence** and does not explain the Vercel failure. No root cause has been proven.
+- PR #118 remains open and **must not be merged** until the Vercel install path is diagnosed and a READY preview exists for the exact head. GitHub `npm ci` passing is insufficient because Vercel uses `npm install` during its build.
+- **Next:** reproduce the Vercel install failure in a controlled, no-cost Node/npm environment using the exact candidate lockfile and capture the full npm error stack. Do not mutate production dependencies or retry deployment blindly.
