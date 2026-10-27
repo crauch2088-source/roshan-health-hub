@@ -222,3 +222,11 @@ Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable 
 - Preferred mitigation is version-controlled `vercel.json` `installCommand: "npm ci"`, not clearing caches by hand, regenerating the lockfile blindly, changing package managers, or retrying deployment. Keep `vercel.json` in `ignoreCommand`'s watched path list so install configuration changes actually trigger a preview.
 - Clinical E2E CI remains deferred by default: it now requires a manual `workflow_dispatch` boolean and `vars.CLINICAL_E2E_QA_READY == 'true'`. Keep the repository variable unset until the free isolated QA environment and suitable synthetic clinician identity are confirmed.
 - **Release rule:** do not merge the dependency batch or declare the fix successful until a READY Vercel preview matches the exact candidate SHA and relevant GitHub checks are green. The install reproduction is not browser or clinical acceptance.
+
+
+## Final verification — install fix merged and production build READY (2026-10-27)
+
+- Fix PR [#121](https://github.com/crauch2088-source/roshan-health-hub/pull/121) merged as `c7b097736f534a80eb9a83a5a0ced8394e6ecfe8`; PR CI and main CI passed, with the canonical clinical E2E job skipped by its explicit gate.
+- Vercel preview on the configuration-bearing PR commit `ab6e914dd3d533b9a06b8b835dd669a504634777` reached READY; production deployment [`dpl_DcutDNTdcXrfjVHRtCjEucPKwpEW`](https://vercel.com/roshan45/roshan-health-hub/DcutDNTdcXrfjVHRtCjEucPKwpEW) reached READY on the exact merged main SHA and ran `npm ci` successfully.
+- Exact check runs and the warm-cache reproduction are in `docs/VERCEL_NPM_INSTALL_CACHE_REPRO_2026-10-27.md`.
+- Next task is to update PR #118's branch without force-pushing and verify its own exact-head preview; do not merge that dependency batch until it is green. Issue #95 remains open.
