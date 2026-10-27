@@ -1905,3 +1905,81 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - The exact tested source commit changes only the validator method name, preserves the same Zod v3 schemas and handler bodies, and adds the source-contract test. No lockfile, database, Auth, production data, or deployment configuration changed.
 - **Merge gate:** the passing evidence above belongs to source/test commit `16ea4c90...`. This follow-up updates evidence documentation only; the final PR head must still complete its own checks before merge.
 - **Next:** verify exact-head checks after this documentation follow-up, then merge PR #117 only if all required checks remain green. Rebase and re-evaluate PR #109 afterward; do not merge its 35-package batch without its own full passing checks.
+
+
+## TanStack validator API fix — merge and production verification (2026-10-27)
+
+- PR [#117](https://github.com/crauch2088-source/roshan-health-hub/pull/117) merged by squash as `224e0f7bc4aa02292571b6cee5a2716502e70acf`. Exact final PR head `0837a94c799d7802a029eb1f81dc545b453a5ba0` passed: CI `40460084141`, insurance-claim integrity `40460084177`, privileged-role guard `40460084169`, prescription atomicity `40460084122`, insurance-claim UI validation `40460084187`, and PR workflow `40460081078`; all completed successfully. The combined Vercel preview status was success.
+- Post-merge exact-main CI `40460217556`, finance-only RPC write isolation `40460217370`, and push-on-main `40460217140` all completed successfully on merge SHA `224e0f7bc4aa02292571b6cee5a2716502e70acf`.
+- Vercel production deployment `dpl_9NgLmr4sGFvcVbcWHawKAFFo8ZHN` is `READY`, target `production`, source SHA exactly `224e0f7bc4aa02292571b6cee5a2716502e70acf`, canonical alias `roshan-health-hub.vercel.app`, and `aliasError: null`.
+- The production dependency blocker is resolved at source level: the four read-only AI server functions use `.validator()`, the same Zod v3 schemas are retained, and the regression guard rejects a return to `.inputValidator()`. No lockfile or database changes were included. No production database migrations, Auth changes, patient records, or financial records were created.
+- PR #109 remains open and unchanged at head `f95bc60bfb7204bd5406d6f50805c0876c6dd9b5` / base `5adfa01a6a96bd2060014a8529741bf9f7525440`, despite issuing both `/rebase` and `@dependabot rebase` comments (comment IDs `6435214209` and `6435222003`). Do not assume a rebase occurred or merge #109; verify a new head and exact-head CI first. PR #114 still has no CI run on its current head and remains unapproved.
+- Issue #95 remains open. Authenticated clinical E2E/staff acceptance remains explicitly deferred until the isolated free QA environment and suitable synthetic clinician identity are available.
+- **Next task:** resolve Dependabot PR #109's stale-base/rebase blocker through a supported repository workflow and rerun its exact-head CI. If the bot cannot rebase, do not hand-edit or merge the 35-package branch blindly; safely regenerate/close the grouped update only after reviewing the Dependabot policy and preserving auditability. In parallel, continue the non-authenticated source-level UX audit; do not close Issue #95 without browser evidence.
+
+
+## UX route inventory and acceptance status — 2026-10-27
+
+- Created `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md` from the current route tree and `src/config/nav.ts`: 27 authenticated page routes (23 nav destinations + four detail routes) and three public pages.
+- The matrix explicitly separates automated source contracts from browser acceptance. The Phase 42 source test verifies the permission-gated mapping for nav destinations; it does not prove runtime authorization, visual correctness, keyboard behavior, or completed user workflows. The four detail routes are inventoried but need separate role review.
+- Source baseline `main` at `5c92e2fa921d7de86e2f9b1e45ba8bf92fb301c0` passed CI `40460461471`, finance isolation `40460461379`, and push-on-main `40460460823`. Production code deployment `dpl_9NgLmr4sGFvcVbcWHawKAFFo8ZHN` is READY for source SHA `224e0f7bc4aa02292571b6cee5a2716502e70acf`; the current main change since then is documentation-only.
+- All visual/browser/keyboard entries remain **NOT TESTED**. Authenticated clinical E2E/staff acceptance remains **BLOCKED/DEFERRED** until a supported isolated QA login path and suitable synthetic clinician identity are available. Issue #95 remains open.
+- Dependency PR #109 was closed unmerged by Dependabot after rebase. Although GitHub CI `40460576126` and the related isolated integration jobs passed on head `b6d827a2d5dbb91f0ea91a7f1cd817ea99b8cf1e`, its Vercel preview failed during `npm install` with `ERR_INVALID_ARG_TYPE`. The 35-package batch is not in main and must not be re-created until this install-path discrepancy is understood.
+- **Next:** continue the non-authenticated source-level UX audit and prepare one comprehensive browser acceptance session; separately diagnose the Vercel install failure before attempting another dependency batch. Do not close Issue #95 or claim clinical acceptance.
+
+
+## Public-route smoke evidence for UX gate — 2026-10-27
+
+- TinyFish's free public fetch endpoint read `/`, `/auth`, and `/setup` from `https://roshan-health-hub.vercel.app`; all three completed without fetch errors. The root redirected to `/auth`. The Arabic sign-in content included the skip link, email/password fields, public-registration-closed notice, and English toggle. Setup returned the completed-setup state and a sign-in link.
+- This was read-only: no login, form submit, or data mutation. Metadata included `width=device-width, initial-scale=1`. It is not an interactive screenshot, keyboard test, viewport matrix, or English LTR acceptance.
+- Updated `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md` with these public smoke observations. Protected-route browser/role tests remain NOT TESTED/BLOCKED; Issue #95 stays open.
+- **Next:** when an authorized interactive browser connection is available at no cost, run the planned viewport/RTL-LTR/keyboard audit. Browser Use managed sessions are metered and were not started. Continue only safe source-level review meanwhile.
+
+
+## Dependabot replacement PR #118 — repeated Vercel install failure (2026-10-27)
+
+- Dependabot opened replacement PR [#118](https://github.com/crauch2088-source/roshan-health-hub/pull/118), head `72efefa2185a9a0c56bf1b655e2ee64239264bf3`, with 36 production patch/minor updates. Exact-head GitHub CI `40460693105`, finance isolation `40460693071`, and clinical-child RPC-only `40460693076` all passed.
+- Vercel preview deployment `dpl_CH8PhqNxyy7R1AXQYUKffaYJ6jGA` is `ERROR` on the same SHA. Build events show `npm install` exits with `ERR_INVALID_ARG_TYPE: The "from" argument must be of type string. Received undefined`. The same error occurred on closed, unmerged PR #109 (`dpl_DVAXprPabMFRmMmHFnPKujiEXmav`). A blocker comment was added to PR #118 (comment `6435338565`).
+- Read-only lockfile comparison found six nested optional WASM package entries without `resolved`/integrity fields in both current main and the candidate; this is **not candidate-specific evidence** and does not explain the Vercel failure. No root cause has been proven.
+- PR #118 remains open and **must not be merged** until the Vercel install path is diagnosed and a READY preview exists for the exact head. GitHub `npm ci` passing is insufficient because Vercel uses `npm install` during its build.
+- **Next:** reproduce the Vercel install failure in a controlled, no-cost Node/npm environment using the exact candidate lockfile and capture the full npm error stack. Do not mutate production dependencies or retry deployment blindly.
+
+
+## UX acceptance matrix drift guard — candidate (2026-10-27)
+
+- Base `main` at `928b2017b1dcabb6b73a8fff74d06472d251ae4b`. The route acceptance matrix currently lists 27 authenticated page files, four detail routes, 23 navigation destinations, and three public pages.
+- Added a Phase 42 regression test that fails if a future route file, public page, or configured navigation destination is absent from `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md`. It also requires the matrix to retain explicit `NOT TESTED` and `BLOCKED/DEFERRED` states so a generated inventory cannot silently imply browser/clinical acceptance.
+- This is a test/documentation-only candidate; it does not change application runtime, database/Auth state, or production records. Issue #95 remains open.
+- **Next:** run exact-head guard suite, typecheck, lint, build, and integration checks. Merge only if the matrix contract test passes; then keep the browser/role acceptance gate open.
+
+
+## Route matrix drift guard — merged verification (2026-10-27)
+
+- PR [#119](https://github.com/crauch2088-source/roshan-health-hub/pull/119) merged as `329f10553e2b38ea99b19af5a7065083beff95c8`; exact PR head `b7e2e726716c171fc44ed2f0fae5fcdee81847d3`.
+- Exact-head workflows all succeeded: CI `40461425709`, insurance-claim UI validation `40461425666`, privileged-role guard `40461425693`, insurance-claim integrity `40461425714`, prescription atomicity `40461425658`, and PR workflow `40461424312`. Vercel preview status was success.
+- Post-merge main workflows on `329f10553e2b38ea99b19af5a7065083beff95c8) all succeeded: CI `40461576783`, finance-only RPC write isolation `40461576803`, and push-on-main/CodeQL `40461576268`.
+- The merged test now guards the route inventory against source drift: all authenticated route files, public page files, and configured navigation destinations must be represented, and explicit `NOT TESTED` / `BLOCKED/DEFERRED` markers must remain. It is an inventory regression guard, not browser or clinical acceptance.
+- Production deployment for the code commit `224e0f7bc4aa02292571b6cee5a2716502e70acf` remains the latest READY code deployment. The `329f1055...` commit is tests/docs only and Vercel canceled its production deployment under the configured build-ignore rule.
+- **Next:** keep Issue #95 open; proceed with non-authenticated source-level UX review and prepare one comprehensive browser acceptance session. Do not use metered browser sessions without approval, and do not claim the 320/360/390/430 viewport, English LTR, keyboard, role, or clinical workflows passed. Separately, PR #118's 36-package update remains blocked by reproducible Vercel `npm install` failure despite green GitHub CI; diagnose that discrepancy before any dependency batch is merged.
+
+
+## Vercel npm install cache-transition — reproduced and mitigation candidate (2026-10-27)
+
+- Verified starting `main`: `4a1352ef4d70f40842b0856f52de91ecb9afad73`. Exact-main CI `40461822012`, finance-only RPC isolation `40461821974`, and push-on-main/CodeQL `40461822062` all succeeded.
+- Dependabot PR [#118](https://github.com/crauch2088-source/roshan-health-hub/pull/118), candidate `72efefa2185a9a0c56bf1b655e2ee64239264bf3`, failed Vercel preview `dpl_CH8PhqNxyy7R1AXQYUKffaYJ6jGA` during `npm install` with `ERR_INVALID_ARG_TYPE`. Vercel build events say the production build cache was restored before installation.
+- Controlled reproduction: clean candidate `npm install` passed in run `40462698808` using Node 22.23.3/npm 10.9.9. Run `40463225740` also passed the clean install and the production-tree seed install, then reproduced the same Arborist `rollbackMoveBackRetiredUnchanged` / `reify.js:1298` failure after replacing the warmed tree's manifest/lockfile with the exact candidate. This supports a stale `node_modules` transition failure; it does not prove the Vercel internal cache is identical to the simulation.
+- Fix candidate sets Vercel `installCommand: npm ci`, adds `vercel.json` to the `ignoreCommand` watched paths so config changes trigger a preview, and adds regression tests. It also makes the deferred clinical E2E CI job opt-in only: manual workflow dispatch input defaults false and the job additionally requires `vars.CLINICAL_E2E_QA_READY == 'true'`. Do not set that variable until the isolated free QA environment and suitable synthetic clinician identity are confirmed.
+- Temporary diagnostic PR [#120](https://github.com/crauch2088-source/roshan-health-hub/pull/120) was closed unmerged after the reproduction evidence was recorded. Its broad CI run `40463225666` was cancelled before the deferred clinical E2E job ran.
+- No production DB/Auth/records or production deployment were changed during reproduction.
+- **Next:** verify exact-head GitHub checks and a READY Vercel preview for the install-command candidate. Keep PR #118 blocked until it is rebased/re-evaluated and has a READY preview on its exact updated SHA. Issue #95 remains open; no browser/clinical acceptance is claimed.
+
+
+## Final verification — Vercel clean install mitigation merged (2026-10-27)
+
+- PR [#121](https://github.com/crauch2088-source/roshan-health-hub/pull/121) was squash-merged as `c7b097736f534a80eb9a83a5a0ced8394e6ecfe8`. Final PR head: `52a9916adedb19a34e51b177247fffad29d6a25e`.
+- Exact-final-head PR CI run [40464005869](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005869) succeeded; the install/audit/role-guard tests/typecheck/lint/build job passed. Insurance claim UI validation [40464005908](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005908), insurance claim integrity [40464005969](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005969), clinical child RPC-only writes [40464005871](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005871), finance-only RPC isolation [40464005900](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005900), prescription atomicity [40464005912](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005912), privileged-role guard [40464005962](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464005962), and CodeQL/PR analysis [40464002878](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464002878) all succeeded.
+- Main CI [40464170976](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464170976), finance-only RPC isolation [40464171138](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464171138), clinical child RPC-only writes [40464170979](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464170979), and push-on-main/CodeQL [40464170652](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40464170652) all succeeded on the merged SHA. The canonical clinical E2E job was **skipped**, as required.
+- Vercel preview [`dpl_9T5G3aTcDX4oTsJs9eQc3xcToPUu`](https://vercel.com/roshan45/roshan-health-hub/9T5G3aTcDX4oTsJs9eQc3xcToPUu) reached READY on config-bearing commit `ab6e914dd3d533b9a06b8b835dd669a504634777`; later commits only corrected the regression test and were intentionally ignored by Vercel's build-ignore rule. The exact merged production deployment [`dpl_DcutDNTdcXrfjVHRtCjEucPKwpEW`](https://vercel.com/roshan45/roshan-health-hub/DcutDNTdcXrfjVHRtCjEucPKwpEW) is READY on `c7b097736f534a80eb9a83a5a0ced8394e6ecfe8`. Its build log confirms `npm ci` installed 436 packages, audited 437, found 0 vulnerabilities, and Vite/Nitro completed successfully.
+- The manual-dispatch input defaults false and the clinical E2E job additionally requires `vars.CLINICAL_E2E_QA_READY == 'true'`; no repository readiness variable was created or changed by this run.
+- Diagnostic PR #120 is closed unmerged. No production DB migration, Auth mutation, clinical/financial record creation, or staff acceptance test was performed.
+- **Next:** merge the current main changes into PR #118's head using GitHub's non-force branch-update operation, then verify its exact updated SHA has green checks and a READY Vercel preview using `npm ci`. Keep PR #118 open until that preview is confirmed; keep Issue #95 open until authorized browser/RTL/LTR and role acceptance evidence exists.

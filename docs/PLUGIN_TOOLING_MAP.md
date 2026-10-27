@@ -214,3 +214,19 @@ Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable 
 - The original monitor check returned HTTP 404 / `DEPLOYMENT_NOT_FOUND` from the old `roshan-health-hub-hjfy.vercel.app` target. Better Stack incident `1033415913` was created.
 - Updated existing monitor `5086672` to `https://roshan-health-hub.vercel.app/` without creating another monitor. Configuration remains unpaused, 180-second checks, EU/Asia, email alerts, SSL verification, redirects, 15-second timeout.
 - Post-update health is not yet confirmed: monitor state remained `down` immediately after update, and `last_checked_at` predated the URL correction. Check after the next scheduled probe and verify the incident resolves.
+
+
+## Vercel npm install cache-transition — verified reproduction and safe install policy (2026-10-27)
+
+- Vercel preview for Dependabot candidate `72efefa2185a9a0c56bf1b655e2ee64239264bf3` failed in `npm install` after restoring production build cache. A clean Node 22/npm 10.9.9 install passed; a controlled warm-tree transition from production dependency versions to the same candidate reproduced the same npm Arborist `rollbackMoveBackRetiredUnchanged` / `reify.js:1298` stack.
+- Preferred mitigation is version-controlled `vercel.json` `installCommand: "npm ci"`, not clearing caches by hand, regenerating the lockfile blindly, changing package managers, or retrying deployment. Keep `vercel.json` in `ignoreCommand`'s watched path list so install configuration changes actually trigger a preview.
+- Clinical E2E CI remains deferred by default: it now requires a manual `workflow_dispatch` boolean and `vars.CLINICAL_E2E_QA_READY == 'true'`. Keep the repository variable unset until the free isolated QA environment and suitable synthetic clinician identity are confirmed.
+- **Release rule:** do not merge the dependency batch or declare the fix successful until a READY Vercel preview matches the exact candidate SHA and relevant GitHub checks are green. The install reproduction is not browser or clinical acceptance.
+
+
+## Final verification — install fix merged and production build READY (2026-10-27)
+
+- Fix PR [#121](https://github.com/crauch2088-source/roshan-health-hub/pull/121) merged as `c7b097736f534a80eb9a83a5a0ced8394e6ecfe8`; PR CI and main CI passed, with the canonical clinical E2E job skipped by its explicit gate.
+- Vercel preview on the configuration-bearing PR commit `ab6e914dd3d533b9a06b8b835dd669a504634777` reached READY; production deployment [`dpl_DcutDNTdcXrfjVHRtCjEucPKwpEW`](https://vercel.com/roshan45/roshan-health-hub/DcutDNTdcXrfjVHRtCjEucPKwpEW) reached READY on the exact merged main SHA and ran `npm ci` successfully.
+- Exact check runs and the warm-cache reproduction are in `docs/VERCEL_NPM_INSTALL_CACHE_REPRO_2026-10-27.md`.
+- Next task is to update PR #118's branch without force-pushing and verify its own exact-head preview; do not merge that dependency batch until it is green. Issue #95 remains open.

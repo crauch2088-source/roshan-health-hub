@@ -10,6 +10,7 @@ const mobileNav = read("../src/components/mobile-bottom-nav.tsx");
 const appShell = read("../src/components/app-shell.tsx");
 const kit = read("../src/components/kit.tsx");
 const dialog = read("../src/components/ui/dialog.tsx");
+const routeMatrix = read("../docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md");
 
 const routeFiles = readdirSync(new URL("../src/routes/_authenticated/", import.meta.url)).filter(
   (name) => name.endsWith(".tsx") && name !== "route.tsx",
@@ -24,6 +25,29 @@ function sourceForRoute(to: string) {
   const name = to.slice(1).replace(/\/\$/g, "_.$").replaceAll("/", "-");
   return "../src/routes/_authenticated/" + name + ".tsx";
 }
+
+test("UX acceptance matrix stays in sync with every route file and navigation destination", () => {
+  for (const name of routeFiles) {
+    assert.ok(
+      routeMatrix.includes("src/routes/_authenticated/" + name),
+      "Acceptance matrix is missing authenticated route file " + name,
+    );
+  }
+  for (const name of publicFiles) {
+    assert.ok(
+      routeMatrix.includes("src/routes/" + name),
+      "Acceptance matrix is missing public route file " + name,
+    );
+  }
+  for (const entry of entries) {
+    assert.ok(
+      routeMatrix.includes("| `" + entry.to + "` |"),
+      "Acceptance matrix is missing navigation destination " + entry.to,
+    );
+  }
+  assert.match(routeMatrix, /NOT TESTED/);
+  assert.match(routeMatrix, /BLOCKED\/DEFERRED/);
+});
 
 test("Phase 42 inventories all real page routes and verifies nav permission gates", () => {
   for (const name of publicFiles) {

@@ -83,3 +83,32 @@
 - The exact tested source commit changes only the validator method name, preserves the same Zod v3 schemas and handler bodies, and adds the source-contract test. No lockfile, database, Auth, production data, or deployment configuration changed.
 - **Merge gate:** the passing evidence above belongs to source/test commit `16ea4c90...`. This follow-up updates evidence documentation only; the final PR head must still complete its own checks before merge.
 - **Next:** verify exact-head checks after this documentation follow-up, then merge PR #117 only if all required checks remain green. Rebase and re-evaluate PR #109 afterward; do not merge its 35-package batch without its own full passing checks.
+
+
+## TanStack validator API fix — merge and production verification (2026-10-27)
+
+- PR [#117](https://github.com/crauch2088-source/roshan-health-hub/pull/117) merged by squash as `224e0f7bc4aa02292571b6cee5a2716502e70acf`. Exact final PR head `0837a94c799d7802a029eb1f81dc545b453a5ba0` passed: CI `40460084141`, insurance-claim integrity `40460084177`, privileged-role guard `40460084169`, prescription atomicity `40460084122`, insurance-claim UI validation `40460084187`, and PR workflow `40460081078`; all completed successfully. The combined Vercel preview status was success.
+- Post-merge exact-main CI `40460217556`, finance-only RPC write isolation `40460217370`, and push-on-main `40460217140` all completed successfully on merge SHA `224e0f7bc4aa02292571b6cee5a2716502e70acf`.
+- Vercel production deployment `dpl_9NgLmr4sGFvcVbcWHawKAFFo8ZHN` is `READY`, target `production`, source SHA exactly `224e0f7bc4aa02292571b6cee5a2716502e70acf`, canonical alias `roshan-health-hub.vercel.app`, and `aliasError: null`.
+- The production dependency blocker is resolved at source level: the four read-only AI server functions use `.validator()`, the same Zod v3 schemas are retained, and the regression guard rejects a return to `.inputValidator()`. No lockfile or database changes were included. No production database migrations, Auth changes, patient records, or financial records were created.
+- PR #109 remains open and unchanged at head `f95bc60bfb7204bd5406d6f50805c0876c6dd9b5` / base `5adfa01a6a96bd2060014a8529741bf9f7525440`, despite issuing both `/rebase` and `@dependabot rebase` comments (comment IDs `6435214209` and `6435222003`). Do not assume a rebase occurred or merge #109; verify a new head and exact-head CI first. PR #114 still has no CI run on its current head and remains unapproved.
+- Issue #95 remains open. Authenticated clinical E2E/staff acceptance remains explicitly deferred until the isolated free QA environment and suitable synthetic clinician identity are available.
+- **Next task:** resolve Dependabot PR #109's stale-base/rebase blocker through a supported repository workflow and rerun its exact-head CI. If the bot cannot rebase, do not hand-edit or merge the 35-package branch blindly; safely regenerate/close the grouped update only after reviewing the Dependabot policy and preserving auditability. In parallel, continue the non-authenticated source-level UX audit; do not close Issue #95 without browser evidence.
+
+
+## Dependency PR #109 closure and preview-build blocker — 2026-10-27
+
+- After merging the validator API fix, PR #109 was synced to main as head `b6d827a2d5dbb91f0ea91a7f1cd817ea99b8cf1e` on base `5c92e2fa921d7de86e2f9b1e45ba8bf92fb301c0`. Its GitHub CI `40460576126`, clinical-child RPC-only `40460576135`, finance-only RPC isolation `40460576132`, and PR workflow `40460574769` all succeeded.
+- The PR was then **closed unmerged** by Dependabot at 2026-10-27T06:21:04Z, with bot comment “Looks like these dependencies are updatable in another way, so this is no longer needed.” It was not merged; main `package.json` and lockfile still pin `@tanstack/react-start@1.168.61`, `@tanstack/react-router@1.170.42`, and the pre-update dependency versions.
+- The Vercel preview for the closed head failed at deployment `dpl_DVAXprPabMFRmMmHFnPKujiEXmav`: `npm install` exited with `ERR_INVALID_ARG_TYPE`, “The \"from\" argument must be of type string. Received undefined.” This failure is distinct from GitHub CI's successful `npm ci`; it is a release-reliability blocker, not proof that the update is safe to ship.
+- Do not reopen or recreate the 35-package batch blindly. First reproduce/diagnose the Vercel `npm install` failure against the exact lockfile and determine why Vercel's install path differs from `npm ci`. Keep the dependency updates unapplied until both CI and Vercel preview pass on the exact head.
+- This dependency failure does not roll back the separately merged `.validator()` source fix. Production code deployment for main's source commit `224e0f7bc4aa02292571b6cee5a2716502e70acf` is READY; the later main commit `5c92e2fa...` changes docs only and its deployment was canceled by the configured build-ignore rule.
+
+
+## Dependabot replacement PR #118 — repeated Vercel install failure (2026-10-27)
+
+- Dependabot opened replacement PR [#118](https://github.com/crauch2088-source/roshan-health-hub/pull/118), head `72efefa2185a9a0c56bf1b655e2ee64239264bf3`, with 36 production patch/minor updates. Exact-head GitHub CI `40460693105`, finance isolation `40460693071`, and clinical-child RPC-only `40460693076` all passed.
+- Vercel preview deployment `dpl_CH8PhqNxyy7R1AXQYUKffaYJ6jGA` is `ERROR` on the same SHA. Build events show `npm install` exits with `ERR_INVALID_ARG_TYPE: The "from" argument must be of type string. Received undefined`. The same error occurred on closed, unmerged PR #109 (`dpl_DVAXprPabMFRmMmHFnPKujiEXmav`). A blocker comment was added to PR #118 (comment `6435338565`).
+- Read-only lockfile comparison found six nested optional WASM package entries without `resolved`/integrity fields in both current main and the candidate; this is **not candidate-specific evidence** and does not explain the Vercel failure. No root cause has been proven.
+- PR #118 remains open and **must not be merged** until the Vercel install path is diagnosed and a READY preview exists for the exact head. GitHub `npm ci` passing is insufficient because Vercel uses `npm install` during its build.
+- **Next:** reproduce the Vercel install failure in a controlled, no-cost Node/npm environment using the exact candidate lockfile and capture the full npm error stack. Do not mutate production dependencies or retry deployment blindly.

@@ -7,6 +7,12 @@ on:
       - fix/tanstack-start-security
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_clinical_e2e_acceptance:
+        description: Run deferred clinical E2E only after isolated QA and synthetic clinician readiness are confirmed
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -516,6 +522,8 @@ jobs:
 
   clinical-e2e-acceptance:
     name: Canonical PG17 baseline replay and authenticated clinical acceptance
+    # Deferred until the free isolated QA environment and synthetic clinician identity are explicitly ready.
+    if: github.event_name == 'workflow_dispatch' && inputs.run_clinical_e2e_acceptance == true && vars.CLINICAL_E2E_QA_READY == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
