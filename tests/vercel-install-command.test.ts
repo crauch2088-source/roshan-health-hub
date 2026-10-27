@@ -14,7 +14,7 @@ const ciWorkflow = readFileSync(new URL("../.github/workflows/ci.yml", import.me
 const workflowDispatchBlock =
   ciWorkflow.split("  workflow_dispatch:")[1]?.split(/^jobs:/m)[0] ?? "";
 const clinicalE2EJobBlock =
-  ciWorkflow.split("  clinical-e2e-acceptance:")[1]?.split(/^  [a-z0-9_-]+:/m)[0] ?? "";
+  ciWorkflow.split("  clinical-e2e-acceptance:")[1]?.split(/^ {2}[a-z0-9_-]+:/m)[0] ?? "";
 
 test("Vercel installs from the lockfile with a clean npm ci", () => {
   assert.equal(vercelConfig.installCommand, "npm ci");
