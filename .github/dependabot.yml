@@ -12,6 +12,13 @@ updates:
       - dependency-name: typescript
         update-types:
           - "version-update:semver-major"
+      # These major APIs currently break the clinic UI; migrate each separately.
+      - dependency-name: react-day-picker
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: recharts
+        update-types:
+          - "version-update:semver-major"
     groups:
       npm-production-patch-minor:
         dependency-type: production
