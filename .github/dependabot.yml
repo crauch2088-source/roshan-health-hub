@@ -19,6 +19,10 @@ updates:
       - dependency-name: recharts
         update-types:
           - "version-update:semver-major"
+      # React Hooks 7 enables additional purity and effect rules that currently fail the UI lint suite.
+      - dependency-name: eslint-plugin-react-hooks
+        update-types:
+          - "version-update:semver-major"
     groups:
       npm-production-patch-minor:
         dependency-type: production

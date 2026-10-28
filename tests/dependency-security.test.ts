@@ -92,7 +92,12 @@ test("AI server functions use TanStack Start's supported validator API", () => {
 
 test("Dependabot defers known-incompatible major updates until their migration is tested", () => {
   const npmUpdates = dependabotConfig.split("\n  - package-ecosystem: github-actions")[0];
-  for (const dependencyName of ["typescript", "react-day-picker", "recharts"]) {
+  for (const dependencyName of [
+    "typescript",
+    "react-day-picker",
+    "recharts",
+    "eslint-plugin-react-hooks",
+  ]) {
     assert.match(
       npmUpdates,
       new RegExp(
