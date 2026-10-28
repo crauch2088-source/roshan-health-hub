@@ -2033,3 +2033,9 @@ Prioritize lab-lead approval of the catalog and an authenticated production smok
 - Candidate policy adds a Dependabot ignore rule for only `eslint-plugin-react-hooks` semver-major updates. Patch/minor updates remain enabled. `tests/dependency-security.test.ts` now asserts this deferral alongside the existing TypeScript, `react-day-picker`, and Recharts major guards.
 - Candidate touches only `.github/dependabot.yml`, the source regression guard, and evidence docs. It does not change `package.json`, `package-lock.json`, application runtime, database/Auth, production data, or deployment settings.
 - **Status:** candidate branch/PR and exact-head CI evidence pending. Keep PR #128 unmerged; after this policy change is merged, close/regenerate the grouped update and inspect the remaining major upgrades on their own exact head.
+
+
+## Exact-head CI formatting follow-up — 2026-10-28
+
+- The first PR #129 CI attempt, run [40649362381](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40649362381), failed the insurance-claim UI validation workflow's shared lint step only because Prettier wanted the new four-package assertion array split across lines in `tests/dependency-security.test.ts:95`. This was a formatting failure, not an application, database, or insurance-claim assertion failure.
+- The test array is reformatted in a follow-up commit without changing policy or behavior. Exact-head CI is rerunning; do not merge until the rerun completes successfully.
