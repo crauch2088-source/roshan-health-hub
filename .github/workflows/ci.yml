@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check grants and RLS in migrations dated 2026-10-30 onward
         run: python3 scripts/verify-supabase-data-api-grants.py
 
@@ -49,7 +49,7 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Create isolated schema and apply reversal function
@@ -79,7 +79,7 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Execute audit trigger behavioral tests
         env:
           PGPASSWORD: postgres
@@ -106,7 +106,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Create isolated Phase 36 schema fixture
@@ -135,7 +135,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Replay canonical v112 baseline, platform shims, and migrations 113–114
@@ -182,7 +182,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute atomic patient registration tests
         env:
           PGPASSWORD: postgres
@@ -211,7 +211,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute atomic invoice integration tests
         env:
           PGPASSWORD: postgres
@@ -238,7 +238,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute visit invoice consolidation tests
         env:
           PGPASSWORD: postgres
@@ -270,7 +270,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute atomic pharmacy dispense and invoice tests
         env:
           PGPASSWORD: postgres
@@ -303,7 +303,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute visit form options authorization tests
         env:
           PGPASSWORD: postgres
@@ -330,7 +330,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute current app profile authorization tests
         env:
           PGPASSWORD: postgres
@@ -347,10 +347,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -436,7 +436,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Execute clinic-local queue-date regression
         env:
           PGPASSWORD: postgres
@@ -453,7 +453,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify frozen historical snapshot plus live forward-source mappings
         run: python3 scripts/verify-migration-source-parity.py
 
@@ -475,7 +475,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Apply synthetic fixture and replay-safe policy migration
         env:
           PGPASSWORD: postgres
@@ -503,7 +503,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Replay Phase 31 security and Phase 32 index migrations on disposable PostgreSQL 17
@@ -539,7 +539,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify canonical v112 baseline builds from an empty database
         env:
           PGPASSWORD: postgres
@@ -576,7 +576,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Replay canonical schema and Phase 33 integration assertions
