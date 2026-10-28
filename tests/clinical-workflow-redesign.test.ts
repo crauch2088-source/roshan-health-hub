@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { calcAge } from "../src/lib/medical.ts";
 import {
   createEmptyPrescriptionDraft,
   validatePrescriptionDrafts,
@@ -28,6 +29,16 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
   assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "10";
   assert.equal(validatePrescriptionDrafts([draft]), null);
+});
+
+test("patient age treats missing, malformed, impossible, and future DOB values as unknown", () => {
+  assert.equal(calcAge(null), null);
+  assert.equal(calcAge(""), null);
+  assert.equal(calcAge("not-a-date"), null);
+  assert.equal(calcAge("2026-02-30"), null);
+  assert.equal(calcAge("2026-13-01"), null);
+  assert.equal(calcAge("2999-01-01"), null);
+  assert.equal(typeof calcAge("2000-02-29"), "number");
 });
 
 test("consultation tabs expose accessible tab semantics, bilingual labels and arrow navigation", () => {
