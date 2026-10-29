@@ -115,9 +115,8 @@ test("Dependabot defers known-incompatible major updates until their migration i
         "- dependency-name:\\s*[\"']?" +
           dependencyName +
           "[\"']?\\s*\\n\\s+update-types:\\s*\\n\\s+- .*version-update:semver-major",
-      ),")}["']?\\s*\\n\\s+update-types:\\s*\\n\\s+- .*version-update:semver-major`,
       ),
-      `${dependencyName} major updates must stay deferred until compatibility is tested`,
+      \`\${dependencyName} major updates must stay deferred until compatibility is tested\`,
     );
   }
 });
