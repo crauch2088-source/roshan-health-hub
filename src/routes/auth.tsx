@@ -42,12 +42,13 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [setupNeeded, setSetupNeeded] = useState(false);
+  const [setupCheckFailed, setSetupCheckFailed] = useState(false);
 
   useEffect(() => {
     if (window.location.hash.includes("type=recovery")) setMode("recover");
     rpc<boolean>("setup_required")
       .then((need) => setSetupNeeded(Boolean(need)))
-      .catch(() => setSetupNeeded(false));
+      .catch(() => setSetupCheckFailed(true));
   }, []);
 
   useEffect(() => {
@@ -178,8 +179,25 @@ function AuthPage() {
                 </button>
               </div>
 
-              {setupNeeded ? (
+              {setupCheckFailed ? (
+                <div className="mt-4 space-y-3" role="status">
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "ar"
+                      ? "تعذّر التحقق من حالة التهيئة. يمكنك إعادة المحاولة من صفحة التهيئة الأولى."
+                      : "Could not check setup status. You can retry from the first-time setup page."}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => void navigate({ to: "/setup" })}
+                  >
+                    {t("first_run_setup")}
+                  </Button>
+                </div>
+              ) : setupNeeded ? (
                 <Button
+                  type="button"
                   variant="outline"
                   className="mt-4 w-full"
                   onClick={() => void navigate({ to: "/setup" })}

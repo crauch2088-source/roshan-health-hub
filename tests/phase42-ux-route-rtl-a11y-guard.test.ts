@@ -175,8 +175,13 @@ test("Phase 44 public auth/setup pages use POST forms, skip links, semantic main
 
   assert.match(
     setupPage,
-    /permission denied\/i\.test\(e\.message\)[\s\S]*?setRequired\(false\)[\s\S]*?return;[\s\S]*?setError\(e\.message\)/,
+    /e instanceof Error && \/permission denied\/i\.test\(e\.message\)[\s\S]*?setRequired\(false\)[\s\S]*?return;/,
     "permission-denied from setup_required must mark setup as not required without exposing an error",
+  );
+  assert.match(
+    setupPage,
+    /setCheckFailed\(true\)[\s\S]*?setError\(e instanceof Error \? e\.message : String\(e\)\)/,
+    "non-permission setup-status errors must be reported without changing denial handling",
   );
 
   for (const [field, autoComplete] of [
@@ -195,4 +200,55 @@ test("Phase 44 public auth/setup pages use POST forms, skip links, semantic main
       `setup field ${field} must expose the ${autoComplete} autocomplete token`,
     );
   }
+});
+
+test("public setup does not misreport a failed status check as complete and offers retry", () => {
+  const setupPage = read("../src/routes/setup.tsx");
+  const failureBranch = setupPage.indexOf("checkFailed ? (");
+  const completedBranch = setupPage.indexOf(": !required ? (");
+
+  assert.ok(failureBranch >= 0, "setup status failure must have its own UI state");
+  assert.ok(
+    completedBranch > failureBranch,
+    "failure state must be checked before setup-complete state",
+  );
+  assert.match(setupPage, /setCheckFailed\(true\)/, "non-permission RPC failures must be recorded");
+  assert.match(
+    setupPage,
+    /onClick=\{\(\) => void checkSetupRequired\(\)\}/,
+    "staff must be able to retry the status check",
+  );
+  assert.match(
+    setupPage.slice(failureBranch, completedBranch),
+    /t\("retry"\)/,
+    "retry action must have a localized label",
+  );
+});
+
+test("public root routes setup-status failures to the setup retry path", () => {
+  const landingPage = read("../src/routes/index.tsx");
+
+  assert.match(
+    landingPage,
+    /\.catch\(\(\) => \{[\s\S]*?void navigate\(\{ to: "\/setup", replace: true \}\);/,
+    "root must route a failed setup-status check to the recovery screen, not hide setup on sign-in",
+  );
+});
+
+test("public auth preserves a first-run recovery path when setup status cannot be checked", () => {
+  const authPage = read("../src/routes/auth.tsx");
+  const failureBranch = authPage.indexOf("setupCheckFailed ? (");
+  const setupNeededBranch = authPage.indexOf("setupNeeded ? (");
+
+  assert.ok(failureBranch >= 0, "auth must expose the status-check failure state");
+  assert.ok(
+    setupNeededBranch > failureBranch,
+    "failure recovery must not depend on a successful check",
+  );
+  assert.match(authPage, /catch\(\(\) => setSetupCheckFailed\(true\)\)/);
+  assert.match(
+    authPage,
+    /onClick=\{\(\) => void navigate\(\{ to: "\/setup" \}\)\}/,
+    "auth must link to setup's safe retry/completion state",
+  );
 });

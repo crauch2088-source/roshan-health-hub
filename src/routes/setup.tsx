@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ErrorBox, Field } from "@/components/kit";
 import { Button } from "@/components/ui/button";
@@ -36,23 +36,34 @@ function SetupPage() {
   const { refresh } = useAuth();
   const [checking, setChecking] = useState(true);
   const [required, setRequired] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "" });
 
-  useEffect(() => {
-    rpc<boolean>("setup_required")
-      .then((need) => setRequired(Boolean(need)))
-      .catch((e: Error) => {
-        if (/permission denied/i.test(e.message)) {
-          // The setup RPC is intentionally unavailable to anon after initialization.
-          setRequired(false);
-          return;
-        }
-        setError(e.message);
-      })
-      .finally(() => setChecking(false));
+  const checkSetupRequired = useCallback(async () => {
+    setChecking(true);
+    setCheckFailed(false);
+    setError(null);
+    try {
+      const need = await rpc<boolean>("setup_required");
+      setRequired(Boolean(need));
+    } catch (e) {
+      if (e instanceof Error && /permission denied/i.test(e.message)) {
+        // The setup RPC is intentionally unavailable to anon after initialization.
+        setRequired(false);
+        return;
+      }
+      setCheckFailed(true);
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setChecking(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void checkSetupRequired();
+  }, [checkSetupRequired]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,6 +139,21 @@ function SetupPage() {
               <ErrorBox error={error} />
               {checking ? (
                 <p className="text-sm text-muted-foreground">{t("loading")}</p>
+              ) : checkFailed ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground" role="status">
+                    {lang === "ar"
+                      ? "تعذّر التحقق من حالة التهيئة. تحقق من اتصالك وحاول مرة أخرى."
+                      : "Could not check setup status. Check your connection and try again."}
+                  </p>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => void checkSetupRequired()}
+                  >
+                    {t("retry")}
+                  </Button>
+                </div>
               ) : !required ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-success">
