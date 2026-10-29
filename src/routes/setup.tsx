@@ -54,8 +54,8 @@ function SetupPage() {
         setRequired(false);
         return;
       }
+      console.warn("[public/setup] status check failed; server details suppressed");
       setCheckFailed(true);
-      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setChecking(false);
     }
@@ -76,7 +76,9 @@ function SetupPage() {
         password: form.password,
         options: { emailRedirectTo: window.location.origin },
       });
-      if (suErr && !/already/i.test(suErr.message)) throw new Error(suErr.message);
+      if (suErr && !/already/i.test(suErr.message)) {
+        throw new Error("First-run account creation failed");
+      }
 
       if (!signUp?.session) {
         const { error: siErr } = await supabase.auth.signInWithPassword({
@@ -84,11 +86,7 @@ function SetupPage() {
           password: form.password,
         });
         if (siErr) {
-          throw new Error(
-            lang === "ar"
-              ? `${siErr.message} — إذا كان تأكيد البريد مطلوباً، افتح رابط التأكيد ثم أعد المحاولة.`
-              : `${siErr.message} — if email confirmation is enabled, confirm the address then retry.`,
-          );
+          throw new Error("First-run account sign-in failed");
         }
       }
 
@@ -101,8 +99,13 @@ function SetupPage() {
 
       await refresh();
       void navigate({ to: "/dashboard", replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      console.warn("[public/setup] first-run submission failed; server details suppressed");
+      setError(
+        lang === "ar"
+          ? "تعذّر إكمال التهيئة. تحقق من البيانات والاتصال، وأكّد بريدك الإلكتروني إذا طُلب منك ذلك، ثم حاول مرة أخرى."
+          : "Could not complete setup. Check the details and connection, confirm your email if prompted, and try again.",
+      );
     } finally {
       setBusy(false);
     }

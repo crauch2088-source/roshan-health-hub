@@ -67,17 +67,30 @@ function AuthPage() {
         const { error: e2 } = await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo: `${window.location.origin}/auth`,
         });
-        if (e2) throw new Error(e2.message);
+        if (e2) throw new Error("Password reset request failed");
         toast.success(lang === "ar" ? "تم إرسال رابط الاستعادة" : "Reset link sent");
         setMode("signin");
       } else {
         const { error: e3 } = await supabase.auth.updateUser({ password });
-        if (e3) throw new Error(e3.message);
+        if (e3) throw new Error("Password recovery update failed");
         toast.success(t("saved"));
         void navigate({ to: "/dashboard", replace: true });
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      console.warn(`[public/auth] ${mode} failed; server details suppressed`);
+      setError(
+        lang === "ar"
+          ? mode === "signin"
+            ? "تعذّر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور ثم حاول مرة أخرى."
+            : mode === "forgot"
+              ? "تعذّر إرسال رابط إعادة تعيين كلمة المرور. تحقق من العنوان وحاول مرة أخرى."
+              : "تعذّر تحديث كلمة المرور. افتح رابط استعادة صالحاً ثم حاول مرة أخرى."
+          : mode === "signin"
+            ? "Sign-in failed. Check the email and password, then try again."
+            : mode === "forgot"
+              ? "Could not send a password-reset link. Check the address and try again."
+              : "Could not update the password. Open a valid recovery link and try again.",
+      );
     } finally {
       setBusy(false);
     }

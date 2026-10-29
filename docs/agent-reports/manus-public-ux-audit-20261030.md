@@ -1,58 +1,62 @@
-# Public Unauthenticated UX Source Audit — 2026-10-30
+# Public UX and Public Error-Disclosure Audit — 2026-10-30
 
-## Scope and baseline
+## Scope and provenance
 
-This audit covers the three public page routes listed in `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md`: `/`, `/auth`, and `/setup`. It is a source-level review on branch `agent/manus-public-ux-20261030`, created from verified `origin/main` SHA `83bcfd9a46f55ff16e9c6a2133f5e01d696f7d79`.
+This source-level audit covers the public routes listed in `docs/UX_ROUTE_ACCEPTANCE_MATRIX_2026-10-27.md`: `/`, `/auth`, and `/setup`. Work remains on the existing branch `agent/manus-public-ux-20261030` and PR #139, based on main SHA `83bcfd9a46f55ff16e9c6a2133f5e01d696f7d79`. The security follow-up addresses the review comment on PR #139: [raw setup error disclosure finding](https://github.com/crauch2088-source/roshan-health-hub/pull/139#issuecomment-6511240097). No competing PR was created.
 
-Before implementation, open PR #125 was reviewed and found limited to the authenticated prescription composer, clinical age parsing, and its evidence log; no files from that workstream were edited. PR #135 was already merged. Its `/setup` autocomplete tokens (`name`, `email`, `tel`, `new-password`) are present and were left unchanged. Issue #95 remains open.
+PR #125 was reviewed and remains limited to the authenticated prescription composer, clinical age parsing, and its evidence log; no files from that workstream were edited. PR #135 is already merged. Its `/setup` autocomplete tokens (`name`, `email`, `tel`, `new-password`) remain unchanged. Issue #95 remains open.
 
-## Source audit observations
+## Error-path trace and changes
 
-- `/` checks the session, sends signed-in users to `/dashboard`, and directs unauthenticated users according to `setup_required`. Its loading view uses a full-viewport flex layout, horizontal padding, and localized app/loading text.
-- `/auth` uses a semantic main landmark and skip link. Email and password inputs are wrapped in the shared `Field` component, which provides label association. Native email/required/minimum-length constraints, a disabled submitting button, `ErrorBox` error announcements, password-reset/recovery modes, and an Arabic/English toggle are present. Username/current-password/new-password autocomplete tokens are set.
-- `/setup` uses a semantic main landmark and skip link. Its fields are labeled, required constraints are native, and the merged PR #135 autocomplete tokens remain intact. The setup status permission-denial handling intentionally renders the completed-setup path after initialization.
-- The language provider updates the document `lang` and `dir` when language changes; authentication/setup email and password controls use LTR direction. Public cards and controls use source-level max-width/full-width/padding rules. This is not evidence that any viewport was rendered without overflow.
-- No password-visibility toggle is present in the reviewed public forms. This was recorded as an observation, not changed: the source review alone does not establish that a reveal control is a product requirement or a defect.
+### `/setup`
 
-## Confirmed defects and fixes
+- `setup_required` initial checks and retry attempts share `checkSetupRequired`. The expected permission-denial branch reads the error message only to distinguish an initialized system; it does not store or display that text. Other failures enter the retry state, whose status copy is fixed and localized.
+- Signup, existing-account sign-in, `bootstrap_super_admin`, and auth refresh errors all reach the submit catch. That catch now displays fixed Arabic/English recovery guidance, including a reminder to confirm email if prompted. Provider and RPC messages are not placed in the rendered error state.
+- `ErrorBox` remains for accessible submission-error announcement, but its state can now be cleared or set only to fixed localized copy. The status/retry UI provides its own generic recovery text.
+- The only diagnostics emitted by these catches are fixed operation labels stating that server details are suppressed; no error object, message, code, stack, token, SQL, schema, or RPC name is logged.
 
-### 1. Setup-status RPC failure could be shown as “Setup complete”
+### `/auth`
 
-Before the change, `required` initialized to `false`. A non-permission rejection from `setup_required` only set an error, after which the route rendered the `!required` completion branch. That could falsely tell a first-run operator that setup had already completed and offered no retry.
+Direct sign-in, password-reset request, and recovery-password update failures previously flowed verbatim into `ErrorBox`. Each now maps to fixed Arabic/English, action-oriented guidance. The diagnostic breadcrumb includes only the constrained UI mode (`signin`, `forgot`, or `recover`) and never includes provider error data.
 
-The regression test was run before the fix and failed because `/setup` had no dedicated failure branch. The route now keeps a distinct `checkFailed` state, displays an Arabic/English explanation and error alert, and exposes a localized retry button. Only the expected permission-denial path maps to the initialized/completed state.
+### `/`
 
-### 2. Root status-check failure hid the setup recovery route
+The route contains no raw-error display. A failed setup-status check redirects to `/setup`, where the status can be retried without rendering a bootstrap form while the check is unknown.
 
-Before the change, a failed `setup_required` lookup on `/` redirected to `/auth`. The auth route also hid the first-run setup link when its own status lookup failed. The pre-fix root regression test failed because this fallback sent users to sign-in rather than a retry path.
+The reviewed acceptance matrix contains no other public recovery page. No additional route or shared error component was changed.
 
-The root fallback now routes to `/setup`, whose status-check failure state is explicit and retryable. This does not expose the bootstrap form when status is unknown.
+## Regression and local validation evidence
 
-### 3. Direct `/auth` status-check failure silently hid first-run setup
+Two new source-contract regressions were first run against the vulnerable version: both failed (**0/2 passed**), because raw error text flowed into the public `ErrorBox` state. After the fix, both passed (**2/2**). The updated focused Phase 42 public-route guard passed **12/12**. The full guard suite passed **227/227**, with zero failures.
 
-Opening `/auth` directly previously converted any status-check failure into `setupNeeded=false` with no feedback or path to setup. The pre-fix regression test failed because there was no failure state or `/setup` recovery action.
-
-The auth route now shows a localized status message and a button to `/setup` when the check fails. That destination safely retries and preserves the established permission-denial behavior.
-
-## Regression evidence
-
-Three focused source-contract regressions were added to the existing Phase 42 UX guard so they run under the repository's current `test:guard` script. Each was observed failing before its corresponding route change. After implementation, the focused Phase 42 file passed **10/10** tests. The existing setup permission-denial contract remains asserted.
-
-Final local validation on this branch completed with exit code 0:
+The final local validation completed successfully:
 
 - `npm run lint` — passed.
 - `npm run typecheck` — passed.
-- `npm run build` — passed; Vite completed all build targets.
-- `npm run test:guard` — **225 passed, 0 failed**.
-- `git diff --check` — passed.
+- `npm run build` — passed.
+- `npm run test:guard` — 227 passed, 0 failed.
+- Prettier check and `git diff --check` — passed.
+
+PR-specific GitHub Actions conclusions and URLs are recorded in the PR #139 follow-up comment after the new commit’s workflows finish.
+
+## Manual browser and accessibility acceptance checklist — not yet performed
+
+Because browser and Vercel access are unavailable, the following items remain for a human reviewer on the preview or an authorized test environment:
+
+- [ ] At **320px**, **360px**, **390px**, and **430px** viewport widths, verify `/`, `/auth`, and `/setup` have no horizontal scrolling, clipped labels/buttons, or content hidden by the on-screen keyboard; confirm the page remains scrollable when needed.
+- [ ] With keyboard only, tab and Shift+Tab through each route; confirm logical order, visible focus on every interactive control, working skip links, Enter submission, and reachable retry/setup-navigation actions without a focus trap.
+- [ ] Render both **Arabic RTL** and **English LTR**. Confirm page direction, text alignment, navigation, and error/status placement; ensure email, phone, and password inputs remain readable in LTR in both languages.
+- [ ] Test browser/password-manager autofill: `/setup` name/email/telephone/new-password; `/auth` username/current-password; and recovery new-password. Confirm values land in the intended fields and toggling language does not clear or misplace them.
+- [ ] With a screen reader, confirm labels announce for each input; skip links and button names are meaningful; generic error and recovery messages are announced once and correspond to the active form; retry is discoverable; no raw backend/server text is visible or announced.
+- [ ] In an authorized non-production test, simulate distinct failures (status check, retry, signup, sign-in, bootstrap, password-reset request, password update) using a sentinel backend message. Confirm the UI and browser console contain only the fixed localized copy and coarse operation labels—not the sentinel or backend details.
 
 ## Acceptance limits and safety
 
-No browser was available for this task. Actual rendering, screenshots, browser autofill, keyboard-only traversal/focus movement, and behavior at 320, 360, 390, and 430 CSS-pixel widths remain **NOT TESTED**. Arabic RTL and English LTR were reviewed only from source; they are not claimed as visual acceptance. No protected Vercel deployment was accessed or inspected, and no deployment was requested.
+These are source and automated-test results only. The manual viewport, keyboard, RTL/LTR rendering, autofill, screen-reader, and simulated-error checks above are **NOT TESTED** here. No browser or visual acceptance is claimed. No protected Vercel deployment was accessed or inspected, and no deployment, promotion, or preview action was manually performed.
 
-No production data, Supabase Auth settings, credentials, environment variables, database schema, clinical/financial workflows, or deployment settings were modified. Issue #95 remains open; this source-level change does not close the UX release acceptance gate or claim clinical acceptance.
+No Supabase/Auth settings, database/schema/migrations, production data, credentials, deployment settings, QA infrastructure, or clinical/financial workflow was modified. The canonical clinical acceptance gate and Issue #95 remain open; this follow-up does not claim clinical acceptance.
 
-## Changed files
+## Changed files in PR #139
 
 - `src/routes/index.tsx`
 - `src/routes/auth.tsx`

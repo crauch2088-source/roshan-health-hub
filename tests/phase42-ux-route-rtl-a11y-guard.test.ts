@@ -180,8 +180,8 @@ test("Phase 44 public auth/setup pages use POST forms, skip links, semantic main
   );
   assert.match(
     setupPage,
-    /setCheckFailed\(true\)[\s\S]*?setError\(e instanceof Error \? e\.message : String\(e\)\)/,
-    "non-permission setup-status errors must be reported without changing denial handling",
+    /setCheckFailed\(true\)/,
+    "non-permission setup-status errors must enter the retry state without changing denial handling",
   );
 
   for (const [field, autoComplete] of [
@@ -250,5 +250,53 @@ test("public auth preserves a first-run recovery path when setup status cannot b
     authPage,
     /onClick=\{\(\) => void navigate\(\{ to: "\/setup" \}\)\}/,
     "auth must link to setup's safe retry/completion state",
+  );
+});
+
+test("public setup never passes backend error text to the rendered ErrorBox", () => {
+  const setupPage = read("../src/routes/setup.tsx");
+  const errorAssignments = Array.from(
+    setupPage.matchAll(/setError\(([\s\S]*?)\);/g),
+    ([, expression]) => expression.trim(),
+  );
+
+  assert.match(setupPage, /<ErrorBox error=\{error\} \/>/);
+  assert.ok(errorAssignments.length > 0, "setup error state remains explicitly controlled");
+  assert.ok(
+    errorAssignments.every(
+      (expression) => expression === "null" || expression.startsWith('lang === "ar"'),
+    ),
+    "only cleared state or fixed localized copy may reach the public setup ErrorBox",
+  );
+  assert.doesNotMatch(setupPage, /throw new Error\(suErr\.message\)|\$\{siErr\.message\}/);
+  assert.match(
+    setupPage,
+    /console\.warn\("\[public\/setup\] status check failed; server details suppressed"\)/,
+  );
+  assert.match(
+    setupPage,
+    /console\.warn\("\[public\/setup\] first-run submission failed; server details suppressed"\)/,
+  );
+});
+
+test("public auth does not pass backend error text to its rendered ErrorBox", () => {
+  const authPage = read("../src/routes/auth.tsx");
+  const errorAssignments = Array.from(
+    authPage.matchAll(/setError\(([\s\S]*?)\);/g),
+    ([, expression]) => expression.trim(),
+  );
+
+  assert.match(authPage, /<ErrorBox error=\{error\} \/>/);
+  assert.ok(errorAssignments.length > 0, "auth error state remains explicitly controlled");
+  assert.ok(
+    errorAssignments.every(
+      (expression) => expression === "null" || expression.startsWith('lang === "ar"'),
+    ),
+    "only cleared state or fixed localized copy may reach the public auth ErrorBox",
+  );
+  assert.doesNotMatch(authPage, /new Error\(e[23]\.message\)/);
+  assert.match(
+    authPage,
+    /console\.warn\(`\[public\/auth\] \$\{mode\} failed; server details suppressed`\)/,
   );
 });
