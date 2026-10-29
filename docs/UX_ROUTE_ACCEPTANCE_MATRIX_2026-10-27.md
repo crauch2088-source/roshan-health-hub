@@ -95,3 +95,11 @@
 - The Phase 42 regression test asserts explicit `PermissionGate` read permissions for patient chart, visit consultation, lab order, and invoice detail. The matrix records `patients.read`, `visits.read`, `lab.read`, and `billing.read` and marks these rows `SOURCE-GUARDED`.
 - Post-merge main CI `40466624118`, finance isolation `40466624144`, and push-on-main/CodeQL `40466623836` passed on merge SHA `e54892d...`. The production app remains READY on `123bc8b...` because the merged commit does not alter watched runtime/build paths.
 - These are source-level assertions only. All protected-route visual/keyboard/viewport checks remain `NOT TESTED`; role and clinical workflows remain `BLOCKED/DEFERRED`. Keep Issue #95 open.
+
+
+## First-run setup form autocomplete source contract — candidate (2026-10-29)
+
+- Source review found that the first-run `/setup` form did not declare autocomplete tokens for the full-name, email, phone, or new-password fields. Added the standard tokens `name`, `email`, `tel`, and `new-password` to support mobile autofill and reduce unnecessary typing without changing validation or account-creation behavior.
+- Extended the existing Phase 42/44 source guard to require the correct token inside each individual setup field wrapper. Test-first evidence: the guard failed before the implementation change on the missing `name` token, then passed 7/7 after all four tokens were added.
+- This is a source-level UX contract only. No browser rendering, keyboard, viewport, login, form submission, or account-creation acceptance was performed. The public setup route remains **NOT TESTED** for visual/interactive acceptance; Issue #95 remains open.
+- No production database/Auth settings, clinical/financial records, or deployment configuration were changed. Exact-head GitHub Actions and preview evidence are pending on the candidate PR.
