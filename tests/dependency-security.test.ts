@@ -106,6 +106,8 @@ test("Dependabot defers known-incompatible major updates until their migration i
     "react-day-picker",
     "recharts",
     "eslint-plugin-react-hooks",
+    "eslint",
+    "@eslint/js",
   ]) {
     assert.match(
       npmUpdates,
