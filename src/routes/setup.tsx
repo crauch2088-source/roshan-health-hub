@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ErrorBox, Field } from "@/components/kit";
 import { Button } from "@/components/ui/button";
@@ -36,23 +36,34 @@ function SetupPage() {
   const { refresh } = useAuth();
   const [checking, setChecking] = useState(true);
   const [required, setRequired] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "" });
 
-  useEffect(() => {
-    rpc<boolean>("setup_required")
-      .then((need) => setRequired(Boolean(need)))
-      .catch((e: Error) => {
-        if (/permission denied/i.test(e.message)) {
-          // The setup RPC is intentionally unavailable to anon after initialization.
-          setRequired(false);
-          return;
-        }
-        setError(e.message);
-      })
-      .finally(() => setChecking(false));
+  const checkSetupRequired = useCallback(async () => {
+    setChecking(true);
+    setCheckFailed(false);
+    setError(null);
+    try {
+      const need = await rpc<boolean>("setup_required");
+      setRequired(Boolean(need));
+    } catch (e) {
+      if (e instanceof Error && /permission denied/i.test(e.message)) {
+        // The setup RPC is intentionally unavailable to anon after initialization.
+        setRequired(false);
+        return;
+      }
+      console.warn("[public/setup] status check failed; server details suppressed");
+      setCheckFailed(true);
+    } finally {
+      setChecking(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void checkSetupRequired();
+  }, [checkSetupRequired]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +76,9 @@ function SetupPage() {
         password: form.password,
         options: { emailRedirectTo: window.location.origin },
       });
-      if (suErr && !/already/i.test(suErr.message)) throw new Error(suErr.message);
+      if (suErr && !/already/i.test(suErr.message)) {
+        throw new Error("First-run account creation failed");
+      }
 
       if (!signUp?.session) {
         const { error: siErr } = await supabase.auth.signInWithPassword({
@@ -73,11 +86,7 @@ function SetupPage() {
           password: form.password,
         });
         if (siErr) {
-          throw new Error(
-            lang === "ar"
-              ? `${siErr.message} — إذا كان تأكيد البريد مطلوباً، افتح رابط التأكيد ثم أعد المحاولة.`
-              : `${siErr.message} — if email confirmation is enabled, confirm the address then retry.`,
-          );
+          throw new Error("First-run account sign-in failed");
         }
       }
 
@@ -90,8 +99,13 @@ function SetupPage() {
 
       await refresh();
       void navigate({ to: "/dashboard", replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      console.warn("[public/setup] first-run submission failed; server details suppressed");
+      setError(
+        lang === "ar"
+          ? "تعذّر إكمال التهيئة. تحقق من البيانات والاتصال، وأكّد بريدك الإلكتروني إذا طُلب منك ذلك، ثم حاول مرة أخرى."
+          : "Could not complete setup. Check the details and connection, confirm your email if prompted, and try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -128,6 +142,21 @@ function SetupPage() {
               <ErrorBox error={error} />
               {checking ? (
                 <p className="text-sm text-muted-foreground">{t("loading")}</p>
+              ) : checkFailed ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground" role="status">
+                    {lang === "ar"
+                      ? "تعذّر التحقق من حالة التهيئة. تحقق من اتصالك وحاول مرة أخرى."
+                      : "Could not check setup status. Check your connection and try again."}
+                  </p>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => void checkSetupRequired()}
+                  >
+                    {t("retry")}
+                  </Button>
+                </div>
               ) : !required ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-success">
