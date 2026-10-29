@@ -53,7 +53,7 @@
 |---|---|---|---|---|
 | `/` | `src/routes/index.tsx` | Redirects to `/auth` in the production fetch | PUBLIC SMOKE PASS (redirect) | NOT TESTED |
 | `/auth` | `src/routes/auth.tsx` | Arabic sign-in title, skip link, email/password fields, closed public registration notice, English toggle visible | PUBLIC SMOKE PASS (Arabic) | NOT TESTED |
-| `/setup` | `src/routes/setup.tsx` | Arabic completed-setup state and sign-in link; no form submitted | PUBLIC SMOKE PASS (completed state) | NOT TESTED |
+| `/setup` | `src/routes/setup.tsx` | Arabic completed-setup state and sign-in link; source declares `name`, `email`, `tel`, and `new-password` autocomplete hints on first-run fields; no form submitted | PUBLIC SMOKE PASS (completed state) | NOT TESTED |
 
 ## Coverage gaps and next acceptance session
 
@@ -97,9 +97,11 @@
 - These are source-level assertions only. All protected-route visual/keyboard/viewport checks remain `NOT TESTED`; role and clinical workflows remain `BLOCKED/DEFERRED`. Keep Issue #95 open.
 
 
-## First-run setup form autocomplete source contract — candidate (2026-10-29)
+## First-run setup form autocomplete — merged verification (2026-10-29 07:16 UTC)
 
-- Source review found that the first-run `/setup` form did not declare autocomplete tokens for the full-name, email, phone, or new-password fields. Added the standard tokens `name`, `email`, `tel`, and `new-password` to support mobile autofill and reduce unnecessary typing without changing validation or account-creation behavior.
-- Extended the existing Phase 42/44 source guard to require the correct token inside each individual setup field wrapper. Test-first evidence: the guard failed before the implementation change on the missing `name` token, then passed 7/7 after all four tokens were added.
-- This is a source-level UX contract only. No browser rendering, keyboard, viewport, login, form submission, or account-creation acceptance was performed. The public setup route remains **NOT TESTED** for visual/interactive acceptance; Issue #95 remains open.
-- No production database/Auth settings, clinical/financial records, or deployment configuration were changed. Exact-head GitHub Actions and preview evidence are pending on the candidate PR.
+- PR [#135](https://github.com/crauch2088-source/roshan-health-hub/pull/135) merged at `891bfecbf2f111beef268ad3b38e97dbbdf60913` from tested head `d099905d48657b31573d0436b4cfbac352660851`. The route guard passed 7/7 on the PR head after a test-first failure before adding the missing `name` token.
+- Exact PR-head CI [40833367547](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40833367547): 25 successful checks and one intentional skip. Post-merge main CI [40834349240](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40834349240) passed all 17 executable jobs; finance isolation [40834349266](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40834349266) and push-on-main/CodeQL [40834348594](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40834348594) succeeded. The canonical PG17/authenticated clinical acceptance gate was skipped by its explicit deferral, not passed.
+- Vercel production deployment [`dpl_DSSjcqHnXds33gc7QEbd6JL7vnfm`](https://vercel.com/roshan45/roshan-health-hub/DSSjcqHnXds33gc7QEbd6JL7vnfm) is `READY`/`PROMOTED` for the merge SHA, with `roshan-health-hub.vercel.app` assigned and no alias error.
+- Only source-level autocomplete metadata and regression coverage changed. No setup submission, login, account creation, Auth configuration, production database write, or clinical/financial record creation occurred. The `/setup` route's live public smoke still returns the completed-setup state; the new first-run fields were not exercised in a browser.
+- Browser autofill, 320/360/390/430px rendering, RTL/LTR, keyboard/focus order, and authenticated role/workflow acceptance remain **NOT TESTED** or **BLOCKED/DEFERRED**. Keep Issue [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95) open and clinical E2E deferred until an isolated free QA login path and synthetic clinician identity are available.
+- **Next:** continue non-authenticated source-level UX review, then run authorized interactive acceptance when the QA gate is satisfied.
