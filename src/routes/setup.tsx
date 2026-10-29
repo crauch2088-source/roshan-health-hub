@@ -142,6 +142,7 @@ function SetupPage() {
                   <Field label={t("full_name")}>
                     <Input
                       required
+                      autoComplete="name"
                       value={form.full_name}
                       onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                     />
@@ -151,6 +152,7 @@ function SetupPage() {
                       type="email"
                       dir="ltr"
                       required
+                      autoComplete="email"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                     />
@@ -158,6 +160,7 @@ function SetupPage() {
                   <Field label={t("phone")}>
                     <Input
                       dir="ltr"
+                      autoComplete="tel"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     />
@@ -168,6 +171,7 @@ function SetupPage() {
                       dir="ltr"
                       required
                       minLength={8}
+                      autoComplete="new-password"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
                     />
