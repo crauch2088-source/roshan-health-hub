@@ -58,6 +58,15 @@ test("any locked fast-uri package includes the URI parsing security fixes", () =
   );
 });
 
+test("all locked seroval packages include the 1.6.11 serialization security fixes", () => {
+  const versions = getLockedVersions("seroval");
+  assert.ok(versions.length >= 1, "expected at least one locked seroval package");
+  assert.ok(
+    versions.every((version) => compareVersions(version, "1.6.11") >= 0),
+    `vulnerable seroval version found: ${versions.join(", ")}`,
+  );
+});
+
 test("existing server validators retain Zod v3 behavior through the supported v3 entry point", () => {
   const schema = z.object({
     full_name: z.string().trim().min(1),
@@ -90,10 +99,20 @@ test("AI server functions use TanStack Start's supported validator API", () => {
   );
 });
 
-test("Dependabot defers TypeScript major updates until the lint toolchain supports them", () => {
+test("Dependabot defers known-incompatible major updates until their migration is tested", () => {
   const npmUpdates = dependabotConfig.split("\n  - package-ecosystem: github-actions")[0];
-  assert.match(
-    npmUpdates,
-    /ignore:\s*\n\s+- dependency-name:\s*typescript\s*\n\s+update-types:\s*\n\s+- "version-update:semver-major"/,
-  );
+  for (const dependencyName of [
+    "typescript",
+    "react-day-picker",
+    "recharts",
+    "eslint-plugin-react-hooks",
+  ]) {
+    assert.match(
+      npmUpdates,
+      new RegExp(
+        `- dependency-name:\\s*${dependencyName}\\s*\\n\\s+update-types:\\s*\\n\\s+- .*version-update:semver-major`,
+      ),
+      `${dependencyName} major updates must stay deferred until compatibility is tested`,
+    );
+  }
 });
