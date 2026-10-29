@@ -178,4 +178,21 @@ test("Phase 44 public auth/setup pages use POST forms, skip links, semantic main
     /permission denied\/i\.test\(e\.message\)[\s\S]*?setRequired\(false\)[\s\S]*?return;[\s\S]*?setError\(e\.message\)/,
     "permission-denied from setup_required must mark setup as not required without exposing an error",
   );
+
+  for (const [field, autoComplete] of [
+    ["full_name", "name"],
+    ["email", "email"],
+    ["phone", "tel"],
+    ["password", "new-password"],
+  ] as const) {
+    const start = setupPage.indexOf(`<Field label={t("${field}")}>`);
+    assert.notEqual(start, -1, `setup field ${field} must remain present`);
+    const end = setupPage.indexOf("</Field>", start);
+    assert.ok(end > start, `setup field ${field} must have a closing field wrapper`);
+    assert.match(
+      setupPage.slice(start, end),
+      new RegExp(`autoComplete="${autoComplete}"`),
+      `setup field ${field} must expose the ${autoComplete} autocomplete token`,
+    );
+  }
 });
