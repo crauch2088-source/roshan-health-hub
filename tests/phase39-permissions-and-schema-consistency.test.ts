@@ -20,6 +20,29 @@ function walk(dir: string, extensions: string[], out: string[] = []): string[] {
   return out;
 }
 
+test("QA-only view security reconciliation is scoped, idempotent and fail-closed", () => {
+  const qaPatch = readFileSync(
+    join(dbRoot, "qa/20261030_restore_security_invoker_on_qa_views.sql"),
+    "utf8",
+  );
+
+  assert.match(qaPatch, /QA-only/i);
+  assert.match(qaPatch, /hopfohcnrtbiqjkgeukz/);
+  assert.match(qaPatch, /BEGIN;[\\s\\S]*COMMIT;/);
+  for (const view of [
+    "cashbox_balance",
+    "follow_ups",
+    "v_patient_receivables",
+    "v_supplier_outstanding",
+  ]) {
+    assert.match(
+      qaPatch,
+      new RegExp(`ALTER\\s+VIEW\\s+public\\.${view}\\s+SET\\s*\\(\\s*security_invoker\\s*=\\s*true\\s*\\)`, "i"),
+    );
+  }
+  assert.match(qaPatch, /missing_views IS NOT NULL[\\s\\S]*RAISE EXCEPTION/);
+});
+
 test("canonical PostgreSQL baseline preserves caller RLS on exposed views", () => {
   const protectedViews = [
     "cashbox_balance",
