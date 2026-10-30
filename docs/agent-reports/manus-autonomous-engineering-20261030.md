@@ -89,3 +89,27 @@ Complete the P1 Storage contract review for [Issue #142](https://github.com/crau
 - **Main `83bcfd9`:** [CI — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40835690794), [finance-only RPC isolation — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40835690771), [CodeQL — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40835690024).
 - **PR #139 at `1922e975`:** [CI — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40976565047), [insurance claim UI — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40976565030), [insurance claim integrity — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40976565066), [privileged-role guard — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40976565322), [prescription atomicity — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40976564943). The canonical PG17/authenticated clinical acceptance job was **skipped** inside CI.
 - **PR #141 at `ace1d0e`:** [CI — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40978509299), [insurance claim UI — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40978509247), [insurance claim integrity — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40978509180), [privileged-role guard — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40978509171), [prescription atomicity — success](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/40978509167). CodeQL was neutral; the canonical clinical acceptance job was **skipped** inside CI.
+
+
+## Post-merge correction and public browser evidence — 2026-10-30 06:18 UTC
+
+The earlier section's instruction to keep PR #143 unmerged is superseded by the verified merge below.
+
+### PR #143 — merged
+
+- Exact PR head: `1e2b33fe2b0623ec6cc7ce0ba1887fce2cae4032`; base: `83bcfd9a46f55ff16e9c6a2133f5e01d696f7d79`.
+- The `createStaffUser` caller lookup now excludes `deleted_at IS NOT NULL` before role resolution. The source regression failed before the fix (6/7) and passed after it (7/7); the complete local guard suite passed 223/223, and lint/typecheck/build/Prettier/diff checks passed.
+- Exact-head CI had 26 completed checks: 25 success and one intentional skip for canonical PG17/authenticated clinical acceptance. CI `40980550179`, insurance UI `40980550229`, privileged-role guard `40980550184`, prescription atomicity `40980550433`, insurance integrity `40980550239`, and CodeQL `40980547599` succeeded.
+- Squash merge result: `0f70bead85a98b694dafea2367dd757e92709797`. Post-merge main CI `41012970778`, finance isolation `41012970822`, and push-on-main/CodeQL `41012970625` all succeeded. Final main check list: 21 success, one explicit clinical-acceptance skip.
+- Vercel production deployment `dpl_5a33UNnHfi5SFRySeDJUrccUQZYB` is READY on the exact merge SHA with no alias error. No production/QA DB, Auth, clinical, or financial data was written.
+
+### PR #144 — public browser tests passed; workflow hardening still required
+
+- Exact PR head `5edbb553c0d2f636f2b93685dfb4f0582084d942`; exact-head checks: 28 success and one intentional PG17/authenticated-clinical skip.
+- Post-deployment Chromium run [comment 6512335108](https://github.com/crauch2088-source/roshan-health-hub/pull/144#issuecomment-6512335108): **16/16 passed**, zero failures/flakes/skips, across 320/360/390/430px; Arabic RTL, English LTR, axe-core WCAG 2.1 A/AA, root/auth/setup/dashboard recovery, overflow, autocomplete, and public error-disclosure checks passed.
+- Preview SSO was temporarily suspended only for that controlled run and restored immediately; no bypass credential or test data was retained.
+- Two workflow review comments are open: [trusted checkout must be pinned to main](https://github.com/crauch2088-source/roshan-health-hub/pull/144#discussion_r4420964628), and [Vercel hostname allowlist must be project-specific](https://github.com/crauch2088-source/roshan-health-hub/pull/144#discussion_r4420964625). PR #144 remains open pending those fixes and branch refresh.
+
+### Current next step
+
+Issue #142 remains the next P1 data-integrity task: add authoritative entity-to-branch binding and PostgreSQL 17 positive/negative policy tests. Keep the live QA reconciliation separate and explicitly approved. Issue #95 remains open; public browser automation does not equal staff acceptance. Authenticated clinical E2E remains deferred because the QA identities do not yet have usable credentials through an approved Auth Admin path and QA view security-invoker remediation #140 has not been applied/rechecked.
