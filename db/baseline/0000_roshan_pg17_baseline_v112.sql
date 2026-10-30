@@ -7592,8 +7592,6 @@ DO $baseline_assertions$ BEGIN
 END $baseline_assertions$;
 GRANT SELECT ON TABLE public.v_patient_receivables TO authenticated;
 
-COMMIT;
-
 -- Preserve caller RLS on views exposed to authenticated users. PostgreSQL 15+
 -- stores this option in pg_class.reloptions; the assertion makes baseline
 -- replay fail closed if a future catalog export drops it.
@@ -7625,3 +7623,5 @@ BEGIN
   END IF;
 END
 $roshan_security_invoker_guard$;
+
+COMMIT;
