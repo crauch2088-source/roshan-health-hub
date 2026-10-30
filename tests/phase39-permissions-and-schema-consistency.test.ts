@@ -37,7 +37,10 @@ test("QA-only view security reconciliation is scoped, idempotent and fail-closed
   ]) {
     assert.match(
       qaPatch,
-      new RegExp(`ALTER\\s+VIEW\\s+public\\.${view}\\s+SET\\s*\\(\\s*security_invoker\\s*=\\s*true\\s*\\)`, "i"),
+      new RegExp(
+        `ALTER\\s+VIEW\\s+public\\.${view}\\s+SET\\s*\\(\\s*security_invoker\\s*=\\s*true\\s*\\)`,
+        "i",
+      ),
     );
   }
   assert.match(qaPatch, /missing_views IS NOT NULL[\\s\\S]*RAISE EXCEPTION/);
