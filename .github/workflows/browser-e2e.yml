@@ -1,0 +1,81 @@
+name: Browser E2E — public routes
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: "Exact Roshan Vercel preview or production URL to test"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roshan-browser-e2e-${{ inputs.deployment_url }}
+  cancel-in-progress: true
+
+jobs:
+  public-routes:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/browser-acceptance-automation-20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted test harness from main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate target deployment URL
+        env:
+          INPUT_DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from "node:fs";
+
+          const raw = process.env.INPUT_DEPLOYMENT_URL;
+          const url = new URL(raw);
+          const allowed =
+            url.protocol === "https:" &&
+            (url.hostname === "roshan-health-hub.vercel.app" ||
+              url.hostname === "roshan-health-hub-roshan45.vercel.app" ||
+              url.hostname.endsWith("-roshan45.vercel.app"));
+
+          if (!allowed) {
+            throw new Error("The target must be a verified Roshan Vercel deployment URL.");
+          }
+
+          appendFileSync(process.env.GITHUB_ENV, "BASE_URL=" + url.origin + "\n");
+          NODE
+
+      - name: Install pinned browser-test packages without changing the app lockfile
+        run: npm install --no-save --package-lock=false @playwright/test@1.64.1 @axe-core/playwright@4.14.0
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run public-route browser and accessibility tests
+        run: npm run test:e2e:public
+
+      - name: Upload browser report and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roshan-browser-e2e-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
