@@ -1,20 +1,29 @@
 /** Clinical + formatting calculations shared across the app. */
 
+/** Returns an age only when DOB is a real YYYY-MM-DD calendar date. */
 export function calcAge(dob?: string | null): number | null {
   if (!dob) return null;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const d = new Date(0);
+  d.setHours(0, 0, 0, 0);
+  d.setFullYear(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
+    return null;
+  }
+
   const now = new Date();
-
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) {
+  let age = now.getFullYear() - year;
+  const m = now.getMonth() - (month - 1);
+  if (m < 0 || (m === 0 && now.getDate() < day)) {
     age--;
   }
   return age >= 0 ? age : null;
 }
-
 export function calcBmi(weightKg?: number | null, heightCm?: number | null): number | null {
   if (!weightKg || !heightCm || heightCm <= 0) return null;
   const m = heightCm / 100;

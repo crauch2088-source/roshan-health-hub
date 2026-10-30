@@ -22,7 +22,7 @@ import { n, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { calcAge } from "@/lib/medical";
-import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
+import { DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
@@ -36,6 +36,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const patientRow = rel((visitQ.data ?? [])[0], "patients");
   const patient = s(patientRow, "id");
   const patientAge = calcAge(s(patientRow, "date_of_birth"));
+  const ageVerificationNeeded =
+    Boolean(patient) && patientAge == null && !visitQ.isLoading && !visitQ.error;
   const vitalsQ = useRows<Row[]>(["clinic-vitals-weight", visitId], () =>
     supabase
       .from("vitals")
@@ -71,6 +73,10 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const [form, setForm] = useState<PrescriptionDraft>(createEmptyPrescriptionDraft);
   const [items, setItems] = useState<PrescriptionDraft[]>([]);
   const [external, setExternal] = useState(false);
+  const isKnownDosageForm = DOSAGE_FORMS.some((option) => option.value === form.dosage_form);
+  const isKnownFrequency = FREQUENCIES.some((option) => option.value === form.frequency);
+  const isKnownDuration = DURATIONS.some((option) => option.value === form.duration);
+  const isKnownRoute = ROUTES.some((option) => option.value === form.route);
   const medicines = (medsQ.data ?? []) as Row[];
   const filtered = medicines;
   const chooseMedicine = (id: string) => {
@@ -107,6 +113,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               : "Complete the frequency for every medicine",
           "missing-duration":
             lang === "ar" ? "أكمل مدة العلاج لكل دواء" : "Complete the duration for every medicine",
+          "missing-dosage-form":
+            lang === "ar"
+              ? "حدّد الشكل الدوائي لكل دواء"
+              : "Specify a dosage form for every medicine",
+          "missing-route":
+            lang === "ar"
+              ? "حدّد طريق الإعطاء لكل دواء"
+              : "Specify an administration route for every medicine",
           "invalid-quantity":
             lang === "ar"
               ? "يجب أن تكون كمية كل دواء عددًا صحيحًا موجبًا"
@@ -162,6 +176,16 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             <Button variant="outline" size="sm" onClick={() => void visitQ.refetch()}>
               {lang === "ar" ? "إعادة المحاولة" : "Retry visit"}
             </Button>
+          </div>
+        ) : null}
+        {ageVerificationNeeded ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
+          >
+            {lang === "ar"
+              ? "تعذّر التحقق من عمر المريض من تاريخ الميلاد المسجّل. تحقّق من تاريخ الميلاد والاحتياطات المرتبطة بالعمر قبل اعتماد الوصفة."
+              : "Patient age could not be verified from the recorded date of birth. Confirm the date of birth and age-specific precautions before approving this prescription."}
           </div>
         ) : null}
         {isPediatric ? (
@@ -285,72 +309,92 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             }}
             placeholder={lang === "ar" ? "اسم الدواء" : "Medication name"}
           />
-          <Select
-            value={form.dosage_form || "custom"}
-            onValueChange={(v) => setForm({ ...form, dosage_form: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "الشكل الدوائي" : "Dosage form"} />
-            </SelectTrigger>
-            <SelectContent>
-              {DOSAGE_FORMS.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "إدخال يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Select
+              value={isKnownDosageForm ? form.dosage_form : "custom"}
+              onValueChange={(v) => setForm({ ...form, dosage_form: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "الشكل الدوائي" : "Dosage form"} />
+              </SelectTrigger>
+              <SelectContent>
+                {DOSAGE_FORMS.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "إدخال يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownDosageForm ? (
+              <Input
+                value={form.dosage_form}
+                onChange={(e) => setForm({ ...form, dosage_form: e.target.value })}
+                aria-label={lang === "ar" ? "الشكل الدوائي المخصص" : "Custom dosage form"}
+                placeholder={lang === "ar" ? "أدخل الشكل الدوائي" : "Enter dosage form"}
+              />
+            ) : null}
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
-          <Select
-            value={form.dose || "custom"}
-            onValueChange={(v) => setForm({ ...form, dose: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "الجرعة" : "Dose"} />
-            </SelectTrigger>
-            <SelectContent>
-              {DOSES.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={form.frequency || "custom"}
-            onValueChange={(v) => setForm({ ...form, frequency: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "التكرار" : "Frequency"} />
-            </SelectTrigger>
-            <SelectContent>
-              {FREQUENCIES.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={form.duration || "custom"}
-            onValueChange={(v) => setForm({ ...form, duration: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "المدة" : "Duration"} />
-            </SelectTrigger>
-            <SelectContent>
-              {DURATIONS.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            value={form.dose}
+            onChange={(e) => setForm({ ...form, dose: e.target.value })}
+            aria-label={lang === "ar" ? "الجرعة والوحدة" : "Dose and unit"}
+            placeholder={lang === "ar" ? "الجرعة مع الوحدة" : "Dose including unit"}
+          />
+          <div className="space-y-2">
+            <Select
+              value={isKnownFrequency ? form.frequency : "custom"}
+              onValueChange={(v) => setForm({ ...form, frequency: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "التكرار" : "Frequency"} />
+              </SelectTrigger>
+              <SelectContent>
+                {FREQUENCIES.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownFrequency ? (
+              <Input
+                value={form.frequency}
+                onChange={(e) => setForm({ ...form, frequency: e.target.value })}
+                aria-label={lang === "ar" ? "تكرار مخصص" : "Custom frequency"}
+                placeholder={lang === "ar" ? "أدخل التكرار والتوقيت" : "Enter frequency and timing"}
+              />
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Select
+              value={isKnownDuration ? form.duration : "custom"}
+              onValueChange={(v) => setForm({ ...form, duration: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "المدة" : "Duration"} />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATIONS.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownDuration ? (
+              <Input
+                value={form.duration}
+                onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                aria-label={lang === "ar" ? "مدة مخصصة" : "Custom duration"}
+                placeholder={lang === "ar" ? "أدخل المدة ووحدتها" : "Enter duration and unit"}
+              />
+            ) : null}
+          </div>
           <Input
             dir="ltr"
             type="number"
@@ -361,22 +405,32 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Select
-            value={form.route || "custom"}
-            onValueChange={(v) => setForm({ ...form, route: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "طريق الإعطاء" : "Route"} />
-            </SelectTrigger>
-            <SelectContent>
-              {ROUTES.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Select
+              value={isKnownRoute ? form.route : "custom"}
+              onValueChange={(v) => setForm({ ...form, route: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "طريق الإعطاء" : "Route"} />
+              </SelectTrigger>
+              <SelectContent>
+                {ROUTES.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownRoute ? (
+              <Input
+                value={form.route}
+                onChange={(e) => setForm({ ...form, route: e.target.value })}
+                aria-label={lang === "ar" ? "طريق إعطاء مخصص" : "Custom administration route"}
+                placeholder={lang === "ar" ? "أدخل طريق الإعطاء" : "Enter administration route"}
+              />
+            ) : null}
+          </div>
           <Input
             value={form.instructions}
             onChange={(e) => setForm({ ...form, instructions: e.target.value })}

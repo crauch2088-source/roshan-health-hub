@@ -92,6 +92,8 @@ export type PrescriptionValidationError =
   | "missing-dose"
   | "missing-frequency"
   | "missing-duration"
+  | "missing-dosage-form"
+  | "missing-route"
   | "invalid-quantity";
 
 /** Validates completeness only; deliberately does not recommend a dose or regimen. */
@@ -104,6 +106,8 @@ export function validatePrescriptionDrafts(
     if (!item.dose.trim()) return "missing-dose";
     if (!item.frequency.trim()) return "missing-frequency";
     if (!item.duration.trim()) return "missing-duration";
+    if (!item.dosage_form.trim()) return "missing-dosage-form";
+    if (!item.route.trim()) return "missing-route";
     const quantity = Number(item.quantity);
     if (!Number.isInteger(quantity) || quantity < 1) return "invalid-quantity";
   }
