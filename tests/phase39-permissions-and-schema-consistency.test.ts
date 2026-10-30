@@ -20,6 +20,29 @@ function walk(dir: string, extensions: string[], out: string[] = []): string[] {
   return out;
 }
 
+test("canonical PostgreSQL baseline preserves caller RLS on exposed views", () => {
+  const protectedViews = [
+    "cashbox_balance",
+    "follow_ups",
+    "v_patient_receivables",
+    "v_supplier_outstanding",
+  ];
+
+  for (const view of protectedViews) {
+    assert.match(
+      baseline,
+      new RegExp(
+        `CREATE\\s+OR\\s+REPLACE\\s+VIEW\\s+public\\.${view}\\s+WITH\\s*\\(\\s*security_invoker\\s*=\\s*true\\s*\\)\\s+AS`,
+        "i",
+      ),
+      `Baseline view public.${view} must apply caller permissions and RLS`,
+    );
+  }
+
+  assert.match(baseline, /DO \\$roshan_security_invoker_guard\\\$/);
+  assert.match(baseline, /missing_views IS NOT NULL[\\s\\S]*RAISE EXCEPTION/);
+});
+
 test("literal permission codes are declared or explicitly tracked as catalog-only", () => {
   const appSource = walk(srcRoot, [".ts", ".tsx", ".js", ".jsx"])
     .map((path) => readFileSync(path, "utf8"))
