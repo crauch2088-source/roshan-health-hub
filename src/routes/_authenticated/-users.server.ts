@@ -35,6 +35,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
       .from("users")
       .select("id, active, role_id, roles(code)")
       .eq("auth_user_id", callerAuth.user.id)
+      .is("deleted_at", null)
       .maybeSingle();
     if (callerRowError || !callerRow || !callerRow.active) {
       throw new Error("Your account is not permitted to create users.");
