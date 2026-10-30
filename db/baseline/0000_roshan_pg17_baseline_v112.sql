@@ -1164,7 +1164,8 @@ ALTER TABLE public.vitals ADD CONSTRAINT vitals_visit_id_fkey FOREIGN KEY (visit
 -- Indexes
 
 -- Views
-CREATE OR REPLACE VIEW public.cashbox_balance AS  SELECT COALESCE(sum(amount), 0::numeric)::numeric(14,2) AS balance,
+CREATE OR REPLACE VIEW public.cashbox_balance
+WITH (security_invoker = true) AS  SELECT COALESCE(sum(amount), 0::numeric)::numeric(14,2) AS balance,
     COALESCE(sum(
         CASE
             WHEN amount > 0::numeric THEN amount
@@ -1177,7 +1178,8 @@ CREATE OR REPLACE VIEW public.cashbox_balance AS  SELECT COALESCE(sum(amount), 0
         END), 0::numeric)::numeric(14,2) AS total_out
    FROM cashbox_transactions
   WHERE deleted_at IS NULL;;
-CREATE OR REPLACE VIEW public.follow_ups AS  SELECT f.id,
+CREATE OR REPLACE VIEW public.follow_ups
+WITH (security_invoker = true) AS  SELECT f.id,
     f.patient_id,
     f.visit_id,
     f.followup_date,
@@ -1211,7 +1213,8 @@ CREATE OR REPLACE VIEW public.followups_with_creator AS  SELECT f.id,
     u.full_name AS creator_full_name
    FROM followups f
      LEFT JOIN users u ON u.id = f.created_by;;
-CREATE OR REPLACE VIEW public.v_patient_receivables AS  SELECT i.id AS invoice_id,
+CREATE OR REPLACE VIEW public.v_patient_receivables
+WITH (security_invoker = true) AS  SELECT i.id AS invoice_id,
     i.invoice_number,
     i.invoice_date,
     i.patient_id,
@@ -1225,7 +1228,8 @@ CREATE OR REPLACE VIEW public.v_patient_receivables AS  SELECT i.id AS invoice_i
    FROM invoices i
      LEFT JOIN patients p ON p.id = i.patient_id
   WHERE i.deleted_at IS NULL AND GREATEST(COALESCE(i.net_amount, i.total_amount, 0::numeric) - COALESCE(i.paid_amount, 0::numeric), 0::numeric) > 0::numeric;;
-CREATE OR REPLACE VIEW public.v_supplier_outstanding AS  SELECT s.id AS supplier_id,
+CREATE OR REPLACE VIEW public.v_supplier_outstanding
+WITH (security_invoker = true) AS  SELECT s.id AS supplier_id,
     s.name,
     s.phone,
     count(b.id) FILTER (WHERE b.id IS NOT NULL) AS bills_count,
@@ -7587,5 +7591,37 @@ DO $baseline_assertions$ BEGIN
  IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='v') <> 5 THEN RAISE EXCEPTION 'baseline view count mismatch'; END IF;
 END $baseline_assertions$;
 GRANT SELECT ON TABLE public.v_patient_receivables TO authenticated;
+
+-- Preserve caller RLS on views exposed to authenticated users. PostgreSQL 15+
+-- stores this option in pg_class.reloptions; the assertion makes baseline
+-- replay fail closed if a future catalog export drops it.
+DO $roshan_security_invoker_guard$
+DECLARE
+  missing_views text[];
+BEGIN
+  SELECT array_agg(required.view_name ORDER BY required.view_name)
+    INTO missing_views
+  FROM (VALUES
+    ('cashbox_balance'),
+    ('follow_ups'),
+    ('v_patient_receivables'),
+    ('v_supplier_outstanding')
+  ) AS required(view_name)
+  LEFT JOIN pg_class AS view_catalog
+    ON view_catalog.relname = required.view_name
+   AND view_catalog.relnamespace = 'public'::regnamespace
+   AND view_catalog.relkind = 'v'
+  WHERE NOT COALESCE(
+    'security_invoker=true' = ANY(view_catalog.reloptions),
+    false
+  );
+
+  IF missing_views IS NOT NULL THEN
+    RAISE EXCEPTION
+      'Canonical baseline is missing security_invoker=true on views: %',
+      array_to_string(missing_views, ', ');
+  END IF;
+END
+$roshan_security_invoker_guard$;
 
 COMMIT;
