@@ -67,6 +67,12 @@ test("canonical PostgreSQL baseline preserves caller RLS on exposed views", () =
 
   assert.match(baseline, /DO \$roshan_security_invoker_guard\$/);
   assert.match(baseline, /missing_views IS NOT NULL[\s\S]*RAISE EXCEPTION/);
+  const guardPosition = baseline.indexOf("DO $roshan_security_invoker_guard$");
+  const finalCommitPosition = baseline.lastIndexOf("COMMIT;");
+  assert.ok(
+    guardPosition >= 0 && finalCommitPosition > guardPosition,
+    "the security-invoker guard must run before the baseline transaction commits",
+  );
 });
 
 test("literal permission codes are declared or explicitly tracked as catalog-only", () => {
