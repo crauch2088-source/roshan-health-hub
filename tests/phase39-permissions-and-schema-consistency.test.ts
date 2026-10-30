@@ -28,7 +28,7 @@ test("QA-only view security reconciliation is scoped, idempotent and fail-closed
 
   assert.match(qaPatch, /QA-only/i);
   assert.match(qaPatch, /hopfohcnrtbiqjkgeukz/);
-  assert.match(qaPatch, /BEGIN;[\\s\\S]*COMMIT;/);
+  assert.match(qaPatch, /BEGIN;[\s\S]*COMMIT;/);
   for (const view of [
     "cashbox_balance",
     "follow_ups",
@@ -43,7 +43,7 @@ test("QA-only view security reconciliation is scoped, idempotent and fail-closed
       ),
     );
   }
-  assert.match(qaPatch, /missing_views IS NOT NULL[\\s\\S]*RAISE EXCEPTION/);
+  assert.match(qaPatch, /missing_views IS NOT NULL[\s\S]*RAISE EXCEPTION/);
 });
 
 test("canonical PostgreSQL baseline preserves caller RLS on exposed views", () => {
