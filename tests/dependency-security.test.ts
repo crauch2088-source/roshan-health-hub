@@ -58,6 +58,15 @@ test("any locked fast-uri package includes the URI parsing security fixes", () =
   );
 });
 
+test("all locked seroval packages include the 1.6.11 serialization security fixes", () => {
+  const versions = getLockedVersions("seroval");
+  assert.ok(versions.length >= 1, "expected at least one locked seroval package");
+  assert.ok(
+    versions.every((version) => compareVersions(version, "1.6.11") >= 0),
+    `vulnerable seroval version found: ${versions.join(", ")}`,
+  );
+});
+
 test("existing server validators retain Zod v3 behavior through the supported v3 entry point", () => {
   const schema = z.object({
     full_name: z.string().trim().min(1),
