@@ -115,7 +115,7 @@ test("Phase 48 Storage policies bind lab orders and certificates while generic a
   );
   assert.ok(
     binding.includes(
-      "WHEN 'roshan-clinical-attachments' THEN\\n      -- No approved uploader/entity contract exists for this bucket yet.\\n      -- Keep every operation fail-closed until a real call site is reviewed.\\n      RETURN false;",
+      "WHEN 'roshan-clinical-attachments' THEN\n      -- No approved uploader/entity contract exists for this bucket yet.\n      -- Keep every operation fail-closed until a real call site is reviewed.\n      RETURN false;",
     ),
   );
   assert.doesNotMatch(binding, /FROM public\.attachments/);
