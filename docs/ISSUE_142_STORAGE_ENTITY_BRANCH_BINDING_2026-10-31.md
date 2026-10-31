@@ -27,12 +27,12 @@ The forward-only Phase 48 candidate binds the supported lab-order and medical-ce
 
 ## Verification and release boundary
 
-- **Test-first source regression:** the Phase 48 source guard was run against the prior Phase 47 implementation before the correction; it failed as expected (3/4 focused assertions passed). The old Phase 47 dedicated PostgreSQL 17 pass is historical evidence only and does not validate this corrected Phase 48 candidate.
-- Exact-head Phase 48 PostgreSQL 17 workflow, focused Node suites, typecheck, lint, build, aggregate CI, and independent review are pending.
-- The prior aggregate CI failure on PR #148 was the separate 14-moderate `minimatch <11.0.1` npm audit finding (GHSA-g3hv-75wg-m249). Do not force `npm audit fix --force` or use an unvalidated major override.
-
-This is a source/test candidate only. No QA or production SQL was executed, no Storage configuration or bucket visibility was changed, and no object or clinical/financial record was created in a live project. Do not apply the candidate to QA or production without separate explicit authorization and the normal release gates.
+- **Test-first source regression:** the Phase 48 source guard failed against the prior Phase 47 candidate before correction (3/4 focused assertions passed). An initial exact-head lint run then caught one Prettier wrapping error; commit `355d24c04afc333ea8d2848131efbcb87eb38fff` fixed it.
+- **Exact-head Phase 48 PostgreSQL 17: PASS** — PR #148 head `355d24c04afc333ea8d2848131efbcb87eb38fff`, run [41180748822](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41180748822), job `124477494190`; canonical v112 baseline + Phase 34 + Phase 33 assertions + Phase 48 candidate/assertions; 15/15 focused source tests passed.
+- **Exact-head aggregate CI: PASS** — run [41180748870](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41180748870), job `124477494519`; Node 22 lockfile install, role-guard tests, typecheck, lint, and build passed. Production dependency audit found 0 vulnerabilities. The complete dependency tree still reports 14 moderate development-tree `minimatch <11.0.1` advisories; the current gate blocks high/critical in the complete tree but does not claim these moderate findings are fixed.
+- Exact-head PR checks: **27 success, 1 intentionally skipped, 0 failures**. The skipped authenticated clinical acceptance job remains deferred by design. Local Node 24 regressions passed 4/4 and 11/11; a temporary full guard attempt was 220/221 because the shell lacked installed `zod`, so GitHub Actions is authoritative for the dependency-complete run.
+- No QA or production SQL was executed, no Storage configuration or bucket visibility was changed, and no object or clinical/financial record was created in a live project. PR #148 remains draft/open pending independent review and separate release authorization.
 
 ## Next step
 
-Run the exact-head Phase 48 PostgreSQL 17 replay and full regression/CI. Keep PR #148 draft until the aggregate audit gate and independent review are green. Keep Issue #95 open; authenticated clinical E2E remains deferred until the isolated free test environment and suitable synthetic doctor identity are available.
+Obtain independent review of the Phase 48 candidate and assess the separate release gate. Keep Issue #95 open; authenticated clinical E2E remains deferred until the isolated free test environment and suitable synthetic doctor identity are available. Resolve the remaining moderate development-tree minimatch advisories separately and without forced major downgrades. Do not apply this candidate to QA or production without separate explicit authorization and the normal release gates.
