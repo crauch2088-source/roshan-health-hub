@@ -719,3 +719,11 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Candidate migration uses one authoritative server-side timestamp for first completion and repairs active tickets on retry, including replacing stale ticket timestamps while preserving the visit's original completion timestamp and `updated_at`. A completed visit with a missing completion timestamp fails closed for manual repair, avoiding writes to potentially locked visits.
 - Isolated PostgreSQL 17 assertions cover retry repair and timestamp alignment; source guards ensure the browser does not perform a duplicate write.
 - The migration is a candidate only and has **not** been applied to production. Do not claim clinical E2E or UX acceptance from these automated checks.
+
+
+## Live UAT schema discrepancy — Phase 46 candidate (2026-10-31)
+
+- The operator's authenticated production browser test reported successful Super Admin login, settings, synthetic patient registration, visit/queue creation, inventory review, and audit events, but the consultation and pharmacy routes surfaced missing-column errors.
+- Read-only catalog inspection confirmed `patients.allergies` and `prescriptions.branch_id` are absent on both production and isolated QA. Production ledger latest remains `20261020232033` (115 entries). No SQL writes or row changes were performed during inspection.
+- A forward-only candidate and isolated PostgreSQL 17 regression suite are recorded in [the Phase 46 UAT report](UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md). The candidate derives prescription branch from the linked visit and fails closed on invalid parent linkage; it does not use a blanket UPDATE to assign arbitrary branches.
+- No application to QA or production is authorized by this source-preparation task. Apply only after exact-head CI/review and a separate explicit release authorization, then read back columns, FK, trigger, index, and migration ledger.

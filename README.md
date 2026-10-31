@@ -63,6 +63,14 @@
 
 # Roshan Health Hub
 
+## Latest UAT update — 2026-10-31 (Phase 46 candidate)
+
+- Live browser UAT reported successful manager login, settings, synthetic patient registration, visit/queue creation, inventory review, and audit capture.
+- Read-only schema checks on production and isolated QA confirmed two missing columns: `patients.allergies` and `prescriptions.branch_id`.
+- Phase 46 candidate adds the columns, backfills prescription branch only from the linked visit, enforces future branch/patient consistency, and adds PostgreSQL 17 regression coverage. It is not applied to QA or production.
+- Full evidence and retest steps: [UAT Phase 46 report](docs/UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md).
+
+
 **Purpose:** a real, low-cost medical-center ERP/EMR for Roshan Medical Center in Hay Al-Sadaqa, Al-Hasahisa, Gezira, Sudan. This repository is the single application; do not create a parallel/replacement app.
 
 > **Continuity rule:** start every work session by reading this README, then `docs/MASTER_PLAN.md`, `docs/DB_MIGRATION_RECONCILIATION.md`, and `docs/PLUGIN_TOOLING_MAP.md`. Re-check the live repository/PR/CI state before acting because this file is a maintained snapshot, not a substitute for current tool evidence. After each meaningful batch, update this README and the master plan with verified outcomes, commit/PR links, test evidence, blockers, and next actions.
