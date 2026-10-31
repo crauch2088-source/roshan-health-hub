@@ -16,6 +16,13 @@ BEGIN
 
   SELECT data_type INTO v_type
   FROM information_schema.columns
+  WHERE table_schema = 'public' AND table_name = 'patients' AND column_name = 'chronic_conditions';
+  IF v_type IS DISTINCT FROM 'text' THEN
+    RAISE EXCEPTION 'patients.chronic_conditions must exist as text; got %', v_type;
+  END IF;
+
+  SELECT data_type INTO v_type
+  FROM information_schema.columns
   WHERE table_schema = 'public' AND table_name = 'prescriptions' AND column_name = 'branch_id';
   IF v_type IS DISTINCT FROM 'uuid' THEN
     RAISE EXCEPTION 'prescriptions.branch_id must exist as uuid; got %', v_type;

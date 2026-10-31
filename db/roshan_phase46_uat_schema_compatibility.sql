@@ -4,13 +4,16 @@
 BEGIN;
 
 ALTER TABLE public.patients
-  ADD COLUMN IF NOT EXISTS allergies text;
+  ADD COLUMN IF NOT EXISTS allergies text,
+  ADD COLUMN IF NOT EXISTS chronic_conditions text;
 
 ALTER TABLE public.prescriptions
   ADD COLUMN IF NOT EXISTS branch_id uuid;
 
 COMMENT ON COLUMN public.patients.allergies IS
   'Free-text allergy summary reviewed by clinicians; NULL means not recorded, not no known allergies.';
+COMMENT ON COLUMN public.patients.chronic_conditions IS
+  'Free-text chronic-condition summary reviewed by clinicians; NULL means not recorded.';
 COMMENT ON COLUMN public.prescriptions.branch_id IS
   'Authoritative branch copied from the linked visit; set and validated by Phase 46 trigger.';
 
