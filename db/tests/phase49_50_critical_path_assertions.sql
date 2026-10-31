@@ -12,15 +12,20 @@ INSERT INTO public.permissions(id,code,name) VALUES
  ('00000000-0000-0000-0000-000000004021','pharmacy.update','Pharmacy update'),
  ('00000000-0000-0000-0000-000000004022','billing.create','Billing create'),
  ('00000000-0000-0000-0000-000000004023','visits.update','Visits update'),
- ('00000000-0000-0000-0000-000000004024','visits.create','Visits create')
+ ('00000000-0000-0000-0000-000000004024','visits.create','Visits create'),
+('00000000-0000-0000-0000-000000004025','pharmacy.read','Pharmacy read'),
+('00000000-0000-0000-0000-000000004026','billing.read','Billing read'),
+('00000000-0000-0000-0000-000000004027','visits.read','Visits read'),
+('00000000-0000-0000-0000-000000004028','queue.read','Queue read'),
+('00000000-0000-0000-0000-000000004029','queue.update','Queue update')
 ON CONFLICT(code) DO NOTHING;
 INSERT INTO public.role_permissions(role_id,permission_id)
 SELECT '00000000-0000-0000-0000-000000004011'::uuid,p.id FROM public.permissions p
-WHERE p.code IN ('pharmacy.update','billing.create')
+WHERE p.code IN ('pharmacy.update','pharmacy.read','billing.create','billing.read')
 AND NOT EXISTS(SELECT 1 FROM public.role_permissions rp WHERE rp.role_id='00000000-0000-0000-0000-000000004011'::uuid AND rp.permission_id=p.id);
 INSERT INTO public.role_permissions(role_id,permission_id)
 SELECT '00000000-0000-0000-0000-000000004012'::uuid,p.id FROM public.permissions p
-WHERE p.code IN ('visits.update','visits.create')
+WHERE p.code IN ('visits.update','visits.create','visits.read','queue.read','queue.update')
 AND NOT EXISTS(SELECT 1 FROM public.role_permissions rp WHERE rp.role_id='00000000-0000-0000-0000-000000004012'::uuid AND rp.permission_id=p.id);
 INSERT INTO auth.users(id) VALUES
  ('00000000-0000-0000-0000-000000004031'),
@@ -96,33 +101,6 @@ BEGIN
 END;
 $pharmacy$;
 
-RESET ROLE;
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000004032',true);
-DO $completion$
-DECLARE v_first jsonb; v_second jsonb; v_invoice uuid; v_count integer; v_total numeric; v_visit_at timestamptz; v_queue_at timestamptz;
-BEGIN
- v_first:=public.complete_clinical_visit_and_bill('00000000-0000-0000-0000-000000004061');
- v_second:=public.complete_clinical_visit_and_bill('00000000-0000-0000-0000-000000004061');
- IF v_first->>'invoice_id' IS NULL OR v_second->>'invoice_id' IS DISTINCT FROM v_first->>'invoice_id' THEN
-   RAISE EXCEPTION 'visit completion retry did not return the same primary invoice';
- END IF;
- v_invoice:=(v_first->>'invoice_id')::uuid;
- SELECT count(*),coalesce(sum(total_price),0) INTO v_count,v_total FROM public.invoice_items WHERE invoice_id=v_invoice AND deleted_at IS NULL;
- IF v_count<>2 OR v_total<>27.50 THEN RAISE EXCEPTION 'consultation and pharmacy invoice totals did not reconcile'; END IF;
- SELECT completed_at INTO v_visit_at FROM public.visits WHERE id='00000000-0000-0000-0000-000000004061';
- SELECT completed_at INTO v_queue_at FROM public.queue_tickets WHERE visit_id='00000000-0000-0000-0000-000000004061' AND deleted_at IS NULL LIMIT 1;
- IF (SELECT status FROM public.visits WHERE id='00000000-0000-0000-0000-000000004061')<>'completed'
- OR (SELECT status FROM public.queue_tickets WHERE visit_id='00000000-0000-0000-0000-000000004061' AND deleted_at IS NULL LIMIT 1)<>'completed'
- OR v_visit_at IS NULL OR v_visit_at IS DISTINCT FROM v_queue_at THEN
-   RAISE EXCEPTION 'visit and queue completion states/timestamps are inconsistent';
- END IF;
- IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=v_invoice AND item_type='consultation' AND deleted_at IS NULL)<>1 THEN
-   RAISE EXCEPTION 'consultation invoice line duplicated on completion retry';
- END IF;
-END;
-$completion$;
-
 DO $additional_guards$
 DECLARE v_expiry_rejected boolean:=false; v_stock_edit_rejected boolean:=false; v_error text;
 BEGIN
@@ -177,6 +155,48 @@ BEGIN
   END IF;
 END;
 $additional_guards$;
+
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000004032',true);
+DO $completion$
+DECLARE v_first jsonb; v_second jsonb; v_visit_at timestamptz; v_queue_at timestamptz;
+BEGIN
+ v_first:=public.complete_clinical_visit_and_bill('00000000-0000-0000-0000-000000004061');
+ v_second:=public.complete_clinical_visit_and_bill('00000000-0000-0000-0000-000000004061');
+ IF v_first->>'invoice_id' IS NULL OR v_second->>'invoice_id' IS DISTINCT FROM v_first->>'invoice_id' THEN
+   RAISE EXCEPTION 'visit completion retry did not return the same primary invoice';
+ END IF;
+ SELECT completed_at INTO v_visit_at FROM public.visits WHERE id='00000000-0000-0000-0000-000000004061';
+ SELECT completed_at INTO v_queue_at FROM public.queue_tickets WHERE visit_id='00000000-0000-0000-0000-000000004061' AND deleted_at IS NULL LIMIT 1;
+ IF (SELECT status FROM public.visits WHERE id='00000000-0000-0000-0000-000000004061')<>'completed'
+ OR (SELECT status FROM public.queue_tickets WHERE visit_id='00000000-0000-0000-0000-000000004061' AND deleted_at IS NULL LIMIT 1)<>'completed'
+ OR v_visit_at IS NULL OR v_visit_at IS DISTINCT FROM v_queue_at THEN
+   RAISE EXCEPTION 'visit and queue completion states/timestamps are inconsistent';
+ END IF;
+END;
+$completion$;
+
+RESET ROLE;
+SET LOCAL ROLE service_role;
+DO $invoice_reconciliation$
+DECLARE v_invoice uuid; v_count integer; v_total numeric;
+BEGIN
+ SELECT i.id INTO v_invoice FROM public.invoices i
+  WHERE i.visit_id='00000000-0000-0000-0000-000000004061'
+    AND i.is_primary IS TRUE AND i.deleted_at IS NULL;
+ IF v_invoice IS NULL THEN RAISE EXCEPTION 'primary invoice missing after clinical completion'; END IF;
+ SELECT count(*),coalesce(sum(total_price),0) INTO v_count,v_total
+  FROM public.invoice_items WHERE invoice_id=v_invoice AND deleted_at IS NULL;
+ IF v_count<>2 OR v_total<>27.50 THEN RAISE EXCEPTION 'consultation and pharmacy invoice totals did not reconcile'; END IF;
+ IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=v_invoice AND item_type='consultation' AND deleted_at IS NULL)<>1
+    OR (SELECT count(*) FROM public.invoice_items WHERE invoice_id=v_invoice AND item_type='pharmacy' AND deleted_at IS NULL)<>1 THEN
+  RAISE EXCEPTION 'consultation or pharmacy invoice line duplicated/missing after completion retry';
+ END IF;
+END;
+$invoice_reconciliation$;
+
+
 
 DO $privileges$
 BEGIN
