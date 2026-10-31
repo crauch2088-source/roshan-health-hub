@@ -51,3 +51,6 @@ Phase 49 also closes the legacy stock-entry route: medicine master creation star
 
 
 The medicine master UI has also been corrected: initial stock is no longer entered on a medicine record. New medicine records start at zero and all positive quantities enter through the idempotent batch receipt RPC with a required expiry. The database protects this invariant against direct authenticated edits.
+
+
+The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.

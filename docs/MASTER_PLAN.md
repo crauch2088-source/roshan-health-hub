@@ -2203,3 +2203,6 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 ### Phase 49 stock-entry source-of-truth correction
 
 Medicine master creation no longer accepts initial quantity or batch-level fields. It starts at zero; positive stock enters through the batch receipt RPC with required expiry. Database guards prevent direct authenticated stock aggregate edits and direct browser writes to pharmacy_inventory/stock_movements.
+
+
+The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.

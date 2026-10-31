@@ -47,3 +47,6 @@ The medicine master form no longer accepts an initial stock count, batch number 
 
 
 The dashboard now exposes a separate unknown-expiry batch panel instead of silently treating those rows as healthy or conflating them with expired stock. Batch receipt requires an expiry date in the UI, and the database trigger enforces the same invariant.
+
+
+The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.
