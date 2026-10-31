@@ -19,14 +19,22 @@ test("pharmacy RPC is idempotent and branch/expiry safe",()=>{
  assert.match(p49,/fn_dispense_prescription_with_invoice/);
  assert.match(p49,/inv\.expiry_date IS NOT NULL/);
  assert.match(p49,/inv\.branch_id = v_patient_branch/);
+ assert.match(p49,/v_patient_branch,v_uid/);
+ assert.match(p49,/pharmacy_batch_expiry_required/);
+ assert.match(p49,/medicine_stock_is_rpc_managed/);
  assert.match(pharmacy,/atomic_pharmacy_dispense/);
  assert.match(pharmacy,/p_request_id: requestId/);
  assert.match(route,/crypto\.randomUUID\(\)/);
  assert.match(route,/dispenseRequestIds/);
+ const inventorySource = read("../src/routes/_authenticated/inventory.tsx");
+ const medicineForm = inventorySource.slice(inventorySource.indexOf("function MedicinesTab"),inventorySource.indexOf("function BatchesTab"));
+ assert.match(medicineForm,/stock_quantity: 0/);
+ assert.doesNotMatch(medicineForm,/form\.stock_quantity|form\.batch_number|form\.expiry_date/);
+ assert.match(inventorySource,/expiry_required/);
 });
 test("stock movement ledger is browser read-only and branch-scoped",()=>{
- assert.match(p49,/REVOKE ALL ON TABLE public\.stock_movements FROM PUBLIC, authenticated/);
- assert.match(p49,/GRANT SELECT ON TABLE public\.stock_movements TO authenticated/);
+ assert.match(p49,/REVOKE ALL ON TABLE public\.stock_movements, public\.pharmacy_inventory FROM PUBLIC, authenticated/);
+ assert.match(p49,/GRANT SELECT ON TABLE public\.stock_movements, public\.pharmacy_inventory TO authenticated/);
  assert.match(p49,/CREATE POLICY stock_movements_select[\s\S]*TO authenticated/);
  assert.match(p49,/private\.app_has_branch_access\(stock_movements\.branch_id\)/);
 });

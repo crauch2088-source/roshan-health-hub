@@ -16,6 +16,12 @@ on:
       - "db/tests/phase49_50_critical_path_assertions.sql"
       - "tests/phase49-50-critical-path.test.ts"
       - "tests/pharmacy-expiry.test.ts"
+      - "src/lib/pharmacy.ts"
+      - "src/lib/pharmacy-expiry.ts"
+      - "src/routes/_authenticated/pharmacy.tsx"
+      - "src/routes/_authenticated/inventory.tsx"
+      - "src/routes/_authenticated/reports.tsx"
+      - "src/lib/i18n.tsx"
       - ".github/workflows/ci-phase49-50-critical-path.yml"
   push:
     branches: [main]

@@ -48,3 +48,6 @@ This is not deployed or accepted. The candidate preserves the currently deployed
 
 
 Phase 49 also closes the legacy stock-entry route: medicine master creation starts at zero, positive batch receipt requires expiry at UI and database layers, browser writes to pharmacy_inventory and stock_movements are revoked, and direct authenticated changes to medicines.stock_quantity are rejected.
+
+
+The medicine master UI has also been corrected: initial stock is no longer entered on a medicine record. New medicine records start at zero and all positive quantities enter through the idempotent batch receipt RPC with a required expiry. The database protects this invariant against direct authenticated edits.

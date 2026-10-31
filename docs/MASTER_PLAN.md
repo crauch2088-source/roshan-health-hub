@@ -2198,3 +2198,8 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Positive-quantity batch receipt requires expiry in the UI and at the database trigger.
 - pharmacy_inventory is browser SELECT-only; direct authenticated edits to medicines.stock_quantity are rejected.
 - Legacy NULL-expiry batches are retained for reconciliation but excluded from dispensing.
+
+
+### Phase 49 stock-entry source-of-truth correction
+
+Medicine master creation no longer accepts initial quantity or batch-level fields. It starts at zero; positive stock enters through the batch receipt RPC with required expiry. Database guards prevent direct authenticated stock aggregate edits and direct browser writes to pharmacy_inventory/stock_movements.

@@ -144,3 +144,10 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Positive-quantity batches require a known expiry; legacy NULL-expiry rows remain stored but non-dispensable.
 - Direct authenticated changes to medicines.stock_quantity are rejected; the aggregate is maintained by atomic receive/dispense RPCs.
 - Stock movement branch attribution for super-admin no-visit dispensing is anchored to the patient's branch.
+
+
+### Phase 49 stock-entry source-of-truth correction
+
+- New medicine master records are created with stock_quantity = 0; initial quantities must enter through the atomic batch receipt RPC.
+- Batch receipt requires expiry at both UI and database layers. Existing legacy NULL-expiry rows are retained but cannot be dispensed.
+- Direct authenticated changes to medicines.stock_quantity are rejected; pharmacy_inventory and stock_movements are browser SELECT-only.

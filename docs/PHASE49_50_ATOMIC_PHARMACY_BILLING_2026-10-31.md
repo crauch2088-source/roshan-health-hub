@@ -39,3 +39,8 @@ This does not replace browser/staff UAT. The candidate is not applied to QA or p
 - Positive-quantity pharmacy batches require a known expiry at database level. Legacy NULL-expiry rows remain stored but cannot be dispensed until reconciled.
 - Browser clients have SELECT-only access to pharmacy_inventory and stock_movements. Direct authenticated changes to medicines.stock_quantity are rejected; atomic receive/dispense RPCs maintain the aggregate.
 - Stock movement branch attribution for no-visit super-admin dispensing is anchored to the patient's branch, not a nullable user branch.
+
+
+### Stock-entry source-of-truth correction
+
+The medicine master form no longer accepts an initial stock count, batch number or medicine-level expiry. New medicine records start at zero stock; every positive stock quantity must enter through the atomic batch receipt RPC. The database rejects positive-quantity batches without an expiry and rejects direct authenticated edits to medicines.stock_quantity. Existing legacy NULL-expiry batches are retained for reconciliation, but the dispense RPC excludes them.
