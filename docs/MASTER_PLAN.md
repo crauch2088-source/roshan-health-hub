@@ -2180,3 +2180,13 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Final exact-head PR checks: 27 success, 1 intentionally skipped (authenticated clinical acceptance), 0 failures. Local Node 24 source tests passed 4/4 and 11/11; the full guard run in the temporary shell was 220/221 only because `zod` was not installed there.
 - No QA/production SQL, Storage configuration, object, patient, clinical, or financial data was changed. PR #148 remains draft/open pending independent review and separate release authorization. Issue #95 remains open; authenticated clinical E2E stays deferred until an isolated free test environment and suitable synthetic doctor identity exist.
 - **Next:** independent review and release-gate assessment for Phase 48; then non-breaking remediation of the 14 moderate dev-only minimatch advisories, followed by Issue #146's public setup RPC gap. Do not apply Phase 48 to QA/production without separate explicit authorization.
+
+
+## Phase 49-50 — atomic pharmacy, expiry, billing and clinical completion (2026-10-31)
+
+- Candidate migrations: db/roshan_phase49_atomic_pharmacy_dispense.sql and db/roshan_phase50_clinical_visit_bill_completion.sql.
+- Phase 49 adds request-key idempotency around FEFO dispense-and-invoice, enforces patient/visit/batch branch agreement even for super-admin, rejects expired and unknown-expiry batches, revokes the dispense-only RPC, and makes stock_movements browser read-only with authenticated branch-scoped SELECT.
+- Phase 50 bills consultation fee before visit completion, aligns visit/queue timestamps atomically, and preserves complete_visit_atomic(uuid) as the existing UI compatibility signature.
+- Audit aggregate is count-only and omits raw clinical JSON snapshots. Branch filters do not guess branch ownership for legacy branchless audit rows.
+- Disposable PostgreSQL 17 workflow replays v112 + Phases 34/46/47/48/49/50 and asserts expiry exclusion, idempotent retry, duplicate rejection, invoice reconciliation and queue timestamp alignment.
+- Candidate only: not applied to QA or production. Production rollout remains blocked on exact-head review/CI, manual backup and restore rehearsal, and authenticated staff UAT. See docs/PHASE49_50_ATOMIC_PHARMACY_BILLING_2026-10-31.md.

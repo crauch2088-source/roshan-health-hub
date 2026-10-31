@@ -405,6 +405,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   healthy: { ar: "سليم", en: "Healthy" },
   expiring_soon: { ar: "قارب على الانتهاء", en: "Expiring soon" },
   expired: { ar: "منتهي الصلاحية", en: "Expired" },
+  unknown: { ar: "تاريخ الانتهاء غير معروف", en: "Expiry unknown" },
   expiring_medicines: { ar: "أدوية قاربت على الانتهاء", en: "Expiring medicines" },
   expired_medicines: { ar: "أدوية منتهية الصلاحية", en: "Expired medicines" },
   low_stock_medicines: { ar: "أدوية منخفضة المخزون", en: "Low stock medicines" },

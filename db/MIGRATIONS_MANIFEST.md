@@ -120,3 +120,19 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Exact-head PR check inventory: **27 success, 1 intentionally skipped, 0 failures**. The skipped canonical PG17/authenticated clinical acceptance job remains deferred by design. Local Node 24 source regressions also passed 4/4 (`phase33-storage-realtime`) and 11/11 (`phase34-consolidated`); the temporary shell's full guard attempt was 220/221 because it lacked installed `zod`, so GitHub CI is the authoritative complete runtime check.
 - No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. PR #148 remains draft/open pending independent review and separate live-apply authorization; Issue #95 remains open and authenticated clinical E2E remains deferred.
 - **Next:** obtain independent review of the Phase 48 candidate and assess the separate release gate; then address the 14 moderate development-tree `minimatch` advisories without forced major downgrades, followed by Issue #146's setup RPC exposure. Do not apply Phase 48 to QA or production without separate explicit authorization.
+
+
+## Phase 49 candidate — atomic pharmacy dispense and stock ledger RLS (2026-10-31)
+
+- Adds private.pharmacy_dispense_idempotency and public.atomic_pharmacy_dispense(uuid,boolean,uuid); identical request IDs replay the prior batch result; key/actor/payload mismatch is rejected.
+- FEFO now requires exact patient-branch batch ownership and known, non-expired expiry. Super-admin status does not make branch stock fungible.
+- Revokes dispense-only fn_dispense_prescription(uuid). The invoice-coupled legacy function remains temporarily callable until frontend cutover.
+- Browser writes to stock_movements are revoked; authenticated SELECT remains permission-checked and branch-scoped.
+- Candidate only: not applied to QA or production.
+
+## Phase 50 candidate — clinical visit completion and consultation billing (2026-10-31)
+
+- Adds complete_clinical_visit_and_bill(uuid): checks permission, active patient/visit, exact branch match, cancelled status and finite two-decimal consultation fee; bills before completing; aligns queue tickets to one timestamp.
+- Existing complete_visit_atomic(uuid) remains as a compatibility wrapper.
+- Disposable PG17 critical-path workflow verifies same-invoice pharmacy + consultation lines, no double charge on retry, expired batch rollback, idempotent dispense replay, and stock-ledger privilege boundary.
+- Candidate only: not applied to QA or production.

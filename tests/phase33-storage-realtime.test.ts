@@ -137,6 +137,7 @@ test("Phase 48 Storage policies bind lab orders and certificates while generic a
     ),
   );
   assert.ok(assertions.includes("Storage UPDATE rebound"));
+  assert.ok(assertions.includes("expected four restrictive authenticated Storage boundary policies"));
   assert.ok(workflow.includes("image: postgres:17"));
   assert.ok(workflow.includes("phase48_storage_entity_branch_binding_assertions.sql"));
   assert.ok(workflow.includes("node --test --experimental-strip-types"));

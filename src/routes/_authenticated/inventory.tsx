@@ -643,6 +643,7 @@ function BatchesTab({
             <SelectItem value="healthy">{t("healthy")}</SelectItem>
             <SelectItem value="expiring_soon">{t("expiring_soon")}</SelectItem>
             <SelectItem value="expired">{t("expired")}</SelectItem>
+            <SelectItem value="unknown">{t("unknown")}</SelectItem>
           </SelectContent>
         </Select>
         <ExportButtons rows={rows} filename="roshan-batches" />

@@ -80,6 +80,8 @@ function PharmacyPageInner() {
   const [search, setSearch] = useState("");
   const [dispenseDetail, setDispenseDetail] = useState<Record<string, DispenseResultRow[]>>({});
   const [separateInvoiceFor, setSeparateInvoiceFor] = useState<Record<string, boolean>>({});
+  // Retain a request UUID after network failure so retry replays the same DB operation.
+  const [dispenseRequestIds, setDispenseRequestIds] = useState<Record<string, string>>({});
 
   const list = useRows(
     ["pharmacy-queue", status],
@@ -98,11 +100,20 @@ function PharmacyPageInner() {
     { refetchInterval: 20000, keepPrevious: true },
   );
 
-  const dispense = useSave<{ prescriptionId: string; separateInvoice: boolean }>(
-    async ({ prescriptionId, separateInvoice }) => {
+  const dispense = useSave<{
+    prescriptionId: string;
+    separateInvoice: boolean;
+    requestId: string;
+  }>(
+    async ({ prescriptionId, separateInvoice, requestId }) => {
       if (!can("pharmacy.update")) throw new Error("Not authorized");
-      const result = await dispensePrescriptionFefo(prescriptionId, separateInvoice);
+      const result = await dispensePrescriptionFefo(prescriptionId, separateInvoice, requestId);
       setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
+      setDispenseRequestIds((current) => {
+        const next = { ...current };
+        delete next[prescriptionId];
+        return next;
+      });
       return result;
     },
     {
@@ -211,12 +222,18 @@ function PharmacyPageInner() {
                               size="sm"
                               variant={separateInvoiceFor[s(p, "id")] ? "secondary" : "outline"}
                               aria-pressed={Boolean(separateInvoiceFor[s(p, "id")])}
-                              onClick={() =>
+                              onClick={() => {
+                                const prescriptionId = s(p, "id");
                                 setSeparateInvoiceFor((current) => ({
                                   ...current,
-                                  [s(p, "id")]: !current[s(p, "id")],
-                                }))
-                              }
+                                  [prescriptionId]: !current[prescriptionId],
+                                }));
+                                setDispenseRequestIds((current) => {
+                                  const next = { ...current };
+                                  delete next[prescriptionId];
+                                  return next;
+                                });
+                              }}
                             >
                               {separateInvoiceFor[s(p, "id")]
                                 ? lang === "ar"
@@ -229,12 +246,20 @@ function PharmacyPageInner() {
                           ) : null}
                           <Button
                             disabled={dispense.isPending}
-                            onClick={() =>
+                            onClick={() => {
+                              const prescriptionId = s(p, "id");
+                              const requestId =
+                                dispenseRequestIds[prescriptionId] ?? crypto.randomUUID();
+                              setDispenseRequestIds((current) => ({
+                                ...current,
+                                [prescriptionId]: requestId,
+                              }));
                               dispense.mutate({
-                                prescriptionId: s(p, "id"),
-                                separateInvoice: Boolean(separateInvoiceFor[s(p, "id")]),
-                              })
-                            }
+                                prescriptionId,
+                                separateInvoice: Boolean(separateInvoiceFor[prescriptionId]),
+                                requestId,
+                              });
+                            }}
                           >
                             {t("dispense")}
                           </Button>
