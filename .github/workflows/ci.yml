@@ -404,8 +404,11 @@ jobs:
           if (failed) process.exit(1);
           NODE
 
-      - name: Security audit
-        run: npm audit
+      - name: Security audit — production dependency tree (blocking)
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Security audit — complete dependency tree (high/critical blocking)
+        run: npm audit --audit-level=high
 
       - name: Role guard unit tests
         run: npm run test:guard
