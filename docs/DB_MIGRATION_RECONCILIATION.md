@@ -736,3 +736,14 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - The candidate has passed disposable PostgreSQL 17 tests and has been applied/read back in isolated QA (ledger version `20261031070544`). No production DDL has been run.
 - Production migration 115 / `20261020232033` is already applied. Phase 46 and 47 must follow it; do not rerun 115.
 - Production release remains blocked until a manual off-site backup is created and verified, the PR is merged on green exact-head checks, and the remaining P1 Storage/entity-binding issue plus staff acceptance gates are addressed.
+
+
+## Phase 48 candidate — Storage entity/branch binding (2026-10-31)
+
+- Candidate: `db/roshan_phase48_storage_entity_branch_binding.sql`; Phase 47 is already reserved for visit/queue branch attribution and is applied to QA and production.
+- Supported private upload contracts resolve lab-report UUIDs to `lab_orders.id` and certificate integer IDs to `medical_certificates.id`. Both require active entity/parent rows and exact path-branch equality; linked visits must belong to the same patient and have the same explicit branch.
+- `roshan-clinical-attachments` remains fail-closed because no active uploader or approved entity-key contract exists. The generic `attachments` table is not treated as an implicit Storage path contract; typed client upload support is removed and the database boundary denies the bucket even when a matching synthetic row exists.
+- The helper is `STABLE SECURITY DEFINER`, uses an empty fixed `search_path`, and is not directly executable by browser/service roles. The existing Phase 34 permission matrix remains unchanged for supported buckets.
+- Test-first source guard was run against the previous Phase 47 candidate and failed as expected (3/4 focused assertions passed). The corrected disposable PostgreSQL 17 assertions and exact-head workflow are pending; the earlier Phase 47 pass is not counted as evidence for this corrected candidate.
+- No QA/production migration, Storage configuration, object, clinical record, or financial record was changed. The candidate remains gated on exact-head PostgreSQL 17 CI, aggregate CI, independent review, and separate live-apply authorization.
+- **Next:** verify the Phase 48 exact-head workflow and full source checks; resolve the separate `minimatch` audit blocker without a forced major downgrade; keep clinical E2E acceptance deferred and Issue #95 open.

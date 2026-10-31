@@ -95,3 +95,47 @@ test("Phase 34 consolidates Storage, Realtime, verification and audit boundaries
     /useBranchRealtime\(realtimeBranchId\)/,
   );
 });
+
+test("Phase 48 Storage policies bind lab orders and certificates while generic attachments remain fail-closed", () => {
+  const binding = read("../db/roshan_phase48_storage_entity_branch_binding.sql");
+  const assertions = read("../db/tests/phase48_storage_entity_branch_binding_assertions.sql");
+  const workflow = read("../.github/workflows/ci-phase48-storage-entity-branch-binding.yml");
+  const storagePath = read("../src/lib/storage-path.ts");
+
+  assert.ok(
+    binding.includes("CREATE OR REPLACE FUNCTION private.phase48_storage_entity_branch_matches"),
+  );
+  assert.ok(binding.includes("SECURITY DEFINER\nSET search_path TO ''"));
+  assert.ok(binding.includes("private.phase48_storage_entity_branch_matches(_bucket_id, _path)"));
+  assert.ok(
+    binding.includes("public.lab_orders") && binding.includes("lo.branch_id = v_branch_id"),
+  );
+  assert.ok(
+    binding.includes("public.medical_certificates") && binding.includes("c.id = v_certificate_id"),
+  );
+  assert.ok(
+    binding.includes(
+      "WHEN 'roshan-clinical-attachments' THEN\n      -- No approved uploader/entity contract exists for this bucket yet.\n      -- Keep every operation fail-closed until a real call site is reviewed.\n      RETURN false;",
+    ),
+  );
+  assert.doesNotMatch(binding, /FROM public\.attachments/);
+  assert.doesNotMatch(storagePath, /roshan-clinical-attachments|clinical-attachments/);
+  assert.ok(
+    binding.includes(
+      "REVOKE ALL ON FUNCTION private.phase48_storage_entity_branch_matches(text, text)",
+    ) && binding.includes("FROM PUBLIC, anon, authenticated, service_role"),
+  );
+
+  assert.ok(
+    assertions.includes("branch-A writer cannot place a branch-B entity under a branch-A prefix"),
+  );
+  assert.ok(assertions.includes("Well-formed paths that reference missing rows fail closed."));
+  assert.ok(assertions.includes("generic clinical-attachments bucket remains fail-closed"));
+  assert.ok(
+    assertions.includes("branch-A reader must not see pre-existing generic clinical-attachments objects"),
+  );
+  assert.ok(assertions.includes("Storage UPDATE rebound"));
+  assert.ok(workflow.includes("image: postgres:17"));
+  assert.ok(workflow.includes("phase48_storage_entity_branch_binding_assertions.sql"));
+  assert.ok(workflow.includes("node --test --experimental-strip-types"));
+});

@@ -2165,3 +2165,14 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Production read-back: patient allergy/chronic-condition fields, prescription and queue branch fields, branch FKs/indexes/triggers all present; no branchless active visits/tickets or branch mismatches; no missing query columns across patients, prescriptions, visits, medicines, and queue tickets; no post-migration 42703 logs.
 - Vercel production deployment `dpl_HJnrrKUFXSsWtdA8QDwrTtmFpAjq` is READY on the main merge commit, with canonical alias assigned and no alias error.
 - Official launch remains blocked by missing off-site backup/restore rehearsal on the Free Supabase plan, open Storage entity-binding Issue #142, open setup RPC Issue #146, incomplete authenticated staff acceptance / Issue #95, and unconfirmed GitHub branch protection. Full checklist: `docs/PRODUCTION_ROLLOUT_2026-10-31.md`.
+
+
+## Phase 48 — Storage entity/branch binding candidate (2026-10-31)
+
+- Work continues from verified `main` SHA `a29711a0b7732fcfc64deefc1b22cec043af9d65` on existing draft PR #148; no parallel branch or new app was created.
+- The previous Phase 47 Storage candidate collided with the already-applied Phase 47 visit/queue migration number. The candidate is now Phase 48 and uses distinct migration, function, assertion, and workflow names.
+- Supported uploads resolve lab-report UUIDs to `lab_orders.id` and certificate integer IDs to `medical_certificates.id`, requiring active entity/parent rows and exact branch equality. Branchless visits fail closed.
+- Generic `roshan-clinical-attachments` remains denied because no active uploader or approved entity-key contract exists; the typed client helper no longer exposes it. Tests include a valid-looking synthetic attachment row and pre-existing objects to prove INSERT/SELECT remain denied.
+- Test-first source guard was run against the previous candidate before correction and failed as expected (3/4 focused assertions passed). Corrected Phase 48 PostgreSQL 17 and full CI are pending; prior Phase 47 checks are not reused as proof.
+- No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. Issue #142 remains open; PR #148 remains draft pending exact-head tests, aggregate dependency audit, and independent review.
+- **Next:** run exact-head Phase 48 PostgreSQL 17 replay and full guard/typecheck/lint/build/CI, then review the candidate. Resolve the independent `minimatch` audit blocker without `npm audit fix --force`; keep Issue #95 open and authenticated clinical E2E deferred.
