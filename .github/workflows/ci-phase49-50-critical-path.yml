@@ -12,7 +12,6 @@ on:
       - "db/roshan_phase50_clinical_visit_bill_completion.sql"
       - "db/tests/phase48_storage_entity_branch_binding_assertions.sql"
       - "db/tests/phase49_50_critical_path_assertions.sql"
-      - ".github/workflows/ci-phase49-50-critical-path.yml"
   push:
     branches: [main]
     paths:
