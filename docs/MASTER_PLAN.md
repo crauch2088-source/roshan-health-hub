@@ -2157,3 +2157,11 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - PostgreSQL 17 Phase 47 fixture/assertions passed on PR #147 head `cf8ebd5567085e371a425807f07e1fa81f2bd56f`. Phase 47 has been applied to isolated QA and its columns/FK/index/functions/ledger were read back; a QA transaction also exercised visit -> queue ticket -> prescription branch propagation and rolled back all synthetic rows.
 - Production has not yet received Phase 46 or 47. Apply them in order after PR merge and a verified manual backup. The live ledger currently ends at migration 115 / `20261020232033`; do not rerun that already-applied Phase 39 migration.
 - The free Supabase organization has no automatic daily database backups. A manual logical backup and off-site verification are required before production DDL. See [Supabase backup policy](https://supabase.com/docs/guides/platform/backups).
+
+
+## Production rollout evidence — 2026-10-31
+
+- PR #147 merged as `2077c71dbb9cc3ca473bfddb5a280ed6ea02202c`; production Supabase migrations `20261031071119` (Phase 46) and `20261031071122` (Phase 47) applied in order. Historical migration `20261020232033` remains unchanged and already applied.
+- Production read-back: patient allergy/chronic-condition fields, prescription and queue branch fields, branch FKs/indexes/triggers all present; no branchless active visits/tickets or branch mismatches; no missing query columns across patients, prescriptions, visits, medicines, and queue tickets; no post-migration 42703 logs.
+- Vercel production deployment `dpl_HJnrrKUFXSsWtdA8QDwrTtmFpAjq` is READY on the main merge commit, with canonical alias assigned and no alias error.
+- Official launch remains blocked by missing off-site backup/restore rehearsal on the Free Supabase plan, open Storage entity-binding Issue #142, open setup RPC Issue #146, incomplete authenticated staff acceptance / Issue #95, and unconfirmed GitHub branch protection. Full checklist: `docs/PRODUCTION_ROLLOUT_2026-10-31.md`.

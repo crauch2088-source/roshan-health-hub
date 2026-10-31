@@ -413,3 +413,8 @@ The original machine-readable `docs/recovered-migrations/source-parity-report.js
 - Both candidate migrations have been applied and read back in isolated QA; PostgreSQL 17 regression suites passed on PR #147 head `cf8ebd5567085e371a425807f07e1fa81f2bd56f`. Production remains unchanged pending merge and a manual backup.
 - Production migration `20261020232033` is already recorded as migration 115 / Phase 39. Do not replay it; Phase 46 then Phase 47 are the forward fixes.
 - The Supabase organization is on the Free plan, which does not include automatic daily database backups. A manual logical backup stored off-site is a launch prerequisite. [Supabase backup documentation](https://supabase.com/docs/guides/platform/backups).
+
+
+## Production rollout status — 2026-10-31
+
+Phase 46 and Phase 47 schema repairs are merged and applied to production; Vercel production deployment is READY. The official clinic launch is **not yet approved**: manual backup/restore, Storage entity binding, setup RPC, authenticated staff acceptance, and branch protection remain open. See [the production rollout record](docs/PRODUCTION_ROLLOUT_2026-10-31.md).

@@ -96,3 +96,11 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Backfills queue tickets from the authoritative visit and adds invoker triggers that keep new visit and queue-ticket branch attribution consistent.
 - Disposable PostgreSQL 17 fixture/assertions: `db/tests/phase47_queue_branch_fixture.sql` and `db/tests/phase47_queue_branch_assertions.sql`; exact-head workflow is part of `.github/workflows/ci-phase46-uat-schema-compatibility.yml` and also has a dedicated workflow file.
 - Applied and read back in isolated QA as migration `roshan_phase47_queue_branch_attribution` (version `20261031070544`). Production remains unchanged until the reviewed PR is merged and the required backup/release gate is satisfied.
+
+
+## Phase 46/47 production application record — 2026-10-31
+
+- Phase 46 `roshan_phase46_uat_schema_compatibility` applied to production as version `20261031071119` and QA as `20261031065937`.
+- Phase 47 `roshan_phase47_queue_branch_attribution` applied to production as version `20261031071122` and QA as `20261031070544`.
+- Phase 46/47 are now applied forward migrations, not candidates. Historical Phase 39 migration `20261020232033` remains unchanged and is already applied.
+- Production post-apply catalog and branch-integrity checks passed. See `docs/PRODUCTION_ROLLOUT_2026-10-31.md`.
