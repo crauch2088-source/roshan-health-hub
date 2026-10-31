@@ -28,10 +28,16 @@ The repository currently has direct uploader call sites for lab orders and medic
 
 ## Verification and release boundary
 
-Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml`. It replays the canonical v112 PostgreSQL 17 baseline, Phase 34 Storage migration, existing Phase 33 assertions, the Phase 47 candidate, and the new Phase 47 assertions. It then runs the focused Node regression tests without an npm install.
+Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml`.
+
+- **PASS on PR #148 head `17808e1180cf29164057fe39c8ff5d1ccc466e40`**: run [41179387366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387366), job `124473485354`. It replayed the canonical v112 PostgreSQL 17 baseline, Phase 34 Storage migration, Phase 33 assertions, Phase 47 candidate, and Phase 47 assertions.
+- Focused Node regression suites: **15/15 PASS**. The dedicated workflow also completed its source-regression step successfully.
+- Typecheck, lint, production build, and focused insurance-claim regression: **PASS**, run [41179387662](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387662), job `124473486696`.
+- CodeQL: **PASS**, no new alerts.
+- Exact-head PR check inventory: **28 total — 26 success, 1 intentionally skipped, 1 failure**. The skipped canonical authenticated clinical acceptance job remains deferred by design. The sole failure is the aggregate npm audit step: 14 moderate `minimatch <11.0.1` advisories (GHSA-g3hv-75wg-m249). `npm audit fix --force` proposes a breaking downgrade to `typescript-eslint@8.14.0`; do not force it. PR #148 remains draft until the aggregate audit blocker is resolved.
 
 This is a source/test candidate only. No production or QA SQL was executed, no Storage bucket configuration was changed, and no object or clinical record was created in a live project. Do not apply the candidate to QA or production without a separate explicit release authorization and the normal release gates.
 
 ## Next step
 
-Review the exact PR head and require the dedicated PostgreSQL 17 workflow to pass. Keep Issue #95 open; clinical end-to-end acceptance remains deferred until the isolated free test environment and suitable synthetic doctor identity are available.
+Resolve the `minimatch` advisory in a separate dependency-only change after checking the compatibility work in PRs #131 and #138; then rerun aggregate CI and review PR #148. Keep Issue #95 open; clinical end-to-end acceptance remains deferred until the isolated free test environment and suitable synthetic doctor identity are available.

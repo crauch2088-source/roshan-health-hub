@@ -83,5 +83,7 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Resolves the path entity key to `lab_orders.id`, `medical_certificates.id`, or `attachments.id`, then verifies active patient/visit parent linkage and branch equality before any private Storage action.
 - Preserves the existing Phase 34 bucket permission matrix and restrictive policy boundary. The helper is SECURITY DEFINER with an empty search_path and is not directly executable by browser/service roles.
 - Disposable PostgreSQL 17 assertions cover matching-branch uploads, forged branch-A-prefix/branch-B-entity paths, missing rows, mismatched patient/visit parents, existing read visibility, UPDATE rebinding, and helper ACLs.
-- Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml`.
-- **Candidate only; not applied to QA or production.** Live database and Storage configuration changes remain separately authorized release work.
+- Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml` — **PASS** on PR #148 head `17808e1180cf29164057fe39c8ff5d1ccc466e40`, run `41179387366`, job `124473485354` (canonical v112 + Phase 34 + Phase 33 + Phase 47 PostgreSQL 17 replay/assertions).
+- Focused Node suites: 15/15 pass. Typecheck/lint/build pass in run `41179387662`, job `124473486696`.
+- Aggregate CI remains blocked by 14 moderate `minimatch <11.0.1` npm audit findings (GHSA-g3hv-75wg-m249); do not force the breaking `typescript-eslint@8.14.0` downgrade proposed by npm.
+- **Candidate only; not merged or applied to QA or production.** Live database and Storage configuration changes remain separately authorized release work.
