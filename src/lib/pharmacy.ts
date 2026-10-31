@@ -59,7 +59,7 @@ export type StockMovement = {
   created_at: string;
 };
 
-/** One row per batch (or legacy fallback) consumed by fn_dispense_prescription(). */
+/** One row per branch-owned, unexpired FEFO batch consumed by the atomic dispense RPC. */
 export type DispenseResultRow = {
   item_id: string;
   medicine_id: string;
@@ -69,70 +69,11 @@ export type DispenseResultRow = {
   expiry_date: string | null;
   quantity_dispensed: number;
   batch_quantity_remaining: number | null;
-  source: "batch" | "legacy";
+  source: "batch";
 };
 
-export type ExpiryStatus = "healthy" | "expiring_soon" | "expired" | "unknown";
-
-export const DEFAULT_EXPIRY_THRESHOLD_DAYS = 90;
-
-// ---------------------------------------------------------------------------
-// Expiry status (Part 3)
-// ---------------------------------------------------------------------------
-
-/**
- * Parse date-only values as calendar dates rather than UTC midnight. Missing,
- * malformed, and impossible dates are unknown, never healthy by default.
- */
-function expiryDayNumber(expiryDate: string | null | undefined): number | null {
-  if (!expiryDate) return null;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(expiryDate);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const utc = Date.UTC(year, month - 1, day);
-  const parsed = new Date(utc);
-  if (
-    parsed.getUTCFullYear() !== year ||
-    parsed.getUTCMonth() !== month - 1 ||
-    parsed.getUTCDate() !== day
-  ) return null;
-  return utc / 86_400_000;
-}
-
-function todayDayNumber(): number {
-  const today = new Date();
-  return Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86_400_000;
-}
-
-export function expiryStatus(
-  expiryDate: string | null | undefined,
-  thresholdDays: number,
-): ExpiryStatus {
-  const expiryDay = expiryDayNumber(expiryDate);
-  if (expiryDay === null) return "unknown";
-  const daysLeft = expiryDay - todayDayNumber();
-  if (daysLeft < 0) return "expired";
-  const threshold = Number.isFinite(thresholdDays)
-    ? Math.max(0, Math.trunc(thresholdDays))
-    : DEFAULT_EXPIRY_THRESHOLD_DAYS;
-  if (daysLeft <= threshold) return "expiring_soon";
-  return "healthy";
-}
-
-export function daysUntil(expiryDate: string | null | undefined): number | null {
-  const expiryDay = expiryDayNumber(expiryDate);
-  return expiryDay === null ? null : expiryDay - todayDayNumber();
-}
-
-/** Tailwind classes for the expiry badge, matching the tone scale already used by StatusBadge. */
-export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
-  healthy: "bg-success/15 text-success border-success/30",
-  expiring_soon: "bg-warning/15 text-warning border-warning/30",
-  expired: "bg-destructive/15 text-destructive border-destructive/30",
-  unknown: "bg-muted text-muted-foreground border-border",
-};
+export { DEFAULT_EXPIRY_THRESHOLD_DAYS, daysUntil, expiryStatus, EXPIRY_TONE } from "./pharmacy-expiry";
+export type { ExpiryStatus } from "./pharmacy-expiry";
 
 // ---------------------------------------------------------------------------
 // FEFO dispensing (Part 2)

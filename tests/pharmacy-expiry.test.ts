@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { daysUntil, expiryStatus } from "../src/lib/pharmacy.ts";
+import { daysUntil, expiryStatus } from "../src/lib/pharmacy-expiry.ts";
 
 function localIsoDate(offsetDays: number): string {
   const date = new Date();
