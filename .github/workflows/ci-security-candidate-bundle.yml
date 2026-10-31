@@ -83,7 +83,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Apply candidate and its focused regression suite
         env:
           PGPASSWORD: postgres
@@ -113,7 +113,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Apply shared synthetic fixture and all candidate migrations in order
         env:
           PGPASSWORD: postgres
