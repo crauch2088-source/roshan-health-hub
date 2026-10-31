@@ -854,7 +854,12 @@ function BatchesTab({
               {t("cancel")}
             </Button>
             <Button
-              disabled={!form.medicine_id || !form.quantity_received || !form.expiry_date || receive.isPending}
+              disabled={
+                !form.medicine_id ||
+                !form.quantity_received ||
+                !form.expiry_date ||
+                receive.isPending
+              }
               onClick={() => receive.mutate(undefined as never)}
             >
               {receive.isPending ? t("saving") : t("save")}

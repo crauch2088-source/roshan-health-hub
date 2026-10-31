@@ -72,7 +72,12 @@ export type DispenseResultRow = {
   source: "batch";
 };
 
-export { DEFAULT_EXPIRY_THRESHOLD_DAYS, daysUntil, expiryStatus, EXPIRY_TONE } from "./pharmacy-expiry";
+export {
+  DEFAULT_EXPIRY_THRESHOLD_DAYS,
+  daysUntil,
+  expiryStatus,
+  EXPIRY_TONE,
+} from "./pharmacy-expiry";
 export type { ExpiryStatus } from "./pharmacy-expiry";
 
 // ---------------------------------------------------------------------------

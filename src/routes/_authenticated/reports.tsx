@@ -289,7 +289,9 @@ function PharmacyReports() {
                         </TableCell>
                         <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                         <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
-                        <TableCell dir="ltr">{s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : t("unknown")}</TableCell>
+                        <TableCell dir="ltr">
+                          {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : t("unknown")}
+                        </TableCell>
                         <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                         <TableCell>
                           {t(expiryStatus(s(b, "expiry_date") || null, thresholdDays))}

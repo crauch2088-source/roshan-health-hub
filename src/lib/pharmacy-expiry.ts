@@ -16,7 +16,9 @@ function expiryDayNumber(expiryDate: string | null | undefined): number | null {
     parsed.getUTCFullYear() !== year ||
     parsed.getUTCMonth() !== month - 1 ||
     parsed.getUTCDate() !== day
-  ) return null;
+  ) {
+    return null;
+  }
   return utc / 86_400_000;
 }
 

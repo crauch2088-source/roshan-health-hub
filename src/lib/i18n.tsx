@@ -376,9 +376,18 @@ const dict: Record<string, { ar: string; en: string }> = {
   batch_number: { ar: "رقم التشغيلة", en: "Batch no." },
   expiry_date: { ar: "تاريخ الانتهاء", en: "Expiry date" },
   expiry_required: { ar: "تاريخ انتهاء الدفعة مطلوب", en: "Batch expiry date is required" },
-  clinical_completion_requires_doctor: { ar: "إنهاء الزيارة السريرية يتطلب صلاحية الطبيب", en: "Clinical visit completion requires clinical permission" },
-  clinical_cancellation_requires_doctor: { ar: "إلغاء الزيارة السريرية يتطلب صلاحية الطبيب", en: "Clinical visit cancellation requires clinical permission" },
-  unknown_expiry_batches: { ar: "دفعات بتاريخ انتهاء غير معروف", en: "Batches with unknown expiry" },
+  clinical_completion_requires_doctor: {
+    ar: "إنهاء الزيارة السريرية يتطلب صلاحية الطبيب",
+    en: "Clinical visit completion requires clinical permission",
+  },
+  clinical_cancellation_requires_doctor: {
+    ar: "إلغاء الزيارة السريرية يتطلب صلاحية الطبيب",
+    en: "Clinical visit cancellation requires clinical permission",
+  },
+  unknown_expiry_batches: {
+    ar: "دفعات بتاريخ انتهاء غير معروف",
+    en: "Batches with unknown expiry",
+  },
   purchase_price: { ar: "سعر الشراء", en: "Purchase price" },
   cost_price: { ar: "سعر التكلفة", en: "Cost price" },
   selling_price: { ar: "سعر البيع", en: "Selling price" },
