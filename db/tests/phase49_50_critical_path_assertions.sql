@@ -1,5 +1,5 @@
 -- Disposable PostgreSQL 17 E2E: expiry -> dispense -> invoice -> visit completion.
--- Replayed after canonical v112 baseline and Phases 34/46/47/48/49/50.
+-- Replayed after canonical v112 baseline, Storage fixture, and Phases 34/48/49/50.
 BEGIN;
 SET LOCAL ROLE service_role;
 
