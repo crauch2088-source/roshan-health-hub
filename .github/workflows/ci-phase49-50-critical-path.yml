@@ -12,15 +12,6 @@ on:
       - "db/roshan_phase50_clinical_visit_bill_completion.sql"
       - "db/tests/phase48_storage_entity_branch_binding_assertions.sql"
       - "db/tests/phase49_50_critical_path_assertions.sql"
-      - "tests/phase49-50-critical-path.test.ts"
-      - "tests/pharmacy-expiry.test.ts"
-      - "src/lib/pharmacy.ts"
-      - "src/lib/pharmacy-expiry.ts"
-      - "src/routes/_authenticated/pharmacy.tsx"
-      - "src/routes/_authenticated/inventory.tsx"
-      - "src/routes/_authenticated/reports.tsx"
-      - "src/routes/_authenticated/dashboard.tsx"
-      - "src/lib/i18n.tsx"
       - ".github/workflows/ci-phase49-50-critical-path.yml"
   push:
     branches: [main]
@@ -57,9 +48,6 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Replay baseline and forward migrations, then assert critical path
