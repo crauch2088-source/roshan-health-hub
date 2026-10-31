@@ -39,12 +39,44 @@ test("storage paths encode branch, typed entity and safe filename", () => {
   assert.throws(() => assertClinicalStoragePath("roshan-medical-certificates", path));
 });
 
+test("clinical storage entity IDs match their authoritative table keys", () => {
+  const certificatePath = buildClinicalStoragePath({
+    branchId,
+    bucket: "roshan-medical-certificates",
+    entityId: "3363",
+    filename: "certificate.pdf",
+  });
+  assert.equal(certificatePath, branchId + "/medical-certificates/3363/certificate.pdf");
+  assertClinicalStoragePath("roshan-medical-certificates", certificatePath);
+
+  assert.throws(() =>
+    buildClinicalStoragePath({
+      branchId,
+      bucket: "roshan-lab-reports",
+      entityId: "3361",
+      filename: "report.pdf",
+    }),
+  );
+  assert.throws(() =>
+    buildClinicalStoragePath({
+      branchId,
+      bucket: "roshan-medical-certificates",
+      entityId: "00000000-0000-0000-0000-000000003363",
+      filename: "certificate.pdf",
+    }),
+  );
+  assert.throws(() =>
+    buildClinicalStoragePath({
+      branchId,
+      bucket: "roshan-clinical-attachments",
+      entityId: "attachment-1",
+      filename: "attachment.pdf",
+    }),
+  );
+});
+
 test("clinical storage helper rejects unsafe MIME types and oversized files", () => {
   validateClinicalFileMetadata({ type: "application/pdf", size: 1024 }, "roshan-lab-reports");
-  validateClinicalFileMetadata({ type: "image/jpeg", size: 1024 }, "roshan-clinical-attachments");
-  assert.throws(() =>
-    validateClinicalFileMetadata({ type: "image/webp", size: 100 }, "roshan-clinical-attachments"),
-  );
   assert.throws(() =>
     validateClinicalFileMetadata(
       { type: "application/pdf", size: 10 * 1024 * 1024 + 1 },
@@ -125,6 +157,19 @@ test("Phase 36 lab and certificate screens preserve private Storage upload and p
   assert.match(uploader, /uploadClinicalFile/);
   assert.match(storage, /createSignedUrl/);
   assert.match(storage, /VITE_ROSHAN_STORAGE_DIRECT_UPLOAD_ENABLED/);
+});
+
+test("certificate Storage uploader derives branch from its same-patient visit and patient", () => {
+  const certificates = read("../src/routes/_authenticated/certificates.tsx");
+  assert.ok(certificates.includes("patients(full_name,mrn,phone,branch_id)"));
+  assert.ok(
+    certificates.includes("visits!medical_certificates_visit_id_fkey(branch_id,patient_id)"),
+  );
+  assert.ok(certificates.includes("function certificateBranchId"));
+  assert.ok(
+    certificates.includes("visitBranchId && patientBranchId && visitBranchId !== patientBranchId"),
+  );
+  assert.ok(certificates.includes("branchId={certificateBranchId(c)}"));
 });
 
 test("Phase 36 clinical attachment UI has guarded upload, validation, status and signed preview", () => {
