@@ -32,17 +32,6 @@ BEGIN
   IF NEW.quantity_received > 0 AND NEW.expiry_date IS NULL THEN
     RAISE EXCEPTION 'pharmacy_batch_expiry_required' USING ERRCODE = '22023';
   END IF;
-  IF TG_OP = 'INSERT' THEN
-    IF NEW.quantity_remaining > 0 AND NEW.expiry_date < CURRENT_DATE THEN
-      RAISE EXCEPTION 'expired_batch_cannot_be_received' USING ERRCODE = '22023';
-    END IF;
-  ELSE
-    IF NEW.quantity_remaining > 0 AND NEW.expiry_date < CURRENT_DATE
-       AND (NEW.expiry_date IS DISTINCT FROM OLD.expiry_date
-         OR NEW.quantity_received > OLD.quantity_received) THEN
-      RAISE EXCEPTION 'expired_batch_cannot_be_received_or_reactivated' USING ERRCODE = '22023';
-    END IF;
-  END IF;
   RETURN NEW;
 END;
 $function$;
