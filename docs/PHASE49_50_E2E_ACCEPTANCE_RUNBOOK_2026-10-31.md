@@ -17,7 +17,7 @@ The PostgreSQL 17 integration suite validates transaction, RLS, idempotency, FEF
 | GP / clinician | `visits.read`, `visits.update`, `visits.create`, `queue.read`, `queue.update` | Bypass branch checks or create duplicate consultation charges |
 | Super Admin | Approved administrative permissions | Use an unassigned branch implicitly for stock attribution |
 
-Create one synthetic QA patient in the active QA branch, one in-progress visit with a consultation fee, and one prescription. Create a medicine master record first; it must start with zero stock. Receive batches only from the Batches workflow.
+Create one synthetic QA patient in the active QA branch, one in-progress visit with a consultation fee, and one prescription. Create a medicine master record first; it must start with zero stock. Create valid batches through the Batches workflow. Expired and NULL-expiry legacy rows used by PHARM-EXP-03 must be seeded only by the disposable QA SQL fixture (the NULL-expiry fixture temporarily disables the trigger inside a rolled-back transaction); never create these rows through the UI or in production.
 
 ## Acceptance scenarios
 

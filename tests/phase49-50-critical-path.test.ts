@@ -2,8 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const read = (path: string) =>
-  readFileSync(new URL(path, import.meta.url), "utf8");
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const p49 = read("../db/roshan_phase49_atomic_pharmacy_dispense.sql");
 const p50 = read("../db/roshan_phase50_clinical_visit_bill_completion.sql");
@@ -95,8 +94,5 @@ test("critical path runs on disposable PostgreSQL 17 only", () => {
   assert.match(workflow, /image: postgres:17/);
   assert.match(workflow, /db\/baseline\/0000_roshan_pg17_baseline_v112\.sql/);
   assert.match(workflow, /phase49_50_critical_path_assertions\.sql/);
-  assert.doesNotMatch(
-    workflow,
-    /jewzonxplxhogqrnhosl|SUPABASE_SERVICE_ROLE_KEY|DATABASE_URL/,
-  );
+  assert.doesNotMatch(workflow, /jewzonxplxhogqrnhosl|SUPABASE_SERVICE_ROLE_KEY|DATABASE_URL/);
 });
