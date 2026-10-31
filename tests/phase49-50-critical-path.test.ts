@@ -32,7 +32,7 @@ test("pharmacy RPC is idempotent and branch/expiry safe",()=>{
  assert.match(medicineForm,/stock_quantity: 0/);
  assert.doesNotMatch(medicineForm,/form\.stock_quantity|form\.batch_number|form\.expiry_date/);
  assert.match(inventorySource,/expiry_required/);
- assert.match(dashboard,/unknownExpiryRows/);
+ assert.match(dashboard,/const unknownExpiryRows/);
  assert.match(dashboard,/unknown_expiry_batches/);
 });
 test("stock movement ledger is browser read-only and branch-scoped",()=>{

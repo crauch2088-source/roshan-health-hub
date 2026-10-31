@@ -304,6 +304,9 @@ function DashboardPageInner() {
   const expiredRows = batchRows
     .filter((b) => expiryStatus(s(b, "expiry_date") || null, thresholdDays) === "expired")
     .slice(0, 8);
+  const unknownExpiryRows = batchRows
+    .filter((b) => expiryStatus(s(b, "expiry_date") || null, thresholdDays) === "unknown")
+    .slice(0, 8);
 
   if (visits.isLoading) return <PageSkeleton />;
 

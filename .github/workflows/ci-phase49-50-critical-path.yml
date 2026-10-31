@@ -19,6 +19,7 @@ on:
       - "src/routes/_authenticated/pharmacy.tsx"
       - "src/routes/_authenticated/inventory.tsx"
       - "src/routes/_authenticated/reports.tsx"
+      - "src/routes/_authenticated/dashboard.tsx"
       - "src/lib/i18n.tsx"
       - ".github/workflows/ci-phase49-50-critical-path.yml"
   push:
