@@ -1,0 +1,33 @@
+# Phase 49-50 — Pharmacy and clinical billing hardening
+
+**Status:** Draft candidate for review. Not applied to QA or production.  
+**Base:** Phase 48 Storage entity/branch binding (PR #148).
+
+## Phase 49 — pharmacy, stock ledger and request idempotency
+
+- Retains the existing FEFO dispense-and-invoice transaction as the single stock mutation path, but hardens branch ownership: even a super-admin consumes stock only from the patient's branch; patient and visit branches must match.
+- Refuses null/unknown expiry and expired batches. FEFO selects the earliest valid expiry, then oldest receipt.
+- Adds a private request-key table. Same actor, prescription and invoice choice replay the original per-batch result; reusing a key for another actor, prescription or payload is rejected.
+- Exposes atomic_pharmacy_dispense to authenticated users only. It checks pharmacy.update and the currently deployed billing.create permission contract.
+- Revokes the older dispense-only RPC because it could mutate stock without invoice coupling.
+- Makes stock_movements read-only to browser clients, with permission-checked branch-scoped SELECT; writes stay in audited atomic definer RPCs.
+- Pharmacy UI retains the request UUID after a network failure; changing invoice mode invalidates that key.
+
+## Phase 50 — clinical completion and billing
+
+- Adds complete_clinical_visit_and_bill.
+- Locks visit and patient, checks active rows, exact patient/visit branch agreement, visits.update, and rejects cancelled visits or invalid consultation fees.
+- Adds the consultation fee to the primary invoice before changing visit state.
+- Completes visit and active queue tickets using one server timestamp. Retry does not rewrite the visit and repairs queue timestamps.
+- Preserves complete_visit_atomic as a compatibility wrapper for existing UI callers.
+- Billing failure rolls back visit and queue state.
+
+## Audit aggregate
+
+The read-only aggregate groups by day, table, action and actor, returning counts only. It does not expose audit_logs.old_data or new_data. Branch filtering excludes legacy rows without an explicit branch id rather than guessing.
+
+## Verification and release boundary
+
+A disposable PostgreSQL 17 workflow replays the canonical v112 baseline and Phases 34/46/47/48/49/50. It tests FEFO expiry exclusion, idempotent retry, duplicate rejection, invoice reconciliation, and visit/queue timestamp alignment.
+
+This does not replace browser/staff UAT. The candidate is not applied to QA or production. Production remains blocked on exact-head review/CI, manual backup and restore rehearsal, and authenticated staff acceptance. The current pharmacist role has billing.create; this candidate preserves that permission contract. Least-privilege pharmacy billing requires a separate coordinated change to the invoice helper and role matrix. The invoice-coupled legacy RPC remains callable temporarily for compatibility and needs a later cutover revocation after UI acceptance.
