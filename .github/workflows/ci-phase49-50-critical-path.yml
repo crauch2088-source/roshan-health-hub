@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "db/baseline/0000_roshan_pg17_baseline_v112.sql"
+      - "db/tests/phase33_storage_realtime_fixture.sql"
+      - "db/tests/phase33_storage_realtime_assertions.sql"
       - "db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql"
       - "db/roshan_phase46_uat_schema_compatibility.sql"
       - "db/roshan_phase47_queue_branch_attribution.sql"
@@ -69,7 +71,9 @@ jobs:
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/tests/phase33_storage_realtime_fixture.sql \
             -f db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql \
+            -f db/tests/phase33_storage_realtime_assertions.sql \
             -f db/roshan_phase46_uat_schema_compatibility.sql \
             -f db/roshan_phase47_queue_branch_attribution.sql \
             -f db/roshan_phase48_storage_entity_branch_binding.sql \

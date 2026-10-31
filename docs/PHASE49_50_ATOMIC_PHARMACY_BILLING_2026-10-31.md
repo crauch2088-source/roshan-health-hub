@@ -44,3 +44,6 @@ This does not replace browser/staff UAT. The candidate is not applied to QA or p
 ### Stock-entry source-of-truth correction
 
 The medicine master form no longer accepts an initial stock count, batch number or medicine-level expiry. New medicine records start at zero stock; every positive stock quantity must enter through the atomic batch receipt RPC. The database rejects positive-quantity batches without an expiry and rejects direct authenticated edits to medicines.stock_quantity. Existing legacy NULL-expiry batches are retained for reconciliation, but the dispense RPC excludes them.
+
+
+The dashboard now exposes a separate unknown-expiry batch panel instead of silently treating those rows as healthy or conflating them with expired stock. Batch receipt requires an expiry date in the UI, and the database trigger enforces the same invariant.

@@ -672,6 +672,42 @@ function DashboardPageInner() {
             </Table>
           )}
         </DataPanel>
+
+        <DataPanel
+          title={t("unknown_expiry_batches")}
+          icon={<AlertTriangle className="text-warning" aria-hidden />}
+        >
+          {batchesForAlerts.error ? (
+            <ErrorBox error={batchesForAlerts.error} />
+          ) : unknownExpiryRows.length === 0 ? (
+            <Empty />
+          ) : (
+            <Table density="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("medicines")}</TableHead>
+                  <TableHead>{t("expiry_date")}</TableHead>
+                  <TableHead>{t("remaining_quantity")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {unknownExpiryRows.map((b) => (
+                  <TableRow key={s(b, "id")}>
+                    <TableCell className="font-medium">
+                      {s(rel(b, "medicines"), "name") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE.unknown)}>
+                        {t("unknown")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataPanel>
       </div>
     </div>
   );
