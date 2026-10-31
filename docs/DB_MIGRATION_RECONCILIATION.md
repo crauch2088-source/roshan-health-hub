@@ -727,3 +727,12 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Read-only catalog inspection confirmed `patients.allergies` and `prescriptions.branch_id` are absent on both production and isolated QA. Production ledger latest remains `20261020232033` (115 entries). No SQL writes or row changes were performed during inspection.
 - A forward-only candidate and isolated PostgreSQL 17 regression suite are recorded in [the Phase 46 UAT report](UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md). The candidate derives prescription branch from the linked visit and fails closed on invalid parent linkage; it does not use a blanket UPDATE to assign arbitrary branches.
 - No application to QA or production is authorized by this source-preparation task. Apply only after exact-head CI/review and a separate explicit release authorization, then read back columns, FK, trigger, index, and migration ledger.
+
+
+## Phase 47 — queue and visit branch compatibility (2026-10-31)
+
+- The production Queue route selects `queue_tickets.branch_id`, but the live table did not have that column. A branchless visit and its linked ticket were also found; the patient had an explicit assignment to the sole active branch.
+- The Phase 47 candidate adds `queue_tickets.branch_id`, an FK/index, a safe single-active-branch backfill for visits, queue-ticket backfill, and invoker triggers for new visits and queue tickets.
+- The candidate has passed disposable PostgreSQL 17 tests and has been applied/read back in isolated QA (ledger version `20261031070544`). No production DDL has been run.
+- Production migration 115 / `20261020232033` is already applied. Phase 46 and 47 must follow it; do not rerun 115.
+- Production release remains blocked until a manual off-site backup is created and verified, the PR is merged on green exact-head checks, and the remaining P1 Storage/entity-binding issue plus staff acceptance gates are addressed.

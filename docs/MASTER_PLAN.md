@@ -2147,3 +2147,13 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Updated missing-column/function diagnostics to refer to current approved forward migrations instead of incorrectly directing every 42703/PGRST202 error to the legacy Phase 1 SQL file.
 - Release gate: exact-head PostgreSQL 17 CI and review, then separately authorized migration application and read-back. After production deployment, retest only the clinic visit, pharmacy queue, and one synthetic visit-linked prescription. Keep Issue #95 open pending complete role/staff acceptance.
 - Detailed evidence: `docs/UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md`.
+
+
+## Phase 47 — live UAT visit and queue branch repair (2026-10-31)
+
+- Production catalog review found `queue_tickets.branch_id` missing although the Queue route selects it. It also found one branchless visit and its linked queue ticket; the patient is assigned to the sole active branch.
+- Phase 47 adds queue branch attribution and branch/date/status index; safely backfills only when exactly one active branch exists and the patient has an explicit assignment; no guessing is performed when branch context is ambiguous.
+- New visit inserts inherit the patient's active branch when the UI omits it. New queue tickets inherit patient/branch from the linked active visit. Cross-branch and missing/deleted parent mismatches fail closed.
+- PostgreSQL 17 Phase 47 fixture/assertions passed on PR #147 head `cf8ebd5567085e371a425807f07e1fa81f2bd56f`. Phase 47 has been applied to isolated QA and its columns/FK/index/functions/ledger were read back; a QA transaction also exercised visit -> queue ticket -> prescription branch propagation and rolled back all synthetic rows.
+- Production has not yet received Phase 46 or 47. Apply them in order after PR merge and a verified manual backup. The live ledger currently ends at migration 115 / `20261020232033`; do not rerun that already-applied Phase 39 migration.
+- The free Supabase organization has no automatic daily database backups. A manual logical backup and off-site verification are required before production DDL. See [Supabase backup policy](https://supabase.com/docs/guides/platform/backups).
