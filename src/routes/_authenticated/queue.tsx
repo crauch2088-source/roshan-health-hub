@@ -58,7 +58,8 @@ function QueuePage() {
 function QueuePageInner() {
   const { lang, t } = useLang();
   const { can } = useAuth();
-  const canUpdate = can("visits.update");
+  const canUpdateQueue = can("queue.update");
+  const canCompleteVisit = can("visits.update");
   const [date, setDate] = useState(todayISO());
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
@@ -123,18 +124,27 @@ function QueuePageInner() {
 
   const update = useSave<{ id: string; status: string }>(
     async ({ id, status }) => {
-      if (!canUpdate) throw new Error("Not authorized");
+      if (!canUpdateQueue) throw new Error("Not authorized");
       const ticket = ((queue.data ?? []) as Row[]).find((r) => s(r, "id") === id);
       const visitId = s(ticket, "visit_id") || s(rel(ticket, "visits"), "id");
-      if (status === "completed" && visitId) {
+      if (status === "completed") {
+        if (!canCompleteVisit || !visitId) {
+          throw new Error(t("clinical_completion_requires_doctor"));
+        }
         const { error: visitError } = await supabase.rpc("complete_visit_atomic", {
           p_visit_id: visitId,
         });
         if (visitError) throw new Error(visitError.message);
-        // The RPC atomically completes the visit and linked tickets; avoid a
-        // second browser write that can overwrite the server timestamp.
+        // The RPC atomically completes the visit, bills its consultation fee,
+        // and completes linked tickets using one server-side timestamp.
         return null;
-      } else if (visitId) {
+      }
+      if (status === "cancelled" && !canCompleteVisit) {
+        throw new Error(t("clinical_cancellation_requires_doctor"));
+      }
+      // Reception can call/start a queue ticket with queue.update. Only a
+      // clinician with visits.update may change the clinical visit status.
+      if (visitId && canCompleteVisit) {
         const visitStatus =
           status === "called" ? "in_progress" : status === "cancelled" ? "cancelled" : "waiting";
         const { error: visitError } = await supabase
@@ -274,7 +284,7 @@ function QueuePageInner() {
                       <StatusBadge status={st} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      {canUpdate && st === "waiting" && (
+                      {canUpdateQueue && st === "waiting" && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -285,7 +295,7 @@ function QueuePageInner() {
                           {lang === "ar" ? "نداء" : "Call"}
                         </Button>
                       )}
-                      {canUpdate && st === "called" && (
+                      {canUpdateQueue && st === "called" && (
                         <Button
                           size="sm"
                           className="min-h-10 flex-1"
@@ -297,7 +307,7 @@ function QueuePageInner() {
                           {lang === "ar" ? "بدء" : "Start"}
                         </Button>
                       )}
-                      {canUpdate && st === "in_progress" && (
+                      {canUpdateQueue && canCompleteVisit && st === "in_progress" && (
                         <Button
                           size="sm"
                           className="min-h-10 flex-1"
@@ -371,7 +381,7 @@ function QueuePageInner() {
                         </TableCell>
                         <TableCell className="text-end">
                           <div className="flex justify-end gap-1">
-                            {canUpdate && st === "waiting" && (
+                            {canUpdateQueue && st === "waiting" && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -383,7 +393,7 @@ function QueuePageInner() {
                                 {lang === "ar" ? "نداء" : "Call"}
                               </Button>
                             )}
-                            {canUpdate && st === "called" && (
+                            {canUpdateQueue && st === "called" && (
                               <Button
                                 size="sm"
                                 onClick={() =>
@@ -394,7 +404,7 @@ function QueuePageInner() {
                                 {lang === "ar" ? "بدء" : "Start"}
                               </Button>
                             )}
-                            {canUpdate && st === "in_progress" && (
+                            {canUpdateQueue && canCompleteVisit && st === "in_progress" && (
                               <Button
                                 size="sm"
                                 onClick={() =>

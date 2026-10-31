@@ -50,3 +50,8 @@ The dashboard now exposes a separate unknown-expiry batch panel instead of silen
 
 
 The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.
+
+
+### Queue role boundary
+
+The queue screen now uses queue.update for operational call/start actions, allowing reception to move tickets without writing clinical visit status. Completion and cancellation remain gated by visits.update; completion uses the billing-aware atomic visit RPC. This avoids granting clinical write authority to reception merely to operate the queue.

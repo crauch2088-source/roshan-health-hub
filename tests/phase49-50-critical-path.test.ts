@@ -9,6 +9,7 @@ const workflow=read("../.github/workflows/ci-phase49-50-critical-path.yml");
 const pharmacy=read("../src/lib/pharmacy.ts");
 const route=read("../src/routes/_authenticated/pharmacy.tsx");
 const dashboard=read("../src/routes/_authenticated/dashboard.tsx");
+const queue=read("../src/routes/_authenticated/queue.tsx");
 const audit=read("../db/reports/audit_aggregate_query.sql");
 
 test("pharmacy RPC is idempotent and branch/expiry safe",()=>{
@@ -34,6 +35,10 @@ test("pharmacy RPC is idempotent and branch/expiry safe",()=>{
  assert.match(inventorySource,/expiry_required/);
  assert.match(dashboard,/const unknownExpiryRows/);
  assert.match(dashboard,/unknown_expiry_batches/);
+ assert.match(queue,/const canUpdateQueue = can\("queue.update"\)/);
+ assert.match(queue,/const canCompleteVisit = can\("visits.update"\)/);
+ assert.match(queue,/clinical_completion_requires_doctor/);
+ assert.match(queue,/canUpdateQueue && canCompleteVisit && st === "in_progress"/);
 });
 test("stock movement ledger is browser read-only and branch-scoped",()=>{
  assert.match(p49,/REVOKE ALL ON TABLE public\.stock_movements, public\.pharmacy_inventory FROM PUBLIC, authenticated/);
