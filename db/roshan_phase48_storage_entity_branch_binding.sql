@@ -67,7 +67,7 @@ BEGIN
       END;
 
       -- medical_certificates has no branch_id column: its authoritative branch is
-      -- the same-patient visit, with the patient's branch as the visit fallback.
+      -- the same-patient visit; the visit and patient must each match the path branch.
       RETURN EXISTS (
         SELECT 1
         FROM public.medical_certificates AS c
