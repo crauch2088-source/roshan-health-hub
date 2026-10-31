@@ -2180,3 +2180,32 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Final exact-head PR checks: 27 success, 1 intentionally skipped (authenticated clinical acceptance), 0 failures. Local Node 24 source tests passed 4/4 and 11/11; the full guard run in the temporary shell was 220/221 only because `zod` was not installed there.
 - No QA/production SQL, Storage configuration, object, patient, clinical, or financial data was changed. PR #148 remains draft/open pending independent review and separate release authorization. Issue #95 remains open; authenticated clinical E2E stays deferred until an isolated free test environment and suitable synthetic doctor identity exist.
 - **Next:** independent review and release-gate assessment for Phase 48; then non-breaking remediation of the 14 moderate dev-only minimatch advisories, followed by Issue #146's public setup RPC gap. Do not apply Phase 48 to QA/production without separate explicit authorization.
+
+
+## Phase 49-50 — atomic pharmacy, expiry, billing and clinical completion (2026-10-31)
+
+- Candidate migrations: db/roshan_phase49_atomic_pharmacy_dispense.sql and db/roshan_phase50_clinical_visit_bill_completion.sql.
+- Phase 49 adds request-key idempotency around FEFO dispense-and-invoice, enforces patient/visit/batch branch agreement even for super-admin, rejects expired and unknown-expiry batches, revokes the dispense-only RPC, and makes stock_movements browser read-only with authenticated branch-scoped SELECT.
+- Phase 50 bills consultation fee before visit completion, aligns visit/queue timestamps atomically, and preserves complete_visit_atomic(uuid) as the existing UI compatibility signature.
+- Audit aggregate is count-only and omits raw clinical JSON snapshots. Branch filters do not guess branch ownership for legacy branchless audit rows.
+- Disposable PostgreSQL 17 workflow replays v112 + Phases 34/46/47/48/49/50 and asserts expiry exclusion, idempotent retry, duplicate rejection, invoice reconciliation and queue timestamp alignment.
+- Candidate only: not applied to QA or production. Production rollout remains blocked on exact-head review/CI, manual backup and restore rehearsal, and authenticated staff UAT. See docs/PHASE49_50_ATOMIC_PHARMACY_BILLING_2026-10-31.md.
+
+
+### Phase 49 additional inventory controls
+
+- Medicine catalogue creation starts at stock_quantity = 0. Batch number and expiry are captured on the batch, not the medicine master row.
+- Positive-quantity batch receipt requires expiry in the UI and at the database trigger.
+- pharmacy_inventory is browser SELECT-only; direct authenticated edits to medicines.stock_quantity are rejected.
+- Legacy NULL-expiry batches are retained for reconciliation but excluded from dispensing.
+
+
+### Phase 49 stock-entry source-of-truth correction
+
+Medicine master creation no longer accepts initial quantity or batch-level fields. It starts at zero; positive stock enters through the batch receipt RPC with required expiry. Database guards prevent direct authenticated stock aggregate edits and direct browser writes to pharmacy_inventory/stock_movements.
+
+
+The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.
+
+
+- [Phase 49–50 browser E2E acceptance runbook](PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md): prepared, not yet executed; QA-only staff acceptance remains a release gate.

@@ -336,4 +336,20 @@ BEGIN
 END
 $phase48_branch_b$;
 
+-- The four boundary policies must be RESTRICTIVE. Bucket-specific policies are
+-- permissive by design; PostgreSQL combines them with this AND gate.
+DO $phase48_restrictive_policy_contract$
+DECLARE v_count integer;
+BEGIN
+ SELECT count(*) INTO v_count FROM pg_catalog.pg_policies
+ WHERE schemaname='storage' AND tablename='objects'
+ AND policyname IN ('phase33_storage_select_boundary','phase33_storage_insert_boundary',
+                    'phase33_storage_update_boundary','phase33_storage_delete_boundary')
+ AND permissive='RESTRICTIVE' AND roles @> ARRAY['authenticated']::name[];
+ IF v_count<>4 THEN
+   RAISE EXCEPTION 'expected four restrictive authenticated Storage boundary policies, got %',v_count;
+ END IF;
+END
+$phase48_restrictive_policy_contract$;
+
 ROLLBACK;

@@ -48,7 +48,8 @@ test("pharmacy dispense and billing are one server-side transaction", () => {
 test("pharmacy UI exposes a deliberate separate-invoice option only to billing-authorized users", () => {
   assert.match(pharmacyRoute, /can\("billing\.create"\)/);
   assert.match(pharmacyRoute, /separateInvoice/);
-  assert.match(pharmacyLib, /fn_dispense_prescription_with_invoice/);
+  assert.match(pharmacyLib, /atomic_pharmacy_dispense/);
+  assert.match(pharmacyLib, /p_request_id: requestId/);
   assert.match(pharmacyRoute, /\["invoices"\]/);
 });
 

@@ -241,7 +241,7 @@ function PharmacyReports() {
   const lowStockRows = medRows.filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level"));
   const expiryRows = batchRows.filter((b) => {
     const status = expiryStatus(s(b, "expiry_date") || null, thresholdDays);
-    return status === "expiring_soon" || status === "expired";
+    return status === "expiring_soon" || status === "expired" || status === "unknown";
   });
 
   const batchInventoryValue = batchRows.reduce(
@@ -289,7 +289,9 @@ function PharmacyReports() {
                         </TableCell>
                         <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                         <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
-                        <TableCell dir="ltr">{formatDate(s(b, "expiry_date"))}</TableCell>
+                        <TableCell dir="ltr">
+                          {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : t("unknown")}
+                        </TableCell>
                         <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                         <TableCell>
                           {t(expiryStatus(s(b, "expiry_date") || null, thresholdDays))}
