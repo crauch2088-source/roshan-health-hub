@@ -35,7 +35,7 @@ test("queue completion delegates ticket status and timestamps to the atomic visi
   );
   assert.match(
     handler,
-    /if \(status === "completed" && visitId\) \{[\s\S]*supabase\.rpc\(["']complete_visit_atomic["'][\s\S]*return null;/,
+    /if \(status === "completed"\) \{[\s\S]*if \(!canCompleteVisit \|\| !visitId\)[\s\S]*supabase\.rpc\(["']complete_visit_atomic["'][\s\S]*return null;/,
   );
   assert.match(
     completionRetryMigration,
