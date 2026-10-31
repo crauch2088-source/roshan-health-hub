@@ -146,6 +146,30 @@ BEGIN
   END;
   IF NOT v_stock_edit_rejected THEN RAISE EXCEPTION 'direct medicine stock edit bypassed batch RPCs'; END IF;
 
+  IF NOT (SELECT relrowsecurity FROM pg_catalog.pg_class WHERE oid='public.pharmacy_inventory'::regclass)
+     OR NOT (SELECT relrowsecurity FROM pg_catalog.pg_class WHERE oid='public.stock_movements'::regclass) THEN
+    RAISE EXCEPTION 'pharmacy inventory and stock movement tables must keep RLS enabled';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_policies
+    WHERE schemaname='public' AND tablename='pharmacy_inventory'
+      AND policyname='pharmacy_inventory_select' AND cmd='SELECT'
+      AND qual ILIKE '%pharmacy.read%'
+      AND qual ILIKE '%app_has_branch_access%'
+  ) THEN
+    RAISE EXCEPTION 'pharmacy_inventory SELECT must remain permission-checked and branch-scoped';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_policies
+    WHERE schemaname='public' AND tablename='stock_movements'
+      AND policyname='stock_movements_select' AND cmd='SELECT'
+      AND roles @> ARRAY['authenticated']::name[]
+      AND qual ILIKE '%pharmacy.read%'
+      AND qual ILIKE '%app_has_branch_access%'
+  ) THEN
+    RAISE EXCEPTION 'stock_movements SELECT must be authenticated, permission-checked and branch-scoped';
+  END IF;
+
   IF has_table_privilege('authenticated','public.pharmacy_inventory','INSERT')
      OR has_table_privilege('authenticated','public.pharmacy_inventory','UPDATE')
      OR has_table_privilege('authenticated','public.pharmacy_inventory','DELETE') THEN

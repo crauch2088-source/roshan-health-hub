@@ -45,6 +45,8 @@ test("stock movement ledger is browser read-only and branch-scoped",()=>{
  assert.match(p49,/GRANT SELECT ON TABLE public\.stock_movements, public\.pharmacy_inventory TO authenticated/);
  assert.match(p49,/CREATE POLICY stock_movements_select[\s\S]*TO authenticated/);
  assert.match(p49,/private\.app_has_branch_access\(stock_movements\.branch_id\)/);
+ assert.match(sql,/pharmacy_inventory SELECT must remain permission-checked and branch-scoped/);
+ assert.match(sql,/stock_movements SELECT must be authenticated, permission-checked and branch-scoped/);
 });
 test("visit completion bills first and aligns queue timestamps",()=>{
  assert.match(p50,/create_visit_consultation_invoice_atomic/);
