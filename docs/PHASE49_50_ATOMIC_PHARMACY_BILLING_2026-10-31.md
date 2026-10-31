@@ -31,3 +31,11 @@ The read-only aggregate groups by day, table, action and actor, returning counts
 A disposable PostgreSQL 17 workflow replays the canonical v112 baseline and Phases 34/46/47/48/49/50. It tests FEFO expiry exclusion, idempotent retry, duplicate rejection, invoice reconciliation, and visit/queue timestamp alignment.
 
 This does not replace browser/staff UAT. The candidate is not applied to QA or production. Production remains blocked on exact-head review/CI, manual backup and restore rehearsal, and authenticated staff acceptance. The current pharmacist role has billing.create; this candidate preserves that permission contract. Least-privilege pharmacy billing requires a separate coordinated change to the invoice helper and role matrix. The invoice-coupled legacy RPC remains callable temporarily for compatibility and needs a later cutover revocation after UI acceptance.
+
+
+### Additional inventory invariants
+
+- Medicine catalogue creation no longer accepts initial stock, batch number or medicine-level expiry. New medicines start at zero; stock is added through the batch receipt RPC only.
+- Positive-quantity pharmacy batches require a known expiry at database level. Legacy NULL-expiry rows remain stored but cannot be dispensed until reconciled.
+- Browser clients have SELECT-only access to pharmacy_inventory and stock_movements. Direct authenticated changes to medicines.stock_quantity are rejected; atomic receive/dispense RPCs maintain the aggregate.
+- Stock movement branch attribution for no-visit super-admin dispensing is anchored to the patient's branch, not a nullable user branch.

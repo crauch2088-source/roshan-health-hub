@@ -136,3 +136,11 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Existing complete_visit_atomic(uuid) remains as a compatibility wrapper.
 - Disposable PG17 critical-path workflow verifies same-invoice pharmacy + consultation lines, no double charge on retry, expired batch rollback, idempotent dispense replay, and stock-ledger privilege boundary.
 - Candidate only: not applied to QA or production.
+
+
+### Phase 49 additional inventory guards
+
+- Browser access to pharmacy_inventory is SELECT-only; receipt and dispense remain the supported write workflows.
+- Positive-quantity batches require a known expiry; legacy NULL-expiry rows remain stored but non-dispensable.
+- Direct authenticated changes to medicines.stock_quantity are rejected; the aggregate is maintained by atomic receive/dispense RPCs.
+- Stock movement branch attribution for super-admin no-visit dispensing is anchored to the patient's branch.

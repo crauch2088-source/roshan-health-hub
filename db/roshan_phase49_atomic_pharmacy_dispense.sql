@@ -287,7 +287,7 @@ BEGIN
         medicine_id,batch_id,movement_type,quantity,reference_id,reference_table,branch_id,created_by
       ) VALUES (
         v_item.medicine_id,v_batch.id,'dispense',-v_take,p_prescription_id,'prescriptions',
-        COALESCE(v_visit_branch,v_branch),v_uid
+        v_patient_branch,v_uid
       );
       item_id := v_item.id;
       medicine_id := v_item.medicine_id;

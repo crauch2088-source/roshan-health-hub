@@ -2190,3 +2190,11 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Audit aggregate is count-only and omits raw clinical JSON snapshots. Branch filters do not guess branch ownership for legacy branchless audit rows.
 - Disposable PostgreSQL 17 workflow replays v112 + Phases 34/46/47/48/49/50 and asserts expiry exclusion, idempotent retry, duplicate rejection, invoice reconciliation and queue timestamp alignment.
 - Candidate only: not applied to QA or production. Production rollout remains blocked on exact-head review/CI, manual backup and restore rehearsal, and authenticated staff UAT. See docs/PHASE49_50_ATOMIC_PHARMACY_BILLING_2026-10-31.md.
+
+
+### Phase 49 additional inventory controls
+
+- Medicine catalogue creation starts at stock_quantity = 0. Batch number and expiry are captured on the batch, not the medicine master row.
+- Positive-quantity batch receipt requires expiry in the UI and at the database trigger.
+- pharmacy_inventory is browser SELECT-only; direct authenticated edits to medicines.stock_quantity are rejected.
+- Legacy NULL-expiry batches are retained for reconciliation but excluded from dispensing.

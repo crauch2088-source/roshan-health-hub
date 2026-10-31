@@ -45,3 +45,6 @@ The deployed permission catalog currently assigns `billing.create` to admin, pha
 Dependent PR #149 adds request-key idempotency to pharmacy dispense-and-invoice, exact patient/visit/batch branch enforcement, rejection of expired/unknown-expiry batches, and a clinical completion RPC that appends consultation fee before completing the visit and queue. It also revokes direct browser writes to the stock movement ledger.
 
 This is not deployed or accepted. The candidate preserves the currently deployed billing.create requirement alongside pharmacy.update; a least-privilege alternative requires a coordinated change to the invoice helper and role matrix. The existing invoice-coupled dispense RPC remains callable during compatibility and needs a later cutover revocation. QA and production remain unchanged pending exact-head CI, authenticated role acceptance, and the manual backup/restore gate.
+
+
+Phase 49 also closes the legacy stock-entry route: medicine master creation starts at zero, positive batch receipt requires expiry at UI and database layers, browser writes to pharmacy_inventory and stock_movements are revoked, and direct authenticated changes to medicines.stock_quantity are rejected.
