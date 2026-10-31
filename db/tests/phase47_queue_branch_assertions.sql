@@ -8,7 +8,7 @@ BEGIN
  IF v_type IS DISTINCT FROM 'uuid' THEN RAISE EXCEPTION 'queue_tickets.branch_id must be uuid'; END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='public.queue_tickets'::regclass AND conname='queue_tickets_branch_id_fkey' AND contype='f') THEN RAISE EXCEPTION 'queue branch FK missing'; END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_indexes WHERE schemaname='public' AND tablename='queue_tickets' AND indexname='queue_tickets_branch_visit_date_idx') THEN RAISE EXCEPTION 'queue branch index missing'; END IF;
- IF EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private' AND p.proname IN ('phase47_visit_branch_attribution','phase47_queue_ticket_branch_attribution') AND (p.prosecdef OR COALESCE(p.proconfig,ARRAY[]::text[]) NOT @> ARRAY['search_path=""'])) THEN RAISE EXCEPTION 'branch triggers must be SECURITY INVOKER with empty search_path'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private' AND p.proname IN ('phase47_visit_branch_attribution','phase47_queue_ticket_branch_attribution') AND (p.prosecdef OR NOT (COALESCE(p.proconfig,ARRAY[]::text[]) @> ARRAY['search_path=""']))) THEN RAISE EXCEPTION 'branch triggers must be SECURITY INVOKER with empty search_path'; END IF;
  IF has_function_privilege('anon','private.phase47_visit_branch_attribution()','EXECUTE')
  OR has_function_privilege('authenticated','private.phase47_visit_branch_attribution()','EXECUTE')
  OR has_function_privilege('anon','private.phase47_queue_ticket_branch_attribution()','EXECUTE')
