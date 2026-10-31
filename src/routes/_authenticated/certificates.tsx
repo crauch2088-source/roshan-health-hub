@@ -48,6 +48,13 @@ function addDays(date: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+function certificateBranchId(certificate: Row | undefined): string {
+  const visitBranchId = s(rel(certificate, "visits"), "branch_id");
+  const patientBranchId = s(rel(certificate, "patients"), "branch_id");
+  if (visitBranchId && patientBranchId && visitBranchId !== patientBranchId) return "";
+  return visitBranchId || patientBranchId || s(certificate, "branch_id");
+}
+
 function CertificatesPage() {
   return (
     <PermissionGate perm="certificates.read">
@@ -73,7 +80,7 @@ function CertificatesPageInner() {
     supabase
       .from("medical_certificates")
       .select(
-        "*,patients(full_name,mrn,phone),users!medical_certificates_doctor_id_fkey(full_name)",
+        "*,patients(full_name,mrn,phone,branch_id),visits!medical_certificates_visit_id_fkey(branch_id,patient_id),users!medical_certificates_doctor_id_fkey(full_name)",
       )
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -95,7 +102,7 @@ function CertificatesPageInner() {
   const visitOptions = (visitOptionsQ.data ?? []) as Row[];
   const realtimeBranchId =
     s(visitOptions[0] as Row | undefined, "branch_id") ||
-    s((list.data ?? [])[0] as Row | undefined, "branch_id") ||
+    certificateBranchId((list.data ?? [])[0]) ||
     null;
   useBranchRealtime(realtimeBranchId);
 
@@ -206,9 +213,9 @@ function CertificatesPageInner() {
                           <Button size="sm" variant="ghost" onClick={() => window.print()}>
                             <Printer className="size-4" />
                           </Button>
-                          {can("certificates.create") && s(c, "branch_id") && (
+                          {can("certificates.create") && certificateBranchId(c) && (
                             <ClinicalAttachmentUploader
-                              branchId={s(c, "branch_id")}
+                              branchId={certificateBranchId(c)}
                               entityId={s(c, "id")}
                               bucket="roshan-medical-certificates"
                               canUpload={can("certificates.create")}

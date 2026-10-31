@@ -95,3 +95,38 @@ test("Phase 34 consolidates Storage, Realtime, verification and audit boundaries
     /useBranchRealtime\(realtimeBranchId\)/,
   );
 });
+
+test("Phase 47 Storage policies bind every bucket path to its authoritative entity and parent branch", () => {
+  const binding = read("../db/roshan_phase47_storage_entity_branch_binding.sql");
+  const assertions = read("../db/tests/phase47_storage_entity_branch_binding_assertions.sql");
+  const workflow = read("../.github/workflows/ci-phase47-storage-entity-branch-binding.yml");
+
+  assert.ok(
+    binding.includes("CREATE OR REPLACE FUNCTION private.phase47_storage_entity_branch_matches"),
+  );
+  assert.ok(binding.includes("SECURITY DEFINER\nSET search_path TO ''"));
+  assert.ok(binding.includes("private.phase47_storage_entity_branch_matches(_bucket_id, _path)"));
+  assert.ok(
+    binding.includes("public.lab_orders") && binding.includes("lo.branch_id = v_branch_id"),
+  );
+  assert.ok(
+    binding.includes("public.medical_certificates") && binding.includes("c.id = v_certificate_id"),
+  );
+  assert.ok(binding.includes("public.attachments") && binding.includes("a.id = v_entity_id"));
+  assert.ok(
+    binding.includes(
+      "REVOKE ALL ON FUNCTION private.phase47_storage_entity_branch_matches(text, text)",
+    ) && binding.includes("FROM PUBLIC, anon, authenticated, service_role"),
+  );
+
+  assert.ok(
+    assertions.includes("branch-A writer cannot place a branch-B entity under a branch-A prefix"),
+  );
+  assert.ok(assertions.includes("Well-formed paths that reference missing rows fail closed."));
+  assert.ok(assertions.includes("mismatched patient/visit parents"));
+  assert.ok(assertions.includes("branch-A reader should see its two"));
+  assert.ok(assertions.includes("Storage UPDATE rebound"));
+  assert.ok(workflow.includes("image: postgres:17"));
+  assert.ok(workflow.includes("phase47_storage_entity_branch_binding_assertions.sql"));
+  assert.ok(workflow.includes("node --test --experimental-strip-types"));
+});

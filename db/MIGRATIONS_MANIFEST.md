@@ -75,3 +75,13 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - The UI delegates linked visit completion to `complete_visit_atomic` and performs no second browser-side ticket update.
 - PostgreSQL 17 isolated CI asserts retry repair, timestamp alignment, and preservation of the visit's original completion timestamp and `updated_at`.
 - **Candidate only; not applied to production.** Production migration remains gated on exact-head CI, migration review, and explicit release approval.
+
+
+## Phase 47 candidate — Storage entity/branch binding (2026-10-31)
+
+- Candidate: `db/roshan_phase47_storage_entity_branch_binding.sql`.
+- Resolves the path entity key to `lab_orders.id`, `medical_certificates.id`, or `attachments.id`, then verifies active patient/visit parent linkage and branch equality before any private Storage action.
+- Preserves the existing Phase 34 bucket permission matrix and restrictive policy boundary. The helper is SECURITY DEFINER with an empty search_path and is not directly executable by browser/service roles.
+- Disposable PostgreSQL 17 assertions cover matching-branch uploads, forged branch-A-prefix/branch-B-entity paths, missing rows, mismatched patient/visit parents, existing read visibility, UPDATE rebinding, and helper ACLs.
+- Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml`.
+- **Candidate only; not applied to QA or production.** Live database and Storage configuration changes remain separately authorized release work.

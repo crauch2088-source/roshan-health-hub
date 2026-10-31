@@ -719,3 +719,13 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Candidate migration uses one authoritative server-side timestamp for first completion and repairs active tickets on retry, including replacing stale ticket timestamps while preserving the visit's original completion timestamp and `updated_at`. A completed visit with a missing completion timestamp fails closed for manual repair, avoiding writes to potentially locked visits.
 - Isolated PostgreSQL 17 assertions cover retry repair and timestamp alignment; source guards ensure the browser does not perform a duplicate write.
 - The migration is a candidate only and has **not** been applied to production. Do not claim clinical E2E or UX acceptance from these automated checks.
+
+
+## Storage entity/branch binding — Phase 47 candidate (2026-10-31)
+
+- Issue #142's source-level finding was reproduced against the current Phase 34 helper: the path's branch prefix is checked, but the entity key is not resolved to its authoritative database row.
+- Bucket mapping and parent rules are documented in `docs/ISSUE_142_STORAGE_ENTITY_BRANCH_BINDING_2026-10-31.md`. Lab reports resolve to `lab_orders.id`; certificates resolve to the integer `medical_certificates.id` and derive branch through their same-patient visit; clinical attachments resolve to `attachments.id` and require a valid patient and/or visit parent.
+- Phase 47 is a forward-only source candidate. Its helper is fixed to an empty search_path, is not directly executable by browser/service roles, and is called by the existing restrictive Storage boundary.
+- Disposable PostgreSQL 17 tests cover valid same-branch writes, forged entity identifiers, missing rows, parent mismatch, read visibility, and UPDATE rebinding. No QA/production migration, Storage setting, or live object was changed.
+
+- Follow-up source review found that the certificate uploader was gated on `medical_certificates.branch_id`, a column absent from the canonical schema. Phase 47 selects the certificate's linked visit/patient branch, rejects parent-branch disagreement in the UI, and uses that derived branch for the uploader and Realtime subscription. The server-side entity helper remains authoritative.

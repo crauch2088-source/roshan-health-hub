@@ -40,6 +40,25 @@ function safeSegment(value: string, label: string): string {
   return trimmed;
 }
 
+function safeEntityId(bucket: ClinicalStorageBucket, value: string): string {
+  const entityId = safeSegment(value, "entity ID");
+  if (bucket === "roshan-medical-certificates") {
+    const numericId = Number(entityId);
+    if (
+      !/^[1-9][0-9]*$/.test(entityId) ||
+      !Number.isSafeInteger(numericId) ||
+      numericId > 2_147_483_647
+    ) {
+      throw new Error("Medical certificate storage paths require a positive integer entity ID.");
+    }
+    return entityId;
+  }
+  if (!UUID.test(entityId)) {
+    throw new Error("Clinical storage entity ID must be a UUID.");
+  }
+  return entityId;
+}
+
 export function buildClinicalStoragePath(input: {
   branchId: string;
   bucket: ClinicalStorageBucket;
@@ -48,7 +67,7 @@ export function buildClinicalStoragePath(input: {
 }): string {
   if (!UUID.test(input.branchId)) throw new Error("A valid branch UUID is required.");
 
-  const entityId = safeSegment(input.entityId, "entity ID");
+  const entityId = safeEntityId(input.bucket, input.entityId);
   const rawFilename = input.filename.trim().normalize("NFKC");
   const filename = rawFilename
     .replace(/\\/g, "-")
@@ -93,7 +112,7 @@ export function assertClinicalStoragePath(bucket: ClinicalStorageBucket, path: s
     throw new Error("Clinical storage path does not match its private bucket.");
   }
 
-  safeSegment(entityId, "entity ID");
+  safeEntityId(bucket, entityId);
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(filename) || filename.startsWith("..")) {
     throw new Error("Invalid clinical storage filename.");
   }
