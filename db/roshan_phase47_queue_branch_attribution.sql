@@ -2,6 +2,7 @@
 -- The current single-active-branch deployment permits a safe one-time backfill
 -- from the patient branch. With multiple active branches, ambiguous legacy rows
 -- remain untouched and fail closed until manually reconciled.
+-- PostgreSQL 17 regression tests passed; applied to QA and production on 2026-10-31.
 BEGIN;
 
 ALTER TABLE public.queue_tickets

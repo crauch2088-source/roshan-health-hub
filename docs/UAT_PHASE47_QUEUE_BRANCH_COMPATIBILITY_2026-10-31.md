@@ -1,3 +1,5 @@
+> **Superseding rollout status (2026-10-31):** Phase 47 is now merged and applied to QA and production. Production migration version: `20261031071122`; QA version: `20261031070544`. See [the production rollout record](PRODUCTION_ROLLOUT_2026-10-31.md) for post-apply verification and remaining launch gates.
+
 # UAT follow-up — visit and queue branch attribution (Phase 47)
 
 ## Read-only production evidence

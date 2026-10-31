@@ -1,3 +1,5 @@
+> **Superseding rollout status (2026-10-31):** Phase 46 and Phase 47 are now merged and applied to QA and production. Production migration versions: `20261031071119` (Phase 46) and `20261031071122` (Phase 47). See [the production rollout record](PRODUCTION_ROLLOUT_2026-10-31.md) for post-apply verification and remaining launch gates.
+
 # Roshan UAT — Phase 46 schema compatibility
 
 **Date:** 2026-10-31  

@@ -1,5 +1,5 @@
 -- Phase 46: close the live UAT schema gaps for clinical allergies and pharmacy branch attribution.
--- Candidate only. Review and run through isolated PostgreSQL 17 CI before any live apply.
+-- Forward-only migration. PostgreSQL 17 regression tests passed; applied to QA and production on 2026-10-31.
 -- Safe forward migration: additive columns, validated backfill, constrained branch attribution.
 BEGIN;
 
