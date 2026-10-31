@@ -1,9 +1,9 @@
--- Phase 47: bind private clinical Storage paths to authoritative entity rows and parent branches.
+-- Phase 48: bind private clinical Storage paths to authoritative entity rows and parent branches.
 -- Candidate only. Replay on disposable PostgreSQL 17 and review before any live application.
 -- No Storage configuration, bucket visibility, or live object data is changed by this source file.
 BEGIN;
 
-CREATE OR REPLACE FUNCTION private.phase47_storage_entity_branch_matches(_bucket_id text, _path text)
+CREATE OR REPLACE FUNCTION private.phase48_storage_entity_branch_matches(_bucket_id text, _path text)
 RETURNS boolean
 LANGUAGE plpgsql
 STABLE
@@ -51,7 +51,7 @@ BEGIN
               v.id IS NOT NULL
               AND v.deleted_at IS NULL
               AND v.patient_id = lo.patient_id
-              AND COALESCE(v.branch_id, p.branch_id) = v_branch_id
+              AND v.branch_id = v_branch_id
             )
           )
       );
@@ -79,61 +79,24 @@ BEGIN
           AND v.deleted_at IS NULL
           AND v.patient_id = c.patient_id
           AND p.branch_id = v_branch_id
-          AND COALESCE(v.branch_id, p.branch_id) = v_branch_id
+          AND v.branch_id = v_branch_id
       );
 
     WHEN 'roshan-clinical-attachments' THEN
-      BEGIN
-        v_entity_id := v_parts[3]::uuid;
-      EXCEPTION WHEN invalid_text_representation THEN
-        RETURN false;
-      END;
-
-      -- Attachments may be patient-linked, visit-linked, or linked to both.
-      -- At least one parent must exist; when both are present they must identify
-      -- the same patient and resolve to the path's branch.
-      RETURN EXISTS (
-        SELECT 1
-        FROM public.attachments AS a
-        WHERE a.id = v_entity_id
-          AND a.deleted_at IS NULL
-          AND (a.patient_id IS NOT NULL OR a.visit_id IS NOT NULL)
-          AND (
-            a.patient_id IS NULL
-            OR EXISTS (
-              SELECT 1
-              FROM public.patients AS p
-              WHERE p.id = a.patient_id
-                AND p.deleted_at IS NULL
-                AND p.branch_id = v_branch_id
-            )
-          )
-          AND (
-            a.visit_id IS NULL
-            OR EXISTS (
-              SELECT 1
-              FROM public.visits AS v
-              JOIN public.patients AS p ON p.id = v.patient_id
-              WHERE v.id = a.visit_id
-                AND v.deleted_at IS NULL
-                AND p.deleted_at IS NULL
-                AND (a.patient_id IS NULL OR v.patient_id = a.patient_id)
-                AND p.branch_id = v_branch_id
-                AND COALESCE(v.branch_id, p.branch_id) = v_branch_id
-            )
-          )
-      );
+      -- No approved uploader/entity contract exists for this bucket yet.
+      -- Keep every operation fail-closed until a real call site is reviewed.
+      RETURN false;
     ELSE
       RETURN false;
   END CASE;
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION private.phase47_storage_entity_branch_matches(text, text)
+REVOKE ALL ON FUNCTION private.phase48_storage_entity_branch_matches(text, text)
   FROM PUBLIC, anon, authenticated, service_role;
 
-COMMENT ON FUNCTION private.phase47_storage_entity_branch_matches(text, text) IS
-  'Fails closed unless a private clinical Storage path resolves to an existing lab order, medical certificate, or attachment whose authoritative patient/visit branch matches the path prefix.';
+COMMENT ON FUNCTION private.phase48_storage_entity_branch_matches(text, text) IS
+  'Fails closed unless a private clinical Storage path resolves to an existing lab order or medical certificate whose authoritative patient/visit branch matches the path prefix; generic clinical attachments remain denied until an approved uploader contract exists.';
 
 -- Keep the existing bucket permission contract, but add entity-to-branch binding
 -- to the restrictive Storage boundary for SELECT, INSERT, UPDATE, and DELETE.
@@ -161,7 +124,7 @@ BEGIN
   IF NOT private.phase34_storage_path_valid(_bucket_id, _path) THEN
     RETURN false;
   END IF;
-  IF NOT private.phase47_storage_entity_branch_matches(_bucket_id, _path) THEN
+  IF NOT private.phase48_storage_entity_branch_matches(_bucket_id, _path) THEN
     RETURN false;
   END IF;
 

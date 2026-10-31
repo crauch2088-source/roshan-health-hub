@@ -2128,35 +2128,51 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - This is automated **public-route** acceptance only. It does not cover 1280px, every route, keyboard/focus/screen-reader behavior, authenticated roles, staff workflows, or clinical acceptance. Issue [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95) remains open.
 - Source review found two least-privilege defects in the new manual workflow. Inline comments [4420964628](https://github.com/crauch2088-source/roshan-health-hub/pull/144#discussion_r4420964628) and [4420964625](https://github.com/crauch2088-source/roshan-health-hub/pull/144#discussion_r4420964625) ask to (1) restrict dispatch to `main` and checkout `main` rather than executing the selected feature branch's package manifest, and (2) narrow the hostname allowlist from any `*-roshan45.vercel.app` host to verified Roshan project aliases with positive/negative tests. PR #144 remains open and must be refreshed onto current main before merge.
 
-## Phase 47 — Storage entity/branch binding (2026-10-31)
-
-- Work continued from verified `main` SHA `f9ec55db37d34f97e8e3f11653c8e80103301409`. Draft PR [#148](https://github.com/crauch2088-source/roshan-health-hub/pull/148) contains the single atomic source commit `17808e1180cf29164057fe39c8ff5d1ccc466e40` plus this evidence-only documentation follow-up.
-- Added forward-only candidate `db/roshan_phase47_storage_entity_branch_binding.sql`. The new `private.phase47_storage_entity_branch_matches(text,text)` resolves:
-  - `roshan-lab-reports` → `public.lab_orders.id` (UUID), matching order/patient branch and validating any linked visit's patient and branch.
-  - `roshan-medical-certificates` → integer `public.medical_certificates.id`; branch is derived from its active same-patient visit/patient because the canonical table has no `branch_id`.
-  - `roshan-clinical-attachments` → `public.attachments.id` (UUID), requiring an active patient and/or visit parent with matching branch and same-patient linkage when both exist.
-- The helper is `STABLE SECURITY DEFINER`, uses an empty fixed `search_path`, is revoked from PUBLIC/anon/authenticated/service_role, and is called only by the existing restrictive Phase 34 Storage boundary. Existing bucket permission rules are unchanged.
-- Client path validation now matches the actual primary-key types. The certificate list/uploader also derives branch from the linked visit/patient instead of reading the non-existent `medical_certificates.branch_id` field; conflicting parent branches hide the uploader.
-- Disposable PostgreSQL 17 tests cover valid uploads in all buckets, forged branch-A-prefix/branch-B-entity inserts and privileged pre-existing objects on SELECT, missing entities, patient/visit mismatches, same-branch read visibility, UPDATE rebinding, and helper ACL/search-path properties.
-
-### Verified evidence — PR #148 head `17808e1180cf29164057fe39c8ff5d1ccc466e40`
-
-- Dedicated Phase 47 PostgreSQL 17 workflow: **PASS**, run [41179387366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387366), job `124473485354`. It replayed the canonical v112 baseline, Phase 34, Phase 33 assertions, Phase 47 candidate, and Phase 47 assertions.
-- Focused Node regression suites: **15/15 PASS** on the exact PR source snapshot; the same suites also passed in the dedicated workflow.
-- Typecheck, lint, production build, and the focused insurance-claim regression workflow: **PASS**, run [41179387662](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387662), job `124473486696`.
-- CodeQL: **PASS**, no new alerts. Phase 33 Storage/Realtime, Phase 36, Phase 37 baseline/forward replay, migration source parity, and the other completed PostgreSQL integration checks also passed.
-- Exact-head check inventory: **28 total — 26 success, 1 intentionally skipped, 1 failure**. The skipped `Canonical PG17 baseline replay and authenticated clinical acceptance` remains intentionally deferred.
-- The sole failure is the aggregate `Install, audit, typecheck, lint, build` check at run [41179387394](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387394), job `124473485991`: `npm audit` reports **14 moderate** `minimatch <11.0.1` advisories (GHSA-g3hv-75wg-m249). The audit output says `npm audit fix --force` would install `typescript-eslint@8.14.0`, a breaking downgrade. Do not force that downgrade or add an unvalidated major override. The same dependency audit blocker is present on PR #147.
-- PR #148 remains **DRAFT / NOT MERGED** because the aggregate audit gate is red. The candidate has not been applied to QA or production; no live Storage settings, objects, clinical records, or financial records were changed.
-
 ### Current blockers and next task
 
-- Current `main`: `f9ec55db37d34f97e8e3f11653c8e80103301409`. Main's latest verified check snapshot: 22 checks, 21 success and 1 intentionally skipped clinical acceptance job.
-- Current open PRs: #148, #147, #141, #144, #139, #125, #108, #138, #131, #112, and #103.
-- Current open issues: #146, #142, #95, #140, and #25.
-- Issue [#142](https://github.com/crauch2088-source/roshan-health-hub/issues/142) now has source/test candidate PR [#148](https://github.com/crauch2088-source/roshan-health-hub/pull/148). Keep the issue open until the PR is reviewed and merged; keep the migration candidate separate from any authorized QA/production application.
-- The next highest-value blocker is the `minimatch` audit failure. Review the existing dependency work in PRs #131 and #138, identify compatible patched releases for the ESLint and TypeScript-ESLint dependency chains, and land a separate dependency-only fix with lockfile regeneration and regression checks. Do not use `npm audit fix --force` or an untested cross-major override.
-- Issue [#140](https://github.com/crauch2088-source/roshan-health-hub/issues/140) remains the QA role-isolation prerequisite. PR [#141](https://github.com/crauch2088-source/roshan-health-hub/pull/141) is still open; its QA-only reconciliation has not been applied and the Security Advisor recheck is outstanding. Do not claim QA role acceptance.
-- Issue [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95) remains open. Authenticated clinical E2E acceptance is **DEFERRED / NOT RUN** until the isolated free test environment and suitable synthetic doctor identity are available; do not substitute production or create real clinical/financial records.
-- Main branch protection/ruleset was not available through the repository settings inventory; continue verifying exact-head checks manually and do not assume required checks are enforced.
-- **Next:** resolve the `minimatch` audit blocker in a separate dependency-only PR, rerun aggregate CI on #147 and #148, then review the Phase 47 source candidate. Keep all QA/production migration application separately authorized.
+- Current `main` is `0f70bead85a98b694dafea2367dd757e92709797`. Current open PRs are #144, #139, #125, #141, #108, #138, #131, #112, and #103. Current open issues are #95, #142, #140, and #25.
+- Issue [#140](https://github.com/crauch2088-source/roshan-health-hub/issues/140) remains the QA role-isolation prerequisite: four authenticated-readable views in the isolated QA project still lack `security_invoker=true`. PR [#141](https://github.com/crauch2088-source/roshan-health-hub/pull/141) contains the canonical baseline fix and QA-only reconciliation script, but the script has not been applied; keep QA role acceptance blocked until the separately approved QA-only reconciliation and Security Advisor recheck are complete.
+- The isolated free QA project and five synthetic staff identities exist, but their usable passwords are not available through an approved Auth Admin path. Authenticated clinical E2E remains **DEFERRED / NOT RUN**. Do not write Auth password hashes through SQL, invent a reset endpoint, or use production for synthetic workflows.
+- Issue [#142](https://github.com/crauch2088-source/roshan-health-hub/issues/142) remains P1 for Storage path/entity branch binding. The current evidence is a source-level authorization gap, not a demonstrated cross-branch read. Next implementation must add disposable PostgreSQL 17 positive/negative policy tests proving that an upload path's entity UUID resolves to an existing row in the same authoritative branch; do not apply a candidate to live QA or production without separate approval.
+- Main branch protection returned 404 and repository ruleset inventory was empty. Treat `main` as currently unprotected; exact-head checks are verified manually, but GitHub does not enforce a required-check ruleset. Define the minimal required check set only after separating the explicitly deferred clinical acceptance job.
+- **Next:** implement Issue #142's entity-to-branch Storage contract and PostgreSQL 17 regression tests in an isolated disposable database; keep all live database reconciliation separate and explicitly gated. Before merging PR #144, resolve both workflow-scope review comments and update its branch to current main.
+
+
+## Phase 46 — live UAT schema compatibility (2026-10-31)
+
+- Operator-reported browser UAT passed Super Admin login, settings review, synthetic patient registration, visit/queue creation, inventory review, and audit capture. This is field evidence supplied by the operator, not a claim that every authenticated role/workflow has passed.
+- Read-only catalog inspection independently confirmed `public.patients.allergies` and `public.prescriptions.branch_id` are absent in both production (PostgreSQL 17.6) and isolated QA (PostgreSQL 17.11). Production migration ledger remains at entry 115 / `20261020232033`. No database writes were performed.
+- Added candidate `db/roshan_phase46_uat_schema_compatibility.sql`: additive allergies text, nullable prescription branch_id, fail-closed preflight, linked-visit backfill, FK/index, and a private SECURITY DEFINER trigger with empty search_path that derives the branch from the linked visit and rejects missing/deleted visits or patient/branch mismatch. Legacy unlinked prescriptions remain unassigned rather than receiving a guessed branch.
+- Added a disposable PostgreSQL 17 fixture/assertion suite and a focused GitHub Actions workflow. The candidate is not a production migration and has not been applied to QA or production.
+- Updated missing-column/function diagnostics to refer to current approved forward migrations instead of incorrectly directing every 42703/PGRST202 error to the legacy Phase 1 SQL file.
+- Release gate: exact-head PostgreSQL 17 CI and review, then separately authorized migration application and read-back. After production deployment, retest only the clinic visit, pharmacy queue, and one synthetic visit-linked prescription. Keep Issue #95 open pending complete role/staff acceptance.
+- Detailed evidence: `docs/UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md`.
+
+
+## Phase 47 — live UAT visit and queue branch repair (2026-10-31)
+
+- Production catalog review found `queue_tickets.branch_id` missing although the Queue route selects it. It also found one branchless visit and its linked queue ticket; the patient is assigned to the sole active branch.
+- Phase 47 adds queue branch attribution and branch/date/status index; safely backfills only when exactly one active branch exists and the patient has an explicit assignment; no guessing is performed when branch context is ambiguous.
+- New visit inserts inherit the patient's active branch when the UI omits it. New queue tickets inherit patient/branch from the linked active visit. Cross-branch and missing/deleted parent mismatches fail closed.
+- PostgreSQL 17 Phase 47 fixture/assertions passed on PR #147 head `cf8ebd5567085e371a425807f07e1fa81f2bd56f`. Phase 47 has been applied to isolated QA and its columns/FK/index/functions/ledger were read back; a QA transaction also exercised visit -> queue ticket -> prescription branch propagation and rolled back all synthetic rows.
+- Production has not yet received Phase 46 or 47. Apply them in order after PR merge and a verified manual backup. The live ledger currently ends at migration 115 / `20261020232033`; do not rerun that already-applied Phase 39 migration.
+- The free Supabase organization has no automatic daily database backups. A manual logical backup and off-site verification are required before production DDL. See [Supabase backup policy](https://supabase.com/docs/guides/platform/backups).
+
+
+## Production rollout evidence — 2026-10-31
+
+- PR #147 merged as `2077c71dbb9cc3ca473bfddb5a280ed6ea02202c`; production Supabase migrations `20261031071119` (Phase 46) and `20261031071122` (Phase 47) applied in order. Historical migration `20261020232033` remains unchanged and already applied.
+- Production read-back: patient allergy/chronic-condition fields, prescription and queue branch fields, branch FKs/indexes/triggers all present; no branchless active visits/tickets or branch mismatches; no missing query columns across patients, prescriptions, visits, medicines, and queue tickets; no post-migration 42703 logs.
+- Vercel production deployment `dpl_HJnrrKUFXSsWtdA8QDwrTtmFpAjq` is READY on the main merge commit, with canonical alias assigned and no alias error.
+- Official launch remains blocked by missing off-site backup/restore rehearsal on the Free Supabase plan, open Storage entity-binding Issue #142, open setup RPC Issue #146, incomplete authenticated staff acceptance / Issue #95, and unconfirmed GitHub branch protection. Full checklist: `docs/PRODUCTION_ROLLOUT_2026-10-31.md`.
+
+
+## Phase 48 — Storage entity/branch binding candidate (2026-10-31)
+
+- Work continues from verified `main` SHA `a29711a0b7732fcfc64deefc1b22cec043af9d65` on existing draft PR #148; no parallel branch or new app was created.
+- The previous Phase 47 Storage candidate collided with the already-applied Phase 47 visit/queue migration number. The candidate is now Phase 48 and uses distinct migration, function, assertion, and workflow names.
+- Supported uploads resolve lab-report UUIDs to `lab_orders.id` and certificate integer IDs to `medical_certificates.id`, requiring active entity/parent rows and exact branch equality. Branchless visits fail closed.
+- Generic `roshan-clinical-attachments` remains denied because no active uploader or approved entity-key contract exists; the typed client helper no longer exposes it. Tests include a valid-looking synthetic attachment row and pre-existing objects to prove INSERT/SELECT remain denied.
+- Test-first source guard was run against the previous candidate before correction and failed as expected (3/4 focused assertions passed). Corrected Phase 48 PostgreSQL 17 and full CI are pending; prior Phase 47 checks are not reused as proof.
+- No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. Issue #142 remains open; PR #148 remains draft pending exact-head tests, aggregate dependency audit, and independent review.
+- **Next:** run exact-head Phase 48 PostgreSQL 17 replay and full guard/typecheck/lint/build/CI, then review the candidate. Resolve the independent `minimatch` audit blocker without `npm audit fix --force`; keep Issue #95 open and authenticated clinical E2E deferred.

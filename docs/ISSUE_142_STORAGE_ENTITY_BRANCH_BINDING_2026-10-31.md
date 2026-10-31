@@ -1,43 +1,38 @@
 # Issue #142 — Storage entity/branch binding
 
 **Date:** 2026-10-31  
-**Status:** Phase 47 source candidate; not applied to QA or production.
+**Status:** Phase 48 source candidate; not applied to QA or production.
 
 ## Finding and scope
 
 The Phase 34 Storage boundary validates the branch prefix, bucket/path shape, and permission, but does not resolve the entity identifier in the path. A branch-A writer can therefore present a branch-A prefix with a syntactically valid branch-B entity identifier. This is a forged/misassociated or orphaned object-placement risk; it is not evidence of a demonstrated cross-branch read.
 
-The candidate binds the third path segment to the authoritative row and verifies the row's parent branch before the restrictive Storage policy permits SELECT, INSERT, UPDATE, or DELETE.
+The forward-only Phase 48 candidate binds the supported lab-order and medical-certificate path identifiers to authoritative rows and checks the actual parent branch before the restrictive Storage policy permits SELECT, INSERT, UPDATE, or DELETE.
 
 ## Bucket/entity inventory
 
-| Private bucket | Path entity key | Authoritative row | Branch/parent contract |
-| --- | --- | --- | --- |
-| `roshan-lab-reports` | UUID | `public.lab_orders.id` | `lab_orders.branch_id` and the linked patient's branch must match the path. If `visit_id` is present, the visit must exist, be active, belong to the same patient, and resolve to the same branch. A legacy unlinked order is accepted only when its explicit order and patient branches match. |
-| `roshan-medical-certificates` | Positive integer | `public.medical_certificates.id` | The table has no `branch_id`; the certificate must resolve to an active patient and active visit, the visit must belong to that patient, and the patient/visit branch (visit branch falling back to patient branch) must match the path. |
-| `roshan-clinical-attachments` | UUID | `public.attachments.id` | At least one patient or visit parent must exist and be active. If both are present, the visit must belong to the same patient; every supplied parent must resolve to the path branch. |
-
-The repository currently has direct uploader call sites for lab orders and medical certificates. No current uploader call site for the generic clinical-attachments bucket was found; its path contract is nevertheless mapped to the existing `attachments` table, which stores patient/visit linkage and a storage path.
+| Private bucket | Current status | Authoritative contract |
+| --- | --- | --- |
+| `roshan-lab-reports` | Supported | Path UUID resolves to `public.lab_orders.id`; order and active patient branches must match. If `visit_id` is present, the visit must exist, be active, belong to the same patient, and have `visit.branch_id = path branch`. Legacy unlinked orders remain valid only when the explicit order and patient branches match. |
+| `roshan-medical-certificates` | Supported | Path segment is a positive 32-bit integer resolving to `public.medical_certificates.id`. The certificate, patient, and required visit must be active; visit patient must equal certificate patient; both patient and visit branches must equal the path branch. There is no branch fallback for a branchless visit. |
+| `roshan-clinical-attachments` | **Fail-closed / unsupported** | Repository search found no active uploader call site and no approved entity contract. The bucket remains denied for every Storage action, even when a same-branch `attachments` row exists. Do not infer that the generic `attachments` table is an approved object-key contract. |
 
 ## Source changes
 
-- Adds `private.phase47_storage_entity_branch_matches(text,text)`, a narrowly scoped `STABLE SECURITY DEFINER` helper with an empty fixed `search_path`. It is not directly executable by `anon`, `authenticated`, or `service_role`; it is called only by the existing SECURITY DEFINER Storage boundary.
-- Replaces `private.phase33_storage_access` without changing the existing bucket permission matrix. Every operation now requires both the caller's branch-prefix access and a live entity/parent row whose authoritative branch equals the prefix.
-- Aligns client path validation with actual primary-key types: UUIDs for lab orders and attachments; positive 32-bit integer IDs for certificates. The certificate list previously read a non-existent `medical_certificates.branch_id`; it now selects the linked visit/patient branch and hides the uploader if those parent branches conflict. Client checks are usability guards only; database policy remains authoritative.
-- Adds disposable PostgreSQL 17 tests for valid uploads in all three buckets, branch-A-prefix/branch-B-entity forgery (including privileged pre-existing forged objects on SELECT), missing entities, patient/visit mismatches, same-branch read visibility, UPDATE rebinding, and helper ACL/search-path properties.
+- Adds `private.phase48_storage_entity_branch_matches(text,text)`, a narrowly scoped `STABLE SECURITY DEFINER` helper with an empty fixed `search_path`. It is not directly executable by `anon`, `authenticated`, or `service_role`; it is called only by the existing SECURITY DEFINER Storage boundary.
+- Replaces `private.phase33_storage_access` without changing the existing permission matrix. Supported lab/certificate operations require both branch-prefix access and a live entity/parent row whose authoritative branch equals the prefix. The generic clinical-attachments bucket returns false before permission evaluation.
+- Removes the unsupported generic-attachments bucket from the typed client upload helper. The Phase 34 bucket itself remains private, but no typed upload path can target it.
+- The certificate list/uploader derives branch from its linked visit/patient rather than reading the non-existent `medical_certificates.branch_id`; conflicting parent branches hide the uploader. Client checks are usability guards only; database policy remains authoritative.
+- Disposable PostgreSQL 17 assertions cover matching-branch lab/certificate uploads, forged branch-A-prefix/branch-B-entity paths, missing entities, mismatched parent links, read visibility, UPDATE rebinding, helper ACL/search-path, and explicit denial of an otherwise valid generic attachment row and pre-existing objects.
 
 ## Verification and release boundary
 
-Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml`.
+- **Test-first source regression:** the Phase 48 source guard was run against the prior Phase 47 implementation before the correction; it failed as expected (3/4 focused assertions passed). The old Phase 47 dedicated PostgreSQL 17 pass is historical evidence only and does not validate this corrected Phase 48 candidate.
+- Exact-head Phase 48 PostgreSQL 17 workflow, focused Node suites, typecheck, lint, build, aggregate CI, and independent review are pending.
+- The prior aggregate CI failure on PR #148 was the separate 14-moderate `minimatch <11.0.1` npm audit finding (GHSA-g3hv-75wg-m249). Do not force `npm audit fix --force` or use an unvalidated major override.
 
-- **PASS on PR #148 head `17808e1180cf29164057fe39c8ff5d1ccc466e40`**: run [41179387366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387366), job `124473485354`. It replayed the canonical v112 PostgreSQL 17 baseline, Phase 34 Storage migration, Phase 33 assertions, Phase 47 candidate, and Phase 47 assertions.
-- Focused Node regression suites: **15/15 PASS**. The dedicated workflow also completed its source-regression step successfully.
-- Typecheck, lint, production build, and focused insurance-claim regression: **PASS**, run [41179387662](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41179387662), job `124473486696`.
-- CodeQL: **PASS**, no new alerts.
-- Exact-head PR check inventory: **28 total — 26 success, 1 intentionally skipped, 1 failure**. The skipped canonical authenticated clinical acceptance job remains deferred by design. The sole failure is the aggregate npm audit step: 14 moderate `minimatch <11.0.1` advisories (GHSA-g3hv-75wg-m249). `npm audit fix --force` proposes a breaking downgrade to `typescript-eslint@8.14.0`; do not force it. PR #148 remains draft until the aggregate audit blocker is resolved.
-
-This is a source/test candidate only. No production or QA SQL was executed, no Storage bucket configuration was changed, and no object or clinical record was created in a live project. Do not apply the candidate to QA or production without a separate explicit release authorization and the normal release gates.
+This is a source/test candidate only. No QA or production SQL was executed, no Storage configuration or bucket visibility was changed, and no object or clinical/financial record was created in a live project. Do not apply the candidate to QA or production without separate explicit authorization and the normal release gates.
 
 ## Next step
 
-Resolve the `minimatch` advisory in a separate dependency-only change after checking the compatibility work in PRs #131 and #138; then rerun aggregate CI and review PR #148. Keep Issue #95 open; clinical end-to-end acceptance remains deferred until the isolated free test environment and suitable synthetic doctor identity are available.
+Run the exact-head Phase 48 PostgreSQL 17 replay and full regression/CI. Keep PR #148 draft until the aggregate audit gate and independent review are green. Keep Issue #95 open; authenticated clinical E2E remains deferred until the isolated free test environment and suitable synthetic doctor identity are available.

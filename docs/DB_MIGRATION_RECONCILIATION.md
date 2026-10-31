@@ -721,13 +721,29 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - The migration is a candidate only and has **not** been applied to production. Do not claim clinical E2E or UX acceptance from these automated checks.
 
 
-## Storage entity/branch binding — Phase 47 candidate (2026-10-31)
+## Live UAT schema discrepancy — Phase 46 candidate (2026-10-31)
 
-- Issue #142's source-level finding was reproduced against the current Phase 34 helper: the path's branch prefix is checked, but the entity key is not resolved to its authoritative database row.
-- Bucket mapping and parent rules are documented in `docs/ISSUE_142_STORAGE_ENTITY_BRANCH_BINDING_2026-10-31.md`. Lab reports resolve to `lab_orders.id`; certificates resolve to the integer `medical_certificates.id` and derive branch through their same-patient visit; clinical attachments resolve to `attachments.id` and require a valid patient and/or visit parent.
-- Phase 47 is a forward-only source candidate. Its helper is fixed to an empty search_path, is not directly executable by browser/service roles, and is called by the existing restrictive Storage boundary.
-- Disposable PostgreSQL 17 tests cover valid same-branch writes, forged entity identifiers, missing rows, parent mismatch, read visibility, and UPDATE rebinding. No QA/production migration, Storage setting, or live object was changed.
+- The operator's authenticated production browser test reported successful Super Admin login, settings, synthetic patient registration, visit/queue creation, inventory review, and audit events, but the consultation and pharmacy routes surfaced missing-column errors.
+- Read-only catalog inspection confirmed `patients.allergies` and `prescriptions.branch_id` are absent on both production and isolated QA. Production ledger latest remains `20261020232033` (115 entries). No SQL writes or row changes were performed during inspection.
+- A forward-only candidate and isolated PostgreSQL 17 regression suite are recorded in [the Phase 46 UAT report](UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md). The candidate derives prescription branch from the linked visit and fails closed on invalid parent linkage; it does not use a blanket UPDATE to assign arbitrary branches.
+- No application to QA or production is authorized by this source-preparation task. Apply only after exact-head CI/review and a separate explicit release authorization, then read back columns, FK, trigger, index, and migration ledger.
 
-- Follow-up source review found that the certificate uploader was gated on `medical_certificates.branch_id`, a column absent from the canonical schema. Phase 47 selects the certificate's linked visit/patient branch, rejects parent-branch disagreement in the UI, and uses that derived branch for the uploader and Realtime subscription. The server-side entity helper remains authoritative.
 
-- Exact PR #148 head `17808e1180cf29164057fe39c8ff5d1ccc466e40` passed the dedicated Phase 47 PostgreSQL 17 replay/assertion workflow (run `41179387366`, job `124473485354`), focused Node tests (15/15), and typecheck/lint/build (run `41179387662`, job `124473486696`). Aggregate PR checks remain blocked only by the separate `minimatch <11.0.1` npm audit finding (14 moderate; GHSA-g3hv-75wg-m249); PR #148 remains draft and the candidate has not been applied to QA or production.
+## Phase 47 — queue and visit branch compatibility (2026-10-31)
+
+- The production Queue route selects `queue_tickets.branch_id`, but the live table did not have that column. A branchless visit and its linked ticket were also found; the patient had an explicit assignment to the sole active branch.
+- The Phase 47 candidate adds `queue_tickets.branch_id`, an FK/index, a safe single-active-branch backfill for visits, queue-ticket backfill, and invoker triggers for new visits and queue tickets.
+- The candidate has passed disposable PostgreSQL 17 tests and has been applied/read back in isolated QA (ledger version `20261031070544`). No production DDL has been run.
+- Production migration 115 / `20261020232033` is already applied. Phase 46 and 47 must follow it; do not rerun 115.
+- Production release remains blocked until a manual off-site backup is created and verified, the PR is merged on green exact-head checks, and the remaining P1 Storage/entity-binding issue plus staff acceptance gates are addressed.
+
+
+## Phase 48 candidate — Storage entity/branch binding (2026-10-31)
+
+- Candidate: `db/roshan_phase48_storage_entity_branch_binding.sql`; Phase 47 is already reserved for visit/queue branch attribution and is applied to QA and production.
+- Supported private upload contracts resolve lab-report UUIDs to `lab_orders.id` and certificate integer IDs to `medical_certificates.id`. Both require active entity/parent rows and exact path-branch equality; linked visits must belong to the same patient and have the same explicit branch.
+- `roshan-clinical-attachments` remains fail-closed because no active uploader or approved entity-key contract exists. The generic `attachments` table is not treated as an implicit Storage path contract; typed client upload support is removed and the database boundary denies the bucket even when a matching synthetic row exists.
+- The helper is `STABLE SECURITY DEFINER`, uses an empty fixed `search_path`, and is not directly executable by browser/service roles. The existing Phase 34 permission matrix remains unchanged for supported buckets.
+- Test-first source guard was run against the previous Phase 47 candidate and failed as expected (3/4 focused assertions passed). The corrected disposable PostgreSQL 17 assertions and exact-head workflow are pending; the earlier Phase 47 pass is not counted as evidence for this corrected candidate.
+- No QA/production migration, Storage configuration, object, clinical record, or financial record was changed. The candidate remains gated on exact-head PostgreSQL 17 CI, aggregate CI, independent review, and separate live-apply authorization.
+- **Next:** verify the Phase 48 exact-head workflow and full source checks; resolve the separate `minimatch` audit blocker without a forced major downgrade; keep clinical E2E acceptance deferred and Issue #95 open.

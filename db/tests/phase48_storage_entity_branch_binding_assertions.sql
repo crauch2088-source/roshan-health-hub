@@ -1,4 +1,4 @@
--- Disposable PostgreSQL 17 assertions for Phase 47 Storage entity/branch binding.
+-- Disposable PostgreSQL 17 assertions for Phase 48 Storage entity/branch binding.
 -- Every synthetic row and temporary privilege grant is rolled back.
 BEGIN;
 
@@ -8,13 +8,13 @@ SET LOCAL ROLE service_role;
 
 INSERT INTO public.branches(id, branch_code, branch_name)
 VALUES
-  ('00000000-0000-0000-0000-000000003301', 'CI-P47-A', 'Phase 47 A'),
-  ('00000000-0000-0000-0000-000000003302', 'CI-P47-B', 'Phase 47 B');
+  ('00000000-0000-0000-0000-000000003301', 'CI-P48-A', 'Phase 48 A'),
+  ('00000000-0000-0000-0000-000000003302', 'CI-P48-B', 'Phase 48 B');
 
 INSERT INTO public.roles(id, name, code)
 VALUES
-  ('00000000-0000-0000-0000-000000003311', 'Phase 47 Storage writer', 'phase47_storage_writer'),
-  ('00000000-0000-0000-0000-000000003312', 'Phase 47 no Storage access', 'phase47_storage_no_access')
+  ('00000000-0000-0000-0000-000000003311', 'Phase 48 Storage writer', 'phase48_storage_writer'),
+  ('00000000-0000-0000-0000-000000003312', 'Phase 48 no Storage access', 'phase48_storage_no_access')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.permissions(id, code, name)
@@ -51,14 +51,14 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.users(id, auth_user_id, active, deleted_at, branch_id, role_id, full_name)
 VALUES
   ('00000000-0000-0000-0000-000000003331', '00000000-0000-0000-0000-000000003341', true, NULL,
-   '00000000-0000-0000-0000-000000003301', '00000000-0000-0000-0000-000000003311', 'Phase 47 User A'),
+   '00000000-0000-0000-0000-000000003301', '00000000-0000-0000-0000-000000003311', 'Phase 48 User A'),
   ('00000000-0000-0000-0000-000000003332', '00000000-0000-0000-0000-000000003342', true, NULL,
-   '00000000-0000-0000-0000-000000003302', '00000000-0000-0000-0000-000000003312', 'Phase 47 User B');
+   '00000000-0000-0000-0000-000000003302', '00000000-0000-0000-0000-000000003312', 'Phase 48 User B');
 
 INSERT INTO public.patients(id, branch_id, mrn, full_name, gender)
 VALUES
-  ('00000000-0000-0000-0000-000000003365', '00000000-0000-0000-0000-000000003301', 'CI-P47-A', 'Synthetic Patient A', 'unknown'),
-  ('00000000-0000-0000-0000-000000003375', '00000000-0000-0000-0000-000000003302', 'CI-P47-B', 'Synthetic Patient B', 'unknown');
+  ('00000000-0000-0000-0000-000000003365', '00000000-0000-0000-0000-000000003301', 'CI-P48-A', 'Synthetic Patient A', 'unknown'),
+  ('00000000-0000-0000-0000-000000003375', '00000000-0000-0000-0000-000000003302', 'CI-P48-B', 'Synthetic Patient B', 'unknown');
 
 INSERT INTO public.visits(id, branch_id, patient_id, status)
 VALUES
@@ -77,6 +77,7 @@ VALUES
   (3364, 90002, '00000000-0000-0000-0000-000000003375', '00000000-0000-0000-0000-000000003332', 'Synthetic certificate B', DATE '2026-10-31', DATE '2026-10-31', '00000000-0000-0000-0000-000000003382'),
   (3365, 90003, '00000000-0000-0000-0000-000000003365', '00000000-0000-0000-0000-000000003331', 'Wrong-parent certificate', DATE '2026-10-31', DATE '2026-10-31', '00000000-0000-0000-0000-000000003382');
 
+-- Keep valid-looking synthetic attachment rows present: the generic bucket must still fail closed.
 INSERT INTO public.attachments(id, patient_id, visit_id, file_name, storage_path, uploaded_by)
 VALUES
   ('00000000-0000-0000-0000-000000003364', '00000000-0000-0000-0000-000000003365', '00000000-0000-0000-0000-000000003381', 'attachment-a.pdf', NULL, '00000000-0000-0000-0000-000000003331'),
@@ -114,33 +115,33 @@ VALUES
 
 RESET ROLE;
 
-DO $phase47_catalog$
+DO $phase48_catalog$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_catalog.pg_proc AS p
     JOIN pg_catalog.pg_namespace AS n ON n.oid = p.pronamespace
     WHERE n.nspname = 'private'
-      AND p.proname = 'phase47_storage_entity_branch_matches'
+      AND p.proname = 'phase48_storage_entity_branch_matches'
       AND p.prosecdef
       AND COALESCE(p.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']
   ) THEN
     RAISE EXCEPTION 'Storage entity helper must be SECURITY DEFINER with empty search_path';
   END IF;
 
-  IF has_function_privilege('anon', 'private.phase47_storage_entity_branch_matches(text,text)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'private.phase47_storage_entity_branch_matches(text,text)', 'EXECUTE')
-     OR has_function_privilege('service_role', 'private.phase47_storage_entity_branch_matches(text,text)', 'EXECUTE') THEN
+  IF has_function_privilege('anon', 'private.phase48_storage_entity_branch_matches(text,text)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'private.phase48_storage_entity_branch_matches(text,text)', 'EXECUTE')
+     OR has_function_privilege('service_role', 'private.phase48_storage_entity_branch_matches(text,text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'Storage entity helper must not be directly executable by browser or service roles';
   END IF;
 END
-$phase47_catalog$;
+$phase48_catalog$;
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000003341', true);
 
 -- Matching-branch entities are allowed for all three bucket path contracts.
-DO $phase47_valid_uploads$
+DO $phase48_valid_uploads$
 BEGIN
   INSERT INTO storage.objects(bucket_id, name)
   VALUES ('roshan-lab-reports',
@@ -150,14 +151,31 @@ BEGIN
   VALUES ('roshan-medical-certificates',
     '00000000-0000-0000-0000-000000003301/medical-certificates/3363/upload.pdf');
 
-  INSERT INTO storage.objects(bucket_id, name)
-  VALUES ('roshan-clinical-attachments',
-    '00000000-0000-0000-0000-000000003301/clinical-attachments/00000000-0000-0000-0000-000000003364/upload.pdf');
 END
-$phase47_valid_uploads$;
+$phase48_valid_uploads$;
+
+-- A real same-branch attachment row exists, but this bucket has no approved
+-- uploader/entity contract and must remain denied for every Storage operation.
+DO $phase48_reject_unmapped_attachments$
+DECLARE
+  v_blocked boolean := false;
+BEGIN
+  BEGIN
+    INSERT INTO storage.objects(bucket_id, name)
+    VALUES ('roshan-clinical-attachments',
+      '00000000-0000-0000-0000-000000003301/clinical-attachments/00000000-0000-0000-0000-000000003364/blocked.pdf');
+    RAISE EXCEPTION 'generic clinical-attachments bucket remains fail-closed: valid row was accepted';
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_blocked := true;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION 'generic clinical-attachments bucket remains fail-closed';
+  END IF;
+END
+$phase48_reject_unmapped_attachments$;
 
 -- A branch-A writer cannot place a branch-B entity under a branch-A prefix.
-DO $phase47_reject_forged$
+DO $phase48_reject_forged$
 DECLARE
   v_blocked boolean;
 BEGIN
@@ -194,10 +212,10 @@ BEGIN
   END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'branch-B attachment was not rejected'; END IF;
 END
-$phase47_reject_forged$;
+$phase48_reject_forged$;
 
 -- Well-formed paths that reference missing rows fail closed.
-DO $phase47_reject_missing$
+DO $phase48_reject_missing$
 DECLARE
   v_blocked boolean;
 BEGIN
@@ -221,21 +239,12 @@ BEGIN
   END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'missing certificate was not rejected'; END IF;
 
-  v_blocked := false;
-  BEGIN
-    INSERT INTO storage.objects(bucket_id, name)
-    VALUES ('roshan-clinical-attachments',
-      '00000000-0000-0000-0000-000000003301/clinical-attachments/00000000-0000-0000-0000-000000003398/missing.pdf');
-    RAISE EXCEPTION 'missing attachment was accepted';
-  EXCEPTION WHEN insufficient_privilege THEN v_blocked := true;
-  END;
-  IF NOT v_blocked THEN RAISE EXCEPTION 'missing attachment was not rejected'; END IF;
 END
-$phase47_reject_missing$;
+$phase48_reject_missing$;
 
--- Existing entity rows with mismatched patient/visit parents are rejected even when
--- the entity's own branch column (lab_orders) or patient branch (certificate/attachment) matches.
-DO $phase47_reject_parent_mismatch$
+-- Existing lab-order and certificate rows with mismatched patient/visit parents are rejected even when
+-- the entity's own branch column or patient branch matches.
+DO $phase48_reject_parent_mismatch$
 DECLARE
   v_blocked boolean;
 BEGIN
@@ -259,20 +268,11 @@ BEGIN
   END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'cross-patient certificate was not rejected'; END IF;
 
-  v_blocked := false;
-  BEGIN
-    INSERT INTO storage.objects(bucket_id, name)
-    VALUES ('roshan-clinical-attachments',
-      '00000000-0000-0000-0000-000000003301/clinical-attachments/00000000-0000-0000-0000-000000003377/wrong-parent.pdf');
-    RAISE EXCEPTION 'attachment with a cross-patient visit was accepted';
-  EXCEPTION WHEN insufficient_privilege THEN v_blocked := true;
-  END;
-  IF NOT v_blocked THEN RAISE EXCEPTION 'cross-patient attachment was not rejected'; END IF;
 END
-$phase47_reject_parent_mismatch$;
+$phase48_reject_parent_mismatch$;
 
 -- The existing same-branch read behavior is retained; branch-B objects remain hidden.
-DO $phase47_read_visibility$
+DO $phase48_read_visibility$
 DECLARE
   v_count integer;
 BEGIN
@@ -285,8 +285,8 @@ BEGIN
     RAISE EXCEPTION 'branch-A reader should see its two certificate objects, got %', v_count;
   END IF;
   SELECT count(*) INTO v_count FROM storage.objects WHERE bucket_id = 'roshan-clinical-attachments';
-  IF v_count <> 2 THEN
-    RAISE EXCEPTION 'branch-A reader should see its two attachment objects, got %', v_count;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'branch-A reader must not see pre-existing generic clinical-attachments objects, got %', v_count;
   END IF;
   IF EXISTS (
     SELECT 1 FROM storage.objects
@@ -295,10 +295,10 @@ BEGIN
     RAISE EXCEPTION 'branch-B object became visible to branch-A reader';
   END IF;
 END
-$phase47_read_visibility$;
+$phase48_read_visibility$;
 
 -- UPDATE cannot rebind an existing branch-A object to a branch-B entity.
-DO $phase47_update_guard$
+DO $phase48_update_guard$
 DECLARE
   v_blocked boolean;
 BEGIN
@@ -313,13 +313,13 @@ BEGIN
   END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'Storage UPDATE accepted a forged entity path'; END IF;
 END
-$phase47_update_guard$;
+$phase48_update_guard$;
 
 RESET ROLE;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000003342', true);
 
-DO $phase47_branch_b$
+DO $phase48_branch_b$
 DECLARE
   v_count integer;
 BEGIN
@@ -334,6 +334,6 @@ BEGIN
     RAISE EXCEPTION 'branch-B user without clinical Storage permissions saw % objects', v_count;
   END IF;
 END
-$phase47_branch_b$;
+$phase48_branch_b$;
 
 ROLLBACK;

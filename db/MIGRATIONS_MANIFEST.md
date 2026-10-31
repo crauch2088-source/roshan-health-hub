@@ -77,13 +77,41 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - **Candidate only; not applied to production.** Production migration remains gated on exact-head CI, migration review, and explicit release approval.
 
 
-## Phase 47 candidate — Storage entity/branch binding (2026-10-31)
+## Phase 46 candidate — UAT schema compatibility (2026-10-31)
 
-- Candidate: `db/roshan_phase47_storage_entity_branch_binding.sql`.
-- Resolves the path entity key to `lab_orders.id`, `medical_certificates.id`, or `attachments.id`, then verifies active patient/visit parent linkage and branch equality before any private Storage action.
-- Preserves the existing Phase 34 bucket permission matrix and restrictive policy boundary. The helper is SECURITY DEFINER with an empty search_path and is not directly executable by browser/service roles.
-- Disposable PostgreSQL 17 assertions cover matching-branch uploads, forged branch-A-prefix/branch-B-entity paths, missing rows, mismatched patient/visit parents, existing read visibility, UPDATE rebinding, and helper ACLs.
-- Dedicated workflow: `.github/workflows/ci-phase47-storage-entity-branch-binding.yml` — **PASS** on PR #148 head `17808e1180cf29164057fe39c8ff5d1ccc466e40`, run `41179387366`, job `124473485354` (canonical v112 + Phase 34 + Phase 33 + Phase 47 PostgreSQL 17 replay/assertions).
-- Focused Node suites: 15/15 pass. Typecheck/lint/build pass in run `41179387662`, job `124473486696`.
-- Aggregate CI remains blocked by 14 moderate `minimatch <11.0.1` npm audit findings (GHSA-g3hv-75wg-m249); do not force the breaking `typescript-eslint@8.14.0` downgrade proposed by npm.
-- **Candidate only; not merged or applied to QA or production.** Live database and Storage configuration changes remain separately authorized release work.
+- Candidate: `db/roshan_phase46_uat_schema_compatibility.sql`.
+- Adds `patients.allergies text` and `prescriptions.branch_id uuid` for the two missing columns independently observed on production and isolated QA during live browser UAT.
+- Prescription branch is copied only from the linked visit; the migration aborts on malformed patient/visit links or conflicting pre-existing branch values. A private SECURITY DEFINER trigger with an empty fixed search_path derives branch_id for future visit-linked prescriptions and rejects wrong patient, wrong branch, missing/deleted visit, or new unlinked prescription. Legacy unlinked prescriptions remain NULL and can receive non-identity updates.
+- FK and branch/status/created_at index are included. No NOT NULL constraint is imposed because historical unlinked rows are retained without guessed attribution.
+- Disposable PG17 fixture/assertions: `db/tests/phase46_uat_schema_compatibility_fixture.sql` and `db/tests/phase46_uat_schema_compatibility_assertions.sql`; focused workflow: `.github/workflows/ci-phase46-uat-schema-compatibility.yml`.
+- **Candidate only:** not applied to QA or production. Do not update the canonical v115 baseline/fingerprint until a separately approved live migration and catalog capture establish the next canonical snapshot.
+- Full UAT evidence: `docs/UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md`.
+
+
+## Phase 47 candidate — visit and queue branch attribution (2026-10-31)
+
+- Candidate: `db/roshan_phase47_queue_branch_attribution.sql`.
+- Adds `queue_tickets.branch_id uuid`, FK and branch/date/status index because the live Queue route selects the field but the production table lacked it.
+- In a deployment with exactly one active branch, backfills branchless visits only from the patient's explicitly assigned branch; with multiple active branches, inactive branches, or unassigned patients, it does not guess.
+- Backfills queue tickets from the authoritative visit and adds invoker triggers that keep new visit and queue-ticket branch attribution consistent.
+- Disposable PostgreSQL 17 fixture/assertions: `db/tests/phase47_queue_branch_fixture.sql` and `db/tests/phase47_queue_branch_assertions.sql`; exact-head workflow is part of `.github/workflows/ci-phase46-uat-schema-compatibility.yml` and also has a dedicated workflow file.
+- Applied and read back in isolated QA as migration `roshan_phase47_queue_branch_attribution` (version `20261031070544`). Production remains unchanged until the reviewed PR is merged and the required backup/release gate is satisfied.
+
+
+## Phase 46/47 production application record — 2026-10-31
+
+- Phase 46 `roshan_phase46_uat_schema_compatibility` applied to production as version `20261031071119` and QA as `20261031065937`.
+- Phase 47 `roshan_phase47_queue_branch_attribution` applied to production as version `20261031071122` and QA as `20261031070544`.
+- Phase 46/47 are now applied forward migrations, not candidates. Historical Phase 39 migration `20261020232033` remains unchanged and is already applied.
+- Production post-apply catalog and branch-integrity checks passed. See `docs/PRODUCTION_ROLLOUT_2026-10-31.md`.
+
+
+## Phase 48 candidate — Storage entity/branch binding (2026-10-31)
+
+- Candidate: `db/roshan_phase48_storage_entity_branch_binding.sql`; Phase 47 is already reserved for visit/queue branch attribution and is applied to QA and production.
+- Supported private upload contracts resolve lab-report UUIDs to `lab_orders.id` and certificate integer IDs to `medical_certificates.id`. Both require active entity/parent rows and exact path-branch equality; linked visits must belong to the same patient and have the same explicit branch.
+- `roshan-clinical-attachments` remains fail-closed because no active uploader or approved entity-key contract exists. The generic `attachments` table is not treated as an implicit Storage path contract; typed client upload support is removed and the database boundary denies the bucket even when a matching synthetic row exists.
+- The helper is `STABLE SECURITY DEFINER`, uses an empty fixed `search_path`, and is not directly executable by browser/service roles. The existing Phase 34 permission matrix remains unchanged for supported buckets.
+- Test-first source guard was run against the previous Phase 47 candidate and failed as expected (3/4 focused assertions passed). The corrected disposable PostgreSQL 17 assertions and exact-head workflow are pending; the earlier Phase 47 pass is not counted as evidence for this corrected candidate.
+- No QA/production migration, Storage configuration, object, clinical record, or financial record was changed. The candidate remains gated on exact-head PostgreSQL 17 CI, aggregate CI, independent review, and separate live-apply authorization.
+- **Next:** verify the Phase 48 exact-head workflow and full source checks; resolve the separate `minimatch` audit blocker without a forced major downgrade; keep clinical E2E acceptance deferred and Issue #95 open.

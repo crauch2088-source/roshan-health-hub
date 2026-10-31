@@ -1,8 +1,6 @@
-export type ClinicalStorageBucket =
-  "roshan-lab-reports" | "roshan-medical-certificates" | "roshan-clinical-attachments";
+export type ClinicalStorageBucket = "roshan-lab-reports" | "roshan-medical-certificates";
 
-export type ClinicalStorageEntityType =
-  "lab-reports" | "medical-certificates" | "clinical-attachments";
+export type ClinicalStorageEntityType = "lab-reports" | "medical-certificates";
 
 export interface ClinicalFileMetadata {
   type: string;
@@ -13,13 +11,11 @@ export interface ClinicalFileMetadata {
 const BUCKET_ENTITY: Record<ClinicalStorageBucket, ClinicalStorageEntityType> = {
   "roshan-lab-reports": "lab-reports",
   "roshan-medical-certificates": "medical-certificates",
-  "roshan-clinical-attachments": "clinical-attachments",
 };
 
 const MAX_BYTES: Record<ClinicalStorageBucket, number> = {
   "roshan-lab-reports": 10 * 1024 * 1024,
   "roshan-medical-certificates": 10 * 1024 * 1024,
-  "roshan-clinical-attachments": 20 * 1024 * 1024,
 };
 
 const ALLOWED_MIME = new Set(["application/pdf", "image/png", "image/jpeg"]);

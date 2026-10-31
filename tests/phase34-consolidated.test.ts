@@ -49,14 +49,6 @@ test("clinical storage entity IDs match their authoritative table keys", () => {
   assert.equal(certificatePath, branchId + "/medical-certificates/3363/certificate.pdf");
   assertClinicalStoragePath("roshan-medical-certificates", certificatePath);
 
-  const attachmentPath = buildClinicalStoragePath({
-    branchId,
-    bucket: "roshan-clinical-attachments",
-    entityId: "00000000-0000-0000-0000-000000003364",
-    filename: "attachment.pdf",
-  });
-  assertClinicalStoragePath("roshan-clinical-attachments", attachmentPath);
-
   assert.throws(() =>
     buildClinicalStoragePath({
       branchId,
@@ -85,10 +77,6 @@ test("clinical storage entity IDs match their authoritative table keys", () => {
 
 test("clinical storage helper rejects unsafe MIME types and oversized files", () => {
   validateClinicalFileMetadata({ type: "application/pdf", size: 1024 }, "roshan-lab-reports");
-  validateClinicalFileMetadata({ type: "image/jpeg", size: 1024 }, "roshan-clinical-attachments");
-  assert.throws(() =>
-    validateClinicalFileMetadata({ type: "image/webp", size: 100 }, "roshan-clinical-attachments"),
-  );
   assert.throws(() =>
     validateClinicalFileMetadata(
       { type: "application/pdf", size: 10 * 1024 * 1024 + 1 },

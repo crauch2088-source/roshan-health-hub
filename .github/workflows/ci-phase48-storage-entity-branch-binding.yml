@@ -1,4 +1,4 @@
-name: Phase 47 Storage entity/branch binding (PostgreSQL 17)
+name: Phase 48 Storage entity/branch binding (PostgreSQL 17)
 
 on:
   pull_request:
@@ -7,12 +7,12 @@ on:
       - "db/tests/phase33_storage_realtime_fixture.sql"
       - "db/tests/phase33_storage_realtime_assertions.sql"
       - "db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql"
-      - "db/roshan_phase47_storage_entity_branch_binding.sql"
-      - "db/tests/phase47_storage_entity_branch_binding_assertions.sql"
+      - "db/roshan_phase48_storage_entity_branch_binding.sql"
+      - "db/tests/phase48_storage_entity_branch_binding_assertions.sql"
       - "src/lib/storage-path.ts"
       - "tests/phase33-storage-realtime.test.ts"
       - "tests/phase34-consolidated.test.ts"
-      - ".github/workflows/ci-phase47-storage-entity-branch-binding.yml"
+      - ".github/workflows/ci-phase48-storage-entity-branch-binding.yml"
   push:
     branches: [main]
     paths:
@@ -20,24 +20,24 @@ on:
       - "db/tests/phase33_storage_realtime_fixture.sql"
       - "db/tests/phase33_storage_realtime_assertions.sql"
       - "db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql"
-      - "db/roshan_phase47_storage_entity_branch_binding.sql"
-      - "db/tests/phase47_storage_entity_branch_binding_assertions.sql"
+      - "db/roshan_phase48_storage_entity_branch_binding.sql"
+      - "db/tests/phase48_storage_entity_branch_binding_assertions.sql"
       - "src/lib/storage-path.ts"
       - "tests/phase33-storage-realtime.test.ts"
       - "tests/phase34-consolidated.test.ts"
-      - ".github/workflows/ci-phase47-storage-entity-branch-binding.yml"
+      - ".github/workflows/ci-phase48-storage-entity-branch-binding.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: roshan-phase47-storage-entity-binding-${{ github.ref }}
+  group: roshan-phase48-storage-entity-binding-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  phase47-storage-entity-binding:
-    name: Phase 47 Storage entity/branch binding (PostgreSQL 17)
+  phase48-storage-entity-binding:
+    name: Phase 48 Storage entity/branch binding (PostgreSQL 17)
     runs-on: ubuntu-latest
     timeout-minutes: 8
     services:
@@ -68,8 +68,8 @@ jobs:
             -f db/tests/phase33_storage_realtime_fixture.sql \
             -f db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql \
             -f db/tests/phase33_storage_realtime_assertions.sql \
-            -f db/roshan_phase47_storage_entity_branch_binding.sql \
-            -f db/tests/phase47_storage_entity_branch_binding_assertions.sql
+            -f db/roshan_phase48_storage_entity_branch_binding.sql \
+            -f db/tests/phase48_storage_entity_branch_binding_assertions.sql
       - name: Run Storage path and policy source regression tests
         run: |
           node --test --experimental-strip-types \
