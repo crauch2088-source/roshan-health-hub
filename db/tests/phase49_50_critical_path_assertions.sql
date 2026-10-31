@@ -123,6 +123,37 @@ BEGIN
 END;
 $completion$;
 
+DO $additional_guards$
+DECLARE v_expiry_rejected boolean:=false; v_stock_edit_rejected boolean:=false; v_error text;
+BEGIN
+  BEGIN
+    PERFORM public.fn_receive_pharmacy_batch_atomic(
+      '00000000-0000-0000-0000-000000004081',1,'NO-EXPIRY',
+      NULL,NULL,1.00,1.25,NULL,NULL,'ci-no-expiry-guard'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
+    v_expiry_rejected := (v_error='pharmacy_batch_expiry_required');
+  END;
+  IF NOT v_expiry_rejected THEN RAISE EXCEPTION 'batch receipt without expiry was not rejected'; END IF;
+
+  BEGIN
+    UPDATE public.medicines SET stock_quantity=stock_quantity+100
+    WHERE id='00000000-0000-0000-0000-000000004081';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
+    v_stock_edit_rejected := (v_error='medicine_stock_is_rpc_managed');
+  END;
+  IF NOT v_stock_edit_rejected THEN RAISE EXCEPTION 'direct medicine stock edit bypassed batch RPCs'; END IF;
+
+  IF has_table_privilege('authenticated','public.pharmacy_inventory','INSERT')
+     OR has_table_privilege('authenticated','public.pharmacy_inventory','UPDATE')
+     OR has_table_privilege('authenticated','public.pharmacy_inventory','DELETE') THEN
+    RAISE EXCEPTION 'authenticated can directly mutate pharmacy_inventory';
+  END IF;
+END;
+$additional_guards$;
+
 DO $privileges$
 BEGIN
  IF NOT has_function_privilege('authenticated','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
@@ -131,7 +162,10 @@ BEGIN
  IF has_function_privilege('anon','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
    RAISE EXCEPTION 'anon can execute atomic pharmacy dispense';
  END IF;
- IF has_table_privilege('authenticated','public.stock_movements','INSERT')
+ IF has_table_privilege('authenticated','public.pharmacy_inventory','INSERT')
+ OR has_table_privilege('authenticated','public.pharmacy_inventory','UPDATE')
+ OR has_table_privilege('authenticated','public.pharmacy_inventory','DELETE')
+ OR has_table_privilege('authenticated','public.stock_movements','INSERT')
  OR has_table_privilege('authenticated','public.stock_movements','UPDATE')
  OR has_table_privilege('authenticated','public.stock_movements','DELETE') THEN
    RAISE EXCEPTION 'authenticated can directly mutate stock movement ledger';

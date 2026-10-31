@@ -13,8 +13,8 @@ REVOKE ALL ON TABLE public.medicines, public.pharmacy_inventory,
 
 -- Stock movements are a ledger: browser users can read their branch only; writes
 -- must pass through audited atomic SECURITY DEFINER RPCs.
-REVOKE ALL ON TABLE public.stock_movements FROM PUBLIC, authenticated;
-GRANT SELECT ON TABLE public.stock_movements TO authenticated;
+REVOKE ALL ON TABLE public.stock_movements, public.pharmacy_inventory FROM PUBLIC, authenticated;
+GRANT SELECT ON TABLE public.stock_movements, public.pharmacy_inventory TO authenticated;
 DROP POLICY IF EXISTS stock_movements_select ON public.stock_movements;
 CREATE POLICY stock_movements_select ON public.stock_movements
   FOR SELECT TO authenticated
@@ -24,6 +24,55 @@ CREATE POLICY stock_movements_select ON public.stock_movements
   );
 COMMENT ON POLICY stock_movements_select ON public.stock_movements IS
   'Authenticated, permission-checked, branch-scoped SELECT only; all ledger writes are RPC-only.';
+
+CREATE OR REPLACE FUNCTION private.guard_pharmacy_batch_expiry()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $function$
+BEGIN
+  IF NEW.quantity_received > 0 AND NEW.expiry_date IS NULL THEN
+    RAISE EXCEPTION 'pharmacy_batch_expiry_required' USING ERRCODE = '22023';
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.quantity_remaining > 0 AND NEW.expiry_date < CURRENT_DATE THEN
+      RAISE EXCEPTION 'expired_batch_cannot_be_received' USING ERRCODE = '22023';
+    END IF;
+  ELSE
+    IF NEW.quantity_remaining > 0 AND NEW.expiry_date < CURRENT_DATE
+       AND (NEW.expiry_date IS DISTINCT FROM OLD.expiry_date
+         OR NEW.quantity_received > OLD.quantity_received) THEN
+      RAISE EXCEPTION 'expired_batch_cannot_be_received_or_reactivated' USING ERRCODE = '22023';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+DROP TRIGGER IF EXISTS trg_pharmacy_inventory_expiry_guard ON public.pharmacy_inventory;
+CREATE TRIGGER trg_pharmacy_inventory_expiry_guard
+  BEFORE INSERT OR UPDATE OF expiry_date, quantity_received
+  ON public.pharmacy_inventory FOR EACH ROW
+  EXECUTE FUNCTION private.guard_pharmacy_batch_expiry();
+
+CREATE OR REPLACE FUNCTION private.guard_medicine_stock_aggregate()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $function$
+BEGIN
+  IF current_user = 'authenticated' THEN
+    IF TG_OP = 'INSERT' AND COALESCE(NEW.stock_quantity,0) <> 0 THEN
+      RAISE EXCEPTION 'medicine_stock_is_rpc_managed' USING ERRCODE = '42501';
+    END IF;
+    IF TG_OP = 'UPDATE' AND NEW.stock_quantity IS DISTINCT FROM OLD.stock_quantity THEN
+      RAISE EXCEPTION 'medicine_stock_is_rpc_managed' USING ERRCODE = '42501';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+DROP TRIGGER IF EXISTS trg_guard_medicine_stock_aggregate ON public.medicines;
+CREATE TRIGGER trg_guard_medicine_stock_aggregate
+  BEFORE INSERT OR UPDATE OF stock_quantity ON public.medicines
+  FOR EACH ROW EXECUTE FUNCTION private.guard_medicine_stock_aggregate();
+REVOKE ALL ON FUNCTION private.guard_pharmacy_batch_expiry() FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION private.guard_medicine_stock_aggregate() FROM PUBLIC, anon, authenticated, service_role;
 
 -- Harden the existing invoice-coupled FEFO implementation: branch ownership is
 -- always anchored to the patient, including super-admin dispensing, and a NULL

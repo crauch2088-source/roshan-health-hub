@@ -158,10 +158,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
     unit: "",
     cost_price: "0",
     selling_price: "0",
-    stock_quantity: "0",
     reorder_level: "10",
-    expiry_date: "",
-    batch_number: "",
   });
 
   const list = usePagedRows<Row[]>(
@@ -204,10 +201,10 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
         unit: form.unit || null,
         cost_price: Number(form.cost_price) || 0,
         selling_price: Number(form.selling_price) || 0,
-        stock_quantity: Number(form.stock_quantity) || 0,
+        stock_quantity: 0,
         reorder_level: Number(form.reorder_level) || 0,
-        expiry_date: form.expiry_date || null,
-        batch_number: form.batch_number || null,
+        expiry_date: null,
+        batch_number: null,
       });
       if (error) throw new Error(error.message);
       return null;
@@ -258,13 +255,6 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                     onChange={(e) => setForm({ ...form, unit: e.target.value })}
                   />
                 </Field>
-                <Field label={t("batch_number")}>
-                  <Input
-                    dir="ltr"
-                    value={form.batch_number}
-                    onChange={(e) => setForm({ ...form, batch_number: e.target.value })}
-                  />
-                </Field>
                 <Field label={t("cost_price")}>
                   <Input
                     type="number"
@@ -281,28 +271,12 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                     onChange={(e) => setForm({ ...form, selling_price: e.target.value })}
                   />
                 </Field>
-                <Field label={t("stock")}>
-                  <Input
-                    type="number"
-                    dir="ltr"
-                    value={form.stock_quantity}
-                    onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
-                  />
-                </Field>
                 <Field label={t("reorder_level")}>
                   <Input
                     type="number"
                     dir="ltr"
                     value={form.reorder_level}
                     onChange={(e) => setForm({ ...form, reorder_level: e.target.value })}
-                  />
-                </Field>
-                <Field label={t("expiry_date")}>
-                  <Input
-                    type="date"
-                    dir="ltr"
-                    value={form.expiry_date}
-                    onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
                   />
                 </Field>
               </div>
@@ -570,6 +544,7 @@ function BatchesTab({
   const receive = useSave(
     async () => {
       if (!form.medicine_id) throw new Error(t("select_medicine"));
+      if (!form.expiry_date) throw new Error(t("expiry_required"));
 
       const qty = Number(form.quantity_received);
       if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) {
@@ -600,7 +575,7 @@ function BatchesTab({
         p_medicine_id: form.medicine_id,
         p_quantity: qty,
         p_batch_number: form.batch_number.trim() || null,
-        p_expiry_date: form.expiry_date || null,
+        p_expiry_date: form.expiry_date,
         p_manufacture_date: form.manufacture_date || null,
         p_purchase_price: purchasePrice,
         p_selling_price: sellingPrice,
@@ -879,7 +854,7 @@ function BatchesTab({
               {t("cancel")}
             </Button>
             <Button
-              disabled={!form.medicine_id || !form.quantity_received || receive.isPending}
+              disabled={!form.medicine_id || !form.quantity_received || !form.expiry_date || receive.isPending}
               onClick={() => receive.mutate(undefined as never)}
             >
               {receive.isPending ? t("saving") : t("save")}
