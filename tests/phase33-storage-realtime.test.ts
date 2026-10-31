@@ -132,7 +132,9 @@ test("Phase 48 Storage policies bind lab orders and certificates while generic a
   assert.ok(assertions.includes("Well-formed paths that reference missing rows fail closed."));
   assert.ok(assertions.includes("generic clinical-attachments bucket remains fail-closed"));
   assert.ok(
-    assertions.includes("branch-A reader must not see pre-existing generic clinical-attachments objects"),
+    assertions.includes(
+      "branch-A reader must not see pre-existing generic clinical-attachments objects",
+    ),
   );
   assert.ok(assertions.includes("Storage UPDATE rebound"));
   assert.ok(workflow.includes("image: postgres:17"));
