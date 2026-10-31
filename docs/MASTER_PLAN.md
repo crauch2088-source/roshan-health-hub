@@ -2206,3 +2206,6 @@ Medicine master creation no longer accepts initial quantity or batch-level field
 
 
 The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.
+
+
+- [Phase 49–50 browser E2E acceptance runbook](PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md): prepared, not yet executed; QA-only staff acceptance remains a release gate.

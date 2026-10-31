@@ -43,9 +43,9 @@ test("queue completion delegates ticket status and timestamps to the atomic visi
   );
 });
 
-test("pharmacy UI invokes only the invoice-backed dispense RPC", () => {
-  assert.match(pharmacy, /fn_dispense_prescription_with_invoice/);
-  assert.doesNotMatch(pharmacy, /\.rpc\s*\(["']fn_dispense_prescription["']/);
+test("pharmacy UI invokes only the idempotent atomic dispense RPC", () => {
+  assert.match(pharmacy, /atomic_pharmacy_dispense/);
+  assert.doesNotMatch(pharmacy, /\.rpc\s*\(["']fn_dispense_prescription(?:_with_invoice)?["']/);
 });
 
 test("certificate issuance requires doctor role and linked visit", () => {

@@ -10,6 +10,7 @@ const pharmacy=read("../src/lib/pharmacy.ts");
 const route=read("../src/routes/_authenticated/pharmacy.tsx");
 const dashboard=read("../src/routes/_authenticated/dashboard.tsx");
 const queue=read("../src/routes/_authenticated/queue.tsx");
+const e2eRunbook=read("../docs/PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md");
 const audit=read("../db/reports/audit_aggregate_query.sql");
 
 test("pharmacy RPC is idempotent and branch/expiry safe",()=>{
@@ -39,6 +40,10 @@ test("pharmacy RPC is idempotent and branch/expiry safe",()=>{
  assert.match(queue,/const canCompleteVisit = can\("visits.update"\)/);
  assert.match(queue,/clinical_completion_requires_doctor/);
  assert.match(queue,/canUpdateQueue && canCompleteVisit && st === "in_progress"/);
+ assert.match(e2eRunbook,/PHARM-EXP-03/);
+ assert.match(e2eRunbook,/PHARM-IDEM-01/);
+ assert.match(e2eRunbook,/CLIN-COMP-01/);
+ assert.match(e2eRunbook,/STOR-ENTITY-01/);
 });
 test("stock movement ledger is browser read-only and branch-scoped",()=>{
  assert.match(p49,/REVOKE ALL ON TABLE public\.stock_movements, public\.pharmacy_inventory FROM PUBLIC, authenticated/);

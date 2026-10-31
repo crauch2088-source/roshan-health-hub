@@ -55,3 +55,6 @@ The combined PG17 critical-path replay follows the canonical Phase 48 fixture or
 ### Queue role boundary
 
 The queue screen now uses queue.update for operational call/start actions, allowing reception to move tickets without writing clinical visit status. Completion and cancellation remain gated by visits.update; completion uses the billing-aware atomic visit RPC. This avoids granting clinical write authority to reception merely to operate the queue.
+
+
+Browser/staff acceptance is documented in `docs/PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md`. The current CI proves PostgreSQL and source contracts; it does not prove authenticated browser workflows or staff usability.

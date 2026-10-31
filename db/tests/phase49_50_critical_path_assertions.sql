@@ -47,12 +47,21 @@ WHERE visit_id='00000000-0000-0000-0000-000000004061' AND deleted_at IS NULL;
 
 INSERT INTO public.medicines(id,generic_name,name,selling_price,stock_quantity,reorder_level,active,is_active) VALUES
  ('00000000-0000-0000-0000-000000004081','CI active medicine','CI active medicine',1.25,11,1,true,true),
- ('00000000-0000-0000-0000-000000004082','CI expired-only medicine','CI expired-only medicine',2.00,1,1,true,true);
+ ('00000000-0000-0000-0000-000000004082','CI expired-only medicine','CI expired-only medicine',2.00,2,1,true,true);
 INSERT INTO public.pharmacy_inventory(id,medicine_id,batch_number,expiry_date,quantity,quantity_received,quantity_remaining,branch_id) VALUES
  ('00000000-0000-0000-0000-000000004091','00000000-0000-0000-0000-000000004081','VALID-NEAR',CURRENT_DATE+20,1,1,1,'00000000-0000-0000-0000-000000004001'),
  ('00000000-0000-0000-0000-000000004092','00000000-0000-0000-0000-000000004081','VALID-LATER',CURRENT_DATE+60,1,1,1,'00000000-0000-0000-0000-000000004001'),
  ('00000000-0000-0000-0000-000000004093','00000000-0000-0000-0000-000000004081','EXPIRED',CURRENT_DATE-1,9,9,9,'00000000-0000-0000-0000-000000004001'),
  ('00000000-0000-0000-0000-000000004094','00000000-0000-0000-0000-000000004082','EXPIRED-ONLY',CURRENT_DATE-1,1,1,1,'00000000-0000-0000-0000-000000004001');
+RESET ROLE;
+ALTER TABLE public.pharmacy_inventory DISABLE TRIGGER trg_pharmacy_inventory_expiry_guard;
+SET LOCAL ROLE service_role;
+INSERT INTO public.pharmacy_inventory(id,medicine_id,batch_number,expiry_date,quantity,quantity_received,quantity_remaining,branch_id)
+VALUES('00000000-0000-0000-0000-000000004095','00000000-0000-0000-0000-000000004082','UNKNOWN-LEGACY',NULL,1,1,1,'00000000-0000-0000-0000-000000004001');
+RESET ROLE;
+ALTER TABLE public.pharmacy_inventory ENABLE TRIGGER trg_pharmacy_inventory_expiry_guard;
+SET LOCAL ROLE service_role;
+
 INSERT INTO public.prescriptions(id,patient_id,visit_id,prescribed_by,created_by,status,is_external) VALUES
  ('00000000-0000-0000-0000-000000004101','00000000-0000-0000-0000-000000004051','00000000-0000-0000-0000-000000004061','00000000-0000-0000-0000-000000004042','00000000-0000-0000-0000-000000004042','pending',false),
  ('00000000-0000-0000-0000-000000004102','00000000-0000-0000-0000-000000004051','00000000-0000-0000-0000-000000004061','00000000-0000-0000-0000-000000004042','00000000-0000-0000-0000-000000004042','pending',false);
@@ -94,7 +103,9 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN v_expired_rejected:=true; END;
  IF NOT v_expired_rejected THEN RAISE EXCEPTION 'expired-only medicine was dispensed'; END IF;
  IF (SELECT quantity_remaining FROM public.pharmacy_inventory WHERE id='00000000-0000-0000-0000-000000004094')<>1
- OR (SELECT status FROM public.prescriptions WHERE id='00000000-0000-0000-0000-000000004102')<>'pending'
+ OR (SELECT quantity_remaining FROM public.pharmacy_inventory WHERE id='00000000-0000-0000-0000-000000004095')<>1
+  OR (SELECT stock_quantity FROM public.medicines WHERE id='00000000-0000-0000-0000-000000004082')<>2
+  OR (SELECT status FROM public.prescriptions WHERE id='00000000-0000-0000-0000-000000004102')<>'pending'
  OR EXISTS(SELECT 1 FROM public.stock_movements WHERE reference_id='00000000-0000-0000-0000-000000004102' AND movement_type='dispense') THEN
    RAISE EXCEPTION 'expired-stock rejection did not roll back every write';
  END IF;
