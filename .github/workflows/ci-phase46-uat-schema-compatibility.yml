@@ -6,6 +6,8 @@ on:
       - "db/roshan_phase46_uat_schema_compatibility.sql"
       - "db/tests/phase46_uat_schema_compatibility_*.sql"
       - ".github/workflows/ci-phase46-uat-schema-compatibility.yml"
+      - "db/roshan_phase47_queue_branch_attribution.sql"
+      - "db/tests/phase47_queue_branch_*.sql"
   push:
     branches: [main]
     paths:
@@ -46,3 +48,32 @@ jobs:
             -f db/tests/phase46_uat_schema_compatibility_fixture.sql \
             -f db/roshan_phase46_uat_schema_compatibility.sql \
             -f db/tests/phase46_uat_schema_compatibility_assertions.sql
+
+  phase47-queue-branch-postgres17:
+    name: Phase 47 visit and queue branch attribution regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Replay legacy schema, apply Phase 47, and assert behavior
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/phase47_queue_branch_fixture.sql \
+            -f db/roshan_phase47_queue_branch_attribution.sql \
+            -f db/tests/phase47_queue_branch_assertions.sql
