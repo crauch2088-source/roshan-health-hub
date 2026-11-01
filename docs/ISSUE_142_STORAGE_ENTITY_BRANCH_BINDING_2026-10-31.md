@@ -1,7 +1,7 @@
 # Issue #142 — Storage entity/branch binding
 
 **Date:** 2026-10-31  
-**Status:** Phase 48 source candidate; not applied to QA or production.
+**Status:** Closed after PR #148 merge and Phase 48 application to isolated QA and production; read-only ledger/catalog confirmation recorded 2026-11-01.
 
 ## Finding and scope
 
@@ -36,3 +36,13 @@ The forward-only Phase 48 candidate binds the supported lab-order and medical-ce
 ## Next step
 
 Obtain independent review of the Phase 48 candidate and assess the separate release gate. Keep Issue #95 open; authenticated clinical E2E remains deferred until the isolated free test environment and suitable synthetic doctor identity are available. Resolve the remaining moderate development-tree minimatch advisories separately and without forced major downgrades. Do not apply this candidate to QA or production without separate explicit authorization and the normal release gates.
+
+
+## Closure and live read-back — 2026-11-01
+
+- PR [#148](https://github.com/crauch2088-source/roshan-health-hub/pull/148) merged on 2026-10-31 at 10:19:20 UTC as `25f7fd29c5142cbfc1bdf65a2dfc6d99e3b48ee6`; Issue #142 closed at 10:19:21 UTC.
+- Supabase migration-ledger read-back confirms `roshan_phase48_storage_entity_branch_binding` as production version `20261031103927` and QA version `20261031103912`.
+- Read-only catalog checks on both projects confirm `private.phase48_storage_entity_branch_matches(text,text)` exists as STABLE SECURITY DEFINER with `search_path = ''`, with no direct EXECUTE grant to anon, authenticated, or service_role.
+- The four Phase 34 restrictive Storage object policies for SELECT, INSERT, UPDATE, and DELETE remain RESTRICTIVE in both environments. Legacy permissive policies remain present; the restrictive boundary is the enforcement layer.
+- Exact-main Phase 48 PG17 workflow passed in [run 41192274124](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192274124). Main aggregate CI [41192274350](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192274350) also succeeded; the separate authenticated clinical acceptance check remains intentionally skipped.
+- No production or QA migration was applied during this read-back. No clinical objects or patient/financial rows were inspected or created.

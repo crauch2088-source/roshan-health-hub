@@ -252,3 +252,12 @@ Last reviewed: 2026-10-30 (incremental capability update; historical entries rem
 - **Composio/GitHub execution:** the connected GitHub account was active and used for exact-SHA reads, PR merge, review comments, and atomic multi-file commits on 2026-10-30. Continue to search tools first, inspect schemas, use the explicit connected account, and batch only independent operations. Keep one atomic commit per logical task and one CI run per completed stage.
 - **Release reliability:** the 2026-10-30 readback returned no branch-protection data for `main` (404) and an empty repository ruleset list. Therefore required status checks are not currently enforced by a main-branch ruleset; verify exact SHA checks manually until a safe required-check set is defined. Do not make the deferred clinical acceptance job a mandatory merge check while its approved QA login path is unavailable.
 - **Storage security priority:** Issue #142 remains P1. Use disposable PostgreSQL 17 positive/negative policy tests to prove path entity UUIDs resolve to rows in the same authoritative branch. Any live QA reconciliation is a separate approved action; production remains read-only.
+
+
+## Browser E2E trust-boundary hardening — 2026-11-01
+
+- The repository-owned Playwright/Chromium/axe-core harness remains the no-cost public-route acceptance path; it does not use TinyFish credits or require a parallel browser service.
+- The manual workflow is restricted to `workflow_dispatch` on `main`, checks out `main`, and never installs or executes the candidate branch's package manifest.
+- Target validation is implemented in `scripts/validate-browser-e2e-target.mjs`; only the canonical production hostname, verified stable alias, project branch-preview pattern, and observed 9-character deployment-ID pattern are accepted. A generic team-wide Vercel suffix is rejected.
+- Positive/negative validator regressions are included in `npm run test:guard`. The validator writes only a normalized origin and never echoes the supplied URL into logs.
+- No long-lived Vercel bypass secret is stored or transmitted. Keep preview SSO enabled except for a separately approved, short controlled public-route test window; restore the prior protection setting immediately.

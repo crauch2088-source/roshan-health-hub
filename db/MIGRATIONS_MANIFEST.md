@@ -120,3 +120,12 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Exact-head PR check inventory: **27 success, 1 intentionally skipped, 0 failures**. The skipped canonical PG17/authenticated clinical acceptance job remains deferred by design. Local Node 24 source regressions also passed 4/4 (`phase33-storage-realtime`) and 11/11 (`phase34-consolidated`); the temporary shell's full guard attempt was 220/221 because it lacked installed `zod`, so GitHub CI is the authoritative complete runtime check.
 - No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. PR #148 remains draft/open pending independent review and separate live-apply authorization; Issue #95 remains open and authenticated clinical E2E remains deferred.
 - **Next:** obtain independent review of the Phase 48 candidate and assess the separate release gate; then address the 14 moderate development-tree `minimatch` advisories without forced major downgrades, followed by Issue #146's setup RPC exposure. Do not apply Phase 48 to QA or production without separate explicit authorization.
+
+
+## Phase 48 application record — 2026-10-31 (read-back 2026-11-01)
+
+- Forward migration source: `db/roshan_phase48_storage_entity_branch_binding.sql`.
+- Supabase migration ledger confirms production version `20261031103927` and isolated QA version `20261031103912`; current ledger counts are 118 production entries and 12 QA entries.
+- Read-only catalog checks in both projects confirm the helper `private.phase48_storage_entity_branch_matches(text,text)` is STABLE SECURITY DEFINER with an empty search path and no direct EXECUTE grant to anon, authenticated, or service_role.
+- The four Phase 34 restrictive Storage boundary policies remain RESTRICTIVE for SELECT, INSERT, UPDATE, and DELETE in both projects. The helper is called from the existing SECURITY DEFINER boundary; it is not exposed as a browser RPC.
+- This supersedes the earlier Phase 48 candidate-only note. No additional migration was applied during the 2026-11-01 verification.

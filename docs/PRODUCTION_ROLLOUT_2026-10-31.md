@@ -34,3 +34,14 @@
 ## Release decision
 
 **Schema/deployment repair: complete. Official production launch: not yet green-lit.** The remaining backup/restore, Storage entity-binding, setup RPC, staff-role acceptance, and branch-protection gates must be closed and evidenced before the clinic begins real patient operations.
+
+
+## Phase 48 Storage rollout — 2026-10-31 (read-back 2026-11-01)
+
+- PR [#148](https://github.com/crauch2088-source/roshan-health-hub/pull/148) merged to `main` at `25f7fd29c5142cbfc1bdf65a2dfc6d99e3b48ee6` on 2026-10-31 10:19:20 UTC.
+- Production migration ledger: `20261031103927 roshan_phase48_storage_entity_branch_binding`. Isolated QA ledger: `20261031103912 roshan_phase48_storage_entity_branch_binding`. These entries were confirmed by read-only `list_migrations` on 2026-11-01; no migration was applied during this verification.
+- Read-only catalog checks on both projects confirm the Phase 48 helper is STABLE SECURITY DEFINER, fixed to an empty search path, and not directly executable by anon/authenticated/service_role. All four restrictive Storage boundary policies remain RESTRICTIVE.
+- Issue [#142](https://github.com/crauch2088-source/roshan-health-hub/issues/142) is closed. No claim is made here about object upload lifecycle testing against live clinical objects.
+- Main commit checks: 24 total, 23 success, one intentional clinical-acceptance skip. Successful runs: [CI 41192274350](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192274350), [Phase 48 PG17 41192274124](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192274124), [clinical-child RPC 41192274059](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192274059), [finance RPC 41192274187](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192274187), and [push/CodeQL 41192273896](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41192273896).
+- Vercel production deployment `dpl_H93ik8uXuGa3uyjJCjqyxSrghz9Y` is READY on the exact merge SHA with canonical alias `roshan-health-hub.vercel.app` and no alias error. Vercel runtime-error aggregation returned no runtime errors in the preceding 24 hours.
+- Remaining launch gates: manual backup/off-site restore rehearsal on the Free Supabase plan; Issue #146 setup RPC; Issue #140 canonical QA baseline; Issue #95 complete UX/staff acceptance; and GitHub required-check enforcement. Authenticated clinical E2E remains deferred.
