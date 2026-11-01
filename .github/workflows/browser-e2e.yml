@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   public-routes:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/browser-acceptance-automation-20261030'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout trusted test harness from main
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: main
           persist-credentials: false
 
       - name: Set up Node.js 22
@@ -41,24 +41,7 @@ jobs:
       - name: Validate target deployment URL
         env:
           INPUT_DEPLOYMENT_URL: ${{ inputs.deployment_url }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { appendFileSync } from "node:fs";
-
-          const raw = process.env.INPUT_DEPLOYMENT_URL;
-          const url = new URL(raw);
-          const allowed =
-            url.protocol === "https:" &&
-            (url.hostname === "roshan-health-hub.vercel.app" ||
-              url.hostname === "roshan-health-hub-roshan45.vercel.app" ||
-              url.hostname.endsWith("-roshan45.vercel.app"));
-
-          if (!allowed) {
-            throw new Error("The target must be a verified Roshan Vercel deployment URL.");
-          }
-
-          appendFileSync(process.env.GITHUB_ENV, "BASE_URL=" + url.origin + "\n");
-          NODE
+        run: node scripts/validate-browser-e2e-target.mjs
 
       - name: Install pinned browser-test packages without changing the app lockfile
         run: npm install --no-save --package-lock=false @playwright/test@1.64.1 @axe-core/playwright@4.14.0

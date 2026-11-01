@@ -1,9 +1,15 @@
 // Regression tests for privilege escalation via role assignment.
 // Run with:  npm run test:guard   (node --test, no extra dependencies)
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { canAssignRole, isPrivilegedRole, SUPER_ADMIN_ROLE_CODE } from "../src/lib/role-guard.ts";
+
+const staffUserHandler = readFileSync(
+  new URL("../src/routes/_authenticated/-users.server.ts", import.meta.url),
+  "utf8",
+);
 
 const ordinaryUserManager = { isSuperAdmin: false };
 const superAdmin = { isSuperAdmin: true };
@@ -36,6 +42,32 @@ test("role code matching is exact (no case/whitespace tricks)", () => {
   assert.equal(isPrivilegedRole({ code: "super_admin" }), true);
   // Documented limitation: matching is by exact code. The database trigger
   // additionally blocks changing the code of the super_admin role itself.
+});
+
+test("staff user creation rejects soft-deleted callers before provisioning", () => {
+  const queryStart = staffUserHandler.indexOf("const { data: callerRow, error: callerRowError }");
+  const authorizationStart = staffUserHandler.indexOf("const callerIsSuperAdmin", queryStart);
+  assert.ok(queryStart >= 0 && authorizationStart > queryStart);
+
+  const callerLookup = staffUserHandler.slice(queryStart, authorizationStart);
+  assert.match(callerLookup, /\.is\(\s*["']deleted_at["']\s*,\s*null\s*\)/);
+  assert.ok(
+    callerLookup.indexOf('.is("deleted_at", null)') < callerLookup.indexOf(".maybeSingle()"),
+  );
+
+  const callerRejected = staffUserHandler.indexOf(
+    "if (callerRowError || !callerRow || !callerRow.active)",
+    queryStart,
+  );
+  const createAuthUser = staffUserHandler.indexOf(
+    "admin.auth.admin.createUser",
+    authorizationStart,
+  );
+  const insertProfile = staffUserHandler.indexOf('.from("users").insert', authorizationStart);
+  assert.ok(callerRejected > queryStart);
+  assert.ok(callerRejected < authorizationStart);
+  assert.ok(createAuthUser > callerRejected);
+  assert.ok(insertProfile > createAuthUser);
 });
 
 test("unknown role is treated as privileged", () => {

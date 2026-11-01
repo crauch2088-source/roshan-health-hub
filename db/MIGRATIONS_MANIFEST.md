@@ -75,3 +75,57 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - The UI delegates linked visit completion to `complete_visit_atomic` and performs no second browser-side ticket update.
 - PostgreSQL 17 isolated CI asserts retry repair, timestamp alignment, and preservation of the visit's original completion timestamp and `updated_at`.
 - **Candidate only; not applied to production.** Production migration remains gated on exact-head CI, migration review, and explicit release approval.
+
+
+## Phase 46 candidate — UAT schema compatibility (2026-10-31)
+
+- Candidate: `db/roshan_phase46_uat_schema_compatibility.sql`.
+- Adds `patients.allergies text` and `prescriptions.branch_id uuid` for the two missing columns independently observed on production and isolated QA during live browser UAT.
+- Prescription branch is copied only from the linked visit; the migration aborts on malformed patient/visit links or conflicting pre-existing branch values. A private SECURITY DEFINER trigger with an empty fixed search_path derives branch_id for future visit-linked prescriptions and rejects wrong patient, wrong branch, missing/deleted visit, or new unlinked prescription. Legacy unlinked prescriptions remain NULL and can receive non-identity updates.
+- FK and branch/status/created_at index are included. No NOT NULL constraint is imposed because historical unlinked rows are retained without guessed attribution.
+- Disposable PG17 fixture/assertions: `db/tests/phase46_uat_schema_compatibility_fixture.sql` and `db/tests/phase46_uat_schema_compatibility_assertions.sql`; focused workflow: `.github/workflows/ci-phase46-uat-schema-compatibility.yml`.
+- **Candidate only:** not applied to QA or production. Do not update the canonical v115 baseline/fingerprint until a separately approved live migration and catalog capture establish the next canonical snapshot.
+- Full UAT evidence: `docs/UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md`.
+
+
+## Phase 47 candidate — visit and queue branch attribution (2026-10-31)
+
+- Candidate: `db/roshan_phase47_queue_branch_attribution.sql`.
+- Adds `queue_tickets.branch_id uuid`, FK and branch/date/status index because the live Queue route selects the field but the production table lacked it.
+- In a deployment with exactly one active branch, backfills branchless visits only from the patient's explicitly assigned branch; with multiple active branches, inactive branches, or unassigned patients, it does not guess.
+- Backfills queue tickets from the authoritative visit and adds invoker triggers that keep new visit and queue-ticket branch attribution consistent.
+- Disposable PostgreSQL 17 fixture/assertions: `db/tests/phase47_queue_branch_fixture.sql` and `db/tests/phase47_queue_branch_assertions.sql`; exact-head workflow is part of `.github/workflows/ci-phase46-uat-schema-compatibility.yml` and also has a dedicated workflow file.
+- Applied and read back in isolated QA as migration `roshan_phase47_queue_branch_attribution` (version `20261031070544`). Production remains unchanged until the reviewed PR is merged and the required backup/release gate is satisfied.
+
+
+## Phase 46/47 production application record — 2026-10-31
+
+- Phase 46 `roshan_phase46_uat_schema_compatibility` applied to production as version `20261031071119` and QA as `20261031065937`.
+- Phase 47 `roshan_phase47_queue_branch_attribution` applied to production as version `20261031071122` and QA as `20261031070544`.
+- Phase 46/47 are now applied forward migrations, not candidates. Historical Phase 39 migration `20261020232033` remains unchanged and is already applied.
+- Production post-apply catalog and branch-integrity checks passed. See `docs/PRODUCTION_ROLLOUT_2026-10-31.md`.
+
+
+
+
+## Phase 48 candidate — Storage entity/branch binding (2026-10-31)
+
+- Candidate: `db/roshan_phase48_storage_entity_branch_binding.sql`; Phase 47 is already reserved for visit/queue branch attribution and is applied to QA and production. Phase 48 remains a source candidate only.
+- Supported private upload contracts resolve lab-report UUIDs to `lab_orders.id` and certificate integer IDs to `medical_certificates.id`. Both require active entity/parent rows and exact path-branch equality; linked visits must belong to the same patient and have the same explicit branch. Branchless visits fail closed.
+- `roshan-clinical-attachments` remains fail-closed because no active uploader or approved entity-key contract exists. A generic `attachments` row is not an implicit Storage contract; typed client upload support is removed and the database boundary denies the bucket even when a matching synthetic row exists.
+- The helper is `STABLE SECURITY DEFINER`, uses an empty fixed `search_path`, and is not directly executable by browser/service roles. The existing Phase 34 permission matrix remains unchanged for the two supported buckets.
+- **Test-first:** the new source guard failed against the previous Phase 47 candidate before the correction (3/4 focused assertions passed). An initial exact-head lint run caught one Prettier wrapping issue; it was fixed in commit `355d24c04afc333ea8d2848131efbcb87eb38fff`.
+- **Exact-head PostgreSQL 17: PASS** — PR #148 current head `1cd9f71bbb769615ba702e836d4620810480e504` (code-bearing commit `355d24c04afc333ea8d2848131efbcb87eb38fff`), workflow run [41180748822](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41180748822), job `124477494190`. It replayed the canonical v112 baseline, Phase 34 Storage migration, Phase 33 assertions, Phase 48 candidate, and Phase 48 assertions; focused source suite reported 15/15 pass, 0 fail.
+- **Aggregate CI: PASS** — run [41180748870](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41180748870), job `124477494519`. Node 22 lockfile install, production dependency audit, complete-tree high/critical audit, role-guard tests, typecheck, lint, and production build all passed. Production dependency audit found 0 vulnerabilities. The complete development-inclusive tree still reports 14 moderate `minimatch <11.0.1` advisories; the current gate allows moderate dev-only findings but blocks high/critical. These advisories are **not fixed** and remain a separate dependency follow-up.
+- Exact-head PR check inventory: **27 success, 1 intentionally skipped, 0 failures**. The skipped canonical PG17/authenticated clinical acceptance job remains deferred by design. Local Node 24 source regressions also passed 4/4 (`phase33-storage-realtime`) and 11/11 (`phase34-consolidated`); the temporary shell's full guard attempt was 220/221 because it lacked installed `zod`, so GitHub CI is the authoritative complete runtime check.
+- No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. PR #148 remains draft/open pending independent review and separate live-apply authorization; Issue #95 remains open and authenticated clinical E2E remains deferred.
+- **Next:** obtain independent review of the Phase 48 candidate and assess the separate release gate; then address the 14 moderate development-tree `minimatch` advisories without forced major downgrades, followed by Issue #146's setup RPC exposure. Do not apply Phase 48 to QA or production without separate explicit authorization.
+
+
+## Phase 48 application record — 2026-10-31 (read-back 2026-11-01)
+
+- Forward migration source: `db/roshan_phase48_storage_entity_branch_binding.sql`.
+- Supabase migration ledger confirms production version `20261031103927` and isolated QA version `20261031103912`; current ledger counts are 118 production entries and 12 QA entries.
+- Read-only catalog checks in both projects confirm the helper `private.phase48_storage_entity_branch_matches(text,text)` is STABLE SECURITY DEFINER with an empty search path and no direct EXECUTE grant to anon, authenticated, or service_role.
+- The four Phase 34 restrictive Storage boundary policies remain RESTRICTIVE for SELECT, INSERT, UPDATE, and DELETE in both projects. The helper is called from the existing SECURITY DEFINER boundary; it is not exposed as a browser RPC.
+- This supersedes the earlier Phase 48 candidate-only note. No additional migration was applied during the 2026-11-01 verification.
