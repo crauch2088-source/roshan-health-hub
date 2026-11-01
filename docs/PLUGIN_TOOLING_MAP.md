@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
+Last reviewed: 2026-10-30 (incremental capability update; historical entries remain time-stamped). Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -241,3 +241,29 @@ Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable 
 - **Remaining dependency blocker:** PR #114 is open at head `9e783981e13993ee03669efc459a563c1c3c216b`, based on the exact current main SHA above. Its CI run `40465003880` fails Typecheck after the grouped npm-major updates: `react-day-picker` 10 removes the `ClassNames.table` property used by `src/components/ui/calendar.tsx`; the Recharts major update changes tooltip payload/label typings and causes additional `src/components/ui/chart.tsx` type errors. The 220 guard tests and the PostgreSQL integration jobs in that run pass, but lint/build are skipped after Typecheck fails. Do not merge PR #114 or patch these generated UI wrappers without a deliberate compatibility review and regression coverage.
 - Issue #95 remains open. The current production source/deployment identity is now synchronized, but all 27 authenticated page routes remain **NOT TESTED** for interactive viewport/RTL/LTR/keyboard acceptance; authenticated role and clinical workflows remain **BLOCKED/DEFERRED**. The prior public fetch is not interactive browser acceptance.
 - **Next task:** continue the source-level UX audit under Issue #95 without opening a new feature workstream. In parallel, keep PR #114 unmerged until its breaking dependency changes are either excluded from Dependabot's major group or migrated with focused tests and a green exact-head CI/preview. Clinical E2E remains explicitly deferred until the free isolated QA environment and suitable synthetic clinician identity are available.
+
+
+## Browser automation and current release-gate routing — 2026-10-30
+
+- **Playwright + Chromium + axe-core (repository harness, candidate PR #144):** the public-route suite passed 16/16 Chromium tests on the exact PR preview across 320/360/390/430px, Arabic RTL and English LTR, with axe-core WCAG 2.1 A/AA scans, overflow checks, route recovery, autocomplete, and public error-disclosure checks. This uses the repository's existing GitHub Actions/Vercel preview path and does not consume TinyFish credits or write clinical/financial data.
+- **Do not merge or dispatch the PR #144 manual workflow until its scope review is resolved:** the current candidate allows a feature-branch dispatch and checks out `${{ github.ref }}` despite claiming to use a trusted main harness; it also accepts any `*-roshan45.vercel.app` host. Required correction: dispatch on `main` only, checkout `main`, and use a project-specific allowlist with positive/negative tests. The preview test result remains valid for the exact tested head, but does not waive this workflow review.
+- **Public UX routing:** prefer the repository Playwright suite for repeatable public-route checks. Use TinyFish only when a specific authorized browser capability is missing and the session is approved; avoid spending metered browser runs on coverage already handled by Playwright.
+- **Authenticated clinical routing:** do not run authenticated role/clinical tests until the isolated free QA project has a usable synthetic clinician identity through an approved Auth Admin credential path and the four QA `security_invoker` view options from Issue #140 are reconciled/rechecked. The five existing QA staff identities have no usable passwords; do not modify `auth.users` directly or create an improvised credential endpoint.
+- **Composio/GitHub execution:** the connected GitHub account was active and used for exact-SHA reads, PR merge, review comments, and atomic multi-file commits on 2026-10-30. Continue to search tools first, inspect schemas, use the explicit connected account, and batch only independent operations. Keep one atomic commit per logical task and one CI run per completed stage.
+- **Release reliability:** the 2026-10-30 readback returned no branch-protection data for `main` (404) and an empty repository ruleset list. Therefore required status checks are not currently enforced by a main-branch ruleset; verify exact SHA checks manually until a safe required-check set is defined. Do not make the deferred clinical acceptance job a mandatory merge check while its approved QA login path is unavailable.
+- **Storage security priority:** Issue #142 remains P1. Use disposable PostgreSQL 17 positive/negative policy tests to prove path entity UUIDs resolve to rows in the same authoritative branch. Any live QA reconciliation is a separate approved action; production remains read-only.
+
+
+## Browser E2E trust-boundary hardening — 2026-11-01
+
+- The repository-owned Playwright/Chromium/axe-core harness remains the no-cost public-route acceptance path; it does not use TinyFish credits or require a parallel browser service.
+- The manual workflow is restricted to `workflow_dispatch` on `main`, checks out `main`, and never installs or executes the candidate branch's package manifest.
+- Target validation is implemented in `scripts/validate-browser-e2e-target.mjs`; only the canonical production hostname, verified stable alias, project branch-preview pattern, and observed 9-character deployment-ID pattern are accepted. A generic team-wide Vercel suffix is rejected.
+- Positive/negative validator regressions are included in `npm run test:guard`. The validator writes only a normalized origin and never echoes the supplied URL into logs.
+- No long-lived Vercel bypass secret is stored or transmitted. Keep preview SSO enabled except for a separately approved, short controlled public-route test window; restore the prior protection setting immediately.
+
+
+## Public browser workflow — merged and verified 2026-11-01
+
+- PR #144 merged as `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`. Main workflow [41280194348](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280194348) passed 16/16 read-only public-route/accessibility checks against production at 320/360/390/430 px.
+- The validator is project-scoped; manual dispatch is main-only and the runner checks out main. The test did not use Vercel SSO bypass or create clinical/financial records.

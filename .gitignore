@@ -37,3 +37,7 @@ dist-ssr
 
 # Graphify generated local artifacts
 graphify-out/
+
+# Playwright browser test artifacts
+playwright-report/
+test-results/
