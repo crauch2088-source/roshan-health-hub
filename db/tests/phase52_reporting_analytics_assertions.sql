@@ -41,6 +41,18 @@ BEGIN
     RAISE EXCEPTION 'PUBLIC must not have direct EXECUTE on Phase 52 reporting RPC';
   END IF;
 
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'payments_reporting_date_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'expenses_reporting_date_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'lab_orders_reporting_created_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'insurance_claims_reporting_submitted_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'insurance_claims_reporting_decided_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'insurance_claims_reporting_paid_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'prescriptions_reporting_created_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'prescriptions_reporting_dispensed_idx')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = 'public' AND indexname = 'stock_movements_reporting_created_idx') THEN
+    RAISE EXCEPTION 'Phase 52 reporting date indexes are incomplete';
+  END IF;
+
   IF NOT has_function_privilege('authenticated', 'private.app_has_perm(text)', 'EXECUTE')
      OR NOT has_function_privilege('authenticated', 'private.app_has_branch_access(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'authenticated must retain execute access to reviewed permission/branch helpers';

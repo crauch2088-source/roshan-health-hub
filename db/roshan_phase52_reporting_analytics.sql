@@ -2,6 +2,36 @@
 -- SECURITY INVOKER is intentional: source-table RLS remains the row-visibility boundary.
 BEGIN;
 
+-- Date-first partial indexes support global reporting windows while preserving
+-- branch as a secondary filter. Existing visit/diagnosis/lab-item join indexes
+-- already cover their respective report joins.
+CREATE INDEX IF NOT EXISTS payments_reporting_date_idx
+  ON public.payments (payment_date, branch_id)
+  WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS expenses_reporting_date_idx
+  ON public.expenses (expense_date, branch_id)
+  WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS lab_orders_reporting_created_idx
+  ON public.lab_orders (created_at, branch_id)
+  WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS insurance_claims_reporting_submitted_idx
+  ON public.insurance_claims (submitted_at, invoice_id)
+  WHERE deleted_at IS NULL AND submitted_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS insurance_claims_reporting_decided_idx
+  ON public.insurance_claims (decided_at, invoice_id)
+  WHERE deleted_at IS NULL AND decided_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS insurance_claims_reporting_paid_idx
+  ON public.insurance_claims (paid_at, invoice_id)
+  WHERE deleted_at IS NULL AND paid_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS prescriptions_reporting_created_idx
+  ON public.prescriptions (created_at, branch_id)
+  WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS prescriptions_reporting_dispensed_idx
+  ON public.prescriptions (dispensed_at, branch_id)
+  WHERE deleted_at IS NULL AND dispensed_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS stock_movements_reporting_created_idx
+  ON public.stock_movements (created_at, branch_id, movement_type);
+
 CREATE OR REPLACE FUNCTION public.get_reporting_analytics(
   p_from_date date,
   p_to_date date,

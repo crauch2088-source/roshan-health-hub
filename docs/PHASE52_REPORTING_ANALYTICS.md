@@ -28,7 +28,7 @@
 - Runs as **STABLE SECURITY INVOKER** with an empty fixed `search_path`; underlying source-table RLS remains effective. The response includes per-domain coverage flags so a role lacking insurance.read (e.g. legacy admin) is not shown a misleading zero-claims result.
 - EXECUTE: authenticated only. PUBLIC, anon and service_role are revoked.
 - Returns aggregates only; no patient names/IDs, notes, invoice numbers, raw diagnoses linked to people, or row-level clinical payloads.
-- No table, trigger or persistent data structure is added. No writes are performed.
+- No tables or triggers are added. Nine date-first partial/composite indexes support the reporting windows and branch filters; no business rows are written.
 
 ### Response shape
 
