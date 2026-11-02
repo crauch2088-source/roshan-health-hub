@@ -518,6 +518,16 @@ const dict: Record<string, { ar: string; en: string }> = {
     en: "Language",
   },
 
+  completed_visits: { ar: "الزيارات المكتملة", en: "Completed visits" },
+  payments_collected: { ar: "التحصيلات", en: "Payments collected" },
+  operating_expenses: { ar: "المصروفات التشغيلية", en: "Operating expenses" },
+  net_cashflow: { ar: "صافي التدفق النقدي", en: "Net cash flow" },
+  monthly_trends: { ar: "الاتجاهات الشهرية", en: "Monthly trends" },
+  invalid_reporting_range: {
+    ar: "اختر فترة صحيحة لا تتجاوز 366 يوماً.",
+    en: "Choose a valid date range of no more than 366 days.",
+  },
+
   // misc
   role: { ar: "الدور", en: "Role" },
   active: { ar: "نشط", en: "Active" },

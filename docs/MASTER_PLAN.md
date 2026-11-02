@@ -2303,3 +2303,35 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Issue [#142](https://github.com/crauch2088-source/roshan-health-hub/issues/142) and [#140](https://github.com/crauch2088-source/roshan-health-hub/issues/140) were already closed as completed.
 - Issues [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95) and [#25](https://github.com/crauch2088-source/roshan-health-hub/issues/25) were closed at the owner's explicit request with state reason `not_planned`, and their bodies were amended to state the unresolved conditions. #95 does **not** represent passed authenticated clinical E2E or staff UAT. #25 does **not** represent verified historical secret cleanup or completed Dependabot/non-provider secret-scanning configuration.
 - Before relying on the new pharmacy/visit workflows for live clinical operations, complete authenticated QA/staff UAT with a suitable synthetic doctor identity. Before any production DB migration, complete the manual logical backup, off-site copy, and successful restore rehearsal. No production database writes were made as part of this merge.
+
+
+## Phase 52 and subsequent roadmap — 2026-11-02
+
+### Phase 52 — Reporting & analytics foundation (current source candidate)
+- Deliver a single bounded, branch-aware, read-only reporting RPC: `public.get_reporting_analytics(date,date,uuid)`. Enforce `reports.read`, authenticated application identity, maximum inclusive range of 366 days, explicit branch authorization, SECURITY INVOKER, fixed empty `search_path`, and authenticated-only EXECUTE.
+- Aggregate visits/completions/cancellations/consultation fees, payment collections, expenses/net cashflow, lab order/item/revenue, insurance submitted/approved/paid totals, prescription/dispense/write-off counts, monthly trends, and top department/doctor/test/diagnosis breakdowns.
+- Do not return patient identifiers, names, clinical notes, invoice references, or raw event rows. Rely on source table RLS; no SECURITY DEFINER bypass.
+- Upgrade `/reports` to call the aggregate RPC with clinic-local dates, strict 366-day range validation, CSV summary/monthly exports, and Arabic/English labels. Keep point-in-time inventory reports separate because their semantics are not date-flow aggregates.
+- Verification: pure date-range unit tests; source/ACL regression tests; disposable PostgreSQL 17 baseline + forward migrations 34/48/49/50/51/52; anon denial; authenticated-without-app-user denial; function metadata and grants; branch authorization and RLS review; CI typecheck/lint/build/guard; public browser checks at 320/360/390/430px. Do not apply to QA/production until prerequisite migrations and backup/release gates are reconciled.
+
+### Phase 53 — Clinical document printing (receipt, invoice, prescription, certificates)
+- Introduce shared print templates with Arabic RTL/English LTR, A4 PDF/browser print and 58/80 mm thermal layouts, configurable clinic identity/footer, QR/serial verification, page-break controls and accessible preview.
+- Receipts must reconcile to the immutable payment ledger and show amount paid, method, timestamp, cashier, invoice balance and reversal state; never generate a receipt from an unposted client-side amount.
+- Prescriptions must render only saved, signed/authorized prescription data, include generic/brand name, dose, route, frequency, duration, quantity, prescriber and date; do not infer missing medication instructions. Protect patient data and avoid embedding public URLs.
+- No new database tables unless print-job audit/versioning is explicitly required. Tests cover RTL/LTR, thermal widths, PDF/browser print snapshots, receipt/payment linkage, void/reprint labels, prescription completeness and role authorization.
+
+### Phase 54 — Inter-branch pharmacy transfers
+- Add transfer header + line tables, immutable transfer events/status history, source/destination branch IDs, idempotency key, actor/timestamps and reason. Stock is reserved at dispatch and received atomically; never treat branch stock as fungible before destination receipt.
+- RPC contract: create draft, dispatch, receive, reject/cancel (only before dispatch), with row locks, positive finite quantities, FEFO batch lineage/expiry preservation, branch-specific permissions, and exact source/destination checks. Transfers must create paired stock movements with a shared transfer reference and reconcile source/destination quantities.
+- Tests cover cross-branch denial, same-branch rejection, partial receipt policy, over-receipt, retries, duplicate keys, concurrent dispatch/receive, expired batches, rollback and ledger reconciliation. Start with full-transfer only; add partial receipt only if operations require it.
+
+### Phase 55 — Insurance claims workflow completion
+- Add claim lifecycle validation and work queues for draft → submitted → partially approved/approved/denied → paid/closed, with immutable status transitions and audit history. Support attachments/prior authorizations only through existing secure Storage entity binding.
+- Add payer/plan-level aging, denial reason analytics, resubmission tracking, reconciliation of approved/paid values against invoice and payment ledger, and exports suitable for payer submission.
+- Preserve existing amount precision, branch isolation and idempotent claim-payment RPCs. No silent overwrite of insurer decisions. Tests cover invalid transitions, amount overrun, duplicate submission/payment, branch isolation, attachment entity binding and accounting reconciliation.
+
+### Phase 56 — Operational readiness & observability
+- Add privacy-safe aggregate application telemetry, queue/lab/pharmacy SLA metrics, backup/restore drills, alert thresholds, failed-job monitoring and a documented incident/rollback runbook. No patient names, clinical text, invoice/payment references or tokens in telemetry.
+- Complete authenticated staff UAT across receptionist, GP, lab, pharmacist and finance roles on a phone-sized device before live clinical use; this remains distinct from unit/PG17/public-route CI.
+
+**Ordering dependencies:** Phase 52 can be developed and tested against the disposable PG17 baseline, but live deployment must wait until production/QA migration chains are reconciled (Phase 49/50 absent on both; Phase 51 currently QA-only) and backup/restore gates are completed. Phase 53 is mostly frontend and can be built independently after saved-data contracts are verified. Phase 54 is a database/accounting-critical feature and follows the inventory/dispense acceptance. Phase 55 follows claim lifecycle and payer workflow requirements. Phase 56 is continuous and must be completed before operational launch.
