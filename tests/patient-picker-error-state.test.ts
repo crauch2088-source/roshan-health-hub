@@ -30,8 +30,8 @@ test("the add-patient suggestion remains limited to a successful empty search", 
 });
 
 test("patient picker error regression is included in the guard suite", () => {
-  const pkg = JSON.parse(
-    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-  ) as { scripts?: Record<string, string> };
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    scripts?: Record<string, string>;
+  };
   assert.match(pkg.scripts?.["test:guard"] ?? "", /patient-picker-error-state\.test\.ts/);
 });
