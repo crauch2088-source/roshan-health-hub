@@ -375,6 +375,19 @@ const dict: Record<string, { ar: string; en: string }> = {
   dosage_form: { ar: "الشكل الدوائي", en: "Dosage form" },
   batch_number: { ar: "رقم التشغيلة", en: "Batch no." },
   expiry_date: { ar: "تاريخ الانتهاء", en: "Expiry date" },
+  expiry_required: { ar: "تاريخ انتهاء الدفعة مطلوب", en: "Batch expiry date is required" },
+  clinical_completion_requires_doctor: {
+    ar: "إنهاء الزيارة السريرية يتطلب صلاحية الطبيب",
+    en: "Clinical visit completion requires clinical permission",
+  },
+  clinical_cancellation_requires_doctor: {
+    ar: "إلغاء الزيارة السريرية يتطلب صلاحية الطبيب",
+    en: "Clinical visit cancellation requires clinical permission",
+  },
+  unknown_expiry_batches: {
+    ar: "دفعات بتاريخ انتهاء غير معروف",
+    en: "Batches with unknown expiry",
+  },
   purchase_price: { ar: "سعر الشراء", en: "Purchase price" },
   cost_price: { ar: "سعر التكلفة", en: "Cost price" },
   selling_price: { ar: "سعر البيع", en: "Selling price" },
@@ -405,6 +418,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   healthy: { ar: "سليم", en: "Healthy" },
   expiring_soon: { ar: "قارب على الانتهاء", en: "Expiring soon" },
   expired: { ar: "منتهي الصلاحية", en: "Expired" },
+  unknown: { ar: "تاريخ الانتهاء غير معروف", en: "Expiry unknown" },
   expiring_medicines: { ar: "أدوية قاربت على الانتهاء", en: "Expiring medicines" },
   expired_medicines: { ar: "أدوية منتهية الصلاحية", en: "Expired medicines" },
   low_stock_medicines: { ar: "أدوية منخفضة المخزون", en: "Low stock medicines" },
