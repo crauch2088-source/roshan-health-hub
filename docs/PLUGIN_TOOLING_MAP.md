@@ -278,3 +278,19 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - Next priority is Issue #146: a boolean-only anonymous bootstrap status RPC. Preserve the private helper boundary, use an empty fixed search_path, and prove exact grants and anonymous behavior in disposable PostgreSQL 17. PR #149 already contains Phase 49/50 pharmacy/billing candidates; treat the next independent setup-status change as Phase 51, but recheck the live ledger and dependency order before assigning a migration version.
 - PR #149 remains draft and targets the old Phase 48 feature branch, not main. Refresh it before review; keep clinical/financial release gates intact.
 - Issue #95 remains open. Do not run authenticated clinical E2E until the isolated free QA login path and suitable synthetic clinician identity are available. Issue #25 remains open while historical secret exposure and unavailable GitHub security-setting controls remain unresolved.
+
+
+## Phase 51 setup-status regression routing — 2026-11-02
+
+- The anonymous bootstrap status issue is handled through the repository's existing free PostgreSQL 17 CI service and Node test:guard suite; no new app, service, secret, or paid browser integration is required.
+- The Phase 51 candidate runs after the v115 catalog fingerprint assertion, then checks the public boolean wrapper's exact direct EXECUTE grants and verifies that anon cannot access the private schema/helper.
+- Keep the anonymous contract deliberately narrow: one boolean only. Do not expose user counts, identity details, or a new setup RPC family.
+- Candidate remains unapplied. Recheck the live migration ledger and Phase 49/50 merge order before assigning a timestamp. Clinical authenticated E2E remains deferred.
+
+
+### Phase 51 exact-head validation — 2026-11-02
+
+- Corrected PR #150 code head ef66e4bdc1d2e93e293c4bcc776a331e4e950906 passed 29 checks: 28 success, one deferred clinical-acceptance skip, zero failures. Run 41399729647 includes the Phase 51 PostgreSQL 17 step, v115 fingerprint comparison, source guard, typecheck, lint, and build.
+- Vercel ignored the corrected-head preview because no frontend/runtime code changed; do not force a preview build for this SQL/test/docs-only candidate.
+- Both live databases were read-only checked: production 118 migrations/latest 20261031103927, QA 12/latest 20261031103912. The existing authenticator membership in anon/authenticated/service_role means a direct authenticator EXECUTE grant is not required after the public grants are narrowed.
+- Keep PR #150 Draft pending independent security review. No live migration is authorized by this source candidate.

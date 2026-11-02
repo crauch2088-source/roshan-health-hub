@@ -45,3 +45,13 @@ Complete the source-only canonical baseline fidelity fix for QA `security_invoke
 - Next task: implement Issue #146 as a source-only Phase 51 candidate. Replace only the public `setup_required()` wrapper with a STABLE SECURITY DEFINER boolean wrapper using `search_path = ''`; direct EXECUTE should be granted only to anon and authenticated. Keep `private.setup_required()` inaccessible to anon. Add PostgreSQL 17 assertions for function flags, exact ACL, anonymous true/false behavior around one disposable synthetic `public.users` row, and private-helper denial. Wire the test after the v115 catalog fingerprint check.
 - PR #149 is still draft and based on the old Phase 48 branch; refresh it to current main before review. It contains Phase 49 and 50 candidates, so do not reuse the stale migration 117 reference. Recheck the live ledger and merge order before assigning a migration timestamp.
 - Keep Issue #95 open and clinical E2E deferred until the isolated free QA login path and suitable synthetic doctor identity are available. Keep Issue #25 open while historical secret exposure and unavailable security-setting controls remain unresolved.
+
+
+## Follow-up — Issue #146 Phase 51 candidate
+
+- Added draft PR [#150](https://github.com/crauch2088-source/roshan-health-hub/pull/150), branch fix/public-setup-status-anon-phase51-20261102.
+- Code commit ce88d504b4c546e4611f78f74346ab1ff415c4e8; formatting-only correction ef66e4bdc1d2e93e293c4bcc776a331e4e950906.
+- Exact-head CI [41399729647](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41399729647): 29 checks, 28 success, one intentionally skipped clinical-acceptance check, zero failures. Phase 51 PostgreSQL 17 assertions, v115 7/7 catalog fingerprint, source guard, typecheck, lint, and build all passed.
+- Read-only Supabase recheck: production 118 migrations/latest 20261031103927; QA 12/latest 20261031103912. Both environments show the same current invoker/anon-denied gap. Authenticator is a member of anon/authenticated/service_role, so the direct authenticator grant can be removed while the role retains inherited permissions.
+- Vercel ignored the corrected-head preview because the candidate changes no frontend/runtime code.
+- PR #150 remains Draft pending independent security review. No QA or production migration/ACL change was made. No timestamp assigned pending PR #149 merge-order review.
