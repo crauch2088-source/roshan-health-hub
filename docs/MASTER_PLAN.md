@@ -2217,3 +2217,46 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - QA migration `20261031071243 qa_restore_security_invoker_on_exposed_views` is already applied. Read-only catalog checks confirm `security_invoker=true` on all four views in both QA and production: `cashbox_balance`, `follow_ups`, `v_patient_receivables`, and `v_supplier_outstanding`. Authenticated SELECT is true and anon SELECT is false for each.
 - PR [#141](https://github.com/crauch2088-source/roshan-health-hub/pull/141) is still open and merge-conflicted against current main. Its body incorrectly says the QA script has not been applied; the latest read-back is recorded in the PR and Issue #140 comments. The remaining source task is to refresh the PR, retain the canonical v112 baseline assertions and disposable-PG17 idempotence replay, and correct its evidence. Do not reapply the live QA script or touch production.
 - Next task: complete the PR #141 source refresh and run its exact-head PostgreSQL 17 replay. Keep Issue #140 open until the canonical baseline is merged and Security Advisor recheck is recorded. Keep Issue #95 open until authenticated clinical E2E and staff acceptance are separately completed.
+
+
+## Autonomous execution update — 2026-11-02: QA view baseline security closure
+
+### Start-of-run verified state
+- Repository: `crauch2088-source/roshan-health-hub`; default branch `main`.
+- Main at inspection: `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`.
+- Open PRs at inspection: #141, #131, #149, #139, #125, #108, #138, #112, and #103.
+- Open issues at inspection: #140, #95, #146, and #25.
+- Read `docs/MASTER_PLAN.md`, `docs/PLUGIN_TOOLING_MAP.md`, the Phase 48/QA view-security evidence, PR #141, and Issues #140/#146 before selecting work.
+
+### Selected task and merge
+- Completed the canonical QA baseline fidelity task in PR [#141](https://github.com/crauch2088-source/roshan-health-hub/pull/141), head `4b1e9a90fa1352fce30d75b6f0a4ef8d7b355fd7`, using a squash merge.
+- Merge commit / current main at this update: `9f17d2bb6d3290b036de71da9cb147540707d17a`.
+- The PR preserves `security_invoker=true` on `public.cashbox_balance`, `public.follow_ups`, `public.v_patient_receivables`, and `public.v_supplier_outstanding` in the canonical v112 baseline. Its fail-closed guard executes inside the baseline transaction before the final COMMIT.
+- The disposable PostgreSQL 17 job resets these four options, applies the QA-only reconciliation script twice, and verifies the resulting catalog contract. The already-applied QA migration `20261031071243` was not rerun.
+
+### Exact validation evidence
+- PR-head inventory: 27 checks — 26 success, 1 intentional skip, 0 failures. The skipped job is authenticated clinical acceptance, still deferred.
+- Post-merge main CI [41398491594](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41398491594): **22 success, 1 intentional skip, 0 failures**.
+- Phase 48 PostgreSQL 17 [41398491496](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41398491496): success.
+- Finance-only RPC write isolation [41398491611](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41398491611): success.
+- Push on main / CodeQL [41398490684](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41398490684): success.
+- The canonical PostgreSQL 17 baseline/forward-replay/catalog-contract job passed in main CI. No test was run against production business data.
+
+### QA / production boundary
+- The QA reconciliation `20261031071243 qa_restore_security_invoker_on_exposed_views` was already applied before this run. Prior read-only catalog evidence confirms all four views have `security_invoker=true` in QA and production; authenticated SELECT remains allowed and anon SELECT remains denied.
+- The 2026-11-01 read-only Security Advisor recheck reported no view-specific finding for these four views. Existing unrelated findings (pg_trgm in public, authenticated-callable SECURITY DEFINER functions, and leaked-password protection) remain separate review items.
+- Issue [#140](https://github.com/crauch2088-source/roshan-health-hub/issues/140) was closed as completed after PR merge, green post-merge checks, and the recorded advisor/catalog evidence.
+- No production migration, privilege change, Auth mutation, business-data write, or synthetic clinical/financial record was created during this run.
+
+### Deployment interpretation
+- Vercel ignored/canceled the docs/SQL/test-only merge deployment `dpl_GH73tJ9XrfjmEtCJRcivRK8mZi8g` with the documented `Ignored Build Step` outcome. This is expected because PR #141 contains no frontend/runtime change.
+- Canonical production remains READY on the prior application deployment `dpl_HzBkWfXAM6oVcYrwhSU8jBkofSVm`, exact app SHA `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`, alias `roshan-health-hub.vercel.app`, `aliasError=null`. No new deployment was forced.
+
+### Current open work and next task
+- Current open PRs after merge: #131, #149, #139, #125, #108, #138, #112, and #103.
+- Current open issues after closure: #95, #146, and #25.
+- Next highest-value source task: Issue [#146](https://github.com/crauch2088-source/roshan-health-hub/issues/146), the anonymous bootstrap `setup_required()` RPC. The current public wrapper is SECURITY INVOKER and anon lacks EXECUTE, causing HTTP 401 on public `/`, `/auth`, and `/setup` checks. Replace only `public.setup_required()` with a STABLE SECURITY DEFINER wrapper using an empty search_path and returning the existing private helper's boolean. Grant direct EXECUTE only to anon and authenticated; keep `private.setup_required()` inaccessible to anon and expose no counts or identity data.
+- Add PostgreSQL 17 assertions for the exact function security/ACL contract, anon boolean result (true with an empty users table, false after one disposable synthetic user row), and private-helper denial. Add source guard coverage and wire the assertion after the v115 fingerprint check.
+- Use Phase 51 naming for this independent candidate because PR #149 already contains Phase 49 and Phase 50 pharmacy/billing candidates. Do not reuse the stale migration 117 reference. Recheck the live migration ledger and PR #149 merge order before assigning an actual migration timestamp; keep the candidate unapplied until exact-head CI/review and separate release approval.
+- PR #149 remains draft and is based on the old Phase 48 feature branch rather than current main; refresh its base before review. Do not merge its clinical/financial workflow changes before exact-head PG17 tests, backup/restore rehearsal, and staff acceptance.
+- Keep Issue #95 open. Authenticated clinical E2E and staff acceptance remain explicitly deferred until an isolated free QA login path and suitable synthetic doctor identity are available. Keep Issue #25 open while historical secret exposure and unavailable repository security-setting controls remain unresolved.

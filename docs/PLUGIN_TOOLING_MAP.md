@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-10-30 (incremental capability update; historical entries remain time-stamped). Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
+Last reviewed: 2026-11-02 (incremental capability update; historical entries remain time-stamped). Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -260,10 +260,21 @@ Last reviewed: 2026-10-30 (incremental capability update; historical entries rem
 - The manual workflow is restricted to `workflow_dispatch` on `main`, checks out `main`, and never installs or executes the candidate branch's package manifest.
 - Target validation is implemented in `scripts/validate-browser-e2e-target.mjs`; only the canonical production hostname, verified stable alias, project branch-preview pattern, and observed 9-character deployment-ID pattern are accepted. A generic team-wide Vercel suffix is rejected.
 - Positive/negative validator regressions are included in `npm run test:guard`. The validator writes only a normalized origin and never echoes the supplied URL into logs.
-- No long-lived Vercel bypass secret is stored or transmitted. Keep preview SSO enabled except for a separately approved, short controlled public-route test window; restore the prior protection setting immediately.
+- No long-lived Vercel bypass secret is stored or transmitted. Keep preview SSO enabled; do not disable or weaken SSO as a routine test step. Public-route checks should use the read-only production alias unless a separately approved OIDC trust path exists.
 
 
 ## Public browser workflow — merged and verified 2026-11-01
 
 - PR #144 merged as `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`. Main workflow [41280194348](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280194348) passed 16/16 read-only public-route/accessibility checks against production at 320/360/390/430 px.
 - The validator is project-scoped; manual dispatch is main-only and the runner checks out main. The test did not use Vercel SSO bypass or create clinical/financial records.
+
+
+## Current execution state — 2026-11-02
+
+- Main is `9f17d2bb6d3290b036de71da9cb147540707d17a`. PR #141 is squash-merged; Issue #140 is closed after the canonical v112 baseline retained `security_invoker=true` on all four affected views and the QA-only reconciliation was confirmed already applied.
+- Exact post-merge main checks: 22 successful, one intentional clinical-acceptance skip, zero failures. The Phase 37 PostgreSQL 17 baseline/forward-replay/catalog contract passed. The clinical skip remains deferred, not passed.
+- The Vercel deployment for the docs/SQL/test-only merge was correctly ignored by the project's Ignore Build Step. Production remains READY on application SHA `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`; no deployment is required for this non-runtime change.
+- Phase 48 / Issue #142 is closed and applied; do not repeat its migration or Storage review absent new evidence.
+- Next priority is Issue #146: a boolean-only anonymous bootstrap status RPC. Preserve the private helper boundary, use an empty fixed search_path, and prove exact grants and anonymous behavior in disposable PostgreSQL 17. PR #149 already contains Phase 49/50 pharmacy/billing candidates; treat the next independent setup-status change as Phase 51, but recheck the live ledger and dependency order before assigning a migration version.
+- PR #149 remains draft and targets the old Phase 48 feature branch, not main. Refresh it before review; keep clinical/financial release gates intact.
+- Issue #95 remains open. Do not run authenticated clinical E2E until the isolated free QA login path and suitable synthetic clinician identity are available. Issue #25 remains open while historical secret exposure and unavailable GitHub security-setting controls remain unresolved.

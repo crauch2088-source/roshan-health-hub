@@ -136,3 +136,13 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Isolated QA migration `20261031071243 qa_restore_security_invoker_on_exposed_views` is already present in the ledger; it is a QA-only reconciliation and is not part of the production migration chain.
 - Read-only QA and production catalog checks confirm `security_invoker=true` on `public.cashbox_balance`, `public.follow_ups`, `public.v_patient_receivables`, and `public.v_supplier_outstanding`. Authenticated SELECT remains true and anon SELECT false for all four views.
 - PR #141 still needs a current-main refresh so the canonical v112 baseline preserves these options and the disposable PostgreSQL 17 replay proves idempotence. Do not rerun the already-applied QA script.
+
+
+## QA view security-invoker baseline closure — 2026-11-02
+
+- PR [#141](https://github.com/crauch2088-source/roshan-health-hub/pull/141) was squash-merged as `9f17d2bb6d3290b036de71da9cb147540707d17a`.
+- The canonical v112 baseline now defines `security_invoker=true` on `cashbox_balance`, `follow_ups`, `v_patient_receivables`, and `v_supplier_outstanding`, with a fail-closed catalog assertion inside the baseline transaction before its final COMMIT.
+- The Phase 37 PostgreSQL 17 CI replay resets these options in its disposable database, applies `db/qa/20261030_restore_security_invoker_on_qa_views.sql` twice, and verifies the contract. PR-head checks were 26 success / 1 intentional clinical-acceptance skip / 0 failures; post-merge main CI [41398491594](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41398491594) was 22 success / 1 intentional skip / 0 failures.
+- The QA-only reconciliation was already applied as migration `20261031071243` before this merge. It was not rerun, and no production migration or business-data write was made.
+- Read-only QA/production catalog evidence confirms all four view options and the prior Security Advisor recheck found no view-specific findings. Issue [#140](https://github.com/crauch2088-source/roshan-health-hub/issues/140) is closed. The unrelated pg_trgm, SECURITY DEFINER function, and leaked-password-protection findings remain separate.
+- This is baseline/QA fidelity closure, not authenticated clinical acceptance. Issue #95 remains open and clinical E2E stays deferred.
