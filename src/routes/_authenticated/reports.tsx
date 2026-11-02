@@ -73,6 +73,7 @@ function ReportsPageInner() {
   );
   const payload = report.data as ReportingPayload | undefined;
   const summary = payload?.summary;
+  const coverage = payload?.coverage;
   const byDepartment = Object.fromEntries(
     (payload?.by_department ?? []).map((row) => [row.name || t("none"), Number(row.count)]),
   );
@@ -132,6 +133,11 @@ function ReportsPageInner() {
       </PageHeader>
 
       <ErrorBox error={report.error ?? (rangeValid ? null : new Error(t("invalid_reporting_range")))} />
+      {coverage && !coverage.insurance ? (
+        <p className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground" role="status">
+          {t("insurance_metrics_unavailable")}
+        </p>
+      ) : null}
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t("visits")} value={String(visitCount)} />

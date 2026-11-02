@@ -24,6 +24,8 @@ test("Phase 52 reporting RPC is read-only, bounded, branch-aware and RLS-preserv
   assert.match(migration, /SET search_path TO ''/);
   assert.match(migration, /private\.app_has_perm\('reports\.read'\)/);
   assert.match(migration, /private\.app_has_branch_access\(p_branch_id\)/);
+  assert.match(migration, /\x27coverage\x27, pg_catalog\.jsonb_build_object/);
+  assert.match(migration, /\x27insurance\x27, private\.app_has_perm\(\x27insurance\.read\x27\)/);
   assert.match(migration, /p_to_date - p_from_date\) > 365/);
   assert.match(migration, /Africa\/Khartoum/);
   assert.match(migration, /REVOKE ALL ON FUNCTION public\.get_reporting_analytics\(date, date, uuid\) FROM PUBLIC, anon, service_role/);

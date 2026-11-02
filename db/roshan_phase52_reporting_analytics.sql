@@ -40,6 +40,16 @@ BEGIN
 
   SELECT pg_catalog.jsonb_build_object(
     'period', pg_catalog.jsonb_build_object('from', p_from_date, 'to', p_to_date, 'branch_id', p_branch_id),
+    'coverage', pg_catalog.jsonb_build_object(
+      'visits', private.app_has_perm('visits.read'),
+      'payments', private.app_has_perm('payments.read'),
+      'expenses', private.app_has_perm('accounting.read'),
+      'lab', private.app_has_perm('lab.read'),
+      'insurance', private.app_has_perm('insurance.read'),
+      'pharmacy', private.app_has_perm('pharmacy.read'),
+      'diagnoses', private.app_has_perm('emr.read'),
+      'doctors', private.app_has_perm('users.read')
+    ),
     'summary', pg_catalog.jsonb_build_object(
       'visits', (
         SELECT count(*) FROM public.visits v

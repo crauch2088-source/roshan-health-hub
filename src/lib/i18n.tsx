@@ -527,6 +527,10 @@ const dict: Record<string, { ar: string; en: string }> = {
     ar: "اختر فترة صحيحة لا تتجاوز 366 يوماً.",
     en: "Choose a valid date range of no more than 366 days.",
   },
+  insurance_metrics_unavailable: {
+    ar: "بيانات مطالبات التأمين غير متاحة لهذا الدور؛ بقية المؤشرات تخضع لصلاحياتها المعتادة.",
+    en: "Insurance metrics are hidden for this role; other metrics remain permission-scoped.",
+  },
 
   // misc
   role: { ar: "الدور", en: "Role" },

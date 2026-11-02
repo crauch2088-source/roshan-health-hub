@@ -25,7 +25,7 @@
 - Requires an authenticated Supabase identity and `reports.read`.
 - Rejects null, reversed or over-366-day date windows.
 - Validates explicitly requested branch access using `private.app_has_branch_access`.
-- Runs as **STABLE SECURITY INVOKER** with an empty fixed `search_path`; underlying source-table RLS remains effective.
+- Runs as **STABLE SECURITY INVOKER** with an empty fixed `search_path`; underlying source-table RLS remains effective. The response includes per-domain coverage flags so a role lacking insurance.read (e.g. legacy admin) is not shown a misleading zero-claims result.
 - EXECUTE: authenticated only. PUBLIC, anon and service_role are revoked.
 - Returns aggregates only; no patient names/IDs, notes, invoice numbers, raw diagnoses linked to people, or row-level clinical payloads.
 - No table, trigger or persistent data structure is added. No writes are performed.
@@ -79,3 +79,16 @@ Do not apply this candidate to either live database until:
 6. Authenticated QA smoke test confirms totals against independently reconciled synthetic fixtures.
 
 The current UI passes `p_branch_id: null`, leaving row visibility to RLS. The RPC supports an explicit branch argument for a future authorized branch selector; no new branch-picker UI is added in this phase.
+
+
+## Authenticated E2E acceptance scenarios (pending isolated QA identity)
+
+1. Sign in as an admin with reports.read and all domain read permissions. Open /reports; reconcile visits, payments, expenses and lab totals against independent synthetic fixture queries for a 30-day range.
+2. Verify same-day, leap-day and 366-day inclusive ranges; a reversed or 367-day range must be rejected before the RPC is called.
+3. Sign in as a legacy-admin account without insurance.read; confirm the coverage notice appears and no insurance total is represented as zero/complete.
+4. Sign in as a user without reports.read; the navigation item must be absent and a direct RPC request must return permission denied.
+5. Compare Arabic RTL and English LTR at 320, 360, 390 and 430 px; no horizontal overflow, clipped tab labels or date input overlap.
+6. Export summary and monthly CSV; verify values match the visible aggregate tables and no patient names, IDs, invoice numbers or clinical notes are present.
+7. Change the user's branch in an isolated QA fixture and verify RLS prevents cross-branch leakage when the optional branch argument is used.
+
+These authenticated scenarios are not marked passed until a dedicated synthetic QA account is available and a browser run is recorded. The existing public-route Playwright suite does not authenticate into /reports.
