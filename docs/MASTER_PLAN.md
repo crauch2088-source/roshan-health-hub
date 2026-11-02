@@ -2335,3 +2335,14 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Complete authenticated staff UAT across receptionist, GP, lab, pharmacist and finance roles on a phone-sized device before live clinical use; this remains distinct from unit/PG17/public-route CI.
 
 **Ordering dependencies:** Phase 52 can be developed and tested against the disposable PG17 baseline, but live deployment must wait until production/QA migration chains are reconciled (Phase 49/50 absent on both; Phase 51 currently QA-only) and backup/restore gates are completed. Phase 53 is mostly frontend and can be built independently after saved-data contracts are verified. Phase 54 is a database/accounting-critical feature and follows the inventory/dispense acceptance. Phase 55 follows claim lifecycle and payer workflow requirements. Phase 56 is continuous and must be completed before operational launch.
+
+
+
+## Clinical vitals input integrity — 2026-11-02
+
+- Start-of-task main SHA: `8ab4340f7fccbd22c79b9f7665230d748d2c66d6`. Current open PR inventory was checked; no open PR covered vitals entry validation. The prescription-specific PR #125 is a separate workstream and was not modified.
+- Source review found that `VitalsTab` excluded zero from the existing danger predicate (`value > 0`), so entered zero pulse, respiratory rate, BP, temperature, or SpO2 did not receive the configured danger styling. The save path also had no input-integrity validation for negative/non-finite measurements or SpO2 above 100%.
+- Candidate fix: zero readings remain recordable and now pass through the danger thresholds; negative/non-finite values are rejected; explicitly entered weight/height must be positive; SpO2 cannot exceed 100%. Other extreme positive observations are not blocked, preserving the clinician's ability to document critical values.
+- Inline bilingual field errors and `aria-invalid` are added. Save is blocked while invalid values exist and the save handler revalidates before constructing a database payload.
+- Regression coverage is added to `tests/clinical-vitals-validation.test.ts` and included in `npm run test:guard`. Coverage includes blank optional values, negative values, emergency zero values, zero anthropometrics, SpO2 maximum, non-finite input, extreme positive readings, and the UI write guard.
+- This is a frontend/source-only candidate: no database migration, production/QA write, patient/financial record, or deployment is included. GitHub PR checks will provide exact automated validation evidence; authenticated clinical/staff acceptance remains a separate deferred release gate.

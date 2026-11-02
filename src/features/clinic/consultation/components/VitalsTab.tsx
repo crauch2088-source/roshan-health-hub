@@ -8,6 +8,10 @@ import { useAuth } from "@/lib/auth";
 import { s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import {
+  validateVitals,
+  type VitalValidationIssue,
+} from "../vitals-validation";
 
 type Fields = Record<string, string>;
 
@@ -25,7 +29,7 @@ function isDanger(key: string, raw: string): boolean {
   const rule = DANGER[key];
   if (!rule || !raw.trim()) return false;
   const value = Number(raw);
-  return Number.isFinite(value) && value > 0 && rule(value);
+  return Number.isFinite(value) && rule(value);
 }
 
 export function VitalsTab({ visitId }: { visitId: string }) {
@@ -81,8 +85,45 @@ export function VitalsTab({ visitId }: { visitId: string }) {
     return Number.isFinite(v) && get(key).trim() !== "" ? v : null;
   };
 
+  const validationErrors = validateVitals(f);
+  const validationErrorFor = (field: string) =>
+    validationErrors.find((issue) => issue.field === field);
+
+  const validationMessage = (issue: VitalValidationIssue) => {
+    if (lang === "ar") {
+      switch (issue.code) {
+        case "invalid-number":
+          return "أدخل قيمة رقمية صحيحة.";
+        case "negative":
+          return "لا يمكن أن تكون القيمة سالبة.";
+        case "must-be-positive":
+          return "يجب أن تكون القيمة أكبر من صفر.";
+        case "above-maximum":
+          return "لا يمكن أن تتجاوز نسبة تشبع الأكسجين 100٪.";
+      }
+    }
+    switch (issue.code) {
+      case "invalid-number":
+        return "Enter a valid numeric value.";
+      case "negative":
+        return "Values cannot be negative.";
+      case "must-be-positive":
+        return "Enter a value greater than zero.";
+      case "above-maximum":
+        return "SpO₂ cannot exceed 100%.";
+    }
+  };
+
   const save = useSave(
     async () => {
+      if (validateVitals(f).length > 0) {
+        throw new Error(
+          lang === "ar"
+            ? "صحح القيم الحيوية غير الصالحة قبل الحفظ."
+            : "Correct invalid vital-sign values before saving.",
+        );
+      }
+
       const existing = ((q.data ?? []) as Row[])[0];
       const payload = {
         visit_id: visitId,
@@ -190,15 +231,27 @@ export function VitalsTab({ visitId }: { visitId: string }) {
                   type="number"
                   step={x.step ?? "1"}
                   placeholder={x.placeholder}
-                  aria-invalid={danger}
+                  aria-invalid={Boolean(validationError)}
+                  aria-describedby={
+                    validationError ? `${x.key}-validation-error` : undefined
+                  }
                   value={get(x.key)}
                   onChange={(e) => set(x.key, e.target.value)}
                   className={
-                    danger
+                    danger || validationError
                       ? "border-destructive bg-destructive/10 focus-visible:ring-destructive"
                       : undefined
                   }
                 />
+                {validationError ? (
+                  <span
+                    id={`${x.key}-validation-error`}
+                    role="alert"
+                    className="block text-xs text-destructive"
+                  >
+                    {validationMessage(validationError)}
+                  </span>
+                ) : null}
               </label>
             );
           })}
@@ -239,7 +292,7 @@ export function VitalsTab({ visitId }: { visitId: string }) {
         </div>
 
         <div className="flex justify-end">
-          <Button disabled={save.isPending} onClick={() => save.mutate(undefined as never)}>
+          <Button disabled={save.isPending || validationErrors.length > 0} onClick={() => save.mutate(undefined as never)}>
             {save.isPending
               ? lang === "ar"
                 ? "جاري الحفظ..."
