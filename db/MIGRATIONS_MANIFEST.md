@@ -146,3 +146,13 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - The QA-only reconciliation was already applied as migration `20261031071243` before this merge. It was not rerun, and no production migration or business-data write was made.
 - Read-only QA/production catalog evidence confirms all four view options and the prior Security Advisor recheck found no view-specific findings. Issue [#140](https://github.com/crauch2088-source/roshan-health-hub/issues/140) is closed. The unrelated pg_trgm, SECURITY DEFINER function, and leaked-password-protection findings remain separate.
 - This is baseline/QA fidelity closure, not authenticated clinical acceptance. Issue #95 remains open and clinical E2E stays deferred.
+
+
+## Phase 51 candidate — anonymous setup status RPC (2026-11-02)
+
+- Candidate: db/roshan_phase51_public_setup_required_anon.sql; source-only, not applied to QA or production.
+- Replaces only the public zero-argument boolean wrapper with STABLE SECURITY DEFINER and an empty fixed search_path, calling the unchanged private.setup_required() helper by its qualified name.
+- Direct EXECUTE is reset and granted only to anon and authenticated. The private helper's body, owner, ACL, and private-schema grants remain unchanged; anon cannot execute it or use the private schema.
+- Disposable PostgreSQL 17 assertions check exact direct grants, function flags/return type, anon true when public.users is empty, anon false after one synthetic user row, and private-helper denial. The synthetic row is in a transaction that is rolled back.
+- CI applies the candidate after the v115 catalog fingerprint comparison, leaving the canonical v115 fingerprint contract unchanged. Source regression is included in npm run test:guard.
+- Phase 49 and Phase 50 are already used by the draft PR #149 pharmacy/billing candidate. Do not reuse stale migration version 117; recheck the live ledger and PR #149 merge order before assigning an actual Supabase migration timestamp.

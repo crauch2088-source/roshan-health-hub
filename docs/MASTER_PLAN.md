@@ -2260,3 +2260,11 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Use Phase 51 naming for this independent candidate because PR #149 already contains Phase 49 and Phase 50 pharmacy/billing candidates. Do not reuse the stale migration 117 reference. Recheck the live migration ledger and PR #149 merge order before assigning an actual migration timestamp; keep the candidate unapplied until exact-head CI/review and separate release approval.
 - PR #149 remains draft and is based on the old Phase 48 feature branch rather than current main; refresh its base before review. Do not merge its clinical/financial workflow changes before exact-head PG17 tests, backup/restore rehearsal, and staff acceptance.
 - Keep Issue #95 open. Authenticated clinical E2E and staff acceptance remain explicitly deferred until an isolated free QA login path and suitable synthetic doctor identity are available. Keep Issue #25 open while historical secret exposure and unavailable repository security-setting controls remain unresolved.
+
+
+## Phase 51 candidate — anonymous setup status RPC (2026-11-02)
+
+- Issue #146 is implemented as a source-only candidate on branch fix/public-setup-status-anon-phase51-20261102; no live database change was made.
+- The candidate changes only the public boolean wrapper to STABLE SECURITY DEFINER with an empty search_path and direct EXECUTE for anon/authenticated; the private helper remains unchanged and inaccessible to anon.
+- PostgreSQL 17 assertions cover exact ACL/function flags, anon true on an empty users table, anon false after one synthetic row, and private-helper denial. The test runs after the v115 catalog fingerprint check and rolls back the synthetic row.
+- Exact-head CI is pending. Next: inspect the Phase 51 PostgreSQL 17 result and all checks, correct any failures, then obtain independent review. Do not apply to QA or production in this task.

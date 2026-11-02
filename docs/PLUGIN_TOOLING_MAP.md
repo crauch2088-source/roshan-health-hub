@@ -278,3 +278,11 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - Next priority is Issue #146: a boolean-only anonymous bootstrap status RPC. Preserve the private helper boundary, use an empty fixed search_path, and prove exact grants and anonymous behavior in disposable PostgreSQL 17. PR #149 already contains Phase 49/50 pharmacy/billing candidates; treat the next independent setup-status change as Phase 51, but recheck the live ledger and dependency order before assigning a migration version.
 - PR #149 remains draft and targets the old Phase 48 feature branch, not main. Refresh it before review; keep clinical/financial release gates intact.
 - Issue #95 remains open. Do not run authenticated clinical E2E until the isolated free QA login path and suitable synthetic clinician identity are available. Issue #25 remains open while historical secret exposure and unavailable GitHub security-setting controls remain unresolved.
+
+
+## Phase 51 setup-status regression routing — 2026-11-02
+
+- The anonymous bootstrap status issue is handled through the repository's existing free PostgreSQL 17 CI service and Node test:guard suite; no new app, service, secret, or paid browser integration is required.
+- The Phase 51 candidate runs after the v115 catalog fingerprint assertion, then checks the public boolean wrapper's exact direct EXECUTE grants and verifies that anon cannot access the private schema/helper.
+- Keep the anonymous contract deliberately narrow: one boolean only. Do not expose user counts, identity details, or a new setup RPC family.
+- Candidate remains unapplied. Recheck the live migration ledger and Phase 49/50 merge order before assigning a timestamp. Clinical authenticated E2E remains deferred.
