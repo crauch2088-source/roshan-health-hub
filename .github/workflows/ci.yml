@@ -158,6 +158,19 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/roshan_phase39_permissions_lab_catalog_and_audit_closure.sql \
             -f db/tests/phase39_permissions_lab_catalog_assertions.sql
+      - name: Exercise QA-only view security reconciliation and idempotence
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c "
+            ALTER VIEW public.cashbox_balance RESET (security_invoker);
+            ALTER VIEW public.follow_ups RESET (security_invoker);
+            ALTER VIEW public.v_patient_receivables RESET (security_invoker);
+            ALTER VIEW public.v_supplier_outstanding RESET (security_invoker);
+          "
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/qa/20261030_restore_security_invoker_on_qa_views.sql \
+            -f db/qa/20261030_restore_security_invoker_on_qa_views.sql
       - name: Compute replayed v115 catalog SHA-256 manifest
         env:
           PGPASSWORD: postgres

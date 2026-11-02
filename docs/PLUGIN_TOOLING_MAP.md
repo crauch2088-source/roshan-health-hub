@@ -261,3 +261,9 @@ Last reviewed: 2026-10-30 (incremental capability update; historical entries rem
 - Target validation is implemented in `scripts/validate-browser-e2e-target.mjs`; only the canonical production hostname, verified stable alias, project branch-preview pattern, and observed 9-character deployment-ID pattern are accepted. A generic team-wide Vercel suffix is rejected.
 - Positive/negative validator regressions are included in `npm run test:guard`. The validator writes only a normalized origin and never echoes the supplied URL into logs.
 - No long-lived Vercel bypass secret is stored or transmitted. Keep preview SSO enabled except for a separately approved, short controlled public-route test window; restore the prior protection setting immediately.
+
+
+## Public browser workflow — merged and verified 2026-11-01
+
+- PR #144 merged as `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`. Main workflow [41280194348](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280194348) passed 16/16 read-only public-route/accessibility checks against production at 320/360/390/430 px.
+- The validator is project-scoped; manual dispatch is main-only and the runner checks out main. The test did not use Vercel SSO bypass or create clinical/financial records.

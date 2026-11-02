@@ -31,3 +31,12 @@ Harden the manual public browser workflow in PR #144, addressing its two unresol
 - No Vercel bypass secret or new paid integration was introduced; no SSO setting was changed.
 - Keep PR #144 open until exact-head CI and preview evidence pass and both review threads are resolved.
 - Next: refresh PR #141 onto current main and re-run its PostgreSQL 17 canonical baseline / security-invoker assertions. Do not write to QA or production during the source refresh.
+
+
+## Post-merge update — 2026-11-01
+
+- PR #144 merged as `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`. Main CI [41280083329](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280083329), Push on main/CodeQL [41280083293](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280083293), clinical child RPC [41280083275](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280083275), and finance-only RPC [41280083326](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280083326) all succeeded.
+- Production deployment `dpl_HzBkWfXAM6oVcYrwhSU8jBkofSVm` READY on the exact merge SHA; canonical alias assigned; no alias error. Runtime-error aggregation returned no errors in the preceding 24 hours.
+- Public browser workflow [41280194348](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280194348) passed 16/16 at 320/360/390/430 px. Artifact `roshan-browser-e2e-41280194348`. No clinical/financial writes.
+- QA view security reconciliation is already applied as `20261031071243`; all four views now have `security_invoker=true` in both QA and production. PR #141 remains the next source-only refresh task.
+- Next: refresh PR #141 onto current main, update its stale QA-application claim, preserve the canonical v112 assertions and disposable PG17 idempotence test, then inspect exact-head CI. No live database write is authorized by this task.

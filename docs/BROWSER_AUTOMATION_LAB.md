@@ -43,7 +43,7 @@ BASE_URL=https://your-roshan-preview.vercel.app npm run test:e2e:public
 
 The manual Browser E2E — public routes workflow is dispatchable from `main` only and always checks out `main` with persisted credentials disabled. A candidate preview URL is supplied as data; the runner never checks out or installs the candidate branch. `scripts/validate-browser-e2e-target.mjs` accepts only the canonical production host, the verified stable project alias, the `roshan-health-hub-git-<branch-slug>-roshan45.vercel.app` branch-preview pattern, or the observed `roshan-health-<9-character-deployment-id>-roshan45.vercel.app` deployment pattern. It rejects other projects on the same Vercel team, non-HTTPS URLs, credentials, ports, paths, queries, and fragments. Positive and negative cases run in `npm run test:guard`.
 
-The connected Vercel API does not currently expose the oidcProviders / Trusted Sources setting in its update-project schema. Therefore the manual workflow does not store or transmit a bypass credential. For a protected preview, the operator temporarily disables Vercel Authentication for the preview environment, runs the workflow, and immediately restores the original all_except_custom_domains protection setting. The test target is restricted by exact hostnames and project-specific patterns; a generic `*-roshan45.vercel.app` suffix is not accepted.
+The connected Vercel API does not currently expose the oidcProviders / Trusted Sources setting in its update-project schema. Therefore the manual workflow does not store or transmit a bypass credential. Do not disable or weaken SSO as a routine test step. Use the public production alias in read-only mode for this public-route suite; treat a protected preview as blocked until a separately approved, repository-scoped GitHub OIDC trust integration exists. The test target is restricted by exact hostnames and project-specific patterns; a generic `*-roshan45.vercel.app` suffix is not accepted.
 
 The persistent Vercel Sandbox browser lab is the primary agent-operated browser. It uses Playwright directly and can be used for detailed diagnostics and screenshots. The GitHub workflow provides a repeatable, artifact-producing run when needed. When the Vercel integration exposes Trusted Sources, prefer a GitHub OIDC rule scoped to this repository, the workflow file, and preview deployments; do not replace this with a long-lived secret in source control.
 
@@ -70,3 +70,8 @@ GitHub Actions uploads these as a short-retention artifact after each manual run
 ## Project-specific workflow target validation
 
 The validator rejects generic team hostnames such as `other-project-roshan45.vercel.app`, deceptive suffixes, non-HTTPS URLs, credentials, non-default ports, paths, queries, and fragments. Its regression cases run with `npm run test:guard`. Dispatch the workflow from `main` only; the runner checks out `main` regardless of the supplied preview target.
+
+
+## Production public-route acceptance — 2026-11-01
+
+Workflow [41280194348](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280194348) passed 16/16 on `https://roshan-health-hub.vercel.app` across 320, 360, 390, and 430 px. It verified root recovery, Arabic/English sign-in usability and accessibility, setup recovery error containment with WCAG AA, and unauthenticated dashboard redirect. The run was read-only; no SSO protection was changed and no clinical/financial data was created. Artifact: `roshan-browser-e2e-41280194348`.

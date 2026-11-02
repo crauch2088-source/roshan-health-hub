@@ -129,3 +129,10 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Read-only catalog checks in both projects confirm the helper `private.phase48_storage_entity_branch_matches(text,text)` is STABLE SECURITY DEFINER with an empty search path and no direct EXECUTE grant to anon, authenticated, or service_role.
 - The four Phase 34 restrictive Storage boundary policies remain RESTRICTIVE for SELECT, INSERT, UPDATE, and DELETE in both projects. The helper is called from the existing SECURITY DEFINER boundary; it is not exposed as a browser RPC.
 - This supersedes the earlier Phase 48 candidate-only note. No additional migration was applied during the 2026-11-01 verification.
+
+
+## QA view security-invoker reconciliation — 2026-11-01 read-back
+
+- Isolated QA migration `20261031071243 qa_restore_security_invoker_on_exposed_views` is already present in the ledger; it is a QA-only reconciliation and is not part of the production migration chain.
+- Read-only QA and production catalog checks confirm `security_invoker=true` on `public.cashbox_balance`, `public.follow_ups`, `public.v_patient_receivables`, and `public.v_supplier_outstanding`. Authenticated SELECT remains true and anon SELECT false for all four views.
+- PR #141 still needs a current-main refresh so the canonical v112 baseline preserves these options and the disposable PostgreSQL 17 replay proves idempotence. Do not rerun the already-applied QA script.
