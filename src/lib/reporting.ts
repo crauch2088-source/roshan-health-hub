@@ -14,8 +14,14 @@ export type ReportingMonthlyRow = {
 export type ReportingPayload = {
   period: { from: string; to: string; branch_id: string | null };
   coverage: {
-    visits: boolean; payments: boolean; expenses: boolean; lab: boolean;
-    insurance: boolean; pharmacy: boolean; diagnoses: boolean; doctors: boolean;
+    visits: boolean;
+    payments: boolean;
+    expenses: boolean;
+    lab: boolean;
+    insurance: boolean;
+    pharmacy: boolean;
+    diagnoses: boolean;
+    doctors: boolean;
   };
   summary: {
     visits: number;
