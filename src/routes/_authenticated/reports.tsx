@@ -109,6 +109,8 @@ function ReportsPageInner() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20);
 
+  if (report.isLoading) return <Loading />;
+
   return (
     <div>
       <PageHeader title={t("reports")} subtitle={`${formatDate(from)} — ${formatDate(to)}`}>
@@ -134,6 +136,7 @@ function ReportsPageInner() {
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t("visits")} value={String(visitCount)} />
         <StatCard label={t("laboratory")} value={String(labItemCount)} />
+        <StatCard label={t("completed_visits")} value={String(Number(summary?.completed_visits ?? 0))} />
         <StatCard label={t("consultation_fee")} value={money(consultRevenue, currency)} />
         <StatCard label={t("payments_collected")} value={money(Number(summary?.payments_collected ?? 0), currency)} tone="success" />
         <StatCard label={t("operating_expenses")} value={money(Number(summary?.operating_expenses ?? 0), currency)} tone="destructive" />

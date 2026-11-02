@@ -40,6 +40,7 @@ test("Reports page uses bounded aggregate RPC and never exports raw visit rows",
   assert.match(route, /p_branch_id: null/);
   assert.match(route, /ExportButtons rows=\{summaryRows\}/);
   assert.match(route, /monthlyRows/);
+  assert.match(route, /if \(report\.isLoading\) return <Loading \/>/);
   assert.doesNotMatch(route, /\.from\("visits"\)/);
   assert.doesNotMatch(route, /\.from\("diagnoses"\)/);
   assert.doesNotMatch(route, /\.from\("lab_order_items"\)/);
