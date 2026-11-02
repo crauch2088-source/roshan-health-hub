@@ -132,9 +132,14 @@ function ReportsPageInner() {
         <ExportButtons rows={summaryRows} filename={`roshan-report-summary-${from}-${to}`} />
       </PageHeader>
 
-      <ErrorBox error={report.error ?? (rangeValid ? null : new Error(t("invalid_reporting_range")))} />
+      <ErrorBox
+        error={report.error ?? (rangeValid ? null : new Error(t("invalid_reporting_range")))}
+      />
       {coverage && !coverage.insurance ? (
-        <p className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground" role="status">
+        <p
+          className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground"
+          role="status"
+        >
           {t("insurance_metrics_unavailable")}
         </p>
       ) : null}
@@ -142,11 +147,25 @@ function ReportsPageInner() {
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t("visits")} value={String(visitCount)} />
         <StatCard label={t("laboratory")} value={String(labItemCount)} />
-        <StatCard label={t("completed_visits")} value={String(Number(summary?.completed_visits ?? 0))} />
+        <StatCard
+          label={t("completed_visits")}
+          value={String(Number(summary?.completed_visits ?? 0))}
+        />
         <StatCard label={t("consultation_fee")} value={money(consultRevenue, currency)} />
-        <StatCard label={t("payments_collected")} value={money(Number(summary?.payments_collected ?? 0), currency)} tone="success" />
-        <StatCard label={t("operating_expenses")} value={money(Number(summary?.operating_expenses ?? 0), currency)} tone="destructive" />
-        <StatCard label={t("net_cashflow")} value={money(Number(summary?.net_cashflow ?? 0), currency)} />
+        <StatCard
+          label={t("payments_collected")}
+          value={money(Number(summary?.payments_collected ?? 0), currency)}
+          tone="success"
+        />
+        <StatCard
+          label={t("operating_expenses")}
+          value={money(Number(summary?.operating_expenses ?? 0), currency)}
+          tone="destructive"
+        />
+        <StatCard
+          label={t("net_cashflow")}
+          value={money(Number(summary?.net_cashflow ?? 0), currency)}
+        />
         <StatCard label={t("lab_revenue")} value={money(labRevenue, currency)} />
       </div>
 

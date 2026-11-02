@@ -20,7 +20,10 @@ test("reporting range accepts valid inclusive periods up to 366 days", () => {
 });
 
 test("Phase 52 reporting RPC is read-only, bounded, branch-aware and RLS-preserving", () => {
-  assert.match(migration, /RETURNS jsonb[\s\S]*LANGUAGE plpgsql[\s\S]*STABLE[\s\S]*SECURITY INVOKER/);
+  assert.match(
+    migration,
+    /RETURNS jsonb[\s\S]*LANGUAGE plpgsql[\s\S]*STABLE[\s\S]*SECURITY INVOKER/,
+  );
   assert.match(migration, /SET search_path TO ''/);
   assert.match(migration, /private\.app_has_perm\('reports\.read'\)/);
   assert.match(migration, /private\.app_has_branch_access\(p_branch_id\)/);
@@ -28,8 +31,14 @@ test("Phase 52 reporting RPC is read-only, bounded, branch-aware and RLS-preserv
   assert.match(migration, /\x27insurance\x27, private\.app_has_perm\(\x27insurance\.read\x27\)/);
   assert.match(migration, /p_to_date - p_from_date\) > 365/);
   assert.match(migration, /Africa\/Khartoum/);
-  assert.match(migration, /REVOKE ALL ON FUNCTION public\.get_reporting_analytics\(date, date, uuid\) FROM PUBLIC, anon, service_role/);
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.get_reporting_analytics\(date, date, uuid\) TO authenticated/);
+  assert.match(
+    migration,
+    /REVOKE ALL ON FUNCTION public\.get_reporting_analytics\(date, date, uuid\) FROM PUBLIC, anon, service_role/,
+  );
+  assert.match(
+    migration,
+    /GRANT EXECUTE ON FUNCTION public\.get_reporting_analytics\(date, date, uuid\) TO authenticated/,
+  );
   assert.doesNotMatch(migration, /INSERT INTO|UPDATE public\.|DELETE FROM/);
   assert.doesNotMatch(migration, /patients\.full_name|clinical_notes|old_data|new_data/);
   assert.match(assertions, /SECURITY INVOKER/);
@@ -57,6 +66,11 @@ test("Phase 52 PG17 workflow replays Phase 49-51 prerequisites on disposable sch
     "db/roshan_phase51_public_setup_required_anon.sql",
     "db/roshan_phase52_reporting_analytics.sql",
     "db/tests/phase52_reporting_analytics_assertions.sql",
-  ]) assert.ok(workflow.includes(path), path);
-  assert.doesNotMatch(workflow, /jewzonxplxhogqrnhosl|hopfohcnrtbiqjkgeukz|SUPABASE_SERVICE_ROLE_KEY/);
+  ]) {
+    assert.ok(workflow.includes(path), path);
+  }
+  assert.doesNotMatch(
+    workflow,
+    /jewzonxplxhogqrnhosl|hopfohcnrtbiqjkgeukz|SUPABASE_SERVICE_ROLE_KEY/,
+  );
 });
