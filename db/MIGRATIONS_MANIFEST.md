@@ -174,3 +174,40 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Read-only `SET ROLE anon` execution returned the expected boolean false in initialized QA. No user, clinical, or financial rows were inserted or changed.
 - Production remains at 118 entries/latest `20261031103927`; Phase 51 is **not applied** to production pending manual logical backup, off-site storage, and restore rehearsal required by the production rollout gate.
 - Source PR #150 merged as `0bb8bab7acee6acccb1fadeb0ae7a5270f097c4a`; exact-head CI [41400152008](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41400152008) passed 28 checks with one intentional clinical-acceptance skip and zero failures.
+
+
+## Phase 49 candidate — atomic pharmacy dispense and stock ledger RLS (2026-10-31)
+
+- Adds private.pharmacy_dispense_idempotency and public.atomic_pharmacy_dispense(uuid,boolean,uuid); identical request IDs replay the prior batch result; key/actor/payload mismatch is rejected.
+- FEFO now requires exact patient-branch batch ownership and known, non-expired expiry. Super-admin status does not make branch stock fungible.
+- Revokes dispense-only fn_dispense_prescription(uuid). The invoice-coupled legacy function remains temporarily callable until frontend cutover.
+- Browser writes to stock_movements are revoked; authenticated SELECT remains permission-checked and branch-scoped.
+- Candidate only: not applied to QA or production.
+
+## Phase 50 candidate — clinical visit completion and consultation billing (2026-10-31)
+
+- Adds complete_clinical_visit_and_bill(uuid): checks permission, active patient/visit, exact branch match, cancelled status and finite two-decimal consultation fee; bills before completing; aligns queue tickets to one timestamp.
+- Existing complete_visit_atomic(uuid) remains as a compatibility wrapper.
+- Disposable PG17 critical-path workflow verifies same-invoice pharmacy + consultation lines, no double charge on retry, expired batch rollback, idempotent dispense replay, and stock-ledger privilege boundary.
+- Candidate only: not applied to QA or production.
+
+
+### Phase 49 additional inventory guards
+
+- Browser access to pharmacy_inventory is SELECT-only; receipt and dispense remain the supported write workflows.
+- Positive-quantity batches require a known expiry; legacy NULL-expiry rows remain stored but non-dispensable.
+- Direct authenticated changes to medicines.stock_quantity are rejected; the aggregate is maintained by atomic receive/dispense RPCs.
+- Stock movement branch attribution for super-admin no-visit dispensing is anchored to the patient's branch.
+
+
+### Phase 49 stock-entry source-of-truth correction
+
+- New medicine master records are created with stock_quantity = 0; initial quantities must enter through the atomic batch receipt RPC.
+- Batch receipt requires expiry at both UI and database layers. Existing legacy NULL-expiry rows are retained but cannot be dispensed.
+- Direct authenticated changes to medicines.stock_quantity are rejected; pharmacy_inventory and stock_movements are browser SELECT-only.
+
+
+The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.
+
+
+- Browser acceptance: `docs/PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md` — manual QA scenarios prepared; not executed. The PG17 integration suite is not a substitute for staff/browser E2E.
