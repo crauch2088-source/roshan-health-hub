@@ -67,6 +67,8 @@ test("Phase 52 PG17 workflow replays Phase 49-51 prerequisites on disposable sch
   assert.match(workflow, /image: postgres:17/);
   for (const path of [
     "db/baseline/0000_roshan_pg17_baseline_v112.sql",
+    "db/roshan_phase46_uat_schema_compatibility.sql",
+    "db/roshan_phase47_queue_branch_attribution.sql",
     "db/roshan_phase49_atomic_pharmacy_dispense.sql",
     "db/roshan_phase50_clinical_visit_bill_completion.sql",
     "db/roshan_phase51_public_setup_required_anon.sql",
