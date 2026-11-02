@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, UserPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { ErrorBox } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -131,6 +132,8 @@ export function PatientPicker({
           <CommandList className="max-h-[min(280px,40vh)] overscroll-contain">
             {searching ? (
               <div className="py-6 text-center text-sm text-muted-foreground">{t("loading")}</div>
+            ) : results.error ? (
+              <ErrorBox error={results.error} onRetry={() => void results.refetch()} />
             ) : rows.length === 0 ? (
               <CommandEmpty>
                 <div className="flex flex-col items-center gap-2 py-3">
