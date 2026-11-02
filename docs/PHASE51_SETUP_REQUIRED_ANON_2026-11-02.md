@@ -1,6 +1,6 @@
 # Phase 51 — anonymous bootstrap setup-status RPC
 
-**Status:** source candidate only; not applied to QA or production.  
+**Status:** source candidate only; PR #150 Draft; exact-head CI passed on code commit ef66e4bdc1d2e93e293c4bcc776a331e4e950906; not applied to QA or production.  
 **Issue:** [#146](https://github.com/crauch2088-source/roshan-health-hub/issues/146)
 
 ## Verified starting contract
@@ -30,3 +30,14 @@
 - The stale migration-version reference 117 must not be reused. The previously documented live ledger read-back had 118 production entries and latest version 20261031103927; recheck the live ledger and PR #149 merge order before assigning an actual Supabase migration timestamp.
 - Candidate only. No QA or production migration, privilege mutation, Auth change, or business-data write is authorized by this PR. Any later QA application needs exact-head review and a separate release action; production remains gated by the documented backup/restore and release controls.
 - Authenticated clinical E2E remains deferred until an isolated free QA login path and suitable synthetic clinician identity exist.
+
+
+## Verified live state and exact CI result
+
+Read-only catalog inspection on 2026-11-02 confirmed the same state in production and QA: owner postgres; current public wrapper STABLE SECURITY INVOKER with empty search_path; anon EXECUTE false; authenticated EXECUTE true; private helper EXECUTE and private schema USAGE denied to anon. The authenticator role is a member of anon, authenticated, and service_role in both projects.
+
+Production migration ledger: 118 entries, latest 20261031103927. QA ledger: 12 entries, latest 20261031103912. No live DDL or ACL changes were made.
+
+Corrected code commit ef66e4bdc1d2e93e293c4bcc776a331e4e950906 passed exact-head CI run 41399729647: 28 successful checks, one intentionally skipped clinical-acceptance check, zero failures. The Phase 51 PostgreSQL 17 assertions, v115 7/7 fingerprint, source test guard, typecheck, lint, and build all passed. The first code commit had four Prettier findings; the follow-up was formatting-only.
+
+PR #150 remains Draft pending independent security review. The next action is review of the direct ACL and PostgREST role inheritance, followed by a source-only merge if approved. Any QA application is separate; production remains gated.

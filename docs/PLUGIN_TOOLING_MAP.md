@@ -286,3 +286,11 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - The Phase 51 candidate runs after the v115 catalog fingerprint assertion, then checks the public boolean wrapper's exact direct EXECUTE grants and verifies that anon cannot access the private schema/helper.
 - Keep the anonymous contract deliberately narrow: one boolean only. Do not expose user counts, identity details, or a new setup RPC family.
 - Candidate remains unapplied. Recheck the live migration ledger and Phase 49/50 merge order before assigning a timestamp. Clinical authenticated E2E remains deferred.
+
+
+### Phase 51 exact-head validation — 2026-11-02
+
+- Corrected PR #150 code head ef66e4bdc1d2e93e293c4bcc776a331e4e950906 passed 29 checks: 28 success, one deferred clinical-acceptance skip, zero failures. Run 41399729647 includes the Phase 51 PostgreSQL 17 step, v115 fingerprint comparison, source guard, typecheck, lint, and build.
+- Vercel ignored the corrected-head preview because no frontend/runtime code changed; do not force a preview build for this SQL/test/docs-only candidate.
+- Both live databases were read-only checked: production 118 migrations/latest 20261031103927, QA 12/latest 20261031103912. The existing authenticator membership in anon/authenticated/service_role means a direct authenticator EXECUTE grant is not required after the public grants are narrowed.
+- Keep PR #150 Draft pending independent security review. No live migration is authorized by this source candidate.

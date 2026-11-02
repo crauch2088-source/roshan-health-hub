@@ -156,3 +156,11 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - Disposable PostgreSQL 17 assertions check exact direct grants, function flags/return type, anon true when public.users is empty, anon false after one synthetic user row, and private-helper denial. The synthetic row is in a transaction that is rolled back.
 - CI applies the candidate after the v115 catalog fingerprint comparison, leaving the canonical v115 fingerprint contract unchanged. Source regression is included in npm run test:guard.
 - Phase 49 and Phase 50 are already used by the draft PR #149 pharmacy/billing candidate. Do not reuse stale migration version 117; recheck the live ledger and PR #149 merge order before assigning an actual Supabase migration timestamp.
+
+
+### Phase 51 validation addendum — 2026-11-02
+
+- PR #150 corrected code head: ef66e4bdc1d2e93e293c4bcc776a331e4e950906; exact-head inventory 29 checks, 28 success, one intentional clinical-acceptance skip, zero failures.
+- CI 41399729647 passed. The Phase 51 PostgreSQL 17 step passed after the v115 7/7 catalog fingerprint check; source guard, typecheck, lint, and build passed.
+- Read-only live recheck: production ledger 118 entries/latest 20261031103927; QA ledger 12/latest 20261031103912. Both still have the pre-migration public wrapper (STABLE SECURITY INVOKER, empty search_path, anon EXECUTE false); authenticated EXECUTE true. Authenticator inherits anon/authenticated/service_role membership in both environments.
+- PR #150 remains Draft pending independent review. No migration timestamp has been assigned and no QA/production migration or privilege change was made.
