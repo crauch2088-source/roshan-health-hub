@@ -43,3 +43,12 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Build or refresh the graph locally using `docs/GRAPHIFY_INTEGRATION.md`. Never commit generated graph output by default, and never upload real patient data, credentials, `.env` files, private keys, or production exports to Graphify or any model.
 - Keep the graph scoped to source, migrations, schemas, documentation, and safe configuration examples. Exclude secrets, local environment files, build output, dependency directories, backups, and any real clinical/financial records.
 - Graphify does not replace TypeScript checks, tests, migration-parity checks, RLS/security review, or read-only verification against Supabase. Do not run its generation in every CI job or trigger a Vercel deployment solely to refresh the graph.
+
+## OpenCode cloud-agent safety policy
+
+- OpenCode is an optional development tool only; it is not a Roshan application dependency and must never be added to production runtime bundles.
+- Start in the built-in read-only `plan` agent. Never use `--auto` or auto-approve permissions.
+- Follow `docs/OPENCODE_CLOUD_SETUP.md`. The project config must keep secret-file reads/edits denied, all source edits and shell commands approval-gated, production database/deploy/merge commands denied, and pushes restricted to explicitly approved `opencode/*` branches.
+- Do not add Supabase, Vercel, patient, finance, or production credentials to Codespaces secrets. The only initial server secret is `OPENCODE_PASSWORD`; provider API keys are entered directly into OpenCode and remain in user-level storage.
+- Never send real patient/clinical/financial data, production exports, credentials, private keys, or secrets to free-tier model providers.
+- Work on fresh `opencode/<task>` branches, preserve the one-atomic-commit policy, include tests/docs for behavior changes, and never merge, force-push, rewrite published history, apply migrations, or deploy to production.
