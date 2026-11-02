@@ -164,3 +164,13 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 - CI 41399729647 passed. The Phase 51 PostgreSQL 17 step passed after the v115 7/7 catalog fingerprint check; source guard, typecheck, lint, and build passed.
 - Read-only live recheck: production ledger 118 entries/latest 20261031103927; QA ledger 12/latest 20261031103912. Both still have the pre-migration public wrapper (STABLE SECURITY INVOKER, empty search_path, anon EXECUTE false); authenticated EXECUTE true. Authenticator inherits anon/authenticated/service_role membership in both environments.
 - PR #150 remains Draft pending independent review. No migration timestamp has been assigned and no QA/production migration or privilege change was made.
+
+
+
+## Phase 51 QA application — 2026-11-02
+
+- Applied migration name `roshan_phase51_public_setup_required_anon` to isolated QA project `hopfohcnrtbiqjkgeukz`; Supabase ledger version **20261102122437**.
+- Read-back confirms public.setup_required() is STABLE SECURITY DEFINER, fixed empty search_path, owned by postgres, executable by anon/authenticated only as direct grants. Anon cannot execute private.setup_required() or use schema private.
+- Read-only `SET ROLE anon` execution returned the expected boolean false in initialized QA. No user, clinical, or financial rows were inserted or changed.
+- Production remains at 118 entries/latest `20261031103927`; Phase 51 is **not applied** to production pending manual logical backup, off-site storage, and restore rehearsal required by the production rollout gate.
+- Source PR #150 merged as `0bb8bab7acee6acccb1fadeb0ae7a5270f097c4a`; exact-head CI [41400152008](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41400152008) passed 28 checks with one intentional clinical-acceptance skip and zero failures.

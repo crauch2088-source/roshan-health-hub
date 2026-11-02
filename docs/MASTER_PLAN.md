@@ -2270,3 +2270,25 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Corrected code commit ef66e4bdc1d2e93e293c4bcc776a331e4e950906 exact-head CI: 29 checks, 28 success, 1 intentionally skipped, 0 failures. Main CI 41399729647 passed; the Phase 51 PostgreSQL 17 step, v115 7/7 catalog fingerprint, source test:guard, typecheck, lint, and build all passed. The only skip is authenticated clinical acceptance.
 - Read-only QA/production recheck on 2026-11-02: production 118 migrations (latest 20261031103927); QA 12 (latest 20261031103912). In both, public.setup_required() owner is postgres, volatility STABLE, current mode SECURITY INVOKER with empty search_path, anon EXECUTE false, authenticated EXECUTE true; anon cannot execute the private helper or use the private schema; authenticator is a member of anon/authenticated/service_role. No live writes were made.
 - Initial code commit ce88d504 had four Prettier findings in the new source guard; formatting-only follow-up ef66e4b fixed them. PR #150 remains Draft pending independent security review. Next: independently review direct ACL and PostgREST role inheritance, then consider a source-only merge. Do not apply to QA or production in this task.
+
+
+
+## Phase 51 merge and QA rollout — 2026-11-02
+
+### Source / CI
+- PR [#150](https://github.com/crauch2088-source/roshan-health-hub/pull/150) was marked ready and squash-merged to main as `0bb8bab7acee6acccb1fadeb0ae7a5270f097c4a`. The source change exposes only the boolean `public.setup_required()`; the private helper remains inaccessible to anon.
+- The initial failing head `ce88d504b4c546e4611f78f74346ab1ff415c4e8` had four Prettier errors in `tests/phase51-setup-required-anon.test.ts`. The focused insurance-claim regression assertions themselves passed; that job's shared typecheck/lint/build step failed at the same lint errors. The final corrected source commit was `ef66e4bdc1d2e93e293c4bcc776a331e4e950906`; final exact PR head `3d7666c2ff70ef99e2d5e70bc9fa764bd3514f44` passed [CI run 41400152008](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41400152008): 28 success, one intentional clinical-acceptance skip, zero failures. Phase 51 PostgreSQL 17, v115 7/7 fingerprint, test:guard, typecheck, lint, build, insurance validation, and CodeQL passed.
+- The 97 React Fast Refresh lint warnings are pre-existing warnings; the four formatting errors were the blocking findings and were corrected. No insurance UI logic change was required.
+
+### QA application
+- Applied `roshan_phase51_public_setup_required_anon` to isolated QA project `hopfohcnrtbiqjkgeukz` using the merged migration source. Supabase assigned migration version **20261102122437**. QA ledger now has 13 entries.
+- Read-back confirms owner `postgres`, `STABLE SECURITY DEFINER`, empty fixed `search_path`, anon and authenticated EXECUTE true, anon private-helper EXECUTE false, anon private-schema USAGE false. An actual `SET ROLE anon` read-only call returned the expected boolean `false` in the existing initialized QA database.
+- QA Security Advisor now reports one expected `anon_security_definer_function_executable` warning for this intentionally public boolean-only RPC. This is a documented intentional exposure, not a grant to tables or the private helper. Existing unrelated advisor findings remain.
+
+### Production and PR #149 boundary
+- Production was not changed: 118 migrations, latest `20261031103927`; the public wrapper remains SECURITY INVOKER and anon EXECUTE remains false.
+- The production rollout record states that the Free Supabase plan has no automatic daily backups and requires a manual logical backup, off-site storage, and a restore rehearsal before launch. No supported backup/export credential path is available in the connected Supabase tools in this run; do not claim the backup gate passed. **Production Phase 51 remains blocked** until the backup/restore rehearsal and production change window are evidenced.
+- PR [#149](https://github.com/crauch2088-source/roshan-health-hub/pull/149) was retargeted from the obsolete Phase 48 feature branch to `main`. The PR head is `5c28eb14a0c5554d60b1621c9ff2b68acc728982`; comparison showed 20 commits ahead / 5 behind and GitHub reports CONFLICTING. GitHub's update-branch operation explicitly returned merge conflicts. Its previous checks on the old base (run 41185376552) were green, but they are not current-main validation. Keep #149 open until conflicts are resolved and exact-main CI passes.
+- PR #149 contains pharmacy dispense and visit billing workflow changes. Do not merge or promote those changes while authenticated clinical/staff UAT remains deferred under Issue #95 and the backup/restore gate remains open.
+- Issue #95 remains open. Authenticated clinical E2E is still deferred until the isolated free QA login path and suitable synthetic doctor identity are available.
+- Next: resolve PR #149's main-merge conflicts in a reviewed atomic change, rerun exact-head PostgreSQL 17 and full CI, then complete the documented staff UAT and backup/restore rehearsal before merge/promotion.

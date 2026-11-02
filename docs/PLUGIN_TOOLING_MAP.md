@@ -294,3 +294,12 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - Vercel ignored the corrected-head preview because no frontend/runtime code changed; do not force a preview build for this SQL/test/docs-only candidate.
 - Both live databases were read-only checked: production 118 migrations/latest 20261031103927, QA 12/latest 20261031103912. The existing authenticator membership in anon/authenticated/service_role means a direct authenticator EXECUTE grant is not required after the public grants are narrowed.
 - Keep PR #150 Draft pending independent security review. No live migration is authorized by this source candidate.
+
+
+
+## Phase 51 merge and QA application — 2026-11-02
+
+- PR #150 merged as `0bb8bab7acee6acccb1fadeb0ae7a5270f097c4a`. The initial `ce88d50` lint failure was four Prettier violations in the new Phase 51 source test; the insurance regression's focused test step passed and its shared lint/typecheck/build step failed on the same formatting issue. Corrected commit `ef66e4b` resolved it. Final exact-head CI run [41400152008](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41400152008): 28 success, one intentional clinical skip, zero failures.
+- QA migration `roshan_phase51_public_setup_required_anon` applied as version `20261102122437`; post-apply catalog and actual SET ROLE anon read-only call passed. The expected new Advisor warning is the one public boolean-only SECURITY DEFINER RPC; anon still cannot use schema `private` or execute `private.setup_required()`.
+- Production is unchanged and remains gated by the documented manual logical backup, off-site copy, and restore rehearsal (Free plan has no automatic daily backups). Do not bypass this gate.
+- PR #149 now targets main but is CONFLICTING (20 ahead / 5 behind); GitHub update-branch reports merge conflicts. Previous CI run 41185376552 was green on its former base only. Resolve conflicts and rerun exact-main CI; keep merge/promotion blocked while Issue #95 clinical/staff acceptance is deferred.

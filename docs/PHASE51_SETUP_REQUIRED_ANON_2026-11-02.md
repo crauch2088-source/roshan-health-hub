@@ -41,3 +41,29 @@ Production migration ledger: 118 entries, latest 20261031103927. QA ledger: 12 e
 Corrected code commit ef66e4bdc1d2e93e293c4bcc776a331e4e950906 passed exact-head CI run 41399729647: 28 successful checks, one intentionally skipped clinical-acceptance check, zero failures. The Phase 51 PostgreSQL 17 assertions, v115 7/7 fingerprint, source test guard, typecheck, lint, and build all passed. The first code commit had four Prettier findings; the follow-up was formatting-only.
 
 PR #150 remains Draft pending independent security review. The next action is review of the direct ACL and PostgREST role inheritance, followed by a source-only merge if approved. Any QA application is separate; production remains gated.
+
+
+
+## Execution update — 2026-11-02
+
+**Status:** source merged; QA applied; production pending backup/restore release gate.  
+**Merged PR:** [#150](https://github.com/crauch2088-source/roshan-health-hub/pull/150), merge SHA `0bb8bab7acee6acccb1fadeb0ae7a5270f097c4a`.
+
+### CI failure diagnosis and correction
+- Commit `ce88d504b4c546e4611f78f74346ab1ff415c4e8` failed lint on four Prettier formatting findings in `tests/phase51-setup-required-anon.test.ts`.
+- The insurance-claim validation regression job's focused claim tests passed; its shared verification step failed on the same lint findings. No insurance UI behavior defect was demonstrated.
+- Formatting correction: `ef66e4bdc1d2e93e293c4bcc776a331e4e950906`. Final PR head: `3d7666c2ff70ef99e2d5e70bc9fa764bd3514f44`.
+- Exact-head CI [41400152008](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41400152008): 28 successful checks, one intentionally skipped clinical-acceptance check, zero failures. Phase 51 PG17 assertions, v115 fingerprint, source guard, typecheck, lint, build, insurance validation and CodeQL passed.
+
+### QA migration
+- Applied to QA project `hopfohcnrtbiqjkgeukz` as migration `20261102122437 roshan_phase51_public_setup_required_anon`.
+- Post-apply read-back: owner postgres; STABLE SECURITY DEFINER; empty search_path; anon/authenticated EXECUTE true; anon private helper EXECUTE false; anon private schema USAGE false.
+- A read-only `SET ROLE anon` call successfully executed `public.setup_required()` and returned Boolean false for the initialized QA database.
+- QA Security Advisor reports the expected public SECURITY DEFINER warning for this boolean-only endpoint. No table grants, user data, identities, or counts were exposed.
+
+### Production
+- Production was not changed. Its migration ledger remains 118 entries, latest `20261031103927`; anon EXECUTE remains false.
+- The documented production gate requires a manual logical backup, off-site storage and restore rehearsal because the Free plan has no automatic daily backups. The connected Supabase toolset does not provide a backup/export workflow or database credential for safely completing that rehearsal here. Do not apply Phase 51 to production until that gate is evidenced.
+
+### Clinical acceptance
+- Authenticated clinical E2E and staff UAT remain deferred as requested. Issue #95 stays open.
