@@ -211,3 +211,14 @@ The combined PG17 critical-path replay follows the canonical Phase 48 fixture or
 
 
 - Browser acceptance: `docs/PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md` — manual QA scenarios prepared; not executed. The PG17 integration suite is not a substitute for staff/browser E2E.
+
+
+## Phase 52 candidate — reporting and analytics (2026-11-02)
+
+- Candidate migration: `db/roshan_phase52_reporting_analytics.sql`; source-only and **not applied** to QA or production.
+- Adds `public.get_reporting_analytics(date,date,uuid)`, a STABLE SECURITY INVOKER read-only RPC. It requires `reports.read`, a valid authenticated app user, an inclusive date range no longer than 366 days, and branch access when a branch is explicitly requested.
+- The RPC relies on underlying table grants/RLS, returns aggregates only (summary KPIs, monthly cash/visit trends, department/doctor/test/diagnosis counts), and never returns patient identifiers, notes, or raw clinical rows. It uses Africa/Khartoum clinic-local date boundaries.
+- EXECUTE is revoked from PUBLIC, anon and service_role; authenticated receives the only application grant. No SECURITY DEFINER is introduced. The payload includes per-domain permission coverage flags so restricted domains (notably insurance for legacy-admin roles) cannot be mistaken for true zero totals.
+- Disposable PostgreSQL 17 workflow replays the canonical v112 baseline and Phase 34/46/47/48/49/50/51 prerequisites before Phase 52 catalog/ACL assertions. Source guard tests date bounds, route RPC usage, aggregate-only export, and workflow isolation.
+- UI candidate updates `src/routes/_authenticated/reports.tsx` to use the bounded aggregate RPC, monthly trend export and summary CSV; `src/lib/reporting.ts` validates dates. Arabic/English labels are added in `src/lib/i18n.tsx`.
+- No receipt/prescription print templates, inter-branch stock transfer writes, or insurance claim workflow changes are included. Those are separate phases below in the roadmap document; they need their own domain-specific safety and accounting contracts.
