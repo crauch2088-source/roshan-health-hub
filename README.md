@@ -1,3 +1,12 @@
+## OpenCode Cloud bootstrap — 2026-11-02
+
+- Prepared an isolated Codespaces/OpenCode bootstrap on branch `chore/opencode-cloud-bootstrap-20261102`; no application source, SQL migrations, production secrets, Supabase projects, Vercel settings, or production data were changed.
+- Added a Node 22 Codespaces devcontainer, approval-gated OpenCode v2 project policy, and four Roshan-specific agents. Default agent is read-only `plan`; provider credentials and browser-server password remain user-managed secrets.
+- Setup guide: [docs/OPENCODE_CLOUD_SETUP.md](docs/OPENCODE_CLOUD_SETUP.md). The Codespace itself and Google/Groq provider sign-in still require the owner's interactive GitHub/provider authorization; no billing was enabled.
+- Do not merge until the Codespace, private authenticated web port, free model connection, and read-only smoke prompt are verified.
+
+---
+
 ## Execution update — 2026-10-20: Phase 33 merged; atomic quota-safe workflow
 
 - Phase 33 PR #80 was conflict-resolved while retaining newer main clinical/lab safety fixes, then squash-merged as 20cb49f01b80eab481708f1a0236f9ed17645574.
