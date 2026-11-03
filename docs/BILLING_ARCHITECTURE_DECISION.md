@@ -38,3 +38,19 @@ The implementation remains a draft proposal. SQL must remain unapplied until mig
 
 ## Verified permission constraint (read-only production inspection)
 The deployed permission catalog currently assigns `billing.create` to admin, pharmacist, receptionist, and super_admin; `visits.create` includes doctor/receptionist; `lab.create` includes doctor/lab_tech. The deployed `invoices` table has `visit_id` but no primary/secondary discriminator, and the existing unique index is live. Accordingly, workflow-specific RPCs must validate `visits.create`, `lab.create`, `pharmacy.create`, or `billing.create` according to the line-item source. Do not weaken authorization or let clinical callers bypass the guarded invoice-number RPC by calling it directly. This was a read-only catalog/schema inspection; no production data or schema was changed.
+
+
+## Phase 49-50 candidate implementation status — 2026-10-31
+
+Dependent PR #149 adds request-key idempotency to pharmacy dispense-and-invoice, exact patient/visit/batch branch enforcement, rejection of expired/unknown-expiry batches, and a clinical completion RPC that appends consultation fee before completing the visit and queue. It also revokes direct browser writes to the stock movement ledger.
+
+This is not deployed or accepted. The candidate preserves the currently deployed billing.create requirement alongside pharmacy.update; a least-privilege alternative requires a coordinated change to the invoice helper and role matrix. The existing invoice-coupled dispense RPC remains callable during compatibility and needs a later cutover revocation. QA and production remain unchanged pending exact-head CI, authenticated role acceptance, and the manual backup/restore gate.
+
+
+Phase 49 also closes the legacy stock-entry route: medicine master creation starts at zero, positive batch receipt requires expiry at UI and database layers, browser writes to pharmacy_inventory and stock_movements are revoked, and direct authenticated changes to medicines.stock_quantity are rejected.
+
+
+The medicine master UI has also been corrected: initial stock is no longer entered on a medicine record. New medicine records start at zero and all positive quantities enter through the idempotent batch receipt RPC with a required expiry. The database protects this invariant against direct authenticated edits.
+
+
+The combined PG17 critical-path replay follows the canonical Phase 48 fixture order: v112 baseline, Storage/Realtime fixture, Phase 34, Phase 48, then Phases 49 and 50. Phase 46 and 47 remain covered by their own isolated fixture workflows and are intentionally not replayed into this baseline test.

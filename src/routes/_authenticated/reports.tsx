@@ -25,6 +25,7 @@ import { n, rel, s, useRows, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { DEFAULT_EXPIRY_THRESHOLD_DAYS, expiryStatus } from "@/lib/pharmacy";
+import { isValidReportingRange, type ReportingPayload } from "@/lib/reporting";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/reports")({
@@ -59,75 +60,57 @@ function ReportsPageInner() {
   const [from, setFrom] = useState(`${todayISO().slice(0, 7)}-01`);
   const [to, setTo] = useState(todayISO());
 
-  const visits = useRows(["rep-visits", from, to], () =>
-    supabase
-      .from("visits")
-      .select(
-        "id, visit_date, status, consultation_fee, departments(name, name_ar), users(full_name)",
-      )
-      .gte("visit_date", from)
-      .lte("visit_date", to)
-      .is("deleted_at", null),
+  const rangeValid = isValidReportingRange(from, to);
+  const report = useRows<ReportingPayload>(
+    ["rep-summary", from, to],
+    () =>
+      supabase.rpc("get_reporting_analytics", {
+        p_from_date: from,
+        p_to_date: to,
+        p_branch_id: null,
+      }),
+    { enabled: rangeValid },
   );
-
-  const labs = useRows(["rep-labs", from, to], () =>
-    supabase
-      .from("lab_order_items")
-      .select("id, price, lab_tests(name, name_ar), lab_orders!inner(created_at)")
-      .gte("lab_orders.created_at", from)
-      .lte("lab_orders.created_at", `${to}T23:59:59`),
+  const payload = report.data as ReportingPayload | undefined;
+  const summary = payload?.summary;
+  const coverage = payload?.coverage;
+  const byDepartment = Object.fromEntries(
+    (payload?.by_department ?? []).map((row) => [row.name || t("none"), Number(row.count)]),
   );
-
-  const diagnoses = useRows(["rep-dx", from, to], () =>
-    supabase
-      .from("diagnoses")
-      .select("id, diagnosis_name, created_at")
-      .gte("created_at", from)
-      .lte("created_at", `${to}T23:59:59`)
-      .is("deleted_at", null),
+  const byDoctor = Object.fromEntries(
+    (payload?.by_doctor ?? []).map((row) => [row.name || t("none"), Number(row.count)]),
   );
-
-  const visitRows = (visits.data ?? []) as Row[];
-  const labRows = (labs.data ?? []) as Row[];
-  const dxRows = (diagnoses.data ?? []) as Row[];
-
-  const byDepartment: Record<string, number> = {};
-  for (const v of visitRows) {
-    const dep = rel(v, "departments");
-    const name =
-      (lang === "ar" ? s(dep, "name_ar") || s(dep, "name") : s(dep, "name")) || t("none");
-    byDepartment[name] = (byDepartment[name] ?? 0) + 1;
-  }
-
-  const byDoctor: Record<string, number> = {};
-  for (const v of visitRows) {
-    const name = s(rel(v, "users"), "full_name") || t("none");
-    byDoctor[name] = (byDoctor[name] ?? 0) + 1;
-  }
-
-  const byTest: Record<string, number> = {};
-  for (const l of labRows) {
-    const test = rel(l, "lab_tests");
-    const name = (lang === "ar" ? s(test, "name_ar") || s(test, "name") : s(test, "name")) || "—";
-    byTest[name] = (byTest[name] ?? 0) + 1;
-  }
-
-  const byDiagnosis: Record<string, number> = {};
-  for (const d of dxRows) {
-    const key = s(d, "diagnosis_name").trim();
-    if (!key) continue;
-    byDiagnosis[key] = (byDiagnosis[key] ?? 0) + 1;
-  }
-
-  const consultRevenue = visitRows.reduce((sum, v) => sum + n(v, "consultation_fee"), 0);
-  const labRevenue = labRows.reduce((sum, l) => sum + n(l, "price"), 0);
-
-  if (visits.isLoading) return <Loading />;
+  const byTest = Object.fromEntries(
+    (payload?.by_test ?? []).map((row) => [
+      lang === "ar" ? row.name_ar || row.name : row.name,
+      Number(row.count),
+    ]),
+  );
+  const byDiagnosis = Object.fromEntries(
+    (payload?.by_diagnosis ?? []).map((row) => [row.name || t("none"), Number(row.count)]),
+  );
+  const monthlyRows = payload?.monthly ?? [];
+  const visitCount = Number(summary?.visits ?? 0);
+  const labItemCount = Number(summary?.lab_items ?? 0);
+  const consultRevenue = Number(summary?.consultation_revenue ?? 0);
+  const labRevenue = Number(summary?.lab_revenue ?? 0);
+  const summaryRows: Row[] = [
+    { metric: t("visits"), value: visitCount },
+    { metric: t("completed_visits"), value: Number(summary?.completed_visits ?? 0) },
+    { metric: t("laboratory"), value: labItemCount },
+    { metric: t("consultation_fee"), value: consultRevenue },
+    { metric: t("lab_revenue"), value: labRevenue },
+    { metric: t("payments_collected"), value: Number(summary?.payments_collected ?? 0) },
+    { metric: t("operating_expenses"), value: Number(summary?.operating_expenses ?? 0) },
+    { metric: t("net_cashflow"), value: Number(summary?.net_cashflow ?? 0) },
+  ];
 
   const rank = (map: Record<string, number>) =>
     Object.entries(map)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20);
+
+  if (report.isLoading) return <Loading />;
 
   return (
     <div>
@@ -146,15 +129,43 @@ function ReportsPageInner() {
           onChange={(e) => setTo(e.target.value)}
           className="w-40"
         />
-        <ExportButtons rows={visitRows} filename={`roshan-visits-${from}-${to}`} />
+        <ExportButtons rows={summaryRows} filename={`roshan-report-summary-${from}-${to}`} />
       </PageHeader>
 
-      <ErrorBox error={visits.error} />
+      <ErrorBox
+        error={report.error ?? (rangeValid ? null : new Error(t("invalid_reporting_range")))}
+      />
+      {coverage && !coverage.insurance ? (
+        <p
+          className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground"
+          role="status"
+        >
+          {t("insurance_metrics_unavailable")}
+        </p>
+      ) : null}
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("visits")} value={String(visitRows.length)} />
-        <StatCard label={t("laboratory")} value={String(labRows.length)} />
+        <StatCard label={t("visits")} value={String(visitCount)} />
+        <StatCard label={t("laboratory")} value={String(labItemCount)} />
+        <StatCard
+          label={t("completed_visits")}
+          value={String(Number(summary?.completed_visits ?? 0))}
+        />
         <StatCard label={t("consultation_fee")} value={money(consultRevenue, currency)} />
+        <StatCard
+          label={t("payments_collected")}
+          value={money(Number(summary?.payments_collected ?? 0), currency)}
+          tone="success"
+        />
+        <StatCard
+          label={t("operating_expenses")}
+          value={money(Number(summary?.operating_expenses ?? 0), currency)}
+          tone="destructive"
+        />
+        <StatCard
+          label={t("net_cashflow")}
+          value={money(Number(summary?.net_cashflow ?? 0), currency)}
+        />
         <StatCard label={t("lab_revenue")} value={money(labRevenue, currency)} />
       </div>
 
@@ -164,6 +175,7 @@ function ReportsPageInner() {
           <TabsTrigger value="doctor">{t("doctor")}</TabsTrigger>
           <TabsTrigger value="tests">{t("test")}</TabsTrigger>
           <TabsTrigger value="dx">{t("diagnosis")}</TabsTrigger>
+          <TabsTrigger value="monthly">{t("monthly_trends")}</TabsTrigger>
         </TabsList>
         {[
           ["dept", byDepartment] as const,
@@ -198,6 +210,39 @@ function ReportsPageInner() {
             </Card>
           </TabsContent>
         ))}
+        <TabsContent value="monthly">
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3 flex justify-end">
+                <ExportButtons rows={monthlyRows as Row[]} filename="roshan-monthly-report" />
+              </div>
+              {monthlyRows.length === 0 ? (
+                <Empty />
+              ) : (
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("month")}</TableHead>
+                      <TableHead>{t("visits")}</TableHead>
+                      <TableHead>{t("payments_collected")}</TableHead>
+                      <TableHead>{t("operating_expenses")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {monthlyRows.map((row) => (
+                      <TableRow key={row.month}>
+                        <TableCell dir="ltr">{row.month}</TableCell>
+                        <TableCell dir="ltr">{Number(row.visits)}</TableCell>
+                        <TableCell>{money(Number(row.payments), currency)}</TableCell>
+                        <TableCell>{money(Number(row.expenses), currency)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <PharmacyReports />
@@ -241,7 +286,7 @@ function PharmacyReports() {
   const lowStockRows = medRows.filter((m) => n(m, "stock_quantity") <= n(m, "reorder_level"));
   const expiryRows = batchRows.filter((b) => {
     const status = expiryStatus(s(b, "expiry_date") || null, thresholdDays);
-    return status === "expiring_soon" || status === "expired";
+    return status === "expiring_soon" || status === "expired" || status === "unknown";
   });
 
   const batchInventoryValue = batchRows.reduce(
@@ -289,7 +334,9 @@ function PharmacyReports() {
                         </TableCell>
                         <TableCell dir="ltr">{s(b, "batch_number") || "—"}</TableCell>
                         <TableCell>{s(rel(b, "suppliers"), "name") || "—"}</TableCell>
-                        <TableCell dir="ltr">{formatDate(s(b, "expiry_date"))}</TableCell>
+                        <TableCell dir="ltr">
+                          {s(b, "expiry_date") ? formatDate(s(b, "expiry_date")) : t("unknown")}
+                        </TableCell>
                         <TableCell dir="ltr">{n(b, "quantity_remaining")}</TableCell>
                         <TableCell>
                           {t(expiryStatus(s(b, "expiry_date") || null, thresholdDays))}

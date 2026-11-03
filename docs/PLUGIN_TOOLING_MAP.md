@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
+Last reviewed: 2026-11-02 (incremental capability update; historical entries remain time-stamped). Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -241,3 +241,78 @@ Last reviewed: 2026-10-18. Purpose: turn available integrations into repeatable 
 - **Remaining dependency blocker:** PR #114 is open at head `9e783981e13993ee03669efc459a563c1c3c216b`, based on the exact current main SHA above. Its CI run `40465003880` fails Typecheck after the grouped npm-major updates: `react-day-picker` 10 removes the `ClassNames.table` property used by `src/components/ui/calendar.tsx`; the Recharts major update changes tooltip payload/label typings and causes additional `src/components/ui/chart.tsx` type errors. The 220 guard tests and the PostgreSQL integration jobs in that run pass, but lint/build are skipped after Typecheck fails. Do not merge PR #114 or patch these generated UI wrappers without a deliberate compatibility review and regression coverage.
 - Issue #95 remains open. The current production source/deployment identity is now synchronized, but all 27 authenticated page routes remain **NOT TESTED** for interactive viewport/RTL/LTR/keyboard acceptance; authenticated role and clinical workflows remain **BLOCKED/DEFERRED**. The prior public fetch is not interactive browser acceptance.
 - **Next task:** continue the source-level UX audit under Issue #95 without opening a new feature workstream. In parallel, keep PR #114 unmerged until its breaking dependency changes are either excluded from Dependabot's major group or migrated with focused tests and a green exact-head CI/preview. Clinical E2E remains explicitly deferred until the free isolated QA environment and suitable synthetic clinician identity are available.
+
+
+## Browser automation and current release-gate routing — 2026-10-30
+
+- **Playwright + Chromium + axe-core (repository harness, candidate PR #144):** the public-route suite passed 16/16 Chromium tests on the exact PR preview across 320/360/390/430px, Arabic RTL and English LTR, with axe-core WCAG 2.1 A/AA scans, overflow checks, route recovery, autocomplete, and public error-disclosure checks. This uses the repository's existing GitHub Actions/Vercel preview path and does not consume TinyFish credits or write clinical/financial data.
+- **Do not merge or dispatch the PR #144 manual workflow until its scope review is resolved:** the current candidate allows a feature-branch dispatch and checks out `${{ github.ref }}` despite claiming to use a trusted main harness; it also accepts any `*-roshan45.vercel.app` host. Required correction: dispatch on `main` only, checkout `main`, and use a project-specific allowlist with positive/negative tests. The preview test result remains valid for the exact tested head, but does not waive this workflow review.
+- **Public UX routing:** prefer the repository Playwright suite for repeatable public-route checks. Use TinyFish only when a specific authorized browser capability is missing and the session is approved; avoid spending metered browser runs on coverage already handled by Playwright.
+- **Authenticated clinical routing:** do not run authenticated role/clinical tests until the isolated free QA project has a usable synthetic clinician identity through an approved Auth Admin credential path and the four QA `security_invoker` view options from Issue #140 are reconciled/rechecked. The five existing QA staff identities have no usable passwords; do not modify `auth.users` directly or create an improvised credential endpoint.
+- **Composio/GitHub execution:** the connected GitHub account was active and used for exact-SHA reads, PR merge, review comments, and atomic multi-file commits on 2026-10-30. Continue to search tools first, inspect schemas, use the explicit connected account, and batch only independent operations. Keep one atomic commit per logical task and one CI run per completed stage.
+- **Release reliability:** the 2026-10-30 readback returned no branch-protection data for `main` (404) and an empty repository ruleset list. Therefore required status checks are not currently enforced by a main-branch ruleset; verify exact SHA checks manually until a safe required-check set is defined. Do not make the deferred clinical acceptance job a mandatory merge check while its approved QA login path is unavailable.
+- **Storage security priority:** Issue #142 remains P1. Use disposable PostgreSQL 17 positive/negative policy tests to prove path entity UUIDs resolve to rows in the same authoritative branch. Any live QA reconciliation is a separate approved action; production remains read-only.
+
+
+## Browser E2E trust-boundary hardening — 2026-11-01
+
+- The repository-owned Playwright/Chromium/axe-core harness remains the no-cost public-route acceptance path; it does not use TinyFish credits or require a parallel browser service.
+- The manual workflow is restricted to `workflow_dispatch` on `main`, checks out `main`, and never installs or executes the candidate branch's package manifest.
+- Target validation is implemented in `scripts/validate-browser-e2e-target.mjs`; only the canonical production hostname, verified stable alias, project branch-preview pattern, and observed 9-character deployment-ID pattern are accepted. A generic team-wide Vercel suffix is rejected.
+- Positive/negative validator regressions are included in `npm run test:guard`. The validator writes only a normalized origin and never echoes the supplied URL into logs.
+- No long-lived Vercel bypass secret is stored or transmitted. Keep preview SSO enabled; do not disable or weaken SSO as a routine test step. Public-route checks should use the read-only production alias unless a separately approved OIDC trust path exists.
+
+
+## Public browser workflow — merged and verified 2026-11-01
+
+- PR #144 merged as `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`. Main workflow [41280194348](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41280194348) passed 16/16 read-only public-route/accessibility checks against production at 320/360/390/430 px.
+- The validator is project-scoped; manual dispatch is main-only and the runner checks out main. The test did not use Vercel SSO bypass or create clinical/financial records.
+
+
+## Current execution state — 2026-11-02
+
+- Main is `9f17d2bb6d3290b036de71da9cb147540707d17a`. PR #141 is squash-merged; Issue #140 is closed after the canonical v112 baseline retained `security_invoker=true` on all four affected views and the QA-only reconciliation was confirmed already applied.
+- Exact post-merge main checks: 22 successful, one intentional clinical-acceptance skip, zero failures. The Phase 37 PostgreSQL 17 baseline/forward-replay/catalog contract passed. The clinical skip remains deferred, not passed.
+- The Vercel deployment for the docs/SQL/test-only merge was correctly ignored by the project's Ignore Build Step. Production remains READY on application SHA `3de0140d3b29fdde4a0865e416ec6f5845b4fbc1`; no deployment is required for this non-runtime change.
+- Phase 48 / Issue #142 is closed and applied; do not repeat its migration or Storage review absent new evidence.
+- Next priority is Issue #146: a boolean-only anonymous bootstrap status RPC. Preserve the private helper boundary, use an empty fixed search_path, and prove exact grants and anonymous behavior in disposable PostgreSQL 17. PR #149 already contains Phase 49/50 pharmacy/billing candidates; treat the next independent setup-status change as Phase 51, but recheck the live ledger and dependency order before assigning a migration version.
+- PR #149 remains draft and targets the old Phase 48 feature branch, not main. Refresh it before review; keep clinical/financial release gates intact.
+- Issue #95 remains open. Do not run authenticated clinical E2E until the isolated free QA login path and suitable synthetic clinician identity are available. Issue #25 remains open while historical secret exposure and unavailable GitHub security-setting controls remain unresolved.
+
+
+## Phase 51 setup-status regression routing — 2026-11-02
+
+- The anonymous bootstrap status issue is handled through the repository's existing free PostgreSQL 17 CI service and Node test:guard suite; no new app, service, secret, or paid browser integration is required.
+- The Phase 51 candidate runs after the v115 catalog fingerprint assertion, then checks the public boolean wrapper's exact direct EXECUTE grants and verifies that anon cannot access the private schema/helper.
+- Keep the anonymous contract deliberately narrow: one boolean only. Do not expose user counts, identity details, or a new setup RPC family.
+- Candidate remains unapplied. Recheck the live migration ledger and Phase 49/50 merge order before assigning a timestamp. Clinical authenticated E2E remains deferred.
+
+
+### Phase 51 exact-head validation — 2026-11-02
+
+- Corrected PR #150 code head ef66e4bdc1d2e93e293c4bcc776a331e4e950906 passed 29 checks: 28 success, one deferred clinical-acceptance skip, zero failures. Run 41399729647 includes the Phase 51 PostgreSQL 17 step, v115 fingerprint comparison, source guard, typecheck, lint, and build.
+- Vercel ignored the corrected-head preview because no frontend/runtime code changed; do not force a preview build for this SQL/test/docs-only candidate.
+- Both live databases were read-only checked: production 118 migrations/latest 20261031103927, QA 12/latest 20261031103912. The existing authenticator membership in anon/authenticated/service_role means a direct authenticator EXECUTE grant is not required after the public grants are narrowed.
+- Keep PR #150 Draft pending independent security review. No live migration is authorized by this source candidate.
+
+
+
+## Phase 51 merge and QA application — 2026-11-02
+
+- PR #150 merged as `0bb8bab7acee6acccb1fadeb0ae7a5270f097c4a`. The initial `ce88d50` lint failure was four Prettier violations in the new Phase 51 source test; the insurance regression's focused test step passed and its shared lint/typecheck/build step failed on the same formatting issue. Corrected commit `ef66e4b` resolved it. Final exact-head CI run [41400152008](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41400152008): 28 success, one intentional clinical skip, zero failures.
+- QA migration `roshan_phase51_public_setup_required_anon` applied as version `20261102122437`; post-apply catalog and actual SET ROLE anon read-only call passed. The expected new Advisor warning is the one public boolean-only SECURITY DEFINER RPC; anon still cannot use schema `private` or execute `private.setup_required()`.
+- Production is unchanged and remains gated by the documented manual logical backup, off-site copy, and restore rehearsal (Free plan has no automatic daily backups). Do not bypass this gate.
+- PR #149 now targets main but is CONFLICTING (20 ahead / 5 behind); GitHub update-branch reports merge conflicts. Previous CI run 41185376552 was green on its former base only. Resolve conflicts and rerun exact-main CI; keep merge/promotion blocked while Issue #95 clinical/staff acceptance is deferred.
+
+
+## OpenCode — cloud coding agent (bootstrap merged; not yet operationally verified)
+
+- Prepared a repository-scoped GitHub Codespaces devcontainer using Node 22 and the official OpenCode CLI package. It installs project dependencies and OpenCode after the owner creates a Codespace; it does not auto-start a network server.
+- Added `opencode.json` with read-only `plan` as the default, approval-gated edits/shell commands, secret-file deny rules, denied production database/deploy/merge commands, and approval-gated pushes only to `opencode/*` branches.
+- Added four project agents: architecture analysis, independent read-only review, QA planning/execution, and implementation. See [OpenCode Cloud Setup](OPENCODE_CLOUD_SETUP.md).
+- Intended first model: a Google AI Studio free-tier Flash model selected interactively with `/connect` and `/models`; Groq is an alternative. Model availability, quotas, and provider data terms must be checked at use time. No API keys are stored in the repository.
+- **Status:** repository bootstrap only. Codespace creation, password secret setup, provider sign-in, and the first read-only prompt require the repository owner. No Supabase/Vercel connection, production mutation, or paid resource is part of this integration.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+
+PR #154 merged to main at `e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`. The repository bootstrap is merged, but Codespace creation, private password-secret setup, free-provider sign-in and the first read-only prompt remain owner-interactive and operationally unverified.

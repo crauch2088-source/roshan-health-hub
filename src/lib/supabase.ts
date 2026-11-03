@@ -41,10 +41,10 @@ export function dbError(error: unknown): string {
     return `${text} (permission denied by database policy)`;
   }
   if (e.code === "42703") {
-    return `${text} (column missing — run db/roshan_phase1_migration.sql)`;
+    return `${text} (database schema is behind the application — apply the current approved forward migrations)`;
   }
   if (e.code === "42883" || e.code === "PGRST202") {
-    return `${text} (database function missing — run db/roshan_phase1_migration.sql)`;
+    return `${text} (database function is missing — apply the current approved forward migrations)`;
   }
   return text;
 }

@@ -1,3 +1,12 @@
+## OpenCode Cloud bootstrap — 2026-11-02
+
+- Prepared an isolated Codespaces/OpenCode bootstrap on branch `chore/opencode-cloud-bootstrap-20261102`; no application source, SQL migrations, production secrets, Supabase projects, Vercel settings, or production data were changed.
+- Added a Node 22 Codespaces devcontainer, approval-gated OpenCode v2 project policy, and four Roshan-specific agents. Default agent is read-only `plan`; provider credentials and browser-server password remain user-managed secrets.
+- Setup guide: [docs/OPENCODE_CLOUD_SETUP.md](docs/OPENCODE_CLOUD_SETUP.md). The Codespace itself and Google/Groq provider sign-in still require the owner's interactive GitHub/provider authorization; no billing was enabled.
+- Do not merge until the Codespace, private authenticated web port, free model connection, and read-only smoke prompt are verified.
+
+---
+
 ## Execution update — 2026-10-20: Phase 33 merged; atomic quota-safe workflow
 
 - Phase 33 PR #80 was conflict-resolved while retaining newer main clinical/lab safety fixes, then squash-merged as 20cb49f01b80eab481708f1a0236f9ed17645574.
@@ -62,6 +71,14 @@
 ---
 
 # Roshan Health Hub
+
+## Latest UAT update — 2026-10-31 (Phase 46 candidate)
+
+- Live browser UAT reported successful manager login, settings, synthetic patient registration, visit/queue creation, inventory review, and audit capture.
+- Read-only schema checks on production and isolated QA confirmed two missing columns: `patients.allergies` and `prescriptions.branch_id`.
+- Phase 46 candidate adds the columns, backfills prescription branch only from the linked visit, enforces future branch/patient consistency, and adds PostgreSQL 17 regression coverage. It is not applied to QA or production.
+- Full evidence and retest steps: [UAT Phase 46 report](docs/UAT_PHASE46_SCHEMA_COMPATIBILITY_2026-10-31.md).
+
 
 **Purpose:** a real, low-cost medical-center ERP/EMR for Roshan Medical Center in Hay Al-Sadaqa, Al-Hasahisa, Gezira, Sudan. This repository is the single application; do not create a parallel/replacement app.
 
@@ -397,3 +414,16 @@ The original machine-readable `docs/recovered-migrations/source-parity-report.js
 - Phase 28 RPCs are live and verified. Phase 29 has revoked direct DML on `prescriptions`, `prescription_items`, `patient_discounts`, and `insurance_prior_authorizations`; SELECT and RLS remain intact.
 - Global read-only audit: 56/56 public base tables have RLS; zero grant any privilege to `anon`; all 81 `SECURITY DEFINER` routines have fixed `search_path`; no public one is executable by `anon`. Two private helpers inherit PUBLIC EXECUTE but `anon` has no schema USAGE, and they remain unmodified.
 - Phase 30 (revoking direct DML on `lab_order_items` and `medical_certificates`) is intentionally gated until the new RPC frontend is deployed to the canonical production alias. Vercel's free deployment API quota resets 2026-10-19 08:52 Africa/Khartoum; a one-time continuation task is scheduled for 09:00.
+
+
+## Production readiness update — 2026-10-31
+
+- Phase 46 and Phase 47 candidates close live UAT schema gaps in patient allergy/chronic-condition fields, prescription branch attribution, and queue-ticket branch attribution. See the two UAT phase reports under `docs/`.
+- Both candidate migrations have been applied and read back in isolated QA; PostgreSQL 17 regression suites passed on PR #147 head `cf8ebd5567085e371a425807f07e1fa81f2bd56f`. Production remains unchanged pending merge and a manual backup.
+- Production migration `20261020232033` is already recorded as migration 115 / Phase 39. Do not replay it; Phase 46 then Phase 47 are the forward fixes.
+- The Supabase organization is on the Free plan, which does not include automatic daily database backups. A manual logical backup stored off-site is a launch prerequisite. [Supabase backup documentation](https://supabase.com/docs/guides/platform/backups).
+
+
+## Production rollout status — 2026-10-31
+
+Phase 46 and Phase 47 schema repairs are merged and applied to production; Vercel production deployment is READY. The official clinic launch is **not yet approved**: manual backup/restore, Storage entity binding, setup RPC, authenticated staff acceptance, and branch protection remain open. See [the production rollout record](docs/PRODUCTION_ROLLOUT_2026-10-31.md).
