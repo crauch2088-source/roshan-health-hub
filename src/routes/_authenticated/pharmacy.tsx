@@ -282,9 +282,8 @@ function PharmacyPageInner() {
                               .join(" · ") || "—"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {[s(i, "frequency"), s(i, "duration")]
-                              .filter(Boolean)
-                              .join(" · ") || "—"}
+                            {[s(i, "frequency"), s(i, "duration")].filter(Boolean).join(" · ") ||
+                              "—"}
                           </p>
                           {s(i, "instructions") ? (
                             <p className="break-words whitespace-pre-wrap text-xs text-muted-foreground">
