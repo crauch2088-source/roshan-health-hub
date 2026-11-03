@@ -261,7 +261,10 @@ function CashboxTab({ currency }: { currency: string }) {
                             {t("reversal")}
                           </Badge>
                         ) : null}
-                        {can("cashbox.update") && isGenericCashboxReversalAllowed(s(tx, "source_type")) && !tx["is_reversed"] && !tx["reversal_of"] ? (
+                        {can("cashbox.update") &&
+                          isGenericCashboxReversalAllowed(s(tx, "source_type")) &&
+                          !tx["is_reversed"] &&
+                          !tx["reversal_of"] ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -322,7 +325,10 @@ function CashboxTab({ currency }: { currency: string }) {
                             {amt > 0 ? `+${money(amt, currency)}` : money(amt, currency)}
                           </TableCell>
                           <TableCell className="no-print text-end">
-                            {can("cashbox.update") && isGenericCashboxReversalAllowed(s(tx, "source_type")) && !tx["is_reversed"] && !tx["reversal_of"] ? (
+                            {can("cashbox.update") &&
+                          isGenericCashboxReversalAllowed(s(tx, "source_type")) &&
+                          !tx["is_reversed"] &&
+                          !tx["reversal_of"] ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
