@@ -70,3 +70,9 @@ A projection/read model, not a duplicate clinical record. References:
 6. No dose calculation without explicit dose basis, units, frequency, maxima, rounding and concentration semantics as applicable.
 7. Recommendation audit captures source/protocol version and final clinician decision.
 8. All new tables/views/RPCs must preserve RLS, branch scoping, least privilege, audit and atomicity.
+
+
+## Additional QA verification — 2026-11-03
+- `patients.allergies` and `patients.chronic_conditions` are free-text fields. The read-only schema audit did not identify dedicated structured allergy/adverse-reaction or interaction knowledge tables. Treat this as a gap requiring a designed, permission-scoped model; do not parse free text as a complete allergy history.
+- The QA `medicines` table currently has zero rows. Product knowledge must not be pre-seeded from guesses or from generic online catalogues. Obtain and clinically/pharmaceutically verify the intended Roshan formulary first.
+- Visit creation currently inserts `visits` directly and calls the consultation invoice RPC in a separate request. Any new intake/weight workflow must explicitly address partial failure and idempotency before extending that flow.

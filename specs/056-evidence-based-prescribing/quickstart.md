@@ -24,7 +24,7 @@ This document is a reviewer/tester checklist, not an instruction to apply migrat
 - Obtain independent GP and pharmacist approval and retain a signed version/review record.
 - Verify the source is current and permitted to be stored/redistributed.
 - Run unit, integration, PG17, RLS/branch and synthetic clinician tests.
-- Complete Android phone, Arabic RTL and English RTL acceptance.
+- Complete Android phone, Arabic RTL and English LTR acceptance.
 
 ## Prohibited
 - Do not paste real patient data into test fixtures.
@@ -32,3 +32,7 @@ This document is a reviewer/tester checklist, not an instruction to apply migrat
 - Do not apply a candidate migration to production.
 - Do not enable or seed a protocol merely because its arithmetic test passes.
 - Do not claim interaction checking is exhaustive without verified dataset coverage.
+
+
+## Verified current QA limitation
+The QA medicine catalogue currently has zero rows. Do not attempt a protocol cohort selection until a reviewed Roshan formulary/product list has been agreed and loaded into QA.

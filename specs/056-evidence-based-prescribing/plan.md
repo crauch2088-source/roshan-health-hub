@@ -110,3 +110,14 @@ Preserve immutable protocol versions and record the exact version used in each p
 - Confirm whether patient allergies/history currently exist in any other table/view and their RLS contracts.
 - Confirm actual QA catalogue and stock product identities without retrieving patient data.
 - Confirm source licensing and exact local clinical review owner.
+
+
+## Verified QA workflow constraints — 2026-11-03 follow-up
+
+A further source and QA read-only inspection established:
+- The current QA `medicines` table contains **0 rows**. There is no actual formulary cohort to prioritize yet. Phase 0 must therefore obtain a reviewed Roshan formulary/product list, verify product identity/strength/formulation/route, then seed only reviewed catalogue records in QA. No protocol content should be selected from assumed stock.
+- The current patient registration form's `Save & new visit` action creates the patient through `create_patient_atomic` then navigates to `/visits?patient=<id>`.
+- The current visit form inserts the visit row directly, then calls `create_visit_consultation_invoice_atomic` separately when the consultation fee is positive. It does not currently use one combined visit+invoice transaction.
+- The vitals form saves the weight as a visit-linked row and updates the latest row. This is the correct measurement destination, but simply adding a second client write after visit creation would create a partial-success failure mode.
+
+**Implementation consequence:** before adding weight to registration, design and test a server-authoritative, idempotent intake/visit creation boundary that persists visit + initial weight and preserves consultation invoice semantics. If a single atomic boundary cannot safely include existing billing behavior, capture weight in the visit intake UI and save it through the existing vitals flow with explicit retry/pending state; never silently discard it or create a patient-level weight cache. The implementer must prove rollback/idempotency and branch/permission checks before choosing.
