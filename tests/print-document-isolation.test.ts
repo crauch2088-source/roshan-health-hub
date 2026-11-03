@@ -10,7 +10,8 @@ test("certificate print action selects and prints exactly one persisted certific
   const source = read("src/routes/_authenticated/certificates.tsx");
   assert.match(source, /printingCertificateId/);
   assert.match(source, /rows\.find\(\(row\) => s\(row, "id"\) === printingCertificateId\)/);
-  assert.match(source, /setPrintingCertificateId\(s\(c, "id"\)\)/);
+  assert.match(source, /handlePrintCertificate\(s\(c, "id"\)\)/);
+  assert.match(source, /flushSync/);
   assert.doesNotMatch(source, /onClick=\{\(\) => window\.print\(\)\}/);
   assert.match(source, /afterprint/);
   assert.match(source, /print-only/);

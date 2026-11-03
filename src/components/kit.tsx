@@ -431,7 +431,12 @@ export function PrintButton({ scoped = false }: { scoped?: boolean }) {
       document.body.classList.add("print-scope-active");
       window.addEventListener("afterprint", cleanup, { once: true });
     }
-    window.print();
+    try {
+      window.print();
+    } catch (error) {
+      if (scoped) document.body.classList.remove("print-scope-active");
+      throw error;
+    }
   };
   return (
     <Button variant="outline" size="sm" className="no-print" onClick={print}>

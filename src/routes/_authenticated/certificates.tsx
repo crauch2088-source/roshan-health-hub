@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Printer } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { Empty, ErrorBox, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
@@ -161,18 +162,21 @@ function CertificatesPageInner() {
   const rows = (list.data ?? []) as Row[];
   const printCertificate = rows.find((row) => s(row, "id") === printingCertificateId);
 
-  useEffect(() => {
-    if (!printingCertificateId || !printCertificate) return;
-    const handleAfterPrint = () => setPrintingCertificateId(null);
+  const handlePrintCertificate = (certificateId: string) => {
+    flushSync(() => setPrintingCertificateId(certificateId));
     document.body.classList.add("print-scope-active");
-    window.addEventListener("afterprint", handleAfterPrint, { once: true });
-    const timeout = window.setTimeout(() => window.print(), 100);
-    return () => {
-      window.clearTimeout(timeout);
-      window.removeEventListener("afterprint", handleAfterPrint);
+    const cleanup = () => {
       document.body.classList.remove("print-scope-active");
+      setPrintingCertificateId(null);
     };
-  }, [printingCertificateId, printCertificate]);
+    window.addEventListener("afterprint", cleanup, { once: true });
+    try {
+      window.print();
+    } catch (error) {
+      cleanup();
+      throw error;
+    }
+  };
 
   if (list.isLoading) return <Loading />;
   return (
@@ -233,7 +237,7 @@ function CertificatesPageInner() {
                             variant="ghost"
                             aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
                             disabled={Boolean(printingCertificateId)}
-                            onClick={() => setPrintingCertificateId(s(c, "id"))}
+                            onClick={() => handlePrintCertificate(s(c, "id"))}
                           >
                             <Printer className="size-4" />
                           </Button>
