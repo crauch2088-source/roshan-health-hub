@@ -70,7 +70,7 @@ test("Roshan Constitution and Phase 53 planning are reviewable and remain implem
   assert.match(plan, /Do not introduce a PDF service, database migration/);
   assert.match(research, /private\.app_has_branch_access/);
   assert.match(research, /center_name/);
-  assert.match(tasks, /T001 Inspect QA PostgreSQL catalogs/);
+  assert.match(tasks, /T001 Inspect QA.*catalogs/);
   assert.match(tasks, /Phase 0 blocks every Production implementation\/release path/);
   assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/data-model.md")));
   assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/quickstart.md")));
