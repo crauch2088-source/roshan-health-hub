@@ -43,9 +43,7 @@ function numberValue(row: ReceiptRow, key: string): number | null {
 function relation(row: ReceiptRow, key: string): ReceiptRow | null {
   const value = row[key];
   const candidate = Array.isArray(value) ? value[0] : value;
-  return candidate && typeof candidate === "object"
-    ? (candidate as ReceiptRow)
-    : null;
+  return candidate && typeof candidate === "object" ? (candidate as ReceiptRow) : null;
 }
 
 function validTimestamp(value: string): boolean {
@@ -111,8 +109,7 @@ export function buildInvoicePaymentReceiptModel(
 
   const netAmount = numberValue(invoice, "net_amount");
   const paidAmount = numberValue(invoice, "paid_amount");
-  const currentBalance =
-    netAmount != null && paidAmount != null ? netAmount - paidAmount : null;
+  const currentBalance = netAmount != null && paidAmount != null ? netAmount - paidAmount : null;
   if (
     netAmount == null ||
     paidAmount == null ||

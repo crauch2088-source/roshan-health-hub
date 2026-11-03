@@ -192,13 +192,7 @@ test("receipt model never invents missing cashier, received timestamp, method, o
   data.payment.method = null;
   data.invoice.invoice_number = null;
 
-  const model = buildInvoicePaymentReceiptModel(
-    data.payment,
-    data.invoice,
-    data.ledger,
-    "",
-    "SDG",
-  );
+  const model = buildInvoicePaymentReceiptModel(data.payment, data.invoice, data.ledger, "", "SDG");
 
   assert.ok(model);
   assert.equal(model.complete, false);

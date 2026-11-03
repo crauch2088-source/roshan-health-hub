@@ -10,7 +10,10 @@ test("receipt UI reads persisted payment and invoice fields only", () => {
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   assert.match(source, /received_at/);
   assert.match(source, /received_by/);
-  assert.match(source, /branch_id, deleted_at, patients\(id, full_name, mrn, phone, branch_id, deleted_at\)/);
+  assert.match(
+    source,
+    /branch_id, deleted_at, patients\(id, full_name, mrn, phone, branch_id, deleted_at\)/,
+  );
   assert.match(source, /received_user:users!payments_received_by_fkey/);
   assert.match(source, /get_invoice_payment_receipt_status/);
   assert.match(source, /index \+= 200/);

@@ -102,7 +102,9 @@ function InvoicePageInner() {
   const paymentsQ = useRows(["payments", invoiceId], () =>
     supabase
       .from("payments")
-      .select("id, invoice_id, amount, payment_method, method, reference_no, reference, received_at, received_by, branch_id, deleted_at, created_at, received_user:users!payments_received_by_fkey(full_name, deleted_at, active)")
+      .select(
+        "id, invoice_id, amount, payment_method, method, reference_no, reference, received_at, received_by, branch_id, deleted_at, created_at, received_user:users!payments_received_by_fkey(full_name, deleted_at, active)",
+      )
       .eq("invoice_id", invoiceId)
       .order("created_at", { ascending: false }),
   );
@@ -196,14 +198,10 @@ function InvoicePageInner() {
             !s(receivedUser, "deleted_at")
           ? s(receivedUser, "full_name")
           : "";
-    const ledger = receiptStatuses.find(
-      (status) => s(status, "payment_id") === s(payment, "id"),
-    );
+    const ledger = receiptStatuses.find((status) => s(status, "payment_id") === s(payment, "id"));
     return buildInvoicePaymentReceiptModel(payment, invoice, ledger, cashierName, currency);
   };
-  const selectedPayment = paymentRows.find(
-    (payment) => s(payment, "id") === printingPaymentId,
-  );
+  const selectedPayment = paymentRows.find((payment) => s(payment, "id") === printingPaymentId);
   const selectedReceipt = selectedPayment ? receiptModelFor(selectedPayment) : null;
 
   const handlePrintPayment = (paymentId: string) => {
@@ -432,60 +430,62 @@ function InvoicePageInner() {
                 <Empty />
               ) : (
                 <>
-                <ul className="space-y-2 text-sm">
-                  {paymentRows.map((payment) => {
-                    const receipt = receiptModelFor(payment);
-                    return (
-                      <li
-                        key={s(payment, "id")}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2"
-                      >
-                        <span>{money(n(payment, "amount"), currency)}</span>
-                        <span className="text-muted-foreground">
-                          {t(s(payment, "payment_method") || s(payment, "method"))} ·{" "}
-                          {formatDateTime(s(payment, "received_at") || s(payment, "created_at"))}
-                        </span>
-                        {can("payments.read") && (
-                          <div className="flex items-center gap-2">
-                            {receipt?.isReversed && (
-                              <span className="text-xs font-semibold text-destructive">
-                                {lang === "ar" ? "ملغي / مسترد" : "Reversed"}
-                              </span>
-                            )}
-                            {receipt?.complete ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                aria-label={lang === "ar" ? "طباعة إيصال الدفع" : "Print payment receipt"}
-                                disabled={Boolean(printingPaymentId) || receiptStatusQ.isLoading}
-                                onClick={() => handlePrintPayment(s(payment, "id"))}
-                              >
-                                <Printer className="size-4" />
-                              </Button>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                {receiptStatusQ.isLoading
-                                  ? lang === "ar"
-                                    ? "جارٍ التحقق من سجل الدفع…"
-                                    : "Verifying payment ledger…"
-                                  : lang === "ar"
-                                    ? "الإيصال غير متاح: تعذر التحقق من السجل أو بيانات المستلم."
-                                    : "Receipt unavailable: ledger or cashier data could not be verified."}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-                {can("payments.read") && receiptStatusQ.error && (
-                  <p role="status" className="mt-3 text-xs text-muted-foreground">
-                    {lang === "ar"
-                      ? "طباعة الإيصالات غير مفعّلة في هذه البيئة حتى يتوفر فحص سلامة سجل الدفع."
-                      : "Receipt printing is unavailable in this environment until payment-ledger verification is deployed."}
-                  </p>
-                )}
+                  <ul className="space-y-2 text-sm">
+                    {paymentRows.map((payment) => {
+                      const receipt = receiptModelFor(payment);
+                      return (
+                        <li
+                          key={s(payment, "id")}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2"
+                        >
+                          <span>{money(n(payment, "amount"), currency)}</span>
+                          <span className="text-muted-foreground">
+                            {t(s(payment, "payment_method") || s(payment, "method"))} ·{" "}
+                            {formatDateTime(s(payment, "received_at") || s(payment, "created_at"))}
+                          </span>
+                          {can("payments.read") && (
+                            <div className="flex items-center gap-2">
+                              {receipt?.isReversed && (
+                                <span className="text-xs font-semibold text-destructive">
+                                  {lang === "ar" ? "ملغي / مسترد" : "Reversed"}
+                                </span>
+                              )}
+                              {receipt?.complete ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  aria-label={
+                                    lang === "ar" ? "طباعة إيصال الدفع" : "Print payment receipt"
+                                  }
+                                  disabled={Boolean(printingPaymentId) || receiptStatusQ.isLoading}
+                                  onClick={() => handlePrintPayment(s(payment, "id"))}
+                                >
+                                  <Printer className="size-4" />
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  {receiptStatusQ.isLoading
+                                    ? lang === "ar"
+                                      ? "جارٍ التحقق من سجل الدفع…"
+                                      : "Verifying payment ledger…"
+                                    : lang === "ar"
+                                      ? "الإيصال غير متاح: تعذر التحقق من السجل أو بيانات المستلم."
+                                      : "Receipt unavailable: ledger or cashier data could not be verified."}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {can("payments.read") && receiptStatusQ.error && (
+                    <p role="status" className="mt-3 text-xs text-muted-foreground">
+                      {lang === "ar"
+                        ? "طباعة الإيصالات غير مفعّلة في هذه البيئة حتى يتوفر فحص سلامة سجل الدفع."
+                        : "Receipt printing is unavailable in this environment until payment-ledger verification is deployed."}
+                    </p>
+                  )}
                 </>
               )}
             </CardContent>
@@ -516,17 +516,25 @@ function InvoicePageInner() {
 
             {selectedReceipt.isReversed && (
               <p className="border-2 border-destructive p-3 text-center text-lg font-bold text-destructive">
-                {lang === "ar" ? "ملغي / مسترد — لا يثبت وجود دفعة قائمة" : "REVERSED / VOID — NOT PROOF OF AN ACTIVE PAYMENT"}
+                {lang === "ar"
+                  ? "ملغي / مسترد — لا يثبت وجود دفعة قائمة"
+                  : "REVERSED / VOID — NOT PROOF OF AN ACTIVE PAYMENT"}
               </p>
             )}
 
             <dl className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <dt className="text-muted-foreground">{lang === "ar" ? "رقم الفاتورة" : "Invoice #"}</dt>
-                <dd className="font-semibold" dir="ltr">{selectedReceipt.invoiceNumber}</dd>
+                <dt className="text-muted-foreground">
+                  {lang === "ar" ? "رقم الفاتورة" : "Invoice #"}
+                </dt>
+                <dd className="font-semibold" dir="ltr">
+                  {selectedReceipt.invoiceNumber}
+                </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">{lang === "ar" ? "تاريخ الاستلام" : "Received at"}</dt>
+                <dt className="text-muted-foreground">
+                  {lang === "ar" ? "تاريخ الاستلام" : "Received at"}
+                </dt>
                 <dd dir="ltr">{formatDateTime(selectedReceipt.receivedAt)}</dd>
               </div>
               <div>
@@ -538,16 +546,22 @@ function InvoicePageInner() {
                 <dd dir="ltr">{selectedReceipt.patientMrn || "—"}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">{lang === "ar" ? "طريقة الدفع" : "Payment method"}</dt>
+                <dt className="text-muted-foreground">
+                  {lang === "ar" ? "طريقة الدفع" : "Payment method"}
+                </dt>
                 <dd>{t(selectedReceipt.paymentMethod) || selectedReceipt.paymentMethod}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">{lang === "ar" ? "المستلم / أمين الصندوق" : "Cashier"}</dt>
+                <dt className="text-muted-foreground">
+                  {lang === "ar" ? "المستلم / أمين الصندوق" : "Cashier"}
+                </dt>
                 <dd>{selectedReceipt.cashierName}</dd>
               </div>
               {selectedReceipt.reference && (
                 <div className="col-span-2">
-                  <dt className="text-muted-foreground">{lang === "ar" ? "مرجع العملية" : "Payment reference"}</dt>
+                  <dt className="text-muted-foreground">
+                    {lang === "ar" ? "مرجع العملية" : "Payment reference"}
+                  </dt>
                   <dd dir="ltr">{selectedReceipt.reference}</dd>
                 </div>
               )}
@@ -560,15 +574,23 @@ function InvoicePageInner() {
               </div>
               <div className="flex justify-between">
                 <span>{lang === "ar" ? "الرصيد الحالي للفاتورة" : "Current invoice balance"}</span>
-                <span dir="ltr">{money(selectedReceipt.currentBalance, selectedReceipt.currency)}</span>
+                <span dir="ltr">
+                  {money(selectedReceipt.currentBalance, selectedReceipt.currency)}
+                </span>
               </div>
             </div>
 
             {selectedReceipt.isReversed && (
               <div className="space-y-1 text-sm text-destructive">
-                <p>{lang === "ar" ? "تاريخ الإلغاء" : "Reversal date"}: {formatDateTime(selectedReceipt.reversalAt)}</p>
+                <p>
+                  {lang === "ar" ? "تاريخ الإلغاء" : "Reversal date"}:{" "}
+                  {formatDateTime(selectedReceipt.reversalAt)}
+                </p>
                 {selectedReceipt.reversalReason && (
-                  <p>{lang === "ar" ? "سبب الإلغاء" : "Reversal reason"}: {selectedReceipt.reversalReason}</p>
+                  <p>
+                    {lang === "ar" ? "سبب الإلغاء" : "Reversal reason"}:{" "}
+                    {selectedReceipt.reversalReason}
+                  </p>
                 )}
               </div>
             )}
