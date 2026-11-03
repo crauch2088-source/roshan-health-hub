@@ -426,8 +426,9 @@ export function ExportButtons({ rows, filename }: { rows: Row[]; filename: strin
 export function PrintButton({ scoped = false }: { scoped?: boolean }) {
   const { t } = useLang();
   const print = () => {
+    let cleanup: (() => void) | undefined;
     if (scoped) {
-      const cleanup = () => {
+      cleanup = () => {
         document.body.classList.remove("print-scope-active");
         window.removeEventListener("afterprint", cleanup);
       };
@@ -437,7 +438,7 @@ export function PrintButton({ scoped = false }: { scoped?: boolean }) {
     try {
       window.print();
     } catch (error) {
-      if (scoped) document.body.classList.remove("print-scope-active");
+      cleanup?.();
       throw error;
     }
   };
