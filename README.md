@@ -1,9 +1,11 @@
-## OpenCode Cloud bootstrap — 2026-11-02
+## Spec Kit integration — 2026-11-03
 
-- Prepared an isolated Codespaces/OpenCode bootstrap on branch `chore/opencode-cloud-bootstrap-20261102`; no application source, SQL migrations, production secrets, Supabase projects, Vercel settings, or production data were changed.
-- Added a Node 22 Codespaces devcontainer, approval-gated OpenCode v2 project policy, and four Roshan-specific agents. Default agent is read-only `plan`; provider credentials and browser-server password remain user-managed secrets.
-- Setup guide: [docs/OPENCODE_CLOUD_SETUP.md](docs/OPENCODE_CLOUD_SETUP.md). The Codespace itself and Google/Groq provider sign-in still require the owner's interactive GitHub/provider authorization; no billing was enabled.
-- Do not merge until the Codespace, private authenticated web port, free model connection, and read-only smoke prompt are verified.
+- Adopted GitHub Spec Kit CLI v1.2.6 using the official agent-neutral none integration.
+- Ran the official CLI against a disposable clone of this repository. Initialization completed successfully; specify integration status returned OK, with none as the only installed/default integration and zero modified/missing/invalid managed files.
+- Added official .specify/ scripts, templates, workflow metadata, integration manifests, Roshan Constitution, and a Draft Phase 53 printing specification.
+- Removed the unused agent bootstrap and Codespaces setup. No manual owner setup, model sign-in, provider key, or coding-agent runtime is required; ChatGPT will manage specifications and repository changes through connected GitHub tools.
+- Added a focused CI workflow to revalidate the pinned CLI, integration state, and repository contract. Development-only; no production app impact.
+- No application code, SQL migrations, Supabase data, Vercel settings, production credentials, or patient/financial records were changed.
 
 ---
 
