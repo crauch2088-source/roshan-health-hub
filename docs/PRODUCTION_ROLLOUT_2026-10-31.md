@@ -67,3 +67,12 @@
 - PR #149 contains pharmacy dispense and visit billing workflow changes. Do not merge or promote those changes while authenticated clinical/staff UAT remains deferred under Issue #95 and the backup/restore gate remains open.
 - Issue #95 remains open. Authenticated clinical E2E is still deferred until the isolated free QA login path and suitable synthetic doctor identity are available.
 - Next: resolve PR #149's main-merge conflicts in a reviewed atomic change, rerun exact-head PostgreSQL 17 and full CI, then complete the documented staff UAT and backup/restore rehearsal before merge/promotion.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+## Live rollout reconciliation — 2026-11-03
+
+Read-only Supabase recheck reports production ledger count 129/latest `20261102232941 roshan_synthetic_patient_cleanup_and_stock_ledger_reversal` and QA count 17/latest `20261102232905 roshan_phase52_reporting_analytics_reconciled`. Phase 49–52 RPCs exist in both projects; six audited function fingerprints match; the pharmacy idempotency table shape is correct; stock-movement access is branch-scoped SELECT-only; and all nine Phase 52 indexes are valid/ready. This supersedes the earlier 118/12 ledger snapshot in this document. See [the live reconciliation report](LIVE_PHASE49_52_RECONCILIATION_2026-11-03.md).
+
+Migration histories remain non-canonical: production has four superseded 134-byte placeholders and later repaired/reconciled rows; QA has different versions/names and a superseded duplicate Phase 50 row. The production cleanup/reversal migration `20261102232941` still needs exact SQL/source review. Matching function fingerprints are not full migration or schema parity.
+
+The production off-site backup and isolated restore rehearsal remain unverified. No production SQL write was performed by this inspection. Do not perform additional production DDL or introduce live patient data until source provenance and backup/restore are evidenced. Authenticated clinical E2E and staff UAT remain deferred.

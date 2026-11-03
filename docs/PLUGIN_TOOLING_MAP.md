@@ -305,10 +305,14 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - PR #149 now targets main but is CONFLICTING (20 ahead / 5 behind); GitHub update-branch reports merge conflicts. Previous CI run 41185376552 was green on its former base only. Resolve conflicts and rerun exact-main CI; keep merge/promotion blocked while Issue #95 clinical/staff acceptance is deferred.
 
 
-## OpenCode — cloud coding agent (bootstrap PR; not yet operationally verified)
+## OpenCode — cloud coding agent (bootstrap merged; not yet operationally verified)
 
 - Prepared a repository-scoped GitHub Codespaces devcontainer using Node 22 and the official OpenCode CLI package. It installs project dependencies and OpenCode after the owner creates a Codespace; it does not auto-start a network server.
 - Added `opencode.json` with read-only `plan` as the default, approval-gated edits/shell commands, secret-file deny rules, denied production database/deploy/merge commands, and approval-gated pushes only to `opencode/*` branches.
 - Added four project agents: architecture analysis, independent read-only review, QA planning/execution, and implementation. See [OpenCode Cloud Setup](OPENCODE_CLOUD_SETUP.md).
 - Intended first model: a Google AI Studio free-tier Flash model selected interactively with `/connect` and `/models`; Groq is an alternative. Model availability, quotas, and provider data terms must be checked at use time. No API keys are stored in the repository.
 - **Status:** repository bootstrap only. Codespace creation, password secret setup, provider sign-in, and the first read-only prompt require the repository owner. No Supabase/Vercel connection, production mutation, or paid resource is part of this integration.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+
+PR #154 merged to main at `e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`. The repository bootstrap is merged, but Codespace creation, private password-secret setup, free-provider sign-in and the first read-only prompt remain owner-interactive and operationally unverified.

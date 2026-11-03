@@ -1,6 +1,6 @@
 # OpenCode Cloud Workspace — Roshan Health Hub
 
-**Status:** repository bootstrap prepared on an isolated branch; Codespace creation and model sign-in still require the repository owner's interactive GitHub/provider authorization.
+**Status:** repository bootstrap merged to main via PR #154 (`e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`); Codespace creation and model sign-in still require the repository owner's interactive GitHub/provider authorization.
 
 ## Purpose and scope
 
@@ -86,3 +86,9 @@ OpenCode stores provider authentication in its user-level data directory (not th
 - OpenCode web UI: https://dev.opencode.ai/v2/docs/cli/web
 - GitHub Codespaces usage: https://docs.github.com/en/codespaces/troubleshooting/troubleshooting-included-usage
 - GitHub Codespaces billing: https://docs.github.com/en/billing/concepts/product-billing/github-codespaces
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+## Merge update — 2026-11-03
+
+- PR #154 merged to main at `e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`; CI run [41531738728](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41531738728) succeeded.
+- The devcontainer, project policy and agents are on main. Codespace creation, `OPENCODE_PASSWORD`, provider authentication and the first read-only smoke prompt remain owner-interactive. This run did not create a Codespace, set a secret, authenticate a provider or enable a paid resource; operational success remains unverified.

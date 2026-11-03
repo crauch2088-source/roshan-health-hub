@@ -2347,3 +2347,26 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Vercel preview deployment `dpl_s3zfR1kZxv5fWipEQFxDm6PuvFEW` reached READY for the application-source commit `0163c215f0ca5d9c35b76fceebf8ac0fb4dd9e92`, with preview alias `roshan-health-hub-git-fix-patient-picker-query-61bb58-roshan45.vercel.app` and no alias error. The later `89bced1` commit changes only test formatting; it contains no additional runtime change.
 - No production deployment, database migration, privilege change, Auth mutation, patient record, or financial record was created. Authenticated clinician/staff acceptance remains untested and deferred.
 - Next: obtain independent review of PR #153, then decide whether to mark it ready for merge. Keep it unmerged until review; this UI-level guard does not replace duplicate-detection policy or authenticated staff acceptance.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+## Execution update — 2026-11-03
+
+### Repository and delivery
+- Main SHA: `a00f8111f9d6f38e02cf850be398a1c16fee8265`.
+- PR [#155](https://github.com/crauch2088-source/roshan-health-hub/pull/155) merged as `92934a7cda8449530dbee4327ce95438671e6f49`. The requested engineering plan is now documented at [ROSHAN_ENGINEERING_IMPROVEMENT_EXECUTION_PLAN_2026-11-03.md](ROSHAN_ENGINEERING_IMPROVEMENT_EXECUTION_PLAN_2026-11-03.md). Exact-head checks: 21 success, one intentional clinical-acceptance skip, zero failures; post-merge main CI [41591155706](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41591155706) succeeded.
+- PR [#153](https://github.com/crauch2088-source/roshan-health-hub/pull/153) merged as this main SHA. Final PR head `28b947c1775766be7f4d345740e782d4dc76c3b1`: 28 success, one intentional clinical-acceptance skip, zero failures. Main CI [41591565308](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41591565308) succeeded. Patient-picker query failures now show an alert/retry instead of a false empty result; the add-patient suggestion appears only after a successful empty search.
+- Vercel production deployment `dpl_7M2opFg7U2KtwNsgyMZ9nidiUyVp` is READY for main SHA `a00f8111f9d6f38e02cf850be398a1c16fee8265`; canonical alias `roshan-health-hub.vercel.app` is attached and `aliasError=null`.
+- PR #154 OpenCode bootstrap merged at `e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`. Repository configuration is merged, but Codespace creation, password secret, provider sign-in and first read-only smoke prompt remain owner-interactive and are not operationally verified.
+- Open PRs at read time: #151, #139, #138, #131, #125, #112 and #103. No open GitHub issues were returned. No dependency update was auto-merged.
+
+### Read-only Phase 49–52 live state
+- Production: 129 migration-ledger rows, latest `20261102232941 roshan_synthetic_patient_cleanup_and_stock_ledger_reversal`; PostgreSQL 17.6.1.155. QA: 17 rows, latest `20261102232905 roshan_phase52_reporting_analytics_reconciled`; PostgreSQL 17.11.0.003.
+- The Phase 49–52 RPCs exist in both projects. Six audited function-definition fingerprints match; audited SECURITY DEFINER/INVOKER flags, empty search paths and EXECUTE ACLs match. The private pharmacy idempotency table has the expected seven columns, primary key and JSON-array check in both.
+- Stock movements are RLS-protected and authenticated SELECT-only with pharmacy.read plus branch scope; the private idempotency table has no anon/authenticated privileges. All nine Phase 52 reporting indexes are present, valid and ready in both projects.
+- **Migration provenance is not reconciled.** Production has four same-fingerprint 134-byte superseded placeholder rows and later repaired/reconciled rows; QA has different version/name history and a superseded duplicate Phase 50 row. The production cleanup/reversal migration `20261102232941` was not source-audited. Matching function fingerprints do not prove full schema or source-SQL parity. See [LIVE_PHASE49_52_RECONCILIATION_2026-11-03.md](LIVE_PHASE49_52_RECONCILIATION_2026-11-03.md).
+- This run used catalog-only SELECTs: no production/QA DDL, DML, grants, Auth/Storage changes or patient/financial row reads.
+
+### Release gates and next task
+- Off-site encrypted backup and isolated restore rehearsal remain **unverified**. Do not infer that gate passed from live migration records.
+- Authenticated clinical E2E and staff UAT remain explicitly deferred as requested. The intentional CI skip is not a pass or clinical sign-off.
+- Next P0: reconcile exact stored SQL/source mappings for production versions `20261102232819`–`20261102232855` and `20261102232941`, preserve them as quarantined non-replayable artifacts, update the canonical manifest, and verify with SHA-256 plus disposable PostgreSQL 17 replay. No manual ledger edits or further production DDL until source provenance and backup/restore are complete.
