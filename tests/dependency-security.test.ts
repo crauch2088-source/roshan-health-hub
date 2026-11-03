@@ -106,13 +106,17 @@ test("Dependabot defers known-incompatible major updates until their migration i
     "react-day-picker",
     "recharts",
     "eslint-plugin-react-hooks",
+    "eslint",
+    "@eslint/js",
   ]) {
     assert.match(
       npmUpdates,
       new RegExp(
-        `- dependency-name:\\s*${dependencyName}\\s*\\n\\s+update-types:\\s*\\n\\s+- .*version-update:semver-major`,
+        "- dependency-name:\\s*[\"']?" +
+          dependencyName +
+          "[\"']?\\s*\\n\\s+update-types:\\s*\\n\\s+- .*version-update:semver-major",
       ),
-      `${dependencyName} major updates must stay deferred until compatibility is tested`,
+      dependencyName + " major updates must stay deferred until compatibility is tested",
     );
   }
 });

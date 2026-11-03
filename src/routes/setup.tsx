@@ -159,7 +159,7 @@ function SetupPage() {
                 </div>
               ) : !required ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-success">
+                  <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-foreground">
                     <CheckCircle2 className="size-4" /> {t("setup_done")}
                   </div>
                   <Button className="w-full" onClick={() => void navigate({ to: "/auth" })}>

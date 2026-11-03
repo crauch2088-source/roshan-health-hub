@@ -28,3 +28,14 @@ The replay-safe policy-only variant is covered by a synthetic PostgreSQL 17 inte
 
 The adjacent `source-parity-report.json` is the **historical 93-entry snapshot** (92 normalized source matches, one redacted identity-link migration), generated before four later live-ledger entries were reconciled. The current live ledger has 97 entries and the latest `docs/DB_MIGRATION_RECONCILIATION.md` records 96/97 exact source matches, with zero unmapped versions. This recovered directory and its JSON report are not a replayable canonical migration chain. The pre-migration baseline is still missing, so full replay remains blocked.
 
+
+## Phase 49–52 live provenance addendum — 2026-11-03
+
+- A scoped read-only SHA-256 reconciliation is recorded in `phase49-52-provenance.json`. It covers the production Phase 49–52 migration rows, the two unmapped remediation rows, the superseded placeholder rows, and the corresponding QA rows. It is not a full 129-row migration-chain parity report.
+- Production ledger statements for `20261102232823`, `20261102232849`, `20261102232852`, and `20261102232855` match their current `db/roshan_phase49...` through `db/roshan_phase52...` source files byte-for-byte after removing only the terminal `COMMIT;` wrapper and trailing whitespace.
+- `20261102232819` has no canonical source file; its exact 223-byte table/index rename statement is preserved in the quarantine directory.
+- `20261102232941` has no canonical source file and contains fixed production UUID literals. Its public artifact replaces all nine occurrences (four distinct identifiers) with invalid placeholders; the original ledger SHA-256 is retained, but the public copy is intentionally not byte-identical or executable.
+- The four 134-byte production placeholder rows are not the Phase 49–52 SQL migrations. The private remediation archive contains one malformed pharmacy-idempotency row and four placeholder ledger rows, not the complete SQL bodies.
+- Static review of `20261102232941` found a broad soft-delete sweep and a stock-reversal guard, but the SQL does not itself prove its fixed targets are synthetic. No patient/business rows were read to verify those targets.
+- `manifest.json` remains the historical 79-row recovery snapshot from 2026-10-15; `source-parity-report.json` remains the historical 93-row snapshot from 2026-10-17. Do not treat either as a complete current ledger report.
+- All recovered SQL in this directory is quarantine evidence only. Do not copy it into a migration directory, execute it, repair the migration ledger manually, or infer that backup/restore and authenticated clinical acceptance gates have passed.
