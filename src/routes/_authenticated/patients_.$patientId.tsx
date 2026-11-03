@@ -338,6 +338,11 @@ function PatientChart() {
   }
   if (!record) return <Empty label={t("no_data")} />;
 
+  const printPrescription = printRequest?.document;
+  const printItems = (printPrescription?.["prescription_items"] as Row[] | undefined) ?? [];
+  const printDoctor = rel(printPrescription, "users");
+  const printClinic = getClinicIdentity(settings, branch, lang);
+
   return (
     <div>
       <DetailHeader
@@ -762,7 +767,6 @@ function PatientChart() {
           </DataPanel>
         </TabsContent>
       </Tabs>
-    </div>
     {printPrescription ? (
       <div className="print-only print-area print-surface mx-auto max-w-[180mm] p-8" dir={lang === "ar" ? "rtl" : "ltr"}>
         <header className="mb-6 border-b pb-4 text-center">
@@ -808,6 +812,6 @@ function PatientChart() {
         </footer>
       </div>
     ) : null}
-    </>
+    </div>
   );
 }
