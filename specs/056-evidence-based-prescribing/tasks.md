@@ -1,7 +1,7 @@
 # Tasks: Evidence-Based Prescribing & Clinical Decision Support
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [contract](contracts/decision-support-contract.md)  
-**Progress**: T001–T005 completed as repository/database discovery only. No clinical protocol, product route mapping, dose rule, or medication interaction rule has been approved or activated. No clinical protocol, product route mapping, dose rule, or medication interaction rule has been approved or activated.
+**Progress**: T001–T006 completed as repository/database and public-source discovery only. No clinical protocol, product route mapping, dose rule, or medication interaction rule has been approved or activated.
 
 ## Phase 0 — Reconciliation and evidence acquisition
 - [x] T001 Fetch latest main and re-read master plan/tool map/constitution.
@@ -9,7 +9,7 @@
 - [x] T003 Inspect patient registration, first-visit creation, invoice atomic RPC and vitals write path; write down exact contract and test boundaries.
 - [x] T004 Inspect medicine inventory create/edit permissions and actual QA formulary metadata without reading patient rows.
 - [x] T005 Inspect allergy, adverse reaction, current-medication and medical-history schemas/RLS; distinguish missing from unknown.
-- [ ] T006 Locate current Sudan Federal/State MoH treatment guidance and assess source/version/licensing; record unavailable sources explicitly.
+- [x] T006 Complete a bounded public-source search for current Sudan Federal/State MoH treatment guidance; assess source/version/licensing and record unavailable primary documents explicitly. This closes the public-search task only; it does not establish that current local guidance was obtained.
 - [ ] T007 Select a small initial protocol cohort with GP/pharmacist based on QA formulary and clinic case mix.
 
 ## Phase 1 — Product/formulation constraints (US1)
@@ -84,9 +84,22 @@
 - T003 is complete as an audit: current visit creation is a direct visit insert followed by a separate consultation-invoice RPC; `vitals.visit_id` is unique; and VitalsTab updates the encounter row. The proposed combined transaction still requires implementation and PG17 proof.
 - T004 remains open: QA has no medicine rows; Production has nine incomplete candidate records. Physical-pack verification and inventory create/edit role/RLS review remain required.
 - T005 remains open: allergy/chronic-condition fields are free text; structured allergy/adverse-reaction and current-medication coverage still need a complete schema/RLS audit.
-- T006 remains open: the 2014 Sudan National Standard Treatment Guidelines are identified through a secondary review, but the primary document and any superseding federal/state circulars have not been verified.
+- T006 public-source search is complete, but no accessible current Federal/ Gezira primary STG set was verified. T049 now tracks obtaining and validating those documents; clinical activation remains blocked.
 - T007 remains blocked until the candidate formulary is normalized and a GP/pharmacist selects and signs off the initial cohort.
 
 
 - T004 completion evidence: QA catalogue is empty; Production has nine incomplete candidates (see catalogue-audit.md). The inventory create form captures only display name, inventory unit, prices and reorder level; a DB trigger copies `name` into required `generic_name` when absent. Medicines RLS is permission-gated by `pharmacy.read/create/update/delete`; no direct medicine update call was found in the reviewed inventory UI/code search. `medicines_2` is empty and admin-only.
 - T005 completion evidence: QA schema has only free-text patient and clinical-note allergy/drug-history fields; no structured allergy/adverse-reaction, interaction or current-medication reconciliation tables were found. Patients, clinical notes, prescriptions, prescription items and vitals have role/branch-scoped RLS as detailed in clinical-context-audit.md.
+
+
+### T006 completion evidence — Sudan local guideline source audit (2026-11-03)
+
+- FMoH's 2017 National Health Care Quality Policy and Strategy reports 15 published clinical standards and PHC STGs for 26 conditions at that time; it does not enumerate or supply current versions.
+- The 2014 FMoH National STG is identified through a WHO comparative review, but the cited primary download could not be retrieved. A 2017 consultancy notice planned an update but does not prove a final approved edition.
+- WHO's public Sudan NEML record is for 2019 and is not a treatment guideline.
+- A 2020 Red Sea State family-medicine manual exists but is geographically non-transferable to Gezira without formal adoption/review. A 2022 University of Gezira emergency-protocol report is only a secondary lead; the original document and formal State Ministry adoption were not verified.
+- A 2024 BMC Primary Care study (data collected in 2021 in Khartoum and Gezira) reports local guidelines were difficult to access and not regularly updated.
+- Full source provenance, limitations, URLs and licensing caveats are recorded in [research.md](research.md). No regimen content was extracted.
+- **Remaining external dependency:** obtain primary Federal and Gezira State documents and written/current adoption status from the relevant authorities before any local rule is encoded or activated. This is not satisfied by checking T006 complete.
+
+- [ ] T049 Obtain primary Federal Ministry of Health and Gezira State Ministry of Health guideline/circular copies (plus the original University of Gezira emergency protocol if relevant); verify formal approval, edition/date, applicability, supersession, licensing, and GP/pharmacist review. Keep all local rules inactive until this evidence exists.

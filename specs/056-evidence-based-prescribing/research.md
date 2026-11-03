@@ -121,3 +121,41 @@ A read-only query found nine active, non-deleted Production medicine catalogue r
 - DailyMed, **CEFPODOXIME PROXETIL granule, for suspension**: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=63777889-d306-4fc3-88da-b24859040ef4
 - Both labels identify the products as for oral use only. This is a product-label cross-check, not proof that the local `Cefpodoxim` inventory row is cefpodoxime proxetil. Its `Inj` unit is therefore a high-priority identity mismatch to quarantine from route auto-fill until the actual pack and active ingredient are verified.
 - Do not transfer any dosing table from these labels into Roshan's active protocols without indication-specific review, local guideline reconciliation, population boundaries, and independent GP/pharmacist approval.
+
+
+## Sudan Federal and Gezira-state guideline source audit — 2026-11-03
+
+**Scope:** Public-source discovery and provenance assessment only. This is not clinical guideline approval, protocol extraction, or a claim that no unpublished/local document exists. Searches covered the Federal Ministry of Health public portal, WHO repositories, indexed Sudanese health-policy material, University of Gezira references, and peer-reviewed literature. Retrieval date: 2026-11-03.
+
+### Federal Ministry of Health material
+
+- **Sudan National Health Care Quality Policy and Strategy (2017)**, hosted in the WHO policy repository: https://platform.who.int/docs/default-source/mca-documents/policy-documents/policy/sdn-cc-31-01-policy-2017-eng-national-health-care-quality.pdf
+  - The document identifies the Federal Ministry of Health as the lead for national clinical standards and guidelines. At the time of publication, it reports 20 consultative councils, 15 published clinical standards for major conditions, and standard treatment guidelines for 26 PHC conditions (Section Five, approximately pp. 51–52).
+  - This is evidence that such standards/guidelines existed in 2017; it does **not** provide their individual titles, complete primary documents, current versions, state applicability, or current endorsement status.
+- **Sudan National Standard Treatment Guidelines (2014)** are cited as a Federal Ministry of Health publication in the WHO Bulletin comparative review: https://pmc.ncbi.nlm.nih.gov/articles/PMC8722630/ . The review cites the former Sudan Health Observatory download endpoint: http://www.sho.gov.sd/controller/dwn_hub_files.php?id=915 . The primary document could not be retrieved/validated in this audit. Its recommendations, full text, licence, and whether it was superseded remain unverified.
+- A 2017 consultant terms-of-reference notice described a planned Federal Ministry of Health update of the 2014 STGs: https://www.sudanjob.net/jobview.php?id=5269 . A recruitment notice proves an update was planned, not that a final updated guideline was completed, approved, published, or implemented. Do not treat it as evidence of a newer edition.
+- WHO's Sudan **National Essential Medicines List 2019** publication record: https://www.who.int/publications/m/item/sudan--national-essential-medicines-list-2019-%28english%29 . This is a 2019 essential-medicines list (40-page WHO record), not a standard treatment guideline and not a source for indication-specific dose/frequency rules.
+
+### State-level and Gezira-specific material
+
+- **Treatment Manual for Family Medicine Practitioners (2020), Red Sea State**: https://khartoum.aics.gov.it/wp-content/uploads/2021/12/Treatment-Manual_FINALE_2020.pdf . The cover and foreword identify the National Medical Supplies Fund — Red Sea State, under the supervision of the Ministry of Health and Social Development, Red Sea State. It is a useful example of a state-specific PHC manual, but it is not a Gezira or national guideline. It must not be copied into Roshan's active rules or represented as applicable to Gezira without an explicit local adoption/adaptation review. Redistribution/adaptation rights for its clinical content were not established.
+- A secondary report describes a **University of Gezira Center for Noncommunicable Studies emergency-treatment protocol** approved for Wad Madani Emergency Hospital and intended for other centers: https://africanuniversities.org/university-of-gezira-sudan-a-treatment-protocol-for-emergency-cases-in-hospitals-and-centers-in-the-gezira/ . The report says the center called on the State Ministry of Health to apply and disseminate it. The original protocol document and evidence of formal State Ministry adoption were not located. Treat it as an institutional protocol lead only, not an official state-wide guideline.
+- A 2024 BMC Primary Care study of guideline implementation in Khartoum and Gezira (survey conducted April–December 2021; 101 PHC centers, including 24 in Gezira) reported that local Sudanese guidelines were difficult to access and not regularly updated: https://doi.org/10.1186/s12875-024-02542-x . This is implementation/accessibility evidence, not a treatment guideline. The article is CC BY-NC-ND 4.0; cite it, but do not adapt its text or figures.
+- The 2017–2018 Gezira NHIF drug-use study refers to state-level STGs and an NHIF essential medicines list version 6 (2018): https://www.scirp.org/journal/paperinformation?paperid=112722 . It is historical secondary evidence, not a current Ministry-issued protocol or a source for regimen content.
+
+### Audit conclusion and implementation boundary
+
+- As of this public-source audit, no accessible, verifiable current Federal STG edition or formally adopted Gezira State Ministry of Health STG/protocol set was obtained. This is a bounded search result, **not proof that no such documents exist**; unpublished circulars, facility manuals, or documents distributed offline may exist.
+- The 2017 FMoH policy, 2014 national STG reference, 2019 NEML, 2020 Red Sea manual, and 2022 University of Gezira protocol lead have different issuers, dates, scope and authority. They are not interchangeable.
+- No drug regimen, dose, frequency, duration, route mapping, interaction severity, or contraindication rule was extracted or activated from these documents.
+- Redistribution/licensing permission for the Federal 2014 STG primary file, Red Sea manual, and University of Gezira protocol remains unverified. Do not reproduce their tables or import their content into the application until rights and provenance are checked.
+- Before any Sudan-local protocol is activated, obtain the primary document from FMoH/Directorate General of Pharmacy and Gezira State Ministry of Health (and the University of Gezira for its emergency protocol lead); verify issuer, signed approval, edition/date, population, facility level, state/jurisdiction, supersession, source sections, redistribution rights, and local GP/pharmacist approval.
+
+### Primary references
+
+1. Sudan FMoH. *National Health Care Quality Policy and Strategy* (2017), Section Five. WHO-hosted primary policy document.
+2. WHO Bulletin comparative review. *Comparison of national antimicrobial treatment guidelines* (2021), citing Sudan FMoH STGs (2014): https://pmc.ncbi.nlm.nih.gov/articles/PMC8722630/
+3. WHO. *Sudan: National Essential Medicines List 2019*: https://www.who.int/publications/m/item/sudan--national-essential-medicines-list-2019-%28english%29
+4. Abdelgadir HS, Bajouri S, Abdelgadir HS. *Implementation of the clinical practice guidelines among family medicine doctors at primary health care facilities in Khartoum and Gezira states of Sudan*. BMC Prim Care. 2024;25:277. doi:10.1186/s12875-024-02542-x.
+5. National Medical Supplies Fund — Red Sea State. *Treatment Manual for Family Medicine Practitioners* (2020). State-specific, not a Gezira guideline.
+6. University of Gezira Center for Noncommunicable Studies emergency protocol (reported 2022); primary protocol and Ministry adoption not verified.

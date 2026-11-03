@@ -2532,3 +2532,14 @@ Release boundary: this audit is documentation evidence only. It does not approve
 - The existing registration flow calls `create_patient_atomic`, then navigates to `/visits?patient=<id>` for Save & New Visit. The visit form inserts the visit row directly and then separately invokes `create_visit_consultation_invoice_atomic` when a fee is due. The vitals form stores weight against the visit.
 - Therefore, weight-at-registration must be implemented only after designing an idempotent, permission/branch-checked intake path that handles partial failure and preserves invoice semantics. Do not add a patient-master weight field or a fragile extra browser write. If a combined transaction is not viable, use a visible pending/retry workflow through the existing vitals path.
 - These findings refine Phase56 planning only. No code, schema, patient data or production database was changed.
+
+
+## Phase 56 — Sudan Federal and Gezira guideline provenance audit (2026-11-03)
+
+- Completed a bounded public-source search for Federal and Gezira State treatment guidance. FMoH's 2017 National Health Care Quality Policy reports 15 published clinical standards and PHC STGs for 26 conditions at that time; it does not provide their titles or current editions.
+- The 2014 Federal STG is cited by a WHO comparative review, but the cited primary download was not retrievable. A 2017 consultant notice to update it is not evidence that an approved final edition was issued.
+- WHO's accessible Sudan NEML record is the 2019 list; it is not a dosing/treatment guideline.
+- A 2020 Red Sea State family-medicine manual is a state-specific reference and is not automatically applicable to Gezira. A 2022 University of Gezira emergency-protocol announcement is a lead only: the original document and formal State Ministry adoption were not verified.
+- A 2024 BMC Primary Care study (survey conducted in 2021 in Khartoum and Gezira) reports local guidelines were difficult to access and not regularly updated. This corroborates an access/update problem but is not a clinical source.
+- Detailed provenance, source links, jurisdiction, limitations and licence caveats are in `specs/056-evidence-based-prescribing/research.md`. No dose, regimen, route mapping, interaction or contraindication content was extracted or activated.
+- **Next external dependency:** obtain primary current FMoH and Gezira State Ministry documents, confirm approval/version/supersession/licensing, and obtain GP/pharmacist review. Phase56 protocol cohort selection remains blocked while QA formulary is empty and the local source set is unverified.
