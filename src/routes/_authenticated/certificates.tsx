@@ -83,7 +83,7 @@ function CertificatesPageInner() {
     supabase
       .from("medical_certificates")
       .select(
-        "*,patients(full_name,mrn,phone,branch_id),visits!medical_certificates_visit_id_fkey(branch_id,patient_id),users!medical_certificates_doctor_id_fkey(full_name)",
+        "*,patients(full_name,mrn,phone,branch_id,deleted_at),visits!medical_certificates_visit_id_fkey(branch_id,patient_id),users!medical_certificates_doctor_id_fkey(full_name)",
       )
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -163,9 +163,18 @@ function CertificatesPageInner() {
   const printCertificate = rows.find((row) => s(row, "id") === printingCertificateId);
 
   const handlePrintCertificate = (certificateId: string) => {
+    const selected = rows.find((row) => s(row, "id") === certificateId);
+    if (!selected || s(rel(selected, "patients"), "deleted_at") || !certificateBranchId(selected)) return;
     flushSync(() => setPrintingCertificateId(certificateId));
+    const printRoot = document.getElementById("medical-certificate-print-document");
+    if (!printRoot) {
+      setPrintingCertificateId(null);
+      return;
+    }
+    printRoot.classList.add("print-target-active");
     document.body.classList.add("print-scope-active");
     const cleanup = () => {
+      printRoot.classList.remove("print-target-active");
       document.body.classList.remove("print-scope-active");
       window.removeEventListener("afterprint", cleanup);
       setPrintingCertificateId(null);
@@ -243,7 +252,7 @@ function CertificatesPageInner() {
                               size="sm"
                               variant="ghost"
                               aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
-                              disabled={Boolean(printingCertificateId)}
+                              disabled={Boolean(printingCertificateId) || Boolean(s(p, "deleted_at")) || !certificateBranchId(c)}
                               onClick={() => handlePrintCertificate(s(c, "id"))}
                             >
                               <Printer className="size-4" />
@@ -392,6 +401,7 @@ function CertificatesPageInner() {
       {printCertificate && (
         <div className="print-only">
           <article
+            id="medical-certificate-print-document"
             className="print-document-root mx-auto max-w-3xl space-y-6"
             dir={lang === "ar" ? "rtl" : "ltr"}
           >

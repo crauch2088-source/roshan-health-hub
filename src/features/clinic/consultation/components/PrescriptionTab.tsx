@@ -455,7 +455,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           </div>
         )}
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {prescriptionPrintModel?.complete && <PrintButton scoped />}
+          {prescriptionPrintModel?.complete && <PrintButton scoped targetId="prescription-print-document" />}
           <Button
             disabled={save.isPending || !items.length}
             onClick={() => save.mutate(undefined as never)}
@@ -503,6 +503,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         {prescriptionPrintModel?.complete && (
           <div className="print-only">
             <article
+              id="prescription-print-document"
               className="print-document-root mx-auto max-w-4xl space-y-5"
               dir={lang === "ar" ? "rtl" : "ltr"}
             >

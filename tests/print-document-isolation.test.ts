@@ -14,13 +14,16 @@ test("certificate print action selects and prints exactly one persisted certific
   assert.match(source, /flushSync/);
   assert.doesNotMatch(source, /onClick=\{\(\) => window\.print\(\)\}/);
   assert.match(source, /afterprint/);
+  assert.match(source, /print-target-active/);
+  assert.match(source, /id="medical-certificate-print-document"/);
   assert.match(source, /print-only/);
 });
 
 test("invoice print boundary excludes all non-document controls and uses canonical center settings", () => {
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   assert.match(source, /print-document-root/);
-  assert.match(source, /<PrintButton scoped \/>/);
+  assert.match(source, /<PrintButton scoped targetId="invoice-print-document" \/>/);
+  assert.match(source, /id="invoice-print-document"/);
   assert.match(source, /className="no-print space-y-4"/);
   assert.match(source, /settings\["center_name"\]/);
   assert.match(source, /settings\["center_name_ar"\]/);
@@ -41,7 +44,8 @@ test("prescription printing uses a saved record and blocks incomplete orders", (
   assert.match(source, /create_prescription_atomic/);
   assert.match(source, /setLastSavedPrescription\(\{ visitId, id: prescriptionId \}\)/);
   assert.match(source, /buildPrescriptionPrintModel/);
-  assert.match(source, /PrintButton scoped/);
+  assert.match(source, /PrintButton scoped targetId="prescription-print-document"/);
+  assert.match(source, /id="prescription-print-document"/);
   assert.match(source, /prescription_items\(id,medication_name/);
   const savedQuery = source.slice(
     source.indexOf("const savedPrescriptionQ"),
@@ -58,12 +62,15 @@ test("print-only certificate content is hidden on screen and displayed only for 
   const css = read("src/styles.css");
   const kit = read("src/components/kit.tsx");
   assert.match(kit, /scoped\?: boolean/);
+  assert.match(kit, /targetId\?: string/);
+  assert.match(kit, /print-target-active/);
   assert.match(kit, /print-scope-active/);
   assert.match(css, /\.print-only\s*\{[^}]*display:\s*none/s);
   assert.match(css, /@media print[\s\S]*?\.print-only\s*\{[^}]*display:\s*block/s);
   assert.match(css, /body\.print-scope-active \*\s*\{[^}]*visibility:\s*hidden/s);
   assert.match(
     css,
-    /body\.print-scope-active \.print-document-root,\s*body\.print-scope-active \.print-document-root \*/,
+    /body\.print-scope-active \.print-document-root\.print-target-active,\s*body\.print-scope-active \.print-document-root\.print-target-active \*/,
   );
+  assert.doesNotMatch(css, /body\.print-scope-active \.print-document-root,/);
 });
