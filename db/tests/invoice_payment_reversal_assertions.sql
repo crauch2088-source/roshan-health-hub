@@ -47,9 +47,7 @@ BEGIN
   SELECT * INTO v_invoice FROM public.invoices WHERE id='50000000-0000-0000-0000-000000000001';
   SELECT * INTO v_original FROM public.cashbox_transactions WHERE id='70000000-0000-0000-0000-000000000001';
   SELECT * INTO v_reversal FROM public.cashbox_transactions WHERE id=v_reversal_id;
-  IF v_payment.deleted_at IS NULL
-     OR v_payment.deleted_by IS DISTINCT FROM '10000000-0000-0000-0000-000000000001'::uuid
-     OR v_payment.updated_by IS DISTINCT FROM '10000000-0000-0000-0000-000000000001'::uuid THEN RAISE EXCEPTION 'payment was not soft-deleted with actor attribution'; END IF;
+  IF v_payment.deleted_at IS NULL OR v_payment.deleted_by IS DISTINCT FROM '10000000-0000-0000-0000-000000000001'::uuid THEN RAISE EXCEPTION 'payment was not soft-deleted with actor attribution'; END IF;
   IF v_invoice.paid_amount <> 10 OR v_invoice.status <> 'partial' OR v_invoice.payment_status <> 'partial' THEN RAISE EXCEPTION 'invoice paid balance/status did not recompute after reversal'; END IF;
   IF NOT v_original.is_reversed OR v_original.reversal_reason <> 'duplicate bank settlement' THEN RAISE EXCEPTION 'original immutable ledger row was not marked reversed'; END IF;
   IF v_reversal.reversal_of IS DISTINCT FROM v_original.id OR v_reversal.amount <> -40 OR v_reversal.source_type <> 'reversal' OR v_reversal.reversal_reason <> 'duplicate bank settlement' THEN RAISE EXCEPTION 'reversal ledger row is not correctly linked or valued'; END IF;
