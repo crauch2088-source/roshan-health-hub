@@ -2465,3 +2465,34 @@ PR #172 merged as `a7592e8fc63f498e55e0962718f4ad84557f1b56`. QA applied Phase55
 ### Production gate
 
 The encrypted backup/export plus isolated restore gate remains open. Do not apply Phase54/54B/54C or Phase55 to Production until that evidence exists. The already-applied production migration `20261102232941` has a redacted, non-replayable provenance artifact and must not be re-run.
+
+## Prescription UX and medication safety review — 2026-11-03
+
+Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No application code, database, patient/financial records, or deployment was changed in this review.
+
+### Verified findings on main
+
+- `src/lib/prescription-draft.ts` derives `route = "oral"` whenever the selected catalogue dosage form is tablet, capsule, syrup, or suspension. Dosage form alone does not establish the intended route for a specific product/prescription; the route should be explicitly selected by the prescriber. This auto-default is present both on main and in the two active prescription-related work branches inspected.
+- `validatePrescriptionDrafts()` on main checks name, dose, frequency, duration and positive integer quantity, but does not require `dosage_form` or `route`. The existing custom-fields branch adds these two required-field checks, but retains the automatic oral route default.
+- `PrescriptionTab.tsx` renders “Custom” as an empty Select value for dosage form, dose, frequency, duration and route; no corresponding free-text input is present in the inspected source. Selecting Custom therefore does not provide a way to enter a custom value.
+- Medicine selection reads `generic_name`, `brand_name`, `strength` and `dosage_form`; however, the inventory medicine-create form currently writes only `name`, `unit`, prices and reorder level. The catalogue workflow therefore does not let staff populate all structured identity/formulation fields used by prescription search and selection.
+- The pharmacy queue query selects prescription-item `dosage`, `frequency` and `duration`, but not `dosage_form`, `route` or `instructions`. Both the mobile and desktop queue summaries display only the first three regimen fields. This is a continuity-of-information gap for pharmacist review.
+- Existing pediatric UI cues ask the clinician to verify visit weight and maximum daily dose and explicitly state that the application does not calculate pediatric doses. No dose calculator or clinically validated age/weight protocol was introduced by this review.
+
+### Branch overlap and verification limits
+
+- `fix/prescription-custom-fields-age-cue-20261027` compares as 8 commits ahead and 15 behind main (diverged). It changes `PrescriptionTab.tsx`, `medical.ts`, `prescription-draft.ts`, the clinical workflow test and this plan. Do not merge it without reconciling the 15 newer main commits.
+- `feat/phase53-prescription-print-20261103` compares as 9 commits ahead and 0 behind main. It also changes `PrescriptionTab.tsx` and adds the prescription print model/tests. Any route/default or form validation correction must be reconciled with this branch before merge.
+- The repository's open-PR search returned no results in this connector call, so the branch comparisons above are verified but current PR numbers/states are not independently confirmed here.
+- The exact main combined status currently exposes one successful Vercel status. The commit-workflow-runs query returned no runs; this is not evidence that GitHub Actions passed. Do not describe the current main Actions suite as green on this evidence.
+
+### Safe next implementation sequence
+
+1. Coordinate the shared `PrescriptionTab.tsx` changes between the custom-fields and Phase53 print branches; avoid parallel edits to the same component.
+2. Add a failing unit regression proving catalogue selection leaves `route` empty for every dosage form; then remove inferred route assignment and require explicit clinician selection. Preserve the dosage-form prefill because it is catalogue metadata, not a route inference.
+3. Add tests for custom free-text entry and completeness validation, including dosage form and route. Keep dose/frequency/duration clinician-entered; do not introduce protocol defaults or arbitrary duration caps.
+4. Extend the pharmacy read model and mobile/desktop summaries to show the persisted formulation, route and instructions only after confirming the exact database column names and existing RPC payload contract. No migration should be assumed necessary.
+5. Extend medicine catalogue maintenance only after confirming existing schema constraints and permission/RLS behavior for the structured fields. Do not add a migration solely to make the UI look complete.
+6. Verify exact-head unit/guard tests, typecheck, lint and build in the repository's documented sequence. Keep clinical E2E acceptance deferred until isolated free QA and a synthetic doctor identity are available.
+
+Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
