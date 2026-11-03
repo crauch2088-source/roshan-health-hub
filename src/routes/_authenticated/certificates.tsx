@@ -164,7 +164,8 @@ function CertificatesPageInner() {
 
   const handlePrintCertificate = (certificateId: string) => {
     const selected = rows.find((row) => s(row, "id") === certificateId);
-    if (!selected || s(rel(selected, "patients"), "deleted_at") || !certificateBranchId(selected)) return;
+    if (!selected || s(rel(selected, "patients"), "deleted_at") || !certificateBranchId(selected))
+      return;
     flushSync(() => setPrintingCertificateId(certificateId));
     const printRoot = document.getElementById("medical-certificate-print-document");
     if (!printRoot) {
@@ -252,7 +253,11 @@ function CertificatesPageInner() {
                               size="sm"
                               variant="ghost"
                               aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
-                              disabled={Boolean(printingCertificateId) || Boolean(s(p, "deleted_at")) || !certificateBranchId(c)}
+                              disabled={
+                                Boolean(printingCertificateId) ||
+                                Boolean(s(p, "deleted_at")) ||
+                                !certificateBranchId(c)
+                              }
                               onClick={() => handlePrintCertificate(s(c, "id"))}
                             >
                               <Printer className="size-4" />

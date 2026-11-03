@@ -455,7 +455,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           </div>
         )}
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {prescriptionPrintModel?.complete && <PrintButton scoped targetId="prescription-print-document" />}
+          {prescriptionPrintModel?.complete && (
+            <PrintButton scoped targetId="prescription-print-document" />
+          )}
           <Button
             disabled={save.isPending || !items.length}
             onClick={() => save.mutate(undefined as never)}
