@@ -2356,7 +2356,6 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - PR [#155](https://github.com/crauch2088-source/roshan-health-hub/pull/155) merged as `92934a7cda8449530dbee4327ce95438671e6f49`. The requested engineering plan is now documented at [ROSHAN_ENGINEERING_IMPROVEMENT_EXECUTION_PLAN_2026-11-03.md](ROSHAN_ENGINEERING_IMPROVEMENT_EXECUTION_PLAN_2026-11-03.md). Exact-head checks: 21 success, one intentional clinical-acceptance skip, zero failures; post-merge main CI [41591155706](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41591155706) succeeded.
 - PR [#153](https://github.com/crauch2088-source/roshan-health-hub/pull/153) merged as this main SHA. Final PR head `28b947c1775766be7f4d345740e782d4dc76c3b1`: 28 success, one intentional clinical-acceptance skip, zero failures. Main CI [41591565308](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41591565308) succeeded. Patient-picker query failures now show an alert/retry instead of a false empty result; the add-patient suggestion appears only after a successful empty search.
 - Vercel production deployment `dpl_7M2opFg7U2KtwNsgyMZ9nidiUyVp` is READY for main SHA `a00f8111f9d6f38e02cf850be398a1c16fee8265`; canonical alias `roshan-health-hub.vercel.app` is attached and `aliasError=null`.
-- PR #154 OpenCode bootstrap merged at `e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`. Repository configuration is merged, but Codespace creation, password secret, provider sign-in and first read-only smoke prompt remain owner-interactive and are not operationally verified.
 - Open PRs at read time: #151, #139, #138, #131, #125, #112 and #103. No open GitHub issues were returned. No dependency update was auto-merged.
 
 ### Read-only Phase 49–52 live state
@@ -2370,3 +2369,54 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Off-site encrypted backup and isolated restore rehearsal remain **unverified**. Do not infer that gate passed from live migration records.
 - Authenticated clinical E2E and staff UAT remain explicitly deferred as requested. The intentional CI skip is not a pass or clinical sign-off.
 - Next P0: reconcile exact stored SQL/source mappings for production versions `20261102232819`–`20261102232855` and `20261102232941`, preserve them as quarantined non-replayable artifacts, update the canonical manifest, and verify with SHA-256 plus disposable PostgreSQL 17 replay. No manual ledger edits or further production DDL until source provenance and backup/restore are complete.
+
+## Execution update — 2026-11-03 (Phase 49–52 provenance recovery)
+
+### Current repository and CI baseline
+
+- Main SHA at the start of this batch: `fe63366f58dbc1184d1750e167773b358c7225b4`.
+- Main GitHub Actions CI run [41592980295](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41592980295) completed successfully on that exact SHA. Finance-only RPC write-isolation integration [41592980287](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41592980287) also succeeded on the same SHA.
+- Current open PRs: #159 (development patch/minor dependencies), #158 (production patch/minor dependencies), #157 (major dependency group), #151 (GitHub Actions major updates), #139 (public setup/auth error recovery), #125 (custom prescription fields and age cue), #112 (UX modernization plan), and #103 (staff-login deferral record). No open GitHub issues were returned by the live repository search.
+- PRs #159/#158/#157/#151 target the current main base. PRs #139/#125 still use base SHA `83bcfd9a46f55ff16e9c6a2133f5e01d696f7d79`; #112 uses `82c9a8306e4f611bcd593eeb5b192fd15b693265`; #103 uses `c091a3355019f741e10a64a2ef08b57a0d15d806`. The combined status endpoint reported only a Vercel success context for each open PR head; that is not evidence of full CI or independent review. No dependency PR was auto-merged.
+
+### Phase 49–52 migration provenance — read-only
+
+- Production is ACTIVE_HEALTHY on PostgreSQL 17.6.1.155 with 129 ledger rows; QA is ACTIVE_HEALTHY on PostgreSQL 17.11.0.003 with 17 rows.
+- Exact SHA-256 comparison proves that production rows `20261102232823`, `20261102232849`, `20261102232852`, and `20261102232855` match the current Phase 49–52 source files after removing only the terminal `COMMIT;` wrapper and trailing whitespace. The full mapping is in `docs/recovered-migrations/phase49-52-provenance.json`.
+- `20261102232819` is a recovered table/index rename without a canonical source file. `20261102232941` is a recovered cleanup/reversal block; its public artifact redacts nine UUID occurrences across four distinct identifiers. Four earlier 134-byte placeholder rows are not the real Phase 49–52 SQL.
+- The private remediation archive has five rows but does not retain the full Phase 49–52 SQL bodies. Direct table privileges are absent for browser/service roles; authenticated has private-schema USAGE but no table access.
+- Static review of `20261102232941` found a broad dynamic soft-delete sweep and a guarded stock reversal. It does not contain an explicit synthetic-record marker predicate and does not assert that both fixed patient targets share the same branch. No patient/visit/prescription/invoice/payment/expense/stock-movement rows were read, so the target identities and data-level postconditions remain unverified.
+- The historical `docs/recovered-migrations/manifest.json` remains the 79-row 2026-10-15 snapshot; `source-parity-report.json` remains the 93-row 2026-10-17 snapshot. The new report is deliberately scoped and must not be presented as full current-ledger parity.
+
+### Safety and next task
+
+- No production or QA DDL/DML, grants, Auth, Storage, deployment, patient records, or financial records were changed or created. Backup/off-site copy/restore rehearsal remain unverified.
+- Authenticated clinical E2E and staff UAT remain explicitly deferred by the owner; the CI skip is not a pass.
+- Next P0: add a disposable PostgreSQL 17 replay fixture for the 32819 rename and a parameterized synthetic equivalent of the 32941 stock-reversal/soft-delete contract. Test idempotency, branch attribution, rollback, and soft-delete-only behavior. Keep the raw production UUIDs out of public source control and do not rerun the production cleanup migration.
+
+## Independent review of the expanded Gemini engineering report — 2026-11-03
+
+- Added [`docs/GEMINI_ENGINEERING_REPORT_INDEPENDENT_REVIEW_2026-11-03.md`](GEMINI_ENGINEERING_REPORT_INDEPENDENT_REVIEW_2026-11-03.md), based on current main `991f22b6890d5114b3e6ddf411d2c2dbc41eabb1`, current source, merged PRs #153/#155/#156/#160, read-only Supabase evidence and official platform documentation.
+- The report is **not** an execution script. Reject dropping/recreating the Phase 49 idempotency table, manual migration-ledger normalization, blind default-privilege changes, re-running production cleanup `20261102232941`, and the unmeasured 82% CI-savings claim.
+- Current source supersedes several report excerpts: inventory receiving already uses the atomic idempotent `fn_receive_pharmacy_batch_atomic` RPC; patient search uses the shared sanitized, paginated MRN-first helper; CSV export already includes UTF-8 BOM. The all-medicines inventory statistics query remains an unbounded client-side aggregate candidate.
+- Current `.github/workflows/ci.yml` snapshot has 18 job definitions and 15 PostgreSQL service declarations. The exact PR #160 workflow run recorded 17 successful jobs and one intentional authenticated-clinical-acceptance skip. The skip is not a pass. GitHub repository metadata confirms this repository is public; standard hosted runner use is free, so the 2,000-minute private Free-plan allowance is not the applicable constraint.
+- Scoped Phase 49–52 SHA-256 provenance is documented by PR #160. This is not full migration-chain parity or full schema parity. Production cleanup/reversal row `20261102232941` remains redacted quarantine evidence and must not be replayed.
+- Encrypted off-site backup/restore, disposable PG17 tests for quarantined remediation semantics, authenticated QA clinical E2E and staff UAT remain open release gates. No production/QA writes or patient/financial row reads were performed for this review.
+- Next sequence: (1) disposable PG17 fixtures for `20261102232819` and a synthetic parameterized equivalent of `20261102232941`; (2) encrypted off-site backup and isolated restore rehearsal; (3) define and test a bounded branch-aware inventory statistics RPC; (4) measure CI before changing job topology. No further production DDL until the backup and migration-provenance gates are accepted.
+
+
+## Quarantined Phase 49 remediation — disposable PostgreSQL 17 test gate (2026-11-03)
+
+- Added a disposable PostgreSQL 17 fixture for the exact quarantined 20261102232819 table/index rename. It uses only synthetic UUIDs and asserts relation/index rename, preservation of the pre-existing legacy row, and availability of the canonical replacement table/index name.
+- Added a parameterized synthetic equivalent of the 20261102232941 stock-reversal/soft-delete intent. The redacted production artifact itself is never executed. The test contract checks repeat execution (one reversal only), branch attribution and cross-branch rejection, unexpected stock-state rejection, transaction rollback, preservation of existing soft-delete timestamps, and no permanent row deletion.
+- The workflow creates a dedicated roshan_quarantine database on the PostgreSQL 17 service. SQL guards reject any other database or major version. No Supabase connection, QA/Production DDL/DML, or patient/financial data is used.
+- Status at authoring: candidate tests added; exact-head GitHub Actions result is the acceptance evidence. Backup/restore, full migration-chain parity, authenticated clinical E2E, and staff UAT remain open.
+
+## Agent-neutral Spec Kit adoption — 2026-11-03
+
+- Adopted the official GitHub Spec Kit CLI v1.2.6 shared scaffolding with integration none. The CLI was run against a disposable clone of this repository and reported Integration status: OK; default/installed integration none; zero modified managed files; zero missing managed files; zero invalid manifest paths; zero unchecked manifests.
+- Committed the CLI-generated .specify/ scripts, templates, workflow, integration metadata and manifest; added the Roshan Constitution and a Draft Phase 53 clinical-document-printing specification. The Draft intentionally has no plan.md or tasks.md until source contracts and open requirements are clarified.
+- Removed the unused agent bootstrap configuration and Codespaces devcontainer; the already-merged feature branch was deleted. Historical PR/commit records remain in GitHub audit history and were not rewritten.
+- Added a focused Spec Kit validation workflow and contract test. It validates the pinned CLI and agent-neutral state; it does not build/deploy the application or access Supabase/Vercel.
+- No application source, package manifest/lockfile, SQL migration, Supabase project, Vercel setting, production credential, clinical/financial record, or production data was changed.
+- The none integration provides shared scaffolding, not interactive agent commands. ChatGPT will perform specification/plan/tasks/review stages directly through connected repository tools; no manual owner setup is required.

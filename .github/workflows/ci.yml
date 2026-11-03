@@ -611,3 +611,45 @@ jobs:
             -f db/tests/phase33_storage_realtime_fixture.sql \
             -f db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql \
             -f db/tests/phase33_storage_realtime_assertions.sql
+
+
+  phase49-quarantine-remediation:
+    name: Phase 49 quarantined remediation contracts (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create a dedicated disposable database
+        env:
+          PGPASSWORD: postgres
+        run: createdb -h localhost -U postgres roshan_quarantine
+      - name: Create synthetic PG17 fixture
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
+            -f db/tests/phase49_quarantine_remediation_fixture.sql
+      - name: Apply exact 20261102232819 rename only inside the disposable database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql --single-transaction -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
+            -f docs/recovered-migrations/sql/20261102232819_roshan_phase49_isolate_malformed_idempotency_table.sql
+      - name: Verify rename and exercise parameterized synthetic 20261102232941 contract
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
+            -f db/tests/phase49_quarantine_remediation_assertions.sql
