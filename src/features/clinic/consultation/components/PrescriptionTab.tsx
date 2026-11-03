@@ -61,9 +61,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       supabase
         .from("prescriptions")
         .select(
-          "id,created_at,status,is_external,notes,patients(full_name,mrn),users(full_name),prescription_items(id,medication_name,dose,route,frequency,duration,quantity,dosage_form,instructions,deleted_at)",
+          "id,created_at,status,is_external,notes,patients(full_name,mrn,deleted_at),users(full_name),prescription_items(id,medication_name,dose,route,frequency,duration,quantity,dosage_form,instructions,deleted_at)",
         )
         .eq("id", lastSavedPrescriptionId ?? "")
+        .eq("visit_id", visitId)
+        .eq("patient_id", patient)
         .is("deleted_at", null)
         .limit(1),
     { enabled: Boolean(lastSavedPrescriptionId) },

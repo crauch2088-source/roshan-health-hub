@@ -77,6 +77,7 @@ export function buildPrescriptionPrintModel(
 
   const missingFields: string[] = [];
   if (!text(patient["full_name"]).trim()) missingFields.push("patient");
+  if (text(patient["deleted_at"])) missingFields.push("patient record");
   if (!text(prescriber["full_name"]).trim()) missingFields.push("prescriber");
   if (!text(row["created_at"]).trim()) missingFields.push("created date");
   if (items.length === 0) missingFields.push("items");
