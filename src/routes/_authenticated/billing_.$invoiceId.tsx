@@ -71,7 +71,7 @@ function InvoicePageInner() {
     from: "/_authenticated/billing_/$invoiceId",
   });
 
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency, settings } = useSettings();
 
@@ -159,37 +159,61 @@ function InvoicePageInner() {
 
   return (
     <div>
-      <PageHeader
-        title={`${t("invoice")} ${s(invoice, "invoice_number")}`}
-        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${formatDate(
-          s(invoice, "invoice_date"),
-        )}`}
-      >
-        <StatusBadge status={s(invoice, "status")} />
+      <div className="no-print">
+        <PageHeader
+          title={`${t("invoice")} ${s(invoice, "invoice_number")}`}
+          subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${formatDate(
+            s(invoice, "invoice_date"),
+          )}`}
+        >
+          <StatusBadge status={s(invoice, "status")} />
 
-        <PrintButton />
+          <PrintButton scoped />
 
-        <Button asChild variant="outline" size="sm">
-          <Link to="/billing">
-            <ArrowLeft className="size-4" />
-            {t("back")}
-          </Link>
-        </Button>
-      </PageHeader>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/billing">
+              <ArrowLeft className="size-4" />
+              {t("back")}
+            </Link>
+          </Button>
+        </PageHeader>
+      </div>
 
-      <ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} />
+      <div className="no-print">
+        <ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="print-area lg:col-span-2">
+        <Card className="print-area print-document-root lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
-                {settings["clinic_name"] || t("app_name")}
+                {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
+                  settings["center_name"] ||
+                  settings["center_name_ar"] ||
+                  t("app_name")}
               </p>
 
               <p className="text-xs text-muted-foreground">
-                {settings["clinic_address"] || ""} {settings["clinic_phone"] || ""}
+                {settings["address"] || ""} {settings["phone"] || ""}
               </p>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <p>
+                  <strong>{lang === "ar" ? "رقم الفاتورة:" : "Invoice #:"}</strong>{" "}
+                  {s(invoice, "invoice_number")}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "التاريخ:" : "Date:"}</strong>{" "}
+                  {formatDate(s(invoice, "invoice_date"))}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "المريض:" : "Patient:"}</strong>{" "}
+                  {s(patient, "full_name")}
+                </p>
+                <p>
+                  <strong>{t("mrn")}:</strong> {s(patient, "mrn")}
+                </p>
+              </div>
             </div>
 
             <SectionTitle>{t("items")}</SectionTitle>
@@ -262,10 +286,13 @@ function InvoicePageInner() {
                 <span>{money(balance, currency)}</span>
               </div>
             </div>
+            {settings["invoice_footer"] && (
+              <p className="mt-6 border-t pt-3 text-xs">{settings["invoice_footer"]}</p>
+            )}
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
+        <div className="no-print space-y-4">
           {can("payments.create") ? (
             <Card className="no-print">
               <CardContent className="grid gap-4 p-4">
