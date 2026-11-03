@@ -213,7 +213,6 @@ BEGIN
   UPDATE public.payments
      SET deleted_at = pg_catalog.now(),
          deleted_by = v_uid,
-         updated_at = pg_catalog.now(),
          updated_by = v_uid
    WHERE id = v_payment.id
      AND deleted_at IS NULL;
