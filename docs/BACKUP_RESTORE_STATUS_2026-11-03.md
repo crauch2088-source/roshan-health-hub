@@ -5,8 +5,8 @@
 - The private Google Drive destination folder **Roshan Health Hub Backups** exists, is owned by the connected account, is not trashed, and is not shared. It contains no verified backup artifact yet.
 - A separate private GitHub repository now exists: `crauch2088-source/roshan-health-hub-backup-runner`. It contains only the manual backup workflow, script, and setup documentation; no secrets or backup artifacts have been added.
 - The runner workflow is manual-only, requires an explicit `confirm_production_backup=true` input, and uploads only encrypted artifacts with one-day retention.
-- Validation-only workflow run `41631926251` passed: Bash syntax, ShellCheck, Supabase CLI `2.122.0` availability, and the required `db dump --db-url` / `--role-only` flags. The Production backup job was intentionally skipped because confirmation was false.
-- Supabase documents temporary token-based database access for PostgreSQL 17+. Both Roshan projects run PostgreSQL 17.6. This provides a path that avoids using the Production database password in the runner.
+- Validation-only workflow runs `41631926251` and `41632621501` passed: Bash syntax, ShellCheck, Supabase CLI `2.122.0` availability, required `db dump --db-url` / `--role-only` flags, and the updated shared-pooler/JIT settings. The Production backup job was intentionally skipped because confirmation was false.
+- Supabase documents temporary token-based database access for PostgreSQL 17.6.1.081+. Production is PostgreSQL 17.6.1.155 and QA is 17.11.0.003. The connection requires SSL enforcement and uses the shared pooler on port 5432 with `options=-c jit=true`; this provides a path that avoids using the Production database password in the runner.
 - The runner uses the existing private Drive folder via the connected Google Drive resumable-upload integration after the encrypted GitHub artifact is downloaded. No Google service-account credential is required.
 - The workflow is designed to abort if `storage.objects` is non-empty or `vault.secrets` contains rows, because object bytes and the Vault encryption root key require separate recovery paths.
 
