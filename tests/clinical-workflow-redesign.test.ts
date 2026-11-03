@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   createEmptyPrescriptionDraft,
+  createPrescriptionDraftForMedicine,
   validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
+import { calcAge } from "../src/lib/medical.ts";
 import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
 import { shouldBlockUnsavedClinicalNoteNavigation } from "../src/lib/clinical-navigation-guard.ts";
 
@@ -20,10 +22,49 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
   draft.frequency = "twice daily";
   assert.equal(validatePrescriptionDrafts([draft]), "missing-duration");
   draft.duration = "5 days";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-dosage-form");
+  draft.dosage_form = "tablet";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-route");
+  draft.route = "oral";
   draft.quantity = "0";
   assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "10";
   assert.equal(validatePrescriptionDrafts([draft]), null);
+});
+
+test("catalogue medicine selection never infers an administration route", () => {
+  for (const dosage_form of ["tablet", "capsule", "syrup", "suspension", "injection"]) {
+    const draft = createPrescriptionDraftForMedicine({
+      id: "medicine-1",
+      name: "Example medicine",
+      dosage_form,
+    });
+    assert.equal(draft.dosage_form, dosage_form);
+    assert.equal(draft.route, "");
+  }
+});
+
+test("prescription UI provides real custom inputs and explicit route selection", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(ui, /!isKnownDosageForm/);
+  assert.match(ui, /!isKnownFrequency/);
+  assert.match(ui, /!isKnownDuration/);
+  assert.match(ui, /!isKnownRoute/);
+  assert.match(ui, /Custom dosage form/);
+  assert.match(ui, /Custom frequency/);
+  assert.match(ui, /Custom duration/);
+  assert.match(ui, /Custom administration route/);
+  assert.match(ui, /Dose including unit/);
+});
+
+test("patient age rejects impossible, malformed, and future dates of birth", () => {
+  assert.equal(calcAge(null), null);
+  assert.equal(calcAge(""), null);
+  assert.equal(calcAge("not-a-date"), null);
+  assert.equal(calcAge("2026-02-30"), null);
+  assert.equal(calcAge("2026-13-01"), null);
+  assert.equal(calcAge("2999-01-01"), null);
+  assert.equal(typeof calcAge("2000-02-29"), "number");
 });
 
 test("consultation tabs expose accessible tab semantics, bilingual labels and arrow navigation", () => {
