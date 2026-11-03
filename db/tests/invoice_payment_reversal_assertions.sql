@@ -51,6 +51,51 @@ BEGIN
   IF v_invoice.paid_amount <> 10 OR v_invoice.status <> 'partial' OR v_invoice.payment_status <> 'partial' THEN RAISE EXCEPTION 'invoice paid balance/status did not recompute after reversal'; END IF;
   IF NOT v_original.is_reversed OR v_original.reversal_reason <> 'duplicate bank settlement' THEN RAISE EXCEPTION 'original immutable ledger row was not marked reversed'; END IF;
   IF v_reversal.reversal_of IS DISTINCT FROM v_original.id OR v_reversal.amount <> -40 OR v_reversal.source_type <> 'reversal' OR v_reversal.reversal_reason <> 'duplicate bank settlement' THEN RAISE EXCEPTION 'reversal ledger row is not correctly linked or valued'; END IF;
+  -- Receipt status is available to billing/payment readers without granting cashbox.read.
+  PERFORM set_config('test.permissions','cashbox.update,payments.read,billing.read',true);
+  SELECT * INTO v_receipt
+    FROM public.get_invoice_payment_receipt_status(ARRAY['60000000-0000-0000-0000-000000000001']::uuid[])
+   WHERE payment_id='60000000-0000-0000-0000-000000000001';
+  IF NOT FOUND OR NOT v_receipt.ledger_found OR NOT v_receipt.ledger_matches
+     OR NOT v_receipt.ledger_is_reversed
+     OR v_receipt.reversal_reason <> 'duplicate bank settlement'
+     OR v_receipt.reversal_at IS NULL THEN
+    RAISE EXCEPTION 'receipt read model did not report the reversed payment state';
+  END IF;
+  SELECT * INTO v_receipt
+    FROM public.get_invoice_payment_receipt_status(ARRAY['60000000-0000-0000-0000-000000000003']::uuid[])
+   WHERE payment_id='60000000-0000-0000-0000-000000000003';
+  IF NOT FOUND OR NOT v_receipt.ledger_found OR NOT v_receipt.ledger_matches
+     OR v_receipt.ledger_is_reversed OR v_receipt.reversal_reason IS NOT NULL
+     OR v_receipt.reversal_at IS NOT NULL THEN
+    RAISE EXCEPTION 'receipt read model did not report the active payment state';
+  END IF;
+  PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000002',true);
+  SELECT count(*) INTO v_receipt_count
+    FROM public.get_invoice_payment_receipt_status(ARRAY[
+      '60000000-0000-0000-0000-000000000001'::uuid,
+      '60000000-0000-0000-0000-000000000002'::uuid
+    ]);
+  IF v_receipt_count <> 1 THEN
+    RAISE EXCEPTION 'receipt read model leaked cross-branch payment status';
+  END IF;
+  PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
+  PERFORM set_config('test.permissions','cashbox.update',true);
+  v_rejected := false;
+  BEGIN
+    PERFORM * FROM public.get_invoice_payment_receipt_status(ARRAY['60000000-0000-0000-0000-000000000001']::uuid[]);
+  EXCEPTION WHEN SQLSTATE '42501' THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'receipt read model bypassed payments.read/billing.read'; END IF;
+  IF has_function_privilege('anon','public.get_invoice_payment_receipt_status(uuid[])','EXECUTE') THEN
+    RAISE EXCEPTION 'anonymous role can execute receipt status RPC';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.get_invoice_payment_receipt_status(uuid[])','EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated role cannot execute receipt status RPC';
+  END IF;
+  PERFORM set_config('test.permissions','cashbox.update,payments.read,billing.read',true);
+  PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
+
   v_rejected := false;
   BEGIN PERFORM public.reverse_invoice_payment('60000000-0000-0000-0000-000000000001','second attempt');
   EXCEPTION WHEN SQLSTATE '22023' THEN v_rejected := true; END;
