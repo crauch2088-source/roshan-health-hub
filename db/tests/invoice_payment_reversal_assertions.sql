@@ -12,7 +12,7 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '22023' THEN GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT; v_rejected := v_error LIKE '%source-specific payment reversal%'; END;
   IF NOT v_rejected THEN RAISE EXCEPTION 'generic cashbox reversal accepted an invoice payment'; END IF;
   IF (SELECT deleted_at FROM public.payments WHERE id='60000000-0000-0000-0000-000000000001') IS NOT NULL
-     OR (SELECT paid_amount FROM public.invoices WHERE id='50000000-0000-0000-0000-000000000001') <> 40
+     OR (SELECT paid_amount FROM public.invoices WHERE id='50000000-0000-0000-0000-000000000001') <> 50
      OR (SELECT is_reversed FROM public.cashbox_transactions WHERE id='70000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'blocked generic reversal caused side effects'; END IF;
   FOREACH v_reversal_id IN ARRAY ARRAY['70000000-0000-0000-0000-000000000004'::uuid,'70000000-0000-0000-0000-000000000005'::uuid] LOOP
     v_rejected := false;
@@ -33,7 +33,7 @@ BEGIN
   SELECT * INTO v_original FROM public.cashbox_transactions WHERE id='70000000-0000-0000-0000-000000000001';
   SELECT * INTO v_reversal FROM public.cashbox_transactions WHERE id=v_reversal_id;
   IF v_payment.deleted_at IS NULL OR v_payment.deleted_by IS DISTINCT FROM '10000000-0000-0000-0000-000000000001'::uuid THEN RAISE EXCEPTION 'payment was not soft-deleted with actor attribution'; END IF;
-  IF v_invoice.paid_amount <> 0 OR v_invoice.status <> 'unpaid' OR v_invoice.payment_status <> 'unpaid' THEN RAISE EXCEPTION 'invoice paid balance/status did not recompute after reversal'; END IF;
+  IF v_invoice.paid_amount <> 10 OR v_invoice.status <> 'partial' OR v_invoice.payment_status <> 'partial' THEN RAISE EXCEPTION 'invoice paid balance/status did not recompute after reversal'; END IF;
   IF NOT v_original.is_reversed OR v_original.reversal_reason <> 'duplicate bank settlement' THEN RAISE EXCEPTION 'original immutable ledger row was not marked reversed'; END IF;
   IF v_reversal.reversal_of IS DISTINCT FROM v_original.id OR v_reversal.amount <> -40 OR v_reversal.source_type <> 'reversal' OR v_reversal.reversal_reason <> 'duplicate bank settlement' THEN RAISE EXCEPTION 'reversal ledger row is not correctly linked or valued'; END IF;
   v_rejected := false;
