@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "db/roshan_phase54_source_aware_financial_reversal.sql"
+      - "db/roshan_phase54b_payment_updated_at_compat.sql"
       - "db/tests/invoice_payment_reversal_fixture.sql"
       - "db/tests/invoice_payment_reversal_assertions.sql"
       - ".github/workflows/ci-invoice-payment-reversal.yml"
@@ -43,7 +44,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/invoice_payment_reversal_fixture.sql \
-            -f db/roshan_phase54_source_aware_financial_reversal.sql
+            -f db/roshan_phase54_source_aware_financial_reversal.sql \
+            -f db/roshan_phase54b_payment_updated_at_compat.sql
       - name: Assert source-aware reversal invariants
         env:
           PGPASSWORD: postgres
