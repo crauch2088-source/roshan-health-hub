@@ -112,6 +112,22 @@ test("receipt model refuses branchless or cross-branch source rows even when cal
   assert.ok(model.missingFields.includes("branch binding"));
 });
 
+test("receipt model can rely on the ledger and authorized parent read when a legacy patient row has no branch_id", () => {
+  const data = source();
+  data.invoice.patients.branch_id = null;
+
+  const model = buildInvoicePaymentReceiptModel(
+    data.payment,
+    data.invoice,
+    data.ledger,
+    "Recorded Cashier",
+    "SDG",
+  );
+
+  assert.ok(model);
+  assert.equal(model.complete, true);
+});
+
 test("receipt model permits a soft-deleted payment only when the authoritative ledger says reversed", () => {
   const data = source();
   data.payment.deleted_at = "2026-11-03T11:00:00.000Z";

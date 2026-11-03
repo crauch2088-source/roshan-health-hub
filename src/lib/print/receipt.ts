@@ -90,9 +90,8 @@ export function buildInvoicePaymentReceiptModel(
   if (
     !paymentBranch ||
     !invoiceBranch ||
-    !patientBranch ||
     paymentBranch !== invoiceBranch ||
-    invoiceBranch !== patientBranch
+    (patientBranch && patientBranch !== invoiceBranch)
   ) {
     missing.add("branch binding");
   }
@@ -115,9 +114,11 @@ export function buildInvoicePaymentReceiptModel(
   const currentBalance =
     netAmount != null && paidAmount != null ? netAmount - paidAmount : null;
   if (
-    currentBalance == null ||
+    netAmount == null ||
+    paidAmount == null ||
     netAmount < 0 ||
     paidAmount < 0 ||
+    currentBalance == null ||
     currentBalance < 0
   ) {
     missing.add("invoice balance");
