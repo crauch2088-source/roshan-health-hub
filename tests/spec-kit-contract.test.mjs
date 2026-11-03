@@ -63,3 +63,22 @@ test("Roshan Constitution and Phase 53 pilot are reviewable but not prematurely 
   assert.ok(!existsSync(join(root, "specs/001-clinical-document-printing/plan.md")));
   assert.ok(!existsSync(join(root, "specs/001-clinical-document-printing/tasks.md")));
 });
+
+test("Phase 54 and Phase 55 feature specs use the official required sections", () => {
+  for (const path of [
+    "specs/001-clinical-document-printing/spec.md",
+    "specs/002-source-aware-financial-reversal/spec.md",
+    "specs/003-clinical-parent-link-acl-reconciliation/spec.md",
+  ]) {
+    const spec = readFileSync(join(root, path), "utf8");
+    for (const heading of [
+      "## User Scenarios & Testing",
+      "## Requirements",
+      "## Success Criteria",
+      "## Assumptions",
+    ]) {
+      assert.ok(spec.includes(heading), path + " missing required section: " + heading);
+    }
+    assert.doesNotMatch(spec, /\[FEATURE NAME\]|\[###-feature-name\]|\[Assumption about/);
+  }
+});

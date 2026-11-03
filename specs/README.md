@@ -1,13 +1,9 @@
-# Roshan feature specifications
+# Feature specifications
 
-Each non-trivial feature uses a numbered directory: specs/NNN-short-name/.
+Feature-specific requirements, plans and task lists live here. The master roadmap remains `docs/MASTER_PLAN.md`; specs must not duplicate it.
 
-- spec.md records user journeys, scope, functional requirements, edge cases, and measurable acceptance criteria.
-- research.md, data-model.md, contracts/, and quickstart.md are added only when the feature needs them.
-- plan.md is written only after requirements are sufficiently clarified and existing code/database contracts have been inspected.
-- tasks.md is derived from the accepted specification and plan. Every task identifies the files/behavior it changes and evidence that proves completion.
-- Reviewer checklists assess requirement quality; they are not implementation-completion checkboxes.
-
-Do not copy the full project roadmap into a feature directory. Link to the relevant phase in docs/MASTER_PLAN.md. Keep real patient, clinical, financial, identity, credential, and production data out of specifications and examples; use synthetic fixtures only.
-
-The first pilot is 001-clinical-document-printing. It remains Draft and must not be implemented until its listed clarifications are resolved.
+| Spec | Feature | Status |
+|---|---|---|
+| [001 — Clinical Document Printing](001-clinical-document-printing/spec.md) | Receipt, invoice, prescription and medical certificate printing | Draft; clarification and code-contract review pending |
+| [002 — Source-aware Financial Reversal](002-source-aware-financial-reversal/spec.md) | Atomic invoice-payment reversal and receipt-status read model | Implemented in QA; production backup gate pending |
+| [003 — Clinical Parent-link and ACL Reconciliation](003-clinical-parent-link-acl-reconciliation/spec.md) | Immutable lab item parent link and private helper ACL hardening | PR #172; QA application pending |

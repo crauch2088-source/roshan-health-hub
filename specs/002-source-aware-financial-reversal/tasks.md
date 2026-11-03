@@ -7,7 +7,7 @@
 - [x] Add PostgreSQL 17 integration fixtures and assertions.
 - [x] Merge PR #168 (Phase54).
 - [x] Record/apply Phase54B in QA.
-- [x] Merge Phase54C PR #171.
+- [x] Merge PR #171 (Phase54C).
 - [x] Apply Phase54C to QA and verify function ACL/search_path metadata.
 - [ ] Finish Phase53 print UI and gate receipt printing on the status RPC.
 - [ ] Apply Phase54/54B/54C to production only after encrypted backup and isolated restore proof.
