@@ -75,8 +75,9 @@ BEGIN
   OR (SELECT count(*) FROM public.visit_annotations WHERE deleted_at IS NOT NULL)<>2 THEN
   RAISE EXCEPTION 'linked_rows_not_soft_deleted';
  END IF;
- IF (SELECT count(*) FROM public.visits)<>3 OR (SELECT count(*) FROM public.prescriptions)<>3
-  OR (SELECT count(*) FROM public.prescription_items)<>3 OR (SELECT count(*) FROM public.patient_notes)<>4 THEN
+ IF (SELECT count(*) FROM public.visits)<>4 OR (SELECT count(*) FROM public.prescriptions)<>4
+  OR (SELECT count(*) FROM public.prescription_items)<>4 OR (SELECT count(*) FROM public.patient_notes)<>5
+  OR (SELECT count(*) FROM public.visit_annotations)<>4 THEN
   RAISE EXCEPTION 'permanent_delete_detected';
  END IF;
  SELECT deleted_at INTO v_preserved FROM public.patient_notes WHERE id='80000000-0000-4000-8000-000000000004';
