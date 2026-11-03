@@ -8,7 +8,7 @@
 
 This is a read-only migration-ledger and PostgreSQL catalog inspection using migration-list operations and catalog-only `SELECT` statements. It did not read patient, visit, prescription, invoice, payment, expense or stock-movement rows; create test identities or records; or perform DDL, DML, grants, Auth, Storage or deployment mutations.
 
-The `statement_md5` values are MD5 fingerprints of `array_to_string(schema_migrations.statements, E'\\n')`. They are forensic comparison aids, not cryptographic signatures or proof of repository-file identity. Function fingerprints are MD5 of `pg_get_functiondef(oid)`. Full source-to-ledger SHA-256 parity and full-schema parity were not performed.
+The `statement_md5` values are MD5 fingerprints of each stored statement array concatenated with a newline separator. They are forensic comparison aids, not cryptographic signatures or proof of repository-file identity. Function fingerprints are MD5 of `pg_get_functiondef(oid)`. Full source-to-ledger SHA-256 parity and full-schema parity were not performed.
 
 ## Environment and ledger state
 
