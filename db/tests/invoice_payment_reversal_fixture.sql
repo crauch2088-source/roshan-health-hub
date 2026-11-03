@@ -32,6 +32,9 @@ END;
 $$;
 CREATE TRIGGER trg_cashbox_immutable BEFORE UPDATE OR DELETE ON public.cashbox_transactions FOR EACH ROW EXECUTE FUNCTION public.fn_cashbox_immutable();
 
+-- The assertion block runs as authenticated and inspects outcomes directly.
+GRANT SELECT ON public.users, public.invoices, public.payments, public.cashbox_transactions TO authenticated;
+
 GRANT SELECT ON public.users, public.invoices, public.payments, public.cashbox_transactions TO authenticated;
 INSERT INTO public.users(id, branch_id, active) VALUES
   ('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',true),
