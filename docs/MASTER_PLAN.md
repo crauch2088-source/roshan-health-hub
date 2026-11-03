@@ -2404,3 +2404,11 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Scoped Phase 49–52 SHA-256 provenance is documented by PR #160. This is not full migration-chain parity or full schema parity. Production cleanup/reversal row `20261102232941` remains redacted quarantine evidence and must not be replayed.
 - Encrypted off-site backup/restore, disposable PG17 tests for quarantined remediation semantics, authenticated QA clinical E2E and staff UAT remain open release gates. No production/QA writes or patient/financial row reads were performed for this review.
 - Next sequence: (1) disposable PG17 fixtures for `20261102232819` and a synthetic parameterized equivalent of `20261102232941`; (2) encrypted off-site backup and isolated restore rehearsal; (3) define and test a bounded branch-aware inventory statistics RPC; (4) measure CI before changing job topology. No further production DDL until the backup and migration-provenance gates are accepted.
+
+
+## Quarantined Phase 49 remediation — disposable PostgreSQL 17 test gate (2026-11-03)
+
+- Added a disposable PostgreSQL 17 fixture for the exact quarantined 20261102232819 table/index rename. It uses only synthetic UUIDs and asserts relation/index rename, preservation of the pre-existing legacy row, and availability of the canonical replacement table/index name.
+- Added a parameterized synthetic equivalent of the 20261102232941 stock-reversal/soft-delete intent. The redacted production artifact itself is never executed. The test contract checks repeat execution (one reversal only), branch attribution and cross-branch rejection, unexpected stock-state rejection, transaction rollback, preservation of existing soft-delete timestamps, and no permanent row deletion.
+- The workflow creates a dedicated roshan_quarantine database on the PostgreSQL 17 service. SQL guards reject any other database or major version. No Supabase connection, QA/Production DDL/DML, or patient/financial data is used.
+- Status at authoring: candidate tests added; exact-head GitHub Actions result is the acceptance evidence. Backup/restore, full migration-chain parity, authenticated clinical E2E, and staff UAT remain open.
