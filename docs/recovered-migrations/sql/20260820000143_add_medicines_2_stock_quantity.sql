@@ -1,1 +1,0 @@
-ALTER TABLE public.medicines_2 ADD COLUMN IF NOT EXISTS stock_quantity INTEGER NOT NULL DEFAULT 0;

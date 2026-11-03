@@ -1,1 +1,0 @@
-ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS patient_number varchar GENERATED ALWAYS AS (mrn) STORED; COMMENT ON COLUMN public.patients.patient_number IS 'Backward-compatible alias for mrn; generated from mrn.'; NOTIFY pgrst, 'reload schema';

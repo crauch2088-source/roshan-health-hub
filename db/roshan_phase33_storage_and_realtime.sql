@@ -1,3 +1,0 @@
--- Superseded by db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql.
--- Phase 33 is closed; do not apply this historical candidate separately.
--- CI and release verification use only the consolidated Phase 34 migration.
