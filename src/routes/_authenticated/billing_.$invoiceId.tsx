@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Printer } from "lucide-react";
 import { flushSync } from "react-dom";
 import { useState } from "react";
@@ -110,9 +111,9 @@ function InvoicePageInner() {
     .map((payment) => s(payment, "id"))
     .filter(Boolean);
   const paymentIdKey = paymentIds.join(",");
-  const receiptStatusQ = useRows<Row[]>(
-    ["invoice-payment-receipt-status", invoiceId, paymentIdKey],
-    async () => {
+  const receiptStatusQ = useQuery({
+    queryKey: ["invoice-payment-receipt-status", invoiceId, paymentIdKey],
+    queryFn: async () => {
       const batches: string[][] = [];
       for (let index = 0; index < paymentIds.length; index += 200) {
         batches.push(paymentIds.slice(index, index + 200));
@@ -124,8 +125,9 @@ function InvoicePageInner() {
       );
       return results.flat();
     },
-    { enabled: can("payments.read") && paymentIds.length > 0 },
-  );
+    enabled: can("payments.read") && paymentIds.length > 0,
+    retry: false,
+  });
 
   // Same atomic path as Finance → Receivables: post_invoice_payment locks the
   // invoice, validates outstanding, inserts payment; triggers recompute
