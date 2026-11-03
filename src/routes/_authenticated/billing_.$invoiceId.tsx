@@ -167,9 +167,9 @@ function InvoicePageInner() {
           )}`}
         >
           <StatusBadge status={s(invoice, "status")} />
-  
+
           <PrintButton scoped />
-  
+
           <Button asChild variant="outline" size="sm">
             <Link to="/billing">
               <ArrowLeft className="size-4" />
@@ -188,9 +188,7 @@ function InvoicePageInner() {
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
-                {(lang === "ar"
-                  ? settings["center_name_ar"]
-                  : settings["center_name"]) ||
+                {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
                   settings["center_name"] ||
                   settings["center_name_ar"] ||
                   t("app_name")}

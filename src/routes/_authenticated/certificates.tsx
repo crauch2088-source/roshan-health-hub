@@ -221,7 +221,9 @@ function CertificatesPageInner() {
                       const p = rel(c, "patients");
                       return (
                         <TableRow key={s(c, "id")}>
-                          <TableCell dir="ltr">{s(c, "certificate_number") || s(c, "id")}</TableCell>
+                          <TableCell dir="ltr">
+                              {s(c, "certificate_number") || s(c, "id")}
+                            </TableCell>
                           <TableCell dir="ltr">{formatDate(s(c, "created_at"))}</TableCell>
                           <TableCell>
                             <div className="font-medium">{s(p, "full_name")}</div>
@@ -232,7 +234,9 @@ function CertificatesPageInner() {
                           <TableCell dir="ltr">
                             {formatDate(s(c, "start_date"))} → {formatDate(s(c, "end_date"))}
                           </TableCell>
-                          <TableCell className="max-w-[24rem]">{s(c, "diagnosis") || "—"}</TableCell>
+                          <TableCell className="max-w-[24rem]">
+                              {s(c, "diagnosis") || "—"}
+                            </TableCell>
                           <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
                           <TableCell className="text-end">
                             <Button
@@ -297,7 +301,9 @@ function CertificatesPageInner() {
                 <Select
                   value={form.visit_id}
                   onValueChange={(v) => setForm({ ...form, visit_id: v })}
-                  disabled={!form.patient_id || visitOptionsQ.isLoading || visitOptions.length === 0}
+                  disabled={
+                    !form.patient_id || visitOptionsQ.isLoading || visitOptions.length === 0
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -392,7 +398,8 @@ function CertificatesPageInner() {
             <header className="space-y-2 border-b pb-5 text-center">
               <h1 className="text-xl font-bold">
                 {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
-                  settings["center_name"] || settings["center_name_ar"] ||
+                  settings["center_name"] ||
+                  settings["center_name_ar"] ||
                   (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
               </h1>
               {(settings["address"] || settings["phone"]) && (
@@ -421,7 +428,8 @@ function CertificatesPageInner() {
               </p>
               <p>
                 <strong>{lang === "ar" ? "الفترة:" : "Period:"}</strong>{" "}
-                {formatDate(s(printCertificate, "start_date"))} — {formatDate(s(printCertificate, "end_date"))}
+                {formatDate(s(printCertificate, "start_date"))} —{" "}
+                {formatDate(s(printCertificate, "end_date"))}
               </p>
               <p>
                 <strong>{lang === "ar" ? "الغرض / التشخيص:" : "Purpose / diagnosis:"}</strong>{" "}
