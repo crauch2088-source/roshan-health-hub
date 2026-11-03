@@ -56,8 +56,7 @@ export function buildMedicineCatalogueInsert(
 
   const selectedForm = draft.dosage_form.trim();
   if (!selectedForm) return { error: "missing-dosage-form" };
-  const dosageForm =
-    selectedForm === "other" ? draft.custom_dosage_form.trim() : selectedForm;
+  const dosageForm = selectedForm === "other" ? draft.custom_dosage_form.trim() : selectedForm;
   if (!dosageForm) return { error: "missing-custom-dosage-form" };
 
   const costPrice = parseNonNegativeNumber(draft.cost_price);

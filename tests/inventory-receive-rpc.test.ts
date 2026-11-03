@@ -44,7 +44,6 @@ testRunner("inventory receiving uses the atomic guarded pharmacy RPC", () => {
   );
 });
 
-
 testRunner(
   "medicine catalogue requires ingredient, exact strength and dosage form without inferring a route",
   () => {
@@ -144,22 +143,18 @@ testRunner(
     const custom = buildMedicineCatalogueInsert(base);
     assert.ok("data" in custom);
     assert.equal(custom.data.dosage_form, "nasal spray");
-    assert.deepEqual(
-      buildMedicineCatalogueInsert({ ...base, custom_dosage_form: " " }),
-      { error: "missing-custom-dosage-form" },
-    );
-    assert.deepEqual(
-      buildMedicineCatalogueInsert({ ...base, cost_price: "-1" }),
-      { error: "invalid-cost-price" },
-    );
-    assert.deepEqual(
-      buildMedicineCatalogueInsert({ ...base, selling_price: "NaN" }),
-      { error: "invalid-selling-price" },
-    );
-    assert.deepEqual(
-      buildMedicineCatalogueInsert({ ...base, reorder_level: "1.5" }),
-      { error: "invalid-reorder-level" },
-    );
+    assert.deepEqual(buildMedicineCatalogueInsert({ ...base, custom_dosage_form: " " }), {
+      error: "missing-custom-dosage-form",
+    });
+    assert.deepEqual(buildMedicineCatalogueInsert({ ...base, cost_price: "-1" }), {
+      error: "invalid-cost-price",
+    });
+    assert.deepEqual(buildMedicineCatalogueInsert({ ...base, selling_price: "NaN" }), {
+      error: "invalid-selling-price",
+    });
+    assert.deepEqual(buildMedicineCatalogueInsert({ ...base, reorder_level: "1.5" }), {
+      error: "invalid-reorder-level",
+    });
   },
 );
 
