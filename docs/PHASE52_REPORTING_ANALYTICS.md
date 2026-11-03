@@ -92,3 +92,10 @@ The current UI passes `p_branch_id: null`, leaving row visibility to RLS. The RP
 7. Change the user's branch in an isolated QA fixture and verify RLS prevents cross-branch leakage when the optional branch argument is used.
 
 These authenticated scenarios are not marked passed until a dedicated synthetic QA account is available and a browser run is recorded. The existing public-route Playwright suite does not authenticate into /reports.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+## Live database addendum — 2026-11-03
+
+Read-only catalog inspection confirms `public.get_reporting_analytics(date,date,uuid)` exists in both production and QA. Its function-definition fingerprint matches across projects; it is STABLE SECURITY INVOKER with an empty fixed search_path, authenticated EXECUTE true, anon false and service_role false. All nine reporting indexes are present in both projects and have `indisvalid=true` and `indisready=true`.
+
+Production records `20261102232855 roshan_phase52_reporting_analytics_reconciled`; QA records `20261102232905 roshan_phase52_reporting_analytics_reconciled`, with matching stored-statement fingerprints. This verifies catalog presence/metadata, not authenticated report totals or branch/RLS behavior against reconciled synthetic fixtures. No patient or financial rows were queried. Authenticated reporting smoke tests remain deferred. See [the live reconciliation report](LIVE_PHASE49_52_RECONCILIATION_2026-11-03.md).

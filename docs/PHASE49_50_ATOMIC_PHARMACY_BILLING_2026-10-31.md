@@ -58,3 +58,12 @@ The queue screen now uses queue.update for operational call/start actions, allow
 
 
 Browser/staff acceptance is documented in `docs/PHASE49_50_E2E_ACCEPTANCE_RUNBOOK_2026-10-31.md`. The current CI proves PostgreSQL and source contracts; it does not prove authenticated browser workflows or staff usability.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+## Live database addendum — 2026-11-03
+
+Read-only catalog inspection now finds the Phase 49 and Phase 50 RPCs in both production and QA. Production ledger rows: `20261102232819 roshan_phase49_isolate_malformed_idempotency_table`, `20261102232823 roshan_phase49_atomic_pharmacy_dispense_repaired`, and `20261102232849 roshan_phase50_clinical_visit_bill_completion_reconciled`. QA retains original Phase 49/50 entries at `20261102133658` and `20261102133734`, plus a superseded duplicate Phase 50 row at `20261102232858`.
+
+The catalog fingerprints of `atomic_pharmacy_dispense`, `fn_dispense_prescription_with_invoice` and `complete_clinical_visit_and_bill` match across production and QA. The idempotency table has the expected seven columns, `request_id` primary key and JSON-array result constraint in both. Browser writes to stock_movements, pharmacy_inventory, prescriptions and prescription_items are denied by table privileges; stock_movements has only a branch-scoped SELECT policy. This is structural/ACL evidence, not authenticated dispensing or visit-completion E2E.
+
+Stored Phase 49/50 migration statements are not identical across all ledger rows. Exact repository-file-to-ledger SHA-256 mapping remains open; do not replay candidate files or edit the ledger on the strength of matching function fingerprints. See [the live reconciliation report](LIVE_PHASE49_52_RECONCILIATION_2026-11-03.md). Clinical acceptance and staff UAT remain deferred.

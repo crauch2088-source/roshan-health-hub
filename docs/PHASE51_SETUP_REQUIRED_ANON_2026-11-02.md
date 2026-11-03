@@ -67,3 +67,10 @@ PR #150 remains Draft pending independent security review. The next action is re
 
 ### Clinical acceptance
 - Authenticated clinical E2E and staff UAT remain deferred as requested. Issue #95 stays open.
+
+<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
+## Live database addendum — 2026-11-03
+
+Read-only catalog inspection confirms the Phase 51 public wrapper exists in both production and QA. Production has `20261102232852 roshan_phase51_public_setup_required_anon_reconciled`; QA has `20261102122437 roshan_phase51_public_setup_required_anon`. The wrapper is STABLE SECURITY DEFINER with an empty fixed search_path; direct EXECUTE is available to anon/authenticated but not service_role. The private helper is not executable by anon, and anon has no USAGE on schema `private`.
+
+This run did not execute the production wrapper under an anonymous session or inspect user rows. The production ledger contains a superseded 134-byte placeholder Phase 51 row; stored migration statements differ between QA and production. Exact source-to-ledger provenance remains open. The earlier QA anonymous boolean smoke result is separate evidence and does not establish production runtime acceptance. Backup/restore and live-launch gates remain unverified. See [the live reconciliation report](LIVE_PHASE49_52_RECONCILIATION_2026-11-03.md).
