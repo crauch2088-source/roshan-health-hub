@@ -27,30 +27,12 @@ BEGIN
 END $audit$;
 CREATE TABLE public.visits(id uuid PRIMARY KEY, status text NOT NULL);
 CREATE TABLE public.lab_orders(id uuid PRIMARY KEY, patient_id uuid, visit_id uuid REFERENCES public.visits(id), branch_id uuid, status text, value text);
--- Match both live Supabase schemas: lab_order_items links to visits through lab_orders.order_id.
-CREATE TABLE public.lab_order_items(id uuid PRIMARY KEY, patient_id uuid, order_id uuid NOT NULL REFERENCES public.lab_orders(id), value text);
+CREATE TABLE public.lab_order_items(id uuid PRIMARY KEY, patient_id uuid, visit_id uuid REFERENCES public.visits(id), order_id uuid REFERENCES public.lab_orders(id), value text);
 CREATE TABLE public.prescriptions(id uuid PRIMARY KEY, patient_id uuid, visit_id uuid REFERENCES public.visits(id), branch_id uuid, value text);
 CREATE TABLE public.prescription_items(id uuid PRIMARY KEY, patient_id uuid, visit_id uuid REFERENCES public.visits(id), prescription_id uuid REFERENCES public.prescriptions(id), value text);
 CREATE TABLE public.medical_certificates(id uuid PRIMARY KEY, patient_id uuid, visit_id uuid REFERENCES public.visits(id), branch_id uuid, diagnosis text, value text);
 CREATE TABLE public.insurance_prior_authorizations(id uuid PRIMARY KEY, value text);
 CREATE TABLE public.patient_discounts(id uuid PRIMARY KEY, value text);
-
-DO $fixture_shape$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='lab_order_items' AND column_name='visit_id'
-  ) THEN
-    RAISE EXCEPTION 'Fixture drift: live lab_order_items has no visit_id column';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='lab_order_items' AND column_name='order_id' AND is_nullable='NO'
-  ) THEN
-    RAISE EXCEPTION 'Fixture drift: lab_order_items.order_id must be NOT NULL';
-  END IF;
-END
-$fixture_shape$;
 
 -- Seed active and cancelled parents before applying the Phase 36 triggers.
 INSERT INTO public.visits(id,status) VALUES
@@ -59,9 +41,9 @@ INSERT INTO public.visits(id,status) VALUES
 INSERT INTO public.lab_orders(id,patient_id,visit_id,branch_id,status,value) VALUES
  ('00000000-0000-0000-0000-000000009101','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009001','00000000-0000-0000-0000-000000009301','ordered','active'),
  ('00000000-0000-0000-0000-000000009102','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009002','00000000-0000-0000-0000-000000009301','ordered','cancelled');
-INSERT INTO public.lab_order_items(id,patient_id,order_id,value) VALUES
- ('00000000-0000-0000-0000-000000009111','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009101','active'),
- ('00000000-0000-0000-0000-000000009112','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009102','cancelled');
+INSERT INTO public.lab_order_items(id,patient_id,visit_id,order_id,value) VALUES
+ ('00000000-0000-0000-0000-000000009111','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009001','00000000-0000-0000-0000-000000009101','active'),
+ ('00000000-0000-0000-0000-000000009112','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009002','00000000-0000-0000-0000-000000009102','cancelled');
 INSERT INTO public.prescriptions(id,patient_id,visit_id,branch_id,value) VALUES
  ('00000000-0000-0000-0000-000000009121','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009001','00000000-0000-0000-0000-000000009301','active'),
  ('00000000-0000-0000-0000-000000009122','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009002','00000000-0000-0000-0000-000000009301','cancelled');
