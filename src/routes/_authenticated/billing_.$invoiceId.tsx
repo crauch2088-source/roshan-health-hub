@@ -22,14 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
 import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
@@ -193,7 +185,7 @@ function InvoicePageInner() {
         <StatusBadge status={s(invoice, "status")} />
 
         <PaperWidthSelect value={paperWidth} onChange={setPaperWidth} lang={lang} />
-        <Button variant="outline" size="sm" onClick={() => printDocument({ kind: "invoice" }, paperWidth)}>
+        <Button variant="outline" size="sm" disabled={itemsQ.isLoading || Boolean(itemsQ.error)} onClick={() => printDocument({ kind: "invoice" }, paperWidth)}>
           <Printer className="size-4" /> {lang === "ar" ? "طباعة الفاتورة" : "Print invoice"}
         </Button>
 
