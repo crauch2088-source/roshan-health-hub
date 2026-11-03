@@ -2449,3 +2449,19 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Production PostgreSQL `17.6.1.155` and QA `17.11.0.003` both exceed the documented minimum `17.6.1.081`.
 - The private runner defaults were updated accordingly. Validation-only workflow run `41632621501` passed; the backup job remained skipped because no confirmation was supplied.
 - This does not change the gate: no PAT/age recipient has been configured, no Production connection has been attempted, and no backup artifact exists.
+
+## Live schema parity audit — 2026-11-03
+
+The current read-only production/QA catalog comparison is recorded in [`docs/SCHEMA_PARITY_AUDIT_2026-11-03.md`](SCHEMA_PARITY_AUDIT_2026-11-03.md). The pre-Phase55 read-only application-schema comparison matched tables/columns (855), constraints (218), indexes (252), triggers (69), RLS flags (58), RLS policies (210), table privileges (991) and views (5), excluding documented production-only quarantine artifacts. Phase54/54B/54C remain QA-only. Phase55 has since corrected the QA function body and private-helper EXECUTE ACLs; Production still lacks the tracked `lab_order_items.order_id` immutability check until the migration is separately promoted after backup/restore.
+
+### Phase 54C — branch-bound reversal and receipt status
+
+PR #171 is merged. Phase54, Phase54B and Phase54C are recorded in QA at versions `20261103114242`, `20261103114612` and `20261103115649`. Phase54C rejects branchless financial reversals even for super-admins and adds the authenticated-only, permission/branch-scoped `get_invoice_payment_receipt_status(uuid[])` RPC. The QA RPC metadata confirms SECURITY DEFINER, empty `search_path`, no anon EXECUTE and authenticated EXECUTE. Production remains unchanged pending encrypted backup and isolated restore evidence.
+
+### Phase 55 — clinical parent-link and helper ACL reconciliation
+
+PR #172 contains the forward-only correction for the Production Phase36 `order_id` guard drift and QA helper ACL drift. QA applied it as migration `20261103155227_roshan_phase55_clinical_parent_guard_acl_reconciliation`; read-only post-apply checks confirmed SECURITY DEFINER with empty `search_path`, immutable `order_id`, retained cancelled-visit protection, and direct EXECUTE denied to PUBLIC/anon/authenticated/service_role/authenticator for all three private routines. The Phase55 PostgreSQL 17 replay passed (run `41673636528`); exact-head standard CI passed with 18 successes, zero failures and one intentional skip (run `41673636564`). The corrected synthetic fixture now matches the live `lab_order_items` schema in both environments: no `visit_id` column, required `order_id`. Production remains unchanged.
+
+### Production gate
+
+The encrypted backup/export plus isolated restore gate remains open. Do not apply Phase54/54B/54C or Phase55 to Production until that evidence exists. The already-applied production migration `20261102232941` has a redacted, non-replayable provenance artifact and must not be re-run.
