@@ -121,3 +121,8 @@ A further source and QA read-only inspection established:
 - The vitals form saves the weight as a visit-linked row and updates the latest row. This is the correct measurement destination, but simply adding a second client write after visit creation would create a partial-success failure mode.
 
 **Implementation consequence:** before adding weight to registration, design and test a server-authoritative, idempotent intake/visit creation boundary that persists visit + initial weight and preserves consultation invoice semantics. If a single atomic boundary cannot safely include existing billing behavior, capture weight in the visit intake UI and save it through the existing vitals flow with explicit retry/pending state; never silently discard it or create a patient-level weight cache. The implementer must prove rollback/idempotency and branch/permission checks before choosing.
+
+
+## Sudan-specific evidence update — 2026-11-03
+
+A WHO Bulletin comparative review identifies Sudan Federal Ministry of Health National Standard Treatment Guidelines (2014), but the primary file was inaccessible during this review. Obtain it and check for superseding federal/state guidance before claiming local alignment. A 2025 Sudan PHC observational study reported high Watch-antibiotic use and low AWaRe compliance; it supports stewardship prioritization only and is not a dosing source. See research.md.

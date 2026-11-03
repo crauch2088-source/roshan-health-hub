@@ -103,3 +103,10 @@ At each review:
 - HL7 FHIR R5 MedicationKnowledge: https://hl7.org/fhir/R5/medicationknowledge.html
 - HL7 FHIR R5 Dosage: https://hl7.org/fhir/R5/dosage.html
 - Sudan NEML 2019: https://www.who.int/publications/m/item/sudan--national-essential-medicines-list-2019-%28english%29
+
+
+## Sudan-specific evidence located — 2026-11-03
+
+A WHO Bulletin comparative review identifies Sudan Federal Ministry of Health, *National Standard Treatment Guidelines* (2014), and cites the primary download hosted by the Sudan Health Observatory. The primary file could not be retrieved in this session; its recommendations and current validity are therefore unverified. Obtain the complete document and later federal/state circulars before encoding local protocols. Review: https://pmc.ncbi.nlm.nih.gov/articles/PMC8722630/ .
+
+A 2025 Sudan primary-care observational study (Abdou et al., J Infect Dev Ctries 19(1):91–97; DOI 10.3855/jidc.20106; https://pubmed.ncbi.nlm.nih.gov/39977472/) examined 52,274 antimicrobials across 325 PHCs in five states using 2022 data and reported 71% Watch-antibiotic use with low compliance to WHO AWaRe guidance for several syndromes. This is stewardship evidence, not a treatment/dosing guideline; it must not generate a regimen.
