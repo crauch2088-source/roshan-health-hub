@@ -36,6 +36,17 @@ test("invoice print boundary excludes all non-document controls and uses canonic
   assert.match(printRoot, /settings\["invoice_footer"\]/);
 });
 
+test("prescription printing uses a saved record and blocks incomplete orders", () => {
+  const source = read("src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(source, /create_prescription_atomic/);
+  assert.match(source, /setLastSavedPrescription\(\{ visitId, id: prescriptionId \}\)/);
+  assert.match(source, /buildPrescriptionPrintModel/);
+  assert.match(source, /PrintButton scoped/);
+  assert.match(source, /prescription_items\(id,medication_name/);
+  assert.match(source, /not a digital signature/);
+  assert.doesNotMatch(source, /window\.print\(\)/);
+});
+
 test("print-only certificate content is hidden on screen and displayed only for print", () => {
   const css = read("src/styles.css");
   const kit = read("src/components/kit.tsx");

@@ -9,6 +9,7 @@ import {
 } from "@/lib/prescription-draft";
 import { sanitizeTerm, useDebounced } from "@/lib/search";
 import { Button } from "@/components/ui/button";
+import { PrintButton } from "@/components/kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,14 +19,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { n, s, useRows, useSave, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
-import { calcAge } from "@/lib/medical";
+import { calcAge, formatDateTime } from "@/lib/medical";
+import { buildPrescriptionPrintModel } from "@/lib/print/prescription";
 import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
+  const { settings } = useSettings();
+  const [lastSavedPrescription, setLastSavedPrescription] = useState<{
+    visitId: string;
+    id: string;
+  } | null>(null);
+  const lastSavedPrescriptionId =
+    lastSavedPrescription?.visitId === visitId ? lastSavedPrescription.id : null;
   const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
     supabase
       .from("visits")
@@ -46,6 +55,21 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       .limit(1),
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
+  const savedPrescriptionQ = useRows<Row[]>(
+    ["prescription-print", visitId, lastSavedPrescriptionId],
+    () =>
+      supabase
+        .from("prescriptions")
+        .select(
+          "id,created_at,status,is_external,notes,patients(full_name,mrn),users(full_name),prescription_items(id,medication_name,dose,route,frequency,duration,quantity,dosage_form,instructions,deleted_at)",
+        )
+        .eq("id", lastSavedPrescriptionId ?? "")
+        .is("deleted_at", null)
+        .limit(1),
+    { enabled: Boolean(lastSavedPrescriptionId) },
+  );
+  const savedPrescription = (savedPrescriptionQ.data ?? [])[0] as Row | undefined;
+  const prescriptionPrintModel = buildPrescriptionPrintModel(savedPrescription);
   const isPediatric = patientAge != null && patientAge < 18;
   const pediatricWeightMissing =
     isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
@@ -125,13 +149,21 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         dosage_form: item.dosage_form,
         route: item.route,
       }));
-      const { error } = await supabase.rpc("create_prescription_atomic", {
+      const { data: prescriptionId, error } = await supabase.rpc("create_prescription_atomic", {
         p_visit_id: visitId,
         p_is_external: external,
         p_items: payload,
       });
       if (error) throw new Error(error.message);
-      return null;
+      if (typeof prescriptionId !== "string" || !prescriptionId) {
+        throw new Error(
+          lang === "ar"
+            ? "تم حفظ الوصفة لكن تعذر تحديد النسخة المحفوظة للطباعة"
+            : "The prescription was saved, but its saved record could not be identified for printing",
+        );
+      }
+      setLastSavedPrescription({ visitId, id: prescriptionId });
+      return prescriptionId;
     },
     {
       invalidate: [
@@ -420,7 +452,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             </table>
           </div>
         )}
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {prescriptionPrintModel?.complete && <PrintButton scoped />}
           <Button
             disabled={save.isPending || !items.length}
             onClick={() => save.mutate(undefined as never)}
@@ -434,6 +467,136 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Save prescription"}
           </Button>
         </div>
+        {lastSavedPrescriptionId && savedPrescriptionQ.isLoading && (
+          <p className="text-xs text-muted-foreground">
+            {lang === "ar" ? "جارٍ تجهيز النسخة المحفوظة..." : "Preparing the saved prescription copy..."}
+          </p>
+        )}
+        {savedPrescriptionQ.error && (
+          <div className="flex flex-wrap items-center gap-2 text-sm text-destructive" role="alert">
+            <span>
+              {lang === "ar"
+                ? "تعذر تحميل الوصفة المحفوظة للطباعة."
+                : "Could not load the saved prescription for printing."}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void savedPrescriptionQ.refetch()}
+            >
+              {lang === "ar" ? "إعادة المحاولة" : "Retry"}
+            </Button>
+          </div>
+        )}
+        {prescriptionPrintModel && !prescriptionPrintModel.complete && (
+          <p className="text-xs text-destructive" role="alert">
+            {lang === "ar"
+              ? "الطباعة الرسمية متوقفة حتى تكتمل بيانات الوصفة المحفوظة وهوية المريض والطبيب."
+              : "Official printing is blocked until the saved prescription, patient identity, and prescriber details are complete."}
+          </p>
+        )}
+        {prescriptionPrintModel?.complete && (
+          <div className="print-only">
+            <article
+              className="print-document-root mx-auto max-w-4xl space-y-5"
+              dir={lang === "ar" ? "rtl" : "ltr"}
+            >
+              <header className="space-y-2 border-b pb-4 text-center">
+                <h1 className="text-xl font-bold">
+                  {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
+                    settings["center_name"] ||
+                    settings["center_name_ar"] ||
+                    (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
+                </h1>
+                {(settings["address"] || settings["phone"]) && (
+                  <p className="text-sm">
+                    {[settings["address"], settings["phone"]].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                <h2 className="pt-3 text-lg font-semibold">
+                  {lang === "ar" ? "نسخة من الوصفة الطبية المحفوظة" : "Saved prescription order copy"}
+                </h2>
+              </header>
+              <section className="grid grid-cols-2 gap-2 text-sm">
+                <p>
+                  <strong>{lang === "ar" ? "المريض:" : "Patient:"}</strong>{" "}
+                  {prescriptionPrintModel.patientName}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "الرقم الطبي:" : "MRN:"}</strong>{" "}
+                  {prescriptionPrintModel.patientMrn || "—"}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "الطبيب:" : "Prescriber:"}</strong>{" "}
+                  {prescriptionPrintModel.prescriberName}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "التاريخ:" : "Date:"}</strong>{" "}
+                  {formatDateTime(prescriptionPrintModel.createdAt)}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "الحالة:" : "Status:"}</strong>{" "}
+                  {prescriptionPrintModel.status || "—"}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "النوع:" : "Type:"}</strong>{" "}
+                  {prescriptionPrintModel.isExternal
+                    ? lang === "ar"
+                      ? "خارجية"
+                      : "External"
+                    : lang === "ar"
+                      ? "داخلية"
+                      : "Internal"}
+                </p>
+              </section>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="p-2 text-start">{lang === "ar" ? "الدواء" : "Medicine"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "الشكل" : "Form"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "الجرعة" : "Dose"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "الطريق" : "Route"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "التكرار" : "Frequency"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "المدة" : "Duration"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "الكمية" : "Qty"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "التعليمات" : "Instructions"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prescriptionPrintModel.items.map((item) => (
+                      <tr key={item.id} className="border-b align-top">
+                        <td className="p-2">{item.medicationName}</td>
+                        <td className="p-2">{item.dosageForm}</td>
+                        <td className="p-2">{item.dose}</td>
+                        <td className="p-2">{item.route}</td>
+                        <td className="p-2">{item.frequency}</td>
+                        <td className="p-2">{item.duration}</td>
+                        <td className="p-2">{item.quantity}</td>
+                        <td className="p-2">{item.instructions || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {prescriptionPrintModel.notes && (
+                <p className="text-sm">
+                  <strong>{lang === "ar" ? "ملاحظات:" : "Notes:"}</strong>{" "}
+                  {prescriptionPrintModel.notes}
+                </p>
+              )}
+              <p className="border-t pt-3 text-xs">
+                {lang === "ar"
+                  ? "نسخة مطبوعة من الطلب المحفوظ؛ لا تمثل توقيعاً رقمياً."
+                  : "Printed copy of the saved order; this is not a digital signature."}
+              </p>
+              {settings["invoice_footer"] && (
+                <footer className="text-xs">{settings["invoice_footer"]}</footer>
+              )}
+            </article>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
