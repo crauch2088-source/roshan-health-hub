@@ -49,9 +49,15 @@ test("Spec Kit scripts are executable and bundled workflow exists", () => {
   assert.ok(existsSync(join(root, ".specify/workflows/workflow-registry.json")));
 });
 
-test("Roshan Constitution and Phase 53 pilot are reviewable but not prematurely planned", () => {
+test("Roshan Constitution and Phase 53 planning are reviewable and remain implementation-gated", () => {
   const constitution = readFileSync(join(root, ".specify/memory/constitution.md"), "utf8");
   const spec = readFileSync(join(root, "specs/001-clinical-document-printing/spec.md"), "utf8");
+  const plan = readFileSync(join(root, "specs/001-clinical-document-printing/plan.md"), "utf8");
+  const research = readFileSync(
+    join(root, "specs/001-clinical-document-printing/research.md"),
+    "utf8",
+  );
+  const tasks = readFileSync(join(root, "specs/001-clinical-document-printing/tasks.md"), "utf8");
   assert.match(constitution, /Clinical Safety and Data Fidelity/);
   assert.match(constitution, /Patient Privacy and Least Privilege/);
   assert.match(constitution, /Migration and Production Safety/);
@@ -60,6 +66,17 @@ test("Roshan Constitution and Phase 53 pilot are reviewable but not prematurely 
   assert.match(spec, /\[NEEDS CLARIFICATION\]/);
   assert.match(spec, /immutable payment ledger/);
   assert.match(spec, /Arabic RTL and English LTR/);
-  assert.ok(!existsSync(join(root, "specs/001-clinical-document-printing/plan.md")));
-  assert.ok(!existsSync(join(root, "specs/001-clinical-document-printing/tasks.md")));
+  assert.match(plan, /G0 — source contracts/);
+  assert.match(plan, /Do not introduce a PDF service, database migration/);
+  assert.match(research, /private\.app_has_branch_access/);
+  assert.match(research, /center_name/);
+  assert.match(tasks, /T001 Inspect QA PostgreSQL catalogs/);
+  assert.match(tasks, /Phase 0 blocks every Production implementation\/release path/);
+  assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/data-model.md")));
+  assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/quickstart.md")));
+  assert.ok(
+    existsSync(
+      join(root, "specs/001-clinical-document-printing/contracts/print-document-contract.md"),
+    ),
+  );
 });
