@@ -82,8 +82,7 @@
 
 - PR #179 (saved-prescription printing) has been synchronized with current `main` at head `b2e4f67334f7f49fc4fa86ae8e06614b4f95b263`; it is 18 commits ahead, zero behind, mergeable, and remains Draft while exact-head CI runs. It contains the explicit-route behavior and the age/custom-field safeguards being developed in PRs #183 and #125. Do not merge #125/#183 independently or close them until the final PR #179 diff is reviewed and merged; reconcile any unique documentation separately.
 - T003 is complete as an audit: current visit creation is a direct visit insert followed by a separate consultation-invoice RPC; `vitals.visit_id` is unique; and VitalsTab updates the encounter row. The proposed combined transaction still requires implementation and PG17 proof.
-- T004 remains open: QA has no medicine rows; Production has nine incomplete candidate records. Physical-pack verification and inventory create/edit role/RLS review remain required.
-- T005 remains open: allergy/chronic-condition fields are free text; structured allergy/adverse-reaction and current-medication coverage still need a complete schema/RLS audit.
+- T004 and T005 are complete as read-only discovery tasks. Their findings remain implementation constraints: QA has no formulary rows, Production candidates require physical-pack verification, and allergy/current-medication context is not yet represented by structured records.
 - T006 public-source search is complete, but no accessible current Federal/ Gezira primary STG set was verified. T049 now tracks obtaining and validating those documents; clinical activation remains blocked.
 - T007 remains blocked until the candidate formulary is normalized and a GP/pharmacist selects and signs off the initial cohort.
 
