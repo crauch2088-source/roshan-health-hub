@@ -2432,3 +2432,13 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - **Production remains unchanged**: catalog inspection confirms `reverse_invoice_payment` is absent and the generic payment-source guard is not installed. The Phase 54 and 54B migrations are not applied to Production. The encrypted backup + isolated restore gate remains open; do not apply either migration to Production until that gate is satisfied.
 - Supplier and insurance payment reversal workflows remain intentionally unsupported; their source-linked ledger rows are blocked by the generic path until dedicated, source-aware reversal functions are designed and tested.
 - Clinical acceptance, full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain open. This phase is a financial database safety improvement, not a clinical-readiness declaration.
+
+## Backup and restore runner — 2026-11-03
+
+- Created private repository `crauch2088-source/roshan-health-hub-backup-runner` to keep backup code and temporary encrypted artifacts separate from the public application repository.
+- Added a manual-only workflow with explicit Production confirmation, PostgreSQL 17.6 full database dump, ephemeral local restore/count comparison, age encryption, and one-day private Actions artifact retention. The workflow aborts if Storage object bytes or Vault secrets require additional recovery paths.
+- Validation-only runs `41631718043` and `41631926251` passed; the latter includes Bash syntax, ShellCheck, Supabase CLI 2.122.0, and the required CLI flags. The backup job was skipped intentionally because no confirmation was supplied.
+- Supabase's temporary token-based database access is a potential passwordless bridge for PostgreSQL 17+; both Roshan projects are PostgreSQL 17.6. The owner must enable the feature preview, grant a short-lived Production role rule, and add the PAT as private-repository secret `SUPABASE_DB_ACCESS_TOKEN`.
+- The owner must also generate an age keypair locally, keep the private identity offline/in a password manager, and add only the public recipient as repository variable `AGE_RECIPIENT`.
+- The connected Google Drive resumable-upload action can transfer the encrypted private Actions artifact into the existing **Roshan Health Hub Backups** folder. No Google service-account credential is required.
+- **Actual Production backup and restore rehearsal remain NOT DONE.** The private runner has not connected to Production, no secrets have been configured, and no artifact exists. No Production DDL/DML or password rotation occurred. Keep the release gate open until an encrypted artifact is uploaded, checksum verified, and restore rehearsal passes.
