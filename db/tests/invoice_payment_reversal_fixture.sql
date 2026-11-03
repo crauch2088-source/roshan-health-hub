@@ -10,8 +10,8 @@ CREATE UNIQUE INDEX uq_cashbox_source ON public.cashbox_transactions(source_type
 CREATE UNIQUE INDEX uq_cashbox_reversal_of ON public.cashbox_transactions(reversal_of) WHERE reversal_of IS NOT NULL;
 CREATE FUNCTION public.current_app_user_id() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('test.user_id', true), '')::uuid $$;
 CREATE FUNCTION public.app_has_perm(p text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT COALESCE(current_setting('test.permissions', true) LIKE '%' || p || '%', false) $$;
-CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
-CREATE FUNCTION private.app_has_branch_access(p_branch uuid) RETURNS boolean LANGUAGE sql STABLE AS $ SELECT public.is_super_admin() OR p_branch = (SELECT u.branch_id FROM public.users u WHERE u.id = public.current_app_user_id() AND u.deleted_at IS NULL AND u.active IS TRUE) $;
+CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $$;
+CREATE FUNCTION private.app_has_branch_access(p_branch uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT public.is_super_admin() OR p_branch = (SELECT u.branch_id FROM public.users u WHERE u.id = public.current_app_user_id() AND u.deleted_at IS NULL AND u.active IS TRUE) $$;
 CREATE FUNCTION public.fn_recompute_invoice_paid() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
 DECLARE v_invoice_id uuid; v_paid numeric; v_net numeric;
 BEGIN
