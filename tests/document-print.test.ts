@@ -47,6 +47,7 @@ test("only complete internal prescriptions are printable", () => {
   const complete = {
     prescription_type: "internal",
     is_external: false,
+    users: { full_name: "Dr. Example" },
     prescription_items: [{
       medication_name: "Amoxicillin",
       dose: "500 mg",
@@ -58,6 +59,7 @@ test("only complete internal prescriptions are printable", () => {
   assert.equal(isPrescriptionPrintReady(complete), true);
   assert.equal(isPrescriptionPrintReady({ ...complete, prescription_type: "external" }), false);
   assert.equal(isPrescriptionPrintReady({ ...complete, is_external: true }), false);
+  assert.equal(isPrescriptionPrintReady({ ...complete, users: null }), false);
   assert.equal(
     isPrescriptionPrintReady({
       ...complete,

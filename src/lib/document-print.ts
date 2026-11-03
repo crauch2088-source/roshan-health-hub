@@ -36,6 +36,7 @@ export function isPrescriptionPrintReady(prescription: Record<string, unknown>):
   if (prescription.prescription_type !== "internal" || prescription.is_external === true) {
     return false;
   }
+  if (!asText(nestedRow(prescription.users).full_name)) return false;
   const items = Array.isArray(prescription.prescription_items)
     ? (prescription.prescription_items as Record<string, unknown>[])
     : [];
