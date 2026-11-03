@@ -1,12 +1,12 @@
 # Tasks: Evidence-Based Prescribing & Clinical Decision Support
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [contract](contracts/decision-support-contract.md)  
-**Status**: Proposed tasks; no task is complete by document creation.
+**Progress**: T001–T003 completed as repository/database discovery only. No clinical protocol, product route mapping, dose rule, or medication interaction rule has been approved or activated.
 
 ## Phase 0 — Reconciliation and evidence acquisition
-- [ ] T001 Fetch latest main and re-read master plan/tool map/constitution.
-- [ ] T002 Reconcile PR #125, #179 and #183 against current main; identify safe merge sequence and preserve all newer safety changes.
-- [ ] T003 Inspect patient registration, first-visit creation, invoice atomic RPC and vitals write path; write down exact contract and test boundaries.
+- [x] T001 Fetch latest main and re-read master plan/tool map/constitution.
+- [x] T002 Reconcile PR #125, #179 and #183 against current main; identify safe merge sequence and preserve all newer safety changes.
+- [x] T003 Inspect patient registration, first-visit creation, invoice atomic RPC and vitals write path; write down exact contract and test boundaries.
 - [ ] T004 Inspect medicine inventory create/edit permissions and actual QA formulary metadata without reading patient rows.
 - [ ] T005 Inspect allergy, adverse reaction, current-medication and medical-history schemas/RLS; distinguish missing from unknown.
 - [ ] T006 Locate current Sudan Federal/State MoH treatment guidance and assess source/version/licensing; record unavailable sources explicitly.
@@ -76,3 +76,13 @@
 - Protocol expiry/withdrawal and source conflict.
 - RLS/branch isolation and atomic visit/invoice writes.
 - No live clinical defaults before independent sign-off.
+
+
+### Phase 0 evidence note — 2026-11-03
+
+- PR #179 (saved-prescription printing) has been synchronized with current `main` at head `b2e4f67334f7f49fc4fa86ae8e06614b4f95b263`; it is 18 commits ahead, zero behind, mergeable, and remains Draft while exact-head CI runs. It contains the explicit-route behavior and the age/custom-field safeguards being developed in PRs #183 and #125. Do not merge #125/#183 independently or close them until the final PR #179 diff is reviewed and merged; reconcile any unique documentation separately.
+- T003 is complete as an audit: current visit creation is a direct visit insert followed by a separate consultation-invoice RPC; `vitals.visit_id` is unique; and VitalsTab updates the encounter row. The proposed combined transaction still requires implementation and PG17 proof.
+- T004 remains open: QA has no medicine rows; Production has nine incomplete candidate records. Physical-pack verification and inventory create/edit role/RLS review remain required.
+- T005 remains open: allergy/chronic-condition fields are free text; structured allergy/adverse-reaction and current-medication coverage still need a complete schema/RLS audit.
+- T006 remains open: the 2014 Sudan National Standard Treatment Guidelines are identified through a secondary review, but the primary document and any superseding federal/state circulars have not been verified.
+- T007 remains blocked until the candidate formulary is normalized and a GP/pharmacist selects and signs off the initial cohort.

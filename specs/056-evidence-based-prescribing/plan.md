@@ -112,16 +112,24 @@ Preserve immutable protocol versions and record the exact version used in each p
 - Confirm source licensing and exact local clinical review owner.
 
 
-## Verified QA workflow constraints — 2026-11-03 follow-up
+## Verified repository and database findings — 2026-11-03 follow-up
 
-A further source and QA read-only inspection established:
-- The current QA `medicines` table contains **0 rows**. There is no actual formulary cohort to prioritize yet. Phase 0 must therefore obtain a reviewed Roshan formulary/product list, verify product identity/strength/formulation/route, then seed only reviewed catalogue records in QA. No protocol content should be selected from assumed stock.
-- The current patient registration form's `Save & new visit` action creates the patient through `create_patient_atomic` then navigates to `/visits?patient=<id>`.
-- The current visit form inserts the visit row directly, then calls `create_visit_consultation_invoice_atomic` separately when the consultation fee is positive. It does not currently use one combined visit+invoice transaction.
-- The vitals form saves the weight as a visit-linked row and updates the latest row. This is the correct measurement destination, but simply adding a second client write after visit creation would create a partial-success failure mode.
+A read-only source audit and QA/Production catalogue inspection established:
 
-**Implementation consequence:** before adding weight to registration, design and test a server-authoritative, idempotent intake/visit creation boundary that persists visit + initial weight and preserves consultation invoice semantics. If a single atomic boundary cannot safely include existing billing behavior, capture weight in the visit intake UI and save it through the existing vitals flow with explicit retry/pending state; never silently discard it or create a patient-level weight cache. The implementer must prove rollback/idempotency and branch/permission checks before choosing.
+- QA `public.medicines` contains **0 rows**. Production contains **9 active, non-deleted medicine catalogue rows**. Only catalogue identity fields were read; no stock quantities, prices, patient rows or financial records were retrieved. The nine candidate rows and data-quality gaps are recorded in [catalogue-audit.md](catalogue-audit.md).
+- In all nine Production rows, `brand_name`, `strength` and `dosage_form` are NULL. Some display names contain apparent strengths, but those strings are not normalized product data. `unit` values (Capsule, Tablet, Inj, Vial) are inventory units and must not be treated as authoritative dosage-form or route metadata.
+- The `Cefpodoxim` row is especially unsafe to auto-map: its generic label is misspelled/incomplete, its strength/formulation are missing, and its inventory unit is `Inj`. If the intended ingredient is cefpodoxime proxetil, current DailyMed tablet and suspension labels state oral use only. The exact local pack must be physically verified; do not infer the identity or rewrite the record from the name alone.
+- Patient registration's `Save & new visit` path calls `create_patient_atomic`, then navigates to `/visits?patient=<id>`.
+- The current visit form inserts the visit row directly, then calls `create_visit_consultation_invoice_atomic` separately when the consultation fee is positive. No single visit + initial-weight + consultation-invoice creation boundary currently exists.
+- The invoice helper is retry-aware: when a primary invoice already contains an active consultation line, the helper returns that invoice rather than adding a second consultation charge.
+- QA `vitals.visit_id` has a unique index (`vitals_visit_id_key`): one vitals row per visit. The existing VitalsTab reads that row and updates it, or inserts it if absent. Weight therefore belongs to the encounter's vitals record, not the patient master record.
+- In the inspected QA schema, `patients.allergies` and `patients.chronic_conditions` are free-text fields. No dedicated structured allergy/adverse-reaction tables were found in the inspected public schema; current-medication coverage and all related policies still require a complete audit. Free text must not be interpreted as a complete negative allergy/history record.
 
+**Implementation consequence — first-visit weight:** design one server-authoritative transaction for visit creation, optional initial weight, queue/branch attribution and consultation invoicing. It must preserve the existing queue and branch triggers, require the relevant `visits.create` and (when weight is supplied) `emr.create` permissions, enforce patient/visit branch equality, and use an idempotent caller-supplied visit identifier. Preserve the existing consultation-invoice retry semantics. Prove rollback, retry, role and cross-branch behavior in disposable PostgreSQL 17 before changing the UI or applying a QA migration. Do not silently overwrite an existing encounter weight on a replay, and never create a patient-level weight cache.
+
+**Catalogue consequence:** treat the nine Production entries only as a candidate review list. Verify each pack's active ingredient, brand, strength, dosage form, concentration, route(s), and stock unit against the physical label and an authoritative product source before copying normalized records to QA. No route, frequency, dose, or protocol is approved by this audit.
+
+No Production data or schema was changed.
 
 ## Sudan-specific evidence update — 2026-11-03
 

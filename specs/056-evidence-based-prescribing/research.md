@@ -110,3 +110,14 @@ At each review:
 A WHO Bulletin comparative review identifies Sudan Federal Ministry of Health, *National Standard Treatment Guidelines* (2014), and cites the primary download hosted by the Sudan Health Observatory. The primary file could not be retrieved in this session; its recommendations and current validity are therefore unverified. Obtain the complete document and later federal/state circulars before encoding local protocols. Review: https://pmc.ncbi.nlm.nih.gov/articles/PMC8722630/ .
 
 A 2025 Sudan primary-care observational study (Abdou et al., J Infect Dev Ctries 19(1):91–97; DOI 10.3855/jidc.20106; https://pubmed.ncbi.nlm.nih.gov/39977472/) examined 52,274 antimicrobials across 325 PHCs in five states using 2022 data and reported 71% Watch-antibiotic use with low compliance to WHO AWaRe guidance for several syndromes. This is stewardship evidence, not a treatment/dosing guideline; it must not generate a regimen.
+
+
+## Production catalogue evidence and product-label cross-check — 2026-11-03
+
+A read-only query found nine active, non-deleted Production medicine catalogue rows and zero QA medicine rows. The normalized product fields `brand_name`, `strength`, and `dosage_form` were NULL in every Production row. The inventory `unit` field is not sufficient evidence of administration route or exact formulation. See [catalogue-audit.md](catalogue-audit.md) for the limited candidate list and explicit data-quality caveats. No stock, price, patient, or financial data was retrieved.
+
+### Cefpodoxime identity/route mismatch
+- DailyMed, **CEFPODOXIME PROXETIL tablet, film coated**, label updated 2026-10-22: https://www.dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=ce5646cb-a450-4c2c-8499-6ecf71b12b0e
+- DailyMed, **CEFPODOXIME PROXETIL granule, for suspension**: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=63777889-d306-4fc3-88da-b24859040ef4
+- Both labels identify the products as for oral use only. This is a product-label cross-check, not proof that the local `Cefpodoxim` inventory row is cefpodoxime proxetil. Its `Inj` unit is therefore a high-priority identity mismatch to quarantine from route auto-fill until the actual pack and active ingredient are verified.
+- Do not transfer any dosing table from these labels into Roshan's active protocols without indication-specific review, local guideline reconciliation, population boundaries, and independent GP/pharmacist approval.
