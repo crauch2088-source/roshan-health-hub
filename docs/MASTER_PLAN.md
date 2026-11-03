@@ -2315,10 +2315,17 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Verification: pure date-range unit tests; source/ACL regression tests; disposable PostgreSQL 17 baseline + forward migrations 34/46/47/48/49/50/51/52; anon denial; authenticated-without-app-user denial; function metadata and grants; branch authorization and RLS review; CI typecheck/lint/build/guard; public browser checks at 320/360/390/430px. Do not apply to QA/production until prerequisite migrations and backup/release gates are reconciled.
 
 ### Phase 53 — Clinical document printing (receipt, invoice, prescription, certificates)
-- Introduce shared print templates with Arabic RTL/English LTR, A4 PDF/browser print and 58/80 mm thermal layouts, configurable clinic identity/footer, QR/serial verification, page-break controls and accessible preview.
-- Receipts must reconcile to the immutable payment ledger and show amount paid, method, timestamp, cashier, invoice balance and reversal state; never generate a receipt from an unposted client-side amount.
-- Prescriptions must render only saved, signed/authorized prescription data, include generic/brand name, dose, route, frequency, duration, quantity, prescriber and date; do not infer missing medication instructions. Protect patient data and avoid embedding public URLs.
-- No new database tables unless print-job audit/versioning is explicitly required. Tests cover RTL/LTR, thermal widths, PDF/browser print snapshots, receipt/payment linkage, void/reprint labels, prescription completeness and role authorization.
+- **v1 rendering policy:** use the existing browser print dialog / Save as PDF. A4 is the first supported layout target. Do not add a PDF service or dependency. 58 mm and 80 mm thermal profiles remain unclaimed until the actual center printer, driver, and browser have been physically tested.
+- **Financial integrity:** a receipt is only a representation of one persisted payment. It must pass Phase54C get_invoice_payment_receipt_status(uuid[]) (maximum 200 IDs per call), which requires both payments.read and billing.read, checks a non-null matching payment/invoice/cashbox branch, ledger amount, and reversal linkage. Reversed receipts must be visibly marked void/reversed. Never use the unsaved payment form, created_by as a cashier fallback, or the date-only payment_date as a received timestamp; the write path persists received_by and received_at.
+- **Clinical integrity:** the current prescription schema has no digital-signature or explicit signed/approved timestamp. v1 may print only a persisted application-created prescription order and must not call it signed. Preserve saved medication instructions exactly and block incomplete required fields.
+- **Identity and privacy:** use the existing settings keys center_name, center_name_ar, address, phone, invoice_footer; do not introduce parallel clinic_* keys. QA currently has no active system_settings rows, so configured branding has not been visually verified. QR/serial verification and public document URLs are excluded from v1; no patient identifiers in QR or public endpoints.
+- **Current delivery evidence (2026-11-03):**
+  - PR [#178](https://github.com/crauch2088-source/roshan-health-hub/pull/178) merged the invoice/certificate print isolation and canonical settings-key correction. Its production deployment is READY at https://roshan-health-hub.vercel.app/.
+  - PR [#179](https://github.com/crauch2088-source/roshan-health-hub/pull/179) is a **draft** for printing a saved prescription order. It uses persisted prescription/child rows, blocks incomplete instructions, attributes the prescriber, and makes no digital-signature claim. Its final print-root isolation change is still under CI review.
+  - PR [#181](https://github.com/crauch2088-source/roshan-health-hub/pull/181) is a **draft** for persisted payment receipts. It uses the Phase54C ledger-status RPC, branch checks, cashier privacy rules, and explicit reversal labels. It is QA-only until Phase54C is promoted to Production after the backup/restore gate.
+  - No Phase53 production migration or production business-data write has been performed.
+- **Remaining release gates:** exact-head CI success for both draft PRs; QA synthetic PostgreSQL and authenticated role/branch E2E; one-record print preview in a real browser; A4 Arabic RTL/English LTR inspection; device/printer model confirmation; thermal tests only if required; and clinical/finance staff acceptance. Phase53 must not be marked complete until these pass.
+- No new database tables, broad grants, public verification route, or paid print service are planned.
 
 ### Phase 54 — Inter-branch pharmacy transfers
 - Add transfer header + line tables, immutable transfer events/status history, source/destination branch IDs, idempotency key, actor/timestamps and reason. Stock is reserved at dispatch and received atomically; never treat branch stock as fungible before destination receipt.
@@ -2415,7 +2422,7 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 ## Agent-neutral Spec Kit adoption — 2026-11-03
 
 - Adopted the official GitHub Spec Kit CLI v1.2.6 shared scaffolding with integration none. The CLI was run against a disposable clone of this repository and reported Integration status: OK; default/installed integration none; zero modified managed files; zero missing managed files; zero invalid manifest paths; zero unchecked manifests.
-- Committed the CLI-generated .specify/ scripts, templates, workflow, integration metadata and manifest; added the Roshan Constitution and a Draft Phase 53 clinical-document-printing specification. The Draft intentionally has no plan.md or tasks.md until source contracts and open requirements are clarified.
+- Committed the CLI-generated .specify/ scripts, templates, workflow, integration metadata and manifest; added the Roshan Constitution and a Draft Phase 53 clinical-document-printing specification. Evidence-based planning artifacts now exist: research.md, plan.md, data-model.md, quickstart.md, tasks.md, and the internal print-document contract. The feature spec remains Draft while printer/branding and staff-acceptance decisions are unresolved; the plan's G0–G5 gates remain binding.
 - Removed the unused agent bootstrap configuration and Codespaces devcontainer; the already-merged feature branch was deleted. Historical PR/commit records remain in GitHub audit history and were not rewritten.
 - Added a focused Spec Kit validation workflow and contract test. It validates the pinned CLI and agent-neutral state; it does not build/deploy the application or access Supabase/Vercel.
 - No application source, package manifest/lockfile, SQL migration, Supabase project, Vercel setting, production credential, clinical/financial record, or production data was changed.
@@ -2465,3 +2472,34 @@ PR #172 merged as `a7592e8fc63f498e55e0962718f4ad84557f1b56`. QA applied Phase55
 ### Production gate
 
 The encrypted backup/export plus isolated restore gate remains open. Do not apply Phase54/54B/54C or Phase55 to Production until that evidence exists. The already-applied production migration `20261102232941` has a redacted, non-replayable provenance artifact and must not be re-run.
+
+## Prescription UX and medication safety review — 2026-11-03
+
+Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No application code, database, patient/financial records, or deployment was changed in this review.
+
+### Verified findings on main
+
+- `src/lib/prescription-draft.ts` derives `route = "oral"` whenever the selected catalogue dosage form is tablet, capsule, syrup, or suspension. Dosage form alone does not establish the intended route for a specific product/prescription; the route should be explicitly selected by the prescriber. This auto-default is present both on main and in the two active prescription-related work branches inspected.
+- `validatePrescriptionDrafts()` on main checks name, dose, frequency, duration and positive integer quantity, but does not require `dosage_form` or `route`. The existing custom-fields branch adds these two required-field checks, but retains the automatic oral route default.
+- `PrescriptionTab.tsx` renders “Custom” as an empty Select value for dosage form, dose, frequency, duration and route; no corresponding free-text input is present in the inspected source. Selecting Custom therefore does not provide a way to enter a custom value.
+- Medicine selection reads `generic_name`, `brand_name`, `strength` and `dosage_form`; however, the inventory medicine-create form currently writes only `name`, `unit`, prices and reorder level. The catalogue workflow therefore does not let staff populate all structured identity/formulation fields used by prescription search and selection.
+- The pharmacy queue query selects prescription-item `dosage`, `frequency` and `duration`, but not `dosage_form`, `route` or `instructions`. Both the mobile and desktop queue summaries display only the first three regimen fields. This is a continuity-of-information gap for pharmacist review.
+- Existing pediatric UI cues ask the clinician to verify visit weight and maximum daily dose and explicitly state that the application does not calculate pediatric doses. No dose calculator or clinically validated age/weight protocol was introduced by this review.
+
+### Branch overlap and verification limits
+
+- `fix/prescription-custom-fields-age-cue-20261027` compares as 8 commits ahead and 15 behind main (diverged). It changes `PrescriptionTab.tsx`, `medical.ts`, `prescription-draft.ts`, the clinical workflow test and this plan. Do not merge it without reconciling the 15 newer main commits.
+- `feat/phase53-prescription-print-20261103` compares as 9 commits ahead and 0 behind main. It also changes `PrescriptionTab.tsx` and adds the prescription print model/tests. Any route/default or form validation correction must be reconciled with this branch before merge.
+- The repository's open-PR search returned no results in this connector call, so the branch comparisons above are verified but current PR numbers/states are not independently confirmed here.
+- The exact main combined status currently exposes one successful Vercel status. The commit-workflow-runs query returned no runs; this is not evidence that GitHub Actions passed. Do not describe the current main Actions suite as green on this evidence.
+
+### Safe next implementation sequence
+
+1. Coordinate the shared `PrescriptionTab.tsx` changes between the custom-fields and Phase53 print branches; avoid parallel edits to the same component.
+2. Add a failing unit regression proving catalogue selection leaves `route` empty for every dosage form; then remove inferred route assignment and require explicit clinician selection. Preserve the dosage-form prefill because it is catalogue metadata, not a route inference.
+3. Add tests for custom free-text entry and completeness validation, including dosage form and route. Keep dose/frequency/duration clinician-entered; do not introduce protocol defaults or arbitrary duration caps.
+4. Extend the pharmacy read model and mobile/desktop summaries to show the persisted formulation, route and instructions only after confirming the exact database column names and existing RPC payload contract. No migration should be assumed necessary.
+5. Extend medicine catalogue maintenance only after confirming existing schema constraints and permission/RLS behavior for the structured fields. Do not add a migration solely to make the UI look complete.
+6. Verify exact-head unit/guard tests, typecheck, lint and build in the repository's documented sequence. Keep clinical E2E acceptance deferred until isolated free QA and a synthetic doctor identity are available.
+
+Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.

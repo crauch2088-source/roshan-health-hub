@@ -41,7 +41,7 @@ The bundled workflow is present, but none does not install interactive /speckit.
 - specs/NNN-feature/: requirements and feature-specific design artifacts.
 - docs/: durable audit, reconciliation, and execution records.
 
-A feature spec links to its Master Plan phase rather than copying the roadmap. The initial pilot is specs/001-clinical-document-printing/spec.md, based on Phase 53. It remains Draft; no plan/task list is authorized until the listed clarifications and current-source contract review are complete.
+A feature spec links to its Master Plan phase rather than copying the roadmap. The initial pilot is specs/001-clinical-document-printing/spec.md, based on Phase 53. It remains Draft because the physical printer/browser matrix, configurable logo/branch identity decision, and actual clinic-role acceptance are unresolved. Current-source research, plan, data model, quickstart, task breakdown, and the internal print contract are committed beside it. Those planning artifacts do not authorize Production release; G0–G5 and the backup/restore gate still apply.
 
 ## CLI installation for reproducible validation
 
