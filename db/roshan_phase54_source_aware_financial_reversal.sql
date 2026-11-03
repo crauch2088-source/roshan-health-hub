@@ -265,7 +265,17 @@ BEGIN
       AND i.branch_id IS NOT NULL
       AND c.branch_id = p.branch_id
       AND p.branch_id = i.branch_id
-      AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount),
+      AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount)
+      AND (
+        (NOT COALESCE(c.is_reversed, false) AND r.id IS NULL)
+        OR (
+          c.is_reversed
+          AND r.id IS NOT NULL
+          AND r.source_type = 'reversal'
+          AND r.branch_id = c.branch_id
+          AND r.amount = -c.amount
+        )
+      ),
     COALESCE(c.is_reversed, false),
     CASE WHEN c.is_reversed THEN c.reversal_reason ELSE NULL END,
     r.transaction_date
