@@ -33,14 +33,7 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
 });
 
 test("medicine catalogue selection never infers an administration route from dosage form", () => {
-  for (const dosage_form of [
-    "tablet",
-    "capsule",
-    "syrup",
-    "suspension",
-    "injection",
-    "cream",
-  ]) {
+  for (const dosage_form of ["tablet", "capsule", "syrup", "suspension", "injection", "cream"]) {
     const draft = createPrescriptionDraftForMedicine({ id: "medicine-1", dosage_form });
     assert.equal(draft.dosage_form, dosage_form);
     assert.equal(draft.route, "");
