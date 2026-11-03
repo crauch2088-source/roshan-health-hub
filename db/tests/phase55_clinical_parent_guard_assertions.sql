@@ -59,7 +59,7 @@ BEGIN
     RAISE EXCEPTION 'Phase55 clinical guard must remain SECURITY DEFINER with an empty search_path';
   END IF;
 END $phase55_assertions$;
-GRANT UPDATE ON public.lab_order_items TO authenticated;
+GRANT SELECT, UPDATE ON public.lab_order_items TO authenticated;
 SET LOCAL ROLE authenticated;
 UPDATE public.lab_order_items SET value='trigger-authenticated-role' WHERE id='00000000-0000-0000-0000-000000009111';
 RESET ROLE;
