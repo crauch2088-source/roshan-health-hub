@@ -222,8 +222,8 @@ function CertificatesPageInner() {
                       return (
                         <TableRow key={s(c, "id")}>
                           <TableCell dir="ltr">
-                              {s(c, "certificate_number") || s(c, "id")}
-                            </TableCell>
+                            {s(c, "certificate_number") || s(c, "id")}
+                          </TableCell>
                           <TableCell dir="ltr">{formatDate(s(c, "created_at"))}</TableCell>
                           <TableCell>
                             <div className="font-medium">{s(p, "full_name")}</div>
@@ -235,8 +235,8 @@ function CertificatesPageInner() {
                             {formatDate(s(c, "start_date"))} → {formatDate(s(c, "end_date"))}
                           </TableCell>
                           <TableCell className="max-w-[24rem]">
-                              {s(c, "diagnosis") || "—"}
-                            </TableCell>
+                            {s(c, "diagnosis") || "—"}
+                          </TableCell>
                           <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
                           <TableCell className="text-end">
                             <Button
