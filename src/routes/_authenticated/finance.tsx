@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { n, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { isGenericCashboxReversalAllowed } from "@/lib/cashbox-reversal";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -125,7 +126,7 @@ function CashboxTab({ currency }: { currency: string }) {
     supabase
       .from("cashbox_transactions")
       .select(
-        "id, transaction_type, amount, payment_method, category, description, transaction_date, is_reversed, reversal_of",
+        "id, transaction_type, amount, payment_method, category, description, source_type, transaction_date, is_reversed, reversal_of",
       )
       .is("deleted_at", null)
       .order("transaction_date", { ascending: false })
@@ -252,7 +253,7 @@ function CashboxTab({ currency }: { currency: string }) {
                             {t("reversal")}
                           </Badge>
                         ) : null}
-                        {can("cashbox.update") && !tx["is_reversed"] && !tx["reversal_of"] ? (
+                        {can("cashbox.update") && isGenericCashboxReversalAllowed(s(tx, "source_type")) && !tx["is_reversed"] && !tx["reversal_of"] ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -313,7 +314,7 @@ function CashboxTab({ currency }: { currency: string }) {
                             {amt > 0 ? `+${money(amt, currency)}` : money(amt, currency)}
                           </TableCell>
                           <TableCell className="no-print text-end">
-                            {can("cashbox.update") && !tx["is_reversed"] && !tx["reversal_of"] ? (
+                            {can("cashbox.update") && isGenericCashboxReversalAllowed(s(tx, "source_type")) && !tx["is_reversed"] && !tx["reversal_of"] ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
