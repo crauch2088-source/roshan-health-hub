@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: phase54-financial-reversal-\${{ github.ref }}
+  group: phase54-financial-reversal-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
