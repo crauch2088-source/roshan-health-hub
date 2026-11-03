@@ -106,10 +106,11 @@ Preserve immutable protocol versions and record the exact version used in each p
 - **Shared PR conflicts**: reconcile existing prescription UI branches before editing shared components.
 
 ## Open design checks before schema/code
-- Confirm current `create_visit_atomic`/visit+invoice creation contract and how Save & New Visit flows from patient registration.
-- Confirm whether patient allergies/history currently exist in any other table/view and their RLS contracts.
-- Confirm actual QA catalogue and stock product identities without retrieving patient data.
-- Confirm source licensing and exact local clinical review owner.
+
+- Design and PG17-test the combined visit + optional initial-weight + consultation-invoice transaction, including idempotency, rollback, role and cross-branch cases.
+- Verify each Production candidate against its physical pack and authoritative product label before normalized QA import or route mapping.
+- Decide the structured allergy/adverse-reaction and current-medication reconciliation model, including unknown/negative/positive states and branch-scoped RLS.
+- Confirm source redistribution rights and name the local GP/pharmacist clinical reviewers.
 
 
 ## Verified repository and database findings — 2026-11-03 follow-up
@@ -123,7 +124,7 @@ A read-only source audit and QA/Production catalogue inspection established:
 - The current visit form inserts the visit row directly, then calls `create_visit_consultation_invoice_atomic` separately when the consultation fee is positive. No single visit + initial-weight + consultation-invoice creation boundary currently exists.
 - The invoice helper is retry-aware: when a primary invoice already contains an active consultation line, the helper returns that invoice rather than adding a second consultation charge.
 - QA `vitals.visit_id` has a unique index (`vitals_visit_id_key`): one vitals row per visit. The existing VitalsTab reads that row and updates it, or inserts it if absent. Weight therefore belongs to the encounter's vitals record, not the patient master record.
-- In the inspected QA schema, `patients.allergies` and `patients.chronic_conditions` are free-text fields. No dedicated structured allergy/adverse-reaction tables were found in the inspected public schema; current-medication coverage and all related policies still require a complete audit. Free text must not be interpreted as a complete negative allergy/history record.
+- In QA, `patients.allergies` and `patients.chronic_conditions`, plus `clinical_notes.allergy_history` and `clinical_notes.drug_history`, are free-text fields. The public schema contains no dedicated structured allergy/adverse-reaction, drug-interaction, or current-medication reconciliation table. `prescriptions`/`prescription_items` record orders and dispensing state, but do not establish a reconciled current medication list. RLS and branch contracts for patients, clinical notes, prescriptions, prescription items, medicines and vitals were inspected; see [clinical-context-audit.md](clinical-context-audit.md). Free text and historical prescriptions must not be interpreted as a complete negative allergy/history or current-medication state.
 
 **Implementation consequence — first-visit weight:** design one server-authoritative transaction for visit creation, optional initial weight, queue/branch attribution and consultation invoicing. It must preserve the existing queue and branch triggers, require the relevant `visits.create` and (when weight is supplied) `emr.create` permissions, enforce patient/visit branch equality, and use an idempotent caller-supplied visit identifier. Preserve the existing consultation-invoice retry semantics. Prove rollback, retry, role and cross-branch behavior in disposable PostgreSQL 17 before changing the UI or applying a QA migration. Do not silently overwrite an existing encounter weight on a replay, and never create a patient-level weight cache.
 

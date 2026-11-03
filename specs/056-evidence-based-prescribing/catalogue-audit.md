@@ -48,3 +48,12 @@ For each candidate product, verify and record:
 7. Product-label source, version/retrieval date, reviewer, and verification status.
 
 Until these checks are complete, every candidate remains **unverified**. Do not seed dose, frequency, indication, route, contraindication, interaction, or protocol content from these rows. This audit is a candidate inventory list, not a clinical formulary or prescribing authorization.
+
+
+## Inventory maintenance and permissions
+
+The current `src/routes/_authenticated/inventory.tsx` create form inserts into `public.medicines` using only `name`, `unit`, cost/selling prices, zero initial stock and reorder level. It does not separately collect `generic_name`, `brand_name`, `strength`, or `dosage_form`. The database requires non-null `generic_name`; the `normalize_medicine_names` trigger falls back to `name` (then `brand_name`) when it is missing. This preserves the constraint but does not guarantee that the stored generic name is a clean active-ingredient identity.
+
+RLS on `medicines` requires `pharmacy.read`, `pharmacy.create`, `pharmacy.update`, and `pharmacy.delete` for the corresponding operations. The reviewed inventory page exposes creation but no direct medicine update call was found in the current code search. A product-identity editor and explicit verification status are therefore part of the required catalogue foundation; do not treat the trigger fallback as verification.
+
+The separate legacy `medicines_2` table contains zero QA rows, has a legacy integer ID/name/price/stock shape, and only an `admin.full` policy. It is not the current prescribing catalogue and must not be used as a substitute.
