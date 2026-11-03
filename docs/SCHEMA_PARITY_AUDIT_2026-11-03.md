@@ -51,7 +51,7 @@ Selected structural fingerprints:
 
 Production's `private.phase36_guard_clinical_visit_links()` does not contain the `lab_order_items.order_id` immutability check present in the tracked Phase 36 migration and the QA function. A caller able to update that child row could re-parent the lab item by changing `order_id` while leaving `patient_id` and `visit_id` unchanged.
 
-Phase 55 PR #172 adds a forward-only correction that restores the tracked function body and tests the exact regression. It also verifies that trigger execution still works after direct function EXECUTE is revoked.
+Phase55 PR #172 adds a forward-only correction that restores the tracked function body and tests the exact regression. It also verifies that trigger execution still works after direct function EXECUTE is revoked. The migration is now applied to QA as `20261103155227`; Production remains unchanged and still requires this correction after the backup/restore gate.
 
 ### QA-only private helper ACL drift
 
@@ -75,6 +75,7 @@ The following migrations are applied and recorded in QA:
 | 54 | `20261103114242` | `roshan_phase54_source_aware_financial_reversal` | Not applied |
 | 54B | `20261103114612` | `roshan_phase54b_payment_updated_at_compat` | Not applied |
 | 54C | `20261103115649` | `roshan_phase54c_branchless_receipt_integrity` | Not applied |
+| 55 | `20261103155227` | `roshan_phase55_clinical_parent_guard_acl_reconciliation` | Not applied |
 
 Phase 54B exists because `public.payments` has `updated_by` but **does not have `updated_at`**. The original Phase 54 migration is historical and remains unchanged; Phase 54B is the forward compatibility correction. Phase 54C is a separate forward-only migration and adds:
 
@@ -105,7 +106,7 @@ The production migration `20261102232941 roshan_synthetic_patient_cleanup_and_st
 
 ## Next gates
 
-1. Complete Phase 55 CI and merge; apply Phase 55 to QA; verify the function/ACL fingerprint.
+1. Phase55 PostgreSQL 17 replay and exact-head full CI passed; QA application and read-only function/ACL verification are complete. Merge PR #172 after main-branch reconciliation and final review.
 2. Finish Phase 53 printing UI using the Phase 54C receipt-status RPC; keep receipt printing visibly unavailable when the RPC is absent in production.
 3. Obtain a verified encrypted production backup and isolated restore before applying Phase 54, 54B, 54C and Phase 55 to production.
 4. Re-run the same catalog fingerprint and advisor checks after each environment transition; do not claim 100% parity until function bodies and effective routine privileges match, excluding only the documented quarantine artifacts.

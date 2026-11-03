@@ -2433,10 +2433,26 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Supplier and insurance payment reversal workflows remain intentionally unsupported; their source-linked ledger rows are blocked by the generic path until dedicated, source-aware reversal functions are designed and tested.
 - Clinical acceptance, full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain open. This phase is a financial database safety improvement, not a clinical-readiness declaration.
 
+## Backup and restore runner — 2026-11-03
+
+- Created private repository `crauch2088-source/roshan-health-hub-backup-runner` to keep backup code and temporary encrypted artifacts separate from the public application repository.
+- Added a manual-only workflow with explicit Production confirmation, PostgreSQL 17.6 full database dump, ephemeral local restore/count comparison, age encryption, and one-day private Actions artifact retention. The workflow aborts if Storage object bytes or Vault secrets require additional recovery paths.
+- Validation-only runs `41631718043` and `41631926251` passed; the latter includes Bash syntax, ShellCheck, Supabase CLI 2.122.0, and the required CLI flags. The backup job was skipped intentionally because no confirmation was supplied.
+- Supabase's temporary token-based database access is a potential passwordless bridge for PostgreSQL 17+; both Roshan projects are PostgreSQL 17.6. The owner must enable the feature preview, grant a short-lived Production role rule, and add the PAT as private-repository secret `SUPABASE_DB_ACCESS_TOKEN`.
+- The owner must also generate an age keypair locally, keep the private identity offline/in a password manager, and add only the public recipient as repository variable `AGE_RECIPIENT`.
+- The connected Google Drive resumable-upload action can transfer the encrypted private Actions artifact into the existing **Roshan Health Hub Backups** folder. No Google service-account credential is required.
+- **Actual Production backup and restore rehearsal remain NOT DONE.** The private runner has not connected to Production, no secrets have been configured, and no artifact exists. No Production DDL/DML or password rotation occurred. Keep the release gate open until an encrypted artifact is uploaded, checksum verified, and restore rehearsal passes.
+
+### Backup runner connection correction (2026-11-03)
+
+- Current Supabase documentation specifies SSL enforcement, shared pooler port `5432`, and `options=-c jit=true` for temporary database access.
+- Production PostgreSQL `17.6.1.155` and QA `17.11.0.003` both exceed the documented minimum `17.6.1.081`.
+- The private runner defaults were updated accordingly. Validation-only workflow run `41632621501` passed; the backup job remained skipped because no confirmation was supplied.
+- This does not change the gate: no PAT/age recipient has been configured, no Production connection has been attempted, and no backup artifact exists.
 
 ## Live schema parity audit — 2026-11-03
 
-The current read-only production/QA catalog comparison is recorded in [`docs/SCHEMA_PARITY_AUDIT_2026-11-03.md`](SCHEMA_PARITY_AUDIT_2026-11-03.md). The application-schema fingerprint matches exactly for tables/columns (855), constraints (218), indexes (252), triggers (69), RLS flags (58), RLS policies (210), table privileges (991) and views (5), excluding the documented production-only quarantine artifacts. Function definitions and routine privileges are not yet identical: QA contains Phase54/54C RPCs, and production's Phase36 guard lacks the tracked `lab_order_items.order_id` immutability check. QA also has two private helper PUBLIC EXECUTE grants to revoke.
+The current read-only production/QA catalog comparison is recorded in [`docs/SCHEMA_PARITY_AUDIT_2026-11-03.md`](SCHEMA_PARITY_AUDIT_2026-11-03.md). The pre-Phase55 read-only application-schema comparison matched tables/columns (855), constraints (218), indexes (252), triggers (69), RLS flags (58), RLS policies (210), table privileges (991) and views (5), excluding documented production-only quarantine artifacts. Phase54/54B/54C remain QA-only. Phase55 has since corrected the QA function body and private-helper EXECUTE ACLs; Production still lacks the tracked `lab_order_items.order_id` immutability check until the migration is separately promoted after backup/restore.
 
 ### Phase 54C — branch-bound reversal and receipt status
 
@@ -2444,8 +2460,8 @@ PR #171 is merged. Phase54, Phase54B and Phase54C are recorded in QA at versions
 
 ### Phase 55 — clinical parent-link and helper ACL reconciliation
 
-PR #172 contains the forward-only correction for the production Phase36 `order_id` guard drift and QA helper ACL drift. Its targeted PostgreSQL 17 test has passed; full CI and QA application remain pending. No production data or schema was changed by this work.
+PR #172 contains the forward-only correction for the Production Phase36 `order_id` guard drift and QA helper ACL drift. QA applied it as migration `20261103155227_roshan_phase55_clinical_parent_guard_acl_reconciliation`; read-only post-apply checks confirmed SECURITY DEFINER with empty `search_path`, immutable `order_id`, retained cancelled-visit protection, and direct EXECUTE denied to PUBLIC/anon/authenticated/service_role/authenticator for all three private routines. The Phase55 PostgreSQL 17 replay passed (run `41673636528`); exact-head standard CI passed with 18 successes, zero failures and one intentional skip (run `41673636564`). The corrected synthetic fixture now matches the live `lab_order_items` schema in both environments: no `visit_id` column, required `order_id`. Production remains unchanged.
 
 ### Production gate
 
-The connected Supabase tools do not expose a verified encrypted backup/export plus isolated restore workflow. Do not apply Phase54/54B/54C or Phase55 to production until that evidence exists. The already-applied production migration `20261102232941` has a redacted, non-replayable provenance artifact and must not be re-run.
+The encrypted backup/export plus isolated restore gate remains open. Do not apply Phase54/54B/54C or Phase55 to Production until that evidence exists. The already-applied production migration `20261102232941` has a redacted, non-replayable provenance artifact and must not be re-run.

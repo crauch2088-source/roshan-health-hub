@@ -32,3 +32,22 @@
 - Dedicated supplier-payment and insurance-claim-payment reversal workflows are not implemented; generic reversal blocks those source-linked rows.
 - Full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain open.
 - The SECURITY DEFINER advisor finding for `reverse_invoice_payment` is expected for this guarded authenticated RPC; it is not executable by anon. Existing unrelated advisor findings remain unchanged.
+
+## Phase 54C, UI guard, and current deployment follow-up (2026-11-03)
+
+- Phase 54C source is present in main: `db/roshan_phase54c_branchless_receipt_integrity.sql`.
+- QA migration `20261103115649_roshan_phase54c_branchless_receipt_integrity` is present in the QA migration history.
+- Dedicated PostgreSQL 17 workflow run `41667019118` passed against main SHA `a1ee3ae937f351311ab1838a135ce6e95d825db0`; the synthetic fixture, Phase 54/54B/54C replay, and behavioral assertions all succeeded.
+- PR #176 merged as `e098b9ed7110a6c9d0d623a790989d1c89ef58d0`. The finance UI now loads `source_type`, suppresses generic cashbox reversal for invoice/supplier/insurance payment ledger rows in mobile and desktop layouts, and explains the restriction in Arabic and English.
+- Exact main push CI run `41669124069`: 18 successful jobs, zero failures, one intentional skip (canonical baseline replay plus authenticated clinical acceptance).
+- Vercel Production deployment `dpl_93E58qVFXexLc8RFmPDUj67KrAUA` reached READY for the merge commit. A 30-minute post-deploy runtime-error query returned no errors.
+- No Production or QA database writes were made as part of PR #176 or this follow-up.
+
+## Outstanding reconciliation and release gates
+
+- Production migration history currently contains no Phase 54, 54B, or 54C migration. Do not apply them to Production until the encrypted backup and isolated restore rehearsal pass.
+- QA migration history also contains `20261103155227_roshan_phase55_clinical_parent_guard_acl_reconciliation`, but no matching Phase 55 source migration or commit was found on main at SHA `e098b9ed7110a6c9d0d623a790989d1c89ef58d0`. Treat this as an unresolved QA/source-parity discrepancy; do not replay, reverse, or infer its SQL. Reconcile its provenance and source before further migration-chain work.
+- The source-specific invoice reversal RPC is not yet exposed as an action in the UI. The generic reversal path is now blocked for all source-linked payment types. Supplier and insurance source-specific reversal workflows remain unimplemented.
+- Encrypted Production backup and restore rehearsal remain NOT DONE. The private backup runner is prepared, but its short-lived Supabase PAT secret and public age recipient variable still require owner-side secure setup; the age private identity must remain offline or in a password manager.
+- Full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain open.
+

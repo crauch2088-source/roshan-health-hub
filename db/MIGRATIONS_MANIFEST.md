@@ -241,8 +241,8 @@ The historical entries above remain unchanged. Current environment ledgers and f
 | 54 | `db/roshan_phase54_source_aware_financial_reversal.sql` | `20261103114242` | Not applied |
 | 54B | `db/roshan_phase54b_payment_updated_at_compat.sql` | `20261103114612` | Not applied |
 | 54C | `db/roshan_phase54c_branchless_receipt_integrity.sql` | `20261103115649` | Not applied |
-| 55 | `db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql` | Candidate; PR #172 | Not applied |
+| 55 | `db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql` | `20261103155227` | Not applied |
 
-As checked on 2026-11-03, production records 129 migrations and QA records 20. These counts do not establish schema parity; see `docs/SCHEMA_PARITY_AUDIT_2026-11-03.md` for the read-only catalog fingerprints and known function/ACL differences. Phase54/54B/54C are applied only in QA. Phase55 is not yet applied to either environment.
+As checked on 2026-11-03 after Phase55 QA application, Production records 129 migrations and QA records 21. These counts do not establish schema parity; see `docs/SCHEMA_PARITY_AUDIT_2026-11-03.md` for read-only catalog fingerprints and known function/ACL differences. Phase54/54B/54C/55 are applied only in QA. Production remains unchanged.
 
 **Production safety:** no production Phase54/54B/54C/55 DDL is authorized until an encrypted backup and isolated restore are verified. Do not replay the redacted production migration `20261102232941`.

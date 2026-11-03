@@ -2,32 +2,33 @@
 
 ## Verified state
 
-- The private Google Drive destination folder **Roshan Health Hub Backups** exists, is owned by the connected account, is not trashed, and is not shared.
-- The folder contains no verified backup artifact.
-- GitHub Actions repository-secret inventory returned **zero secrets** for this repository.
-- Vercel production environment metadata includes sensitive database connection variables (including `POSTGRES_URL_NON_POOLING` and `POSTGRES_PASSWORD`). Their values were not retrieved, copied, logged, or exposed.
-- The available Vercel environment connector exposes metadata in the safe listing path; it is not an approved bridge for injecting those values into an independent backup runner.
-- A Google Drive resumable-upload action is available for large staged files. It requires an already staged file reference; it does not itself create a database dump or provide database credentials.
-- No encrypted database dump, Storage-object archive, or restore rehearsal has been completed.
+- The private Google Drive destination folder **Roshan Health Hub Backups** exists, is owned by the connected account, is not trashed, and is not shared. It contains no verified backup artifact yet.
+- A separate private GitHub repository now exists: `crauch2088-source/roshan-health-hub-backup-runner`. It contains only the manual backup workflow, script, and setup documentation; no secrets or backup artifacts have been added.
+- The runner workflow is manual-only, requires an explicit `confirm_production_backup=true` input, and uploads only encrypted artifacts with one-day retention.
+- Validation-only workflow runs `41631926251` and `41632621501` passed: Bash syntax, ShellCheck, Supabase CLI `2.122.0` availability, required `db dump --db-url` / `--role-only` flags, and the updated shared-pooler/JIT settings. The Production backup job was intentionally skipped because confirmation was false.
+- Supabase documents temporary token-based database access for PostgreSQL 17.6.1.081+. Production is PostgreSQL 17.6.1.155 and QA is 17.11.0.003. The connection requires SSL enforcement and uses the shared pooler on port 5432 with `options=-c jit=true`; this provides a path that avoids using the Production database password in the runner.
+- The runner uses the existing private Drive folder via the connected Google Drive resumable-upload integration after the encrypted GitHub artifact is downloaded. No Google service-account credential is required.
+- The workflow is designed to abort if `storage.objects` is non-empty or `vault.secrets` contains rows, because object bytes and the Vault encryption root key require separate recovery paths.
+
+## Required one-time owner setup
+
+1. Enable Supabase **Temporary token-based database access** in organization Feature Previews and add a short-lived Production access rule for the owner's account and database role `postgres`.
+2. Create a short-lived Supabase Personal Access Token and add it as the private runner repository Actions secret `SUPABASE_DB_ACCESS_TOKEN`. Do not send it through ChatGPT. Revoke it and remove the temporary access rule after the backup.
+3. Generate an age keypair on a trusted device. Keep the private identity offline/in a password manager; add only the public `age1...` recipient as the private repository Actions variable `AGE_RECIPIENT`.
+4. Once those values exist, trigger **Actions → Manual encrypted Production backup** with the confirmation input set to true. The runner will dump the full PostgreSQL database, perform an ephemeral local PostgreSQL 17 restore and compare critical table counts, then encrypt the archive. The agent can transfer the encrypted artifact to Drive and verify the upload.
+
+Detailed setup steps and commands are in the private runner repository README.
 
 ## Safety and change record
 
-- No DDL or DML was executed against Production or QA.
-- No project password or API key was rotated.
-- No secret value, database URL, patient data, or plaintext dump was written to GitHub, chat, or Drive.
-- The GitHub Actions secret inventory and Vercel environment listing were metadata-only checks.
+- No Production DDL or DML has been executed for backup setup.
+- No Production database password or PAT value was retrieved, copied, logged, or exposed.
+- No plaintext database dump has been written to GitHub, chat, or Drive.
+- The new runner has not yet connected to Production; no encrypted backup artifact exists.
+- No Production password or API key was rotated.
 
-## Current blocker
+## Current gate
 
-There is not yet a controlled runner with least-privilege access to the production database, an independently held encryption recipient/private-key custody arrangement, and a secure Drive upload identity. The repository currently has no GitHub Actions secrets. Therefore an automated backup workflow cannot run safely yet.
+**Encrypted Production backup: NOT DONE. Restore rehearsal: NOT DONE. Release gate: OPEN.**
 
-## Required next steps
-
-1. Provision a controlled runner/secret store and inject the database connection value there without passing it through chat or source control.
-2. Establish an encryption keypair outside the repository; store only the public recipient in the runner and keep the private key under separate custody.
-3. Implement a backup job that exports the database using an authorized Supabase CLI/pg_dump environment, separately captures required Storage object bytes and recovery metadata, encrypts the artifacts before upload, and records checksums and timestamps.
-4. Upload the encrypted artifacts to the private Drive folder using the resumable upload path.
-5. Restore into a disposable isolated target (not the existing QA project and never Production), then verify schema, roles/grants/RLS, critical RPC behavior, Storage references, and representative synthetic records.
-6. Update `docs/MASTER_PLAN.md` and close this gate only after the restore rehearsal passes.
-
-**Release gate: OPEN.** A destination folder and upload capability are not a backup. No backup or restore is claimed complete.
+A private runner and a validated workflow are preparation, not a backup. The gate stays open until the first encrypted artifact is uploaded to Drive, its checksum is verified, and the local restore rehearsal passes. Full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain separate release gates.
