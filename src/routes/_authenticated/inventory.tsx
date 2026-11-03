@@ -44,6 +44,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { n, rel, s, usePagedRows, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { buildMedicineCatalogueInsert, buildMedicineCatalogueSearchFilter, type MedicineCatalogueDraft } from "@/lib/medicine-catalogue";
+import { DOSAGE_FORMS } from "@/features/clinic/consultation/constants";
 import { formatDate, money } from "@/lib/medical";
 import {
   DEFAULT_EXPIRY_THRESHOLD_DAYS,
@@ -73,10 +75,27 @@ export const Route = createFileRoute("/_authenticated/inventory")({
 });
 
 const PAGE_SIZE = 25;
+const DOSAGE_FORM_OPTIONS = [
+  ...DOSAGE_FORMS,
+  { value: "other", label: "Other", labelAr: "أخرى" },
+] as const;
+const EMPTY_MEDICINE_FORM: MedicineCatalogueDraft = {
+  name: "",
+  generic_name: "",
+  brand_name: "",
+  strength: "",
+  dosage_form: "",
+  custom_dosage_form: "",
+  unit: "",
+  cost_price: "0",
+  selling_price: "0",
+  reorder_level: "10",
+};
 
-/** Keeps free-text search safe to embed in a PostgREST `.ilike()` filter. */
-function sanitizeSearch(term: string): string {
-  return term.replace(/[,()%]/g, "").trim();
+function dosageFormLabel(value: string, lang: "ar" | "en"): string {
+  const option = DOSAGE_FORM_OPTIONS.find((item) => item.value === value);
+  if (!option) return value;
+  return lang === "ar" ? option.labelAr : option.label;
 }
 
 function ExpiryBadge({ status }: { status: ExpiryStatus }) {
@@ -147,19 +166,13 @@ function InventoryPageInner() {
 // =============================================================================
 
 function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string) => void }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    unit: "",
-    cost_price: "0",
-    selling_price: "0",
-    reorder_level: "10",
-  });
+  const [form, setForm] = useState<MedicineCatalogueDraft>(EMPTY_MEDICINE_FORM);
 
   const list = usePagedRows<Row[]>(
     ["inventory", search],
@@ -167,13 +180,13 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
       let q = supabase
         .from("medicines")
         .select(
-          "id, name, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date",
+          "id, name, generic_name, brand_name, strength, dosage_form, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date",
           { count: "exact" },
         )
         .is("deleted_at", null);
 
-      const term = sanitizeSearch(search);
-      if (term) q = q.ilike("name", `%${term}%`);
+      const filter = buildMedicineCatalogueSearchFilter(search);
+      if (filter) q = q.or(filter);
 
       return q.order("name", { ascending: true }).range(from, to);
     },
@@ -196,23 +209,19 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
 
   const create = useSave(
     async () => {
-      const { error } = await supabase.from("medicines").insert({
-        name: form.name,
-        unit: form.unit || null,
-        cost_price: Number(form.cost_price) || 0,
-        selling_price: Number(form.selling_price) || 0,
-        stock_quantity: 0,
-        reorder_level: Number(form.reorder_level) || 0,
-        expiry_date: null,
-        batch_number: null,
-      });
+      const result = buildMedicineCatalogueInsert(form);
+      if ("error" in result) throw new Error(t(result.error.replace(/-/g, "_")));
+      const { error } = await supabase.from("medicines").insert(result.data);
       if (error) throw new Error(error.message);
       return null;
     },
     {
       invalidate: [["inventory"], ["inventory-stats"], ["medicines"]],
       successMessage: t("saved"),
-      onDone: () => setOpen(false),
+      onDone: () => {
+        setForm(EMPTY_MEDICINE_FORM);
+        setOpen(false);
+      },
     },
   );
 
@@ -242,11 +251,67 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
               <DialogHeader>
                 <DialogTitle>{t("medicines")}</DialogTitle>
               </DialogHeader>
+              <p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground">
+                {t("medicine_identity_hint")}
+              </p>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={`${t("name")} *`} className="sm:col-span-2">
+                <Field label={`${t("generic_name")} *`} className="sm:col-span-2">
+                  <Input
+                    value={form.generic_name}
+                    onChange={(e) => setForm({ ...form, generic_name: e.target.value })}
+                    placeholder="Amoxicillin"
+                  />
+                </Field>
+                <Field label={t("brand_name")}>
+                  <Input
+                    value={form.brand_name}
+                    onChange={(e) => setForm({ ...form, brand_name: e.target.value })}
+                  />
+                </Field>
+                <Field label={`${t("strength")} *`}>
+                  <Input
+                    value={form.strength}
+                    onChange={(e) => setForm({ ...form, strength: e.target.value })}
+                    placeholder={t("strength_placeholder")}
+                    dir="auto"
+                  />
+                </Field>
+                <Field label={`${t("dosage_form")} *`}>
+                  <Select
+                    value={form.dosage_form}
+                    onValueChange={(value) =>
+                      setForm({
+                        ...form,
+                        dosage_form: value,
+                        custom_dosage_form: value === "other" ? form.custom_dosage_form : "",
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("select_dosage_form")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DOSAGE_FORM_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {lang === "ar" ? option.labelAr : option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {form.dosage_form === "other" ? (
+                  <Field label={`${t("other_dosage_form")} *`}>
+                    <Input
+                      value={form.custom_dosage_form}
+                      onChange={(e) => setForm({ ...form, custom_dosage_form: e.target.value })}
+                    />
+                  </Field>
+                ) : null}
+                <Field label={t("medicine_display_name")} className="sm:col-span-2">
                   <Input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder={t("medicine_display_name_hint")}
                   />
                 </Field>
                 <Field label={t("unit")}>
@@ -254,10 +319,13 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                     value={form.unit}
                     onChange={(e) => setForm({ ...form, unit: e.target.value })}
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">{t("inventory_unit_hint")}</p>
                 </Field>
                 <Field label={t("cost_price")}>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     dir="ltr"
                     value={form.cost_price}
                     onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
@@ -266,6 +334,8 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 <Field label={t("selling_price")}>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     dir="ltr"
                     value={form.selling_price}
                     onChange={(e) => setForm({ ...form, selling_price: e.target.value })}
@@ -274,6 +344,8 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 <Field label={t("reorder_level")}>
                   <Input
                     type="number"
+                    min="0"
+                    step="1"
                     dir="ltr"
                     value={form.reorder_level}
                     onChange={(e) => setForm({ ...form, reorder_level: e.target.value })}
@@ -285,7 +357,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!form.name || create.isPending}
+                  disabled={!form.generic_name.trim() || !form.strength.trim() || !form.dosage_form.trim() || (form.dosage_form === "other" && !form.custom_dosage_form.trim()) || create.isPending}
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}
@@ -323,6 +395,11 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-medium">{s(m, "name")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {[s(m, "generic_name"), s(m, "brand_name"), s(m, "strength"), dosageFormLabel(s(m, "dosage_form"), lang)]
+                              .filter(Boolean)
+                              .join(" · ") || "—"}
+                          </p>
                           <p className="text-xs text-muted-foreground">{s(m, "unit") || "—"}</p>
                         </div>
                         <span
@@ -369,7 +446,16 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                       const low = n(m, "stock_quantity") <= n(m, "reorder_level");
                       return (
                         <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
-                          <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="space-y-1">
+                              <p>{s(m, "name")}</p>
+                              <p className="text-xs font-normal text-muted-foreground">
+                                {[s(m, "generic_name"), s(m, "brand_name"), s(m, "strength"), dosageFormLabel(s(m, "dosage_form"), lang)]
+                                  .filter(Boolean)
+                                  .join(" · ") || "—"}
+                              </p>
+                            </div>
+                          </TableCell>
                           <TableCell>{s(m, "unit") || "—"}</TableCell>
                           <TableCell
                             dir="ltr"
