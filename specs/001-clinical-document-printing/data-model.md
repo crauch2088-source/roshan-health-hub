@@ -14,14 +14,16 @@
 
 ### ClinicIdentity
 - `nameAr`, `nameEn`, `address`, `phone`, `footer`, `logoAsset`
-- Values must map to existing approved `system_settings` keys after verification.
+- Map to the existing settings page keys: `center_name_ar`, `center_name`, `address`, `phone`, `invoice_footer`; verify logo mapping before using it.
+- QA `system_settings` currently has no active rows; do not fabricate default address/contact values.
 - No parallel `clinic_*` settings vocabulary may be introduced without a migration/design decision.
 
 ### ReceiptPrintModel
 - Source: one persisted payment plus its linked invoice and authoritative ledger/reversal state.
-- Fields: payment ID/number if present, invoice number, patient display name/MRN only when authorized, amount, currency, method, posted timestamp, cashier, invoice balance, status/reversal reference.
+- Fields: payment ID/number if present, invoice number, patient display name/MRN only when authorized, amount, currency, method, `received_at`, cashier from `received_by`, invoice balance, status/reversal reference.
 - Amount and status must not come from an unsaved form or optimistic client state.
-- Exact source columns and cashier relation are a G0 verification item.
+- Ledger integrity and reversal state must be checked through `get_invoice_payment_receipt_status(uuid[])`; this RPC currently exists in QA only. Production receipt UI must remain gated until Phase54C is deployed there.
+- The RPC requires both `payments.read` and `billing.read` and checks branch/ledger linkage.
 
 ### InvoicePrintModel
 - Source: one persisted invoice and its saved invoice items and payment aggregates.
@@ -30,9 +32,9 @@
 
 ### PrescriptionPrintModel
 - Source: one persisted prescription and its saved prescription items.
-- Fields: patient/visit context, prescriber, created/authorized date and state, medication name, dose, route, frequency, duration, quantity, dosage form, instructions.
+- Fields: patient/visit context, persisted author (`prescribed_by` / `doctor_id`), creation date, workflow status, medication name, dose, route, frequency, duration, quantity, dosage form, instructions.
+- The current schema has no explicit signature, signer, or approval timestamp. The output is a saved prescription/order copy, not a digitally signed document.
 - Preserve original values exactly. A missing required field is represented as missing and blocks official print; no clinical inference or defaulting.
-- Explicit signature/approval state and exact relation fields are G0/G2 verification items.
 
 ### MedicalCertificatePrintModel
 - Source: one persisted medical certificate and authorized patient/visit/doctor relations.
@@ -47,5 +49,6 @@
 4. Soft-deleted records are not printable as current official documents; reprint policy for historical/reversed items is explicit.
 5. Financial values are copied from persisted authoritative rows/ledger.
 6. Clinical instructions are copied verbatim from saved authorized records.
-7. No patient data is exposed through a public verification endpoint, QR code, or analytics event.
-8. Print rendering never writes to Supabase.
+7. A prescription printout must not claim a digital signature or approval state absent from the schema.
+8. No patient data is exposed through a public verification endpoint, QR code, or analytics event.
+9. Print rendering never writes to Supabase.

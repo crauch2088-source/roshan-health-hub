@@ -2,19 +2,19 @@
 
 **Input**: [spec.md](./spec.md), [plan.md](./plan.md), [research.md](./research.md), [data-model.md](./data-model.md), and [contracts/print-document-contract.md](./contracts/print-document-contract.md).
 
-**Status**: Planning baseline. Implementation tasks remain blocked by G0–G2 until their evidence is recorded.
+**Status**: Planning baseline. Implementation tasks remain blocked by release dependencies recorded below.
 
 ## Phase 0: Source and permission contracts
 
-- [ ] T001 Inspect QA PostgreSQL catalogs for exact columns, FKs, soft-delete fields, indexes, and triggers for `invoices`, `invoice_items`, `payments`, ledger/reversal tables, `prescriptions`, `prescription_items`, `medical_certificates`, `visits`, `users`, and `system_settings`.
-- [ ] T002 [P] Verify RLS policies and grants for each source table under anon, authenticated, and service roles; record branch-scoping predicates.
-- [ ] T003 [P] Verify the permission catalog and actual UI/RPC authorization paths for invoice, receipt, prescription, and certificate read/print/reprint actions.
-- [ ] T004 Verify whether prescription records have an explicit signed/approved/finalized state; document the exact existing lifecycle semantics.
-- [ ] T005 Verify `useSettings()` key mapping against `src/routes/_authenticated/settings.tsx`; resolve the observed `center_*` versus `clinic_*` mismatch without adding parallel settings keys.
+- [ ] T001 Inspect QA PostgreSQL catalogs for exact columns, FKs, soft-delete fields, indexes, and triggers for `invoices`, `invoice_items`, `payments`, ledger/reversal tables, `prescriptions`, `prescription_items`, `medical_certificates`, `visits`, `users`, and `system_settings`. (Catalog pass completed; retain this as a reproducible evidence task.)
+- [ ] T002 [P] Verify RLS policies and grants for each source table under anon, authenticated, and service roles; record branch-scoping predicates. (Policy inspection completed; authenticated end-to-end role checks remain.)
+- [ ] T003 [P] Verify the permission catalog and actual UI/RPC authorization paths for invoice, receipt, prescription, and certificate read/print/reprint actions. (RLS contracts identified; actual clinic role assignments and user journeys remain.)
+- [ ] T004 Verify prescription lifecycle semantics and signature/approval support. The current schema has no explicit signature/approval field; describe output as a saved prescription order with author attribution, never as digitally signed.
+- [ ] T005 Verify `useSettings()` key mapping against `src/routes/_authenticated/settings.tsx`; resolve the observed `center_*` versus `clinic_*` mismatch without adding parallel settings keys. (Canonical managed keys identified; no active QA settings rows exist.)
 - [ ] T006 Record browser, Android device/browser, printer model, driver, and actual supported paper sizes; keep thermal support unclaimed until physical tests pass.
-- [ ] T007 Record the G0–G2 evidence and update this plan/spec before enabling implementation tasks.
+- [ ] T007 Record G0–G2 evidence, role assignment test results, and Phase54C Production availability. Production receipt output stays blocked until Phase54C is promoted after the backup/restore gate.
 
-**Gate:** Do not begin document UI implementation until T001–T005 are complete and reviewed.
+**Gate:** Do not begin Production document UI release until T001–T005 are complete, role E2E is verified, and the required receipt integrity RPC is present in Production. QA-only implementation/testing may proceed with synthetic fixtures.
 
 ## Phase 1: Shared print foundation
 
@@ -28,17 +28,17 @@
 ## Phase 2: User Story 1 — Posted payment receipt (P1)
 
 - [ ] T014 [P] Add failing tests for receipt source fidelity, partial payment, reversed payment, and duplicate/retry cases in `tests/print/receipt-print-model.test.ts`.
-- [ ] T015 Add a persisted-payment receipt view-model helper in `src/lib/print/receipt.ts`; reject unsaved form state and missing invoice/payment linkage.
+- [ ] T015 Add a receipt view-model helper in `src/lib/print/receipt.ts`; reject unsaved form state and missing invoice/payment linkage.
 - [ ] T016 Add a receipt print surface that receives one persisted payment ID and loads it through the verified authorized read path.
 - [ ] T017 Add the receipt action only to persisted payment rows; never to the unsaved payment entry form.
-- [ ] T018 Verify every displayed financial field against the authoritative payment and ledger records under synthetic PostgreSQL fixtures.
+- [ ] T018 Verify every displayed financial field against the authoritative payment and ledger records under synthetic PostgreSQL fixtures. Production enablement is blocked until Phase54C exists in Production.
 
-## Phase 3: User Story 2 — Authorized prescription (P1)
+## Phase 3: User Story 2 — Saved prescription order (P1)
 
 - [ ] T019 [P] Add failing tests for exact field fidelity and incomplete instructions in `tests/print/prescription-print-model.test.ts`.
 - [ ] T020 Implement the read-only prescription view model in `src/lib/print/prescription.ts` from the verified saved prescription/child-item contract.
 - [ ] T021 Add an authorized print action to the persisted prescription workflow, not to unsaved composer state.
-- [ ] T022 Block official printing when required saved medication instructions are missing; preserve all saved strings and quantities verbatim.
+- [ ] T022 Block official printing when required saved medication instructions are missing; preserve all saved strings and quantities verbatim; do not claim a digital signature.
 - [ ] T023 Verify authorization, branch isolation, and prescription lifecycle state using synthetic records.
 
 ## Phase 4: User Story 3 — Invoice and medical certificate (P2)
@@ -58,8 +58,8 @@
 
 ## Dependencies and execution order
 
-- Phase 0 blocks every implementation phase.
+- Phase 0 blocks every Production implementation/release path.
 - Phase 1 blocks all document-specific print surfaces.
-- Receipt and prescription stories can proceed independently after Phase 0/1, using separate files.
-- Invoice/certificate correction can proceed after Phase 0/1.
+- Prescription and invoice/certificate QA work can proceed after source contracts and role tests.
+- Receipt UI can be developed against QA Phase54C, but cannot be enabled in Production until the migration is promoted after backup/restore.
 - Physical thermal validation and staff acceptance are release gates, not assumptions.
