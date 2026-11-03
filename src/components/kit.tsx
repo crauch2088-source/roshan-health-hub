@@ -426,19 +426,20 @@ export function ExportButtons({ rows, filename }: { rows: Row[]; filename: strin
 export function PrintButton({ scoped = false }: { scoped?: boolean }) {
   const { t } = useLang();
   const print = () => {
-    let cleanup: (() => void) | undefined;
-    if (scoped) {
-      cleanup = () => {
-        document.body.classList.remove("print-scope-active");
-        window.removeEventListener("afterprint", cleanup);
-      };
-      document.body.classList.add("print-scope-active");
-      window.addEventListener("afterprint", cleanup, { once: true });
+    if (!scoped) {
+      window.print();
+      return;
     }
+    const cleanup = () => {
+      document.body.classList.remove("print-scope-active");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    document.body.classList.add("print-scope-active");
+    window.addEventListener("afterprint", cleanup, { once: true });
     try {
       window.print();
     } catch (error) {
-      cleanup?.();
+      cleanup();
       throw error;
     }
   };
