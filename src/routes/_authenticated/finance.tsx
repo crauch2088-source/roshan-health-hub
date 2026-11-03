@@ -262,9 +262,9 @@ function CashboxTab({ currency }: { currency: string }) {
                           </Badge>
                         ) : null}
                         {can("cashbox.update") &&
-                          isGenericCashboxReversalAllowed(s(tx, "source_type")) &&
-                          !tx["is_reversed"] &&
-                          !tx["reversal_of"] ? (
+                        isGenericCashboxReversalAllowed(s(tx, "source_type")) &&
+                        !tx["is_reversed"] &&
+                        !tx["reversal_of"] ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -326,9 +326,9 @@ function CashboxTab({ currency }: { currency: string }) {
                           </TableCell>
                           <TableCell className="no-print text-end">
                             {can("cashbox.update") &&
-                          isGenericCashboxReversalAllowed(s(tx, "source_type")) &&
-                          !tx["is_reversed"] &&
-                          !tx["reversal_of"] ? (
+                            isGenericCashboxReversalAllowed(s(tx, "source_type")) &&
+                            !tx["is_reversed"] &&
+                            !tx["reversal_of"] ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
