@@ -49,15 +49,12 @@ export function createPrescriptionDraftForMedicine(medicine: {
     "sachet",
   ]);
   const dosageForm = supportedForms.has(rawForm) ? rawForm : "";
-  const oralForms = new Set(["tablet", "capsule", "syrup", "suspension"]);
-  const route = oralForms.has(dosageForm) ? "oral" : "";
 
   return {
     ...createEmptyPrescriptionDraft(),
     medicine_id: medicine.id,
     name: medicine.name?.trim() || medicine.generic_name?.trim() || "",
     dosage_form: dosageForm,
-    route,
   };
 }
 

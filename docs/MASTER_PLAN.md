@@ -2496,3 +2496,16 @@ Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No 
 6. Verify exact-head unit/guard tests, typecheck, lint and build in the repository's documented sequence. Keep clinical E2E acceptance deferred until isolated free QA and a synthetic doctor identity are available.
 
 Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
+
+## Prescription route selection correction — 2026-11-03
+
+Implemented on branch `fix/prescription-route-explicit-selection-20261103` from main `f648be5e6499205c90b79129628ca9ccdc4b42b8`.
+
+- Removed the `tablet/capsule/syrup/suspension → oral` inference from `createPrescriptionDraftForMedicine()`.
+- Catalogue selection still prefills a recognized dosage form, but always leaves `route` blank. The prescriber must select the administration route explicitly.
+- Updated the existing capsule-selection regression and added coverage for tablet, capsule, syrup, suspension, drops, injection, cream and ointment.
+- No dose, frequency, duration, strength conversion, or age/weight calculation was added. No clinical protocol was inferred or approved.
+- TDD evidence: the focused regression failed against the previous helper with `Tablet must not imply a route: 'oral' !== ''`; after removing the route inference, the same test passed (8 supported dosage-form cases).
+- Local verification used Node 22.16.0 with `node --test --experimental-strip-types` against the exact helper logic and focused regression. Full repository CI must still validate the branch.
+- PR #125 already adds explicit route/form completeness validation but remains open and is based on an older main SHA; PR #179 also edits `PrescriptionTab.tsx` and remains Draft. This change is isolated to the pure draft helper, its existing prescription atomicity test, and this plan entry to minimize overlap.
+- Release gate: do not merge or promote until PR #125/#179 are reconciled against current main, branch CI passes, and the existing clinician/pharmacist acceptance gate is met. Clinical E2E remains deferred pending isolated free QA and a synthetic clinician identity.

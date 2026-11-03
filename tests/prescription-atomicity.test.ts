@@ -67,7 +67,7 @@ test("new medicine selection starts with a clean regimen", () => {
       quantity: "1",
       instructions: "",
       dosage_form: "capsule",
-      route: "oral",
+      route: "",
     },
   );
 });
@@ -117,6 +117,27 @@ test("prescription catalog query uses only the sanitized server-side filter", ()
   assert.match(ui, /buildMedicineSearchFilter\(debouncedSearch\)/);
   assert.match(ui, /query\.or\(medicineFilter\)/);
   assert.match(ui, /enabled: Boolean\(medicineFilter\)/);
+});
+
+test("catalogue dosage form never infers an administration route", () => {
+  for (const dosage_form of [
+    "Tablet",
+    "Capsule",
+    "Syrup",
+    "Suspension",
+    "Drops",
+    "Injection",
+    "Cream",
+    "Ointment",
+  ]) {
+    const draft = createPrescriptionDraftForMedicine({
+      id: "medicine-route-check",
+      name: "Catalogue medicine",
+      dosage_form,
+    });
+    assert.equal(draft.dosage_form, dosage_form.toLowerCase());
+    assert.equal(draft.route, "", `${dosage_form} must not imply an administration route`);
+  }
 });
 
 test("unknown catalog dosage forms do not masquerade as a supported form", () => {
