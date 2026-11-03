@@ -54,3 +54,23 @@ For each Sudan product, retain the physical product identity and its verificatio
 - This document does not authorize database seeding, migrations or production writes.
 
 **Design objective:** make the safe path the easy path. Keep the first release small: verified product identity, clear references and clinician control.
+
+
+## Source-freshness check — 2026-11-03
+
+A second check of the public source pages adds these practical limits:
+
+- **NMPB is the regulatory starting point.** Its current public website exposes human-medicine services and links to a registered-products portal. It also lists a report titled **Sudan Index 2023**, posted 2023-01-08. The portal's public data/API and the report's current completeness were not independently verified in this review; do not treat a visible portal link as a validated API or a complete live export. Use the NMPB site and report for human lookup, then record the exact edition/date and verify uncertain products with the Board or the physical pack.
+- **Wasila is a discovery aid, not the regulatory source.** Google Play describes its Sudan brand/generic search and offline database, but the listing says the app was last updated **2018-11-19**. Use it to find likely trade names or spelling variants only; confirm registration, manufacturer, strength and dosage form independently. Its own listing also carries a disclaimer that it is not a substitute for professional advice.
+- **Do not auto-fill current prices from old NMSF material.** The accessible NMSF Retail Prices PDF is explicitly **First Edition, 2015**; the previously listed live medicine-search URL returned 404 during this check. A price is usable only when its source, market, currency, issue date and validity are known. Otherwise leave the price for pharmacy staff to enter from a current supplier/official quotation.
+- **WHO reference freshness:** WHO lists the 2025 24th adult EML and 10th EMLc as its current model lists. The WHO repository entry located for Sudan remains the **2019 Sudan NEML**. A WHO model-list entry is a comparison/reference, not proof of Sudan registration, stock or a locally approved treatment regimen.
+- **Medscape remains an external clinician reference.** Open it from Roshan; do not scrape, mirror or store its monographs/interactions without a written licence.
+
+Verified public pages:
+- NMPB home and human-medicine services: https://www.nmpb.gov.sd/
+- NMPB report page — Sudan Index 2023: https://www.nmpb.gov.sd/detailreport.php?id=7
+- Wasila Google Play listing (including its stated update date): https://play.google.com/store/apps/details?id=com.wasila.sudandrugindex
+- NMSF 2015 retail-price PDF: https://nmsf.gov.sd/includes/pdf/Retail%20Prices%20.pdf
+- WHO current model lists: https://www.who.int/groups/expert-committee-on-selection-and-use-of-essential-medicines/essential-medicines-lists/
+
+**Implementation consequence:** no API integration, automated import, or automatic price population is justified by these pages. Keep the first release to structured product identity, human verification status/date, and outbound reference links. This is intentionally smaller and safer than building a drug-information platform.
