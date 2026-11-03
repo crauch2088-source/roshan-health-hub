@@ -41,9 +41,6 @@ BEGIN
   IF orig.reversal_of IS NOT NULL THEN
     RAISE EXCEPTION 'a reversal entry cannot itself be reversed' USING ERRCODE = '22023';
   END IF;
-  IF orig.branch_id IS NULL THEN
-    RAISE EXCEPTION 'cashbox transaction must be branch-bound before reversal' USING ERRCODE = '23514';
-  END IF;
   IF orig.source_type IN ('payment', 'supplier_payment', 'insurance_claim_payment') THEN
     RAISE EXCEPTION 'payment ledger entries require a source-specific payment reversal workflow'
       USING ERRCODE = '22023';
@@ -151,9 +148,6 @@ BEGIN
   IF v_payment.deleted_at IS NOT NULL THEN
     RAISE EXCEPTION 'invoice payment is already voided or reversed' USING ERRCODE = '22023';
   END IF;
-  IF v_invoice_branch IS NULL OR v_payment.branch_id IS NULL THEN
-    RAISE EXCEPTION 'invoice payment and invoice must be branch-bound before reversal' USING ERRCODE = '23514';
-  END IF;
   IF v_payment.branch_id IS DISTINCT FROM v_invoice_branch THEN
     RAISE EXCEPTION 'invoice payment branch does not match its invoice' USING ERRCODE = '23514';
   END IF;
@@ -213,6 +207,7 @@ BEGIN
   UPDATE public.payments
      SET deleted_at = pg_catalog.now(),
          deleted_by = v_uid,
+         updated_at = pg_catalog.now(),
          updated_by = v_uid
    WHERE id = v_payment.id
      AND deleted_at IS NULL;
@@ -224,77 +219,7 @@ BEGIN
 END;
 $function$;
 
-
-CREATE OR REPLACE FUNCTION public.get_invoice_payment_receipt_status(
-  _payment_ids uuid[]
-) RETURNS TABLE (
-  payment_id uuid,
-  ledger_found boolean,
-  ledger_matches boolean,
-  ledger_is_reversed boolean,
-  reversal_reason text,
-  reversal_at timestamptz
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path TO ''
-AS $function$
-BEGIN
-  IF NOT public.app_has_perm('payments.read')
-     OR NOT public.app_has_perm('billing.read') THEN
-    RAISE EXCEPTION 'not authorised to read invoice payment receipt status'
-      USING ERRCODE = '42501';
-  END IF;
-  IF _payment_ids IS NULL OR pg_catalog.cardinality(_payment_ids) = 0 THEN
-    RETURN;
-  END IF;
-  IF pg_catalog.cardinality(_payment_ids) > 200 THEN
-    RAISE EXCEPTION 'at most 200 payment ids may be checked at once'
-      USING ERRCODE = '22023';
-  END IF;
-
-  RETURN QUERY
-  SELECT
-    p.id,
-    c.id IS NOT NULL,
-    c.id IS NOT NULL
-      AND c.branch_id IS NOT NULL
-      AND p.branch_id IS NOT NULL
-      AND i.branch_id IS NOT NULL
-      AND c.branch_id = p.branch_id
-      AND p.branch_id = i.branch_id
-      AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount)
-      AND (
-        (NOT COALESCE(c.is_reversed, false) AND r.id IS NULL)
-        OR (
-          c.is_reversed
-          AND r.id IS NOT NULL
-          AND r.source_type = 'reversal'
-          AND r.branch_id = c.branch_id
-          AND r.amount = -c.amount
-        )
-      ),
-    COALESCE(c.is_reversed, false),
-    CASE WHEN c.is_reversed THEN c.reversal_reason ELSE NULL END,
-    r.transaction_date
-  FROM public.payments p
-  JOIN public.invoices i ON i.id = p.invoice_id AND i.deleted_at IS NULL
-  LEFT JOIN public.cashbox_transactions c
-    ON c.source_type = 'payment'
-   AND c.source_id = p.id
-   AND c.reversal_of IS NULL
-  LEFT JOIN public.cashbox_transactions r
-    ON r.reversal_of = c.id
-  WHERE p.id = ANY(_payment_ids)
-    AND private.app_has_branch_access(p.branch_id)
-    AND private.app_has_branch_access(i.branch_id);
-END;
-$function$;
-
 REVOKE ALL ON FUNCTION public.reverse_invoice_payment(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.reverse_invoice_payment(uuid, text) TO authenticated;
-REVOKE ALL ON FUNCTION public.get_invoice_payment_receipt_status(uuid[]) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_invoice_payment_receipt_status(uuid[]) TO authenticated;
 
 COMMIT;
