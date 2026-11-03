@@ -6,6 +6,12 @@ SELECT set_config('test.super_admin','false',true);
 DO $test$
 DECLARE v_rejected boolean; v_error text; v_reversal_id uuid; v_original public.cashbox_transactions; v_payment public.payments; v_invoice public.invoices; v_reversal public.cashbox_transactions;
 BEGIN
+  IF has_function_privilege('anon','public.reverse_invoice_payment(uuid,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'anonymous role can execute invoice payment reversal';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.reverse_invoice_payment(uuid,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated role cannot execute invoice payment reversal';
+  END IF;
   v_rejected := false;
   BEGIN
     PERFORM public.reverse_cashbox_entry('70000000-0000-0000-0000-000000000001','generic payment reversal');
@@ -27,6 +33,15 @@ BEGIN
   IF NOT v_rejected THEN RAISE EXCEPTION 'cross-branch invoice payment reversal was accepted'; END IF;
   IF (SELECT deleted_at FROM public.payments WHERE id='60000000-0000-0000-0000-000000000001') IS NOT NULL THEN RAISE EXCEPTION 'cross-branch reversal soft-deleted the payment'; END IF;
   PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
+  v_rejected := false;
+  BEGIN PERFORM public.reverse_invoice_payment('60000000-0000-0000-0000-000000000004','branchless invoice payment');
+  EXCEPTION WHEN SQLSTATE '42501' THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'branchless invoice payment reversal was accepted'; END IF;
+  IF (SELECT deleted_at FROM public.payments WHERE id='60000000-0000-0000-0000-000000000004') IS NOT NULL
+     OR (SELECT is_reversed FROM public.cashbox_transactions WHERE id='70000000-0000-0000-0000-000000000007')
+     OR EXISTS(SELECT 1 FROM public.cashbox_transactions WHERE reversal_of='70000000-0000-0000-0000-000000000007') THEN
+    RAISE EXCEPTION 'branchless invoice reversal left side effects';
+  END IF;
   v_reversal_id := public.reverse_invoice_payment('60000000-0000-0000-0000-000000000001','duplicate bank settlement');
   SELECT * INTO v_payment FROM public.payments WHERE id='60000000-0000-0000-0000-000000000001';
   SELECT * INTO v_invoice FROM public.invoices WHERE id='50000000-0000-0000-0000-000000000001';
