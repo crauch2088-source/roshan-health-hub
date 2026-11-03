@@ -73,20 +73,21 @@ CREATE FUNCTION private.apply_synthetic_cleanup(p_patient_ids uuid[],p_medicine_
 RETURNS void LANGUAGE plpgsql SET search_path TO ''
 AS $function$
 DECLARE
- v_patient_count bigint; v_unique_count bigint; v_branch_count bigint; v_branch_text text;
+ v_patient_count bigint; v_unique_count bigint; v_branch_count bigint; v_null_branch_count bigint; v_branch_text text;
  v_branch uuid; v_stock integer; v_has_reversal boolean; r record; v_predicate text; v_sql text;
 BEGIN
  IF p_patient_ids IS NULL OR pg_catalog.cardinality(p_patient_ids)=0 OR p_medicine_id IS NULL OR p_reference_id IS NULL THEN
   RAISE EXCEPTION 'invalid_synthetic_cleanup_arguments' USING ERRCODE='22023';
  END IF;
- SELECT pg_catalog.count(*),pg_catalog.count(DISTINCT branch_id),pg_catalog.min(branch_id::text)
- INTO v_patient_count,v_branch_count,v_branch_text
+ SELECT pg_catalog.count(*),pg_catalog.count(DISTINCT branch_id),pg_catalog.min(branch_id::text),
+  pg_catalog.count(*) FILTER (WHERE branch_id IS NULL)
+ INTO v_patient_count,v_branch_count,v_branch_text,v_null_branch_count
  FROM public.patients WHERE id=ANY(p_patient_ids) AND deleted_at IS NULL;
  SELECT pg_catalog.count(DISTINCT patient_id) INTO v_unique_count
  FROM pg_catalog.unnest(p_patient_ids) AS input(patient_id);
  IF v_patient_count<>pg_catalog.cardinality(p_patient_ids)
     OR v_unique_count<>pg_catalog.cardinality(p_patient_ids)
-    OR v_branch_count<>1 OR v_branch_text IS NULL THEN
+    OR v_null_branch_count<>0 OR v_branch_count<>1 OR v_branch_text IS NULL THEN
   RAISE EXCEPTION 'cleanup_targets_cross_branch_or_missing' USING ERRCODE='42501';
  END IF;
  v_branch:=v_branch_text::uuid;
