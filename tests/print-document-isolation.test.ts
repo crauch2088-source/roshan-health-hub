@@ -19,6 +19,7 @@ test("certificate print action selects and prints exactly one persisted certific
 test("invoice print boundary excludes all non-document controls and uses canonical center settings", () => {
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   assert.match(source, /print-document-root/);
+  assert.match(source, /<PrintButton scoped \/>/);
   assert.match(source, /className="no-print space-y-4"/);
   assert.match(source, /settings\["center_name"\]/);
   assert.match(source, /settings\["center_name_ar"\]/);
@@ -29,6 +30,11 @@ test("invoice print boundary excludes all non-document controls and uses canonic
 
 test("print-only certificate content is hidden on screen and displayed only for print", () => {
   const css = read("src/styles.css");
+  const kit = read("src/components/kit.tsx");
+  assert.match(kit, /scoped\?: boolean/);
+  assert.match(kit, /print-scope-active/);
   assert.match(css, /\.print-only\s*\{[^}]*display:\s*none/s);
   assert.match(css, /@media print[\s\S]*?\.print-only\s*\{[^}]*display:\s*block/s);
+  assert.match(css, /body\.print-scope-active \*\s*\{[^}]*visibility:\s*hidden/s);
+  assert.match(css, /body\.print-scope-active \.print-document-root,\s*body\.print-scope-active \.print-document-root \*/);
 });

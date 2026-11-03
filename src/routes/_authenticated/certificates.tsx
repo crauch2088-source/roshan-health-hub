@@ -164,11 +164,13 @@ function CertificatesPageInner() {
   useEffect(() => {
     if (!printingCertificateId || !printCertificate) return;
     const handleAfterPrint = () => setPrintingCertificateId(null);
+    document.body.classList.add("print-scope-active");
     window.addEventListener("afterprint", handleAfterPrint, { once: true });
     const timeout = window.setTimeout(() => window.print(), 100);
     return () => {
       window.clearTimeout(timeout);
       window.removeEventListener("afterprint", handleAfterPrint);
+      document.body.classList.remove("print-scope-active");
     };
   }, [printingCertificateId, printCertificate]);
 
@@ -380,7 +382,8 @@ function CertificatesPageInner() {
           <header className="space-y-2 border-b pb-5 text-center">
             <h1 className="text-xl font-bold">
               {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
-                settings["center_name"] || settings["center_name_ar"] || t("app_name")}
+                settings["center_name"] || settings["center_name_ar"] ||
+                (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
             </h1>
             {(settings["address"] || settings["phone"]) && (
               <p className="text-sm">

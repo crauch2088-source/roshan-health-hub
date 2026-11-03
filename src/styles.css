@@ -305,3 +305,18 @@
     border: 0 !important;
   }
 }
+
+@media print {
+  body.print-scope-active * {
+    visibility: hidden !important;
+  }
+  body.print-scope-active .print-document-root,
+  body.print-scope-active .print-document-root * {
+    visibility: visible !important;
+  }
+  body.print-scope-active .print-document-root {
+    position: absolute !important;
+    inset-block-start: 0 !important;
+    inset-inline-start: 0 !important;
+  }
+}

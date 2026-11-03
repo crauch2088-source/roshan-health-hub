@@ -423,10 +423,18 @@ export function ExportButtons({ rows, filename }: { rows: Row[]; filename: strin
   );
 }
 
-export function PrintButton() {
+export function PrintButton({ scoped = false }: { scoped?: boolean }) {
   const { t } = useLang();
+  const print = () => {
+    if (scoped) {
+      const cleanup = () => document.body.classList.remove("print-scope-active");
+      document.body.classList.add("print-scope-active");
+      window.addEventListener("afterprint", cleanup, { once: true });
+    }
+    window.print();
+  };
   return (
-    <Button variant="outline" size="sm" className="no-print" onClick={() => window.print()}>
+    <Button variant="outline" size="sm" className="no-print" onClick={print}>
       <Printer className="size-4" /> {t("print")}
     </Button>
   );

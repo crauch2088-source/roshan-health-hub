@@ -168,7 +168,7 @@ function InvoicePageInner() {
       >
         <StatusBadge status={s(invoice, "status")} />
 
-        <PrintButton />
+        <PrintButton scoped />
 
         <Button asChild variant="outline" size="sm">
           <Link to="/billing">
