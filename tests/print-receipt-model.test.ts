@@ -22,6 +22,13 @@ const source = () => ({
     deleted_at: null,
     net_amount: "500.00",
     paid_amount: "250.00",
+    patients: {
+      id: "patient-1",
+      full_name: "Synthetic Patient",
+      mrn: "MRN-0001",
+      branch_id: "branch-1",
+      deleted_at: null,
+    },
   },
   ledger: {
     payment_id: "payment-1",

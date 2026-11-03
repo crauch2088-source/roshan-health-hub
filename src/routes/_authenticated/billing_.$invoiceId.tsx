@@ -420,6 +420,7 @@ function InvoicePageInner() {
               {((paymentsQ.data ?? []) as Row[]).length === 0 ? (
                 <Empty />
               ) : (
+                <>
                 <ul className="space-y-2 text-sm">
                   {paymentRows.map((payment) => {
                     const receipt = receiptModelFor(payment);
@@ -474,6 +475,7 @@ function InvoicePageInner() {
                       : "Receipt printing is unavailable in this environment until payment-ledger verification is deployed."}
                   </p>
                 )}
+                </>
               )}
             </CardContent>
           </Card>
