@@ -160,34 +160,40 @@ function InvoicePageInner() {
   return (
     <div>
       <div className="no-print">
-      <PageHeader
-        title={`${t("invoice")} ${s(invoice, "invoice_number")}`}
-        subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${formatDate(
-          s(invoice, "invoice_date"),
-        )}`}
-      >
-        <StatusBadge status={s(invoice, "status")} />
-
-        <PrintButton scoped />
-
-        <Button asChild variant="outline" size="sm">
-          <Link to="/billing">
-            <ArrowLeft className="size-4" />
-            {t("back")}
-          </Link>
-        </Button>
-      </PageHeader>
+        <PageHeader
+          title={`${t("invoice")} ${s(invoice, "invoice_number")}`}
+          subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${formatDate(
+            s(invoice, "invoice_date"),
+          )}`}
+        >
+          <StatusBadge status={s(invoice, "status")} />
+  
+          <PrintButton scoped />
+  
+          <Button asChild variant="outline" size="sm">
+            <Link to="/billing">
+              <ArrowLeft className="size-4" />
+              {t("back")}
+            </Link>
+          </Button>
+        </PageHeader>
       </div>
 
-      <div className="no-print"><ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} /></div>
+      <div className="no-print">
+        <ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="print-area print-document-root lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
-                {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
-                  settings["center_name"] || settings["center_name_ar"] || t("app_name")}
+                {(lang === "ar"
+                  ? settings["center_name_ar"]
+                  : settings["center_name"]) ||
+                  settings["center_name"] ||
+                  settings["center_name_ar"] ||
+                  t("app_name")}
               </p>
 
               <p className="text-xs text-muted-foreground">

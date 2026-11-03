@@ -182,237 +182,262 @@ function CertificatesPageInner() {
   if (list.isLoading) return <Loading />;
   return (
     <>
-    <div className="space-y-4 no-print">
-      <PageHeader
-        title={lang === "ar" ? "الشهادات الطبية" : "Medical certificates"}
-        subtitle={lang === "ar" ? "إصدار وطباعة الشهادات" : "Issue and print medical certificates"}
-      >
-        {can("certificates.create") && user?.role_code === "doctor" && (
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="size-4" /> {lang === "ar" ? "شهادة جديدة" : "New certificate"}
-          </Button>
-        )}
-      </PageHeader>
-      <ErrorBox error={list.error} />
-      <Card>
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <Empty />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table density="compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{lang === "ar" ? "رقم الشهادة" : "Certificate #"}</TableHead>
-                    <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
-                    <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
-                    <TableHead>{lang === "ar" ? "الفترة" : "Period"}</TableHead>
-                    <TableHead>
-                      {lang === "ar" ? "الغرض / التشخيص" : "Purpose / diagnosis"}
-                    </TableHead>
-                    <TableHead>{lang === "ar" ? "الطبيب" : "Doctor"}</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((c) => {
-                    const p = rel(c, "patients");
-                    return (
-                      <TableRow key={s(c, "id")}>
-                        <TableCell dir="ltr">{s(c, "certificate_number") || s(c, "id")}</TableCell>
-                        <TableCell dir="ltr">{formatDate(s(c, "created_at"))}</TableCell>
-                        <TableCell>
-                          <div className="font-medium">{s(p, "full_name")}</div>
-                          <div className="text-xs text-muted-foreground" dir="ltr">
-                            {s(p, "mrn") || s(p, "phone")}
-                          </div>
-                        </TableCell>
-                        <TableCell dir="ltr">
-                          {formatDate(s(c, "start_date"))} → {formatDate(s(c, "end_date"))}
-                        </TableCell>
-                        <TableCell className="max-w-[24rem]">{s(c, "diagnosis") || "—"}</TableCell>
-                        <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
-                        <TableCell className="text-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
-                            disabled={Boolean(printingCertificateId)}
-                            onClick={() => handlePrintCertificate(s(c, "id"))}
-                          >
-                            <Printer className="size-4" />
-                          </Button>
-                          {can("certificates.create") && certificateBranchId(c) && (
-                            <ClinicalAttachmentUploader
-                              branchId={certificateBranchId(c)}
-                              entityId={s(c, "id")}
-                              bucket="roshan-medical-certificates"
-                              canUpload={can("certificates.create")}
-                              lang={lang === "ar" ? "ar" : "en"}
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+      <div className="space-y-4 no-print">
+        <PageHeader
+          title={lang === "ar" ? "الشهادات الطبية" : "Medical certificates"}
+          subtitle={
+            lang === "ar" ? "إصدار وطباعة الشهادات" : "Issue and print medical certificates"
+          }
+        >
+          {can("certificates.create") && user?.role_code === "doctor" && (
+            <Button size="sm" onClick={() => setOpen(true)}>
+              <Plus className="size-4" /> {lang === "ar" ? "شهادة جديدة" : "New certificate"}
+            </Button>
           )}
-        </CardContent>
-      </Card>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {lang === "ar" ? "إصدار شهادة طبية" : "Issue medical certificate"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <Field label={`${lang === "ar" ? "المريض" : "Patient"} *`}>
-              <PatientPicker
-                value={
-                  form.patient_id
-                    ? {
-                        id: form.patient_id,
-                        full_name: form.patient_name || "",
-                        mrn: "",
-                        phone: "",
-                      }
-                    : null
-                }
-                onSelect={(p: PickedPatient | null) =>
-                  setForm({
-                    ...form,
-                    patient_id: p?.id ?? "",
-                    patient_name: p?.full_name ?? "",
-                    visit_id: "",
-                  })
-                }
-              />
-            </Field>
-            <Field label={`${lang === "ar" ? "الزيارة المرتبطة" : "Linked visit"} *`}>
-              <Select
-                value={form.visit_id}
-                onValueChange={(v) => setForm({ ...form, visit_id: v })}
-                disabled={!form.patient_id || visitOptionsQ.isLoading || visitOptions.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      lang === "ar" ? "اختر زيارة لهذا المريض" : "Select this patient's visit"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {visitOptions.map((visit) => (
-                    <SelectItem key={s(visit, "id")} value={s(visit, "id")}>
-                      {s(visit, "visit_number") || s(visit, "id")} · {s(visit, "status")} ·{" "}
-                      {s(visit, "visit_date")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.patient_id && !visitOptionsQ.isLoading && visitOptions.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {lang === "ar"
-                    ? "لا توجد زيارة نشطة لهذا المريض؛ أنشئ زيارة أولاً."
-                    : "No active visit found for this patient. Create a visit first."}
-                </p>
-              )}
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={lang === "ar" ? "النوع" : "Type"}>
-                <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+        </PageHeader>
+        <ErrorBox error={list.error} />
+        <Card>
+          <CardContent className="p-0">
+            {rows.length === 0 ? (
+              <Empty />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{lang === "ar" ? "رقم الشهادة" : "Certificate #"}</TableHead>
+                      <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
+                      <TableHead>{lang === "ar" ? "المريض" : "Patient"}</TableHead>
+                      <TableHead>{lang === "ar" ? "الفترة" : "Period"}</TableHead>
+                      <TableHead>
+                        {lang === "ar" ? "الغرض / التشخيص" : "Purpose / diagnosis"}
+                      </TableHead>
+                      <TableHead>{lang === "ar" ? "الطبيب" : "Doctor"}</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((c) => {
+                      const p = rel(c, "patients");
+                      return (
+                        <TableRow key={s(c, "id")}>
+                          <TableCell dir="ltr">{s(c, "certificate_number") || s(c, "id")}</TableCell>
+                          <TableCell dir="ltr">{formatDate(s(c, "created_at"))}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{s(p, "full_name")}</div>
+                            <div className="text-xs text-muted-foreground" dir="ltr">
+                              {s(p, "mrn") || s(p, "phone")}
+                            </div>
+                          </TableCell>
+                          <TableCell dir="ltr">
+                            {formatDate(s(c, "start_date"))} → {formatDate(s(c, "end_date"))}
+                          </TableCell>
+                          <TableCell className="max-w-[24rem]">{s(c, "diagnosis") || "—"}</TableCell>
+                          <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
+                          <TableCell className="text-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
+                              disabled={Boolean(printingCertificateId)}
+                              onClick={() => handlePrintCertificate(s(c, "id"))}
+                            >
+                              <Printer className="size-4" />
+                            </Button>
+                            {can("certificates.create") && certificateBranchId(c) && (
+                              <ClinicalAttachmentUploader
+                                branchId={certificateBranchId(c)}
+                                entityId={s(c, "id")}
+                                bucket="roshan-medical-certificates"
+                                canUpload={can("certificates.create")}
+                                lang={lang === "ar" ? "ar" : "en"}
+                              />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {lang === "ar" ? "إصدار شهادة طبية" : "Issue medical certificate"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <Field label={`${lang === "ar" ? "المريض" : "Patient"} *`}>
+                <PatientPicker
+                  value={
+                    form.patient_id
+                      ? {
+                          id: form.patient_id,
+                          full_name: form.patient_name || "",
+                          mrn: "",
+                          phone: "",
+                        }
+                      : null
+                  }
+                  onSelect={(p: PickedPatient | null) =>
+                    setForm({
+                      ...form,
+                      patient_id: p?.id ?? "",
+                      patient_name: p?.full_name ?? "",
+                      visit_id: "",
+                    })
+                  }
+                />
+              </Field>
+              <Field label={`${lang === "ar" ? "الزيارة المرتبطة" : "Linked visit"} *`}>
+                <Select
+                  value={form.visit_id}
+                  onValueChange={(v) => setForm({ ...form, visit_id: v })}
+                  disabled={!form.patient_id || visitOptionsQ.isLoading || visitOptions.length === 0}
+                >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue
+                      placeholder={
+                        lang === "ar" ? "اختر زيارة لهذا المريض" : "Select this patient's visit"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sick_leave">
-                      {lang === "ar" ? "إجازة مرضية" : "Sick leave"}
-                    </SelectItem>
-                    <SelectItem value="fitness">
-                      {lang === "ar" ? "لياقة طبية" : "Medical fitness"}
-                    </SelectItem>
+                    {visitOptions.map((visit) => (
+                      <SelectItem key={s(visit, "id")} value={s(visit, "id")}>
+                        {s(visit, "visit_number") || s(visit, "id")} · {s(visit, "status")} ·{" "}
+                        {s(visit, "visit_date")}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {form.patient_id && !visitOptionsQ.isLoading && visitOptions.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "ar"
+                      ? "لا توجد زيارة نشطة لهذا المريض؛ أنشئ زيارة أولاً."
+                      : "No active visit found for this patient. Create a visit first."}
+                  </p>
+                )}
               </Field>
-              <Field label={lang === "ar" ? "عدد الأيام" : "Days"}>
-                <Input
-                  dir="ltr"
-                  type="number"
-                  min="1"
-                  value={form.days}
-                  onChange={(e) => setForm({ ...form, days: e.target.value })}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={lang === "ar" ? "النوع" : "Type"}>
+                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sick_leave">
+                        {lang === "ar" ? "إجازة مرضية" : "Sick leave"}
+                      </SelectItem>
+                      <SelectItem value="fitness">
+                        {lang === "ar" ? "لياقة طبية" : "Medical fitness"}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={lang === "ar" ? "عدد الأيام" : "Days"}>
+                  <Input
+                    dir="ltr"
+                    type="number"
+                    min="1"
+                    value={form.days}
+                    onChange={(e) => setForm({ ...form, days: e.target.value })}
+                  />
+                </Field>
+                <Field label={lang === "ar" ? "بداية" : "Start date"}>
+                  <Input
+                    type="date"
+                    dir="ltr"
+                    value={form.start_date}
+                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                  />
+                </Field>
+                <Field label={lang === "ar" ? "النهاية" : "End date"}>
+                  <Input type="date" dir="ltr" value={endDate} readOnly />
+                </Field>
+              </div>
+              <Field
+                label={lang === "ar" ? "التشخيص / الملاحظات الطبية" : "Diagnosis / medical notes"}
+              >
+                <Textarea
+                  value={form.diagnosis}
+                  onChange={(e) => setForm({ ...form, diagnosis: e.target.value })}
                 />
-              </Field>
-              <Field label={lang === "ar" ? "بداية" : "Start date"}>
-                <Input
-                  type="date"
-                  dir="ltr"
-                  value={form.start_date}
-                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                />
-              </Field>
-              <Field label={lang === "ar" ? "النهاية" : "End date"}>
-                <Input type="date" dir="ltr" value={endDate} readOnly />
               </Field>
             </div>
-            <Field
-              label={lang === "ar" ? "التشخيص / الملاحظات الطبية" : "Diagnosis / medical notes"}
-            >
-              <Textarea
-                value={form.diagnosis}
-                onChange={(e) => setForm({ ...form, diagnosis: e.target.value })}
-              />
-            </Field>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              {lang === "ar" ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              disabled={create.isPending || !form.patient_id || !form.visit_id}
-              onClick={() => create.mutate(undefined as never)}
-            >
-              {create.isPending ? "Saving..." : lang === "ar" ? "إصدار" : "Issue"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-    {printCertificate && (
-      <div className="print-only">
-        <article className="print-document-root mx-auto max-w-3xl space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
-          <header className="space-y-2 border-b pb-5 text-center">
-            <h1 className="text-xl font-bold">
-              {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
-                settings["center_name"] || settings["center_name_ar"] ||
-                (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
-            </h1>
-            {(settings["address"] || settings["phone"]) && (
-              <p className="text-sm">
-                {[settings["address"], settings["phone"]].filter(Boolean).join(" · ")}
-              </p>
-            )}
-            <h2 className="pt-3 text-lg font-semibold">
-              {lang === "ar" ? "شهادة طبية" : "Medical Certificate"}
-            </h2>
-          </header>
-          <section className="space-y-4 text-base leading-8">
-            {s(printCertificate, "certificate_number") && (
-              <p><strong>{lang === "ar" ? "رقم الشهادة:" : "Certificate number:"}</strong> {s(printCertificate, "certificate_number")}</p>
-            )}
-            <p><strong>{lang === "ar" ? "تاريخ الإصدار:" : "Issue date:"}</strong> {formatDate(s(printCertificate, "created_at"))}</p>
-            <p><strong>{lang === "ar" ? "اسم المريض:" : "Patient:"}</strong> {s(rel(printCertificate, "patients"), "full_name")}</p>
-            <p><strong>{lang === "ar" ? "الفترة:" : "Period:"}</strong> {formatDate(s(printCertificate, "start_date"))} — {formatDate(s(printCertificate, "end_date"))}</p>
-            <p><strong>{lang === "ar" ? "الغرض / التشخيص:" : "Purpose / diagnosis:"}</strong> {s(printCertificate, "diagnosis") || "—"}</p>
-            <p><strong>{lang === "ar" ? "الطبيب:" : "Doctor:"}</strong> {s(rel(printCertificate, "users"), "full_name") || "—"}</p>
-          </section>
-          {settings["invoice_footer"] && <footer className="border-t pt-4 text-sm">{settings["invoice_footer"]}</footer>}
-        </article>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button
+                disabled={create.isPending || !form.patient_id || !form.visit_id}
+                onClick={() => create.mutate(undefined as never)}
+              >
+                {create.isPending ? "Saving..." : lang === "ar" ? "إصدار" : "Issue"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-    )}
+      {printCertificate && (
+        <div className="print-only">
+          <article
+            className="print-document-root mx-auto max-w-3xl space-y-6"
+            dir={lang === "ar" ? "rtl" : "ltr"}
+          >
+            <header className="space-y-2 border-b pb-5 text-center">
+              <h1 className="text-xl font-bold">
+                {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
+                  settings["center_name"] || settings["center_name_ar"] ||
+                  (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
+              </h1>
+              {(settings["address"] || settings["phone"]) && (
+                <p className="text-sm">
+                  {[settings["address"], settings["phone"]].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              <h2 className="pt-3 text-lg font-semibold">
+                {lang === "ar" ? "شهادة طبية" : "Medical Certificate"}
+              </h2>
+            </header>
+            <section className="space-y-4 text-base leading-8">
+              {s(printCertificate, "certificate_number") && (
+                <p>
+                  <strong>{lang === "ar" ? "رقم الشهادة:" : "Certificate number:"}</strong>{" "}
+                  {s(printCertificate, "certificate_number")}
+                </p>
+              )}
+              <p>
+                <strong>{lang === "ar" ? "تاريخ الإصدار:" : "Issue date:"}</strong>{" "}
+                {formatDate(s(printCertificate, "created_at"))}
+              </p>
+              <p>
+                <strong>{lang === "ar" ? "اسم المريض:" : "Patient:"}</strong>{" "}
+                {s(rel(printCertificate, "patients"), "full_name")}
+              </p>
+              <p>
+                <strong>{lang === "ar" ? "الفترة:" : "Period:"}</strong>{" "}
+                {formatDate(s(printCertificate, "start_date"))} — {formatDate(s(printCertificate, "end_date"))}
+              </p>
+              <p>
+                <strong>{lang === "ar" ? "الغرض / التشخيص:" : "Purpose / diagnosis:"}</strong>{" "}
+                {s(printCertificate, "diagnosis") || "—"}
+              </p>
+              <p>
+                <strong>{lang === "ar" ? "الطبيب:" : "Doctor:"}</strong>{" "}
+                {s(rel(printCertificate, "users"), "full_name") || "—"}
+              </p>
+            </section>
+            {settings["invoice_footer"] && (
+              <footer className="border-t pt-4 text-sm">{settings["invoice_footer"]}</footer>
+            )}
+          </article>
+        </div>
+      )}
     </>
   );
 }
