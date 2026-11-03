@@ -31,6 +31,16 @@ test("consultation fetches and displays allergy, chronic and blood-group context
   assert.match(consultation, /border-destructive\/30 bg-destructive\/15/);
   assert.match(consultation, /AlertTriangle/);
   assert.match(consultation, /bloodGroup/);
+
+  const schemaFix = source("../db/roshan_phase46_uat_schema_compatibility.sql");
+  assert.match(schemaFix, /ADD COLUMN IF NOT EXISTS allergies text/);
+  assert.match(schemaFix, /ADD COLUMN IF NOT EXISTS chronic_conditions text/);
+  assert.match(schemaFix, /ADD COLUMN IF NOT EXISTS branch_id uuid/);
+
+  const queueFix = source("../db/roshan_phase47_queue_branch_attribution.sql");
+  assert.match(queueFix, /ADD COLUMN IF NOT EXISTS branch_id uuid/);
+  assert.match(queueFix, /phase47_visit_branch_attribution/);
+  assert.match(queueFix, /phase47_queue_ticket_branch_attribution/);
 });
 
 test("consultation uses clinic-local date, explicit direction and unsaved-note guard", () => {

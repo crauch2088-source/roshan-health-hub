@@ -59,7 +59,7 @@ export type StockMovement = {
   created_at: string;
 };
 
-/** One row per batch (or legacy fallback) consumed by fn_dispense_prescription(). */
+/** One row per branch-owned, unexpired FEFO batch consumed by the atomic dispense RPC. */
 export type DispenseResultRow = {
   item_id: string;
   medicine_id: string;
@@ -69,52 +69,16 @@ export type DispenseResultRow = {
   expiry_date: string | null;
   quantity_dispensed: number;
   batch_quantity_remaining: number | null;
-  source: "batch" | "legacy";
+  source: "batch";
 };
 
-export type ExpiryStatus = "healthy" | "expiring_soon" | "expired";
-
-export const DEFAULT_EXPIRY_THRESHOLD_DAYS = 90;
-
-// ---------------------------------------------------------------------------
-// Expiry status (Part 3)
-// ---------------------------------------------------------------------------
-
-/**
- * Classifies a batch by its expiry date against the clinic's configurable
- * threshold (system_settings.pharmacy_expiry_threshold_days, default 90).
- * A null expiry date is treated as healthy (nothing to warn about).
- */
-export function expiryStatus(
-  expiryDate: string | null | undefined,
-  thresholdDays: number,
-): ExpiryStatus {
-  if (!expiryDate) return "healthy";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  if (Number.isNaN(expiry.getTime())) return "healthy";
-  const daysLeft = Math.floor((expiry.getTime() - today.getTime()) / 86_400_000);
-  if (daysLeft < 0) return "expired";
-  if (daysLeft <= thresholdDays) return "expiring_soon";
-  return "healthy";
-}
-
-export function daysUntil(expiryDate: string | null | undefined): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  if (Number.isNaN(expiry.getTime())) return null;
-  return Math.floor((expiry.getTime() - today.getTime()) / 86_400_000);
-}
-
-/** Tailwind classes for the expiry badge, matching the tone scale already used by StatusBadge. */
-export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
-  healthy: "bg-success/15 text-success border-success/30",
-  expiring_soon: "bg-warning/15 text-warning border-warning/30",
-  expired: "bg-destructive/15 text-destructive border-destructive/30",
-};
+export {
+  DEFAULT_EXPIRY_THRESHOLD_DAYS,
+  daysUntil,
+  expiryStatus,
+  EXPIRY_TONE,
+} from "./pharmacy-expiry";
+export type { ExpiryStatus } from "./pharmacy-expiry";
 
 // ---------------------------------------------------------------------------
 // FEFO dispensing (Part 2)
@@ -122,17 +86,20 @@ export const EXPIRY_TONE: Record<ExpiryStatus, string> = {
 
 /**
  * Dispenses every item on a pending prescription First-Expire-First-Out.
- * Runs entirely inside one Postgres function (fn_dispense_prescription_with_invoice) so
+ * Runs entirely inside the idempotent atomic_pharmacy_dispense Postgres RPC so
  * it's atomic under concurrent dispensing, and returns one row per batch
  * (or legacy-stock) consumption for display.
  */
 export async function dispensePrescriptionFefo(
   prescriptionId: string,
-  separateInvoice = false,
+  separateInvoice: boolean,
+  requestId: string,
 ): Promise<DispenseResultRow[]> {
-  return rpc<DispenseResultRow[]>("fn_dispense_prescription_with_invoice", {
+  if (!requestId) throw new Error("A stable dispense request id is required");
+  return rpc<DispenseResultRow[]>("atomic_pharmacy_dispense", {
     p_prescription_id: prescriptionId,
     p_separate_invoice: separateInvoice,
+    p_request_id: requestId,
   });
 }
 
