@@ -46,7 +46,8 @@ BEGIN
  IF EXISTS(SELECT 1 FROM public.visits WHERE deleted_at IS NOT NULL)
   OR EXISTS(SELECT 1 FROM public.prescriptions WHERE deleted_at IS NOT NULL)
   OR EXISTS(SELECT 1 FROM public.prescription_items WHERE deleted_at IS NOT NULL)
-  OR EXISTS(SELECT 1 FROM public.patient_notes WHERE id IN ('80000000-0000-4000-8000-000000000001','80000000-0000-4000-8000-000000000002') AND deleted_at IS NOT NULL) THEN
+  OR EXISTS(SELECT 1 FROM public.patient_notes WHERE id IN ('80000000-0000-4000-8000-000000000001','80000000-0000-4000-8000-000000000002') AND deleted_at IS NOT NULL)
+  OR EXISTS(SELECT 1 FROM public.visit_annotations WHERE deleted_at IS NOT NULL) THEN
   RAISE EXCEPTION 'soft_delete_survived_rollback';
  END IF;
 END
@@ -70,7 +71,8 @@ BEGIN
  IF (SELECT count(*) FROM public.visits WHERE deleted_at IS NOT NULL)<>2
   OR (SELECT count(*) FROM public.prescriptions WHERE deleted_at IS NOT NULL)<>2
   OR (SELECT count(*) FROM public.prescription_items WHERE deleted_at IS NOT NULL)<>2
-  OR (SELECT count(*) FROM public.patient_notes WHERE id IN ('80000000-0000-4000-8000-000000000001','80000000-0000-4000-8000-000000000002') AND deleted_at IS NOT NULL)<>2 THEN
+  OR (SELECT count(*) FROM public.patient_notes WHERE id IN ('80000000-0000-4000-8000-000000000001','80000000-0000-4000-8000-000000000002') AND deleted_at IS NOT NULL)<>2
+  OR (SELECT count(*) FROM public.visit_annotations WHERE deleted_at IS NOT NULL)<>2 THEN
   RAISE EXCEPTION 'linked_rows_not_soft_deleted';
  END IF;
  IF (SELECT count(*) FROM public.visits)<>3 OR (SELECT count(*) FROM public.prescriptions)<>3
@@ -93,11 +95,30 @@ BEGIN
  END;
  IF (SELECT stock_quantity FROM public.medicines WHERE id='40000000-0000-4000-8000-000000000002')<>49
   OR EXISTS(SELECT 1 FROM public.stock_movements WHERE reference_id='90000000-0000-4000-8000-000000000002')
-  OR (SELECT deleted_at FROM public.patient_notes WHERE id='80000000-0000-4000-8000-000000000003') IS NOT NULL THEN
+  OR (SELECT deleted_at FROM public.patient_notes WHERE id='80000000-0000-4000-8000-000000000003') IS NOT NULL
+  OR (SELECT deleted_at FROM public.visit_annotations WHERE id='81000000-0000-4000-8000-000000000003') IS NOT NULL THEN
   RAISE EXCEPTION 'cross_branch_rejection_left_side_effects';
  END IF;
 END
 $cross_branch_assertions$;
+
+DO $null_branch_assertions$
+BEGIN
+ BEGIN
+  PERFORM private.apply_synthetic_cleanup(
+   ARRAY['30000000-0000-4000-8000-000000000001'::uuid,'30000000-0000-4000-8000-000000000004'::uuid],
+   '40000000-0000-4000-8000-000000000004','90000000-0000-4000-8000-000000000004');
+  RAISE EXCEPTION 'expected_null_branch_rejection';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
+ END;
+ IF (SELECT stock_quantity FROM public.medicines WHERE id='40000000-0000-4000-8000-000000000004')<>49
+  OR EXISTS(SELECT 1 FROM public.stock_movements WHERE reference_id='90000000-0000-4000-8000-000000000004')
+  OR (SELECT deleted_at FROM public.patient_notes WHERE id='80000000-0000-4000-8000-000000000005') IS NOT NULL
+  OR (SELECT deleted_at FROM public.visit_annotations WHERE id='81000000-0000-4000-8000-000000000004') IS NOT NULL THEN
+  RAISE EXCEPTION 'null_branch_rejection_left_side_effects';
+ END IF;
+END
+$null_branch_assertions$;
 
 DO $unexpected_stock_assertions$
 BEGIN
@@ -110,7 +131,8 @@ BEGIN
  END;
  IF (SELECT stock_quantity FROM public.medicines WHERE id='40000000-0000-4000-8000-000000000003')<>48
   OR EXISTS(SELECT 1 FROM public.stock_movements WHERE reference_id='90000000-0000-4000-8000-000000000003')
-  OR (SELECT deleted_at FROM public.patient_notes WHERE id='80000000-0000-4000-8000-000000000003') IS NOT NULL THEN
+  OR (SELECT deleted_at FROM public.patient_notes WHERE id='80000000-0000-4000-8000-000000000003') IS NOT NULL
+  OR (SELECT deleted_at FROM public.visit_annotations WHERE id='81000000-0000-4000-8000-000000000003') IS NOT NULL THEN
   RAISE EXCEPTION 'unexpected_stock_rejection_left_side_effects';
  END IF;
 END
@@ -118,9 +140,10 @@ $unexpected_stock_assertions$;
 
 DO $final_assertions$
 BEGIN
- IF (SELECT count(*) FROM public.patients)<>3 OR (SELECT count(*) FROM public.visits)<>3
-  OR (SELECT count(*) FROM public.prescriptions)<>3 OR (SELECT count(*) FROM public.prescription_items)<>3
-  OR (SELECT count(*) FROM public.patient_notes)<>4 THEN RAISE EXCEPTION 'permanent_delete_detected'; END IF;
+ IF (SELECT count(*) FROM public.patients)<>4 OR (SELECT count(*) FROM public.visits)<>4
+  OR (SELECT count(*) FROM public.prescriptions)<>4 OR (SELECT count(*) FROM public.prescription_items)<>4
+  OR (SELECT count(*) FROM public.patient_notes)<>5 OR (SELECT count(*) FROM public.visit_annotations)<>4 THEN
+  RAISE EXCEPTION 'permanent_delete_detected'; END IF;
  RAISE NOTICE 'PASS: quarantined rename, synthetic idempotency, branch attribution, rollback and soft-delete';
 END
 $final_assertions$;
