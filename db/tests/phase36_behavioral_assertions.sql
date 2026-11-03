@@ -12,12 +12,14 @@ BEGIN
       RAISE EXCEPTION 'Phase 36 failed to reject patient_id UPDATE on %',t;
     EXCEPTION WHEN check_violation THEN NULL;
     END;
-    BEGIN
-      EXECUTE format('UPDATE public.%I SET visit_id=$1 WHERE id=$2',t)
-        USING '00000000-0000-0000-0000-000000009002'::uuid, v_id;
-      RAISE EXCEPTION 'Phase 36 failed to reject visit_id UPDATE on %',t;
-    EXCEPTION WHEN check_violation THEN NULL;
-    END;
+    IF t <> 'lab_order_items' THEN
+      BEGIN
+        EXECUTE format('UPDATE public.%I SET visit_id=$1 WHERE id=$2',t)
+          USING '00000000-0000-0000-0000-000000009002'::uuid, v_id;
+        RAISE EXCEPTION 'Phase 36 failed to reject visit_id UPDATE on %',t;
+      EXCEPTION WHEN check_violation THEN NULL;
+      END;
+    END IF;
   END LOOP;
 END $guard_update_tests$;
 
@@ -27,8 +29,8 @@ BEGIN
   FOR t IN SELECT unnest(ARRAY['lab_orders','lab_order_items','prescriptions','prescription_items','medical_certificates']) LOOP
     BEGIN
       IF t='lab_order_items' THEN
-        INSERT INTO public.lab_order_items(id,patient_id,visit_id,order_id,value)
-        VALUES ('00000000-0000-0000-0000-000000009151','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009002','00000000-0000-0000-0000-000000009102','cancelled');
+        INSERT INTO public.lab_order_items(id,patient_id,order_id,value)
+        VALUES ('00000000-0000-0000-0000-000000009151','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009102','cancelled');
       ELSIF t='prescription_items' THEN
         INSERT INTO public.prescription_items(id,patient_id,visit_id,prescription_id,value)
         VALUES ('00000000-0000-0000-0000-000000009152','00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009002','00000000-0000-0000-0000-000000009122','cancelled');
