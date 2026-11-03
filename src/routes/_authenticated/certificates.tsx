@@ -32,6 +32,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { s, useRows, useSave, type Row, rel } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { PaperWidthSelect } from "@/components/paper-width-select";
+import { getClinicIdentity, useDocumentPrint, type PaperWidth } from "@/lib/document-print";
+import { useSettings } from "@/lib/db";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 import { useBranchRealtime } from "@/lib/realtime";
@@ -64,6 +67,9 @@ function CertificatesPage() {
 }
 function CertificatesPageInner() {
   const { lang } = useLang();
+  const { settings } = useSettings();
+  const [paperWidth, setPaperWidth] = useState<PaperWidth>("a4");
+  const { request: printRequest, printDocument } = useDocumentPrint<Row>();
   const { can, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -76,6 +82,10 @@ function CertificatesPageInner() {
     diagnosis: "",
     notes: "",
   });
+  const branchesQ = useRows<Row[]>(["certificate-print-branches"], () =>
+    supabase.from("branches").select("id, branch_name, name, address, phone"),
+  );
+  const branchesById = new Map(((branchesQ.data ?? []) as Row[]).map((branch) => [s(branch, "id"), branch]));
   const list = useRows<Row[]>(["certificates"], () =>
     supabase
       .from("medical_certificates")
@@ -158,12 +168,20 @@ function CertificatesPageInner() {
   );
   if (list.isLoading) return <Loading />;
   const rows = (list.data ?? []) as Row[];
+  const printCertificate = printRequest?.document;
+  const printBranchId = certificateBranchId(printCertificate);
+  const printClinic = getClinicIdentity(settings, branchesById.get(printBranchId), lang);
+  const printPatient = rel(printCertificate, "patients");
+  const printDoctor = rel(printCertificate, "users");
+
   return (
-    <div className="space-y-4">
+    <>
+    <div className={printRequest ? "print-hide space-y-4" : "space-y-4"}>
       <PageHeader
         title={lang === "ar" ? "الشهادات الطبية" : "Medical certificates"}
         subtitle={lang === "ar" ? "إصدار وطباعة الشهادات" : "Issue and print medical certificates"}
       >
+        <PaperWidthSelect value={paperWidth} onChange={setPaperWidth} lang={lang} />
         {can("certificates.create") && user?.role_code === "doctor" && (
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="size-4" /> {lang === "ar" ? "شهادة جديدة" : "New certificate"}
@@ -210,7 +228,14 @@ function CertificatesPageInner() {
                         <TableCell className="max-w-[24rem]">{s(c, "diagnosis") || "—"}</TableCell>
                         <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
                         <TableCell className="text-end">
-                          <Button size="sm" variant="ghost" onClick={() => window.print()}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={!certificateBranchId(c)}
+                            title={lang === "ar" ? "طباعة هذه الشهادة فقط" : "Print this certificate only"}
+                            aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
+                            onClick={() => printDocument(c, paperWidth)}
+                          >
                             <Printer className="size-4" />
                           </Button>
                           {can("certificates.create") && certificateBranchId(c) && (
@@ -352,5 +377,39 @@ function CertificatesPageInner() {
         </DialogContent>
       </Dialog>
     </div>
+    {printCertificate ? (
+      <div className="print-only print-area print-surface mx-auto max-w-[180mm] p-8" dir={lang === "ar" ? "rtl" : "ltr"}>
+        <header className="mb-8 border-b pb-5 text-center">
+          <p className="text-xl font-bold">{printClinic.name}</p>
+          {printClinic.branchName ? <p className="text-sm">{printClinic.branchName}</p> : null}
+          {printClinic.address ? <p className="text-sm">{printClinic.address}</p> : null}
+          {printClinic.phone ? <p className="text-sm" dir="ltr">{printClinic.phone}</p> : null}
+          <h1 className="mt-6 text-xl font-bold">{lang === "ar" ? "شهادة طبية" : "Medical Certificate"}</h1>
+          <p className="mt-2 text-sm">
+            {lang === "ar" ? "رقم الشهادة" : "Certificate No."}: <bdi dir="ltr">{s(printCertificate, "certificate_number") || "—"}</bdi>
+            {" · "}{formatDate(s(printCertificate, "created_at"))}
+          </p>
+        </header>
+        <section className="space-y-4 text-base">
+          <p><strong>{lang === "ar" ? "اسم المريض" : "Patient"}:</strong> {s(printPatient, "full_name") || "—"}</p>
+          <p><strong>{lang === "ar" ? "الرقم الطبي" : "MRN"}:</strong> <bdi dir="ltr">{s(printPatient, "mrn") || "—"}</bdi></p>
+          {s(printPatient, "phone") ? <p><strong>{lang === "ar" ? "الهاتف" : "Phone"}:</strong> <bdi dir="ltr">{s(printPatient, "phone")}</bdi></p> : null}
+          <div className="print-keep border-y py-5">
+            <strong>{lang === "ar" ? "التشخيص / الإفادة الطبية" : "Diagnosis / Medical statement"}:</strong>
+            <p className="mt-2 whitespace-pre-wrap">{s(printCertificate, "diagnosis") || "—"}</p>
+          </div>
+          <p><strong>{lang === "ar" ? "الفترة" : "Period"}:</strong> <bdi dir="ltr">{formatDate(s(printCertificate, "start_date"))} — {formatDate(s(printCertificate, "end_date"))}</bdi></p>
+        </section>
+        <footer className="mt-20 grid grid-cols-2 gap-10 text-sm">
+          <div className="print-keep border-t pt-3">
+            <p>{lang === "ar" ? "الطبيب" : "Doctor"}: {s(printDoctor, "full_name") || "—"}</p>
+          </div>
+          <div className="print-keep border-t pt-3 text-center">
+            {lang === "ar" ? "توقيع وختم الطبيب" : "Doctor's signature and stamp"}
+          </div>
+        </footer>
+      </div>
+    ) : null}
+    </>
   );
 }
