@@ -69,8 +69,8 @@ const dict: Record<string, { ar: string; en: string }> = {
   reversal_reason: { ar: "سبب العكس", en: "Reversal reason" },
   reversal_reason_required: { ar: "سبب العكس مطلوب", en: "A reversal reason is required" },
   source_specific_reversal_required: {
-    ar: "لا يمكن عكس هذه الدفعة من الخزنة؛ يلزم مسار عكس خاص بمصدرها.",
-    en: "This payment cannot be reversed from the cashbox; use its source-specific workflow.",
+    ar: "لا يمكن عكس هذه الدفعة من شاشة الخزنة؛ عكس الدفعات يحتاج إجراءً مخصصاً لمصدرها.",
+    en: "Payment entries cannot be reversed here; they require a source-specific reversal action.",
   },
   record_payment: { ar: "تسجيل دفعة", en: "Record payment" },
   total_billed: { ar: "إجمالي الفواتير", en: "Total billed" },
