@@ -1,6 +1,7 @@
 -- Disposable PostgreSQL 17 fixture for source-aware financial reversals.
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+CREATE SCHEMA private;
 CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz, active boolean NOT NULL DEFAULT true);
 CREATE TABLE public.invoices (id uuid PRIMARY KEY, net_amount numeric(14,2) NOT NULL, total_amount numeric(14,2) NOT NULL, paid_amount numeric(14,2) NOT NULL DEFAULT 0, branch_id uuid, deleted_at timestamptz, status text NOT NULL DEFAULT 'unpaid', payment_status text NOT NULL DEFAULT 'unpaid', updated_at timestamptz, updated_by uuid);
 CREATE TABLE public.payments (id uuid PRIMARY KEY, invoice_id uuid NOT NULL REFERENCES public.invoices(id), amount numeric(14,2) NOT NULL, payment_method text, method text, reference_no text, reference text, payment_date date, received_at timestamptz, received_by uuid, created_by uuid, branch_id uuid, deleted_at timestamptz, deleted_by uuid, updated_at timestamptz, updated_by uuid);
@@ -9,7 +10,8 @@ CREATE UNIQUE INDEX uq_cashbox_source ON public.cashbox_transactions(source_type
 CREATE UNIQUE INDEX uq_cashbox_reversal_of ON public.cashbox_transactions(reversal_of) WHERE reversal_of IS NOT NULL;
 CREATE FUNCTION public.current_app_user_id() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('test.user_id', true), '')::uuid $$;
 CREATE FUNCTION public.app_has_perm(p text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT COALESCE(current_setting('test.permissions', true) LIKE '%' || p || '%', false) $$;
-CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $$;
+CREATE FUNCTION public.is_super_admin() RETURNS boolean LANGUAGE sql STABLE AS $ SELECT COALESCE(current_setting('test.super_admin', true) = 'true', false) $;
+CREATE FUNCTION private.app_has_branch_access(p_branch uuid) RETURNS boolean LANGUAGE sql STABLE AS $ SELECT public.is_super_admin() OR p_branch = (SELECT u.branch_id FROM public.users u WHERE u.id = public.current_app_user_id() AND u.deleted_at IS NULL AND u.active IS TRUE) $;
 CREATE FUNCTION public.fn_recompute_invoice_paid() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
 DECLARE v_invoice_id uuid; v_paid numeric; v_net numeric;
 BEGIN

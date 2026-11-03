@@ -219,7 +219,61 @@ BEGIN
 END;
 $function$;
 
+
+CREATE OR REPLACE FUNCTION public.get_invoice_payment_receipt_status(
+  _payment_ids uuid[]
+) RETURNS TABLE (
+  payment_id uuid,
+  ledger_found boolean,
+  ledger_matches boolean,
+  ledger_is_reversed boolean,
+  reversal_reason text,
+  reversal_at timestamptz
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+BEGIN
+  IF NOT public.app_has_perm('payments.read')
+     OR NOT public.app_has_perm('billing.read') THEN
+    RAISE EXCEPTION 'not authorised to read invoice payment receipt status'
+      USING ERRCODE = '42501';
+  END IF;
+  IF _payment_ids IS NULL OR pg_catalog.cardinality(_payment_ids) = 0 THEN
+    RETURN;
+  END IF;
+  IF pg_catalog.cardinality(_payment_ids) > 200 THEN
+    RAISE EXCEPTION 'at most 200 payment ids may be checked at once'
+      USING ERRCODE = '22023';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    p.id,
+    c.id IS NOT NULL,
+    c.id IS NOT NULL
+      AND c.branch_id IS NOT DISTINCT FROM p.branch_id
+      AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount),
+    COALESCE(c.is_reversed, false),
+    CASE WHEN c.is_reversed THEN c.reversal_reason ELSE NULL END,
+    r.transaction_date
+  FROM public.payments p
+  LEFT JOIN public.cashbox_transactions c
+    ON c.source_type = 'payment'
+   AND c.source_id = p.id
+   AND c.reversal_of IS NULL
+  LEFT JOIN public.cashbox_transactions r
+    ON r.reversal_of = c.id
+  WHERE p.id = ANY(_payment_ids)
+    AND private.app_has_branch_access(p.branch_id);
+END;
+$function$;
+
 REVOKE ALL ON FUNCTION public.reverse_invoice_payment(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.reverse_invoice_payment(uuid, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_invoice_payment_receipt_status(uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_invoice_payment_receipt_status(uuid[]) TO authenticated;
 
 COMMIT;

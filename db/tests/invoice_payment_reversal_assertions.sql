@@ -4,7 +4,7 @@ SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
 SELECT set_config('test.permissions','cashbox.update',true);
 SELECT set_config('test.super_admin','false',true);
 DO $test$
-DECLARE v_rejected boolean; v_error text; v_reversal_id uuid; v_original public.cashbox_transactions; v_payment public.payments; v_invoice public.invoices; v_reversal public.cashbox_transactions;
+DECLARE v_rejected boolean; v_error text; v_reversal_id uuid; v_original public.cashbox_transactions; v_payment public.payments; v_invoice public.invoices; v_reversal public.cashbox_transactions; v_receipt record; v_receipt_count integer;
 BEGIN
   IF has_function_privilege('anon','public.reverse_invoice_payment(uuid,text)','EXECUTE') THEN
     RAISE EXCEPTION 'anonymous role can execute invoice payment reversal';
