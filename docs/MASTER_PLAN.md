@@ -2503,3 +2503,13 @@ Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No 
 6. Verify exact-head unit/guard tests, typecheck, lint and build in the repository's documented sequence. Keep clinical E2E acceptance deferred until isolated free QA and a synthetic doctor identity are available.
 
 Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
+
+
+## Phase 56 — Medicine catalogue identity authoring foundation (2026-11-03)
+
+- The inventory create workflow now captures required generic ingredient, exact product strength, and dosage form; brand name and display name remain optional. Common dosage forms use the shared bilingual option set, with an explicit custom-form path.
+- When no display name is supplied, the product label is generated from brand (or generic ingredient), strength and dosage form. Inventory search now covers display name, generic ingredient, brand, strength and dosage form.
+- The inventory UI explains that stock/packaging unit is not an administration route, and dosage form never auto-selects route. No route, dose, frequency or treatment recommendation is stored or inferred by this feature.
+- Creation validates required identity fields, custom dosage form, non-negative finite prices and whole-number reorder levels. Initial stock remains zero and stock receipts continue through the existing atomic batch workflow.
+- No migration, QA catalogue seeding, Production data write, or existing-product correction was performed.
+- **Next catalogue task:** implement pharmacist-authorized review/edit of product identity under the existing `pharmacy.update` permission, with audit/RLS tests. Existing Production candidates must be verified against physical packs before editing or using them clinically.

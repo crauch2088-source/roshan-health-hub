@@ -43,9 +43,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { n, rel, s, usePagedRows, useRows, useSave, useSettings, type Row } from "@/lib/db";
-import { useLang } from "@/lib/i18n";
-import { buildMedicineCatalogueInsert, buildMedicineCatalogueSearchFilter, type MedicineCatalogueDraft } from "@/lib/medicine-catalogue";
 import { DOSAGE_FORMS } from "@/features/clinic/consultation/constants";
+import { useLang } from "@/lib/i18n";
+import {
+  buildMedicineCatalogueInsert,
+  buildMedicineCatalogueSearchFilter,
+  type MedicineCatalogueDraft,
+} from "@/lib/medicine-catalogue";
 import { formatDate, money } from "@/lib/medical";
 import {
   DEFAULT_EXPIRY_THRESHOLD_DAYS,
@@ -158,11 +162,8 @@ function InventoryPageInner() {
 }
 
 // =============================================================================
-// Medicines tab — UNCHANGED from the pre-Phase-3 inventory page other than
-// the permission check fix noted inline (pharmacy.manage -> pharmacy.create;
-// pharmacy.manage was never a real permission code in the permissions
-// table, so this button and the one in the old dispense queue were
-// invisible to every non-super-admin role, including the pharmacist role).
+// Medicines tab — normalized product identity, safe catalogue search and stock overview.
+
 // =============================================================================
 
 function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string) => void }) {
@@ -259,7 +260,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   <Input
                     value={form.generic_name}
                     onChange={(e) => setForm({ ...form, generic_name: e.target.value })}
-                    placeholder="Amoxicillin"
+                    placeholder={lang === "ar" ? "مثال: Amoxicillin" : "e.g. Amoxicillin"}
                   />
                 </Field>
                 <Field label={t("brand_name")}>
@@ -273,7 +274,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                     value={form.strength}
                     onChange={(e) => setForm({ ...form, strength: e.target.value })}
                     placeholder={t("strength_placeholder")}
-                    dir="auto"
+                    dir="ltr"
                   />
                 </Field>
                 <Field label={`${t("dosage_form")} *`}>
@@ -357,7 +358,13 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!form.generic_name.trim() || !form.strength.trim() || !form.dosage_form.trim() || (form.dosage_form === "other" && !form.custom_dosage_form.trim()) || create.isPending}
+                  disabled={
+                    !form.generic_name.trim() ||
+                    !form.strength.trim() ||
+                    !form.dosage_form.trim() ||
+                    (form.dosage_form === "other" && !form.custom_dosage_form.trim()) ||
+                    create.isPending
+                  }
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}
@@ -396,7 +403,12 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                         <div className="min-w-0">
                           <p className="font-medium">{s(m, "name")}</p>
                           <p className="text-xs text-muted-foreground">
-                            {[s(m, "generic_name"), s(m, "brand_name"), s(m, "strength"), dosageFormLabel(s(m, "dosage_form"), lang)]
+                            {[
+                              s(m, "generic_name"),
+                              s(m, "brand_name"),
+                              s(m, "strength"),
+                              dosageFormLabel(s(m, "dosage_form"), lang),
+                            ]
                               .filter(Boolean)
                               .join(" · ") || "—"}
                           </p>
@@ -450,7 +462,12 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                             <div className="space-y-1">
                               <p>{s(m, "name")}</p>
                               <p className="text-xs font-normal text-muted-foreground">
-                                {[s(m, "generic_name"), s(m, "brand_name"), s(m, "strength"), dosageFormLabel(s(m, "dosage_form"), lang)]
+                                {[
+                                  s(m, "generic_name"),
+                                  s(m, "brand_name"),
+                                  s(m, "strength"),
+                                  dosageFormLabel(s(m, "dosage_form"), lang),
+                                ]
                                   .filter(Boolean)
                                   .join(" · ") || "—"}
                               </p>

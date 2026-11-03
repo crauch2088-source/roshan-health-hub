@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import testRunner from "node:test";
-import { buildMedicineCatalogueInsert, buildMedicineCatalogueSearchFilter } from "../src/lib/medicine-catalogue.ts";
+import {
+  buildMedicineCatalogueInsert,
+  buildMedicineCatalogueSearchFilter,
+} from "../src/lib/medicine-catalogue.ts";
 
 const source = readFileSync(
   new URL("../src/routes/_authenticated/inventory.tsx", import.meta.url),
