@@ -222,3 +222,12 @@ The combined PG17 critical-path replay follows the canonical Phase 48 fixture or
 - Disposable PostgreSQL 17 workflow replays the canonical v112 baseline and Phase 34/46/47/48/49/50/51 prerequisites before Phase 52 catalog/ACL assertions. Source guard tests date bounds, route RPC usage, aggregate-only export, and workflow isolation.
 - UI candidate updates `src/routes/_authenticated/reports.tsx` to use the bounded aggregate RPC, monthly trend export and summary CSV; `src/lib/reporting.ts` validates dates. Arabic/English labels are added in `src/lib/i18n.tsx`.
 - No receipt/prescription print templates, inter-branch stock transfer writes, or insurance claim workflow changes are included. Those are separate phases below in the roadmap document; they need their own domain-specific safety and accounting contracts.
+
+## Phase 49–52 production/QA provenance update — 2026-11-03
+
+- Read-only ledger/catalog verification now confirms 129 production migration rows (latest `20261102232941`) and 17 QA rows (latest `20261102232905`). This supersedes the earlier candidate-only status notes for Phases 49–52.
+- Production rows `20261102232823`, `20261102232849`, `20261102232852`, and `20261102232855` match the current Phase 49–52 source files after removing only the terminal `COMMIT;` wrapper and trailing whitespace. Exact SHA-256 mappings and source Git blob SHAs are in `docs/recovered-migrations/phase49-52-provenance.json`.
+- Production row `20261102232819` is an unmapped table/index rename; its exact SQL is quarantined under `docs/recovered-migrations/sql/` and is not a canonical deployment migration.
+- Production row `20261102232941` is an unmapped cleanup/reversal `DO` block. The public copy is redacted because the stored SQL contains fixed production UUIDs. Its original ledger SHA-256 is preserved in the scoped provenance report; the redacted artifact is non-replayable.
+- Four earlier 134-byte production ledger rows are placeholder statements, not the Phase 49–52 migration bodies. The private archive does not contain full migration SQL.
+- This is a scoped provenance reconciliation, not full migration-chain replay, full schema parity, or data-level validation. Backup/restore remains unverified; no further production database change is authorized by this documentation update.

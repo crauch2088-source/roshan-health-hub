@@ -84,3 +84,41 @@ Not verified: full production/QA schema parity, exact repository-file-to-ledger 
 - Authenticated clinical E2E and staff UAT remain explicitly deferred until the isolated free QA login path and suitable synthetic clinician identity exist. The skipped CI acceptance job is not a pass.
 - Next P0: recover and review exact stored SQL for production remediation rows `20261102232819`–`20261102232855` and cleanup/reversal row `20261102232941`; map each to quarantined, non-replayable source artifacts and the canonical manifest; compare source/ledger with SHA-256; then replay only in disposable PostgreSQL 17. Do not manually alter ledger rows, re-run live migrations or apply further production DDL during reconciliation.
 - Complete the encrypted off-site backup and isolated restore drill before any further production database change or live-data launch.
+
+## SHA-256 source mapping and remediation review — 2026-11-03
+
+This addendum supersedes only the earlier statement that exact repository-to-ledger SHA-256 parity had not yet been checked for the Phase 49–52 rows. It does not establish full schema parity or full-chain replay.
+
+| Production version | Stored name | Ledger bytes | Ledger SHA-256 | Source file | Result |
+|---|---|---:|---|---|---|
+| `20261102232823` | `roshan_phase49_atomic_pharmacy_dispense_repaired` | 19145 | `ba292230bafe17c6f8b6c6286f64073d83aaf19a7e468c9806bd6c45e7f78950` | `db/roshan_phase49_atomic_pharmacy_dispense.sql` | Exact byte match after removing only the terminal `COMMIT;` wrapper and trailing whitespace |
+| `20261102232849` | `roshan_phase50_clinical_visit_bill_completion_reconciled` | 4474 | `3f663771a1739f3d67d71b0eeee74f959628e059081740ba83171f247436d180` | `db/roshan_phase50_clinical_visit_bill_completion.sql` | Exact byte match after removing only the terminal `COMMIT;` wrapper and trailing whitespace |
+| `20261102232852` | `roshan_phase51_public_setup_required_anon_reconciled` | 788 | `1d38e5f1b45acd38bb1f96e58f17a24acd9cde2f89e5079971e709f730743dae` | `db/roshan_phase51_public_setup_required_anon.sql` | Exact byte match after removing only the terminal `COMMIT;` wrapper and trailing whitespace |
+| `20261102232855` | `roshan_phase52_reporting_analytics_reconciled` | 14296 | `9be8cc5fd48631febf10e7e19c3bd46e8c65932ebafb3eec44269a2ee09972da` | `db/roshan_phase52_reporting_analytics.sql` | Exact byte match after removing only the terminal `COMMIT;` wrapper and trailing whitespace |
+
+The checked-in source file SHA-256 values (including the terminal wrapper) and Git blob SHAs are preserved in `docs/recovered-migrations/phase49-52-provenance.json`.
+
+### Unmapped remediation rows
+
+- `20261102232819` (`roshan_phase49_isolate_malformed_idempotency_table`) is a 223-byte, one-statement table/index rename. Its ledger SHA-256 is `d34bcd4b12417cf0df7be976a80aea678ba352c72629f82267bb7b9933fcb3e8`. No matching canonical source file exists; the exact statement is preserved under `docs/recovered-migrations/sql/` as quarantine evidence.
+- `20261102232941` (`roshan_synthetic_patient_cleanup_and_stock_ledger_reversal`) is a 3,285-byte, one-statement `DO` block with SHA-256 `e826d4947a497e61fcdde5b87ae4e1a8789523fa2979db048f6960b119e04c75`. It is not in the private remediation archive and no canonical source file was found. The public recovered copy redacts nine UUID occurrences across four distinct literals.
+- Static review shows a guarded 49-to-50 medicine aggregate stock reversal plus a +1 stock-movement adjustment, followed by dynamic soft-deletion of related rows across qualifying public tables. It does not permanently delete those rows.
+- Important limitation: the migration has no explicit synthetic-record marker check. It validates one target patient's existence and non-null branch, but does not explicitly assert that the second patient shares that branch. Because no patient/business rows were queried, this review cannot attest that the hard-coded targets were synthetic or that the data-level postconditions are correct. Do not rerun or reverse this migration based on inference.
+
+### Superseded placeholders and private archive
+
+- Production versions `20261102122437`, `20261102133658`, `20261102133734`, and `20261102140000` each contain the same 134-byte placeholder statement with SHA-256 `e95dd067bc31011d7c04ed1a0e1302f241472bf932b0a97203b1b1b4024d8c93`; they are not the actual migration SQL.
+- `private.roshan_remediation_archive_20261103` exists with five rows: one malformed pharmacy-idempotency table row and four superseded placeholder migration rows. Its stored migration statement arrays are 11 bytes each, not the full SQL bodies. The table is owned by `postgres`, RLS is disabled, and direct SELECT/INSERT/UPDATE/DELETE grants are absent for anon, authenticated, service_role and authenticator; authenticated has schema USAGE but no table privilege.
+
+### QA comparison
+
+- QA Phase 49 (`20261102133658`) and Phase 50 (`20261102133734`) stored statements exactly match the checked-in source files.
+- QA Phase 51 (`20261102122437`) differs from the current source only by omission of three leading explanatory comments and the following blank line; the SQL body and ACL statements match.
+- QA Phase 52 (`20261102232905`) has the same stored SQL as production Phase 52 (`20261102232855`) and matches the source after terminal `COMMIT;` wrapper removal.
+- QA's superseded duplicate Phase 50 row (`20261102232858`) matches production Phase 50's reconciled statement.
+
+### Release boundary
+
+- These were read-only migration-ledger/catalog queries. No production or QA DDL, DML, privilege, Auth, Storage or deployment changes occurred; no patient/clinical/financial rows were read.
+- The encrypted off-site backup and isolated restore rehearsal remain unverified. Authenticated clinical E2E and staff UAT remain deferred by the owner; no acceptance is claimed.
+- Next: build a disposable PostgreSQL 17 fixture for the 32819 rename and a parameterized synthetic equivalent of the 32941 stock-reversal/soft-delete contract. Do not execute either artifact against production or QA.

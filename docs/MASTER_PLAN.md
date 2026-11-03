@@ -2370,3 +2370,27 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - Off-site encrypted backup and isolated restore rehearsal remain **unverified**. Do not infer that gate passed from live migration records.
 - Authenticated clinical E2E and staff UAT remain explicitly deferred as requested. The intentional CI skip is not a pass or clinical sign-off.
 - Next P0: reconcile exact stored SQL/source mappings for production versions `20261102232819`–`20261102232855` and `20261102232941`, preserve them as quarantined non-replayable artifacts, update the canonical manifest, and verify with SHA-256 plus disposable PostgreSQL 17 replay. No manual ledger edits or further production DDL until source provenance and backup/restore are complete.
+
+## Execution update — 2026-11-03 (Phase 49–52 provenance recovery)
+
+### Current repository and CI baseline
+
+- Main SHA at the start of this batch: `fe63366f58dbc1184d1750e167773b358c7225b4`.
+- Main GitHub Actions CI run [41592980295](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41592980295) completed successfully on that exact SHA. Finance-only RPC write-isolation integration [41592980287](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41592980287) also succeeded on the same SHA.
+- Current open PRs: #159 (development patch/minor dependencies), #158 (production patch/minor dependencies), #157 (major dependency group), #151 (GitHub Actions major updates), #139 (public setup/auth error recovery), #125 (custom prescription fields and age cue), #112 (UX modernization plan), and #103 (staff-login deferral record). No open GitHub issues were returned by the live repository search.
+- PRs #159/#158/#157/#151 target the current main base. PRs #139/#125 still use base SHA `83bcfd9a46f55ff16e9c6a2133f5e01d696f7d79`; #112 uses `82c9a8306e4f611bcd593eeb5b192fd15b693265`; #103 uses `c091a3355019f741e10a64a2ef08b57a0d15d806`. The combined status endpoint reported only a Vercel success context for each open PR head; that is not evidence of full CI or independent review. No dependency PR was auto-merged.
+
+### Phase 49–52 migration provenance — read-only
+
+- Production is ACTIVE_HEALTHY on PostgreSQL 17.6.1.155 with 129 ledger rows; QA is ACTIVE_HEALTHY on PostgreSQL 17.11.0.003 with 17 rows.
+- Exact SHA-256 comparison proves that production rows `20261102232823`, `20261102232849`, `20261102232852`, and `20261102232855` match the current Phase 49–52 source files after removing only the terminal `COMMIT;` wrapper and trailing whitespace. The full mapping is in `docs/recovered-migrations/phase49-52-provenance.json`.
+- `20261102232819` is a recovered table/index rename without a canonical source file. `20261102232941` is a recovered cleanup/reversal block; its public artifact redacts nine UUID occurrences across four distinct identifiers. Four earlier 134-byte placeholder rows are not the real Phase 49–52 SQL.
+- The private remediation archive has five rows but does not retain the full Phase 49–52 SQL bodies. Direct table privileges are absent for browser/service roles; authenticated has private-schema USAGE but no table access.
+- Static review of `20261102232941` found a broad dynamic soft-delete sweep and a guarded stock reversal. It does not contain an explicit synthetic-record marker predicate and does not assert that both fixed patient targets share the same branch. No patient/visit/prescription/invoice/payment/expense/stock-movement rows were read, so the target identities and data-level postconditions remain unverified.
+- The historical `docs/recovered-migrations/manifest.json` remains the 79-row 2026-10-15 snapshot; `source-parity-report.json` remains the 93-row 2026-10-17 snapshot. The new report is deliberately scoped and must not be presented as full current-ledger parity.
+
+### Safety and next task
+
+- No production or QA DDL/DML, grants, Auth, Storage, deployment, patient records, or financial records were changed or created. Backup/off-site copy/restore rehearsal remain unverified.
+- Authenticated clinical E2E and staff UAT remain explicitly deferred by the owner; the CI skip is not a pass.
+- Next P0: add a disposable PostgreSQL 17 replay fixture for the 32819 rename and a parameterized synthetic equivalent of the 32941 stock-reversal/soft-delete contract. Test idempotency, branch attribution, rollback, and soft-delete-only behavior. Keep the raw production UUIDs out of public source control and do not rerun the production cleanup migration.

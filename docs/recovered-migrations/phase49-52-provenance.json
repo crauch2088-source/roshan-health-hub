@@ -1,0 +1,233 @@
+{
+  "report_type": "scoped_phase49_phase52_production_qa_migration_provenance",
+  "captured_on": "2026-11-03",
+  "repository_main_sha_at_capture": "fe63366f58dbc1184d1750e167773b358c7225b4",
+  "project_refs": {
+    "production": "jewzonxplxhogqrnhosl",
+    "qa": "hopfohcnrtbiqjkgeukz"
+  },
+  "environments": {
+    "production": {
+      "status": "ACTIVE_HEALTHY",
+      "postgres": "17.6.1.155",
+      "migration_rows": 129,
+      "latest_version": "20261102232941",
+      "latest_name": "roshan_synthetic_patient_cleanup_and_stock_ledger_reversal"
+    },
+    "qa": {
+      "status": "ACTIVE_HEALTHY",
+      "postgres": "17.11.0.003",
+      "migration_rows": 17,
+      "latest_version": "20261102232905",
+      "latest_name": "roshan_phase52_reporting_analytics_reconciled"
+    }
+  },
+  "production_source_mappings": [
+    {
+      "version": "20261102232823",
+      "name": "roshan_phase49_atomic_pharmacy_dispense_repaired",
+      "statement_count": 1,
+      "ledger_statement_bytes": 19145,
+      "ledger_statement_sha256": "ba292230bafe17c6f8b6c6286f64073d83aaf19a7e468c9806bd6c45e7f78950",
+      "source_path": "db/roshan_phase49_atomic_pharmacy_dispense.sql",
+      "source_git_blob_sha": "cf3f67291601d7513d758570b8d46c35d6bc56f1",
+      "source_file_bytes": 19155,
+      "source_file_sha256": "0a946aa8729da51518ae7e84b4888de7ff8f4960b1e77f318a70081af62fdee6",
+      "normalization": "Remove the terminal COMMIT; wrapper and trailing whitespace only.",
+      "normalized_source_equals_stored_ledger_statement": true,
+      "normalized_source_sha256": "ba292230bafe17c6f8b6c6286f64073d83aaf19a7e468c9806bd6c45e7f78950",
+      "quarantine_only": true
+    },
+    {
+      "version": "20261102232849",
+      "name": "roshan_phase50_clinical_visit_bill_completion_reconciled",
+      "statement_count": 1,
+      "ledger_statement_bytes": 4474,
+      "ledger_statement_sha256": "3f663771a1739f3d67d71b0eeee74f959628e059081740ba83171f247436d180",
+      "source_path": "db/roshan_phase50_clinical_visit_bill_completion.sql",
+      "source_git_blob_sha": "031cca46782d5821f05d936ff7d35d9c19fef28c",
+      "source_file_bytes": 4484,
+      "source_file_sha256": "cad26c4d2100ad1e47d0f82a785d5a205c54f86137165c1d8dd4228cabee06d8",
+      "normalization": "Remove the terminal COMMIT; wrapper and trailing whitespace only.",
+      "normalized_source_equals_stored_ledger_statement": true,
+      "normalized_source_sha256": "3f663771a1739f3d67d71b0eeee74f959628e059081740ba83171f247436d180",
+      "quarantine_only": true
+    },
+    {
+      "version": "20261102232852",
+      "name": "roshan_phase51_public_setup_required_anon_reconciled",
+      "statement_count": 1,
+      "ledger_statement_bytes": 788,
+      "ledger_statement_sha256": "1d38e5f1b45acd38bb1f96e58f17a24acd9cde2f89e5079971e709f730743dae",
+      "source_path": "db/roshan_phase51_public_setup_required_anon.sql",
+      "source_git_blob_sha": "fc124e36b1435c9e135ed2ec282581f585f93a26",
+      "source_file_bytes": 798,
+      "source_file_sha256": "8f2e836529e2963fc7f768799bf705dda72b7691ebbf268842b8013993769034",
+      "normalization": "Remove the terminal COMMIT; wrapper and trailing whitespace only.",
+      "normalized_source_equals_stored_ledger_statement": true,
+      "normalized_source_sha256": "1d38e5f1b45acd38bb1f96e58f17a24acd9cde2f89e5079971e709f730743dae",
+      "quarantine_only": true
+    },
+    {
+      "version": "20261102232855",
+      "name": "roshan_phase52_reporting_analytics_reconciled",
+      "statement_count": 1,
+      "ledger_statement_bytes": 14296,
+      "ledger_statement_sha256": "9be8cc5fd48631febf10e7e19c3bd46e8c65932ebafb3eec44269a2ee09972da",
+      "source_path": "db/roshan_phase52_reporting_analytics.sql",
+      "source_git_blob_sha": "b86ccade80bc88e4a09d2e027389a1bd3782ad17",
+      "source_file_bytes": 14305,
+      "source_file_sha256": "625b0ed1ecdf99e04bfb5c2e534b39e1ea825089d10f885fe61760c9fc1212bc",
+      "normalization": "Remove the terminal COMMIT; wrapper and trailing whitespace only.",
+      "normalized_source_equals_stored_ledger_statement": true,
+      "normalized_source_sha256": "9be8cc5fd48631febf10e7e19c3bd46e8c65932ebafb3eec44269a2ee09972da",
+      "quarantine_only": true
+    }
+  ],
+  "unmapped_production_rows": [
+    {
+      "version": "20261102232819",
+      "name": "roshan_phase49_isolate_malformed_idempotency_table",
+      "statement_count": 1,
+      "ledger_statement_bytes": 223,
+      "ledger_statement_sha256": "d34bcd4b12417cf0df7be976a80aea678ba352c72629f82267bb7b9933fcb3e8",
+      "source_path": null,
+      "artifact_path": "docs/recovered-migrations/sql/20261102232819_roshan_phase49_isolate_malformed_idempotency_table.sql",
+      "classification": "exact_recovered_quarantine_artifact",
+      "static_effect": "Renames the existing private pharmacy_dispense_idempotency table and its primary-key index to legacy quarantine names.",
+      "replayable": false
+    },
+    {
+      "version": "20261102232941",
+      "name": "roshan_synthetic_patient_cleanup_and_stock_ledger_reversal",
+      "statement_count": 1,
+      "ledger_statement_bytes": 3285,
+      "ledger_statement_sha256": "e826d4947a497e61fcdde5b87ae4e1a8789523fa2979db048f6960b119e04c75",
+      "source_path": null,
+      "artifact_path": "docs/recovered-migrations/sql/20261102232941_roshan_synthetic_patient_cleanup_and_stock_ledger_reversal.sql",
+      "classification": "redacted_recovered_quarantine_artifact",
+      "public_artifact_redacted": true,
+      "redacted_uuid_occurrences": 9,
+      "distinct_uuid_literals_redacted": 4,
+      "public_artifact_bytes": 3722,
+      "public_artifact_sha256": "ce055f8dccd08f72a3303516238595a5a33b6d9b2f06e35a4ce8b48d51921e31",
+      "replayable": false
+    }
+  ],
+  "superseded_production_placeholders": [
+    {
+      "version": "20261102122437",
+      "name": "superseded_placeholder_phase49_atomic_pharmacy_dispense",
+      "statement_bytes": 134,
+      "statement_sha256": "e95dd067bc31011d7c04ed1a0e1302f241472bf932b0a97203b1b1b4024d8c93",
+      "classification": "placeholder_only_not_migration_sql"
+    },
+    {
+      "version": "20261102133658",
+      "name": "superseded_placeholder_phase50_clinical_visit_bill_completion",
+      "statement_bytes": 134,
+      "statement_sha256": "e95dd067bc31011d7c04ed1a0e1302f241472bf932b0a97203b1b1b4024d8c93",
+      "classification": "placeholder_only_not_migration_sql"
+    },
+    {
+      "version": "20261102133734",
+      "name": "superseded_placeholder_phase51_public_setup_required_anon",
+      "statement_bytes": 134,
+      "statement_sha256": "e95dd067bc31011d7c04ed1a0e1302f241472bf932b0a97203b1b1b4024d8c93",
+      "classification": "placeholder_only_not_migration_sql"
+    },
+    {
+      "version": "20261102140000",
+      "name": "superseded_placeholder_phase52_reporting_analytics",
+      "statement_bytes": 134,
+      "statement_sha256": "e95dd067bc31011d7c04ed1a0e1302f241472bf932b0a97203b1b1b4024d8c93",
+      "classification": "placeholder_only_not_migration_sql"
+    }
+  ],
+  "qa_comparison": [
+    {
+      "version": "20261102122437",
+      "name": "roshan_phase51_public_setup_required_anon",
+      "statement_bytes": 552,
+      "statement_sha256": "a00ae5e31ba39d730bc10b113b715798e08a910f4e7c2549716ddd199e2b0043",
+      "source_comparison": "Only three leading source comments and the following blank line are absent; SQL body/ACL statements match."
+    },
+    {
+      "version": "20261102133658",
+      "name": "roshan_phase49_atomic_pharmacy_dispense",
+      "statement_bytes": 19155,
+      "statement_sha256": "0a946aa8729da51518ae7e84b4888de7ff8f4960b1e77f318a70081af62fdee6",
+      "source_comparison": "Exact current Phase 49 source file match."
+    },
+    {
+      "version": "20261102133734",
+      "name": "roshan_phase50_clinical_visit_bill_completion",
+      "statement_bytes": 4484,
+      "statement_sha256": "cad26c4d2100ad1e47d0f82a785d5a205c54f86137165c1d8dd4228cabee06d8",
+      "source_comparison": "Exact current Phase 50 source file match."
+    },
+    {
+      "version": "20261102232858",
+      "name": "superseded_duplicate_roshan_phase50_clinical_visit_bill_completion",
+      "statement_bytes": 4474,
+      "statement_sha256": "3f663771a1739f3d67d71b0eeee74f959628e059081740ba83171f247436d180",
+      "source_comparison": "Same stored SQL as production Phase 50 version 20261102232849."
+    },
+    {
+      "version": "20261102232905",
+      "name": "roshan_phase52_reporting_analytics_reconciled",
+      "statement_bytes": 14296,
+      "statement_sha256": "9be8cc5fd48631febf10e7e19c3bd46e8c65932ebafb3eec44269a2ee09972da",
+      "source_comparison": "Same stored SQL as production Phase 52; exact current source match after terminal COMMIT wrapper removal."
+    }
+  ],
+  "superseded_placeholder_archive": {
+    "table": "private.roshan_remediation_archive_20261103",
+    "exists": true,
+    "rows": 5,
+    "owner": "postgres",
+    "row_level_security": false,
+    "direct_table_privileges": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false,
+      "authenticator": false
+    },
+    "private_schema_usage": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false,
+      "authenticator": false
+    },
+    "contents_summary": "One archived malformed pharmacy idempotency-table row and four superseded placeholder migration rows. The archived migration statement arrays are 11 bytes each and do not contain the full Phase 49–52 SQL source. The archive row contents were not exposed."
+  },
+  "cleanup_migration_review": {
+    "static_behavior": [
+      "Checks that one fixed patient row exists and has a non-null branch.",
+      "Checks a fixed medicine stock state and whether a matching +1 adjustment reversal already exists.",
+      "If stock is 49 and the reversal is absent, restores aggregate stock to 50 and inserts a stock_movements adjustment; if stock is already 50 with the reversal, it is a no-op; other states raise an exception.",
+      "Dynamically sets deleted_at on matching rows in public tables that contain deleted_at plus patient_id, visit_id, or prescription_id."
+    ],
+    "static_safety_findings": [
+      "The SQL has no explicit synthetic-record marker predicate; the claim that fixed target identifiers are synthetic is not independently proven by this read-only catalog/ledger review.",
+      "The SQL checks only one target patient's branch before using that branch on the stock reversal; it does not explicitly assert the other target patient's branch matches.",
+      "The migration soft-deletes associated rows rather than permanently deleting them, but the sweep is broad across qualifying public tables."
+    ],
+    "raw_statement_uuid_occurrences": 9,
+    "distinct_uuid_literals": 4,
+    "original_sql_not_committed_to_public_repository": true,
+    "exact_source_file_not_found": true,
+    "replay_status": "BLOCKED_PENDING_DISPOSABLE_PG17_TEST_AND_OWNER_REVIEW"
+  },
+  "verification_scope": {
+    "production_and_qa_operations": "Read-only migration-ledger/catalog SELECTs only",
+    "patient_visit_prescription_invoice_payment_expense_stock_rows_read": false,
+    "ddl_dml_grants_auth_storage_or_deployment_writes": false,
+    "full_schema_parity_proven": false,
+    "full_migration_chain_replay_proven": false,
+    "authenticated_clinical_e2e_proven": false,
+    "staff_uat_proven": false,
+    "encrypted_offsite_backup_and_restore_rehearsal_proven": false
+  },
+  "next_task": "Add a disposable PostgreSQL 17 replay fixture using synthetic UUIDs for the exact 20261102232819 rename and a parameterized, redacted-equivalent 20261102232941 stock-reversal/soft-delete contract; verify idempotency, branch attribution, rollback and no permanent deletes. Do not apply to QA or production."
+}
