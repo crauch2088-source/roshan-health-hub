@@ -179,6 +179,9 @@ function CashboxTab({ currency }: { currency: string }) {
 
   const bal = (balance.data ?? [])[0] as Row | undefined;
   const rows = (txns.data ?? []) as Row[];
+  const hasSourceLinkedPaymentRows = rows.some(
+    (tx) => !isGenericCashboxReversalAllowed(s(tx, "source_type")),
+  );
 
   if (balance.isLoading) return <Loading />;
 
@@ -194,6 +197,11 @@ function CashboxTab({ currency }: { currency: string }) {
       </div>
 
       <ErrorBox error={balance.error ?? txns.error} />
+      {can("cashbox.update") && hasSourceLinkedPaymentRows ? (
+        <p className="mb-3 text-sm text-muted-foreground">
+          {t("source_specific_reversal_required")}
+        </p>
+      ) : null}
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <StatCard label={t("cashbox_balance")} value={money(n(bal, "balance"), currency)} />
