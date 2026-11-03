@@ -167,6 +167,7 @@ function CertificatesPageInner() {
     document.body.classList.add("print-scope-active");
     const cleanup = () => {
       document.body.classList.remove("print-scope-active");
+      window.removeEventListener("afterprint", cleanup);
       setPrintingCertificateId(null);
     };
     window.addEventListener("afterprint", cleanup, { once: true });

@@ -427,7 +427,10 @@ export function PrintButton({ scoped = false }: { scoped?: boolean }) {
   const { t } = useLang();
   const print = () => {
     if (scoped) {
-      const cleanup = () => document.body.classList.remove("print-scope-active");
+      const cleanup = () => {
+        document.body.classList.remove("print-scope-active");
+        window.removeEventListener("afterprint", cleanup);
+      };
       document.body.classList.add("print-scope-active");
       window.addEventListener("afterprint", cleanup, { once: true });
     }
