@@ -41,6 +41,9 @@ BEGIN
   IF orig.reversal_of IS NOT NULL THEN
     RAISE EXCEPTION 'a reversal entry cannot itself be reversed' USING ERRCODE = '22023';
   END IF;
+  IF orig.branch_id IS NULL THEN
+    RAISE EXCEPTION 'cashbox transaction must be branch-bound before reversal' USING ERRCODE = '23514';
+  END IF;
   IF orig.source_type IN ('payment', 'supplier_payment', 'insurance_claim_payment') THEN
     RAISE EXCEPTION 'payment ledger entries require a source-specific payment reversal workflow'
       USING ERRCODE = '22023';
@@ -148,6 +151,9 @@ BEGIN
   IF v_payment.deleted_at IS NOT NULL THEN
     RAISE EXCEPTION 'invoice payment is already voided or reversed' USING ERRCODE = '22023';
   END IF;
+  IF v_invoice_branch IS NULL OR v_payment.branch_id IS NULL THEN
+    RAISE EXCEPTION 'invoice payment and invoice must be branch-bound before reversal' USING ERRCODE = '23514';
+  END IF;
   IF v_payment.branch_id IS DISTINCT FROM v_invoice_branch THEN
     RAISE EXCEPTION 'invoice payment branch does not match its invoice' USING ERRCODE = '23514';
   END IF;
@@ -254,12 +260,17 @@ BEGIN
     p.id,
     c.id IS NOT NULL,
     c.id IS NOT NULL
-      AND c.branch_id IS NOT DISTINCT FROM p.branch_id
+      AND c.branch_id IS NOT NULL
+      AND p.branch_id IS NOT NULL
+      AND i.branch_id IS NOT NULL
+      AND c.branch_id = p.branch_id
+      AND p.branch_id = i.branch_id
       AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount),
     COALESCE(c.is_reversed, false),
     CASE WHEN c.is_reversed THEN c.reversal_reason ELSE NULL END,
     r.transaction_date
   FROM public.payments p
+  JOIN public.invoices i ON i.id = p.invoice_id AND i.deleted_at IS NULL
   LEFT JOIN public.cashbox_transactions c
     ON c.source_type = 'payment'
    AND c.source_id = p.id
@@ -267,7 +278,8 @@ BEGIN
   LEFT JOIN public.cashbox_transactions r
     ON r.reversal_of = c.id
   WHERE p.id = ANY(_payment_ids)
-    AND private.app_has_branch_access(p.branch_id);
+    AND private.app_has_branch_access(p.branch_id)
+    AND private.app_has_branch_access(i.branch_id);
 END;
 $function$;
 

@@ -26,6 +26,17 @@ BEGIN
     EXCEPTION WHEN SQLSTATE '22023' THEN GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT; v_rejected := v_error LIKE '%source-specific payment reversal%'; END;
     IF NOT v_rejected THEN RAISE EXCEPTION 'generic cashbox reversal accepted a source payment: %',v_reversal_id; END IF;
   END LOOP;
+  -- Branchless cashbox rows are never reversible, including for a super-admin.
+  PERFORM set_config('test.super_admin','true',true);
+  v_rejected := false;
+  BEGIN PERFORM public.reverse_cashbox_entry('70000000-0000-0000-0000-000000000008','branchless cashbox correction');
+  EXCEPTION WHEN SQLSTATE '23514' THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'super-admin branch bypass allowed branchless cashbox reversal'; END IF;
+  IF (SELECT is_reversed FROM public.cashbox_transactions WHERE id='70000000-0000-0000-0000-000000000008')
+     OR EXISTS(SELECT 1 FROM public.cashbox_transactions WHERE reversal_of='70000000-0000-0000-0000-000000000008') THEN
+    RAISE EXCEPTION 'blocked branchless cashbox reversal left side effects';
+  END IF;
+  PERFORM set_config('test.super_admin','false',true);
   PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000002',true);
   v_rejected := false;
   BEGIN PERFORM public.reverse_invoice_payment('60000000-0000-0000-0000-000000000001','branch mismatch');
@@ -33,10 +44,12 @@ BEGIN
   IF NOT v_rejected THEN RAISE EXCEPTION 'cross-branch invoice payment reversal was accepted'; END IF;
   IF (SELECT deleted_at FROM public.payments WHERE id='60000000-0000-0000-0000-000000000001') IS NOT NULL THEN RAISE EXCEPTION 'cross-branch reversal soft-deleted the payment'; END IF;
   PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000001',true);
+  PERFORM set_config('test.super_admin','true',true);
   v_rejected := false;
   BEGIN PERFORM public.reverse_invoice_payment('60000000-0000-0000-0000-000000000004','branchless invoice payment');
-  EXCEPTION WHEN SQLSTATE '42501' THEN v_rejected := true; END;
-  IF NOT v_rejected THEN RAISE EXCEPTION 'branchless invoice payment reversal was accepted'; END IF;
+  EXCEPTION WHEN SQLSTATE '23514' THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'super-admin branch bypass allowed branchless invoice payment reversal'; END IF;
+  PERFORM set_config('test.super_admin','false',true);
   IF (SELECT deleted_at FROM public.payments WHERE id='60000000-0000-0000-0000-000000000004') IS NOT NULL
      OR (SELECT is_reversed FROM public.cashbox_transactions WHERE id='70000000-0000-0000-0000-000000000007')
      OR EXISTS(SELECT 1 FROM public.cashbox_transactions WHERE reversal_of='70000000-0000-0000-0000-000000000007') THEN
@@ -70,6 +83,15 @@ BEGIN
      OR v_receipt.reversal_at IS NOT NULL THEN
     RAISE EXCEPTION 'receipt read model did not report the active payment state';
   END IF;
+  -- A super-admin can inspect, but never treat, a branchless payment as receipt-safe.
+  PERFORM set_config('test.super_admin','true',true);
+  SELECT * INTO v_receipt
+    FROM public.get_invoice_payment_receipt_status(ARRAY['60000000-0000-0000-0000-000000000004']::uuid[])
+   WHERE payment_id='60000000-0000-0000-0000-000000000004';
+  IF NOT FOUND OR NOT v_receipt.ledger_found OR v_receipt.ledger_matches THEN
+    RAISE EXCEPTION 'branchless payment was marked as receipt-safe';
+  END IF;
+  PERFORM set_config('test.super_admin','false',true);
   PERFORM set_config('test.user_id','10000000-0000-0000-0000-000000000002',true);
   SELECT count(*) INTO v_receipt_count
     FROM public.get_invoice_payment_receipt_status(ARRAY[
