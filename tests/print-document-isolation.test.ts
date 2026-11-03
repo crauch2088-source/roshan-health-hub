@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import test from "node:test";
+
+const root = process.cwd();
+const read = (path) => readFileSync(join(root, path), "utf8");
+
+test("certificate print action selects and prints exactly one persisted certificate", () => {
+  const source = read("src/routes/_authenticated/certificates.tsx");
+  assert.match(source, /printingCertificateId/);
+  assert.match(source, /rows\.find\(\(row\) => s\(row, "id"\) === printingCertificateId\)/);
+  assert.match(source, /setPrintingCertificateId\(s\(c, "id"\)\)/);
+  assert.doesNotMatch(source, /onClick=\{\(\) => window\.print\(\)\}/);
+  assert.match(source, /afterprint/);
+  assert.match(source, /print-only/);
+});
+
+test("invoice print boundary excludes all non-document controls and uses canonical center settings", () => {
+  const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
+  assert.match(source, /print-document-root/);
+  assert.match(source, /className="no-print space-y-4"/);
+  assert.match(source, /settings\["center_name"\]/);
+  assert.match(source, /settings\["center_name_ar"\]/);
+  assert.match(source, /settings\["address"\]/);
+  assert.match(source, /settings\["phone"\]/);
+  assert.doesNotMatch(source, /settings\["clinic_(name|address|phone)"\]/);
+});
+
+test("print-only certificate content is hidden on screen and displayed only for print", () => {
+  const css = read("src/styles.css");
+  assert.match(css, /\.print-only\s*\{[^}]*display:\s*none/s);
+  assert.match(css, /@media print[\s\S]*?\.print-only\s*\{[^}]*display:\s*block/s);
+});
