@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Empty, ErrorBox, Field, Loading, PageHeader, PermissionGate } from "@/components/kit";
 import { PatientPicker, type PickedPatient } from "@/components/patient-picker";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { s, useRows, useSave, type Row, rel } from "@/lib/db";
+import { s, useRows, useSave, useSettings, type Row, rel } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -65,6 +65,8 @@ function CertificatesPage() {
 function CertificatesPageInner() {
   const { lang } = useLang();
   const { can, user } = useAuth();
+  const { settings } = useSettings();
+  const [printingCertificateId, setPrintingCertificateId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     patient_id: "",
@@ -156,10 +158,24 @@ function CertificatesPageInner() {
       },
     },
   );
-  if (list.isLoading) return <Loading />;
   const rows = (list.data ?? []) as Row[];
+  const printCertificate = rows.find((row) => s(row, "id") === printingCertificateId);
+
+  useEffect(() => {
+    if (!printingCertificateId || !printCertificate) return;
+    const handleAfterPrint = () => setPrintingCertificateId(null);
+    window.addEventListener("afterprint", handleAfterPrint, { once: true });
+    const timeout = window.setTimeout(() => window.print(), 100);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, [printingCertificateId, printCertificate]);
+
+  if (list.isLoading) return <Loading />;
   return (
-    <div className="space-y-4">
+    <>
+    <div className="space-y-4 no-print">
       <PageHeader
         title={lang === "ar" ? "الشهادات الطبية" : "Medical certificates"}
         subtitle={lang === "ar" ? "إصدار وطباعة الشهادات" : "Issue and print medical certificates"}
@@ -210,7 +226,13 @@ function CertificatesPageInner() {
                         <TableCell className="max-w-[24rem]">{s(c, "diagnosis") || "—"}</TableCell>
                         <TableCell>{s(rel(c, "users"), "full_name") || "—"}</TableCell>
                         <TableCell className="text-end">
-                          <Button size="sm" variant="ghost" onClick={() => window.print()}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            aria-label={lang === "ar" ? "طباعة الشهادة" : "Print certificate"}
+                            disabled={Boolean(printingCertificateId)}
+                            onClick={() => setPrintingCertificateId(s(c, "id"))}
+                          >
                             <Printer className="size-4" />
                           </Button>
                           {can("certificates.create") && certificateBranchId(c) && (
@@ -352,5 +374,37 @@ function CertificatesPageInner() {
         </DialogContent>
       </Dialog>
     </div>
+    {printCertificate && (
+      <div className="print-only">
+        <article className="print-document-root mx-auto max-w-3xl space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <header className="space-y-2 border-b pb-5 text-center">
+            <h1 className="text-xl font-bold">
+              {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
+                settings["center_name"] || settings["center_name_ar"] || t("app_name")}
+            </h1>
+            {(settings["address"] || settings["phone"]) && (
+              <p className="text-sm">
+                {[settings["address"], settings["phone"]].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            <h2 className="pt-3 text-lg font-semibold">
+              {lang === "ar" ? "شهادة طبية" : "Medical Certificate"}
+            </h2>
+          </header>
+          <section className="space-y-4 text-base leading-8">
+            {s(printCertificate, "certificate_number") && (
+              <p><strong>{lang === "ar" ? "رقم الشهادة:" : "Certificate number:"}</strong> {s(printCertificate, "certificate_number")}</p>
+            )}
+            <p><strong>{lang === "ar" ? "تاريخ الإصدار:" : "Issue date:"}</strong> {formatDate(s(printCertificate, "created_at"))}</p>
+            <p><strong>{lang === "ar" ? "اسم المريض:" : "Patient:"}</strong> {s(rel(printCertificate, "patients"), "full_name")}</p>
+            <p><strong>{lang === "ar" ? "الفترة:" : "Period:"}</strong> {formatDate(s(printCertificate, "start_date"))} — {formatDate(s(printCertificate, "end_date"))}</p>
+            <p><strong>{lang === "ar" ? "الغرض / التشخيص:" : "Purpose / diagnosis:"}</strong> {s(printCertificate, "diagnosis") || "—"}</p>
+            <p><strong>{lang === "ar" ? "الطبيب:" : "Doctor:"}</strong> {s(rel(printCertificate, "users"), "full_name") || "—"}</p>
+          </section>
+          {settings["invoice_footer"] && <footer className="border-t pt-4 text-sm">{settings["invoice_footer"]}</footer>}
+        </article>
+      </div>
+    )}
+    </>
   );
 }

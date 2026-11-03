@@ -71,7 +71,7 @@ function InvoicePageInner() {
     from: "/_authenticated/billing_/$invoiceId",
   });
 
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency, settings } = useSettings();
 
@@ -159,6 +159,7 @@ function InvoicePageInner() {
 
   return (
     <div>
+      <div className="no-print">
       <PageHeader
         title={`${t("invoice")} ${s(invoice, "invoice_number")}`}
         subtitle={`${s(patient, "full_name")} · ${t("mrn")}: ${s(patient, "mrn")} · ${formatDate(
@@ -176,19 +177,21 @@ function InvoicePageInner() {
           </Link>
         </Button>
       </PageHeader>
+      </div>
 
-      <ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} />
+      <div className="no-print"><ErrorBox error={invoiceQ.error ?? itemsQ.error ?? paymentsQ.error} /></div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="print-area lg:col-span-2">
+        <Card className="print-area print-document-root lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
-                {settings["clinic_name"] || t("app_name")}
+                {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
+                  settings["center_name"] || settings["center_name_ar"] || t("app_name")}
               </p>
 
               <p className="text-xs text-muted-foreground">
-                {settings["clinic_address"] || ""} {settings["clinic_phone"] || ""}
+                {settings["address"] || ""} {settings["phone"] || ""}
               </p>
             </div>
 
@@ -265,7 +268,7 @@ function InvoicePageInner() {
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
+        <div className="no-print space-y-4">
           {can("payments.create") ? (
             <Card className="no-print">
               <CardContent className="grid gap-4 p-4">

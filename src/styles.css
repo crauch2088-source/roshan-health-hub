@@ -286,3 +286,22 @@
 @media (max-width: 639px) {
   .roshan-main { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 }
+
+/* Phase 53 — render only the selected certificate document during print. */
+.print-only {
+  display: none;
+}
+@media print {
+  .print-only {
+    display: block !important;
+  }
+  .print-document-root {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    color: #000 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
