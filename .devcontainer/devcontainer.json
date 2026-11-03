@@ -1,0 +1,21 @@
+{
+  "name": "Roshan Health Hub — OpenCode Cloud",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22-bookworm",
+  "remoteUser": "node",
+  "postCreateCommand": "npm ci && npm install --global @opencode/cli && opencode --version",
+  "forwardPorts": [4096],
+  "portsAttributes": {
+    "4096": {
+      "label": "OpenCode Web",
+      "visibility": "private",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}
