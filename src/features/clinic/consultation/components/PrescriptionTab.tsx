@@ -471,7 +471,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         </div>
         {lastSavedPrescriptionId && savedPrescriptionQ.isLoading && (
           <p className="text-xs text-muted-foreground">
-            {lang === "ar" ? "جارٍ تجهيز النسخة المحفوظة..." : "Preparing the saved prescription copy..."}
+            {lang === "ar"
+              ? "جارٍ تجهيز النسخة المحفوظة..."
+              : "Preparing the saved prescription copy..."}
           </p>
         )}
         {savedPrescriptionQ.error && (
@@ -517,7 +519,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                   </p>
                 )}
                 <h2 className="pt-3 text-lg font-semibold">
-                  {lang === "ar" ? "نسخة من الوصفة الطبية المحفوظة" : "Saved prescription order copy"}
+                  {lang === "ar"
+                    ? "نسخة من الوصفة الطبية المحفوظة"
+                    : "Saved prescription order copy"}
                 </h2>
               </header>
               <section className="grid grid-cols-2 gap-2 text-sm">
@@ -563,7 +567,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                       <th className="p-2 text-start">{lang === "ar" ? "التكرار" : "Frequency"}</th>
                       <th className="p-2 text-start">{lang === "ar" ? "المدة" : "Duration"}</th>
                       <th className="p-2 text-start">{lang === "ar" ? "الكمية" : "Qty"}</th>
-                      <th className="p-2 text-start">{lang === "ar" ? "التعليمات" : "Instructions"}</th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "التعليمات" : "Instructions"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

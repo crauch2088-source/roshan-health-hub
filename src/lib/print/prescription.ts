@@ -27,9 +27,7 @@ export type PrescriptionPrintModel = {
 type RecordValue = Record<string, unknown>;
 
 function asRecord(value: unknown): RecordValue {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as RecordValue)
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {};
 }
 
 function relation(row: RecordValue, key: string): RecordValue {
@@ -50,9 +48,7 @@ function positiveInteger(value: unknown): number {
  * Build a read-only print model from one persisted prescription row.
  * Values are copied verbatim; missing clinical fields are never inferred.
  */
-export function buildPrescriptionPrintModel(
-  value: unknown,
-): PrescriptionPrintModel | null {
+export function buildPrescriptionPrintModel(value: unknown): PrescriptionPrintModel | null {
   const row = asRecord(value);
   if (!text(row["id"]).trim()) return null;
 
