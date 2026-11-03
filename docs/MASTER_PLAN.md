@@ -2432,3 +2432,20 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - **Production remains unchanged**: catalog inspection confirms `reverse_invoice_payment` is absent and the generic payment-source guard is not installed. The Phase 54 and 54B migrations are not applied to Production. The encrypted backup + isolated restore gate remains open; do not apply either migration to Production until that gate is satisfied.
 - Supplier and insurance payment reversal workflows remain intentionally unsupported; their source-linked ledger rows are blocked by the generic path until dedicated, source-aware reversal functions are designed and tested.
 - Clinical acceptance, full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain open. This phase is a financial database safety improvement, not a clinical-readiness declaration.
+
+
+## Live schema parity audit — 2026-11-03
+
+The current read-only production/QA catalog comparison is recorded in [`docs/SCHEMA_PARITY_AUDIT_2026-11-03.md`](SCHEMA_PARITY_AUDIT_2026-11-03.md). The application-schema fingerprint matches exactly for tables/columns (855), constraints (218), indexes (252), triggers (69), RLS flags (58), RLS policies (210), table privileges (991) and views (5), excluding the documented production-only quarantine artifacts. Function definitions and routine privileges are not yet identical: QA contains Phase54/54C RPCs, and production's Phase36 guard lacks the tracked `lab_order_items.order_id` immutability check. QA also has two private helper PUBLIC EXECUTE grants to revoke.
+
+### Phase 54C — branch-bound reversal and receipt status
+
+PR #171 is merged. Phase54, Phase54B and Phase54C are recorded in QA at versions `20261103114242`, `20261103114612` and `20261103115649`. Phase54C rejects branchless financial reversals even for super-admins and adds the authenticated-only, permission/branch-scoped `get_invoice_payment_receipt_status(uuid[])` RPC. The QA RPC metadata confirms SECURITY DEFINER, empty `search_path`, no anon EXECUTE and authenticated EXECUTE. Production remains unchanged pending encrypted backup and isolated restore evidence.
+
+### Phase 55 — clinical parent-link and helper ACL reconciliation
+
+PR #172 contains the forward-only correction for the production Phase36 `order_id` guard drift and QA helper ACL drift. Its targeted PostgreSQL 17 test has passed; full CI and QA application remain pending. No production data or schema was changed by this work.
+
+### Production gate
+
+The connected Supabase tools do not expose a verified encrypted backup/export plus isolated restore workflow. Do not apply Phase54/54B/54C or Phase55 to production until that evidence exists. The already-applied production migration `20261102232941` has a redacted, non-replayable provenance artifact and must not be re-run.

@@ -231,3 +231,18 @@ The combined PG17 critical-path replay follows the canonical Phase 48 fixture or
 - Production row `20261102232941` is an unmapped cleanup/reversal `DO` block. The public copy is redacted because the stored SQL contains fixed production UUIDs. Its original ledger SHA-256 is preserved in the scoped provenance report; the redacted artifact is non-replayable.
 - Four earlier 134-byte production ledger rows are placeholder statements, not the Phase 49–52 migration bodies. The private archive does not contain full migration SQL.
 - This is a scoped provenance reconciliation, not full migration-chain replay, full schema parity, or data-level validation. Backup/restore remains unverified; no further production database change is authorized by this documentation update.
+
+## Live migration addendum — 2026-11-03
+
+The historical entries above remain unchanged. Current environment ledgers and forward phases:
+
+| Phase | Source file | QA applied version | Production state |
+|---|---|---|---|
+| 54 | `db/roshan_phase54_source_aware_financial_reversal.sql` | `20261103114242` | Not applied |
+| 54B | `db/roshan_phase54b_payment_updated_at_compat.sql` | `20261103114612` | Not applied |
+| 54C | `db/roshan_phase54c_branchless_receipt_integrity.sql` | `20261103115649` | Not applied |
+| 55 | `db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql` | Candidate; PR #172 | Not applied |
+
+As checked on 2026-11-03, production records 129 migrations and QA records 20. These counts do not establish schema parity; see `docs/SCHEMA_PARITY_AUDIT_2026-11-03.md` for the read-only catalog fingerprints and known function/ACL differences. Phase54/54B/54C are applied only in QA. Phase55 is not yet applied to either environment.
+
+**Production safety:** no production Phase54/54B/54C/55 DDL is authorized until an encrypted backup and isolated restore are verified. Do not replay the redacted production migration `20261102232941`.
