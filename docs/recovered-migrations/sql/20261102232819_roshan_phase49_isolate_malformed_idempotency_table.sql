@@ -1,0 +1,1 @@
+ALTER TABLE private.pharmacy_dispense_idempotency RENAME TO pharmacy_dispense_idempotency_legacy_20261103; ALTER INDEX private.pharmacy_dispense_idempotency_pkey RENAME TO pharmacy_dispense_idempotency_legacy_20261103_pkey;
