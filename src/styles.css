@@ -190,25 +190,23 @@
   }
 }
 
-/* Print: clean clinical documents (invoices, lab reports, prescriptions) */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  .print-area {
-    box-shadow: none !important;
-    border: 0 !important;
-  }
-  body {
-    background: #fff !important;
-  }
+/* Clinical document printing: isolate one selected document and support A4/thermal rolls. */
+.print-only { display: none !important; }
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@page roshan-thermal-58 {
+  size: 58mm auto;
+  margin: 2mm;
+}
+@page roshan-thermal-80 {
+  size: 80mm auto;
+  margin: 2mm;
 }
 
-/* Phase 10 — print polish for clinical documents */
 @media print {
-  @page {
-    margin: 12mm;
-  }
   html,
   body {
     background: #fff !important;
@@ -216,31 +214,95 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .no-print {
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .no-print,
+  .print-hide {
     display: none !important;
   }
-  .print-area {
-    box-shadow: none !important;
-    border: 0 !important;
+
+  .print-only {
+    display: block !important;
   }
-  /* Avoid awkward breaks inside table rows and cards */
-  tr,
-  .print-keep {
+
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+    color: #000 !important;
+  }
+
+  .print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-family: "Cairo", "Segoe UI", system-ui, sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
+  }
+
+  html[data-print-width="a4"] .print-area {
+    page: auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  html[data-print-width="58mm"] .print-area {
+    page: roshan-thermal-58;
+    width: 54mm;
+    max-width: 54mm;
+    font-size: 8.5pt;
+  }
+
+  html[data-print-width="80mm"] .print-area {
+    page: roshan-thermal-80;
+    width: 76mm;
+    max-width: 76mm;
+    font-size: 9pt;
+  }
+
+  .print-area table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-area th,
+  .print-area td {
+    padding: 3px 2px;
+    border-bottom: 1px solid #bbb;
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .print-area tr,
+  .print-area .print-keep {
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  thead {
+
+  .print-area thead {
     display: table-header-group;
   }
-  h1,
-  h2,
-  h3 {
+
+  .print-area h1,
+  .print-area h2,
+  .print-area h3 {
     break-after: avoid;
     page-break-after: avoid;
   }
-  a {
-    text-decoration: none !important;
+
+  .print-area a {
     color: inherit !important;
+    text-decoration: none !important;
   }
 }
 
