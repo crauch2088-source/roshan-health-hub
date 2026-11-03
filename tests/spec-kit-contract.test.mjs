@@ -53,7 +53,10 @@ test("Roshan Constitution and Phase 53 planning are reviewable and remain implem
   const constitution = readFileSync(join(root, ".specify/memory/constitution.md"), "utf8");
   const spec = readFileSync(join(root, "specs/001-clinical-document-printing/spec.md"), "utf8");
   const plan = readFileSync(join(root, "specs/001-clinical-document-printing/plan.md"), "utf8");
-  const research = readFileSync(join(root, "specs/001-clinical-document-printing/research.md"), "utf8");
+  const research = readFileSync(
+    join(root, "specs/001-clinical-document-printing/research.md"),
+    "utf8",
+  );
   const tasks = readFileSync(join(root, "specs/001-clinical-document-printing/tasks.md"), "utf8");
   assert.match(constitution, /Clinical Safety and Data Fidelity/);
   assert.match(constitution, /Patient Privacy and Least Privilege/);
@@ -71,5 +74,9 @@ test("Roshan Constitution and Phase 53 planning are reviewable and remain implem
   assert.match(tasks, /Do not begin document UI implementation until T001–T005/);
   assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/data-model.md")));
   assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/quickstart.md")));
-  assert.ok(existsSync(join(root, "specs/001-clinical-document-printing/contracts/print-document-contract.md")));
+  assert.ok(
+    existsSync(
+      join(root, "specs/001-clinical-document-printing/contracts/print-document-contract.md"),
+    ),
+  );
 });
