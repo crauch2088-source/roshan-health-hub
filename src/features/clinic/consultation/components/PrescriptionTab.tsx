@@ -114,9 +114,13 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           "missing-duration":
             lang === "ar" ? "أكمل مدة العلاج لكل دواء" : "Complete the duration for every medicine",
           "missing-dosage-form":
-            lang === "ar" ? "حدّد الشكل الدوائي لكل دواء" : "Specify a dosage form for every medicine",
+            lang === "ar"
+              ? "حدّد الشكل الدوائي لكل دواء"
+              : "Specify a dosage form for every medicine",
           "missing-route":
-            lang === "ar" ? "حدّد طريق الإعطاء لكل دواء" : "Specify an administration route for every medicine",
+            lang === "ar"
+              ? "حدّد طريق الإعطاء لكل دواء"
+              : "Specify an administration route for every medicine",
           "invalid-quantity":
             lang === "ar"
               ? "يجب أن تكون كمية كل دواء عددًا صحيحًا موجبًا"
