@@ -64,7 +64,7 @@ test("Roshan Constitution and Phase 53 planning are reviewable and remain implem
   assert.match(spec, /immutable payment ledger/);
   assert.match(spec, /Arabic RTL and English LTR/);
   assert.match(plan, /G0 — source contracts/);
-  assert.match(plan, /No new database migration or table/);
+  assert.match(plan, /Do not introduce a PDF service, database migration/);
   assert.match(research, /private\.app_has_branch_access/);
   assert.match(research, /center_name/);
   assert.match(tasks, /T001 Inspect QA PostgreSQL catalogs/);
