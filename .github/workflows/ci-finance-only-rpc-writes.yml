@@ -36,7 +36,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run finance-only privilege and RPC regression tests
         env:
           PGPASSWORD: postgres
@@ -63,7 +63,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Race two identical idempotent payment requests
         env:
           PGPASSWORD: postgres
