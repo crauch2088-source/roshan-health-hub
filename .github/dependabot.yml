@@ -23,6 +23,14 @@ updates:
       - dependency-name: eslint-plugin-react-hooks
         update-types:
           - "version-update:semver-major"
+      # ESLint 10 is incompatible with the pinned React Hooks 5 plugin peer range.
+      # Keep ESLint 9 until the Hooks plugin migration and its lint-rule cleanup are tested together.
+      - dependency-name: eslint
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@eslint/js"
+        update-types:
+          - "version-update:semver-major"
     groups:
       npm-production-patch-minor:
         dependency-type: production
