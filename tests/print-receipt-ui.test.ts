@@ -32,6 +32,8 @@ test("receipt printing is bound to one selected persisted payment", () => {
   assert.match(source, /paymentRows\.find\([\s\S]*printingPaymentId/);
   assert.match(source, /flushSync\(\(\) => setPrintingPaymentId\(paymentId\)\)/);
   assert.match(source, /document\.body\.classList\.add\("print-scope-active"\)/);
+  assert.match(source, /id="payment-receipt-print-document"/);
+  assert.match(source, /printRoot\.classList\.add\("print-target-active"\)/);
   assert.match(source, /selectedReceipt\?\.complete/);
   assert.match(source, /selectedReceipt\.isReversed/);
   assert.match(source, /Current invoice balance|الرصيد الحالي للفاتورة/);

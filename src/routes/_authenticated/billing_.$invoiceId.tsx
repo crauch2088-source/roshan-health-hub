@@ -207,7 +207,14 @@ function InvoicePageInner() {
   const handlePrintPayment = (paymentId: string) => {
     flushSync(() => setPrintingPaymentId(paymentId));
     document.body.classList.add("print-scope-active");
+    const printRoot = document.getElementById("payment-receipt-print-document");
+    if (!printRoot) {
+      setPrintingPaymentId(null);
+      return;
+    }
+    printRoot.classList.add("print-target-active");
     const cleanup = () => {
+      printRoot.classList.remove("print-target-active");
       document.body.classList.remove("print-scope-active");
       window.removeEventListener("afterprint", cleanup);
       setPrintingPaymentId(null);
@@ -232,7 +239,9 @@ function InvoicePageInner() {
         >
           <StatusBadge status={s(invoice, "status")} />
 
-          <PrintButton scoped />
+          {!s(invoice, "deleted_at") && !s(patient, "deleted_at") && (
+            <PrintButton scoped targetId="invoice-print-document" />
+          )}
 
           <Button asChild variant="outline" size="sm">
             <Link to="/billing">
@@ -248,7 +257,7 @@ function InvoicePageInner() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="print-area print-document-root lg:col-span-2">
+        <Card id="invoice-print-document" className="print-area print-document-root lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
@@ -484,6 +493,7 @@ function InvoicePageInner() {
       {selectedReceipt?.complete && (
         <div className="print-only">
           <article
+            id="payment-receipt-print-document"
             className="print-document-root mx-auto max-w-2xl space-y-5"
             dir={lang === "ar" ? "rtl" : "ltr"}
           >

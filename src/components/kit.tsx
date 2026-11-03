@@ -423,17 +423,28 @@ export function ExportButtons({ rows, filename }: { rows: Row[]; filename: strin
   );
 }
 
-export function PrintButton({ scoped = false }: { scoped?: boolean }) {
+export function PrintButton({
+  scoped = false,
+  targetId,
+}: {
+  scoped?: boolean;
+  targetId?: string;
+}) {
   const { t } = useLang();
   const print = () => {
-    if (!scoped) {
+    if (!scoped && !targetId) {
       window.print();
       return;
     }
+    if (!targetId) return;
+    const target = document.getElementById(targetId);
+    if (!target?.classList.contains("print-document-root")) return;
     const cleanup = () => {
+      target.classList.remove("print-target-active");
       document.body.classList.remove("print-scope-active");
       window.removeEventListener("afterprint", cleanup);
     };
+    target.classList.add("print-target-active");
     document.body.classList.add("print-scope-active");
     window.addEventListener("afterprint", cleanup, { once: true });
     try {
