@@ -78,7 +78,7 @@ A user previews and prints supported documents in Arabic or English on supported
 - **FR-005**: Never infer missing medication instructions or silently fabricate clinical/financial values.
 - **FR-006**: Support Arabic RTL and English LTR.
 - **FR-007**: Support A4 browser printing/Save as PDF and 58 mm/80 mm thermal layouts only after physical validation.
-- **FR-008**: Clinic identity/footer content comes from the existing canonical settings source; QA currently has no active settings rows, and the existing key mismatch must be reconciled.
+- **FR-008**: Clinic identity/footer content comes from the existing canonical settings source: center_name, center_name_ar, address, phone, and invoice_footer. The invoice key mismatch was corrected in PR #178. QA currently has no active settings rows, so actual configured branding remains unverified.
 - **FR-009**: QR/serial verification is excluded from v1; do not embed patient data or expose public patient/document URLs.
 - **FR-010**: Preview/print layout supports controlled page breaks and accessible interaction.
 - **FR-011**: Preview/print access enforces existing document-specific role and branch authorization; no broad grants or new permissions are introduced.
@@ -90,7 +90,16 @@ A user previews and prints supported documents in Arabic or English on supported
 
 - **[NEEDS CLARIFICATION]** Which printer models and browsers are available at the center, and is 58/80 mm printing required for opening?
 - **[NEEDS CLARIFICATION]** Does the center require a configurable logo, and should identity settings remain global or become branch-specific?
-- **[NEEDS CLARIFICATION]** Which real clinic roles will perform receipt reprints and prescription printing? Validate against existing permission assignments; do not create new permission codes by assumption.
+- **[NEEDS CLARIFICATION]** Confirm which actual staff roles will perform each print/reprint workflow and complete account-based acceptance. The current permission contracts are billing.read + payments.read for receipt status, emr.read or pharmacy.read for prescriptions, and certificates.read for certificates; these are not a substitute for real-user UAT.
+
+### Verified source contracts (read-only QA/Production catalog review)
+
+- Invoice and payment records carry branch and soft-delete fields. Payment writes persist received_by and received_at; payment_date is date-only and must not be presented as a received timestamp.
+- The Phase54C receipt-status RPC is SECURITY DEFINER with an empty search path, requires payments.read and billing.read, caps each request at 200 payment IDs, and checks payment/invoice/cashbox branch equality, amount equality, and reversal linkage.
+- Prescription reads are protected by pharmacy.read or emr.read plus parent/branch RLS. The schema has no signature or signed-at field; output is a saved prescription order copy, not a digitally signed prescription.
+- Medical-certificate reads use certificates.read; invoice reads use billing.read.
+- useSettings() does not alias setting names. The settings page's canonical keys are center_name, center_name_ar, address, phone, and invoice_footer. No active QA settings rows currently exist.
+- Receipt/certificate/invoice print output must select exactly one persisted document root. Soft-deleted documents and branch-mismatched records are not printable as current official documents.
 
 ### Key Entities
 
