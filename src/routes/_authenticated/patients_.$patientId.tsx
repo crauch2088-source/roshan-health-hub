@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FlaskConical,
   Plus,
+  Printer,
   Receipt,
   ShieldCheck,
   Stethoscope,
@@ -23,6 +24,7 @@ import {
   PermissionGate,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
+import { PaperWidthSelect } from "@/components/paper-width-select";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -44,6 +46,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { getClinicIdentity, isPrescriptionPrintReady, useDocumentPrint, type PaperWidth } from "@/lib/document-print";
 import { BLOOD_GROUPS, MARITAL, calcAge, formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
@@ -101,13 +104,21 @@ function PatientChart() {
   const { patientId } = useParams({ from: "/_authenticated/patients_/$patientId" });
   const { t, lang } = useLang();
   const { can } = useAuth();
-  const { currency } = useSettings();
+  const { currency, settings } = useSettings();
+  const [paperWidth, setPaperWidth] = useState<PaperWidth>("a4");
+  const { request: printRequest, printDocument } = useDocumentPrint<Row>();
   const [form, setForm] = useState<Row>({});
 
   const patient = useRows(["patient", patientId], () =>
     supabase.from("patients").select("*").eq("id", patientId).limit(1),
   );
   const record = ((patient.data ?? []) as Row[])[0];
+  const patientBranchId = s(record, "branch_id");
+  const branchQ = useRows<Row[]>(["patient-print-branch", patientBranchId], () =>
+    supabase.from("branches").select("id, branch_name, name, address, phone").eq("id", patientBranchId).limit(1),
+    { enabled: Boolean(patientBranchId) },
+  );
+  const branch = ((branchQ.data ?? []) as Row[])[0];
 
   useEffect(() => {
     if (record) setForm(record);
@@ -283,11 +294,11 @@ function PatientChart() {
     currency,
   ]);
 
-  const prescriptions = useRows(["patient-rx", patientId], () =>
+  const prescriptions = useRows<Row[]>(["patient-rx", patientId], () =>
     supabase
       .from("prescriptions")
       .select(
-        "id, created_at, status, is_external, prescription_items(id, dosage, medicines(name))",
+        "id, created_at, status, is_external, prescription_type, prescribed_by, doctor_id, branch_id, visit_id, notes, users!prescriptions_prescribed_by_fkey(full_name), prescription_items(id, medication_name, dose, dosage, frequency, duration, quantity, instructions, dosage_form, route, medicines(name, generic_name, strength, dosage_form))",
       )
       .eq("patient_id", patientId)
       .is("deleted_at", null)
@@ -642,6 +653,11 @@ function PatientChart() {
 
         <TabsContent value="rx">
           <DataPanel>
+            {can("emr.read") ? (
+              <div className="no-print mb-3 flex justify-end">
+                <PaperWidthSelect value={paperWidth} onChange={setPaperWidth} lang={lang} />
+              </div>
+            ) : null}
             {((prescriptions.data ?? []) as Row[]).length === 0 ? (
               <Empty />
             ) : (
@@ -651,23 +667,50 @@ function PatientChart() {
                     <TableHead>{t("date")}</TableHead>
                     <TableHead>{t("medicines")}</TableHead>
                     <TableHead>{t("status")}</TableHead>
+                    {can("emr.read") ? <TableHead className="no-print text-end">{lang === "ar" ? "طباعة" : "Print"}</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {((prescriptions.data ?? []) as Row[]).map((p) => (
-                    <TableRow key={s(p, "id")}>
-                      <TableCell dir="ltr">{formatDateTime(s(p, "created_at"))}</TableCell>
-                      <TableCell>
-                        {((p["prescription_items"] as Row[]) ?? [])
-                          .map((i) => s(rel(i, "medicines"), "name"))
-                          .filter(Boolean)
-                          .join(", ") || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={s(p, "status")} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {((prescriptions.data ?? []) as Row[]).map((p) => {
+                    const items = (p["prescription_items"] as Row[]) ?? [];
+                    const rxBranchId = s(p, "branch_id");
+                    const branchMatches = Boolean(patientBranchId && rxBranchId && patientBranchId === rxBranchId);
+                    const printable = branchMatches && isPrescriptionPrintReady(p);
+                    const names = items
+                      .map((item) => s(item, "medication_name") || s(rel(item, "medicines"), "name") || s(rel(item, "medicines"), "generic_name"))
+                      .filter(Boolean)
+                      .join(", ");
+                    return (
+                      <TableRow key={s(p, "id")}>
+                        <TableCell dir="ltr">{formatDateTime(s(p, "created_at"))}</TableCell>
+                        <TableCell>{names || "—"}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={s(p, "status")} />
+                          {s(p, "prescription_type") === "external" || p["is_external"] === true ? (
+                            <p className="text-xs text-muted-foreground">{lang === "ar" ? "وصفة خارجية مسجلة" : "External prescription record"}</p>
+                          ) : null}
+                        </TableCell>
+                        {can("emr.read") ? (
+                          <TableCell className="no-print text-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={!printable}
+                              title={
+                                printable
+                                  ? (lang === "ar" ? "طباعة الوصفة" : "Print prescription")
+                                  : (lang === "ar" ? "لا يمكن الطباعة: وصفة خارجية أو بيانات دوائية ناقصة أو فرع غير مطابق" : "Cannot print: external record, incomplete medication directions or branch mismatch")
+                              }
+                              aria-label={lang === "ar" ? "طباعة الوصفة" : "Print prescription"}
+                              onClick={() => printDocument(p, paperWidth)}
+                            >
+                              <Printer className="size-4" />
+                            </Button>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -720,5 +763,51 @@ function PatientChart() {
         </TabsContent>
       </Tabs>
     </div>
+    {printPrescription ? (
+      <div className="print-only print-area print-surface mx-auto max-w-[180mm] p-8" dir={lang === "ar" ? "rtl" : "ltr"}>
+        <header className="mb-6 border-b pb-4 text-center">
+          <p className="text-xl font-bold">{printClinic.name}</p>
+          {printClinic.branchName ? <p className="text-sm">{printClinic.branchName}</p> : null}
+          {printClinic.address ? <p className="text-sm">{printClinic.address}</p> : null}
+          {printClinic.phone ? <p className="text-sm" dir="ltr">{printClinic.phone}</p> : null}
+          <h1 className="mt-5 text-xl font-bold">{lang === "ar" ? "وصفة طبية" : "Medical Prescription"}</h1>
+          <p className="mt-2 text-sm">{formatDateTime(s(printPrescription, "created_at"))}</p>
+        </header>
+        <section className="mb-5 grid gap-2 border-b pb-4 text-sm sm:grid-cols-2">
+          <p><strong>{lang === "ar" ? "المريض" : "Patient"}:</strong> {s(record, "full_name") || "—"}</p>
+          <p><strong>{lang === "ar" ? "الرقم الطبي" : "MRN"}:</strong> <bdi dir="ltr">{s(record, "mrn") || "—"}</bdi></p>
+          <p><strong>{lang === "ar" ? "العمر" : "Age"}:</strong> {calcAge(s(record, "date_of_birth")) ?? "—"}</p>
+          <p><strong>{lang === "ar" ? "الطبيب" : "Prescriber"}:</strong> {s(printDoctor, "full_name") || "—"}</p>
+        </section>
+        <section className="space-y-4">
+          {printItems.map((item) => {
+            const medicine = rel(item, "medicines");
+            const medicineName = s(item, "medication_name") || s(medicine, "name") || s(medicine, "generic_name") || "—";
+            const dose = s(item, "dose") || s(item, "dosage");
+            const strength = s(medicine, "strength");
+            return (
+              <div key={s(item, "id")} className="print-keep border-b pb-4">
+                <p className="text-base font-bold">{medicineName}{strength ? " · " + strength : ""}</p>
+                <div className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+                  <p><strong>{lang === "ar" ? "الشكل الدوائي" : "Dosage form"}:</strong> {s(item, "dosage_form") || s(medicine, "dosage_form") || "—"}</p>
+                  <p><strong>{lang === "ar" ? "طريق الإعطاء" : "Route"}:</strong> {s(item, "route") || "—"}</p>
+                  <p><strong>{lang === "ar" ? "الجرعة" : "Dose"}:</strong> {dose || "—"}</p>
+                  <p><strong>{lang === "ar" ? "التكرار" : "Frequency"}:</strong> {s(item, "frequency") || "—"}</p>
+                  <p><strong>{lang === "ar" ? "المدة" : "Duration"}:</strong> {s(item, "duration") || "—"}</p>
+                  <p><strong>{lang === "ar" ? "الكمية" : "Quantity"}:</strong> <bdi dir="ltr">{s(item, "quantity") || "—"}</bdi></p>
+                </div>
+                {s(item, "instructions") ? <p className="mt-2 whitespace-pre-wrap text-sm"><strong>{lang === "ar" ? "تعليمات" : "Instructions"}:</strong> {s(item, "instructions")}</p> : null}
+              </div>
+            );
+          })}
+        </section>
+        {s(printPrescription, "notes") ? <p className="mt-4 whitespace-pre-wrap text-sm"><strong>{lang === "ar" ? "ملاحظات" : "Notes"}:</strong> {s(printPrescription, "notes")}</p> : null}
+        <footer className="mt-16 grid grid-cols-2 gap-10 text-sm">
+          <div className="print-keep border-t pt-3">{lang === "ar" ? "الطبيب" : "Prescriber"}: {s(printDoctor, "full_name") || "—"}</div>
+          <div className="print-keep border-t pt-3 text-center">{lang === "ar" ? "التوقيع والختم" : "Signature and stamp"}</div>
+        </footer>
+      </div>
+    ) : null}
+    </>
   );
 }
