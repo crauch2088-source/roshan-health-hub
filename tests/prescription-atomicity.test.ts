@@ -67,7 +67,7 @@ test("new medicine selection starts with a clean regimen", () => {
       quantity: "1",
       instructions: "",
       dosage_form: "capsule",
-      route: "oral",
+      route: "",
     },
   );
 });

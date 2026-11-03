@@ -1,15 +1,15 @@
 /** Clinical + formatting calculations shared across the app. */
 
 export function calcAge(dob?: string | null): number | null {
-  if (!dob) return null;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return null;
+  if (!dob?.trim()) return null;
+  const birthDate = parseDateOnly(dob.trim());
+  if (!birthDate) return null;
+
   const now = new Date();
+  let age = now.getFullYear() - birthDate.getUTCFullYear();
+  const monthDifference = now.getMonth() - birthDate.getUTCMonth();
 
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) {
+  if (monthDifference < 0 || (monthDifference === 0 && now.getDate() < birthDate.getUTCDate())) {
     age--;
   }
   return age >= 0 ? age : null;

@@ -2496,3 +2496,11 @@ Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No 
 6. Verify exact-head unit/guard tests, typecheck, lint and build in the repository's documented sequence. Keep clinical E2E acceptance deferred until isolated free QA and a synthetic doctor identity are available.
 
 Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
+
+## Prescription safety remediation — 2026-11-03
+
+- The follow-on implementation removes automatic route inference from catalogue dosage form. Selecting a tablet, capsule, syrup, suspension or injection no longer assigns an administration route; the prescriber must select a supported route or enter a custom one.
+- Dosage form, frequency, duration and route now retain usable free-text inputs when the clinician selects **Custom** or enters a value outside the predefined options. Dose entry is clinician-entered free text with an explicit unit cue; the application does not calculate or recommend a regimen.
+- Prescription completeness validation now requires name, dose, frequency, duration, dosage form, route and a positive integer quantity before the atomic save RPC is called.
+- `calcAge()` now rejects malformed, impossible calendar dates and future dates of birth rather than allowing JavaScript date normalization to produce a misleading age. The prescription screen displays a bilingual alert when the patient age cannot be verified.
+- Regression coverage was added to `tests/clinical-workflow-redesign.test.ts` and `tests/prescription-atomicity.test.ts`. No database migration, patient-data write, or Production change is part of this correction. Browser-based staff acceptance remains open.
