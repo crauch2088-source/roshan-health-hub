@@ -42,7 +42,9 @@ function Landing() {
         void navigate({ to: need ? "/setup" : "/auth", replace: true });
       })
       .catch(() => {
-        void navigate({ to: "/auth", replace: true });
+        // /setup distinguishes transient RPC failures from an initialized system
+        // and provides an explicit retry without exposing the bootstrap form.
+        void navigate({ to: "/setup", replace: true });
       });
   }, [loading, session, user, navigate]);
 

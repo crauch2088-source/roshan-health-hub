@@ -304,15 +304,12 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - Production is unchanged and remains gated by the documented manual logical backup, off-site copy, and restore rehearsal (Free plan has no automatic daily backups). Do not bypass this gate.
 - PR #149 now targets main but is CONFLICTING (20 ahead / 5 behind); GitHub update-branch reports merge conflicts. Previous CI run 41185376552 was green on its former base only. Resolve conflicts and rerun exact-main CI; keep merge/promotion blocked while Issue #95 clinical/staff acceptance is deferred.
 
+## GitHub Spec Kit — agent-neutral specification governance
 
-## OpenCode — cloud coding agent (bootstrap merged; not yet operationally verified)
-
-- Prepared a repository-scoped GitHub Codespaces devcontainer using Node 22 and the official OpenCode CLI package. It installs project dependencies and OpenCode after the owner creates a Codespace; it does not auto-start a network server.
-- Added `opencode.json` with read-only `plan` as the default, approval-gated edits/shell commands, secret-file deny rules, denied production database/deploy/merge commands, and approval-gated pushes only to `opencode/*` branches.
-- Added four project agents: architecture analysis, independent read-only review, QA planning/execution, and implementation. See [OpenCode Cloud Setup](OPENCODE_CLOUD_SETUP.md).
-- Intended first model: a Google AI Studio free-tier Flash model selected interactively with `/connect` and `/models`; Groq is an alternative. Model availability, quotas, and provider data terms must be checked at use time. No API keys are stored in the repository.
-- **Status:** repository bootstrap only. Codespace creation, password secret setup, provider sign-in, and the first read-only prompt require the repository owner. No Supabase/Vercel connection, production mutation, or paid resource is part of this integration.
-
-<!-- LIVE-PHASE49-52-RECONCILIATION-2026-11-03 -->
-
-PR #154 merged to main at `e3fa0febb7d27b21bfdf169d75a945b5aad5b71e`. The repository bootstrap is merged, but Codespace creation, private password-secret setup, free-provider sign-in and the first read-only prompt remain owner-interactive and operationally unverified.
+- Adopted GitHub Spec Kit CLI v1.2.6, pinned to the official release, using integration key none.
+- Provides shared specifications, implementation-plan/task templates, a project Constitution, feature scripts, and the bundled SDD workflow. Development governance only; no application bundle or Node runtime dependency.
+- ChatGPT operates directly on the connected GitHub repository to inspect source, write specifications, create atomic commits/PRs, and review CI evidence. The none integration installs no coding-agent commands, hooks, or provider credentials. No owner-operated Codespace or local agent setup is required.
+- Source-of-truth boundaries: docs/MASTER_PLAN.md is the roadmap; AGENTS.md is operational guidance; .specify/memory/constitution.md contains durable principles; specs/ contains feature-specific requirements/design/tasks.
+- Pilot: specs/001-clinical-document-printing/spec.md is a Draft derived from Phase 53. It has no implementation plan/tasks while QR verification, role permissions, clinic identity source, and print/PDF mechanism remain to be verified.
+- .github/workflows/spec-kit-validation.yml validates the pinned CLI, repository contract, and a disposable none project. It does not connect to Supabase or Vercel.
+- Never put real clinical/financial records, credentials, production exports, or secrets in specs or model prompts. Spec completion does not authorize production changes.

@@ -1,0 +1,58 @@
+name: Spec Kit validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.specify/**'
+      - 'specs/**'
+      - 'docs/SPEC_KIT_INTEGRATION.md'
+      - 'tests/spec-kit-contract.test.mjs'
+      - '.github/workflows/spec-kit-validation.yml'
+  pull_request:
+    paths:
+      - '.specify/**'
+      - 'specs/**'
+      - 'docs/SPEC_KIT_INTEGRATION.md'
+      - 'tests/spec-kit-contract.test.mjs'
+      - '.github/workflows/spec-kit-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spec-kit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Pinned CLI and agent-neutral repository baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install pinned Spec Kit CLI
+        run: uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.2.6
+      - name: Verify committed integration and managed files
+        run: specify integration status
+      - name: Verify repository Spec Kit contract
+        run: node --test tests/spec-kit-contract.test.mjs
+      - name: Smoke-test official agent-neutral initialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp_dir="$(mktemp -d)"
+          cd "$temp_dir"
+          specify init roshan-spec-kit-smoke --integration none --non-interactive --ignore-agent-tools
+          test -f roshan-spec-kit-smoke/.specify/init-options.json
+          test -f roshan-spec-kit-smoke/.specify/workflows/speckit/workflow.yml
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          options = json.loads(Path("roshan-spec-kit-smoke/.specify/init-options.json").read_text())
+          assert options["integration"] == "none"
+          assert options["speckit_version"] == "1.2.6"
+          PY

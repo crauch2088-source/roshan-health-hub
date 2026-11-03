@@ -44,11 +44,14 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Keep the graph scoped to source, migrations, schemas, documentation, and safe configuration examples. Exclude secrets, local environment files, build output, dependency directories, backups, and any real clinical/financial records.
 - Graphify does not replace TypeScript checks, tests, migration-parity checks, RLS/security review, or read-only verification against Supabase. Do not run its generation in every CI job or trigger a Vercel deployment solely to refresh the graph.
 
-## OpenCode cloud-agent safety policy
+## Spec Kit — agent-neutral specification policy
 
-- OpenCode is an optional development tool only; it is not a Roshan application dependency and must never be added to production runtime bundles.
-- Start in the built-in read-only `plan` agent. Never use `--auto` or auto-approve permissions.
-- Follow `docs/OPENCODE_CLOUD_SETUP.md`. The project config must keep secret-file reads/edits denied, all source edits and shell commands approval-gated, production database/deploy/merge commands denied, and pushes restricted to explicitly approved `opencode/*` branches.
-- Do not add Supabase, Vercel, patient, finance, or production credentials to Codespaces secrets. The only initial server secret is `OPENCODE_PASSWORD`; provider API keys are entered directly into OpenCode and remain in user-level storage.
-- Never send real patient/clinical/financial data, production exports, credentials, private keys, or secrets to free-tier model providers.
-- Work on fresh `opencode/<task>` branches, preserve the one-atomic-commit policy, include tests/docs for behavior changes, and never merge, force-push, rewrite published history, apply migrations, or deploy to production.
+- This repository uses GitHub Spec Kit CLI v1.2.6 with the official none integration. Do not add an agent-specific integration, IDE plugin, coding-agent CLI, model credential, or agent runtime as a project requirement.
+- The committed .specify/ directory is the shared Spec Kit baseline: official scripts, templates, workflow metadata, and the Roshan Constitution. specify integration status must report OK, with none as the only installed and default integration.
+- docs/MASTER_PLAN.md remains the execution roadmap and project-level source of truth. AGENTS.md contains operational instructions; .specify/memory/constitution.md contains durable principles; specs/ contains feature-specific requirements and design artifacts. Do not duplicate the roadmap.
+- For non-trivial features, clarify user-visible behavior and acceptance criteria in spec.md before technical planning. Produce plan.md and tasks.md only after requirements and existing implementation contracts are understood.
+- ChatGPT operates directly on the connected GitHub repository to inspect, author, commit, and review project artifacts. The none integration intentionally installs no agent commands; no local agent setup or owner-operated terminal workflow is required.
+- Every accepted requirement must map to observable verification: focused regression tests, security/authorization checks, disposable PostgreSQL 17 tests where relevant, and exact-head CI evidence. Never mark a task complete merely because its document exists.
+- Never transmit real patient, clinical, financial, identity, credential, or production-export data to any model or external service. Use synthetic fixtures only.
+- A Spec Kit task never authorizes production SQL/migration, Auth/Storage mutation, deployment, or live clinical/financial data changes. Preserve separately documented owner authorization and release gates.
+- Keep work quota-aware: avoid redundant CI runs, do not add production dependencies for development tooling, and keep each logical change in one atomic commit.
