@@ -2442,3 +2442,10 @@ This entry supersedes the earlier 06:15 snapshot in this file for current merge 
 - The owner must also generate an age keypair locally, keep the private identity offline/in a password manager, and add only the public recipient as repository variable `AGE_RECIPIENT`.
 - The connected Google Drive resumable-upload action can transfer the encrypted private Actions artifact into the existing **Roshan Health Hub Backups** folder. No Google service-account credential is required.
 - **Actual Production backup and restore rehearsal remain NOT DONE.** The private runner has not connected to Production, no secrets have been configured, and no artifact exists. No Production DDL/DML or password rotation occurred. Keep the release gate open until an encrypted artifact is uploaded, checksum verified, and restore rehearsal passes.
+
+### Backup runner connection correction (2026-11-03)
+
+- Current Supabase documentation specifies SSL enforcement, shared pooler port `5432`, and `options=-c jit=true` for temporary database access.
+- Production PostgreSQL `17.6.1.155` and QA `17.11.0.003` both exceed the documented minimum `17.6.1.081`.
+- The private runner defaults were updated accordingly. Validation-only workflow run `41632621501` passed; the backup job remained skipped because no confirmation was supplied.
+- This does not change the gate: no PAT/age recipient has been configured, no Production connection has been attempted, and no backup artifact exists.
