@@ -16,7 +16,7 @@ INSERT INTO private.pharmacy_dispense_idempotency VALUES (
  '10000000-0000-4000-8000-000000000099',
  '{"fixture":"legacy-row-preservation"}'::jsonb
 );
-CREATE TABLE public.patients(id uuid PRIMARY KEY, branch_id uuid NOT NULL, deleted_at timestamptz);
+CREATE TABLE public.patients(id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.medicines(id uuid PRIMARY KEY, stock_quantity integer NOT NULL, updated_at timestamptz NOT NULL DEFAULT pg_catalog.now());
 CREATE TABLE public.stock_movements(
  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, medicine_id uuid NOT NULL, batch_id uuid,
@@ -28,32 +28,44 @@ CREATE TABLE public.visits(id uuid PRIMARY KEY, patient_id uuid NOT NULL, delete
 CREATE TABLE public.prescriptions(id uuid PRIMARY KEY, patient_id uuid NOT NULL, visit_id uuid, deleted_at timestamptz);
 CREATE TABLE public.prescription_items(id uuid PRIMARY KEY, prescription_id uuid NOT NULL, deleted_at timestamptz);
 CREATE TABLE public.patient_notes(id uuid PRIMARY KEY, patient_id uuid NOT NULL, deleted_at timestamptz);
+CREATE TABLE public.visit_annotations(id uuid PRIMARY KEY, visit_id uuid NOT NULL, deleted_at timestamptz);
 
 INSERT INTO public.patients(id,branch_id) VALUES
  ('30000000-0000-4000-8000-000000000001','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
  ('30000000-0000-4000-8000-000000000002','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
- ('30000000-0000-4000-8000-000000000003','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+ ('30000000-0000-4000-8000-000000000003','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+ ('30000000-0000-4000-8000-000000000004',NULL);
 INSERT INTO public.medicines(id,stock_quantity) VALUES
  ('40000000-0000-4000-8000-000000000001',49),
  ('40000000-0000-4000-8000-000000000002',49),
- ('40000000-0000-4000-8000-000000000003',48);
+ ('40000000-0000-4000-8000-000000000003',48),
+ ('40000000-0000-4000-8000-000000000004',49);
 INSERT INTO public.visits(id,patient_id) VALUES
  ('50000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001'),
  ('50000000-0000-4000-8000-000000000002','30000000-0000-4000-8000-000000000002'),
- ('50000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003');
+ ('50000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003'),
+ ('50000000-0000-4000-8000-000000000004','30000000-0000-4000-8000-000000000004');
 INSERT INTO public.prescriptions(id,patient_id,visit_id) VALUES
  ('60000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001'),
  ('60000000-0000-4000-8000-000000000002','30000000-0000-4000-8000-000000000002','50000000-0000-4000-8000-000000000002'),
- ('60000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003','50000000-0000-4000-8000-000000000003');
+ ('60000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003','50000000-0000-4000-8000-000000000003'),
+ ('60000000-0000-4000-8000-000000000004','30000000-0000-4000-8000-000000000004','50000000-0000-4000-8000-000000000004');
 INSERT INTO public.prescription_items(id,prescription_id) VALUES
  ('70000000-0000-4000-8000-000000000001','60000000-0000-4000-8000-000000000001'),
  ('70000000-0000-4000-8000-000000000002','60000000-0000-4000-8000-000000000002'),
- ('70000000-0000-4000-8000-000000000003','60000000-0000-4000-8000-000000000003');
+ ('70000000-0000-4000-8000-000000000003','60000000-0000-4000-8000-000000000003'),
+ ('70000000-0000-4000-8000-000000000004','60000000-0000-4000-8000-000000000004');
 INSERT INTO public.patient_notes(id,patient_id,deleted_at) VALUES
  ('80000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001',NULL),
  ('80000000-0000-4000-8000-000000000002','30000000-0000-4000-8000-000000000002',NULL),
  ('80000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003',NULL),
- ('80000000-0000-4000-8000-000000000004','30000000-0000-4000-8000-000000000001','2026-11-01 00:00:00+00');
+ ('80000000-0000-4000-8000-000000000004','30000000-0000-4000-8000-000000000001','2026-11-01 00:00:00+00'),
+ ('80000000-0000-4000-8000-000000000005','30000000-0000-4000-8000-000000000004',NULL);
+INSERT INTO public.visit_annotations(id,visit_id) VALUES
+ ('81000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001'),
+ ('81000000-0000-4000-8000-000000000002','50000000-0000-4000-8000-000000000002'),
+ ('81000000-0000-4000-8000-000000000003','50000000-0000-4000-8000-000000000003'),
+ ('81000000-0000-4000-8000-000000000004','50000000-0000-4000-8000-000000000004');
 
 -- Test-only parameterized equivalent. It adds an explicit same-branch guard;
 -- it is not canonical migration SQL and does not execute the redacted artifact.
@@ -61,20 +73,21 @@ CREATE FUNCTION private.apply_synthetic_cleanup(p_patient_ids uuid[],p_medicine_
 RETURNS void LANGUAGE plpgsql SET search_path TO ''
 AS $function$
 DECLARE
- v_patient_count bigint; v_unique_count bigint; v_branch_count bigint; v_branch_text text;
+ v_patient_count bigint; v_unique_count bigint; v_branch_count bigint; v_null_branch_count bigint; v_branch_text text;
  v_branch uuid; v_stock integer; v_has_reversal boolean; r record; v_predicate text; v_sql text;
 BEGIN
  IF p_patient_ids IS NULL OR pg_catalog.cardinality(p_patient_ids)=0 OR p_medicine_id IS NULL OR p_reference_id IS NULL THEN
   RAISE EXCEPTION 'invalid_synthetic_cleanup_arguments' USING ERRCODE='22023';
  END IF;
- SELECT pg_catalog.count(*),pg_catalog.count(DISTINCT branch_id),pg_catalog.min(branch_id::text)
- INTO v_patient_count,v_branch_count,v_branch_text
+ SELECT pg_catalog.count(*),pg_catalog.count(DISTINCT branch_id),pg_catalog.min(branch_id::text),
+  pg_catalog.count(*) FILTER (WHERE branch_id IS NULL)
+ INTO v_patient_count,v_branch_count,v_branch_text,v_null_branch_count
  FROM public.patients WHERE id=ANY(p_patient_ids) AND deleted_at IS NULL;
  SELECT pg_catalog.count(DISTINCT patient_id) INTO v_unique_count
  FROM pg_catalog.unnest(p_patient_ids) AS input(patient_id);
  IF v_patient_count<>pg_catalog.cardinality(p_patient_ids)
     OR v_unique_count<>pg_catalog.cardinality(p_patient_ids)
-    OR v_branch_count<>1 OR v_branch_text IS NULL THEN
+    OR v_null_branch_count<>0 OR v_branch_count<>1 OR v_branch_text IS NULL THEN
   RAISE EXCEPTION 'cleanup_targets_cross_branch_or_missing' USING ERRCODE='42501';
  END IF;
  v_branch:=v_branch_text::uuid;
