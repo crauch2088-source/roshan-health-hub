@@ -59,4 +59,15 @@ BEGIN
     RAISE EXCEPTION 'Phase55 clinical guard must remain SECURITY DEFINER with an empty search_path';
   END IF;
 END $phase55_assertions$;
+GRANT UPDATE ON public.lab_order_items TO authenticated;
+SET LOCAL ROLE authenticated;
+UPDATE public.lab_order_items SET value='trigger-authenticated-role' WHERE id='00000000-0000-0000-0000-000000009111';
+RESET ROLE;
+DO $trigger_acl$
+BEGIN
+  IF (SELECT value FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000009111') <> 'trigger-authenticated-role' THEN
+    RAISE EXCEPTION 'clinical trigger stopped working after direct EXECUTE was revoked';
+  END IF;
+END
+$trigger_acl$;
 ROLLBACK;
