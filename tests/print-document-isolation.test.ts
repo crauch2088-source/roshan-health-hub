@@ -27,6 +27,10 @@ test("invoice print boundary excludes all non-document controls and uses canonic
   assert.match(source, /settings\["address"\]/);
   assert.match(source, /settings\["phone"\]/);
   assert.doesNotMatch(source, /settings\["clinic_(name|address|phone)"\]/);
+  const printRoot = source.slice(source.indexOf("print-document-root"), source.indexOf("</Card>", source.indexOf("print-document-root")));
+  assert.match(printRoot, /s\(invoice, "invoice_number"\)/);
+  assert.match(printRoot, /s\(patient, "full_name"\)/);
+  assert.match(printRoot, /settings\["invoice_footer"\]/);
 });
 
 test("print-only certificate content is hidden on screen and displayed only for print", () => {

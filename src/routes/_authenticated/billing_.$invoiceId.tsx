@@ -193,6 +193,23 @@ function InvoicePageInner() {
               <p className="text-xs text-muted-foreground">
                 {settings["address"] || ""} {settings["phone"] || ""}
               </p>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <p>
+                  <strong>{lang === "ar" ? "رقم الفاتورة:" : "Invoice #:"}</strong>{" "}
+                  {s(invoice, "invoice_number")}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "التاريخ:" : "Date:"}</strong>{" "}
+                  {formatDate(s(invoice, "invoice_date"))}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "المريض:" : "Patient:"}</strong>{" "}
+                  {s(patient, "full_name")}
+                </p>
+                <p>
+                  <strong>{t("mrn")}:</strong> {s(patient, "mrn")}
+                </p>
+              </div>
             </div>
 
             <SectionTitle>{t("items")}</SectionTitle>
@@ -265,6 +282,9 @@ function InvoicePageInner() {
                 <span>{money(balance, currency)}</span>
               </div>
             </div>
+            {settings["invoice_footer"] && (
+              <p className="mt-6 border-t pt-3 text-xs">{settings["invoice_footer"]}</p>
+            )}
           </CardContent>
         </Card>
 
