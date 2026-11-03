@@ -77,3 +77,12 @@ test("missing patient or prescriber identity blocks official prescription printi
   assert.ok(model.missingFields.includes("patient"));
   assert.ok(model.missingFields.includes("prescriber"));
 });
+
+test("soft-deleted patient identity blocks official prescription printing", () => {
+  const record = completePrescription();
+  Object.assign(record.patients, { deleted_at: "2026-11-03T11:00:00Z" });
+  const model = buildPrescriptionPrintModel(record);
+  assert.ok(model);
+  assert.equal(model.complete, false);
+  assert.ok(model.missingFields.includes("patient record"));
+});

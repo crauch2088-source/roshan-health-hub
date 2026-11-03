@@ -43,6 +43,9 @@ test("prescription printing uses a saved record and blocks incomplete orders", (
   assert.match(source, /buildPrescriptionPrintModel/);
   assert.match(source, /PrintButton scoped/);
   assert.match(source, /prescription_items\(id,medication_name/);
+  assert.match(source, /patients\(full_name,mrn,deleted_at\)/);
+  assert.match(source, /\.eq\("visit_id", visitId\)/);
+  assert.match(source, /\.eq\("patient_id", patient\)/);
   assert.match(source, /not a digital signature/);
   assert.doesNotMatch(source, /window\.print\(\)/);
 });
