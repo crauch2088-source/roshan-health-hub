@@ -89,7 +89,7 @@ function PharmacyPageInner() {
       let q = supabase
         .from("prescriptions")
         .select(
-          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
+          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, dosage_form, route, instructions, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -277,10 +277,21 @@ function PharmacyPageInner() {
                         <div className="min-w-0 space-y-0.5">
                           <p className="font-medium">{s(rel(i, "medicines"), "name")}</p>
                           <p className="text-xs text-muted-foreground">
-                            {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                            {[s(i, "dosage_form"), s(i, "dosage"), s(i, "route")]
                               .filter(Boolean)
                               .join(" · ") || "—"}
                           </p>
+                          <p className="text-xs text-muted-foreground">
+                            {[s(i, "frequency"), s(i, "duration")].filter(Boolean).join(" · ") || "—"}
+                          </p>
+                          {s(i, "instructions") ? (
+                            <p className="break-words whitespace-pre-wrap text-xs text-muted-foreground">
+                              <span className="font-medium">
+                                {lang === "ar" ? "تعليمات:" : "Instructions:"}
+                              </span>{" "}
+                              {s(i, "instructions")}
+                            </p>
+                          ) : null}
                           <p className="text-xs text-muted-foreground">
                             {t("quantity")} <span dir="ltr">{n(i, "quantity") || 1}</span> ·{" "}
                             {t("stock")}{" "}
@@ -301,7 +312,7 @@ function PharmacyPageInner() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>{t("medicines")}</TableHead>
-                          <TableHead>{t("dosage")}</TableHead>
+                          <TableHead>{lang === "ar" ? "تفاصيل الوصفة" : "Prescription details"}</TableHead>
                           <TableHead>{t("quantity")}</TableHead>
                           <TableHead>{t("stock")}</TableHead>
                           <TableHead>{t("total")}</TableHead>
@@ -314,9 +325,26 @@ function PharmacyPageInner() {
                               {s(rel(i, "medicines"), "name")}
                             </TableCell>
                             <TableCell>
-                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
-                                .filter(Boolean)
-                                .join(" · ") || "—"}
+                              <div className="space-y-1">
+                                <p>
+                                  {[s(i, "dosage_form"), s(i, "dosage"), s(i, "route")]
+                                    .filter(Boolean)
+                                    .join(" · ") || "—"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {[s(i, "frequency"), s(i, "duration")]
+                                    .filter(Boolean)
+                                    .join(" · ") || "—"}
+                                </p>
+                                {s(i, "instructions") ? (
+                                  <p className="max-w-sm whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                                    <span className="font-medium">
+                                      {lang === "ar" ? "تعليمات:" : "Instructions:"}
+                                    </span>{" "}
+                                    {s(i, "instructions")}
+                                  </p>
+                                ) : null}
+                              </div>
                             </TableCell>
                             <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
                             <TableCell dir="ltr">

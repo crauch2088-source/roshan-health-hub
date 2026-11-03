@@ -64,6 +64,17 @@ test("prescription custom fields remain editable and dose entry requests a unit"
   assert.match(ui, /Custom administration route/);
 });
 
+test("pharmacy queue preserves formulation, route and instructions on mobile and desktop", () => {
+  const pharmacy = read("../src/routes/_authenticated/pharmacy.tsx");
+  assert.match(
+    pharmacy,
+    /prescription_items\\(id, quantity, dosage, dosage_form, route, instructions, frequency, duration/,
+  );
+  assert.match(pharmacy, /s\\(i, "dosage_form"\\)/);
+  assert.match(pharmacy, /s\\(i, "route"\\)/);
+  assert.match(pharmacy, /s\\(i, "instructions"\\)/);
+});
+
 test("consultation tabs expose accessible tab semantics, bilingual labels and arrow navigation", () => {
   const ui = read("../src/features/clinic/consultation/ConsultationPage.tsx");
   assert.match(ui, /role="tablist"/);
