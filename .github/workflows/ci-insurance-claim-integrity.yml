@@ -10,6 +10,9 @@ on:
     branches:
       - 'fix/insurance-claim-amount-integrity'
 
+permissions:
+  contents: read
+
 jobs:
   postgres-integration:
     name: PostgreSQL 17 integration
@@ -28,7 +31,9 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
       - name: Run SQL integration tests
         env:
           PGPASSWORD: postgres
