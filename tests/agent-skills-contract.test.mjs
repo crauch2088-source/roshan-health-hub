@@ -64,10 +64,7 @@ test("Graphify is conditionally routed and remains a non-authoritative local aid
   }
   assert.match(architecture, /verify Graphify findings against actual source/i);
   assert.match(architecture, /never connect the graph tool to Production PostgreSQL/i);
-  assert.match(
-    architecture,
-    /not authoritative for SQL\/RLS\/grants/i,
-  );
+  assert.match(architecture, /not authoritative for SQL\/RLS\/grants/i);
 });
 
 test("clinical, database, security and pharmacy skills retain hard safety contracts", () => {
