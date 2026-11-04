@@ -32,3 +32,11 @@ Detailed setup steps and commands are in the private runner repository README.
 **Encrypted Production backup: NOT DONE. Restore rehearsal: NOT DONE. Release gate: OPEN.**
 
 A private runner and a validated workflow are preparation, not a backup. The gate stays open until the first encrypted artifact is uploaded to Drive, its checksum is verified, and the local restore rehearsal passes. Full migration-chain reconciliation, authenticated clinical E2E, and staff UAT remain separate release gates.
+
+
+## 2026-11-04 update
+
+- The private backup runner was reviewed before owner setup. Its local restore config rewrite contained a double-escaped Python regex that raised `re.PatternError`; this would have stopped the workflow after the Production dump and before local PostgreSQL 17 restore validation.
+- A fix is proposed in private runner PR [#1](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/1), commit `faf3eb03c4109cd8f88b241389a30c78ecb21d7a`. Five Python regression tests cover the config update behavior. Validation-only workflow run [41791360826](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41791360826) passed the validation job; the backup job was intentionally skipped with `confirm_production_backup=false`.
+- No Production connection, dump, restore, credential read or backup artifact was attempted. PR #1 remains Draft pending review.
+- Secret/variable values were not inspected. The previous 2026-11-03 setup record is the last known inventory; owner-managed PAT and age-recipient configuration must be confirmed in GitHub Settings without disclosing values.
