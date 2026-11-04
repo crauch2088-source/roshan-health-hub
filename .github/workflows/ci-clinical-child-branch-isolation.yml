@@ -10,6 +10,9 @@ on:
       - 'tests/clinical-rls.test.ts'
       - '.github/workflows/ci-clinical-child-branch-isolation.yml'
 
+permissions:
+  contents: read
+
 jobs:
   clinical-child-branch-isolation:
     name: clinical-child-branch-isolation
@@ -24,7 +27,9 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
       - name: Apply fixture, migration, and cross-branch regression
         env: { PGPASSWORD: postgres }
         run: |

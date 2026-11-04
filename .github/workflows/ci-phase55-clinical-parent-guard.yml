@@ -12,6 +12,9 @@ on:
       - 'db/tests/phase55_clinical_parent_guard_assertions.sql'
       - '.github/workflows/ci-phase55-clinical-parent-guard.yml'
 
+permissions:
+  contents: read
+
 jobs:
   phase55-clinical-parent-guard:
     name: phase55-clinical-parent-guard
@@ -26,7 +29,9 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
       - name: Apply Phase36 baseline, simulate live drift, and reconcile
         env: { PGPASSWORD: postgres }
         run: |
