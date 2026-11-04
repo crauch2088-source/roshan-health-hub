@@ -185,8 +185,9 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<MedicineCatalogueDraft>(EMPTY_MEDICINE_FORM);
   const [editingMedicine, setEditingMedicine] = useState<Row | null>(null);
-  const [identityForm, setIdentityForm] =
-    useState<MedicineCatalogueIdentityDraft>(EMPTY_MEDICINE_IDENTITY_FORM);
+  const [identityForm, setIdentityForm] = useState<MedicineCatalogueIdentityDraft>(
+    EMPTY_MEDICINE_IDENTITY_FORM,
+  );
   const [packChecked, setPackChecked] = useState(false);
 
   const list = usePagedRows<Row[]>(
@@ -289,9 +290,9 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
 
   const identityFormReady = Boolean(
     identityForm.generic_name.trim() &&
-      identityForm.strength.trim() &&
-      identityForm.dosage_form.trim() &&
-      (identityForm.dosage_form !== "other" || identityForm.custom_dosage_form.trim()),
+    identityForm.strength.trim() &&
+    identityForm.dosage_form.trim() &&
+    (identityForm.dosage_form !== "other" || identityForm.custom_dosage_form.trim()),
   );
 
   const rows = list.rows;
@@ -464,7 +465,9 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
               <Field label={`${t("generic_name")} *`}>
                 <Input
                   value={identityForm.generic_name}
-                  onChange={(e) => setIdentityForm({ ...identityForm, generic_name: e.target.value })}
+                  onChange={(e) =>
+                    setIdentityForm({ ...identityForm, generic_name: e.target.value })
+                  }
                 />
               </Field>
               <Field label={t("brand_name")}>

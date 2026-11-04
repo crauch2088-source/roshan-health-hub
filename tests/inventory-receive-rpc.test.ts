@@ -190,7 +190,6 @@ testRunner(
   },
 );
 
-
 testRunner(
   "medicine identity updates whitelist product fields and never alter stock or commercial metadata",
   () => {
@@ -240,18 +239,15 @@ testRunner("medicine identity update validates custom form and required product 
       dosage_form: "nasal spray",
     },
   });
-  assert.deepEqual(
-    buildMedicineCatalogueIdentityUpdate({ ...base, custom_dosage_form: " " }),
-    { error: "missing-custom-dosage-form" },
-  );
-  assert.deepEqual(
-    buildMedicineCatalogueIdentityUpdate({ ...base, generic_name: " " }),
-    { error: "missing-generic-name" },
-  );
-  assert.deepEqual(
-    buildMedicineCatalogueIdentityUpdate({ ...base, strength: " " }),
-    { error: "missing-strength" },
-  );
+  assert.deepEqual(buildMedicineCatalogueIdentityUpdate({ ...base, custom_dosage_form: " " }), {
+    error: "missing-custom-dosage-form",
+  });
+  assert.deepEqual(buildMedicineCatalogueIdentityUpdate({ ...base, generic_name: " " }), {
+    error: "missing-generic-name",
+  });
+  assert.deepEqual(buildMedicineCatalogueIdentityUpdate({ ...base, strength: " " }), {
+    error: "missing-strength",
+  });
 });
 
 testRunner(
