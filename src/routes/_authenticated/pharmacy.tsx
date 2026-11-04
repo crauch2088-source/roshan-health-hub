@@ -302,9 +302,15 @@ function PharmacyPageInner() {
                             </p>
                           ) : null}
                           <p className="text-xs text-muted-foreground">
-                            {t("quantity")} <span dir="ltr">{parsePositiveWholeQuantity(i["quantity"]) ?? "—"}</span> ·{" "}
-                            {t("stock")}{" "}
-                            <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
+                            {t("quantity")} {" "}
+                            <span dir="ltr">
+                              {parsePositiveWholeQuantity(i["quantity"]) ?? "—"}
+                            </span>{" "}
+                            ·{" "}
+                            {t("stock")} {" "}
+                            <span dir="ltr">
+                              {n(rel(i, "medicines"), "stock_quantity")}
+                            </span>
                           </p>
                         </div>
                         <span className="shrink-0 font-semibold">
@@ -360,18 +366,20 @@ function PharmacyPageInner() {
                                 ) : null}
                               </div>
                             </TableCell>
-                            <TableCell dir="ltr">{parsePositiveWholeQuantity(i["quantity"]) ?? "—"}</TableCell>
+                            <TableCell dir="ltr">
+                              {parsePositiveWholeQuantity(i["quantity"]) ?? "—"}
+                            </TableCell>
                             <TableCell dir="ltr">
                               {n(rel(i, "medicines"), "stock_quantity")}
                             </TableCell>
                             <TableCell>
                               {parsePositiveWholeQuantity(i["quantity"]) === null
-                            ? "—"
-                            : money(
-                                (parsePositiveWholeQuantity(i["quantity"]) ?? 0) *
-                                  n(rel(i, "medicines"), "selling_price"),
-                                currency,
-                              )}
+                                ? "—"
+                                : money(
+                                    (parsePositiveWholeQuantity(i["quantity"]) ?? 0) *
+                                      n(rel(i, "medicines"), "selling_price"),
+                                    currency,
+                                  )}
                             </TableCell>
                           </TableRow>
                         ))}
