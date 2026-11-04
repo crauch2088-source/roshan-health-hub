@@ -10,6 +10,9 @@ on:
       - 'db/tests/pharmacy_batch_money_precision_fixture.sql'
       - 'db/tests/pharmacy_batch_money_precision_integration.sql'
       - '.github/workflows/ci-pharmacy-batch-money-precision.yml'
+permissions:
+  contents: read
+
 jobs:
   pharmacy-batch-precision:
     runs-on: ubuntu-latest
@@ -23,7 +26,9 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
       - name: Apply fixture, migration, and behavioral regression
         env: { PGPASSWORD: postgres }
         run: |
