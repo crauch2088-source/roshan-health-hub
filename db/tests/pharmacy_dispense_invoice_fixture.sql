@@ -1,6 +1,7 @@
 -- Standalone disposable PostgreSQL fixture for pharmacy dispense + invoice integration.
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+CREATE ROLE service_role BYPASSRLS;
 CREATE SCHEMA private;
 
 CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, active boolean NOT NULL DEFAULT true, deleted_at timestamptz);
