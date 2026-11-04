@@ -218,7 +218,6 @@ test("blank or nonnumeric lab values are not classified as out of range", async 
   assert.equal(isAbnormalLabResult("4.5", 3.5, 5.5), false);
 });
 
-
 test("pharmacy queue never invents quantity one and blocks invalid dispensing", () => {
   assert.match(pharmacyQueue, /parsePositiveWholeQuantity/);
   assert.match(pharmacyQueue, /disabled=\{dispense\.isPending \|\| cannotDispense\}/);

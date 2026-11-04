@@ -305,9 +305,8 @@ function PharmacyPageInner() {
                             {t("quantity")}{" "}
                             <span dir="ltr">
                               {parsePositiveWholeQuantity(i["quantity"]) ?? "—"}
-                            </span>
-                            {" "}
-                            {t("stock")} {" "}
+                            </span>{" "}
+                            {t("stock")}{" "}
                             <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
                           </p>
                         </div>

@@ -172,7 +172,6 @@ test("editing a selected medicine name clears its catalog link and old regimen",
   assert.equal(edited.instructions, "");
 });
 
-
 test("pharmacy quantity parsing fails closed instead of defaulting missing values to one", () => {
   for (const value of [null, undefined, "", "   ", 0, -1, 1.5, "1.5", "1e3", true, 2_147_483_648]) {
     assert.equal(parsePositiveWholeQuantity(value), null);
