@@ -11,6 +11,7 @@ import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
 import { shouldBlockUnsavedClinicalNoteNavigation } from "../src/lib/clinical-navigation-guard.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+const pharmacyQueue = read("../src/routes/_authenticated/pharmacy.tsx");
 
 test("prescription completeness guard rejects empty and incomplete regimens", () => {
   assert.equal(validatePrescriptionDrafts([]), "empty");
@@ -215,4 +216,12 @@ test("blank or nonnumeric lab values are not classified as out of range", async 
   assert.equal(isAbnormalLabResult("3.4", 3.5, 5.5), true);
   assert.equal(isAbnormalLabResult("5.6", 3.5, 5.5), true);
   assert.equal(isAbnormalLabResult("4.5", 3.5, 5.5), false);
+});
+
+
+test("pharmacy queue never invents quantity one and blocks invalid dispensing", () => {
+  assert.match(pharmacyQueue, /parsePositiveWholeQuantity/);
+  assert.match(pharmacyQueue, /disabled=\{dispense\.isPending \|\| cannotDispense\}/);
+  assert.doesNotMatch(pharmacyQueue, /n\(i, "quantity"\)\s*\|\|\s*1/);
+  assert.match(pharmacyQueue, /Dispensing blocked: a medicine quantity is missing or invalid/);
 });

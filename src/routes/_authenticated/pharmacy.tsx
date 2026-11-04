@@ -37,6 +37,7 @@ import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDateTime, money } from "@/lib/medical";
 import { dispensePrescriptionFefo, type DispenseResultRow } from "@/lib/pharmacy";
+import { parsePositiveWholeQuantity } from "@/lib/pharmacy-quantity";
 import { supabase } from "@/lib/supabase";
 import { useBranchRealtime } from "@/lib/realtime";
 
@@ -191,10 +192,17 @@ function PharmacyPageInner() {
         <div className="grid gap-4">
           {rows.map((p) => {
             const items = (p["prescription_items"] as Row[]) ?? [];
-            const total = items.reduce(
-              (sum, i) => sum + (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-              0,
-            );
+            const quantities = items.map((item) => parsePositiveWholeQuantity(item["quantity"]));
+            const hasInvalidQuantity = quantities.some((quantity) => quantity === null);
+            const hasNoItems = items.length === 0;
+            const cannotDispense = hasInvalidQuantity || hasNoItems;
+            const total = cannotDispense
+              ? null
+              : items.reduce(
+                  (sum, item, index) =>
+                    sum + (quantities[index] ?? 0) * n(rel(item, "medicines"), "selling_price"),
+                  0,
+                );
             const usedBatches = dispenseDetail[s(p, "id")];
             return (
               <DataPanel key={s(p, "id")}>
@@ -245,7 +253,7 @@ function PharmacyPageInner() {
                             </Button>
                           ) : null}
                           <Button
-                            disabled={dispense.isPending}
+                            disabled={dispense.isPending || cannotDispense}
                             onClick={() => {
                               const prescriptionId = s(p, "id");
                               const requestId =
@@ -294,16 +302,19 @@ function PharmacyPageInner() {
                             </p>
                           ) : null}
                           <p className="text-xs text-muted-foreground">
-                            {t("quantity")} <span dir="ltr">{n(i, "quantity") || 1}</span> ·{" "}
+                            {t("quantity")} <span dir="ltr">{parsePositiveWholeQuantity(i["quantity"]) ?? "—"}</span> ·{" "}
                             {t("stock")}{" "}
                             <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
                           </p>
                         </div>
                         <span className="shrink-0 font-semibold">
-                          {money(
-                            (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-                            currency,
-                          )}
+                          {parsePositiveWholeQuantity(i["quantity"]) === null
+                            ? "—"
+                            : money(
+                                (parsePositiveWholeQuantity(i["quantity"]) ?? 0) *
+                                  n(rel(i, "medicines"), "selling_price"),
+                                currency,
+                              )}
                         </span>
                       </li>
                     ))}
@@ -349,13 +360,16 @@ function PharmacyPageInner() {
                                 ) : null}
                               </div>
                             </TableCell>
-                            <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
+                            <TableCell dir="ltr">{parsePositiveWholeQuantity(i["quantity"]) ?? "—"}</TableCell>
                             <TableCell dir="ltr">
                               {n(rel(i, "medicines"), "stock_quantity")}
                             </TableCell>
                             <TableCell>
-                              {money(
-                                (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
+                              {parsePositiveWholeQuantity(i["quantity"]) === null
+                            ? "—"
+                            : money(
+                                (parsePositiveWholeQuantity(i["quantity"]) ?? 0) *
+                                  n(rel(i, "medicines"), "selling_price"),
                                 currency,
                               )}
                             </TableCell>
@@ -364,8 +378,19 @@ function PharmacyPageInner() {
                       </TableBody>
                     </Table>
                   </div>
+                  {cannotDispense ? (
+                    <p role="alert" className="mt-2 text-sm text-destructive">
+                      {hasNoItems
+                        ? lang === "ar"
+                          ? "لا توجد أدوية قابلة للصرف."
+                          : "No medicines are available to dispense."
+                        : lang === "ar"
+                          ? "تعذر الصرف: توجد كمية مفقودة أو غير صحيحة."
+                          : "Dispensing blocked: a medicine quantity is missing or invalid."}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-end text-sm font-semibold">
-                    {t("total")}: {money(total, currency)}
+                    {t("total")}: {total === null ? "—" : money(total, currency)}
                   </p>
 
                   {usedBatches && usedBatches.length > 0 ? (
