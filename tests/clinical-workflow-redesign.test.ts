@@ -14,6 +14,8 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
   assert.equal(validatePrescriptionDrafts([]), "empty");
   const draft = createEmptyPrescriptionDraft();
   draft.name = "Example medicine";
+  draft.dosage_form = "tablet";
+  draft.route = "oral";
   assert.equal(validatePrescriptionDrafts([draft]), "missing-dose");
   draft.dose = "500 mg";
   assert.equal(validatePrescriptionDrafts([draft]), "missing-frequency");
