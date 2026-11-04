@@ -34,3 +34,9 @@ This is application/UI validation, not a clinical protocol approval. No database
 - Regression coverage asserts the blank default, catalogue-selection behavior, rejection before save and required UI semantics. The prescription atomicity test fixtures now expect an empty quantity.
 - TDD reproduced the defect before the change (`"1" !== ""`) and passed after the change using Node 22.16.0. Exact-head CI on PR #179 commit `4de2bbbb64860ae9f84bd784fa1c56e456d09c00` passed run `41789990771` (18 success, zero failures, one intentional clinical-acceptance skip). The prescription atomicity integration passed run `41789990830`.
 - No database migration or patient/financial record write was performed. This does not authorize any default dose, route, frequency, duration or clinical protocol.
+
+## PR consolidation — 2026-11-04
+
+- PRs #125, #183 and #184 were closed as superseded by the consolidated implementation in PR #179. Their route-selection, custom-field, DOB-validation and age-warning changes are present in the current #179 branch, which also contains saved-prescription printing and explicit quantity entry.
+- The old READY preview cited by #125 is tied to an earlier implementation commit and is not current acceptance evidence. PR #179 remains Draft until a current authorized preview, RTL/LTR print checks, actual A4 printer behavior and staff acceptance are recorded.
+- No clinical E2E acceptance, production migration or production data write is claimed.
