@@ -54,10 +54,12 @@ test("patient age treats missing, malformed, impossible, and future DOB values a
   assert.equal(typeof calcAge("2000-02-29"), "number");
 });
 
-
 test("prescription quantity is required and has no one-unit default in the composer", () => {
   const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
-  const quantityField = ui.slice(ui.indexOf("value={form.quantity}") - 160, ui.indexOf("value={form.quantity}") + 300);
+  const quantityField = ui.slice(
+    ui.indexOf("value={form.quantity}") - 160,
+    ui.indexOf("value={form.quantity}") + 300,
+  );
   assert.match(quantityField, /required/);
   assert.match(quantityField, /Required quantity/);
 });
