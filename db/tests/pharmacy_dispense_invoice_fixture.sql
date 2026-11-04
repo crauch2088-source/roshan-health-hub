@@ -98,3 +98,23 @@ GRANT SELECT, INSERT, UPDATE ON public.invoices, public.invoice_items TO authent
 GRANT SELECT, INSERT, UPDATE ON public.medicines, public.prescriptions,
   public.prescription_items, public.pharmacy_inventory, public.stock_movements TO authenticated;
 GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription(uuid) TO authenticated;
+
+-- Minimal fixture equivalent of the production branch-scope helper used by Phase49 RLS.
+CREATE FUNCTION private.app_has_branch_access(p_branch_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT public.is_super_admin()
+    OR EXISTS (
+      SELECT 1
+      FROM public.users AS u
+      WHERE u.id = public.current_app_user_id()
+        AND u.branch_id = p_branch_id
+        AND u.active IS TRUE
+        AND u.deleted_at IS NULL
+    );
+$function$;
+
