@@ -3,7 +3,7 @@ CREATE ROLE anon;
 CREATE ROLE authenticated;
 CREATE SCHEMA private;
 
-CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
+CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, active boolean NOT NULL DEFAULT true, deleted_at timestamptz);
 CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.partners (id uuid PRIMARY KEY, active boolean, deleted_at timestamptz);
 CREATE TABLE public.visits (

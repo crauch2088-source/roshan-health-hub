@@ -16,7 +16,7 @@ No data is backfilled. No default is added. No table constraint is added. Existi
 
 ## Regression coverage
 
-The synthetic SQL integration test sets one test prescription item's quantity to NULL, expects the exact `prescription quantity is required` error, and verifies that batch stock, aggregate stock, invoice lines, and prescription status remain unchanged. It restores the fixture quantity before later scenarios. The integration privilege assertions are aligned with the live contract: the idempotent wrapper is authenticated-only, and the legacy non-idempotent `fn_dispense_prescription(uuid)` remains revoked.
+The PostgreSQL 17 CI job now replays Phase49, Phase17, and Phase57 in sequence against the synthetic fixture (including an active-user field required by the current branch-safe function). The synthetic SQL integration test sets one test prescription item's quantity to NULL, expects the exact `prescription quantity is required` error, and verifies that batch stock, aggregate stock, invoice lines, and prescription status remain unchanged. It restores the fixture quantity before later scenarios. The integration privilege assertions are aligned with the live contract: the idempotent wrapper is authenticated-only, and the legacy non-idempotent `fn_dispense_prescription(uuid)` remains revoked.
 
 ## Rollout boundary
 
