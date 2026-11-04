@@ -302,10 +302,13 @@ function PharmacyPageInner() {
                             </p>
                           ) : null}
                           <p className="text-xs text-muted-foreground">
-                            {t("quantity")} {" "}
+                            {t("quantity")}{" "}
                             <span dir="ltr">
                               {parsePositiveWholeQuantity(i["quantity"]) ?? "—"}
-                            </span> · {t("stock")} {" "} <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
+                            </span>
+                            {" "}
+                            {t("stock")} {" "}
+                            <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
                           </p>
                         </div>
                         <span className="shrink-0 font-semibold">
