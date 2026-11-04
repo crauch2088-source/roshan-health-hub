@@ -11,6 +11,29 @@ export type MedicineCatalogueDraft = {
   reorder_level: string;
 };
 
+export type MedicineCatalogueIdentityDraft = Pick<
+  MedicineCatalogueDraft,
+  "name" | "generic_name" | "brand_name" | "strength" | "dosage_form" | "custom_dosage_form"
+>;
+
+export type MedicineCatalogueIdentityBuildResult =
+  | {
+      data: {
+        name: string;
+        generic_name: string;
+        brand_name: string | null;
+        strength: string;
+        dosage_form: string;
+      };
+    }
+  | {
+      error:
+        | "missing-generic-name"
+        | "missing-strength"
+        | "missing-dosage-form"
+        | "missing-custom-dosage-form";
+    };
+
 type MedicineCatalogueInsert = {
   name: string;
   generic_name: string;
@@ -86,6 +109,39 @@ export function buildMedicineCatalogueInsert(
       reorder_level: reorderLevel,
       expiry_date: null,
       batch_number: null,
+    },
+  };
+}
+
+/**
+ * Build a strict identity-only update. Stock, packaging unit, prices and reorder
+ * settings are intentionally excluded from this write contract.
+ */
+export function buildMedicineCatalogueIdentityUpdate(
+  draft: MedicineCatalogueIdentityDraft,
+): MedicineCatalogueIdentityBuildResult {
+  const genericName = draft.generic_name.trim();
+  if (!genericName) return { error: "missing-generic-name" };
+
+  const strength = draft.strength.trim();
+  if (!strength) return { error: "missing-strength" };
+
+  const selectedForm = draft.dosage_form.trim();
+  if (!selectedForm) return { error: "missing-dosage-form" };
+  const dosageForm = selectedForm === "other" ? draft.custom_dosage_form.trim() : selectedForm;
+  if (!dosageForm) return { error: "missing-custom-dosage-form" };
+
+  const brandName = draft.brand_name.trim();
+  const displayBase = brandName || genericName;
+  const generatedName = [displayBase, strength, dosageForm].join(" ");
+
+  return {
+    data: {
+      name: draft.name.trim() || generatedName,
+      generic_name: genericName,
+      brand_name: brandName || null,
+      strength,
+      dosage_form: dosageForm,
     },
   };
 }

@@ -3,11 +3,23 @@ import { readFileSync } from "node:fs";
 import testRunner from "node:test";
 import {
   buildMedicineCatalogueInsert,
+  buildMedicineCatalogueIdentityUpdate,
   buildMedicineCatalogueSearchFilter,
 } from "../src/lib/medicine-catalogue.ts";
 
 const source = readFileSync(
   new URL("../src/routes/_authenticated/inventory.tsx", import.meta.url),
+  "utf8",
+);
+const medicineAuditSql = readFileSync(
+  new URL("../db/roshan_phase39_permissions_lab_catalog_and_audit_closure.sql", import.meta.url),
+  "utf8",
+);
+const medicineRlsSql = readFileSync(
+  new URL(
+    "../docs/recovered-migrations/sql/20260818234039_harden_rls_permissions_and_public_grants_v1.sql",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -175,5 +187,89 @@ testRunner(
     assert.match(source, /generic_name, brand_name, strength, dosage_form/);
     assert.match(source, /medicine_identity_hint/);
     assert.match(source, /inventory_unit_hint/);
+  },
+);
+
+
+testRunner(
+  "medicine identity updates whitelist product fields and never alter stock or commercial metadata",
+  () => {
+    const result = buildMedicineCatalogueIdentityUpdate({
+      name: "",
+      generic_name: "  amoxicillin  ",
+      brand_name: " Amoxil ",
+      strength: " 500 mg ",
+      dosage_form: "capsule",
+      custom_dosage_form: "",
+    });
+    assert.deepEqual(result, {
+      data: {
+        name: "Amoxil 500 mg capsule",
+        generic_name: "amoxicillin",
+        brand_name: "Amoxil",
+        strength: "500 mg",
+        dosage_form: "capsule",
+      },
+    });
+    assert.ok("data" in result);
+    assert.deepEqual(Object.keys(result.data).sort(), [
+      "brand_name",
+      "dosage_form",
+      "generic_name",
+      "name",
+      "strength",
+    ]);
+  },
+);
+
+testRunner("medicine identity update validates custom form and required product fields", () => {
+  const base = {
+    name: "",
+    generic_name: "drug",
+    brand_name: "",
+    strength: "1%",
+    dosage_form: "other",
+    custom_dosage_form: " nasal spray ",
+  };
+  assert.deepEqual(buildMedicineCatalogueIdentityUpdate(base), {
+    data: {
+      name: "drug 1% nasal spray",
+      generic_name: "drug",
+      brand_name: null,
+      strength: "1%",
+      dosage_form: "nasal spray",
+    },
+  });
+  assert.deepEqual(
+    buildMedicineCatalogueIdentityUpdate({ ...base, custom_dosage_form: " " }),
+    { error: "missing-custom-dosage-form" },
+  );
+  assert.deepEqual(
+    buildMedicineCatalogueIdentityUpdate({ ...base, generic_name: " " }),
+    { error: "missing-generic-name" },
+  );
+  assert.deepEqual(
+    buildMedicineCatalogueIdentityUpdate({ ...base, strength: " " }),
+    { error: "missing-strength" },
+  );
+});
+
+testRunner(
+  "medicine identity editing is permission-gated, pack-confirmed and covered by existing RLS/audit controls",
+  () => {
+    assert.match(source, /can\("pharmacy\.update"\)/);
+    assert.match(source, /if \(!packChecked\)/);
+    assert.match(source, /medicine_identity_shared_hint/);
+    assert.match(source, /buildMedicineCatalogueIdentityUpdate\(vars\.draft\)/);
+    assert.match(source, /\.update\(result\.data\)/);
+    assert.match(source, /\.eq\("id", vars\.id\)/);
+    assert.match(source, /\.is\("deleted_at", null\)/);
+    assert.match(
+      medicineRlsSql,
+      /CREATE POLICY medicines_update ON public\.medicines FOR UPDATE TO authenticated USING \(\(SELECT public\.app_has_perm\('pharmacy\.update'\)\)\) WITH CHECK \(\(SELECT public\.app_has_perm\('pharmacy\.update'\)\)\)/,
+    );
+    assert.match(medicineAuditSql, /'medicines'/);
+    assert.match(medicineAuditSql, /trigger_name := 'trg_audit_'\|\|table_name/);
+    assert.match(medicineAuditSql, /EXECUTE FUNCTION public\.audit_row_change\(\)/);
   },
 );

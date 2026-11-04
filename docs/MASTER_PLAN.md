@@ -2504,7 +2504,6 @@ Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No 
 
 Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
 
-
 ## Phase 56 — Medicine catalogue identity authoring foundation (2026-11-03)
 
 - The inventory create workflow now captures required generic ingredient, exact product strength, and dosage form; brand name and display name remain optional. Common dosage forms use the shared bilingual option set, with an explicit custom-form path.
@@ -2514,3 +2513,14 @@ Release boundary: this audit is documentation evidence only. It does not approve
 - No migration, QA catalogue seeding, Production data write, or existing-product correction was performed.
 - The intentionally small reference model and 2026-11-03 source-freshness findings are documented in [DRUG_REFERENCES_SIMPLE_MODEL_2026-11-03.md](DRUG_REFERENCES_SIMPLE_MODEL_2026-11-03.md). Use NMPB for regulatory verification; Wasila only as a human discovery aid (Google Play lists its last update as 2018-11-19); do not auto-fill prices from the NMSF 2015 retail-price edition.
 - **Next catalogue task:** implement pharmacist-authorized review/edit of product identity under the existing `pharmacy.update` permission, with audit/RLS tests. Existing Production candidates must be verified against physical packs before editing or using them clinically.
+
+## Phase 56A — pharmacist-authorized medicine identity correction (2026-11-04)
+
+- Added a pharmacist-only edit path for the shared medicine catalogue under the existing `pharmacy.update` permission. Both the UI permission check and the existing database `medicines_update` RLS policy are retained; RLS remains the authoritative boundary.
+- The edit builder can update exactly five identity fields: display name, generic ingredient, brand, strength and dosage form. It does not send stock quantity, batch/expiry, packaging unit, prices, reorder level, barcode, active flags or branch fields.
+- The edit dialog requires an explicit physical-pack comparison confirmation and warns that the catalogue row is shared (the live `medicines` schema has no `branch_id`, so changes apply across branches). The confirmation is a per-save UI acknowledgement, not a persisted verification attestation.
+- Read-only catalog inspection on 2026-11-04 confirmed Production and QA both have RLS enabled and forced; `medicines_update` checks `pharmacy.update` in both USING and WITH CHECK; `trg_audit_medicines` records INSERT/UPDATE/DELETE; and the stock-aggregate guard remains installed. No database writes or schema changes were performed.
+- Regression tests cover the five-field whitelist, required/custom dosage form validation, permission/pack-confirmation wiring, the existing update RLS policy and the audit-trigger source contract.
+- Current implementation candidate is being added to PR #189. Exact-head CI and independent review remain pending. Authenticated pharmacist browser acceptance remains deferred until an approved synthetic QA identity path is available; this is not a clinical E2E pass.
+
+Next: run exact-head CI for the combined PR #189 branch, review the diff for any accidental commercial/stock-field writes, and keep the PR Draft pending independent review and authorized pharmacist acceptance.

@@ -55,3 +55,13 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Never transmit real patient, clinical, financial, identity, credential, or production-export data to any model or external service. Use synthetic fixtures only.
 - A Spec Kit task never authorizes production SQL/migration, Auth/Storage mutation, deployment, or live clinical/financial data changes. Preserve separately documented owner authorization and release gates.
 - Keep work quota-aware: avoid redundant CI runs, do not add production dependencies for development tooling, and keep each logical change in one atomic commit.
+
+
+## Roshan Agent Skills — routing policy
+
+- For non-trivial engineering work, begin with .agents/skills/roshan-engineering-orchestrator/SKILL.md, then load only the relevant specialist skill(s).
+- Skill files are repository-local execution guidance, not a new source of truth and not an authorization mechanism. Precedence remains owner-approved release gates, the Spec Kit Constitution, docs/MASTER_PLAN.md, this file, feature specs, then skills.
+- Use docs/ROSHAN_AGENT_SKILLS_SYSTEM.md for inventory, routing, upstream inspiration, and maintenance policy.
+- Use installed general TDD/debugging/security/documentation skills when they add distinct value; avoid duplication and overlapping Roshan skills.
+- Simplicity/YAGNI must never weaken clinical safety, data fidelity, clinician confirmation, authentication, permissions, RLS, branch isolation, auditability, atomic finance/stock operations, or test coverage.
+- Skills do not authorize Production migrations, grants/RLS changes, Auth/Storage mutations, live business-data writes, deployment promotion, paid services, or clinical/staff acceptance.

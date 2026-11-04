@@ -389,6 +389,32 @@ const dict: Record<string, { ar: string; en: string }> = {
     ar: "أدخل الاسم العلمي والتركيز والشكل الدوائي كما تظهر على العبوة. الشكل الدوائي لا يحدد طريق الإعطاء.",
     en: "Enter the generic ingredient, exact strength and dosage form as shown on the pack. Dosage form does not determine administration route.",
   },
+  edit_identity: { ar: "تعديل البيانات", en: "Edit details" },
+  edit_medicine_identity: { ar: "تعديل بيانات المنتج", en: "Edit medicine identity" },
+  medicine_identity_edit_hint: {
+    ar: "عدّل الاسم العلمي والاسم التجاري والتركيز والشكل الدوائي واسم العرض فقط. لا تغيّر وحدة المخزون أو الأسعار أو حد إعادة الطلب من هذه الشاشة.",
+    en: "Edit only the generic, brand, strength, dosage form and display name. Stock unit, prices and reorder level are not editable here.",
+  },
+  medicine_identity_shared_hint: {
+    ar: "هذا سجل موحّد في دليل الأدوية؛ أي تعديل هنا يسري على جميع الفروع.",
+    en: "This is a shared medicine catalogue record; changes apply across all branches.",
+  },
+  confirm_pack_identity: {
+    ar: "أؤكد أنني قارنت الاسم والتركيز والشكل الدوائي بالعبوة الفعلية قبل الحفظ.",
+    en: "I compared the medicine name, strength and dosage form against the physical pack before saving.",
+  },
+  pharmacy_update_required: {
+    ar: "تحتاج إلى صلاحية تحديث الصيدلية لتعديل بيانات المنتج.",
+    en: "Pharmacy update permission is required to edit medicine identity.",
+  },
+  pack_check_required: {
+    ar: "يجب تأكيد مطابقة العبوة الفعلية قبل الحفظ.",
+    en: "Confirm the physical-pack check before saving.",
+  },
+  medicine_not_updated: {
+    ar: "لم يتم تحديث سجل الدواء؛ قد تكون الصلاحية غير كافية أو أن السجل لم يعد متاحًا.",
+    en: "The medicine was not updated; permission may be missing or the record is no longer available.",
+  },
   inventory_unit_hint: {
     ar: "وحدة المخزون أو العبوة فقط؛ لا تعني طريق الإعطاء.",
     en: "Stock or packaging unit only; it is not an administration route.",
