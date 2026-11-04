@@ -38,6 +38,17 @@ test("orchestrator routes work and preserves authority boundaries", () => {
   }
 });
 
+test("Graphify is conditionally routed and remains a non-authoritative local aid", () => {
+  const orchestrator = readSkill("roshan-engineering-orchestrator");
+  const architecture = readSkill("roshan-architecture");
+  for (const term of ["Cross-layer flows", "Broad refactors", "current branch", "small isolated edit", "Graphify is an aid, never a blocker", "--code-only", "Production PostgreSQL", "RLS/grants"]) {
+    assert.ok(orchestrator.includes(term), "Graphify routing contract missing: " + term);
+  }
+  assert.match(architecture, /verify Graphify findings against actual source/i);
+  assert.match(architecture, /never connect the graph tool to Production PostgreSQL/i);
+  assert.match(architecture, /not authoritative for SQL\/RLS\/grants/i);
+});
+
 test("clinical, database, security and pharmacy skills retain hard safety contracts", () => {
   const clinical = readSkill("roshan-clinical-safety");
   const database = readSkill("roshan-database");
@@ -69,4 +80,5 @@ test("system documentation records inspirations and authority boundaries", () =>
   assert.match(docs, /docs\/MASTER_PLAN\.md/);
   assert.match(docs, /Skills never authorize production operations/);
   assert.match(docs, /No frontend dependency/);
+  assert.match(docs, /AGENT_TOOLING_RESEARCH_2026-11-04\.md/);
 });

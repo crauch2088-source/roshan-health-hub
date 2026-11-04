@@ -44,6 +44,17 @@ If a skill conflicts with a higher-level source, follow the higher-level source 
 5. Keep one coherent task in one branch/atomic commit, including implementation, tests and docs.
 6. Report exact evidence and unresolved gates; never claim skipped/unperformed checks passed.
 
+## Graphify integration
+Graphify is already integrated in `.agents/skills/graphify/SKILL.md` and `docs/GRAPHIFY_INTEGRATION.md`. Reuse that skill; do not create a duplicate.
+- Route it selectively for cross-layer discovery, multi-hop dependency tracing, broad refactors, and pre-change impact analysis.
+- Skip it for isolated edits and simple symbol lookups.
+- Use current-branch, local `--code-only` graphs as navigation leads only; verify material findings against source, migrations, SQL definitions, and tests.
+- Keep graph artifacts local/ignored. Never process real patient/financial data, secrets, credentials, or `.env` files; never connect Graphify to Production PostgreSQL.
+- Do not make it a CI requirement or an application dependency.
+
+## External tooling research
+See [Agent Tooling Research — 2026-11-04](AGENT_TOOLING_RESEARCH_2026-11-04.md) for the comparative review of Graphify, GitNexus, Serena, Agent Skills, and the currently connected ChatGPT apps. That document records evaluated options and explicitly rejected additions to avoid overlapping tools and recurring cost.
+
 ## Safety boundaries
 - No real patient, clinical, financial, staff identity, credential, private key, or production export data in prompts, fixtures, logs, screenshots, issues, or external model services.
 - No production migration, grant/RLS change, Auth/Storage mutation, business-data write, deployment promotion, or clinical acceptance from skill instructions alone.

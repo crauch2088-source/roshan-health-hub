@@ -6,7 +6,11 @@ description: Use when inspecting or changing Roshan architecture, modules, route
 # Roshan Architecture
 - Inspect the live repository and current branch, not an old handoff alone.
 - Read relevant source, route tree, domain services, shared components, tests, and contracts.
-- Consult Graphify only if its graph exists; inferred edges are hypotheses, verified against source.
+- For cross-module or cross-layer investigations, consult the existing Graphify skill when a graph for the current branch is available; use it to find candidate paths, callers, and affected modules before broad manual search.
+- Verify Graphify findings against actual source, call sites, SQL/migrations, schema, and tests. Check graph freshness and parser warnings; inferred edges are not proof.
+- If Graphify is unavailable, stale, or unhelpful, proceed with targeted source search. Do not make Graphify a prerequisite for simple or localized work.
+- Use Graphify's local `--code-only` mode by default. Never include production data, patient/financial records, credentials, tokens, or `.env` files; never connect the graph tool to Production PostgreSQL.
+- Graphify is not authoritative for SQL/RLS/grants, transaction atomicity, clinical safety, or release decisions. Inspect the actual definitions and verification evidence directly.
 - Respect the existing React, TypeScript, TanStack Start, and Supabase architecture and exact package versions.
 - Keep domain behavior in established services/boundaries; UI components must not become hidden business-rule engines.
 - Preserve separation of presentation, authorization, data access, and transactional database operations.

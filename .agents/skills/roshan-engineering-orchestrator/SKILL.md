@@ -25,6 +25,31 @@ Load only the smallest useful set:
 
 Use installed general TDD, debugging, security-review, and documentation skills when they add distinct method. Do not duplicate generic instructions.
 
+## Graphify routing
+Graphify is already integrated in `.agents/skills/graphify/SKILL.md`; reuse that skill rather than creating a second Graphify skill or duplicating its setup instructions.
+
+Consult Graphify when all of the following are true:
+- The question spans multiple modules or layers, or asks for broad architecture/onboarding context.
+- Dependency tracing, call paths, data flow, or change blast-radius analysis could materially reduce missed relationships.
+- A local graph generated from the relevant current branch is available, or the documented local CLI can be run safely.
+
+Typical triggers:
+- Cross-layer flows (UI → service/RPC → SQL/schema → tests).
+- Broad refactors, shared contract changes, dependency upgrades, or architecture changes.
+- Debugging that crosses several modules or follows a multi-hop call/data path.
+- Pre-change impact analysis for a non-trivial PR.
+
+Do not invoke Graphify for a small isolated edit, a straightforward symbol lookup, or a task whose relevant source and tests are already clear. If no current graph or CLI is available, continue with targeted source search; Graphify is an aid, never a blocker.
+
+Graphify operating constraints:
+1. Use the existing Roshan Graphify skill and `docs/GRAPHIFY_INTEGRATION.md`; default to local `--code-only` processing.
+2. Confirm the graph corresponds to the current branch and meaningful source changes before relying on it. Do not assume an ignored local `graphify-out/` artifact exists or is fresh.
+3. Use graph queries to discover candidate files, callers, paths, and affected modules; then verify each material conclusion in source code, SQL definitions, migrations, tests, and current CI.
+4. Treat inferred or low-confidence edges as hypotheses. Record gaps and parser warnings when they affect the conclusion.
+5. Never use Graphify as proof of RLS/grants, SQL correctness, transaction atomicity, clinical safety, or release readiness. Inspect authoritative database definitions and tests directly.
+6. Do not send production data, patient/financial records, credentials, tokens, or `.env` content to Graphify or any model. Do not connect it to Production PostgreSQL.
+7. Do not add a Graphify dependency to the application, a paid/hosted graph service, or graph generation to every CI run. Refresh locally only when the expected benefit justifies it.
+
 ## Execution protocol
 1. Classify domain, risk, affected users, data boundaries, and behavior impact.
 2. Inspect implementation, neighboring tests, database contracts, flags, and live release gates.
@@ -32,7 +57,7 @@ Use installed general TDD, debugging, security-review, and documentation skills 
 4. Plan the smallest complete change, tests, risks, and non-goals.
 5. For behavior changes, write a failing regression test before implementation. For docs/policy-only changes, add contract checks where they prevent drift.
 6. Implement narrowly while preserving established contracts.
-7. Run focused tests, then applicable guard/type/lint/build/integration checks.
+7. Run focused tests, then applicable full guard/type/lint/build/integration checks.
 8. Review full diff for safety, privacy, scope creep, and workflow impact.
 9. Follow one-atomic-commit policy; report exact SHA, CI evidence, and remaining gates.
 
