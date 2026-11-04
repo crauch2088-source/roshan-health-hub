@@ -9,6 +9,11 @@ on:
       - 'specs/**'
       - 'docs/SPEC_KIT_INTEGRATION.md'
       - 'tests/spec-kit-contract.test.mjs'
+      - '.agents/skills/**'
+      - 'docs/ROSHAN_AGENT_SKILLS_SYSTEM.md'
+      - 'docs/AGENT_TOOLING_RESEARCH_2026-11-04.md'
+      - 'tests/agent-skills-contract.test.mjs'
+      - 'AGENTS.md'
       - '.github/workflows/spec-kit-validation.yml'
   pull_request:
     paths:
@@ -16,6 +21,11 @@ on:
       - 'specs/**'
       - 'docs/SPEC_KIT_INTEGRATION.md'
       - 'tests/spec-kit-contract.test.mjs'
+      - '.agents/skills/**'
+      - 'docs/ROSHAN_AGENT_SKILLS_SYSTEM.md'
+      - 'docs/AGENT_TOOLING_RESEARCH_2026-11-04.md'
+      - 'tests/agent-skills-contract.test.mjs'
+      - 'AGENTS.md'
       - '.github/workflows/spec-kit-validation.yml'
 
 permissions:
@@ -40,6 +50,8 @@ jobs:
         run: specify integration status
       - name: Verify repository Spec Kit contract
         run: node --test tests/spec-kit-contract.test.mjs
+      - name: Verify Roshan agent skills and Graphify routing contracts
+        run: node --test tests/agent-skills-contract.test.mjs
       - name: Smoke-test official agent-neutral initialization
         shell: bash
         run: |

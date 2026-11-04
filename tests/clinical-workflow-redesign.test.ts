@@ -27,6 +27,8 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
   draft.dosage_form = "tablet";
   assert.equal(validatePrescriptionDrafts([draft]), "missing-route");
   draft.route = "oral";
+  assert.equal(draft.quantity, "");
+  assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "0";
   assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "10";
@@ -38,6 +40,7 @@ test("medicine catalogue selection never infers an administration route from dos
     const draft = createPrescriptionDraftForMedicine({ id: "medicine-1", dosage_form });
     assert.equal(draft.dosage_form, dosage_form);
     assert.equal(draft.route, "");
+    assert.equal(draft.quantity, "");
   }
 });
 
@@ -51,6 +54,13 @@ test("patient age treats missing, malformed, impossible, and future DOB values a
   assert.equal(typeof calcAge("2000-02-29"), "number");
 });
 
+
+test("prescription quantity is required and has no one-unit default in the composer", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  const quantityField = ui.slice(ui.indexOf("value={form.quantity}") - 160, ui.indexOf("value={form.quantity}") + 300);
+  assert.match(quantityField, /required/);
+  assert.match(quantityField, /Required quantity/);
+});
 test("prescription custom fields remain editable and dose entry requests a unit", () => {
   const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
   assert.match(ui, /Dose and unit/);

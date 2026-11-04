@@ -17,7 +17,7 @@ export function createEmptyPrescriptionDraft(): PrescriptionDraft {
     dose: "",
     frequency: "",
     duration: "",
-    quantity: "1",
+    quantity: "",
     instructions: "",
     dosage_form: "",
     route: "",

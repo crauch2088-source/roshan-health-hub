@@ -435,7 +435,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             min="1"
             value={form.quantity}
             onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-            placeholder={lang === "ar" ? "الكمية" : "Qty"}
+            required
+            aria-label={lang === "ar" ? "الكمية المطلوبة" : "Required quantity"}
+            placeholder={lang === "ar" ? "الكمية المطلوبة" : "Required quantity"}
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
