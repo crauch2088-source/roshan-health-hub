@@ -57,7 +57,7 @@ CREATE TABLE public.prescription_items (
 );
 CREATE TABLE public.pharmacy_inventory (
   id uuid PRIMARY KEY, medicine_id uuid NOT NULL, batch_number text, expiry_date date,
-  quantity numeric, quantity_remaining numeric NOT NULL, branch_id uuid, deleted_at timestamptz,
+  quantity numeric, quantity_remaining numeric NOT NULL, quantity_received numeric NOT NULL DEFAULT 0, branch_id uuid, deleted_at timestamptz,
   created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now(), updated_by uuid
 );
 CREATE TABLE public.stock_movements (
