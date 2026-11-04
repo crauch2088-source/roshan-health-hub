@@ -1,0 +1,72 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const root = process.cwd();
+const skills = [
+  "roshan-engineering-orchestrator",
+  "roshan-architecture",
+  "roshan-database",
+  "roshan-clinical-safety",
+  "roshan-security",
+  "roshan-pharmacy-laboratory",
+  "roshan-qa",
+  "roshan-release",
+  "roshan-minimal-change",
+];
+
+function readSkill(name) {
+  const path = join(root, ".agents", "skills", name, "SKILL.md");
+  assert.ok(existsSync(path), "missing skill: " + name);
+  return readFileSync(path, "utf8");
+}
+
+test("Roshan skill inventory and frontmatter are complete", () => {
+  for (const name of skills) {
+    const content = readSkill(name);
+    assert.match(content, /^---\nname: [a-z0-9-]+\ndescription: .+\n---\n/m);
+    assert.match(content, new RegExp("^name: " + name + "$", "m"));
+    assert.ok(content.length > 250, "skill is unexpectedly empty: " + name);
+  }
+});
+
+test("orchestrator routes work and preserves authority boundaries", () => {
+  const content = readSkill("roshan-engineering-orchestrator");
+  for (const term of ["roshan-database", "roshan-clinical-safety", "roshan-security", "roshan-pharmacy-laboratory", "roshan-qa", "roshan-release", "docs/MASTER_PLAN.md", "Completion report"]) {
+    assert.ok(content.includes(term), "orchestrator missing contract: " + term);
+  }
+});
+
+test("clinical, database, security and pharmacy skills retain hard safety contracts", () => {
+  const clinical = readSkill("roshan-clinical-safety");
+  const database = readSkill("roshan-database");
+  const security = readSkill("roshan-security");
+  const pharmacy = readSkill("roshan-pharmacy-laboratory");
+  assert.match(clinical, /Never invent, infer, silently normalize/);
+  assert.match(clinical, /Do not infer route from dosage form/);
+  assert.match(clinical, /clinician review and explicit confirmation/);
+  assert.match(database, /Never use Production as a test database/);
+  assert.match(database, /fixed safe search_path/);
+  assert.match(database, /FORCE RLS/);
+  assert.match(security, /A hidden button, route guard, client filter, or TypeScript type is not authorization/);
+  assert.match(security, /branch access/);
+  assert.match(pharmacy, /approved verification RPC/);
+  assert.match(pharmacy, /aggregate stock/);
+});
+
+test("minimal-change policy cannot weaken safety, security, or test coverage", () => {
+  const content = readSkill("roshan-minimal-change");
+  assert.match(content, /Simplicity never permits weakening/);
+  assert.match(content, /Do not reduce test coverage/);
+  assert.match(content, /without reducing security or clinical assurance/);
+});
+
+test("system documentation records inspirations and authority boundaries", () => {
+  const docs = readFileSync(join(root, "docs/ROSHAN_AGENT_SKILLS_SYSTEM.md"), "utf8");
+  assert.match(docs, /Addy Osmani/);
+  assert.match(docs, /Ponytail/);
+  assert.match(docs, /docs\/MASTER_PLAN\.md/);
+  assert.match(docs, /Skills never authorize production operations/);
+  assert.match(docs, /No frontend dependency/);
+});
