@@ -2503,3 +2503,15 @@ Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No 
 6. Verify exact-head unit/guard tests, typecheck, lint and build in the repository's documented sequence. Keep clinical E2E acceptance deferred until isolated free QA and a synthetic doctor identity are available.
 
 Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
+
+
+## Phase 57 — QA application and verification (2026-11-04)
+
+- PR [#191](https://github.com/crauch2088-source/roshan-health-hub/pull/191) code head `809ca724b9ec991a31c5a860edd820267e9d427e` passed exact-head CI run [41756609987](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41756609987): 17 successful jobs, zero failures, and one intentional skip for the canonical baseline/authenticated clinical-acceptance gate. The `Atomic pharmacy dispense and invoice integration` PostgreSQL 17 job passed, including the NULL-quantity rejection and no-side-effect assertions.
+- Applied the exact tracked migration blob `9db6768999352c32081f69b5e665c3cc95452616` to isolated QA project `hopfohcnrtbiqjkgeukz` only. Supabase recorded migration `20261104065852` (`roshan_phase57_pharmacy_quantity_required_guard`). QA is PostgreSQL 17.11.
+- Post-apply read-only catalog verification confirmed `fn_dispense_prescription_with_invoice(uuid,boolean)` remains SECURITY DEFINER with `search_path=""`, contains the explicit `pi.quantity IS NULL` rejection, no longer contains `COALESCE(pi.quantity,1)`, is not executable by `anon`, and remains executable by `authenticated`. The idempotent wrapper remains authenticated-only.
+- The synthetic rollback/atomicity scenario was exercised in the disposable PostgreSQL 17 CI service, not by creating test prescriptions or invoices in the persistent QA project. No QA or Production patient, prescription, invoice, payment, or stock rows were created or modified by this run.
+- PR #191 remains Draft: the QA DDL application and disposable-PG17 regression are verified, but a QA-authenticated pharmacist scenario is still deferred because no approved synthetic pharmacist identity/Auth Admin path is available. The separate clinical acceptance gate remains deferred as requested.
+- Production was not modified. The encrypted off-site backup plus isolated restore gate remains open; Phase 57 must not be applied to Production before that gate passes.
+
+Next: establish an approved synthetic pharmacist identity in isolated QA (without direct `auth.users` edits or an improvised credential endpoint), run the QA-scoped atomic dispense rollback scenario, then request independent review of PR #191.

@@ -26,3 +26,12 @@ The synthetic SQL integration test sets one test prescription item's quantity to
 4. Do not apply to Production until the encrypted backup and isolated restore gate is independently verified.
 
 No patient records or production data were read or changed for this finding; only schema metadata and function definitions were inspected.
+
+
+## QA application and verification — 2026-11-04
+
+- Applied to isolated QA only as migration version `20261104065852` (`roshan_phase57_pharmacy_quantity_required_guard`) on PostgreSQL 17.11. The exact SQL blob was `9db6768999352c32081f69b5e665c3cc95452616`.
+- Post-apply read-only catalog checks passed: function exists; SECURITY DEFINER; fixed empty `search_path`; explicit NULL-quantity guard present; the `COALESCE(pi.quantity, 1)` fallback absent; `anon` EXECUTE denied; `authenticated` EXECUTE retained; the idempotent wrapper remains authenticated-only.
+- PR #191 code head `809ca724b9ec991a31c5a860edd820267e9d427e` passed CI run `41756609987` with 17 successful jobs, zero failures and one intentional skip. Its disposable PostgreSQL 17 pharmacy dispense/invoice integration passed the synthetic NULL-quantity rejection and no-side-effect assertions.
+- No synthetic pharmacist transaction was run against persistent QA because there is no approved synthetic pharmacist identity/Auth Admin path. The CI integration used its disposable PostgreSQL 17 fixture instead. No patient, prescription, invoice, payment or stock business rows were created or changed in QA.
+- Production remains unchanged. The encrypted backup and isolated restore gate remains open. PR #191 remains Draft pending the QA-authenticated pharmacist scenario and independent review.
