@@ -74,3 +74,11 @@ test("print-only certificate content is hidden on screen and displayed only for 
   );
   assert.doesNotMatch(css, /body\.print-scope-active \.print-document-root,/);
 });
+
+test("clinical document print stylesheet explicitly requests A4 paper", () => {
+  const css = read("src/styles.css");
+  const pageRule = css.match(/@page\s*\{([^}]*)\}/s);
+  assert.ok(pageRule, "clinical print stylesheet must define a page rule");
+  assert.match(pageRule[1], /(?:^|\s)size:\s*A4\s*;/);
+  assert.match(pageRule[1], /margin:\s*12mm\s*;/);
+});
