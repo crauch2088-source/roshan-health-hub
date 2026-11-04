@@ -2515,3 +2515,14 @@ Release boundary: this audit is documentation evidence only. It does not approve
 - Production was not modified. The encrypted off-site backup plus isolated restore gate remains open; Phase 57 must not be applied to Production before that gate passes.
 
 Next: establish an approved synthetic pharmacist identity in isolated QA (without direct `auth.users` edits or an improvised credential endpoint), run the QA-scoped atomic dispense rollback scenario, then request independent review of PR #191.
+
+## Prescription quantity must be explicitly entered — 2026-11-04
+
+- Source review found that `createEmptyPrescriptionDraft()` initialized `quantity` to `"1"`. A new prescription and every newly selected catalogue medicine therefore began with a one-unit quantity even though the prescriber had not entered one.
+- Changed the draft default to an empty value. The existing completeness validator already rejects blank, zero, fractional and negative quantities; the pharmacy composer now marks the quantity input required and exposes a bilingual accessible label/placeholder. Catalogue selection and manual-name reset both retain the blank state.
+- Added regression assertions for the empty draft, catalogue selection, save validation and required UI field. Updated the prescription atomicity fixtures to expect no inferred quantity.
+- TDD evidence: a focused Node 22.16.0 regression against the pre-fix helper failed with actual `"1"` versus expected `""`; after the change the same test passed. Exact-head repository CI then passed on `4de2bbbb64860ae9f84bd784fa1c56e456d09c00`.
+- PR [#179](https://github.com/crauch2088-source/roshan-health-hub/pull/179) exact-head CI [41789990771](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990771) passed 18 jobs with zero failures and one intentional authenticated-clinical-acceptance skip. Prescription atomicity integration [41789990830](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990830), insurance claim UI validation [41789990751](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990751), and PR analysis [41789985834](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789985834) also succeeded.
+- No schema migration, QA/Production write, or clinical/financial record creation was part of this UI correction. PR #179 remains Draft because print-preview/browser checks, actual A4 printer behavior, and staff acceptance are still outstanding. Clinical E2E remains deferred.
+
+Next: reconcile the overlapping route/custom-field PRs into #179, then complete authorized non-staff browser print-preview checks (Arabic RTL and English LTR) without bypassing Vercel SSO or build limits. Staff UAT remains a later, separate gate.
