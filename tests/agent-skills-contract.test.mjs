@@ -33,7 +33,16 @@ test("Roshan skill inventory and frontmatter are complete", () => {
 
 test("orchestrator routes work and preserves authority boundaries", () => {
   const content = readSkill("roshan-engineering-orchestrator");
-  for (const term of ["roshan-database", "roshan-clinical-safety", "roshan-security", "roshan-pharmacy-laboratory", "roshan-qa", "roshan-release", "docs/MASTER_PLAN.md", "Completion report"]) {
+  for (const term of [
+    "roshan-database",
+    "roshan-clinical-safety",
+    "roshan-security",
+    "roshan-pharmacy-laboratory",
+    "roshan-qa",
+    "roshan-release",
+    "docs/MASTER_PLAN.md",
+    "Completion report",
+  ]) {
     assert.ok(content.includes(term), "orchestrator missing contract: " + term);
   }
 });
@@ -41,12 +50,24 @@ test("orchestrator routes work and preserves authority boundaries", () => {
 test("Graphify is conditionally routed and remains a non-authoritative local aid", () => {
   const orchestrator = readSkill("roshan-engineering-orchestrator");
   const architecture = readSkill("roshan-architecture");
-  for (const term of ["Cross-layer flows", "Broad refactors", "current branch", "small isolated edit", "Graphify is an aid, never a blocker", "--code-only", "Production PostgreSQL", "RLS/grants"]) {
+  for (const term of [
+    "Cross-layer flows",
+    "Broad refactors",
+    "current branch",
+    "small isolated edit",
+    "Graphify is an aid, never a blocker",
+    "--code-only",
+    "Production PostgreSQL",
+    "RLS/grants",
+  ]) {
     assert.ok(orchestrator.includes(term), "Graphify routing contract missing: " + term);
   }
   assert.match(architecture, /verify Graphify findings against actual source/i);
   assert.match(architecture, /never connect the graph tool to Production PostgreSQL/i);
-  assert.match(architecture, /not authoritative for SQL\/RLS\/grants/i);
+  assert.match(
+    architecture,
+    /not authoritative for SQL\/RLS\/grants/i,
+  );
 });
 
 test("clinical, database, security and pharmacy skills retain hard safety contracts", () => {
@@ -60,7 +81,10 @@ test("clinical, database, security and pharmacy skills retain hard safety contra
   assert.match(database, /Never use Production as a test database/);
   assert.match(database, /fixed safe search_path/);
   assert.match(database, /FORCE RLS/);
-  assert.match(security, /A hidden button, route guard, client filter, or TypeScript type is not authorization/);
+  assert.match(
+    security,
+    /A hidden button, route guard, client filter, or TypeScript type is not authorization/,
+  );
   assert.match(security, /branch access/);
   assert.match(pharmacy, /approved verification RPC/);
   assert.match(pharmacy, /aggregate stock/);
