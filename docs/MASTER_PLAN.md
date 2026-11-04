@@ -2521,3 +2521,14 @@ Release boundary: this audit is documentation evidence only. It does not approve
 ### Current main and next tasks
 - Roshan application `main` remained at `d32c55af911ba0a701b32a6b29c3adfcf8758f05` during this run. No Production database migration, DDL/DML, application deployment or real clinical/financial record creation occurred.
 - Next: (1) review private backup-runner PR #1, then wait for owner-managed credentials/settings before the explicitly confirmed backup; (2) obtain a current authorized preview for PR #179 and complete non-staff RTL/LTR/print checks; (3) establish an approved synthetic pharmacist identity for the QA-only Phase 57 scenario. Authenticated clinical E2E and staff UAT remain deferred until their separate environment/identity and acceptance gates are met.
+
+## A4 clinical-document print contract — 2026-11-04
+
+- Read-only review of main `8270dcc8a93e36a135a04292cbb0f89085754895` found that the shared clinical print stylesheet set a 12 mm margin but did not declare a paper size. Browser/OS defaults could therefore produce a non-A4 page even though the clinic's intended paper output is A4.
+- The narrow correction requests `size: A4` in the existing `@page` rule while retaining the 12 mm margin. It applies to the existing invoice/certificate print surface and the pending saved-prescription print surface; it does not claim 58/80 mm thermal-receipt support.
+- Added a source regression contract requiring the A4 page size and existing margin. TDD was run on Node 22: the test failed against the previous stylesheet and passed after adding the A4 declaration.
+- No patient/financial data, application database, production deployment, or clinical workflow was touched. CSS can request A4, but a user may override paper size in the browser print dialog; physical printer output is not verified by this source test.
+- Release boundary remains unchanged: current authorized print-preview checks in Arabic RTL and English LTR, mobile browser behavior, page breaks, and actual A4 hardware output remain open. PR #179 stays Draft until its own acceptance gates are met; do not bypass SSO or Vercel deployment limits.
+- Exact candidate commit, PR, and GitHub Actions result are pending this change's repository validation and will be recorded in the follow-up verification entry.
+
+Next: run the exact-head repository CI; if green, merge this A4 print contract, then update the still-open PR #179 branch and perform authorized non-staff preview checks when the existing preview path is available.
