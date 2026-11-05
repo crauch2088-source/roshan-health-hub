@@ -1,6 +1,6 @@
 # Phase 57 — Pharmacy quantity must be explicit
 
-**Status:** candidate migration and regression coverage prepared; QA replay required; Production not modified.
+**Status:** applied to isolated QA as migration `20261104065852`; disposable PostgreSQL 17 and read-only catalog verification passed; Production not modified and remains gated by encrypted backup plus isolated restore.
 
 ## Finding
 

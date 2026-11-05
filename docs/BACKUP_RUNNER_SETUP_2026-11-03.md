@@ -49,3 +49,11 @@ In the private runner repository:
 - Supabase backup/restore: https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
 - Supabase database backups: https://supabase.com/docs/guides/platform/backups
 - age encryption: https://age-encryption.org/
+
+
+## 2026-11-04 runner code correction
+
+- A read-only review found the inline Python config rewrite in `scripts/backup-and-restore.sh` used double-escaped regex patterns and newline literals. The `[db]` section matcher raises `re.PatternError` before the local PostgreSQL 17 restore rehearsal, so the existing backup workflow could not complete its restore-validation stage.
+- The fix is in private backup-runner PR [#1](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/1), commit `faf3eb03c4109cd8f88b241389a30c78ecb21d7a`. It extracts `scripts/set_local_postgres_major_version.py`, replaces only the `[db].major_version` key, and adds five unit tests. The manual workflow validation job now compiles the helper and runs the tests.
+- Validation-only run [41791360826](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41791360826) passed the validation job, including Bash syntax, ShellCheck, Python compile and five tests. The Production backup job was skipped because `confirm_production_backup=false`.
+- PR #1 is Draft pending review. This correction does not mean a backup or restore rehearsal has occurred. No Production connection, database dump, restore, credential read or encrypted artifact creation occurred.
