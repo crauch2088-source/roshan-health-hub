@@ -207,6 +207,7 @@
 /* Phase 10 — print polish for clinical documents */
 @media print {
   @page {
+    size: A4;
     margin: 12mm;
   }
   html,
