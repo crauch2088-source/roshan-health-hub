@@ -43,3 +43,14 @@ Before saving, the authorized user must confirm that the product name, strength 
 - No DDL, DML, permission changes, seed data, Auth-user creation, deployment promotion or production data access occurred.
 - Authenticated browser acceptance and staff UAT remain deferred. Do not modify `auth.users` directly or create a new credential endpoint.
 - Keep PR #189 Draft until the role-scope decision, authorized non-staff browser/mobile/RTL review and independent review are complete.
+
+## Main reconciliation and exact-head validation — 2026-11-06
+
+- Synchronized with main `0b1785b69dd0d2cbc523757db79a886780495d25` by normal two-parent merge commit `29ee3c60b82ec304daae1f0886b8c28448335a6f`; first parent is prior feature head `ec886194fc164bfcab673dfb8f56f35cf7e580c8`. No published history was rewritten.
+- PR #189 is now 12 commits ahead / 0 behind main and GitHub reports mergeable=true. It remains Draft.
+- Exact-head CI [42177775976](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775976): 18 successful jobs, zero failures, one intentional skip for canonical PG17 baseline/authenticated clinical acceptance. Install, audits, role guard, typecheck, lint and build passed. Supporting runs [42177775946](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775946), [42177775953](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775953), [42177776009](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177776009), [42177775930](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775930) and CodeQL [42177771248](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177771248) all passed.
+- Vercel preview status is successful, but no interactive browser/RTL/mobile acceptance was performed because preview SSO remains enabled and no authorized non-bypass browser session is available. No SSO or build-quota bypass was used.
+- Read-only schema metadata checks on QA and Production confirmed the catalogue columns match; no business rows were queried or modified.
+- No migration, database write, Auth/Storage change, patient/financial record, or Production deployment occurred. The authenticated clinical acceptance job remains intentionally deferred.
+
+Next: resolve the role-scope question (the existing `pharmacy.update` map includes admin and super-admin roles as well as pharmacist), obtain independent review, and complete authorized non-staff mobile/RTL/LTR preview checks. Keep this PR Draft until those gates are evidenced.
