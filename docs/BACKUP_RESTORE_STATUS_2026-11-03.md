@@ -40,3 +40,12 @@ A private runner and a validated workflow are preparation, not a backup. The gat
 - A fix is proposed in private runner PR [#1](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/1), commit `faf3eb03c4109cd8f88b241389a30c78ecb21d7a`. Five Python regression tests cover the config update behavior. Validation-only workflow run [41791360826](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41791360826) passed the validation job; the backup job was intentionally skipped with `confirm_production_backup=false`.
 - No Production connection, dump, restore, credential read or backup artifact was attempted. PR #1 remains Draft pending review.
 - Secret/variable values were not inspected. The previous 2026-11-03 setup record is the last known inventory; owner-managed PAT and age-recipient configuration must be confirmed in GitHub Settings without disclosing values.
+
+## 2026-11-06 — merged runner correction, backup still not executed
+
+- Private runner PR [#1](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/1) was merged on 2026-11-04 at `9bc9bd7c203614e7173d1413936d92a483a691ad`. The merged fix replaces the broken embedded Python config rewrite with `scripts/set_local_postgres_major_version.py` and includes six Python regression tests.
+- Exact merged-head workflow run [41817196723](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41817196723) completed successfully: `validate` passed; `backup` was skipped because `confirm_production_backup=false`.
+- The runner implementation is no longer waiting for PR review. However, no Production connection, dump, restore rehearsal, encrypted artifact, SHA-256 verification, or Drive upload occurred. The run deliberately did not enter the backup job.
+- Owner-managed setup remains outstanding: temporary Supabase token access and SSL enforcement, short-lived Production access rule, private Actions secret `SUPABASE_DB_ACCESS_TOKEN`, and public Actions variable `AGE_RECIPIENT`. Secret/variable values were not inspected. The private age identity must remain offline.
+- **Current gate: OPEN.** Do not treat the merged runner or validation-only success as a completed backup/restore.
+
