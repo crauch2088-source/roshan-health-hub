@@ -2572,6 +2572,22 @@ Next: PR #179 is now reconciled with main. Obtain an approved non-bypass preview
 
 Next: wait for owner-managed settings/keys; do not inspect secret values or start a Production backup without explicit confirmation. No Production migration or privilege change is authorized by this documentation update.
 
+## Phase 57 pharmacy quantity guard — branch reconciliation (2026-11-05)
+
+- Run-start main was `0b1785b69dd0d2cbc523757db79a886780495d25` (PR #197, pinned GitHub Actions and least-privilege workflow tokens). Exact-main CI `41817482791` and the dynamic main delivery workflow `41817499637` both completed successfully; supporting Phase 49–50 `41817482837`, Phase 52 `41817482865`, migration-source delta `41817482849`, and security-candidate `41817482925` workflows also completed successfully.
+- PR [#191](https://github.com/crauch2088-source/roshan-health-hub/pull/191) previously had head `be8abd4965227c8622a7fb5dbbe3740c0b87629a`, base `d32c55af911ba0a701b32a6b29c3adfcf8758f05`, and was 6 commits ahead / 6 behind current main. Its conflict surface was limited to `.github/workflows/ci.yml` and this plan. Reconciliation preserves the current-main workflow hardening and overlays the seven Phase 57 source/test/documentation files without rewriting published history.
+- The pharmacy PostgreSQL 17 CI sequence now replays Phase 49, Phase 17 legacy-RPC revocation, and Phase 57 before the pharmacy integration assertions. This aligns the disposable fixture with the actual idempotent dispensing contract and verifies the legacy endpoint is already revoked before the main integration test.
+- Phase 57 rejects an active, non-deleted, catalogue-linked prescription item with NULL quantity before invoice construction or stock mutation. It adds no default, data backfill, or schema constraint. The synthetic integration assertion verifies batch stock, aggregate stock, invoice lines, and prescription status remain unchanged after rejection.
+- Read-only live Supabase verification on 2026-11-05: QA `hopfohcnrtbiqjkgeukz` is ACTIVE_HEALTHY on PostgreSQL 17.11 with 22 migration rows; Phase 57 version `20261104065852` is recorded, the guard is present, SECURITY DEFINER with empty `search_path`, anon EXECUTE denied, authenticated EXECUTE retained. Production `jewzonxplxhogqrnhosl` is ACTIVE_HEALTHY on PostgreSQL 17.6 with 129 migration rows, latest `20261102232941`; Phase 57 is not recorded and the guard is absent. These were metadata/function-definition reads only.
+- The prior exact-head PR #191 CI `41789572969` passed (18 successful jobs, zero failures, one intentional clinical-acceptance skip); the earlier Phase 57 disposable PostgreSQL 17 integration `41756609987` passed. Reconciliation merge commit `1a5bd04c99aa0395118181d36133147cb1c4ab96` has first parent `be8abd4965227c8622a7fb5dbbe3740c0b87629a` (the Phase 57 feature head) and second parent `0b1785b69dd0d2cbc523757db79a886780495d25` (main). The branch is now 7 commits ahead / 0 behind; GitHub reports PR #191 mergeable=true.
+- Exact-head standard CI [41980421806](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41980421806) passed: 18 successful jobs, zero failures, and one intentional skip for canonical PG17 baseline/authenticated clinical acceptance. Its Atomic pharmacy dispense and invoice integration job passed after replaying Phase 49, Phase 17, Phase 57, then the pharmacy/legacy-revocation integration scripts.
+- Exact-head CodeQL [41980417962](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41980417962) passed JavaScript/TypeScript and Python. Supporting exact-head workflows passed: prescription atomicity [41980421804](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41980421804), insurance claim integrity [41980421935](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41980421935), privileged-role guard [41980422003](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41980422003), and insurance-claim UI validation [41980421979](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41980421979).
+- The canonical Vercel status was still pending at the last read. This branch changes SQL, tests, documentation and CI only; no application runtime source was changed, no deployment was requested, and no quota/SSO bypass was used.
+- No persistent QA pharmacist transaction was run because there is still no approved synthetic pharmacist identity/Auth Admin path. Authenticated clinical E2E remains explicitly deferred until the isolated free test environment and suitable synthetic clinician identity are available; staff UAT remains separate.
+- Production remains unchanged. Do not apply Phase 57, revoke Production privileges, or create clinical/financial records until the encrypted off-site backup and isolated restore rehearsal pass. The private backup-runner still requires owner-managed access and age-key configuration.
+
+Next: inspect the exact-head Phase 57 PostgreSQL 17 and standard CI results, then request independent review of PR #191. Keep it Draft until the separate QA pharmacist acceptance path exists; keep Production rollout blocked by the backup/restore gate.
+
 ## Execution and release-readiness audit — 2026-11-07
 
 Baseline verified: `main` = `ac521c7c8cd15ce83d389e53a320d6edfc6a4f18` (`docs(backup): record merged runner fix and open restore gate`). This entry records current connector evidence; it does not authorize a Production write or release.
@@ -2609,7 +2625,9 @@ Baseline verified: `main` = `ac521c7c8cd15ce83d389e53a320d6edfc6a4f18` (`docs(ba
 
 No clinical regimen, dosing automation, patient or financial data write, or Production change is approved by this audit.
 
+## Follow-up branch reconciliation — 2026-11-07
 
+- After the readiness audit was recorded on `main`, its documentation-only commit was merged into the Phase 57 branch using a normal two-parent merge commit. The Phase 57 source, SQL integration tests, CI workflow and prior plan history were preserved; the current-main audit section is retained above. This is a branch-only reconciliation: no application deployment or database write was triggered.
 
 ## Release-gate recheck — 2026-11-07 10:06 Africa/Khartoum
 
@@ -2642,3 +2660,7 @@ This is a fresh read-only operational recheck. It supersedes earlier audit state
 5. Keep PRs #189 and #191 Draft until their explicit acceptance criteria are met. No Production DDL/DML, permissions changes, or deployment promotion during this audit.
 
 No patient/business data was written, no Production migration was applied, and no deployment was triggered by this recheck.
+
+## Latest main reconciliation — 2026-11-07
+
+- Merged documentation-only main commit `17eb097052019ec32a4ec18395a73c023ac4cc18` with a normal two-parent merge commit. No feature code, database migration, business data, or Production deployment was changed by this reconciliation.

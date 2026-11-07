@@ -1,9 +1,10 @@
 -- Standalone disposable PostgreSQL fixture for pharmacy dispense + invoice integration.
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+CREATE ROLE service_role BYPASSRLS;
 CREATE SCHEMA private;
 
-CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
+CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, active boolean NOT NULL DEFAULT true, deleted_at timestamptz);
 CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.partners (id uuid PRIMARY KEY, active boolean, deleted_at timestamptz);
 CREATE TABLE public.visits (
@@ -57,7 +58,7 @@ CREATE TABLE public.prescription_items (
 );
 CREATE TABLE public.pharmacy_inventory (
   id uuid PRIMARY KEY, medicine_id uuid NOT NULL, batch_number text, expiry_date date,
-  quantity numeric, quantity_remaining numeric NOT NULL, branch_id uuid, deleted_at timestamptz,
+  quantity numeric, quantity_remaining numeric NOT NULL, quantity_received numeric NOT NULL DEFAULT 0, branch_id uuid, deleted_at timestamptz,
   created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now(), updated_by uuid
 );
 CREATE TABLE public.stock_movements (
@@ -98,3 +99,23 @@ GRANT SELECT, INSERT, UPDATE ON public.invoices, public.invoice_items TO authent
 GRANT SELECT, INSERT, UPDATE ON public.medicines, public.prescriptions,
   public.prescription_items, public.pharmacy_inventory, public.stock_movements TO authenticated;
 GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription(uuid) TO authenticated;
+
+-- Minimal fixture equivalent of the production branch-scope helper used by Phase49 RLS.
+CREATE FUNCTION private.app_has_branch_access(p_branch_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT public.is_super_admin()
+    OR EXISTS (
+      SELECT 1
+      FROM public.users AS u
+      WHERE u.id = public.current_app_user_id()
+        AND u.branch_id = p_branch_id
+        AND u.active IS TRUE
+        AND u.deleted_at IS NULL
+    );
+$function$;
+
