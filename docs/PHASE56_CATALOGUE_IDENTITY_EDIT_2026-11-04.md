@@ -62,3 +62,11 @@ Next: resolve the role-scope question (the existing `pharmacy.update` map includ
 - Vercel status check passed for the exact PR head. Protected-preview visual acceptance, mobile review and RTL/LTR review remain NOT TESTED; SSO was not weakened or bypassed.
 - No database migration, QA/Production DDL/DML, catalogue seed, Auth/Storage mutation, patient/clinical/financial record creation or Production promotion occurred.
 - Next: independent review and explicit role-scope decision, then authorized mobile/RTL/LTR preview checks. Keep Draft until those gates are evidenced.
+
+## Latest-main reconciliation — 2026-11-07
+
+- Main at reconciliation: 20e3d872f23171354166bd58504b4c6368835733. The feature branch was updated by normal two-parent merge commit 2f725cdc416caafa12910027359a02a0cae9cb49 (first parent 34b81851869f31542ff63b224b77335f2d2e9437, second parent main). No published history was rewritten.
+- PR [#189](https://github.com/crauch2088-source/roshan-health-hub/pull/189) is 16 commits ahead / 0 behind and GitHub reports mergeable/clean; it remains Draft.
+- Exact-head CI [42350748375](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748375): 18 success, zero failures, one intentional clinical-acceptance skip. Supporting integration and CodeQL workflows passed: [42350748366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748366), [42350748371](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748371), [42350748403](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748403), [42350748448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748448), and [42350745706](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350745706).
+- Vercel status is successful; no protected-preview browser/visual acceptance or physical pack workflow was performed. SSO remains enabled.
+- No QA/Production database changes, migration application, Auth-user creation, clinical/financial records, or deployment promotion occurred. Keep the PR Draft pending independent review, role-scope decision and authorized mobile/RTL/LTR acceptance.
