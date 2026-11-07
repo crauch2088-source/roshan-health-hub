@@ -2562,6 +2562,16 @@ Next: PR #179 is now reconciled with main. Obtain an approved non-bypass preview
 - No interactive browser/print preview or physical printer run was performed. Keep preview SSO enabled; there is no approved OIDC browser-test path, and no share-link/SSO bypass was used. The existing clinical E2E skip remains deferred until an isolated free QA environment and synthetic clinician identity are available. Staff UAT is separate.
 - Next: obtain an approved non-bypass preview validation path for Arabic RTL / English LTR print-preview, mobile print and page-break checks; then validate actual A4 hardware output. Keep the encrypted Production backup and isolated restore rehearsal as the highest-priority release gate; no Production migration or clinical/financial writes before it passes.
 
+## Backup runner code closure and remaining Production restore gate — 2026-11-06
+
+- Private repository PR [#1](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/1), which fixed the local PostgreSQL 17 restore-config rewrite, is now merged at `9bc9bd7c203614e7173d1413936d92a483a691ad` (private runner main). The branch's six Python regression tests and manual-workflow validation are included in the merged runner.
+- Exact merged-head validation run [41817196723](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41817196723) completed successfully. The `validate` job passed; the `backup` job was intentionally skipped because `confirm_production_backup=false`.
+- This closes the runner-code defect only. No Production connection, database dump, restore rehearsal, encrypted artifact, checksum, or Drive upload was produced. No secret or variable values were inspected, and no Production credential was read.
+- The release gate remains OPEN. Owner-managed setup is still required: enable temporary token-based Supabase database access, enforce SSL, create a short-lived Production access rule, configure the short-lived PAT secret and public age recipient in the private runner, and keep the private age identity offline. Trigger the manual workflow only after the owner has completed setup and explicitly confirms the Production backup.
+- The workflow's own safety checks still need to pass: it must confirm that Storage object bytes and Vault secrets do not require separate recovery handling, complete the PostgreSQL 17 restore rehearsal, encrypt the archive, and upload the ciphertext to the existing private Drive destination. Verify SHA-256 and restore evidence before closing the gate.
+
+Next: wait for owner-managed settings/keys; do not inspect secret values or start a Production backup without explicit confirmation. No Production migration or privilege change is authorized by this documentation update.
+
 ## Phase 56A — permission-gated medicine identity correction (2026-11-04)
 
 - Added an inventory edit path gated by the existing `pharmacy.update` permission and the existing `medicines_update` RLS policy. The RLS policy remains authoritative; no new permission or migration was added.
