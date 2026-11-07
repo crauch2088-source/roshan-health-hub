@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { parsePositiveWholeQuantity } from "../src/lib/pharmacy-quantity.ts";
 
 import {
   buildMedicineSearchFilter,
@@ -64,10 +65,10 @@ test("new medicine selection starts with a clean regimen", () => {
       dose: "",
       frequency: "",
       duration: "",
-      quantity: "1",
+      quantity: "",
       instructions: "",
       dosage_form: "capsule",
-      route: "oral",
+      route: "",
     },
   );
 });
@@ -79,7 +80,7 @@ test("adding an item can reset every regimen field for the next medicine", () =>
     dose: "",
     frequency: "",
     duration: "",
-    quantity: "1",
+    quantity: "",
     instructions: "",
     dosage_form: "",
     route: "",
@@ -132,7 +133,7 @@ test("unknown catalog dosage forms do not masquerade as a supported form", () =>
       dose: "",
       frequency: "",
       duration: "",
-      quantity: "1",
+      quantity: "",
       instructions: "",
       dosage_form: "",
       route: "",
@@ -169,4 +170,13 @@ test("editing a selected medicine name clears its catalog link and old regimen",
   assert.equal(edited.frequency, "");
   assert.equal(edited.duration, "");
   assert.equal(edited.instructions, "");
+});
+
+test("pharmacy quantity parsing fails closed instead of defaulting missing values to one", () => {
+  for (const value of [null, undefined, "", "   ", 0, -1, 1.5, "1.5", "1e3", true, 2_147_483_648]) {
+    assert.equal(parsePositiveWholeQuantity(value), null);
+  }
+  assert.equal(parsePositiveWholeQuantity(1), 1);
+  assert.equal(parsePositiveWholeQuantity("2"), 2);
+  assert.equal(parsePositiveWholeQuantity("2.0"), 2);
 });

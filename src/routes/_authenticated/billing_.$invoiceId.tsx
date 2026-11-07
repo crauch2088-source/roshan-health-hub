@@ -83,7 +83,7 @@ function InvoicePageInner() {
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, patients(id, full_name, mrn, phone), partners(name)",
+        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, branch_id, deleted_at, patients(id, full_name, mrn, phone, branch_id, deleted_at), partners(name)",
       )
       .eq("id", invoiceId)
       .limit(1),
@@ -168,7 +168,9 @@ function InvoicePageInner() {
         >
           <StatusBadge status={s(invoice, "status")} />
 
-          <PrintButton scoped />
+          {!s(invoice, "deleted_at") && !s(patient, "deleted_at") && (
+            <PrintButton scoped targetId="invoice-print-document" />
+          )}
 
           <Button asChild variant="outline" size="sm">
             <Link to="/billing">
@@ -184,7 +186,7 @@ function InvoicePageInner() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="print-area print-document-root lg:col-span-2">
+        <Card id="invoice-print-document" className="print-area print-document-root lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">

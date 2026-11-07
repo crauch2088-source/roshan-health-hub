@@ -2505,6 +2505,37 @@ Read-only source audit from main `1c505e8964668d31acb716354c31b0a0297adc33`. No 
 Release boundary: this audit is documentation evidence only. It does not approve clinical protocols, validate product-specific route mappings, authorize a production migration, or satisfy clinical/staff acceptance.
 
 
+## Phase 57 — QA application and verification (2026-11-04)
+
+- PR [#191](https://github.com/crauch2088-source/roshan-health-hub/pull/191) code head `809ca724b9ec991a31c5a860edd820267e9d427e` passed exact-head CI run [41756609987](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41756609987): 17 successful jobs, zero failures, and one intentional skip for the canonical baseline/authenticated clinical-acceptance gate. The `Atomic pharmacy dispense and invoice integration` PostgreSQL 17 job passed, including the NULL-quantity rejection and no-side-effect assertions.
+- Applied the exact tracked migration blob `9db6768999352c32081f69b5e665c3cc95452616` to isolated QA project `hopfohcnrtbiqjkgeukz` only. Supabase recorded migration `20261104065852` (`roshan_phase57_pharmacy_quantity_required_guard`). QA is PostgreSQL 17.11.
+- Post-apply read-only catalog verification confirmed `fn_dispense_prescription_with_invoice(uuid,boolean)` remains SECURITY DEFINER with `search_path=""`, contains the explicit `pi.quantity IS NULL` rejection, no longer contains `COALESCE(pi.quantity,1)`, is not executable by `anon`, and remains executable by `authenticated`. The idempotent wrapper remains authenticated-only.
+- The synthetic rollback/atomicity scenario was exercised in the disposable PostgreSQL 17 CI service, not by creating test prescriptions or invoices in the persistent QA project. No QA or Production patient, prescription, invoice, payment, or stock rows were created or modified by this run.
+- PR #191 remains Draft: the QA DDL application and disposable-PG17 regression are verified, but a QA-authenticated pharmacist scenario is still deferred because no approved synthetic pharmacist identity/Auth Admin path is available. The separate clinical acceptance gate remains deferred as requested.
+- Production was not modified. The encrypted off-site backup plus isolated restore gate remains open; Phase 57 must not be applied to Production before that gate passes.
+
+Next: establish an approved synthetic pharmacist identity in isolated QA (without direct `auth.users` edits or an improvised credential endpoint), run the QA-scoped atomic dispense rollback scenario, then request independent review of PR #191.
+
+## Prescription quantity must be explicitly entered — 2026-11-04
+
+- Source review found that `createEmptyPrescriptionDraft()` initialized `quantity` to `"1"`. A new prescription and every newly selected catalogue medicine therefore began with a one-unit quantity even though the prescriber had not entered one.
+- Changed the draft default to an empty value. The existing completeness validator already rejects blank, zero, fractional and negative quantities; the pharmacy composer now marks the quantity input required and exposes a bilingual accessible label/placeholder. Catalogue selection and manual-name reset both retain the blank state.
+- Added regression assertions for the empty draft, catalogue selection, save validation and required UI field. Updated the prescription atomicity fixtures to expect no inferred quantity.
+- TDD evidence: a focused Node 22.16.0 regression against the pre-fix helper failed with actual `"1"` versus expected `""`; after the change the same test passed. Exact-head repository CI then passed on `4de2bbbb64860ae9f84bd784fa1c56e456d09c00`.
+- PR [#179](https://github.com/crauch2088-source/roshan-health-hub/pull/179) exact-head CI [41789990771](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990771) passed 18 jobs with zero failures and one intentional authenticated-clinical-acceptance skip. Prescription atomicity integration [41789990830](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990830), insurance claim UI validation [41789990751](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990751), and PR analysis [41789985834](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789985834) also succeeded.
+- No schema migration, QA/Production write, or clinical/financial record creation was part of this UI correction. PR #179 remains Draft because print-preview/browser checks, actual A4 printer behavior, and staff acceptance are still outstanding. Clinical E2E remains deferred.
+
+Next: reconcile the overlapping route/custom-field PRs into #179, then complete authorized non-staff browser print-preview checks (Arabic RTL and English LTR) without bypassing Vercel SSO or build limits. Staff UAT remains a later, separate gate.
+
+## Prescription branch consolidation and next release gate — 2026-11-04
+
+- Closed PR #125, #183 and #184 as superseded by PR [#179](https://github.com/crauch2088-source/roshan-health-hub/pull/179). The current #179 branch contains their explicit-route, custom-field, strict DOB/age-warning changes and regression coverage; no duplicate merge path remains. The safety remediation summary is preserved in `docs/PRESCRIPTION_SAFETY_REMEDIATION_2026-11-03.md`.
+- PR #179 implementation commit `4de2bbbb64860ae9f84bd784fa1c56e456d09c00` passed exact-head CI [41789990771](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789990771): 18 successful jobs, zero failures and one intentional clinical-acceptance skip. Its documentation follow-up head `e28d3ed51db9604c1c7eb2956697b106d8c67265` passed CI [41790271529](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41790271529) with the same 18-success/one-skip result. PR analysis [41789985834](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41789985834) passed.
+- PR #179 remains Draft. The earlier READY preview referenced by closed PR #125 was built from stale implementation commit `1640a22c...`; it is not current acceptance evidence. No current authenticated browser/print preview was verified, and no SSO or Vercel build-limit bypass was attempted.
+- PR #191 remains Draft after Phase 57 QA migration `20261104065852` and passing disposable-PG17 integration. The persistent-QA authenticated pharmacist scenario is still deferred because no approved synthetic pharmacist identity/Auth Admin path exists. Production remains unchanged behind the encrypted backup/isolated-restore gate.
+
+Next: obtain a current authorized preview for #179 without weakening SSO or bypassing build limits; complete non-staff Arabic RTL/English LTR print-preview checks and actual A4 printer validation. Only after that should the clinic/pharmacy staff acceptance session be scheduled. Authenticated clinical E2E remains deferred until the isolated free test environment and synthetic doctor identity gates are met.
+
 ## Verified continuation update — 2026-11-04
 
 ### Pharmacy quantity and Phase 57

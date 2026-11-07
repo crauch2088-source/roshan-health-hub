@@ -17,7 +17,7 @@ export function createEmptyPrescriptionDraft(): PrescriptionDraft {
     dose: "",
     frequency: "",
     duration: "",
-    quantity: "1",
+    quantity: "",
     instructions: "",
     dosage_form: "",
     route: "",
@@ -49,8 +49,9 @@ export function createPrescriptionDraftForMedicine(medicine: {
     "sachet",
   ]);
   const dosageForm = supportedForms.has(rawForm) ? rawForm : "";
-  const oralForms = new Set(["tablet", "capsule", "syrup", "suspension"]);
-  const route = oralForms.has(dosageForm) ? "oral" : "";
+  // A catalogue dosage form does not identify the intended administration route.
+  // The prescriber must choose the route explicitly for this prescription.
+  const route = "";
 
   return {
     ...createEmptyPrescriptionDraft(),
@@ -92,6 +93,8 @@ export type PrescriptionValidationError =
   | "missing-dose"
   | "missing-frequency"
   | "missing-duration"
+  | "missing-dosage-form"
+  | "missing-route"
   | "invalid-quantity";
 
 /** Validates completeness only; deliberately does not recommend a dose or regimen. */
@@ -104,6 +107,8 @@ export function validatePrescriptionDrafts(
     if (!item.dose.trim()) return "missing-dose";
     if (!item.frequency.trim()) return "missing-frequency";
     if (!item.duration.trim()) return "missing-duration";
+    if (!item.dosage_form.trim()) return "missing-dosage-form";
+    if (!item.route.trim()) return "missing-route";
     const quantity = Number(item.quantity);
     if (!Number.isInteger(quantity) || quantity < 1) return "invalid-quantity";
   }
