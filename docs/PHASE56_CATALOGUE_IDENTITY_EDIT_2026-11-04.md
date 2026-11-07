@@ -54,3 +54,11 @@ Before saving, the authorized user must confirm that the product name, strength 
 - No migration, database write, Auth/Storage change, patient/financial record, or Production deployment occurred. The authenticated clinical acceptance job remains intentionally deferred.
 
 Next: resolve the role-scope question (the existing `pharmacy.update` map includes admin and super-admin roles as well as pharmacist), obtain independent review, and complete authorized non-staff mobile/RTL/LTR preview checks. Keep this PR Draft until those gates are evidenced.
+
+## Branch reconciliation and exact-head checks — 2026-11-07
+
+- PR [#189](https://github.com/crauch2088-source/roshan-health-hub/pull/189) was merged with current main by normal two-parent commit e944812c6c85662ac5806852e83dd0b499423326. The previous feature head is the first parent and main ac521c7c8cd15ce83d389e53a320d6edfc6a4f18 is the second. Compare result: 14 ahead / 0 behind; PR is mergeable and remains Draft.
+- Exact-head CI [42350006998](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006998): 18 successful, zero failed, one intentional clinical-acceptance skip. Supporting exact-head runs passed: [42350006984](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006984), [42350007131](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350007131), [42350007180](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350007180), [42350006977](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006977), and CodeQL [42350004776](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350004776), both language analyses successful.
+- Vercel status check passed for the exact PR head. Protected-preview visual acceptance, mobile review and RTL/LTR review remain NOT TESTED; SSO was not weakened or bypassed.
+- No database migration, QA/Production DDL/DML, catalogue seed, Auth/Storage mutation, patient/clinical/financial record creation or Production promotion occurred.
+- Next: independent review and explicit role-scope decision, then authorized mobile/RTL/LTR preview checks. Keep Draft until those gates are evidenced.

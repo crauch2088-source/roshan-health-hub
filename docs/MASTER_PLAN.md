@@ -2597,3 +2597,22 @@ Next: resolve whether the existing broad `pharmacy.update` role mapping is accep
 - Release limits remain explicit: the existing `pharmacy.update` role map includes admin, legacy admin, legacy super-admin, pharmacist and super-admin; this feature is permission-gated, not strictly pharmacist-only. The physical-pack checkbox is an ephemeral acknowledgement, not a persisted verification attestation. Do not label products verified from this UI alone.
 
 Next: obtain independent review and resolve the intended role scope; then complete authorized mobile/RTL/LTR preview checks without weakening SSO. Keep PR #189 Draft until those gates are evidenced.
+
+## Verified continuation — 2026-11-07 (Phase 56A branch reconciliation)
+
+- Run-start main was ac521c7c8cd15ce83d389e53a320d6edfc6a4f18. PR [#189](https://github.com/crauch2088-source/roshan-health-hub/pull/189) was reconciled with that exact main using normal two-parent merge commit e944812c6c85662ac5806852e83dd0b499423326 (first parent: prior feature head f065051c809187c0ce90446038e6ac3a550958c7; second parent: main). The branch now compares as 14 commits ahead / 0 behind and GitHub reports mergeable=true, mergeable_state=clean. It remains Draft.
+- Exact-head CI [42350006998](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006998) passed 18 jobs; zero failures; the canonical PG17 baseline/authenticated clinical-acceptance job was intentionally skipped. The skipped job is deferred, not passed.
+- Exact-head supporting workflows passed: prescription atomicity [42350006984](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006984), privileged-role guard [42350007131](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350007131), insurance claim integrity [42350007180](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350007180), insurance claim UI validation [42350006977](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006977), and CodeQL [42350004776](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350004776) (JavaScript/TypeScript and Python).
+- The Vercel commit status check is success on this PR head. This is not visual/browser acceptance: preview SSO remains enabled and no authorized non-bypass browser session was available. No SSO bypass or manual Production promotion was attempted.
+- The merge reconciles source history and documentation; it does not apply a migration or change QA/Production data, privileges, Auth/Storage, or clinical/financial records. No authenticated clinical acceptance or staff UAT is claimed.
+- Remaining Phase 56A decision: pharmacy.update is assigned to admin, legacy admin, legacy super-admin, pharmacist and super-admin. The edit is permission-gated, not pharmacist-only. The pack-comparison checkbox is ephemeral and not a persisted verification attestation. Keep those limits explicit; do not label products verified.
+
+Next: obtain independent review and resolve the intended role scope, then perform authorized mobile/RTL/LTR preview checks without weakening SSO. Keep PR #189 Draft until those gates are evidenced.
+
+## Backup/restore gate recheck — 2026-11-07
+
+- Private backup-runner main remains 9bc9bd7c203614e7173d1413936d92a483a691ad. Its latest workflow is [41817196723](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41817196723), completed successfully on 2026-11-04; the backup job was skipped because confirm_production_backup=false.
+- A fresh read of that run's artifact list returned zero artifacts. No later workflow run is present in the repository's current run list. Therefore no encrypted dump, SHA-256, restore rehearsal or Drive upload is evidenced.
+- Secret/variable values were not inspected. No Production connection, dump, restore, database write or credential read occurred. The Production backup/restore release gate remains OPEN.
+
+Next: wait for owner-managed temporary Supabase access/SSL, the short-lived PAT secret, the public age recipient, and explicit manual confirmation. Do not start the Production backup or apply Production migrations before the gate is satisfied.

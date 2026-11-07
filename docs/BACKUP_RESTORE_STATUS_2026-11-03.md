@@ -49,3 +49,8 @@ A private runner and a validated workflow are preparation, not a backup. The gat
 - Owner-managed setup remains outstanding: temporary Supabase token access and SSL enforcement, short-lived Production access rule, private Actions secret `SUPABASE_DB_ACCESS_TOKEN`, and public Actions variable `AGE_RECIPIENT`. Secret/variable values were not inspected. The private age identity must remain offline.
 - **Current gate: OPEN.** Do not treat the merged runner or validation-only success as a completed backup/restore.
 
+## 2026-11-07 read-only recheck — no backup artifact
+
+- Private runner main remains 9bc9bd7c203614e7173d1413936d92a483a691ad. The newest run is still [41817196723](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41817196723), completed 2026-11-04 with validation successful and the Production backup job skipped because confirmation was false.
+- The current artifact listing for that run is empty, and no newer workflow run is present. No Production dump, local restore rehearsal, encrypted archive, SHA-256 verification or Drive upload has occurred.
+- Secret/variable values remain uninspected; no Production connection or credential read occurred. Gate remains OPEN. Owner-managed access/SSL, short-lived PAT, public age recipient and explicit backup confirmation are still required.
