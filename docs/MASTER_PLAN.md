@@ -2571,3 +2571,41 @@ Next: PR #179 is now reconciled with main. Obtain an approved non-bypass preview
 - The workflow's own safety checks still need to pass: it must confirm that Storage object bytes and Vault secrets do not require separate recovery handling, complete the PostgreSQL 17 restore rehearsal, encrypt the archive, and upload the ciphertext to the existing private Drive destination. Verify SHA-256 and restore evidence before closing the gate.
 
 Next: wait for owner-managed settings/keys; do not inspect secret values or start a Production backup without explicit confirmation. No Production migration or privilege change is authorized by this documentation update.
+
+## Execution and release-readiness audit — 2026-11-07
+
+Baseline verified: `main` = `ac521c7c8cd15ce83d389e53a320d6edfc6a4f18` (`docs(backup): record merged runner fix and open restore gate`). This entry records current connector evidence; it does not authorize a Production write or release.
+
+### Pharmacy PRs and exact-head validation
+
+- PR [#189](https://github.com/crauch2088-source/roshan-health-hub/pull/189), medicine catalogue identity, remains Draft. Current head `e944812c6c85662ac5806852e83dd0b499423326` is based on current main. Exact-head CI [42350006998](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006998): 18 successful jobs, zero failures, and one intentionally skipped canonical authenticated clinical-acceptance job. Prescription atomicity, insurance integrity, privileged-role guard and insurance UI supporting workflows passed. No database write, catalogue seed, Auth-user creation or deployment promotion occurred.
+- PR #189's `pharmacy.update` role mapping is broad: admin, legacy_admin, legacy_super_admin, pharmacist and super_admin. It is not a pharmacist-only server-side control. The UI's per-save physical-pack checkbox is not a persisted verification attestation; the existing medicine audit trigger records row changes and actor only. Keep these limitations explicit; do not narrow permissions without an agreed clinic role policy.
+- PR [#191](https://github.com/crauch2088-source/roshan-health-hub/pull/191), Phase 57 missing-quantity guard, remains Draft. Branch was reconciled with current main using normal merge commit `5f6d4757590e996a39912a30ab5a6c34716a54a2`, now 9 ahead / 0 behind and mergeable. Exact-head CI [42349166002](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42349166002): 18 successful jobs, zero failures, one intentional clinical-acceptance skip. QA migration `20261104065852` is applied on PostgreSQL 17.11; live read-only checks confirm NULL quantity is rejected, all three `COALESCE(pi.quantity, 1)` fallbacks are absent, the function is not executable by anon, and authenticated execution remains. No active prescription item with NULL quantity was found in QA or Production. Production does not have Phase 57 and remains unchanged.
+- PR #179 remains Draft. Exact-head CI [41800918035](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/41800918035) and supporting clinical/finance/insurance/role workflows passed; its Vercel preview was READY on merge SHA `5298f6578ed379b1a8fb42a5d5bb592e15bc623c`. Interactive preview/browser/physical A4 printer acceptance is still unverified; preview SSO was not bypassed.
+- PR #185 remains a documentation/specification package, not an active protocol engine. Its recorded exact head has no verified green exact-head CI and is not mergeable; do not treat clinical protocols as implemented or approved.
+
+### Database and Supabase advisors
+
+- QA ledger includes Phase 57 `20261104065852`; Production's latest listed migration remains `20261102232941`. Do not claim full migration parity: the Phase 57 delta is QA-only and must remain so until the backup/restore and release gates pass.
+- Supabase Health advisors: zero lints in both QA and Production.
+- Security advisor groups: QA 5 groups (private idempotency table RLS with no policies [informational and intentional for a private table], pg_trgm extension in public [warning], anon-executable SECURITY DEFINER `setup_required()` [intentionally exposes setup state only], 28 authenticated-executable SECURITY DEFINER functions [review each contract, do not blanket-revoke], and leaked-password protection disabled [Auth configuration follow-up]). Production has the same groups, with two private no-policy tables and 26 authenticated-executable SECURITY DEFINER functions. No blanket permission revocation is authorized.
+- Performance advisors: QA reports 144 unused indexes; Production reports 95 unused indexes and two unindexed FKs on quarantined `private.pharmacy_dispense_idempotency_legacy_20261103`. These are INFO-level findings; do not drop indexes without workload evidence. The two legacy-table FK indexes can be assessed separately after confirming retention and dependencies.
+- The legacy database helper `public.create_staff_user(text,text,text,text)` is SECURITY DEFINER and executable only by service_role (not anon/authenticated). Its `search_path` is `public, pg_temp`, while pgcrypto's `crypt`/`gen_salt` functions are installed in `extensions` and are referenced unqualified. Current application server action `src/routes/_authenticated/-users.server.ts` uses Supabase Admin Auth `createUser` and inserts the profile; it does not call this helper. Treat the helper as a legacy, potentially broken service-only object; do not patch or invoke it until ownership/usage is established and a source migration plus PG17 regression is prepared.
+
+### Backup and deployment gates
+
+- Private backup-runner main includes fix commit `9bc9bd7c203614e7173d1413936d92a483a691ad`. Six most recent manual workflow runs ([41817196723](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41817196723), [41815230322](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41815230322), [41791360826](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41791360826), [41632621501](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41632621501), [41631926251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41631926251), [41631718043](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41631718043)) each passed the `validate` job but skipped the `backup` job. Each queried run has zero GitHub artifacts. Therefore no encrypted Production backup artifact or restore rehearsal is evidenced; runner code validation is not a backup.
+- The latest Production-target Vercel deployment for current main `ac521c7` is CANCELED by the expected docs-only build skip. The latest READY Production deployment remains commit `6daf1f15be23aa391bd40bc38f671c00c842b446` (PR #193 A4 print CSS). No deployment was triggered from this audit.
+- Production release remains blocked on owner-managed backup prerequisites, successful encrypted off-site backup with checksum, isolated PostgreSQL 17 restore rehearsal, source/migration parity review, and documented clinical/pharmacy acceptance. No Production DDL/DML, grants, Auth/Storage changes, business rows, or deployments were performed.
+
+### Next execution order
+
+1. Obtain owner-managed backup prerequisites and explicit confirmation for the private runner's manual Production backup; keep secret values offline and never inspect them.
+2. Verify encrypted artifact/checksum and isolated restore rehearsal before any Production migration.
+3. Keep PR #191 QA-only and Draft until an approved synthetic pharmacist/Auth Admin path enables persistent-QA acceptance.
+4. Keep PR #189 Draft until inventory-edit role scope is agreed and mobile/RTL physical-pack workflow reviewed.
+5. Resolve print preview and physical A4 acceptance without bypassing preview SSO.
+6. Treat `create_staff_user` as legacy until usage is established; if retained, qualify pgcrypto calls and add migration/PG17 regression in a separate reviewed change.
+
+No clinical regimen, dosing automation, patient or financial data write, or Production change is approved by this audit.
+
