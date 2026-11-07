@@ -2572,6 +2572,32 @@ Next: PR #179 is now reconciled with main. Obtain an approved non-bypass preview
 
 Next: wait for owner-managed settings/keys; do not inspect secret values or start a Production backup without explicit confirmation. No Production migration or privilege change is authorized by this documentation update.
 
+## Phase 56A — permission-gated medicine identity correction (2026-11-04)
+
+- Added an inventory edit path gated by the existing `pharmacy.update` permission and the existing `medicines_update` RLS policy. The RLS policy remains authoritative; no new permission or migration was added.
+- **Role-scope clarification:** catalog-only role mapping in both Production and QA shows `pharmacy.update` is assigned to `admin`, `legacy_admin`, `legacy_super_admin`, `pharmacist` and `super_admin`. Therefore this implementation is permission-gated, not strictly pharmacist-only. A strict pharmacist-only guarantee would require a dedicated permission or a server-side role restriction and forward migration; that is not part of this PR.
+- The edit builder writes exactly five identity fields: display name, generic ingredient, brand, strength and dosage form. It excludes stock quantity, batch/expiry, packaging unit, prices, reorder level, barcode, active flags and branch fields.
+- The medicine catalogue is shared: the live `medicines` table has no `branch_id`. The edit dialog warns that changes apply across branches and requires a physical-pack comparison acknowledgement. That checkbox is not persisted; the existing audit trigger records old/new row values and the authenticated actor but not the acknowledgement itself.
+- Read-only Production and QA catalog inspection on 2026-11-04 confirmed RLS enabled and forced, `medicines_update` USING/WITH CHECK guarded by `pharmacy.update`, `trg_audit_medicines`, the aggregate-stock guard and the name-normalization trigger. No business rows were read and no database writes occurred.
+- **Code-bearing exact head:** `679266228a48eb16db45988f8446793c9d85b0d6` (implementation commit `b913a46d6138c58495cf272bfb7201f3513dc1d3`, followed by formatting-only correction). PR #189 remains Draft and is based on the current main SHA with 0 commits behind.
+- **Exact-head validation:** CI run `41794972957` completed with 18 successful jobs and one intentionally skipped canonical authenticated clinical-acceptance job. Supporting workflows also passed: prescription atomicity `41794972960`, insurance claim integrity `41794973017`, privileged-role guard `41794973114`, and insurance claim UI validation `41794973187`. The earlier CI at `b913a46` failed only on Prettier formatting; the correction is in the tested head.
+- **Preview:** Vercel deployment `dpl_FSjcL1qWMisxzWCQewnyFu1E9Ttc` is READY for `6792662` at `https://roshan-health-74hgojpbm-roshan45.vercel.app`. A read-only fetch returned `login_required`; do not weaken Vercel SSO or use an unauthorized profile. No visual/browser acceptance is claimed.
+- No migration, production/QA DML, catalogue seeding, Auth-user creation, deployment promotion or staff acceptance occurred. Clinical E2E remains deferred.
+
+Next: resolve whether the existing broad `pharmacy.update` role mapping is acceptable or a strict pharmacist-only policy is required. Then obtain an authorized browser session for non-staff mobile/RTL review; keep PR #189 Draft until that review and independent review are complete.
+
+## Phase 56A branch reconciliation and exact-head validation — 2026-11-06
+
+- Run-start `main` was `0b1785b69dd0d2cbc523757db79a886780495d25`. The medicine-catalogue branch was reconciled with that exact main using normal two-parent merge commit `29ee3c60b82ec304daae1f0886b8c28448335a6f` (first parent `ec886194fc164bfcab673dfb8f56f35cf7e580c8`; second parent main). The merge preserves the six intervening main commits, including GitHub Actions pinning/least-privilege permissions and the A4 print stylesheet/regression.
+- PR [#189](https://github.com/crauch2088-source/roshan-health-hub/pull/189) now points to `29ee3c60b82ec304daae1f0886b8c28448335a6f`, is 12 commits ahead / 0 behind main, and GitHub reports it mergeable. It remains Draft.
+- Exact-head CI [42177775976](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775976) completed successfully: 18 jobs succeeded, zero failed, and the canonical PG17 baseline/authenticated clinical-acceptance job was intentionally skipped. Install, security audits, role-guard tests, typecheck, lint and build all passed. Supporting exact-head workflows passed: prescription atomicity [42177775946](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775946), insurance claim integrity [42177775953](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775953), privileged-role guard [42177776009](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177776009), insurance claim UI validation [42177775930](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177775930), and CodeQL [42177771248](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42177771248) (JavaScript/TypeScript and Python).
+- The Vercel preview status check completed successfully on this head. This is not visual/browser acceptance: the preview remains protected by SSO, and no approved non-bypass browser session was available. No SSO or build-quota bypass was attempted.
+- Read-only `information_schema.columns` checks on QA and Production confirmed the catalogue metadata columns have matching definitions; `cost_price`/`selling_price` are unconstrained numeric, `reorder_level` is integer, and `generic_name` is NOT NULL. No catalogue rows or other business data were queried.
+- No QA/Production DDL or DML, Auth/Storage mutation, patient/clinical/financial record creation, migration application, or Production deployment was performed. The authenticated clinical acceptance job remains intentionally deferred at the owner's request.
+- Release limits remain explicit: the existing `pharmacy.update` role map includes admin, legacy admin, legacy super-admin, pharmacist and super-admin; this feature is permission-gated, not strictly pharmacist-only. The physical-pack checkbox is an ephemeral acknowledgement, not a persisted verification attestation. Do not label products verified from this UI alone.
+
+Next: obtain independent review and resolve the intended role scope; then complete authorized mobile/RTL/LTR preview checks without weakening SSO. Keep PR #189 Draft until those gates are evidenced.
+
 ## Execution and release-readiness audit — 2026-11-07
 
 Baseline verified: `main` = `ac521c7c8cd15ce83d389e53a320d6edfc6a4f18` (`docs(backup): record merged runner fix and open restore gate`). This entry records current connector evidence; it does not authorize a Production write or release.
@@ -2609,7 +2635,24 @@ Baseline verified: `main` = `ac521c7c8cd15ce83d389e53a320d6edfc6a4f18` (`docs(ba
 
 No clinical regimen, dosing automation, patient or financial data write, or Production change is approved by this audit.
 
+## Phase 56A reconciliation follow-up — 2026-11-07
 
+- Main advanced from ac521c7c8cd15ce83d389e53a320d6edfc6a4f18 to 20e3d872f23171354166bd58504b4c6368835733 through a separate documentation-only release-readiness audit. The medicine-catalogue branch already contains code-bearing merge e944812c6c85662ac5806852e83dd0b499423326 and docs follow-up 34b81851869f31542ff63b224b77335f2d2e9437; this second two-parent merge reconciles that branch with the newer main without rewriting published history.
+- The code-bearing PR head e944812 was validated by CI [42350006998](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006998): 18 success, zero failures, one intentional clinical-acceptance skip. Supporting exact-head workflows passed: prescription atomicity [42350006984](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006984), privileged-role guard [42350007131](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350007131), insurance claim integrity [42350007180](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350007180), insurance UI validation [42350006977](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350006977), and CodeQL [42350004776](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350004776). The Vercel commit status was successful; protected-preview visual/browser acceptance was not performed.
+- The follow-up commit 34b818 is documentation-only. Its CodeQL/PR analysis [42350384533](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350384533) passed. The concurrent main documentation commit's CI [42350334238](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350334238) and main push workflow [42350333574](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350333574) also passed.
+- The latest private backup-runner workflow remains [41817196723](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/41817196723); its artifact list is empty and no later run exists. No encrypted Production backup or isolated restore is evidenced. The release gate remains OPEN.
+- This reconciliation is documentation/history only; no database migration, QA/Production data or privilege change, Auth/Storage mutation, clinical/financial record creation, or Production deployment was performed. The authenticated clinical acceptance skip remains deferred.
+
+Next: wait for exact-head checks on this reconciled branch, then keep PR #189 Draft until independent review, intended role scope and authorized mobile/RTL/LTR preview acceptance are complete.
+
+## Phase 56A exact-head verification after latest-main reconciliation — 2026-11-07
+
+- Current main is 20e3d872f23171354166bd58504b4c6368835733. PR [#189](https://github.com/crauch2088-source/roshan-health-hub/pull/189) head is 2f725cdc416caafa12910027359a02a0cae9cb49, created by a normal two-parent merge whose first parent is the preceding feature head 34b81851869f31542ff63b224b77335f2d2e9437 and second parent is current main. Compare: 16 commits ahead / 0 behind; GitHub reports mergeable=true and mergeable_state=clean. PR remains Draft.
+- Exact-head CI [42350748375](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748375) passed 18 jobs, zero failed; canonical PG17 baseline/authenticated clinical-acceptance was intentionally skipped. Supporting exact-head workflows passed: insurance UI validation [42350748366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748366), insurance claim integrity [42350748371](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748371), privileged-role guard [42350748403](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748403), prescription atomicity [42350748448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748448), and CodeQL [42350745706](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350745706). Both CodeQL language analyses passed.
+- Vercel status check is success for this exact head. This is a deployment/status check only, not visual/browser acceptance; preview SSO remains enabled. No unauthorized SSO bypass or Production promotion was attempted.
+- The reconciliation is history/docs only relative to the previously tested code-bearing head e944812c6c85662ac5806852e83dd0b499423326. No database migration, QA/Production DDL/DML, catalogue seed, Auth/Storage mutation, patient/clinical/financial record creation or Production deployment occurred. The clinical acceptance job remains deferred.
+
+Next: obtain independent review, resolve the broad pharmacy.update role-scope decision, and complete authorized mobile/RTL/LTR review without weakening SSO. Keep PR #189 Draft until those gates are evidenced.
 
 ## Release-gate recheck — 2026-11-07 10:06 Africa/Khartoum
 
@@ -2642,3 +2685,7 @@ This is a fresh read-only operational recheck. It supersedes earlier audit state
 5. Keep PRs #189 and #191 Draft until their explicit acceptance criteria are met. No Production DDL/DML, permissions changes, or deployment promotion during this audit.
 
 No patient/business data was written, no Production migration was applied, and no deployment was triggered by this recheck.
+
+## Latest main reconciliation — 2026-11-07
+
+- Merged documentation-only main commit `17eb097052019ec32a4ec18395a73c023ac4cc18` with a normal two-parent merge commit. No feature code, database migration, business data, or Production deployment was changed by this reconciliation.
