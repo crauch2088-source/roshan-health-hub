@@ -1,7 +1,7 @@
 # Roshan Health Hub — QA Staff Acceptance Runbook
 
 **Date:** 2026-10-24  
-**Status:** QA Preview READY; synthetic staff identities provisioned; authenticated execution blocked  
+**Status:** QA Preview READY; authenticated login test deferred by user; non-authenticated/code-level checks may proceed  
 **Tracking issue:** [#95](https://github.com/crauch2088-source/roshan-health-hub/issues/95)  
 **Production project:** `jewzonxplxhogqrnhosl` — read-only for this acceptance  
 **Isolated QA project:** `hopfohcnrtbiqjkgeukz`  
@@ -35,6 +35,8 @@ Five synthetic QA identities were created through the Supabase Dashboard UI and 
 Observed role-permission link counts: receptionist 20, doctor 26, lab_tech 7, pharmacist 14, admin 109. These counts are configuration evidence only, not proof of effective authorization.
 
 **Authentication blocker:** the Dashboard UI has no direct set-password action after creation, and the connected Supabase toolset has no supported Auth Admin update-user/password action. An Auth Admin mutation attempt was blocked by the execution layer. Passwords generated during account creation were not captured. Do not set password hashes with SQL or bypass the approved execution boundary. Therefore `AUTH-02` and all authenticated workflow/role tests remain `NOT RUN`. The official supported Auth Admin user-update path must be enabled before testing can proceed.
+
+**User-directed disposition — 2026-10-24:** The user elected to skip the blocked staff-login test for the current work pass so remaining work can continue. Record `AUTH-02` as `BLOCKED` (not PASS); keep authenticated role/workflow checks unexecuted and explicitly outside this pass. Continue only with checks that do not require staff authentication, and do not weaken this release gate or close Issue #95. The skipped test may be resumed later through the official Auth UI/API without changing production.
 
 No patient, visit, queue, lab, prescription, stock, invoice, payment, or other clinical/financial fixture rows were created. Production project remains unchanged. Issue #95 remains open.
 
@@ -93,7 +95,7 @@ Allowed outcomes: `PASS`, `FAIL`, `BLOCKED`, `NOT RUN`.
 | PRE-01 | Operator | Confirm QA URL, project ref, branch, and QA-only environment | All four match the approved QA environment |  | NOT RUN |  |
 | PRE-02 | Operator | Confirm all accounts and records are synthetic | No real-person data used |  | NOT RUN |  |
 | AUTH-01 | Unauthenticated | Open a protected route directly | Redirect to login or deny access; no protected payload rendered |  | NOT RUN |  |
-| AUTH-02 | Each role | Sign in with the assigned synthetic account | Correct identity and role shown; no cross-role session residue |  | NOT RUN |  |
+| AUTH-02 | Each role | Sign in with the assigned synthetic account | Correct identity and role shown; no cross-role session residue | Deferred by user for this work pass; credentials unavailable | BLOCKED | Resume only via official QA Auth UI/API |
 | AUTH-03 | Each role | Sign out, then use browser back and revisit a protected route | Protected content is not available after sign-out |  | NOT RUN |  |
 | AUTH-04 | Each role | Attempt one route and one API action outside role scope | Denied server-side; hiding a menu alone is insufficient |  | NOT RUN |  |
 | AUTH-05 | Operator | Submit an invalid password and repeat rapidly within reasonable limits | Clear error, no account disclosure, no unbounded retry behaviour |  | NOT RUN |  |
