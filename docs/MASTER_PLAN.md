@@ -2653,3 +2653,39 @@ Next: wait for exact-head checks on this reconciled branch, then keep PR #189 Dr
 - The reconciliation is history/docs only relative to the previously tested code-bearing head e944812c6c85662ac5806852e83dd0b499423326. No database migration, QA/Production DDL/DML, catalogue seed, Auth/Storage mutation, patient/clinical/financial record creation or Production deployment occurred. The clinical acceptance job remains deferred.
 
 Next: obtain independent review, resolve the broad pharmacy.update role-scope decision, and complete authorized mobile/RTL/LTR review without weakening SSO. Keep PR #189 Draft until those gates are evidenced.
+
+## Release-gate recheck — 2026-11-07 10:06 Africa/Khartoum
+
+This is a fresh read-only operational recheck. It supersedes earlier audit statements where the snapshot has changed.
+
+### Current application and CI evidence
+- Production application root `https://roshan-health-hub.vercel.app/` returned HTTP 200 and served Arabic RTL HTML on 2026-11-07. Vercel runtime-error query for the preceding seven days returned no runtime error clusters. This is a public-shell check, not authenticated route acceptance.
+- PR #191 current head `44cf17f09e528390a074debff464aa4fb894bc95`: exact-head CI completed with 18 successful jobs, zero failures, and one intentionally skipped canonical authenticated clinical-acceptance job. Supporting prescription atomicity, insurance integrity, insurance UI, privileged-role and CodeQL workflows passed. PR remains Draft.
+- PR #189 current head `3df3d3af7e20def9b509402996169ad668c5c9c3`: exact-head CI run `42351003891` completed with 18 successful jobs, zero failures, and one intentionally skipped canonical authenticated clinical-acceptance job. It is 17 commits ahead of current main and 0 behind. PR remains Draft pending role-scope and physical-pack acknowledgement decisions; its acknowledgement is not a dedicated audit attestation.
+- No open non-PR GitHub issues were returned by the repository issue search at the time of the audit. New release-gate tracker: Issue #199.
+
+### Database preflight evidence
+- Production project `jewzonxplxhogqrnhosl`: PostgreSQL 17.6; latest migration `20261102232941`; zero Storage objects; zero Vault secrets; three empty Storage buckets; zero active prescription items with NULL quantity.
+- QA project `hopfohcnrtbiqjkgeukz`: PostgreSQL 17.11; latest migration `20261104065852` (Phase 57 present in QA only); zero Storage objects; zero Vault secrets; three empty Storage buckets; zero active prescription items with NULL quantity.
+- QA has one active user assigned to the pharmacist role, but no authenticated pharmacist browser acceptance is evidenced. Do not infer credentials or treat a role row as a successful sign-in.
+- Production remains unchanged. Do not apply Phase 57 to Production before a successful encrypted backup and isolated restore.
+
+### Backup runner recheck
+- Private backup runner main is `9bc9bd7c203614e7173d1413936d92a483a691ad`.
+- Latest workflow run `41817196723` passed the `validate` job; the `backup` job was skipped and the run has zero artifacts. This is validation-only, not a backup or restore rehearsal.
+- The runner's current preflight will not abort on Storage or Vault content based on the present zero counts. Its remaining external prerequisites are temporary Supabase database access, SSL enforcement, a short-lived owner PAT stored directly in GitHub Actions secret `SUPABASE_DB_ACCESS_TOKEN`, and public age recipient stored as GitHub Actions variable `AGE_RECIPIENT`. Never place the PAT or age private identity in ChatGPT or repository files.
+- Supabase's current Temporary access guide documents this feature as disabled by default and requires PostgreSQL 17.6.1.081 or later. Its SSL enforcement guide warns that changing SSL enforcement triggers a fast database reboot / brief interruption. Therefore do not toggle Production SSL enforcement without the owner knowingly accepting the brief database restart window.
+- The available connected GitHub action surface does not expose a safe workflow-dispatch operation or repository secret/variable inspection; do not pretend the manual backup can be triggered or that credentials are configured.
+
+### Remaining release gates
+1. Owner completes the Supabase temporary-access / SSL review and adds the temporary PAT directly to the private runner secret; public age recipient is stored as a repository variable while the private identity remains offline.
+2. Run the manual Production backup only after the owner confirms setup and the short-lived access window; verify artifact checksum and isolated restore; transfer ciphertext to private off-site storage; revoke the PAT and temporary access rule.
+3. Authenticate to QA with the approved pharmacist account and run the Phase 57 rejection plus valid FEFO/invoice/idempotency/audit acceptance scenario. No synthetic Production data.
+4. Complete physical A4/mobile printing and staff UAT for reception → GP → lab → pharmacy → billing; verify RTL/LTR and mobile widths.
+5. Keep PRs #189 and #191 Draft until their explicit acceptance criteria are met. No Production DDL/DML, permissions changes, or deployment promotion during this audit.
+
+No patient/business data was written, no Production migration was applied, and no deployment was triggered by this recheck.
+
+## Latest main reconciliation — 2026-11-07
+
+- Merged documentation-only main commit `17eb097052019ec32a4ec18395a73c023ac4cc18` with a normal two-parent merge commit. No feature code, database migration, business data, or Production deployment was changed by this reconciliation.
