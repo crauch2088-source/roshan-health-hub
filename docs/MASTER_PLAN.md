@@ -2642,3 +2642,44 @@ This is a fresh read-only operational recheck. It supersedes earlier audit state
 5. Keep PRs #189 and #191 Draft until their explicit acceptance criteria are met. No Production DDL/DML, permissions changes, or deployment promotion during this audit.
 
 No patient/business data was written, no Production migration was applied, and no deployment was triggered by this recheck.
+
+
+## Release-gate recheck — 2026-11-08 08:24 Africa/Khartoum
+
+Fresh read-only recheck; see [the full evidence record](RELEASE_GATE_RECHECK_2026-11-08.md). This entry supersedes earlier operational snapshots where the live records differ.
+
+- Main is `17eb097052019ec32a4ec18395a73c023ac4cc18`. Combined commit checks: 22 success, 1 skipped, 0 failures; CI run [42354307485](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42354307485), finance-only integration [42354307457](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42354307457), CodeQL [42354306221](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42354306221). The canonical authenticated clinical-acceptance job is skipped, not passed.
+- Main branch currently reports `protected=false` and no required status checks. Do not silently change repository settings; obtain owner approval for a required-check ruleset.
+- Open work: 11 PRs and one non-PR issue, [#199](https://github.com/crauch2088-source/roshan-health-hub/issues/199). PR #191 Phase 57 remains Draft at `de6e43fb794c3afaf6ccfe527f809cf144ce2ece`; exact-head CI [42355337661](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42355337661) has 18 success, one intentional clinical skip, zero failures. PR #189 remains Draft at `360c3ae693ace3b510bb2f80df1ea3c2e3f82ac2`; exact-head CI [42355329812](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42355329812) has 18 success, one intentional clinical skip, zero failures.
+- Production Supabase: PostgreSQL 17.6.1.155, 129 migrations, latest `20261102232941`. QA: PostgreSQL 17.11.0.003, 22 migrations, latest `20261104065852`. Live ledgers are not identical; source-parity CI passing does not establish live-ledger parity.
+- Phase 57 is applied in QA only. QA's dispensing function explicitly rejects `pi.quantity IS NULL` and has no `COALESCE(pi.quantity,1)` fallback. Production lacks Phase 57 and retains three NULL-to-one fallbacks. The quantity column remains nullable in both; current aggregate checks found zero active non-deleted NULL-quantity prescription items in both environments.
+- Both projects have 0 Storage objects, 0 Vault secrets and 3 buckets. Health advisors: 0 findings in both. Security and performance advisor groups remain open as detailed in the evidence record; do not blanket-revoke SECURITY DEFINER RPCs or drop unused indexes.
+- Current-main docs-only Vercel deployment `dpl_2vNcNDHf555SEhtVxPwtF2WZyUxU` is CANCELED as expected. Canonical alias `roshan-health-hub.vercel.app` remains attached to READY Production deployment `dpl_E5m6Z8CLf3uaFRwt1dAxiRMpADPv` on application commit `6daf1f15be23aa391bd40bc38f671c00c842b446`, with no alias error.
+- Private backup-runner main is `9bc9bd7c203614e7173d1413936d92a483a691ad`. Main workflow [42358343245](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42358343245) and Draft PR #2 workflow [42361589067](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42361589067) both passed validation but skipped the backup job and produced no artifact. The existing private Drive backup folder is owned, private and empty. No encrypted off-site artifact, checksum or successful isolated restore rehearsal exists.
+- Production release remains blocked on owner-managed backup credentials/age recipient, explicit manual backup confirmation, encrypted off-site artifact and checksum, successful isolated restore, live migration reconciliation, Production Phase 57 rollout, and clinical/pharmacy/staff acceptance. No production or QA writes, backup dispatch, secret inspection, merge or deployment occurred in this run.
+
+Next: complete the owner-controlled backup setup and review Draft backup-runner PR #2; then perform the explicitly confirmed encrypted backup and isolated restore. Only after that should Production Phase 57 be scheduled. Clinical E2E remains deferred until suitable synthetic doctor/pharmacist identities and the isolated free test path exist.
+
+
+## Encrypted Production backup completed — 2026-11-09 (supersedes the 2026-11-08 backup status)
+
+A controlled manual Production backup was completed after the earlier read-only audit. This entry supersedes the 2026-11-08 statements that the runner backup was skipped and the Drive destination was empty; those statements remain valid historical snapshots as of their audit time.
+
+- Private backup-runner PR [#2](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/2) is merged at `07ca69125da7cc702f9306da55cccf4916146b2f`.
+- Manual workflow run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) completed successfully on 2026-11-08 23:35–23:40 UTC. Both `validate` and `backup` jobs and all listed steps succeeded, including PostgreSQL 17 dump, isolated local restore rehearsal, critical row-count comparison, age encryption and ciphertext-only artifact upload.
+- GitHub artifact [13639676572](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) — `roshan-production-backup-42535939237`, 305,317 bytes, SHA-256 `3b3df1aa9056c70a0d6c9fc40f98a5ba6f23e4889040c24ec8f3302f270df355`. GitHub artifact retention is short (expires 2026-11-09 23:40:05 UTC); the durable copy is the private Drive file below.
+- Google Drive file [Roshan-Production-Backup-2026-11-08.zip](https://drive.google.com/file/d/1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv/view?usp=drivesdk) exists, is not trashed, and is in the dated `2026-11-09` folder. Drive metadata confirms 305,317 bytes and MD5 `875a85ac23e8b7a671c371cca41f7732`. The file is encrypted; no plaintext dump or private age identity was uploaded.
+- At backup time, Storage object count and Vault secret count were both zero; three Storage buckets existed but were empty. Therefore this artifact is a database backup, not a copy of Storage object bytes or Vault secret material.
+- The local PostgreSQL 17 restore rehearsal and critical row-count comparison passed. **End-user decryptability on the Honor/Termux device has not yet been independently confirmed.** Keep that as a remaining verification step; never send the private age identity to ChatGPT or GitHub.
+- The one-time `SUPABASE_DB_PASSWORD` Actions secret was removed after the successful run and Drive verification. This workflow is manual, not a recurring scheduled backup.
+- No Production migration, DDL/DML, patient/financial record write, permission change or deployment was performed by the backup workflow.
+
+### Remaining release gates after backup
+
+1. Verify that the Drive ZIP can be listed and the age archive decrypted on the user's device using the locally held private identity; do not expose decrypted SQL or the identity in chat.
+2. Keep Phase 57 in QA until the QA pharmacist acceptance and independent review are complete; Production still has the pre-Phase-57 NULL-to-one dispensing behavior.
+3. Complete authenticated QA pharmacist acceptance, physical A4/mobile print checks, and staff UAT (reception → GP → lab → pharmacy → billing).
+4. Reconcile the intentionally different Production/QA migration ledgers and plan any Production rollout only after the above evidence is accepted.
+5. Resolve PR #189's broad `pharmacy.update` role scope and non-persisted physical-pack acknowledgement semantics before marking its medicine-catalogue workflow accepted.
+
+Production remains on migration `20261102232941`; QA remains on Phase 57 migration `20261104065852`. The backup closes the backup/restore rehearsal gate at infrastructure level, but does not by itself authorize Production rollout or clinical launch.
