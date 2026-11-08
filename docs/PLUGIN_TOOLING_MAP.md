@@ -315,8 +315,9 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - Never put real clinical/financial records, credentials, production exports, or secrets in specs or model prompts. Spec completion does not authorize production changes.
 
 
-## Google Drive backup destination — live verification (2026-11-08)
-- The connected Google Drive account is active and can read the existing “Roshan Health Hub Backups” folder.
-- The folder is owned by the connected account, private, and not trashed. Direct-child searches returned no files; no shared drives were listed.
-- This is a destination-only readiness check. No encrypted backup artifact, checksum, or restore evidence exists. Do not upload plaintext dumps, credentials, or the private age identity; transfer only ciphertext after a successful runner and isolated restore.
-- Google Calendar was not verified as connected or used.
+## Google Drive encrypted backup — verified delivery (2026-11-09)
+- Google Drive connection is active. The dated folder “2026-11-09” contains the encrypted archive [Roshan-Production-Backup-2026-11-08.zip](https://drive.google.com/file/d/1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv/view?usp=drivesdk), 305,317 bytes, Drive MD5 `875a85ac23e8b7a671c371cca41f7732`.
+- The backup runner completed a PostgreSQL 17 dump, isolated restore rehearsal, critical row-count comparison, age encryption and ciphertext-only artifact upload in workflow [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237). Artifact SHA-256: `3b3df1aa9056c70a0d6c9fc40f98a5ba6f23e4889040c24ec8f3302f270df355`.
+- The local restore rehearsal passed. Device-side decryptability remains unverified; keep the private age identity offline and never upload it.
+- Storage objects and Vault secrets were zero at backup time; three Storage buckets were empty. This backup does not include Storage object bytes or Vault secret material.
+- The workflow is manual, not scheduled. The one-time database-password Actions secret was removed after the successful run. Google Calendar remains unverified.

@@ -2659,3 +2659,27 @@ Fresh read-only recheck; see [the full evidence record](RELEASE_GATE_RECHECK_202
 - Production release remains blocked on owner-managed backup credentials/age recipient, explicit manual backup confirmation, encrypted off-site artifact and checksum, successful isolated restore, live migration reconciliation, Production Phase 57 rollout, and clinical/pharmacy/staff acceptance. No production or QA writes, backup dispatch, secret inspection, merge or deployment occurred in this run.
 
 Next: complete the owner-controlled backup setup and review Draft backup-runner PR #2; then perform the explicitly confirmed encrypted backup and isolated restore. Only after that should Production Phase 57 be scheduled. Clinical E2E remains deferred until suitable synthetic doctor/pharmacist identities and the isolated free test path exist.
+
+
+## Encrypted Production backup completed — 2026-11-09 (supersedes the 2026-11-08 backup status)
+
+A controlled manual Production backup was completed after the earlier read-only audit. This entry supersedes the 2026-11-08 statements that the runner backup was skipped and the Drive destination was empty; those statements remain valid historical snapshots as of their audit time.
+
+- Private backup-runner PR [#2](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/2) is merged at `07ca69125da7cc702f9306da55cccf4916146b2f`.
+- Manual workflow run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) completed successfully on 2026-11-08 23:35–23:40 UTC. Both `validate` and `backup` jobs and all listed steps succeeded, including PostgreSQL 17 dump, isolated local restore rehearsal, critical row-count comparison, age encryption and ciphertext-only artifact upload.
+- GitHub artifact [13639676572](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) — `roshan-production-backup-42535939237`, 305,317 bytes, SHA-256 `3b3df1aa9056c70a0d6c9fc40f98a5ba6f23e4889040c24ec8f3302f270df355`. GitHub artifact retention is short (expires 2026-11-09 23:40:05 UTC); the durable copy is the private Drive file below.
+- Google Drive file [Roshan-Production-Backup-2026-11-08.zip](https://drive.google.com/file/d/1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv/view?usp=drivesdk) exists, is not trashed, and is in the dated `2026-11-09` folder. Drive metadata confirms 305,317 bytes and MD5 `875a85ac23e8b7a671c371cca41f7732`. The file is encrypted; no plaintext dump or private age identity was uploaded.
+- At backup time, Storage object count and Vault secret count were both zero; three Storage buckets existed but were empty. Therefore this artifact is a database backup, not a copy of Storage object bytes or Vault secret material.
+- The local PostgreSQL 17 restore rehearsal and critical row-count comparison passed. **End-user decryptability on the Honor/Termux device has not yet been independently confirmed.** Keep that as a remaining verification step; never send the private age identity to ChatGPT or GitHub.
+- The one-time `SUPABASE_DB_PASSWORD` Actions secret was removed after the successful run and Drive verification. This workflow is manual, not a recurring scheduled backup.
+- No Production migration, DDL/DML, patient/financial record write, permission change or deployment was performed by the backup workflow.
+
+### Remaining release gates after backup
+
+1. Verify that the Drive ZIP can be listed and the age archive decrypted on the user's device using the locally held private identity; do not expose decrypted SQL or the identity in chat.
+2. Keep Phase 57 in QA until the QA pharmacist acceptance and independent review are complete; Production still has the pre-Phase-57 NULL-to-one dispensing behavior.
+3. Complete authenticated QA pharmacist acceptance, physical A4/mobile print checks, and staff UAT (reception → GP → lab → pharmacy → billing).
+4. Reconcile the intentionally different Production/QA migration ledgers and plan any Production rollout only after the above evidence is accepted.
+5. Resolve PR #189's broad `pharmacy.update` role scope and non-persisted physical-pack acknowledgement semantics before marking its medicine-catalogue workflow accepted.
+
+Production remains on migration `20261102232941`; QA remains on Phase 57 migration `20261104065852`. The backup closes the backup/restore rehearsal gate at infrastructure level, but does not by itself authorize Production rollout or clinical launch.
