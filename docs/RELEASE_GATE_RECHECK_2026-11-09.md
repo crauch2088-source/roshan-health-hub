@@ -2,6 +2,38 @@
 
 Audit update: 2026-11-09 (Africa/Khartoum). This document records the evidence that arrived after the 2026-11-08 read-only audit. The 2026-11-08 report remains a historical snapshot; its backup statements were accurate at that earlier time and are superseded below.
 
+
+## Superseding verification — 2026-11-09 08:44 Africa/Khartoum
+
+This update supersedes the earlier statements below that device-side decryptability remained outstanding. Those statements are retained as historical snapshots and are no longer the current status.
+
+### Backup and recovery: passed
+
+- Private backup-runner PR #2 is merged. Workflow [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) passed PostgreSQL 17 dump, isolated restore rehearsal, critical row-count comparison, age encryption, and ciphertext-only artifact upload.
+- The encrypted bundle is stored in the private Drive copy [Roshan-Production-Backup-2026-11-08.zip](https://drive.google.com/file/d/1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv/view?usp=drivesdk). The owner independently verified the payload checksum on Android/Termux, decrypted it using the offline identity, confirmed gzip/tar readability, and deleted the temporary plaintext archive.
+- This closes both the runner-side isolated restore rehearsal and the owner-device decryption/archive-readability sub-gate. It is not a second PostgreSQL import on Android.
+- The archive contains the database only. At backup time there were zero Storage objects, zero Vault secrets, and three empty buckets. Backups remain manual; no recurring schedule is configured.
+- The private age identity, database credentials, plaintext dump, and decrypted SQL were not committed or shared.
+
+### Current code and acceptance state
+
+- PR #201 (device-side recovery evidence) and PR #202 (engineering acceleration review) are merged.
+- PR #191 remains Draft at code head `44cf17f09e528390a074debff464aa4fb894bc95`. Its exact-head CI is recorded as 18 successful jobs, zero failures, and one intentional skip for authenticated clinical acceptance. Phase 57 is applied to QA only; persistent-QA pharmacist acceptance and independent review remain open.
+- PR #189 remains Draft at code head `3df3d3af7e20def9b509402996169ad668c5c9c3`. Its exact-head CI is recorded as 18 successful jobs, zero failures, and one intentional authenticated clinical-acceptance skip. Permission scope, global catalogue semantics, and durable pack-verification evidence remain unresolved.
+- PR #179 (saved-prescription printing) and PR #181 (persisted-payment receipts) remain Draft. Automated tests do not substitute for browser/Android print preview, role/branch E2E, physical printer checks, or staff acceptance.
+- Production Supabase remains on migration `20261102232941`; QA remains on `20261104065852` with Phase 57 applied in QA only. The live ledgers are not yet reconciled. No Production migration or application data write was performed by the backup/recovery work.
+- Issue [#199](https://github.com/crauch2088-source/roshan-health-hub/issues/199) remains the canonical release-gate tracker.
+
+### Remaining gates
+
+1. Obtain an authorized synthetic QA pharmacist sign-in path and complete the Phase 57 pharmacist acceptance scenario in persistent QA.
+2. Complete independent review of PR #191 and resolve the PR #189 role-scope/catalogue/audit decisions.
+3. Complete authenticated role/branch E2E and staff UAT for reception → GP → lab → pharmacy → billing.
+4. Complete Arabic RTL / English LTR browser print-preview and Android/mobile checks; verify A4 on actual hardware and defer thermal claims until the target printer/browser is tested.
+5. Reconcile Production and QA migration ledgers to canonical source before planning any Production rollout.
+
+**Release boundary:** successful backup and recovery do not authorize Production Phase 57, Phase 54C promotion, production DDL/DML, permission changes, deployment promotion, or clinical launch. No production business data is to be used for acceptance testing.
+
 ## 1. Encrypted Production backup — completed
 
 - Private runner PR [#2](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/2) is merged at `07ca69125da7cc702f9306da55cccf4916146b2f`.
