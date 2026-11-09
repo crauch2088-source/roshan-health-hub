@@ -2766,3 +2766,12 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 - Receipt currency provenance is a separate Spec Kit gate in `specs/058-transaction-currency-provenance/`: historical receipts must not derive currency from mutable `system_settings.currency`; persisted transaction/invoice currency is required before PR #181 can be accepted.
 
 **Next task:** complete the content/effective-catalog source reconciliation in the linked report, then synchronize PR #191 with current main and rerun its PG17 regression suite. Keep it Draft until isolated QA and synthetic pharmacist acceptance exist. No Production DDL/DML or external backup dispatch in this step.
+
+
+## Phase 56A medicine catalogue identity — rebased review candidate (2026-11-09)
+
+- A fresh candidate branch is based on current `main`; it carries the permission-gated medicine identity editor, pure builder, Arabic/English labels, and regression tests without importing the stale backup-status snapshot from the older branch.
+- The editor changes only display name, generic ingredient, brand, strength and dosage form. It does not edit stock quantity, batch/expiry, packaging unit, prices, reorder level, barcode, active flags or branch identifiers.
+- Existing live role mapping gives `pharmacy.update` to admin, legacy admin roles, pharmacist and super-admin. This is permission-gated, not pharmacist-exclusive. The catalogue is shared across branches; physical-pack acknowledgement remains transient and is not a durable attestation. Keep Draft pending owner-approved role scope, durable acknowledgement decision, independent review, and QA pharmacist acceptance.
+- Drug product identity is not a dosing recommendation. Product matching must not infer dose, route, frequency or duration; clinical protocols require separately validated current guidance.
+- No schema migration, database write, permission change or deployment is included in this candidate.
