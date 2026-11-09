@@ -66,21 +66,24 @@ BEGIN
     i.currency_code,
     c.currency_code,
     r.currency_code,
-    p.currency_code = 'SDG'
-      AND i.currency_code = 'SDG'
-      AND c.currency_code = 'SDG'
-      AND COALESCE(c.ledger_count, 0) = 1
-      AND (
-        (
-          NOT COALESCE(c.is_reversed, false)
-          AND COALESCE(r.reversal_count, 0) = 0
-        )
-        OR (
-          c.is_reversed
-          AND r.reversal_count = 1
-          AND r.currency_code = 'SDG'
-        )
-      )
+    COALESCE(
+      p.currency_code = 'SDG'
+        AND i.currency_code = 'SDG'
+        AND c.currency_code = 'SDG'
+        AND COALESCE(c.ledger_count, 0) = 1
+        AND (
+          (
+            NOT COALESCE(c.is_reversed, false)
+            AND COALESCE(r.reversal_count, 0) = 0
+          )
+          OR (
+            c.is_reversed
+            AND r.reversal_count = 1
+            AND r.currency_code = 'SDG'
+          )
+        ),
+      false
+    )
   FROM public.payments p
   JOIN public.invoices i
     ON i.id = p.invoice_id
