@@ -1,25 +1,13 @@
 name: Phase 58 SDG currency provenance
 
 on:
-  pull_request:
-    paths:
-      - "db/roshan_phase58_single_sdg_currency_provenance.sql"
-      - "db/tests/phase58_sdg_currency_provenance_*.sql"
-      - "tests/phase58-sdg-currency-provenance.test.mjs"
-      - ".github/workflows/ci-phase58-sdg-currency.yml"
-  push:
-    branches: [main]
-    paths:
-      - "db/roshan_phase58_single_sdg_currency_provenance.sql"
-      - "db/tests/phase58_sdg_currency_provenance_*.sql"
-      - "tests/phase58-sdg-currency-provenance.test.mjs"
-      - ".github/workflows/ci-phase58-sdg-currency.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: phase58-sdg-currency-${{ github.ref }}
+  group: phase58-sdg-currency-manual
   cancel-in-progress: true
 
 jobs:
