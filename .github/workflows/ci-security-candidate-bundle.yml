@@ -11,6 +11,8 @@ on:
       - 'db/roshan_queue_followup_branch_isolation.sql'
       - 'db/roshan_prescription_lab_child_branch_isolation.sql'
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/roshan_phase58_single_sdg_currency_provenance.sql'
+      - 'db/roshan_post_expense_finite_amount.sql'
       - 'db/roshan_invoice_payment_money_precision.sql'
       - 'db/roshan_security_candidate_bundle_20261017.sql'
       - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
@@ -89,16 +91,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           persist-credentials: false
-      - name: Apply candidate and its focused regression suite
+      - name: Apply candidate fixture and migration
         env:
           PGPASSWORD: postgres
           FIXTURE: ${{ matrix.fixture }}
           MIGRATION: ${{ matrix.migration }}
-          INTEGRATION: ${{ matrix.integration }}
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f "$FIXTURE" \
-            -f "$MIGRATION" \
+            -f "$MIGRATION"
+      - name: Apply Phase 58 provenance to the finance RPC candidate
+        if: matrix.name == 'Finance RPC-only writes and numeric validation'
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/roshan_post_expense_finite_amount.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql
+      - name: Run candidate integration assertions
+        env:
+          PGPASSWORD: postgres
+          INTEGRATION: ${{ matrix.integration }}
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f "$INTEGRATION"
 
   combined-schema:
