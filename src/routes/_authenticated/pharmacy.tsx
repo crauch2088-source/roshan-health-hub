@@ -90,7 +90,7 @@ function PharmacyPageInner() {
       let q = supabase
         .from("prescriptions")
         .select(
-          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
+          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, medication_name, dosage, frequency, duration, medicine_id, deleted_at, medicines(name, selling_price, stock_quantity))",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -191,10 +191,14 @@ function PharmacyPageInner() {
       ) : (
         <div className="grid gap-4">
           {rows.map((p) => {
-            const items = (p["prescription_items"] as Row[]) ?? [];
+            const items = ((p["prescription_items"] as Row[]) ?? []).filter(
+              (item) => item["deleted_at"] == null,
+            );
             const quantityFor = (item: Row) => parseDispenseQuantity(item["quantity"]);
             const hasInvalidQuantity = items.some((item) => quantityFor(item) === null);
-            const total = hasInvalidQuantity
+            const hasUnlinkedItem = items.some((item) => !s(item, "medicine_id"));
+            const hasDispenseBlocker = hasInvalidQuantity || hasUnlinkedItem;
+            const total = hasDispenseBlocker
               ? null
               : items.reduce(
                   (sum, item) =>
@@ -251,7 +255,7 @@ function PharmacyPageInner() {
                             </Button>
                           ) : null}
                           <Button
-                            disabled={dispense.isPending || hasInvalidQuantity}
+                            disabled={dispense.isPending || hasDispenseBlocker}
                             onClick={() => {
                               const prescriptionId = s(p, "id");
                               const requestId =
@@ -284,11 +288,21 @@ function PharmacyPageInner() {
                         : "A prescribed quantity is missing or invalid. Dispensing is blocked until the prescriber corrects it."}
                     </p>
                   ) : null}
+                  {hasUnlinkedItem ? (
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-md border border-destructive/40 p-3 text-sm text-destructive"
+                    >
+                      {lang === "ar"
+                        ? "تحتوي الوصفة على دواء غير مرتبط بدليل الأدوية. يجب ربطه بدواء نشط قبل الصرف."
+                        : "This prescription contains a medicine not linked to the active catalogue. Link it before dispensing."}
+                    </p>
+                  ) : null}
                   <ul className="divide-y rounded-md border md:hidden">
                     {items.map((i) => {
                       const quantity = quantityFor(i);
                       const lineTotal =
-                        quantity === null
+                        quantity === null || !s(i, "medicine_id")
                           ? null
                           : quantity * n(rel(i, "medicines"), "selling_price");
                       return (
@@ -297,7 +311,9 @@ function PharmacyPageInner() {
                           className="flex items-start justify-between gap-3 p-2.5 text-sm"
                         >
                           <div className="min-w-0 space-y-0.5">
-                            <p className="font-medium">{s(rel(i, "medicines"), "name")}</p>
+                            <p className="font-medium">
+                              {s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
                                 .filter(Boolean)
@@ -338,13 +354,13 @@ function PharmacyPageInner() {
                         {items.map((i) => {
                           const quantity = quantityFor(i);
                           const lineTotal =
-                            quantity === null
+                            quantity === null || !s(i, "medicine_id")
                               ? null
                               : quantity * n(rel(i, "medicines"), "selling_price");
                           return (
                             <TableRow key={s(i, "id")}>
                               <TableCell className="font-medium">
-                                {s(rel(i, "medicines"), "name")}
+                                {s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}
                               </TableCell>
                               <TableCell>
                                 {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]

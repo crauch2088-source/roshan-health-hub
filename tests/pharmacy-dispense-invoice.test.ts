@@ -96,9 +96,13 @@ test("integration contract covers itemized medicine charges, rollback, retry, an
 test("pharmacy queue fails closed for missing or invalid prescription quantities", () => {
   assert.match(pharmacyRoute, /parseDispenseQuantity/);
   assert.match(pharmacyRoute, /hasInvalidQuantity/);
-  assert.match(pharmacyRoute, /disabled=\{dispense\.isPending \|\| hasInvalidQuantity\}/);
+  assert.match(pharmacyRoute, /hasUnlinkedItem/);
+  assert.match(pharmacyRoute, /disabled=\{dispense\.isPending \|\| hasDispenseBlocker\}/);
+  assert.match(pharmacyRoute, /medication_name, dosage, frequency/);
   assert.doesNotMatch(pharmacyRoute, /n\(i, "quantity"\)\s*\|\|\s*1/);
   assert.match(pharmacyRoute, /A prescribed quantity is missing or invalid/);
+  assert.match(pharmacyRoute, /not linked to the active catalogue/);
+  assert.doesNotMatch(pharmacyRoute, /n\(i, "quantity"\)\s*\|\|\s*1/);
 });
 
 test("dispense quantity parser accepts only finite positive whole units", () => {

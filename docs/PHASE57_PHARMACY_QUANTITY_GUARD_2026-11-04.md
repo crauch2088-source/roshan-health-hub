@@ -54,3 +54,6 @@ Next: independent review of PR #191, then an approved synthetic pharmacist ident
 - The SQL RPC repeats the NULL check after its `FOR UPDATE` row read, so the authoritative locked item value is checked as well as the early preflight.
 - The disposable fixture now matches live QA/Production metadata: `prescription_items.quantity` is nullable and has no default. The live read-only column audit confirmed that in both projects.
 - Added unit/source assertions for NULL, blank, zero, negative, fractional, NaN/Infinity, over-limit and valid whole quantities. No hosted database change was made.
+
+
+- The queue also displays the saved medication name for free-text items, explains that they must be linked to an active catalogue medicine, and disables dispense when any active item is unlinked. Soft-deleted child items are excluded from queue totals and blockers.
