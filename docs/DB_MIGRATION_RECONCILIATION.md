@@ -752,3 +752,31 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Exact-head PR check inventory: **27 success, 1 intentionally skipped, 0 failures**. The skipped canonical PG17/authenticated clinical acceptance job remains deferred by design. Local Node 24 source regressions also passed 4/4 (`phase33-storage-realtime`) and 11/11 (`phase34-consolidated`); the temporary shell's full guard attempt was 220/221 because it lacked installed `zod`, so GitHub CI is the authoritative complete runtime check.
 - No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. PR #148 remains draft/open pending independent review and separate live-apply authorization; Issue #95 remains open and authenticated clinical E2E remains deferred.
 - **Next:** obtain independent review of the Phase 48 candidate and assess the separate release gate; then address the 14 moderate development-tree `minimatch` advisories without forced major downgrades, followed by Issue #146's setup RPC exposure. Do not apply Phase 48 to QA or production without separate explicit authorization.
+
+
+## Live Production/QA migration ledger reconciliation — 2026-11-09 (read-only)
+
+The Supabase migration-history API was queried independently for Production project `jewzonxplxhogqrnhosl` and QA project `hopfohcnrtbiqjkgeukz`. This is a ledger read-back only; it does not expose stored migration SQL bytes or establish byte-for-byte source parity.
+
+| Environment | Ledger entries | Latest version | Latest recorded name |
+|---|---:|---|---|
+| Production | 129 | `20261102232941` | `roshan_synthetic_patient_cleanup_and_stock_ledger_reversal` |
+| QA | 22 | `20261104065852` | `roshan_phase57_pharmacy_quantity_required_guard` |
+
+**Version-set comparison:**
+- Shared version IDs: **3**; all three have different names between environments.
+- Production-only version IDs: **126**.
+- QA-only version IDs: **19**.
+- The three collisions are:
+
+| Version | Production name | QA name |
+|---|---|---|
+| `20261102122437` | `superseded_placeholder_phase49_atomic_pharmacy_dispense` | `roshan_phase51_public_setup_required_anon` |
+| `20261102133658` | `superseded_placeholder_phase50_clinical_visit_bill_completion` | `roshan_phase49_atomic_pharmacy_dispense` |
+| `20261102133734` | `superseded_placeholder_phase51_public_setup_required_anon` | `roshan_phase50_clinical_visit_bill_completion` |
+
+**Interpretation:** QA is not a forward-migration continuation of the Production ledger. The three version collisions are semantic/name conflicts, not proof that the corresponding SQL is equivalent. QA's latest Phase 57 entry is not represented in the Production ledger. Production's four placeholder Phase 49–52 entries do not represent the final reconciled implementations; later Production ledger entries record the repaired Phase 49–52 candidates.
+
+**Do not attempt a mechanical repair.** Do not replay Production history onto QA, replay QA history onto Production, insert/delete migration-history rows to make counts match, or rename/reuse a previously recorded version. Any future reconciliation must be a separately reviewed, forward-only environment-specific plan based on live schema/function fingerprints, canonical repository source, and explicit environment approvals. A ledger row alone is not evidence that the SQL was applied as intended.
+
+No migration, SQL write, DDL/DML, role/grant/RLS/Auth/Storage change, or application deployment was performed to collect these facts.
