@@ -65,16 +65,6 @@ test("finance migration preserves precision and RPC-only access", () => {
   assert.match(integration, /idempotent retry returned different ID/);
   assert.match(integration, /idempotency key accepted a different payload/);
   assert.match(integration, /fractional minor-unit payment amount was accepted/);
-  // Insurance claim writes are covered by their own migration and integration suite.
-});
-
-test("finance RPC-only guard is part of the standard guard suite", () => {
-  const pkg = JSON.parse(read("../package.json")) as { scripts?: Record<string, string> };
-  assert.match(pkg.scripts?.["test:guard"] ?? "", /finance-rpc-only-writes\.test\.ts/);
-});
-
-
-test("Phase 58 currency provenance is exercised through the finance RPC integration workflow", () => {
   assert.match(financeWorkflow, /roshan_phase58_single_sdg_currency_provenance\.sql/);
   assert.match(financeWorkflow, /roshan_post_expense_finite_amount\.sql/);
   assert.match(securityWorkflow, /roshan_phase58_single_sdg_currency_provenance\.sql/);
@@ -84,4 +74,10 @@ test("Phase 58 currency provenance is exercised through the finance RPC integrat
   assert.match(integration, /posted payment did not persist SDG/);
   assert.match(integration, /post_expense did not persist SDG/);
   assert.match(currencyMigration, /invoice currency provenance is missing or inconsistent/);
+  // Insurance claim writes are covered by their own migration and integration suite.
+});
+
+test("finance RPC-only guard is part of the standard guard suite", () => {
+  const pkg = JSON.parse(read("../package.json")) as { scripts?: Record<string, string> };
+  assert.match(pkg.scripts?.["test:guard"] ?? "", /finance-rpc-only-writes\.test\.ts/);
 });
