@@ -1,3 +1,5 @@
+export const ROSHAN_CURRENCY = "SDG" as const;
+
 type ReceiptRow = Record<string, unknown>;
 
 export type InvoicePaymentReceiptModel = {
