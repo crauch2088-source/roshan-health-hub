@@ -2,12 +2,23 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const migration = readFileSync("db/roshan_phase58_single_sdg_currency_provenance.sql", "utf8");
-const integration = readFileSync("db/tests/phase58_sdg_currency_provenance_integration.sql", "utf8");
+const migration = readFileSync(
+  "db/roshan_phase58_single_sdg_currency_provenance.sql",
+  "utf8",
+);
+const integration = readFileSync(
+  "db/tests/phase58_sdg_currency_provenance_integration.sql",
+  "utf8",
+);
 
 const financialTables = [
-  "invoices","payments","cashbox_transactions","expenses",
-  "supplier_bills","supplier_payments","pharmacy_inventory",
+  "invoices",
+  "payments",
+  "cashbox_transactions",
+  "expenses",
+  "supplier_bills",
+  "supplier_payments",
+  "pharmacy_inventory",
 ];
 
 test("Phase 58 covers every approved financial source and ledger table", () => {
@@ -22,7 +33,10 @@ test("Phase 58 covers every approved financial source and ledger table", () => {
 
 test("Phase 58 preserves unknown legacy rows without a settings-derived backfill", () => {
   assert.match(migration, /Existing rows intentionally remain NULL/);
-  assert.doesNotMatch(migration, /UPDATE\s+public\.(invoices|payments|cashbox_transactions|expenses|supplier_bills|supplier_payments|pharmacy_inventory)\s+SET\s+currency_code/i);
+  assert.doesNotMatch(
+    migration,
+    /UPDATE\s+public\.(invoices|payments|cashbox_transactions|expenses|supplier_bills|supplier_payments|pharmacy_inventory)\s+SET\s+currency_code/i,
+  );
   assert.match(integration, /legacy.*unexpectedly backfilled/i);
 });
 
@@ -32,10 +46,10 @@ test("Phase 58 rejects NULL, non-SDG and post-posting currency mutation", () => 
   assert.match(migration, /posted financial currency_code is immutable/);
   assert.match(migration, /NEW\.currency_code IS DISTINCT FROM OLD\.currency_code/);
   assert.match(integration, /legacy currency assignment on/);
-  assert.match(integration, /test_writer unexpectedly has direct EXECUTE/);
-  assert.match(integration, /restricted writer/);
   assert.match(integration, /explicit NULL insert/);
   assert.match(integration, /non-SDG insert/);
   assert.match(integration, /currency clear/);
   assert.match(integration, /currency change/);
+  assert.match(integration, /test_writer unexpectedly has direct EXECUTE/);
+  assert.match(integration, /restricted writer/);
 });
