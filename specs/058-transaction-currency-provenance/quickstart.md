@@ -41,4 +41,4 @@ Run:
 2. db/roshan_phase58_single_sdg_currency_provenance.sql
 3. db/tests/phase58_sdg_currency_provenance_integration.sql
 
-Assertions cover legacy NULL preservation, SDG defaults on new records, explicit NULL and USD rejection, explicit legacy assignment, and immutability after assignment. PR #211 adds a focused GitHub Actions workflow. Insurance and payroll are deferred; no hosted database is contacted.
+Assertions cover legacy NULL preservation, SDG defaults on new records, explicit NULL and USD rejection, legacy assignment rejection, and immutability after assignment. PR #211 adds a focused GitHub Actions workflow. Insurance and payroll are deferred; no hosted database is contacted.

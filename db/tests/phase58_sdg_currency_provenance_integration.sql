@@ -76,7 +76,8 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN
       GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE;
     END;
-    IF (v_table <> 'cashbox_transactions' AND v_state IS DISTINCT FROM '22023')
+    IF v_state IS NULL
+       OR (v_table <> 'cashbox_transactions' AND v_state <> '22023')
        OR (v_table = 'cashbox_transactions' AND v_state NOT IN ('22023','55000')) THEN
       RAISE EXCEPTION 'currency clear on % was not rejected (got %)', v_table, v_state;
     END IF;

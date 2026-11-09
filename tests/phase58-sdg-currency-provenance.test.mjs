@@ -29,7 +29,7 @@ test("Phase 58 rejects NULL, non-SDG and post-posting currency mutation", () => 
   assert.match(migration, /currency_code is required for new financial records/);
   assert.match(migration, /Roshan supports SDG only/);
   assert.match(migration, /posted financial currency_code is immutable/);
-  assert.match(migration, /NEW\\.currency_code IS DISTINCT FROM OLD\\.currency_code/);
+  assert.match(migration, /NEW\.currency_code IS DISTINCT FROM OLD\.currency_code/);
   assert.match(integration, /legacy currency assignment on/);
   assert.match(integration, /explicit NULL insert/);
   assert.match(integration, /non-SDG insert/);
