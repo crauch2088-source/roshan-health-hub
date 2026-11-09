@@ -2766,3 +2766,11 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 - Receipt currency provenance is a separate Spec Kit gate in `specs/058-transaction-currency-provenance/`: historical receipts must not derive currency from mutable `system_settings.currency`; persisted transaction/invoice currency is required before PR #181 can be accepted.
 
 **Next task:** complete the content/effective-catalog source reconciliation in the linked report, then synchronize PR #191 with current main and rerun its PG17 regression suite. Keep it Draft until isolated QA and synthetic pharmacist acceptance exist. No Production DDL/DML or external backup dispatch in this step.
+
+
+## Phase 57 quantity guard — rebased review candidate (2026-11-09)
+
+- Rebased candidate starts from current `main` and preserves the current CI workflow; the disposable PostgreSQL 17 pharmacy sequence applies Phase 49 atomic dispense, Phase 17 legacy-RPC revocation, then Phase 57 quantity guard before integration assertions.
+- Phase 57 rejects active, non-deleted catalogue-linked prescription items with NULL quantity before invoice construction or stock mutation. It does not infer a quantity, backfill data, or add a schema default/constraint.
+- The integration fixture asserts rejection leaves batch stock, aggregate medicine stock, invoice lines, prescription status, stock movements, and item dispense flags unchanged. This remains a source candidate until exact-head CI and independent SQL review pass.
+- QA already records the original Phase 57 migration; this rebased PR does not replay or apply any migration. Production remains unchanged and no migration promotion is authorized here.
