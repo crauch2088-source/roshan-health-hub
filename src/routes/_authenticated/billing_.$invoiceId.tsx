@@ -34,11 +34,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { ROSHAN_CURRENCY, n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
-import { buildInvoicePaymentReceiptModel, ROSHAN_CURRENCY } from "@/lib/print/receipt";
+import { buildInvoicePaymentReceiptModel } from "@/lib/print/receipt";
 
 export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
   head: () => ({
