@@ -52,6 +52,7 @@ SET search_path TO ''
 AS $function$
 DECLARE
   v_parent_currency text;
+  v_validate_source boolean := false;
 BEGIN
   IF NEW.currency_code IS NULL AND TG_OP = 'INSERT' THEN
     RAISE EXCEPTION 'currency_code is required for new financial records'
@@ -70,8 +71,21 @@ BEGIN
   END IF;
 
   -- A default on the child row is not proof that its source record has a known
-  -- currency. New payments against legacy NULL-currency invoices must fail closed.
+  -- currency. Validate source links on insert and whenever a source reference changes.
   IF TG_OP = 'INSERT' THEN
+    v_validate_source := true;
+  ELSIF TG_TABLE_NAME = 'payments' THEN
+    v_validate_source := NEW.invoice_id IS DISTINCT FROM OLD.invoice_id;
+  ELSIF TG_TABLE_NAME = 'supplier_payments' THEN
+    v_validate_source := NEW.supplier_bill_id IS DISTINCT FROM OLD.supplier_bill_id;
+  ELSIF TG_TABLE_NAME = 'cashbox_transactions' THEN
+    v_validate_source :=
+      NEW.source_type IS DISTINCT FROM OLD.source_type
+      OR NEW.source_id IS DISTINCT FROM OLD.source_id
+      OR NEW.reversal_of IS DISTINCT FROM OLD.reversal_of;
+  END IF;
+
+  IF v_validate_source THEN
     IF TG_TABLE_NAME = 'payments' THEN
       SELECT i.currency_code INTO v_parent_currency
       FROM public.invoices AS i
