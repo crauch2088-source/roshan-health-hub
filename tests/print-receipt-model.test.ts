@@ -53,7 +53,7 @@ test("receipt model preserves posted payment values and authoritative current in
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -77,7 +77,7 @@ test("receipt model refuses payments without a matching posted cashbox ledger ro
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -92,7 +92,7 @@ test("receipt model refuses ledger amount or branch mismatches", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -107,7 +107,7 @@ test("receipt model refuses branchless or cross-branch source rows even when cal
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -123,7 +123,7 @@ test("receipt model can rely on the ledger and authorized parent read when a leg
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -142,7 +142,7 @@ test("receipt model permits a soft-deleted payment only when the authoritative l
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -160,7 +160,7 @@ test("receipt model blocks a deleted payment whose ledger is not reversed", () =
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -177,7 +177,7 @@ test("receipt model blocks an active payment whose ledger is reversed", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -210,7 +210,7 @@ test("receipt model rejects a payment linked to a different invoice", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -227,7 +227,6 @@ test("receipt model rejects zero, negative, and non-finite payment amounts", () 
       data.invoice,
       data.ledger,
       "Recorded Cashier",
-      "SDG",
     );
 
     assert.ok(model);
@@ -244,7 +243,7 @@ test("receipt model rejects conflicting legacy and canonical payment method fiel
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
@@ -261,7 +260,7 @@ test("receipt model rejects missing or negative invoice balance inputs", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier"
+    "Recorded Cashier",
   );
 
   assert.ok(model);
