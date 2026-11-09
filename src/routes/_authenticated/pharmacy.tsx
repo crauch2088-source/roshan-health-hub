@@ -37,6 +37,7 @@ import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDateTime, money } from "@/lib/medical";
 import { dispensePrescriptionFefo, type DispenseResultRow } from "@/lib/pharmacy";
+import { parseDispenseQuantity } from "@/lib/pharmacy-quantity";
 import { supabase } from "@/lib/supabase";
 import { useBranchRealtime } from "@/lib/realtime";
 
@@ -191,10 +192,15 @@ function PharmacyPageInner() {
         <div className="grid gap-4">
           {rows.map((p) => {
             const items = (p["prescription_items"] as Row[]) ?? [];
-            const total = items.reduce(
-              (sum, i) => sum + (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-              0,
-            );
+            const quantityFor = (item: Row) => parseDispenseQuantity(item["quantity"]);
+            const hasInvalidQuantity = items.some((item) => quantityFor(item) === null);
+            const total = hasInvalidQuantity
+              ? null
+              : items.reduce(
+                  (sum, item) =>
+                    sum + (quantityFor(item) ?? 0) * n(rel(item, "medicines"), "selling_price"),
+                  0,
+                );
             const usedBatches = dispenseDetail[s(p, "id")];
             return (
               <DataPanel key={s(p, "id")}>
@@ -245,7 +251,7 @@ function PharmacyPageInner() {
                             </Button>
                           ) : null}
                           <Button
-                            disabled={dispense.isPending}
+                            disabled={dispense.isPending || hasInvalidQuantity}
                             onClick={() => {
                               const prescriptionId = s(p, "id");
                               const requestId =
@@ -268,8 +274,21 @@ function PharmacyPageInner() {
                     </div>
                   </div>
                   <SectionTitle>{t("medicines")}</SectionTitle>
+                  {hasInvalidQuantity ? (
+                    <p role="alert" className="mb-3 rounded-md border border-destructive/40 p-3 text-sm text-destructive">
+                      {lang === "ar"
+                        ? "توجد كمية مفقودة أو غير صالحة. أوقفنا الصرف حتى يراجع الطبيب الوصفة ويصحح الكمية."
+                        : "A prescribed quantity is missing or invalid. Dispensing is blocked until the prescriber corrects it."}
+                    </p>
+                  ) : null}
                   <ul className="divide-y rounded-md border md:hidden">
-                    {items.map((i) => (
+                    {items.map((i) => {
+                      const quantity = quantityFor(i);
+                      const lineTotal =
+                        quantity === null
+                          ? null
+                          : quantity * n(rel(i, "medicines"), "selling_price");
+                      return (
                       <li
                         key={s(i, "id")}
                         className="flex items-start justify-between gap-3 p-2.5 text-sm"
@@ -282,19 +301,24 @@ function PharmacyPageInner() {
                               .join(" · ") || "—"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {t("quantity")} <span dir="ltr">{n(i, "quantity") || 1}</span> ·{" "}
-                            {t("stock")}{" "}
+                            {t("quantity")}{" "}
+                            <span dir="ltr">
+                              {quantity === null
+                                ? lang === "ar"
+                                  ? "غير محددة"
+                                  : "Missing"
+                                : quantity}
+                            </span>{" "}
+                            · {t("stock")}{" "}
                             <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
                           </p>
                         </div>
                         <span className="shrink-0 font-semibold">
-                          {money(
-                            (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-                            currency,
-                          )}
+                          {lineTotal === null ? "—" : money(lineTotal, currency)}
                         </span>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                   <div className="hidden md:block">
                     <Table density="compact">
@@ -308,7 +332,13 @@ function PharmacyPageInner() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {items.map((i) => (
+                        {items.map((i) => {
+                          const quantity = quantityFor(i);
+                          const lineTotal =
+                            quantity === null
+                              ? null
+                              : quantity * n(rel(i, "medicines"), "selling_price");
+                          return (
                           <TableRow key={s(i, "id")}>
                             <TableCell className="font-medium">
                               {s(rel(i, "medicines"), "name")}
@@ -318,23 +348,27 @@ function PharmacyPageInner() {
                                 .filter(Boolean)
                                 .join(" · ") || "—"}
                             </TableCell>
-                            <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
+                            <TableCell dir="ltr">
+                              {quantity === null
+                                ? lang === "ar"
+                                  ? "غير محددة"
+                                  : "Missing"
+                                : quantity}
+                            </TableCell>
                             <TableCell dir="ltr">
                               {n(rel(i, "medicines"), "stock_quantity")}
                             </TableCell>
                             <TableCell>
-                              {money(
-                                (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-                                currency,
-                              )}
+                              {lineTotal === null ? "—" : money(lineTotal, currency)}
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
                   <p className="mt-2 text-end text-sm font-semibold">
-                    {t("total")}: {money(total, currency)}
+                    {t("total")}: {total === null ? "—" : money(total, currency)}
                   </p>
 
                   {usedBatches && usedBatches.length > 0 ? (

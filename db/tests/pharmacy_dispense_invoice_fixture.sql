@@ -52,7 +52,7 @@ CREATE TABLE public.prescriptions (
 );
 CREATE TABLE public.prescription_items (
   id uuid PRIMARY KEY, prescription_id uuid NOT NULL, medicine_id uuid,
-  medication_name text, quantity numeric DEFAULT 1, dosage text, frequency text, duration text,
+  medication_name text, quantity numeric, dosage text, frequency text, duration text,
   dispensed_quantity integer DEFAULT 0, unit_price numeric, is_dispensed boolean DEFAULT false,
   deleted_at timestamptz, updated_at timestamptz DEFAULT now(), updated_by uuid
 );

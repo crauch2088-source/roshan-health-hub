@@ -149,6 +149,11 @@ BEGIN
      ORDER BY pi.id
      FOR UPDATE OF pi, m
   LOOP
+    -- Recheck after FOR UPDATE: the early preflight check is intentionally
+    -- before invoice/stock work, but this locked row is the authoritative value.
+    IF v_item.qty IS NULL THEN
+      RAISE EXCEPTION 'prescription quantity is required';
+    END IF;
     IF v_item.qty::text IN ('NaN','Infinity','-Infinity')
        OR v_item.qty <= 0 OR v_item.qty <> trunc(v_item.qty)
        OR v_item.qty > 2147483647 THEN
