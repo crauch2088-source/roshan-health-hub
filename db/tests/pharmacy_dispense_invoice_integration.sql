@@ -136,8 +136,12 @@ DECLARE
   v_batch numeric;
   v_stock integer;
   v_invoice_lines bigint;
+  v_stock_movements bigint;
+  v_was_dispensed boolean;
+  v_dispensed_quantity integer;
 BEGIN
-  SELECT pi.id, pi.quantity INTO v_item_id, v_original_quantity
+  SELECT pi.id, pi.quantity, pi.is_dispensed, pi.dispensed_quantity
+    INTO v_item_id, v_original_quantity, v_was_dispensed, v_dispensed_quantity
     FROM public.prescription_items AS pi
    WHERE pi.prescription_id='90000000-0000-0000-0000-000000000005'
      AND pi.deleted_at IS NULL AND pi.medicine_id IS NOT NULL
@@ -153,6 +157,9 @@ BEGIN
    WHERE invoice_id=(SELECT id FROM public.invoices
      WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
      AND deleted_at IS NULL;
+  SELECT count(*) INTO v_stock_movements FROM public.stock_movements
+   WHERE reference_id='90000000-0000-0000-0000-000000000005'
+     AND reference_table='prescriptions';
 
   UPDATE public.prescription_items SET quantity=NULL WHERE id=v_item_id;
   BEGIN
@@ -175,6 +182,17 @@ BEGIN
   IF (SELECT status FROM public.prescriptions
        WHERE id='90000000-0000-0000-0000-000000000005') <> 'pending' THEN
     RAISE EXCEPTION 'null quantity rejection changed prescription status';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+       WHERE reference_id='90000000-0000-0000-0000-000000000005'
+         AND reference_table='prescriptions') <> v_stock_movements THEN
+    RAISE EXCEPTION 'null quantity rejection created stock movements';
+  END IF;
+  IF (SELECT is_dispensed FROM public.prescription_items WHERE id=v_item_id)
+       IS DISTINCT FROM v_was_dispensed
+     OR (SELECT dispensed_quantity FROM public.prescription_items WHERE id=v_item_id)
+       IS DISTINCT FROM v_dispensed_quantity THEN
+    RAISE EXCEPTION 'null quantity rejection changed prescription item dispense flags';
   END IF;
   IF (SELECT count(*) FROM public.invoice_items
        WHERE invoice_id=(SELECT id FROM public.invoices
