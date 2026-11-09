@@ -55,12 +55,6 @@ test("historical payment receipts use Roshan's fixed SDG currency, not mutable d
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   const db = read("src/lib/db.ts");
   assert.match(db, /export const ROSHAN_CURRENCY = "SDG" as const/);
-  assert.match(
-    source,
-    /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/,
-  );
-  assert.doesNotMatch(
-    source,
-    /buildInvoicePaymentReceiptModel.*cashierName, currency/,
-  );
+  assert.match(source, /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/);
+  assert.doesNotMatch(source, /buildInvoicePaymentReceiptModel.*cashierName, currency/);
 });
