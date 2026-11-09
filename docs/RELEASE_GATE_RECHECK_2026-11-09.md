@@ -65,3 +65,36 @@ This update supersedes the earlier statements below that device-side decryptabil
 - Do not apply Phase 57 or other pending migrations to Production until the remaining acceptance gates and independent review pass.
 - Do not treat a successful backup restore rehearsal as clinical UAT or production release authorization.
 - No automatic recurring backup schedule is configured.
+
+
+## Live Supabase catalog and security recheck — 2026-11-09 08:53 Africa/Khartoum
+
+Read-only catalog and advisor queries were run directly against both connected PostgreSQL 17 projects. No application rows were selected or modified.
+
+### Live migration and schema parity
+
+| Measure | Production | QA |
+|---|---:|---:|
+| Applied migrations | 129 | 22 |
+| Latest migration | `20261102232941` | `20261104065852` |
+| Public base tables | 56 | 56 |
+| Public columns | 842 | 842 |
+| Public tables with RLS enabled | 56 | 56 |
+| Public RLS tables without any policy | 0 | 0 |
+| Public SECURITY DEFINER functions | 53 | 55 |
+| SECURITY DEFINER callable by anon | 1 | 1 |
+| SECURITY DEFINER callable by authenticated | 26 | 28 |
+
+The two QA-only authenticated SECURITY DEFINER RPCs observed in the catalog are `get_invoice_payment_receipt_status(uuid[])` and `reverse_invoice_payment(uuid,text)`, consistent with QA's Phase 54C migration and Production's older migration head. This does not mean the environments are schema-identical: live migration ledgers remain different and require source-level reconciliation before rollout.
+
+### Security advisor interpretation
+
+- Both environments report one anonymous SECURITY DEFINER function: `public.setup_required()`. Its implementation delegates to `private.setup_required()`, which returns only whether `public.users` is empty. This is the intentionally public first-run setup signal; retain it only while that onboarding contract remains required and continue testing that it reveals no user or clinic data.
+- Supabase flags authenticated-executable SECURITY DEFINER RPCs (26 Production, 28 QA). This is an exposure warning, not proof that each function is exploitable: these are intended API RPCs and require per-function review of actor identity, permission checks, branch constraints, fixed search_path, and object qualification. The sampled `atomic_pharmacy_dispense`, `get_invoice_payment_receipt_status`, and `reverse_invoice_payment` definitions use an empty search_path and explicit application permission/branch checks. Do not blanket-revoke authenticated EXECUTE or switch these RPCs to SECURITY INVOKER without dependency and authorization testing.
+- The internal `private.pharmacy_dispense_idempotency` table has RLS enabled and no policies in both environments; direct table privileges for anon/authenticated/service_role were absent in the read-only check. The Production legacy idempotency table is also ungranted. This is consistent with access only through the owning SECURITY DEFINER RPC; preserve the private schema boundary and verify it in future grants tests.
+- Both environments report `pg_trgm` installed in `public` (advisor warning), and leaked-password protection disabled (Auth warning). Moving the extension requires dependency/rebuild analysis; enabling leaked-password protection is an Auth configuration decision. Neither was changed.
+- Performance advisors report unused-index informational findings (95 Production, 143 QA) and two unindexed foreign keys on the legacy Production idempotency table. These counts are not a license to drop indexes on an idle/new clinic; require workload evidence and query plans first.
+
+### Release consequence
+
+The live catalog confirms RLS is enabled on all 56 public base tables in both environments and no public RLS-enabled table lacks a policy. It does not establish that every policy is semantically correct or every SECURITY DEFINER function has safe authorization. Keep the function-by-function audit and live migration reconciliation open. No migration, grant, Auth setting, extension, index, or business-data change was performed.

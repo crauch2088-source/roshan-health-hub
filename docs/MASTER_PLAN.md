@@ -2741,3 +2741,10 @@ This is the current consolidated checkpoint after PR #203 was merged. Older entr
 6. Complete staff UAT across reception → GP → lab → pharmacy → billing; keep clinical launch blocked until all P0/P1 findings are resolved or explicitly accepted by the owner.
 
 **Status discipline:** automated CI, disposable PostgreSQL integration, authenticated QA acceptance, physical-device validation, staff UAT, and Production release approval are distinct evidence classes. Never substitute one for another.
+
+
+### Live Supabase evidence addendum — 2026-11-09
+
+The direct read-only catalog recheck is recorded in [RELEASE_GATE_RECHECK_2026-11-09.md](RELEASE_GATE_RECHECK_2026-11-09.md). Both projects currently have 56 public base tables, 842 public columns, RLS enabled on all 56, and zero public RLS-enabled tables without a policy. Production has 129 applied migrations (head `20261102232941`); QA has 22 (head `20261104065852`). The live migration ledgers remain intentionally unequal and are not certified reconciled.
+
+Supabase security advisors report 1 anon-executable SECURITY DEFINER (`setup_required()`) and 26 authenticated-executable SECURITY DEFINER RPCs in Production; QA reports 1 and 28 respectively. The sampled RPCs were reviewed for empty search_path and application permission/branch checks; this is not a complete function-by-function audit. Keep per-function review open; do not mass-revoke intended authenticated RPCs. Both projects also report the `pg_trgm` public-schema warning and disabled leaked-password protection. No Auth configuration, extension, grants, indexes, or database objects were changed.

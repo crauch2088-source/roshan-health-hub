@@ -114,3 +114,14 @@ This gate is additive; existing task checkboxes remain unchanged until evidence 
 - PR #191 remains Draft. A focused independent code-review comment was submitted; this is not a substitute for a second human reviewer or persistent-QA pharmacist acceptance.
 - PR #179 and #181 remain Draft pending browser/mobile/physical printer, role/branch, and staff acceptance. PR #181 additionally has the currency-fidelity gate above.
 - Backup/recovery is complete at infrastructure level, but the backup is database-only and manual. No Production migration, permission change, clinical data write, or release promotion is authorized.
+
+
+## Live database verification addendum — 2026-11-09
+
+- [x] Read-only Production/QA catalog count check: 56 public base tables each, 842 public columns each, all 56 public tables have RLS enabled, and no public RLS-enabled table lacks a policy.
+- [ ] Reconcile the live migration ledgers to canonical migration source before any rollout: Production 129 migrations through `20261102232941`; QA 22 migrations through `20261104065852`. These are different and are not declared reconciled.
+- [ ] Complete per-function authorization review for SECURITY DEFINER RPCs. Advisor counts are Production 53 total / 26 authenticated-executable / 1 anon-executable; QA 55 total / 28 authenticated-executable / 1 anon-executable. The anon function is `setup_required()`, a minimal first-run boolean signal. Sampled dispensing and receipt RPCs use empty search_path and permission/branch checks; the full set remains to be reviewed.
+- [ ] Owner/security decision on disabled leaked-password protection in both Auth projects.
+- [ ] Review `pg_trgm` public-schema warning and unused-index informational findings only after dependency and real workload/query-plan analysis. Do not drop indexes solely because current low-volume projects show no usage.
+
+Private idempotency-table note: RLS is enabled with no policies, and direct table grants for anon/authenticated/service_role were absent in the read-only check. Keep this table private and reachable only through the controlled RPC boundary.
