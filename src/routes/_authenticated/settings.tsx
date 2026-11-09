@@ -117,7 +117,9 @@ function SettingsPageInner() {
             <Input value={form["address"] ?? ""} onChange={set("address")} />
           </Field>
           <Field label={t("currency")}>
-            <div className="text-sm font-medium" dir="ltr">{ROSHAN_CURRENCY}</div>
+            <div className="text-sm font-medium" dir="ltr">
+              {ROSHAN_CURRENCY}
+            </div>
             <p className="text-xs text-muted-foreground">
               {lang === "ar"
                 ? "عملة المركز ثابتة: الجنيه السوداني (SDG)، ولا يمكن تغييرها من الإعدادات."
