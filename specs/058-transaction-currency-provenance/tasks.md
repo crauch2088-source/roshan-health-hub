@@ -2,11 +2,11 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [receipt-currency-contract.md](contracts/receipt-currency-contract.md)
 
-**Status**: Specification only. Implementation is blocked until the owner approves the currency operating policy and the monetary-table scope.
+**Status**: Owner policy decided (SDG-only). Implementation remains blocked on complete monetary-scope inventory, live-source reconciliation, and disposable PG17 test contracts.
 
 ## Phase 0 — Decisions and source contracts
 
-- [ ] T001 Obtain explicit owner decision: single immutable clinic currency or multi-currency.
+- [x] T001 Owner decision recorded: permanent single-currency SDG-only; no multi-currency or FX.
 - [ ] T002 Inventory all monetary tables, catalog prices, write RPCs, triggers, and reports; classify which must carry currency provenance.
 - [ ] T003 Reconcile current Production/QA migration ledgers and deployed financial RPC definitions against canonical repository sources. Do not apply migrations.
 - [ ] T004 Confirm historical/soft-deleted record policy and approved receipt display format (ISO code plus localized label).
@@ -43,7 +43,7 @@
 
 ## Dependencies
 
-- T001–T004 block all implementation.
+- T002–T004 block implementation until monetary scope, legacy treatment and display contract are complete.
 - T005–T008 must be written and fail before T009–T014.
 - T015–T018 block any release.
 - T019–T022 are separate Production gates; green CI does not authorize deployment or database changes.

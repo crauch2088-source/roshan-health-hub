@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-09
 
-**Status**: Draft — owner policy decision required before implementation
+**Status**: Draft — owner policy decided; implementation and release gates remain open
 
 **Input**: Resolve the historical receipt-currency integrity issue identified during review of PR #181. A printed receipt must show the currency that applied when the transaction was posted, not whatever currency is currently selected in mutable application settings.
 
@@ -69,9 +69,9 @@ An administrator changes the clinic currency only under an explicitly approved p
 
 ### Functional Requirements
 
-- **FR-001**: System MUST persist a validated ISO 4217 currency code with every invoice covered by this feature.
-- **FR-002**: System MUST persist the invoice currency with every payment and MUST reject a payment whose currency does not match its invoice.
-- **FR-003**: System MUST persist the same currency code on the cashbox ledger entry generated from a payment.
+- **FR-001**: System MUST persist the fixed ISO 4217 code `SDG` with every invoice covered by this feature.
+- **FR-002**: System MUST persist `SDG` with every payment and MUST reject a payment whose currency does not match its invoice.
+- **FR-003**: System MUST persist the `SDG` on every cashbox ledger entry generated from a payment.
 - **FR-004**: Receipt rendering MUST use saved transaction currency provenance and MUST NOT derive a historical receipt's currency from the current `system_settings.currency` value.
 - **FR-005**: Reversal entries MUST retain the original transaction currency.
 - **FR-006**: Monetary writes MUST remain atomic and use the existing authorized RPC/write boundary; browser clients MUST NOT gain direct financial-table write privileges.
@@ -82,14 +82,14 @@ An administrator changes the clinic currency only under an explicitly approved p
 - **FR-011**: The feature MUST preserve idempotency, branch isolation, exact decimal precision, audit attribution, and existing reversal semantics.
 - **FR-012**: No FX rates, FX gains/losses, or cross-currency settlement are included in the initial release unless separately specified and approved.
 
-### Owner Decision Required
+### Owner Policy — Decided
 
-Choose one operating policy before implementation:
+The owner has explicitly selected **single-currency SDG-only operation**. Roshan will use Sudanese pounds (`SDG`) permanently. There is no anticipated business requirement to change the clinic's currency, and no multi-currency or FX capability should be built. Enforce this policy in the authoritative database/write boundary, not only in UI settings. Persist `SDG` on financial records and ledger entries so receipts and reports remain historically self-describing. Any future reversal would require a separate, exceptional, owner-authorized migration and accounting-reconciliation project, not a routine setting.
 
-- **Recommended initial policy**: one clinic currency (currently Production is configured as SDG), immutable after the first monetary record; persist the currency code on financial source and ledger records so historical documents remain self-describing.
-- **Alternative**: multi-currency transactions; each monetary record carries its own currency and all balances/reports are currency-partitioned. FX conversion requires a separate specification.
-
-This feature does not assume the owner has selected either policy.
+- Every monetary write must be denominated in SDG.
+- Attempts to configure or post another currency must fail closed.
+- The current settings value is not historical transaction provenance.
+- No FX rates, conversion, cross-currency settlement, or multi-currency reporting are in scope.
 
 ## Key Entities
 

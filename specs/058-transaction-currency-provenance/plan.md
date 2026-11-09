@@ -4,7 +4,7 @@
 
 ## Summary
 
-Persist transaction currency at the authoritative database write boundary and render historical receipts from saved currency provenance. The current receipt model receives currency from mutable application settings, while the live invoice/payment/cashbox schema has no currency-code fields. The feature must first obtain an explicit owner decision on single-currency locking versus multi-currency operation. No migration or code behavior change is authorized by this draft plan.
+Persist transaction currency at the authoritative database write boundary and render historical receipts from saved currency provenance. The current receipt model receives currency from mutable application settings, while the live invoice/payment/cashbox schema has no currency-code fields. The owner has explicitly decided on permanent SDG-only operation: no currency switching, multi-currency support, or FX features are to be implemented. No migration or code behavior change is authorized by this draft plan.
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Persist transaction currency at the authoritative database write boundary and re
 
 **Constraints**: Atomic RPC-only financial writes; exact decimal precision; branch isolation; idempotency; no Production DDL/DML in this feature PR; no paid dependencies.
 
-**Scale/Scope**: Invoice, payment, cashbox ledger, receipt read model, and the clinic currency-setting boundary. Broader monetary modules must be inventoried before any policy lock is implemented.
+**Scale/Scope**: Invoice, payment, cashbox ledger, receipt read model, and the clinic currency-setting boundary. All monetary domains must be inventoried for the SDG-only invariant before implementation.
 
 ## Constitution Check
 
@@ -77,7 +77,7 @@ tests/
 
 ## Risks and Mitigations
 
-- **Owner policy unresolved**: keep all implementation tasks blocked at T001 until the policy is explicitly accepted.
+- **Owner policy**: decided — permanent SDG-only operation. Implementation remains blocked on complete monetary-scope inventory and canonical-source reconciliation.
 - **Live migration source drift**: compare actual Production/QA function definitions with canonical migration files before creating a forward migration.
 - **Legacy records**: require an evidence-backed backfill or explicitly quarantine non-printable records; never use the current setting as a blanket historical default.
 - **Incomplete monetary scope**: inventory all monetary tables and catalogue prices before implementing any currency-setting lock.

@@ -14,8 +14,8 @@ Represents the clinic's approved operating currency.
 
 - Current Production setting: `system_settings.currency = SDG`.
 - QA currently has no currency setting row.
-- The setting is configuration for new operations, not the source of truth for historical records.
-- Whether the setting is immutable after the first monetary record or supports multi-currency is an owner decision.
+- The setting is display/configuration metadata only. All posted monetary records persist `SDG`; historical receipts read the persisted record, never the setting.
+- Owner policy is decided: `SDG` is the permanent clinic currency; no multi-currency or FX. Database enforcement must reject changes away from SDG.
 
 ### Invoice
 
