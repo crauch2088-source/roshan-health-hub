@@ -71,75 +71,78 @@ BEGIN
 
   -- A default on the child row is not proof that its source record has a known
   -- currency. New payments against legacy NULL-currency invoices must fail closed.
-  IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'payments' THEN
-    SELECT i.currency_code INTO v_parent_currency
-    FROM public.invoices AS i
-    WHERE i.id = NEW.invoice_id
-    FOR KEY SHARE;
-
-    IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
-      RAISE EXCEPTION 'invoice currency provenance is missing or inconsistent'
-        USING ERRCODE = '23514';
-    END IF;
-  ELSIF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'supplier_payments'
-        AND NEW.supplier_bill_id IS NOT NULL THEN
-    SELECT b.currency_code INTO v_parent_currency
-    FROM public.supplier_bills AS b
-    WHERE b.id = NEW.supplier_bill_id
-    FOR KEY SHARE;
-
-    IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
-      RAISE EXCEPTION 'supplier bill currency provenance is missing or inconsistent'
-        USING ERRCODE = '23514';
-    END IF;
-  ELSIF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'cashbox_transactions' THEN
-    IF NEW.source_type = 'reversal' AND NEW.reversal_of IS NULL THEN
-      RAISE EXCEPTION 'cashbox reversal must reference its original ledger row'
-        USING ERRCODE = '23514';
-    END IF;
-
-    IF NEW.reversal_of IS NOT NULL THEN
-      SELECT c.currency_code INTO v_parent_currency
-      FROM public.cashbox_transactions AS c
-      WHERE c.id = NEW.reversal_of
+  IF TG_OP = 'INSERT' THEN
+    IF TG_TABLE_NAME = 'payments' THEN
+      SELECT i.currency_code INTO v_parent_currency
+      FROM public.invoices AS i
+      WHERE i.id = NEW.invoice_id
       FOR KEY SHARE;
 
       IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
-        RAISE EXCEPTION 'reversal currency provenance is missing or inconsistent'
+        RAISE EXCEPTION 'invoice currency provenance is missing or inconsistent'
           USING ERRCODE = '23514';
       END IF;
-    ELSIF NEW.source_type = 'payment' THEN
-      SELECT p.currency_code INTO v_parent_currency
-      FROM public.payments AS p
-      WHERE p.id = NEW.source_id
-      FOR KEY SHARE;
+    ELSIF TG_TABLE_NAME = 'supplier_payments' THEN
+      IF NEW.supplier_bill_id IS NOT NULL THEN
+        SELECT b.currency_code INTO v_parent_currency
+        FROM public.supplier_bills AS b
+        WHERE b.id = NEW.supplier_bill_id
+        FOR KEY SHARE;
 
-      IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
-        RAISE EXCEPTION 'source payment currency provenance is missing or inconsistent'
+        IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
+          RAISE EXCEPTION 'supplier bill currency provenance is missing or inconsistent'
+            USING ERRCODE = '23514';
+        END IF;
+      END IF;
+    ELSIF TG_TABLE_NAME = 'cashbox_transactions' THEN
+      IF NEW.source_type = 'reversal' AND NEW.reversal_of IS NULL THEN
+        RAISE EXCEPTION 'cashbox reversal must reference its original ledger row'
           USING ERRCODE = '23514';
       END IF;
-    ELSIF NEW.source_type = 'expense' THEN
-      SELECT e.currency_code INTO v_parent_currency
-      FROM public.expenses AS e
-      WHERE e.id = NEW.source_id
-      FOR KEY SHARE;
 
-      IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
-        RAISE EXCEPTION 'source expense currency provenance is missing or inconsistent'
-          USING ERRCODE = '23514';
-      END IF;
-    ELSIF NEW.source_type = 'supplier_payment' THEN
-      SELECT sp.currency_code INTO v_parent_currency
-      FROM public.supplier_payments AS sp
-      WHERE sp.id = NEW.source_id
-      FOR KEY SHARE;
+      IF NEW.reversal_of IS NOT NULL THEN
+        SELECT c.currency_code INTO v_parent_currency
+        FROM public.cashbox_transactions AS c
+        WHERE c.id = NEW.reversal_of
+        FOR KEY SHARE;
 
-      IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
-        RAISE EXCEPTION 'source supplier payment currency provenance is missing or inconsistent'
-          USING ERRCODE = '23514';
+        IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
+          RAISE EXCEPTION 'reversal currency provenance is missing or inconsistent'
+            USING ERRCODE = '23514';
+        END IF;
+      ELSIF NEW.source_type = 'payment' THEN
+        SELECT p.currency_code INTO v_parent_currency
+        FROM public.payments AS p
+        WHERE p.id = NEW.source_id
+        FOR KEY SHARE;
+
+        IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
+          RAISE EXCEPTION 'source payment currency provenance is missing or inconsistent'
+            USING ERRCODE = '23514';
+        END IF;
+      ELSIF NEW.source_type = 'expense' THEN
+        SELECT e.currency_code INTO v_parent_currency
+        FROM public.expenses AS e
+        WHERE e.id = NEW.source_id
+        FOR KEY SHARE;
+
+        IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
+          RAISE EXCEPTION 'source expense currency provenance is missing or inconsistent'
+            USING ERRCODE = '23514';
+        END IF;
+      ELSIF NEW.source_type = 'supplier_payment' THEN
+        SELECT sp.currency_code INTO v_parent_currency
+        FROM public.supplier_payments AS sp
+        WHERE sp.id = NEW.source_id
+        FOR KEY SHARE;
+
+        IF NOT FOUND OR v_parent_currency IS DISTINCT FROM NEW.currency_code THEN
+          RAISE EXCEPTION 'source supplier payment currency provenance is missing or inconsistent'
+            USING ERRCODE = '23514';
+        END IF;
       END IF;
     END IF;
-  END IF;
+  END IF;;
 
   RETURN NEW;
 END;
