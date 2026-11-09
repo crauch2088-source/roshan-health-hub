@@ -13,17 +13,17 @@
 
 ## Phase 1 — Test-first database contract
 
-- [ ] T005 Add failing PostgreSQL 17 tests for invoice currency capture, payment inherits invoice currency, and cashbox ledger currency matches payment.
-- [ ] T006 Add failing tests for missing/invalid currency, mismatched currency, idempotent retry after setting change, and rollback of all partial writes.
-- [ ] T007 Add failing reversal tests proving the original and reversal retain the same currency.
-- [ ] T008 Add privilege/branch tests proving no direct browser DML and no cross-branch receipt disclosure.
+- [x] T005 Add PostgreSQL 17 tests for invoice currency capture, payment inheritance from a persisted SDG invoice, and source-ledger currency matching.
+- [x] T006 Cover explicit NULL/non-SDG rejection, legacy-parent NULL rejection with no partial payment row, immutable posted currency, and idempotent payment retry. The permanent SDG-only decision removes any mutable currency-setting input from the write contract.
+- [x] T007 Cover valid reversal currency retention and reject reversals whose original ledger currency is unknown or inconsistent.
+- [x] T008 Cover RPC-only finance writes, permission and branch guards, and no cross-branch receipt disclosure in disposable PostgreSQL 17 fixtures.
 
 ## Phase 2 — Authorized write and read implementation
 
 - [ ] T009 Create a reviewed forward migration with currency columns, constraints, indexes only if justified, and an evidence-backed legacy-row strategy.
-- [ ] T010 Update the invoice creation RPC to persist the authoritative currency at invoice creation.
-- [ ] T011 Update `post_invoice_payment` to copy the locked invoice currency and include it in idempotency semantics.
-- [ ] T012 Update payment ledger triggers and reversal RPCs to preserve currency provenance atomically.
+- [x] T010 Keep `create_invoice_atomic` signature stable; the database default/trigger persists SDG on invoice creation. The real RPC path is exercised after Phase 58 in the PG17 invoice integration job.
+- [x] T011 Keep `post_invoice_payment` signature stable; the BEFORE INSERT trigger requires the locked source invoice to carry persisted SDG, rejecting legacy NULL invoices. The actual RPC, idempotent retry and no-partial-write behavior are covered by the finance-only PG17 workflow.
+- [x] T012 Keep existing environment-specific ledger/reversal RPC bodies intact; database triggers require source-ledger and reversal currency equality. PG17 integration covers payment, expense, supplier-payment and reversal source relationships.
 - [x] T013 Add candidate `get_invoice_payment_receipt_status_v2(uuid[])` with permission/branch guards, source-ledger uniqueness checks, and payment/invoice/cashbox/reversal currency outputs. Legacy NULL and inconsistent provenance returns a negative currency match.
 - [x] T014 Update the PR #181 receipt model/route to use persisted currency only; require all applicable records to agree on SDG and fail closed for legacy NULL, missing, duplicate, or mismatched ledger provenance. The UI branch remains dependent on PR #211/Phase 59 and is not deployable alone.
 
@@ -57,3 +57,10 @@
 - [ ] T004 Legacy-row evidence and official receipt/reprint policy remain open. NULL provenance is not inferred from settings.
 
 PR #211 now contains Phase 58 schema guards plus Phase 59 receipt-currency RPC and disposable PostgreSQL 17 integration tests. The Phase 58 and Phase 59 PostgreSQL 17 jobs passed on the candidate branch. Full exact-head CI and independent review remain in progress. PR #181 was updated separately and must be rebased/revalidated after #211 is merged. No hosted migration or historical backfill has occurred.
+
+
+## Candidate implementation note — 2026-11-09
+
+The approved single-currency policy makes RPC replacement unnecessary and less safe than enforcing provenance at the database write boundary. Phase 58 uses a private trigger to apply SDG defaults and validate parent/source relationships while preserving the existing Production/QA RPC definitions. Phase 59 adds a branch-guarded receipt read RPC; PR #181 consumes only persisted values and remains non-printable for legacy NULL or inconsistent records.
+
+At head `70becde517557cfb18c2718988fe0cf9f5c712a8`, focused PG17 Phase 58/59, invoice RPC, finance RPC, security-bundle and insurance UI checks passed. Exact-head full CI and independent review remain open. Hosted QA/Production apply and authenticated staff/print acceptance remain blocked.

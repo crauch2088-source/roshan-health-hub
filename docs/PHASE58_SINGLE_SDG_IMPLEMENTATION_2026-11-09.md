@@ -41,3 +41,21 @@ The disposable PostgreSQL 17 workflow covers all seven tables: new-row defaults,
 - Production/QA migration and financial function provenance must be reconciled before hosted application.
 - Legacy NULL records must remain non-printable until a separately approved evidence-backed reconciliation.
 - QA and Production migration application require separate explicit owner approval.
+
+
+## Parent/source currency integrity follow-up — 2026-11-09
+
+The private BEFORE INSERT trigger now also validates source provenance:
+
+- `payments.invoice_id` must resolve to an invoice whose persisted `currency_code` equals the new payment currency. A legacy NULL-currency invoice therefore cannot accept a new payment until a separately approved evidence-backed reconciliation exists.
+- A `supplier_payments` row linked to a supplier bill must match that bill's persisted currency.
+- Cashbox rows sourced from `payment`, `expense`, or `supplier_payment` must match the source record. Reversal rows must reference an original cashbox row with the same currency; a row labelled as a reversal without `reversal_of` is rejected.
+- The trigger uses nested table-name branches so it never dereferences a `NEW` field that is absent from the target table.
+- This keeps the existing RPC signatures and environment-specific security-definer function bodies unchanged. The permanent SDG invariant is enforced at the database write boundary.
+
+Additional PG17 evidence:
+- The invoice atomicity workflow now applies Phase 58 and asserts the real `create_invoice_atomic` RPC persists SDG.
+- The finance-only RPC workflow applies Phase 27, the finite-expense guard, and Phase 58 before exercising `post_invoice_payment` and `post_expense`. It proves a legacy NULL-currency invoice rejects a payment without leaving a payment row, while new SDG invoice/payment/expense/supplier-bill paths pass.
+- The security-candidate bundle's finance matrix and combined-schema replay also include Phase 58 in the same psql session as fixture and integration assertions, preserving session-scoped auth/permission settings.
+
+At candidate head `70becde517557cfb18c2718988fe0cf9f5c712a8`, focused Phase 58, Phase 59, invoice atomicity, finance-only RPC, security bundle, and insurance UI validation passed. Full main CI was still running. No hosted database was changed.

@@ -2791,3 +2791,15 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 3. Reconcile live migration/function source provenance before any hosted application.
 4. Decide and evidence the treatment of existing NULL-provenance rows before receipts/reprints are enabled.
 5. Separate owner approval for QA application, then separate approval for any Production migration.
+
+
+## Phase 58/59 verification update — 2026-11-09, candidate head `70becde517557cfb18c2718988fe0cf9f5c712a8`
+
+- The SDG guard now validates source relationships, not only the child row's default: a new payment must reference an invoice whose persisted currency is SDG; a supplier payment linked to a bill must match that bill; cashbox rows sourced from payments, expenses, supplier payments, or reversals must match their source row.
+- A payment against a legacy invoice with NULL currency is rejected before insertion. Legacy rows remain NULL; no setting-derived historical inference or backfill is introduced.
+- PostgreSQL 17 coverage now includes the actual `create_invoice_atomic` path (new invoice persists SDG), actual `post_invoice_payment` and `post_expense` finance RPC paths, legacy invoice rejection, idempotent payment retry, source-linked ledger currency checks, supplier-bill linkage, and reversal currency checks.
+- The security-candidate bundle's isolated finance matrix and combined-schema workflow now apply Phase 58 in the same psql session as their fixtures and assertions, preserving session-scoped test identity/permission settings.
+- Exact-head evidence on `70becde...`: Phase 58 PG17, Phase 59 PG17, atomic invoice integration, finance-only RPC integration, security-candidate bundle, insurance claim validation and CodeQL passed. Main CI remained in progress at the time this note was written.
+- PR #211 and dependent PR #181 remain Draft. No hosted migration, historical backfill, Production DDL/DML, role/grant/RLS/Auth/Storage change, or deployment promotion occurred.
+
+**Release gates remain unchanged:** independent SQL/security review, exact-head full CI, Production/QA migration and function-source reconciliation, evidence-backed legacy policy, separate QA/Production approvals, authenticated finance/pharmacist acceptance, and Android/A4 print acceptance.
