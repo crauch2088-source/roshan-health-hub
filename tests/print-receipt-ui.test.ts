@@ -48,7 +48,7 @@ test("receipt UI is not enabled by the unsaved payment form and fails closed whe
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   assert.match(source, /can\("payments\.read"\) && paymentIds\.length > 0/);
   assert.match(source, /receiptStatusQ\.error/);
-  assert.match(source, /Receipt printing is unavailable in this environment/);
+  assert.match(source, /Receipt printing is unavailable until payment-ledger and persisted-currency verification are deployed/);
   assert.match(source, /receipt\?\.complete \?/);
   assert.doesNotMatch(source, /onClick=\{\(\) => handlePrintPayment\(amount\)\}/);
 });

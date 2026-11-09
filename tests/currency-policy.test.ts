@@ -25,5 +25,7 @@ test("system settings cannot edit or overwrite the fixed currency", () => {
 test("all receipt and invoice views use the same fixed currency source", () => {
   const receipt = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   assert.match(receipt, /ROSHAN_CURRENCY/);
-  assert.match(receipt, /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/);
+  assert.match(receipt, /money\(n\(invoice, "net_amount"\), ROSHAN_CURRENCY\)/);
+  assert.match(receipt, /buildInvoicePaymentReceiptModel\(payment, invoice, ledger, cashierName\)/);
+  assert.doesNotMatch(receipt, /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/);
 });

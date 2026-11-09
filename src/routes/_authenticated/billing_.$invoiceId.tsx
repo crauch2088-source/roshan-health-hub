@@ -34,7 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { ROSHAN_CURRENCY, n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -76,7 +76,7 @@ function InvoicePageInner() {
 
   const { t, lang } = useLang();
   const { can, user } = useAuth();
-  const { currency, settings } = useSettings();
+  const { settings } = useSettings();
 
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("cash");
@@ -319,9 +319,9 @@ function InvoicePageInner() {
 
                       <TableCell dir="ltr">{n(item, "quantity")}</TableCell>
 
-                      <TableCell>{money(n(item, "unit_price"), currency)}</TableCell>
+                      <TableCell>{money(n(item, "unit_price"), ROSHAN_CURRENCY)}</TableCell>
 
-                      <TableCell>{money(n(item, "total_price"), currency)}</TableCell>
+                      <TableCell>{money(n(item, "total_price"), ROSHAN_CURRENCY)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -332,31 +332,31 @@ function InvoicePageInner() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("subtotal")}</span>
 
-                <span>{money(n(invoice, "total_amount"), currency)}</span>
+                <span>{money(n(invoice, "total_amount"), ROSHAN_CURRENCY)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("discount")}</span>
 
-                <span>{money(n(invoice, "discount_amount"), currency)}</span>
+                <span>{money(n(invoice, "discount_amount"), ROSHAN_CURRENCY)}</span>
               </div>
 
               <div className="flex justify-between font-semibold">
                 <span>{t("net")}</span>
 
-                <span>{money(n(invoice, "net_amount"), currency)}</span>
+                <span>{money(n(invoice, "net_amount"), ROSHAN_CURRENCY)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("paid")}</span>
 
-                <span>{money(n(invoice, "paid_amount"), currency)}</span>
+                <span>{money(n(invoice, "paid_amount"), ROSHAN_CURRENCY)}</span>
               </div>
 
               <div className="flex justify-between font-semibold text-primary">
                 <span>{t("balance")}</span>
 
-                <span>{money(balance, currency)}</span>
+                <span>{money(balance, ROSHAN_CURRENCY)}</span>
               </div>
             </div>
             {settings["invoice_footer"] && (
@@ -438,7 +438,7 @@ function InvoicePageInner() {
                           key={s(payment, "id")}
                           className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2"
                         >
-                          <span>{money(n(payment, "amount"), currency)}</span>
+                          <span>{money(n(payment, "amount"), ROSHAN_CURRENCY)}</span>
                           <span className="text-muted-foreground">
                             {t(s(payment, "payment_method") || s(payment, "method"))} ·{" "}
                             {formatDateTime(s(payment, "received_at") || s(payment, "created_at"))}
