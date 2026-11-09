@@ -45,7 +45,6 @@ The owner has explicitly decided that Roshan is a **permanent SDG-only clinic sy
 
 
 
-1. Owner policy: single immutable clinic currency or multi-currency?
-2. Which monetary tables and price catalogues must be included in the setting-change lock or currency provenance model? Current inventory includes invoices, invoice items, payments, cashbox transactions, expenses, insurance claims/payments, supplier bills/payments, lab/procedure/service prices, and pharmacy inventory prices.
-3. How should legacy soft-deleted records be treated if historical reprint is later enabled for them?
-4. Does the owner require a displayed currency symbol, an ISO code, or both on official receipts? The safe default is ISO code plus localized display name.
+1. Complete the inventory of every monetary table, catalogue price, write RPC, trigger, report and export so the SDG-only invariant covers all financial surfaces.
+2. Determine evidence-backed treatment of any legacy soft-deleted monetary records with missing provenance before enabling historical reprints.
+3. Confirm the localized display presentation of SDG (ISO code plus approved Arabic/English label); the stored canonical code remains `SDG`.

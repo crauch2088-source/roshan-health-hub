@@ -3,7 +3,7 @@
 ## Currency Code
 
 - **Representation**: ISO 4217 three-letter code (for example, `SDG`).
-- **Validation**: Must match the supported currency registry and be uppercase.
+- **Validation**: Must equal the literal uppercase code `SDG`; no currency registry or selector is needed.
 - **Immutability**: Currency is immutable after the monetary record is posted. Corrections use an audited reversal/reissue workflow, never an in-place currency relabel.
 
 ## Entities
@@ -21,7 +21,7 @@ Represents the clinic's approved operating currency.
 
 Proposed attribute:
 
-- `currency_code`: non-null ISO 4217 code captured at invoice creation.
+- `currency_code`: non-null, CHECK-constrained literal `SDG`, assigned at invoice creation.
 
 Invariant:
 
@@ -32,7 +32,7 @@ Invariant:
 
 Proposed attribute:
 
-- `currency_code`: non-null ISO 4217 code copied from the locked parent invoice during payment posting.
+- `currency_code`: non-null literal `SDG`, copied from the locked parent invoice during payment posting.
 
 Invariants:
 
@@ -45,8 +45,8 @@ Invariants:
 
 Proposed attribute:
 
-- `currency_code`: non-null ISO 4217 code inherited from its source payment or reversal.
-- Manual cashbox entries use the approved clinic currency at posting time.
+- `currency_code`: non-null literal `SDG`, inherited from its source payment or reversal.
+- Manual cashbox entries are assigned `SDG` internally at posting time.
 
 Invariants:
 

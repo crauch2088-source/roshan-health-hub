@@ -13,16 +13,16 @@
 
 ## Phase 1 — Test-first database contract
 
-- [ ] T005 Add failing PostgreSQL 17 tests for invoice currency capture, payment inherits invoice currency, and cashbox ledger currency matches payment.
-- [ ] T006 Add failing tests for missing/invalid currency, mismatched currency, idempotent retry after setting change, and rollback of all partial writes.
+- [ ] T005 Add failing PostgreSQL 17 tests proving invoice, payment, cashbox and reversal currency is always SDG.
+- [ ] T006 Add failing tests rejecting non-SDG/missing currency, proving idempotent retries preserve SDG, and proving rollback of all partial writes.
 - [ ] T007 Add failing reversal tests proving the original and reversal retain the same currency.
 - [ ] T008 Add privilege/branch tests proving no direct browser DML and no cross-branch receipt disclosure.
 
 ## Phase 2 — Authorized write and read implementation
 
-- [ ] T009 Create a reviewed forward migration with currency columns, constraints, indexes only if justified, and an evidence-backed legacy-row strategy.
-- [ ] T010 Update the invoice creation RPC to persist the authoritative currency at invoice creation.
-- [ ] T011 Update `post_invoice_payment` to copy the locked invoice currency and include it in idempotency semantics.
+- [ ] T009 Create a reviewed forward migration with SDG-only currency columns/constraints and an evidence-backed legacy-row strategy.
+- [ ] T010 Update invoice creation RPCs to assign and persist SDG internally.
+- [ ] T011 Update `post_invoice_payment` to require the locked invoice currency to be SDG and preserve it in idempotency semantics.
 - [ ] T012 Update payment ledger triggers and reversal RPCs to preserve currency provenance atomically.
 - [ ] T013 Update the authorized receipt read path to return persisted currency and validate invoice/payment/ledger agreement.
 - [ ] T014 Update `buildInvoicePaymentReceiptModel` to use persisted currency and remove mutable settings fallback.
@@ -37,7 +37,7 @@
 ## Phase 4 — Release gate
 
 - [ ] T019 Reconcile Production and QA live migration ledgers and canonical migration sources.
-- [ ] T020 Obtain explicit owner approval for the migration/backfill and Production release plan.
+- [ ] T020 Obtain explicit approval for the migration/backfill and Production release plan; this is separate from the now-recorded SDG-only policy decision.
 - [ ] T021 Apply only through the approved migration/release workflow after encrypted backup and isolated restore evidence; never create synthetic Production data.
 - [ ] T022 Complete finance staff acceptance and update the Master Plan with evidence.
 

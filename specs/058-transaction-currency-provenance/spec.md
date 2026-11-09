@@ -16,7 +16,7 @@ A cashier with the required permissions opens a previously posted payment and pr
 
 **Why this priority**: A currency label is part of the amount's meaning. Relabelling an old amount can create a materially false financial document.
 
-**Independent Test**: Create a synthetic QA invoice and payment with a known currency, change the current display setting in a disposable test fixture, reload the saved payment, and verify that the receipt still displays the original currency. No Production records are used.
+**Independent Test**: Create a synthetic QA invoice and payment with a known currency, change a test-only display preference, reload the saved payment, and verify that the receipt still displays the original currency. No Production records are used.
 
 **Acceptance Scenarios**:
 
@@ -34,24 +34,25 @@ When an invoice or payment is posted, the system records the applicable currency
 
 **Acceptance Scenarios**:
 
-1. **Given** a valid configured currency, **When** an invoice is created, **Then** its currency code is saved atomically with the invoice.
-2. **Given** an invoice with a saved currency, **When** a payment is posted, **Then** the payment copies the invoice currency rather than reading a newer display setting.
+1. **Given** the fixed SDG currency, **When** an invoice is created, **Then** its currency code is saved atomically with the invoice.
+2. **Given** an invoice with a saved currency, **When** a payment is posted, **Then** the payment copies the invoice's persisted SDG provenance rather than reading a newer display setting.
 3. **Given** a payment ledger row, **When** the payment is reversed, **Then** the reversal retains the original currency code and amount sign semantics.
-4. **Given** a request with a missing or unsupported currency, **When** a monetary write is attempted, **Then** the RPC fails closed without creating partial invoice, payment, or ledger state.
+4. **Given** a request with a missing or non-SDG currency, **When** a monetary write is attempted, **Then** the RPC fails closed without creating partial invoice, payment, or ledger state.
 
-### User Story 3 — Change the clinic currency without corrupting existing records (Priority: P2)
+### User Story 3 — Enforce permanent SDG-only operation (Priority: P1)
 
-An administrator changes the clinic currency only under an explicitly approved policy. Historical invoices, payments, cashbox entries, supplier balances, expenses, and catalogue prices must never be silently relabelled.
+Roshan operates exclusively in Sudanese pounds (SDG). Administrators cannot select, switch, or add another currency. Every monetary record is denominated in SDG.
 
-**Why this priority**: Currency configuration affects every displayed monetary value, not only receipts.
+**Why this priority**: This reflects the clinic's actual operating model and avoids unnecessary multi-currency and FX complexity. Persisted SDG provenance prevents historical receipts from being relabelled by a mutable setting.
 
-**Independent Test**: Use synthetic QA data to verify the approved policy's behavior when an administrator attempts a currency change after monetary records exist.
+**Independent Test**: In disposable PostgreSQL 17, attempt to change the clinic currency and post a non-SDG monetary record; both must fail without partial writes. Reprint a posted SDG receipt after changing a test-only display preference and verify it remains SDG.
 
 **Acceptance Scenarios**:
 
-1. **Given** the clinic has no monetary records, **When** an administrator selects the initial currency, **Then** the setting is validated and stored.
-2. **Given** monetary records exist, **When** an administrator attempts to change the clinic currency, **Then** the system follows the owner-approved single-currency lock or explicitly supported multi-currency workflow.
-3. **Given** reports contain records in more than one currency, **When** totals are calculated, **Then** values are grouped by currency unless a separately specified and auditable FX conversion is used.
+1. **Given** the clinic currency is SDG, **When** an administrator attempts to change it, **Then** the database rejects the change.
+2. **Given** an invoice, payment, cashbox entry, or reversal is posted, **When** its provenance is inspected, **Then** its stored currency code is SDG.
+3. **Given** a request attempts to submit a non-SDG currency, **When** a monetary write is attempted, **Then** the RPC rejects it and creates no partial financial or ledger state.
+4. **Given** an old receipt is reprinted, **When** a display preference changes, **Then** the receipt still displays SDG.
 
 ## Edge Cases
 
@@ -70,17 +71,17 @@ An administrator changes the clinic currency only under an explicitly approved p
 ### Functional Requirements
 
 - **FR-001**: System MUST persist the fixed ISO 4217 code `SDG` with every invoice covered by this feature.
-- **FR-002**: System MUST persist `SDG` with every payment and MUST reject a payment whose currency does not match its invoice.
-- **FR-003**: System MUST persist the `SDG` on every cashbox ledger entry generated from a payment.
+- **FR-002**: System MUST persist `SDG` with every payment and MUST reject a payment whose currency is not SDG or does not match its invoice.
+- **FR-003**: System MUST persist `SDG` on every cashbox ledger entry, including payment and reversal entries.
 - **FR-004**: Receipt rendering MUST use saved transaction currency provenance and MUST NOT derive a historical receipt's currency from the current `system_settings.currency` value.
 - **FR-005**: Reversal entries MUST retain the original transaction currency.
 - **FR-006**: Monetary writes MUST remain atomic and use the existing authorized RPC/write boundary; browser clients MUST NOT gain direct financial-table write privileges.
 - **FR-007**: A receipt with missing, invalid, or contradictory currency provenance MUST fail closed and MUST NOT print an inferred currency.
 - **FR-008**: Historical rows MUST NOT be backfilled from a mutable setting unless a separately reviewed evidence record proves the correct currency for every affected row.
-- **FR-009**: The system MUST prevent silent currency changes from relabelling catalogue prices, balances, invoices, payments, expenses, supplier records, or cashbox entries.
-- **FR-010**: Reports MUST NOT sum amounts across currencies without explicit, auditable conversion rules.
+- **FR-009**: The system MUST enforce SDG as the only permitted currency at authorized database write boundaries and reject attempts to configure or post another currency.
+- **FR-010**: The system MUST NOT implement FX rates, FX gains/losses, currency conversion, or multi-currency reporting.
 - **FR-011**: The feature MUST preserve idempotency, branch isolation, exact decimal precision, audit attribution, and existing reversal semantics.
-- **FR-012**: No FX rates, FX gains/losses, or cross-currency settlement are included in the initial release unless separately specified and approved.
+- **FR-012**: No FX rates, FX gains/losses, cross-currency settlement, currency switching, or multi-currency support are in scope.
 
 ### Owner Policy — Decided
 
@@ -114,4 +115,4 @@ The owner has explicitly selected **single-currency SDG-only operation**. Roshan
 - The current `invoices`, `payments`, and `cashbox_transactions` tables have no currency-code column.
 - PR #181 currently passes a mutable `currencyValue` into the receipt model builder.
 - Phase54C receipt-integrity RPC exists in QA only; Production migration head remains earlier.
-- These facts do not establish a policy decision or authorize a migration.
+- The owner policy is now decided; these facts do not authorize a migration or Production change.
