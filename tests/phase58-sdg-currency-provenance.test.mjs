@@ -68,6 +68,12 @@ test("Phase 58 binds source-ledger and reversal currency to their original recor
   assert.match(migration, /reversal currency provenance is missing or inconsistent/);
   assert.match(integration, /cashbox ledger accepted a payment with unknown currency provenance/);
   assert.match(integration, /cashbox ledger accepted an expense with unknown currency provenance/);
-  assert.match(integration, /cashbox ledger accepted a supplier payment with unknown currency provenance/);
-  assert.match(integration, /cashbox reversal accepted an original row with unknown currency provenance/);
+  assert.match(
+    integration,
+    /cashbox ledger accepted a supplier payment with unknown currency provenance/,
+  );
+  assert.match(
+    integration,
+    /cashbox reversal accepted an original row with unknown currency provenance/,
+  );
 });
