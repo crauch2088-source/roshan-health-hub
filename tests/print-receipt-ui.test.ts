@@ -51,11 +51,16 @@ test("receipt UI is not enabled by the unsaved payment form and fails closed whe
   assert.doesNotMatch(source, /onClick=\{\(\) => handlePrintPayment\(amount\)\}/);
 });
 
-
 test("historical payment receipts use Roshan's fixed SDG currency, not mutable display settings", () => {
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   const receiptModel = read("src/lib/print/receipt.ts");
   assert.match(receiptModel, /export const ROSHAN_CURRENCY = "SDG"/);
-  assert.match(source, /buildInvoicePaymentReceiptModel\(payment, invoice, ledger, cashierName, ROSHAN_CURRENCY\)/);
-  assert.doesNotMatch(source, /buildInvoicePaymentReceiptModel\(payment, invoice, ledger, cashierName, currency\)/);
+  assert.match(
+    source,
+    /buildInvoicePaymentReceiptModel\\(payment, invoice, ledger, cashierName, ROSHAN_CURRENCY\\)/,
+  );
+  assert.doesNotMatch(
+    source,
+    /buildInvoicePaymentReceiptModel\\(payment, invoice, ledger, cashierName, currency\\)/,
+  );
 });
