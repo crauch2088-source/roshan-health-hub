@@ -34,6 +34,17 @@ This update supersedes the earlier statements below that device-side decryptabil
 
 **Release boundary:** successful backup and recovery do not authorize Production Phase 57, Phase 54C promotion, production DDL/DML, permission changes, deployment promotion, or clinical launch. No production business data is to be used for acceptance testing.
 
+
+## Live operational and ledger recheck — 2026-11-09
+
+- Main `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`: CI [42576306597](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42576306597) passed 18 jobs with one intentional clinical-acceptance skip; Finance [42576306524](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42576306524) and Spec Kit [42576306592](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42576306592) passed. PR #204 merged at this main SHA after its exact-head CI/Spec Kit/PR checks passed.
+- Eight open PRs: #205, #181, #191, #157, #189, #185, #179, #112. Issue #199 remains open. PR #191 is 12 ahead/5 behind main and dirty; PR #189 is 18 ahead/5 behind and dirty.
+- Live migration version/name/hash comparison is documented in [`LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md`](LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md). Production 129 rows, QA 22; only three shared version IDs and all three differ in name and stored statement fingerprint. Production Phase 57 is absent; QA Phase 57 is applied.
+- Supabase health advisors are empty in both projects. Security: Production 2 private RLS/no-policy INFO, 1 public extension WARN, 1 anon SECURITY DEFINER WARN, 26 authenticated SECURITY DEFINER WARN, 1 leaked-password WARN; QA 1, 1, 1, 28, 1. Performance: Production 2 unindexed foreign keys and 94 unused indexes; QA 142 unused indexes. No blanket permission or index changes.
+- READY deployment `dpl_E5m6Z8CLf3uaFRwt1dAxiRMpADPv` continues to serve `roshan-health-hub.vercel.app`, `aliasError=null`. Main is 12 commits ahead of the deployed application SHA but the delta is workflows/docs/specs only; no runtime source files changed. Latest main docs deployment `dpl_4oLUkdtUMbEE82VPzrefUJba7nWa` was CANCELED by the expected ignore-build path.
+- Encrypted Drive backup remains present; owner-device checksum/decryption/archive-readability and runner-side PostgreSQL 17 restore are evidenced by run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237). Latest overall run [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) was validation-only: backup skipped, no artifact. Current runner main's portable checksum-manifest helper has not had a full backup/restore run.
+- Release remains blocked by full source/effective-catalog reconciliation, Production Phase 57, pharmacist/doctor acceptance, staff UAT, physical print acceptance, and persisted transaction-currency provenance. Clinical E2E remains deferred until an isolated free environment and synthetic doctor/pharmacist identities are available.
+
 ## 1. Encrypted Production backup — completed
 
 - Private runner PR [#2](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/2) is merged at `07ca69125da7cc702f9306da55cccf4916146b2f`.
