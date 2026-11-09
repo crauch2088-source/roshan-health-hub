@@ -13,10 +13,11 @@ const financialTables = [
 test("Phase 58 covers every approved financial source and ledger table", () => {
   for (const table of financialTables) {
     assert.match(migration, new RegExp("'" + table + "'"));
-    assert.match(migration, new RegExp("trg_" + table + "_sdg_currency"));
   }
-  assert.match(migration, /SET DEFAULT 'SDG'/);
-  assert.match(migration, /currency_code IS NULL OR currency_code = 'SDG'/);
+  assert.match(migration, /trg_%s_sdg_currency/);
+  assert.match(migration, /ALTER COLUMN currency_code SET DEFAULT %L/);
+  assert.match(migration, /currency_code IS NULL OR currency_code = %L/);
+  assert.match(migration, /v_table, 'SDG'/);
 });
 
 test("Phase 58 preserves unknown legacy rows without a settings-derived backfill", () => {
