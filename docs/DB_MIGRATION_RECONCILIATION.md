@@ -803,3 +803,24 @@ A single read-only catalog query was run against both environments for public/pr
 The two differing write functions are release-critical. The QA-only reversal RPCs must not be assumed to exist in Production or be called by an application release until their exact source, grants, branch guards, and audit/ledger effects have been independently reconciled. The new Phase 59 receipt RPC is an additive candidate in PR #211; it has not been installed in either hosted environment.
 
 This fingerprint inventory supplements (does not replace) the migration-ledger comparison above. It does not authorize replacing functions, synchronizing migration histories, or deploying QA-only RPCs.
+
+
+### Functional meaning of the deployed finance/pharmacy definition drift
+
+The live definitions were read with `pg_get_functiondef` (read-only) to distinguish harmless formatting from behavioral drift:
+
+1. **Prescription dispensing — `fn_dispense_prescription_with_invoice(uuid, boolean)`:**
+   - Production uses `COALESCE(pi.quantity, 1)` in the dispense selection and stock aggregation. A missing prescription quantity is therefore treated as one unit.
+   - QA explicitly rejects any active prescription item with `quantity IS NULL` before invoice construction, stock locks, or mutation, with `prescription quantity is required`; the stock aggregation then uses the persisted quantity directly.
+   - This is a clinically significant safety difference. Phase 57's candidate/QA behavior is the intended fail-closed direction. Production must not be considered quantity-safe until the reviewed forward migration is separately applied and read back.
+
+2. **Generic cashbox reversal — `reverse_cashbox_entry(uuid, text)`:**
+   - Production's shorter implementation checks the basic permission/reason, locks the original row, and creates a reversal, but does not enforce the QA version's active application-user check, non-null branch binding, and explicit branch authorization in the same manner.
+   - QA also rejects generic reversal of payment, supplier-payment, and insurance-claim-payment ledger sources; those require their source-specific reversal workflow. It verifies the original row remains unreversed at update time and uses explicit SQLSTATEs.
+   - This is a behavior/security difference, not a candidate to resolve by copying QA's body blindly. Reconcile against the canonical repository source, existing triggers, and Phase 54 source-aware reversal contract first.
+
+3. **Invoice-payment reversal — `reverse_invoice_payment(uuid, text)`:**
+   - QA alone has this RPC. It locks invoice then payment (matching the payment-posting lock order), checks active invoice/payment state, branch equality and caller branch, locates and locks the original payment ledger row, validates amount/branch consistency, creates a reversal row, marks the original ledger reversed, soft-deletes the payment, and relies on the existing recompute/audit triggers.
+   - Production has no function with this signature. Any future application change that calls it would fail in Production until a reviewed Production migration exists. Its grants and source must be separately reconciled; it is not part of the current Phase 58/59 candidate.
+
+These differences are now explicit release blockers in addition to the migration-ledger collisions. Do not infer that QA is a complete Production mirror or promote a UI path solely because it works in QA.
