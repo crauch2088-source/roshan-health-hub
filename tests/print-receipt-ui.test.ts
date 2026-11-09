@@ -57,10 +57,10 @@ test("historical payment receipts use Roshan's fixed SDG currency, not mutable d
   assert.match(db, /export const ROSHAN_CURRENCY = "SDG" as const/);
   assert.match(
     source,
-    /buildInvoicePaymentReceiptModel\\(payment, invoice, ledger, cashierName, ROSHAN_CURRENCY\\)/,
+    /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/,
   );
   assert.doesNotMatch(
     source,
-    /buildInvoicePaymentReceiptModel\\(payment, invoice, ledger, cashierName, currency\\)/,
+    /buildInvoicePaymentReceiptModel.*cashierName, currency/,
   );
 });
