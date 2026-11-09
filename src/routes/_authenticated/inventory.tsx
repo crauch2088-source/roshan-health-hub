@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Package, Plus, Truck } from "lucide-react";
+import { Package, Pencil, Plus, Truck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +43,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { n, rel, s, usePagedRows, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { DOSAGE_FORMS } from "@/features/clinic/consultation/constants";
 import { useLang } from "@/lib/i18n";
+import {
+  buildMedicineCatalogueInsert,
+  buildMedicineCatalogueIdentityUpdate,
+  buildMedicineCatalogueSearchFilter,
+  type MedicineCatalogueDraft,
+  type MedicineCatalogueIdentityDraft,
+} from "@/lib/medicine-catalogue";
 import { formatDate, money } from "@/lib/medical";
 import {
   DEFAULT_EXPIRY_THRESHOLD_DAYS,
@@ -73,10 +81,35 @@ export const Route = createFileRoute("/_authenticated/inventory")({
 });
 
 const PAGE_SIZE = 25;
+const DOSAGE_FORM_OPTIONS = [
+  ...DOSAGE_FORMS,
+  { value: "other", label: "Other", labelAr: "أخرى" },
+] as const;
+const EMPTY_MEDICINE_FORM: MedicineCatalogueDraft = {
+  name: "",
+  generic_name: "",
+  brand_name: "",
+  strength: "",
+  dosage_form: "",
+  custom_dosage_form: "",
+  unit: "",
+  cost_price: "0",
+  selling_price: "0",
+  reorder_level: "10",
+};
+const EMPTY_MEDICINE_IDENTITY_FORM: MedicineCatalogueIdentityDraft = {
+  name: "",
+  generic_name: "",
+  brand_name: "",
+  strength: "",
+  dosage_form: "",
+  custom_dosage_form: "",
+};
 
-/** Keeps free-text search safe to embed in a PostgREST `.ilike()` filter. */
-function sanitizeSearch(term: string): string {
-  return term.replace(/[,()%]/g, "").trim();
+function dosageFormLabel(value: string, lang: "ar" | "en"): string {
+  const option = DOSAGE_FORM_OPTIONS.find((item) => item.value === value);
+  if (!option) return value;
+  return lang === "ar" ? option.labelAr : option.label;
 }
 
 function ExpiryBadge({ status }: { status: ExpiryStatus }) {
@@ -139,27 +172,23 @@ function InventoryPageInner() {
 }
 
 // =============================================================================
-// Medicines tab — UNCHANGED from the pre-Phase-3 inventory page other than
-// the permission check fix noted inline (pharmacy.manage -> pharmacy.create;
-// pharmacy.manage was never a real permission code in the permissions
-// table, so this button and the one in the old dispense queue were
-// invisible to every non-super-admin role, including the pharmacist role).
+// Medicines tab — normalized product identity, safe catalogue search and stock overview.
+
 // =============================================================================
 
 function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string) => void }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    unit: "",
-    cost_price: "0",
-    selling_price: "0",
-    reorder_level: "10",
-  });
+  const [form, setForm] = useState<MedicineCatalogueDraft>(EMPTY_MEDICINE_FORM);
+  const [editingMedicine, setEditingMedicine] = useState<Row | null>(null);
+  const [identityForm, setIdentityForm] = useState<MedicineCatalogueIdentityDraft>(
+    EMPTY_MEDICINE_IDENTITY_FORM,
+  );
+  const [packChecked, setPackChecked] = useState(false);
 
   const list = usePagedRows<Row[]>(
     ["inventory", search],
@@ -167,13 +196,13 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
       let q = supabase
         .from("medicines")
         .select(
-          "id, name, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date",
+          "id, name, generic_name, brand_name, strength, dosage_form, unit, stock_quantity, reorder_level, selling_price, cost_price, expiry_date",
           { count: "exact" },
         )
         .is("deleted_at", null);
 
-      const term = sanitizeSearch(search);
-      if (term) q = q.ilike("name", `%${term}%`);
+      const filter = buildMedicineCatalogueSearchFilter(search);
+      if (filter) q = q.or(filter);
 
       return q.order("name", { ascending: true }).range(from, to);
     },
@@ -196,24 +225,74 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
 
   const create = useSave(
     async () => {
-      const { error } = await supabase.from("medicines").insert({
-        name: form.name,
-        unit: form.unit || null,
-        cost_price: Number(form.cost_price) || 0,
-        selling_price: Number(form.selling_price) || 0,
-        stock_quantity: 0,
-        reorder_level: Number(form.reorder_level) || 0,
-        expiry_date: null,
-        batch_number: null,
-      });
+      const result = buildMedicineCatalogueInsert(form);
+      if ("error" in result) throw new Error(t(result.error.replace(/-/g, "_")));
+      const { error } = await supabase.from("medicines").insert(result.data);
       if (error) throw new Error(error.message);
       return null;
     },
     {
       invalidate: [["inventory"], ["inventory-stats"], ["medicines"]],
       successMessage: t("saved"),
-      onDone: () => setOpen(false),
+      onDone: () => {
+        setForm(EMPTY_MEDICINE_FORM);
+        setOpen(false);
+      },
     },
+  );
+
+  const updateIdentity = useSave(
+    async (vars: { id: string; draft: MedicineCatalogueIdentityDraft }) => {
+      if (!can("pharmacy.update")) throw new Error(t("pharmacy_update_required"));
+      if (!packChecked) throw new Error(t("pack_check_required"));
+
+      const result = buildMedicineCatalogueIdentityUpdate(vars.draft);
+      if ("error" in result) throw new Error(t(result.error.replace(/-/g, "_")));
+
+      const { data, error } = await supabase
+        .from("medicines")
+        .update(result.data)
+        .eq("id", vars.id)
+        .is("deleted_at", null)
+        .select("id")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error(t("medicine_not_updated"));
+      return data;
+    },
+    {
+      invalidate: [["inventory"], ["inventory-stats"], ["medicines"]],
+      successMessage: t("saved"),
+      onDone: () => {
+        setEditingMedicine(null);
+        setIdentityForm(EMPTY_MEDICINE_IDENTITY_FORM);
+        setPackChecked(false);
+      },
+    },
+  );
+
+  const openIdentityEditor = (medicine: Row) => {
+    const storedForm = s(medicine, "dosage_form");
+    const isStandardForm = DOSAGE_FORM_OPTIONS.some(
+      (option) => option.value === storedForm && option.value !== "other",
+    );
+    setIdentityForm({
+      name: s(medicine, "name"),
+      generic_name: s(medicine, "generic_name"),
+      brand_name: s(medicine, "brand_name"),
+      strength: s(medicine, "strength"),
+      dosage_form: isStandardForm ? storedForm : "other",
+      custom_dosage_form: isStandardForm ? "" : storedForm,
+    });
+    setPackChecked(false);
+    setEditingMedicine(medicine);
+  };
+
+  const identityFormReady = Boolean(
+    identityForm.generic_name.trim() &&
+    identityForm.strength.trim() &&
+    identityForm.dosage_form.trim() &&
+    (identityForm.dosage_form !== "other" || identityForm.custom_dosage_form.trim()),
   );
 
   const rows = list.rows;
@@ -242,11 +321,67 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
               <DialogHeader>
                 <DialogTitle>{t("medicines")}</DialogTitle>
               </DialogHeader>
+              <p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground">
+                {t("medicine_identity_hint")}
+              </p>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={`${t("name")} *`} className="sm:col-span-2">
+                <Field label={`${t("generic_name")} *`} className="sm:col-span-2">
+                  <Input
+                    value={form.generic_name}
+                    onChange={(e) => setForm({ ...form, generic_name: e.target.value })}
+                    placeholder={lang === "ar" ? "مثال: Amoxicillin" : "e.g. Amoxicillin"}
+                  />
+                </Field>
+                <Field label={t("brand_name")}>
+                  <Input
+                    value={form.brand_name}
+                    onChange={(e) => setForm({ ...form, brand_name: e.target.value })}
+                  />
+                </Field>
+                <Field label={`${t("strength")} *`}>
+                  <Input
+                    value={form.strength}
+                    onChange={(e) => setForm({ ...form, strength: e.target.value })}
+                    placeholder={t("strength_placeholder")}
+                    dir="ltr"
+                  />
+                </Field>
+                <Field label={`${t("dosage_form")} *`}>
+                  <Select
+                    value={form.dosage_form}
+                    onValueChange={(value) =>
+                      setForm({
+                        ...form,
+                        dosage_form: value,
+                        custom_dosage_form: value === "other" ? form.custom_dosage_form : "",
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("select_dosage_form")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DOSAGE_FORM_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {lang === "ar" ? option.labelAr : option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {form.dosage_form === "other" ? (
+                  <Field label={`${t("other_dosage_form")} *`}>
+                    <Input
+                      value={form.custom_dosage_form}
+                      onChange={(e) => setForm({ ...form, custom_dosage_form: e.target.value })}
+                    />
+                  </Field>
+                ) : null}
+                <Field label={t("medicine_display_name")} className="sm:col-span-2">
                   <Input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder={t("medicine_display_name_hint")}
                   />
                 </Field>
                 <Field label={t("unit")}>
@@ -254,10 +389,13 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                     value={form.unit}
                     onChange={(e) => setForm({ ...form, unit: e.target.value })}
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">{t("inventory_unit_hint")}</p>
                 </Field>
                 <Field label={t("cost_price")}>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     dir="ltr"
                     value={form.cost_price}
                     onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
@@ -266,6 +404,8 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 <Field label={t("selling_price")}>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     dir="ltr"
                     value={form.selling_price}
                     onChange={(e) => setForm({ ...form, selling_price: e.target.value })}
@@ -274,6 +414,8 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 <Field label={t("reorder_level")}>
                   <Input
                     type="number"
+                    min="0"
+                    step="1"
                     dir="ltr"
                     value={form.reorder_level}
                     onChange={(e) => setForm({ ...form, reorder_level: e.target.value })}
@@ -285,7 +427,13 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   {t("cancel")}
                 </Button>
                 <Button
-                  disabled={!form.name || create.isPending}
+                  disabled={
+                    !form.generic_name.trim() ||
+                    !form.strength.trim() ||
+                    !form.dosage_form.trim() ||
+                    (form.dosage_form === "other" && !form.custom_dosage_form.trim()) ||
+                    create.isPending
+                  }
                   onClick={() => create.mutate(undefined as never)}
                 >
                   {create.isPending ? t("saving") : t("save")}
@@ -294,6 +442,124 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
             </DialogContent>
           </Dialog>
         ) : null}
+        <Dialog
+          open={editingMedicine !== null}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setEditingMedicine(null);
+              setPackChecked(false);
+            }
+          }}
+        >
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("edit_medicine_identity")}</DialogTitle>
+            </DialogHeader>
+            <p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground">
+              {t("medicine_identity_edit_hint")}
+            </p>
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm leading-relaxed">
+              {t("medicine_identity_shared_hint")}
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={`${t("generic_name")} *`}>
+                <Input
+                  value={identityForm.generic_name}
+                  onChange={(e) =>
+                    setIdentityForm({ ...identityForm, generic_name: e.target.value })
+                  }
+                />
+              </Field>
+              <Field label={t("brand_name")}>
+                <Input
+                  value={identityForm.brand_name}
+                  onChange={(e) => setIdentityForm({ ...identityForm, brand_name: e.target.value })}
+                />
+              </Field>
+              <Field label={`${t("strength")} *`}>
+                <Input
+                  value={identityForm.strength}
+                  onChange={(e) => setIdentityForm({ ...identityForm, strength: e.target.value })}
+                  placeholder={t("strength_placeholder")}
+                  dir="ltr"
+                />
+              </Field>
+              <Field label={`${t("dosage_form")} *`}>
+                <Select
+                  value={identityForm.dosage_form}
+                  onValueChange={(value) =>
+                    setIdentityForm({
+                      ...identityForm,
+                      dosage_form: value,
+                      custom_dosage_form: value === "other" ? identityForm.custom_dosage_form : "",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("select_dosage_form")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOSAGE_FORM_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {lang === "ar" ? option.labelAr : option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              {identityForm.dosage_form === "other" ? (
+                <Field label={`${t("other_dosage_form")} *`}>
+                  <Input
+                    value={identityForm.custom_dosage_form}
+                    onChange={(e) =>
+                      setIdentityForm({ ...identityForm, custom_dosage_form: e.target.value })
+                    }
+                  />
+                </Field>
+              ) : null}
+              <Field label={t("medicine_display_name")} className="sm:col-span-2">
+                <Input
+                  value={identityForm.name}
+                  onChange={(e) => setIdentityForm({ ...identityForm, name: e.target.value })}
+                  placeholder={t("medicine_display_name_hint")}
+                />
+              </Field>
+            </div>
+            <label className="flex items-start gap-3 rounded-lg border p-3 text-sm leading-relaxed">
+              <input
+                type="checkbox"
+                className="mt-1 size-4 shrink-0"
+                checked={packChecked}
+                onChange={(e) => setPackChecked(e.target.checked)}
+              />
+              <span>{t("confirm_pack_identity")}</span>
+            </label>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingMedicine(null);
+                  setPackChecked(false);
+                }}
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                disabled={!packChecked || !identityFormReady || updateIdentity.isPending}
+                onClick={() => {
+                  if (editingMedicine) {
+                    updateIdentity.mutate({
+                      id: s(editingMedicine, "id"),
+                      draft: identityForm,
+                    });
+                  }
+                }}
+              >
+                {updateIdentity.isPending ? t("saving") : t("save")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <ErrorBox error={list.error} />
@@ -323,6 +589,16 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-medium">{s(m, "name")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {[
+                              s(m, "generic_name"),
+                              s(m, "brand_name"),
+                              s(m, "strength"),
+                              dosageFormLabel(s(m, "dosage_form"), lang),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || "—"}
+                          </p>
                           <p className="text-xs text-muted-foreground">{s(m, "unit") || "—"}</p>
                         </div>
                         <span
@@ -338,15 +614,29 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                           {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
                         </span>
                       </div>
-                      {can("pharmacy.create") ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => onReceiveStock(s(m, "id"))}
-                        >
-                          {t("receive_stock")}
-                        </Button>
+                      {can("pharmacy.update") || can("pharmacy.create") ? (
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          {can("pharmacy.update") ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => openIdentityEditor(m)}
+                            >
+                              <Pencil className="size-4" /> {t("edit_identity")}
+                            </Button>
+                          ) : null}
+                          {can("pharmacy.create") ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => onReceiveStock(s(m, "id"))}
+                            >
+                              {t("receive_stock")}
+                            </Button>
+                          ) : null}
+                        </div>
                       ) : null}
                     </li>
                   );
@@ -369,7 +659,21 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                       const low = n(m, "stock_quantity") <= n(m, "reorder_level");
                       return (
                         <TableRow key={s(m, "id")} className={low ? "bg-destructive/5" : undefined}>
-                          <TableCell className="font-medium">{s(m, "name")}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="space-y-1">
+                              <p>{s(m, "name")}</p>
+                              <p className="text-xs font-normal text-muted-foreground">
+                                {[
+                                  s(m, "generic_name"),
+                                  s(m, "brand_name"),
+                                  s(m, "strength"),
+                                  dosageFormLabel(s(m, "dosage_form"), lang),
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ") || "—"}
+                              </p>
+                            </div>
+                          </TableCell>
                           <TableCell>{s(m, "unit") || "—"}</TableCell>
                           <TableCell
                             dir="ltr"
@@ -382,15 +686,26 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                             {s(m, "expiry_date") ? formatDate(s(m, "expiry_date")) : "—"}
                           </TableCell>
                           <TableCell className="no-print text-end">
-                            {can("pharmacy.create") ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onReceiveStock(s(m, "id"))}
-                              >
-                                {t("receive_stock")}
-                              </Button>
-                            ) : null}
+                            <div className="flex justify-end gap-2">
+                              {can("pharmacy.update") ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openIdentityEditor(m)}
+                                >
+                                  <Pencil className="size-4" /> {t("edit_identity")}
+                                </Button>
+                              ) : null}
+                              {can("pharmacy.create") ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => onReceiveStock(s(m, "id"))}
+                                >
+                                  {t("receive_stock")}
+                                </Button>
+                              ) : null}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
