@@ -2,12 +2,12 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [receipt-currency-contract.md](contracts/receipt-currency-contract.md)
 
-**Status**: Specification only. Implementation is blocked until the owner approves the currency operating policy and the monetary-table scope.
+**Status**: Owner policy confirmed. Additive SDG provenance schema/test candidate is in PR #211; receipt RPC integration and hosted rollout remain gated.
 
 ## Phase 0 — Decisions and source contracts
 
-- [ ] T001 Obtain explicit owner decision: single immutable clinic currency or multi-currency.
-- [ ] T002 Inventory all monetary tables, catalog prices, write RPCs, triggers, and reports; classify which must carry currency provenance.
+- [x] T001 Confirm permanent SDG-only clinic policy; no currency switching, multi-currency, FX, or cross-currency settlement.
+- [x] T002 Inventory the approved financial source/ledger scope and classify deferred insurance/payroll plus SDG catalogue prices; see the 2026-11-09 addendum below.
 - [ ] T003 Reconcile current Production/QA migration ledgers and deployed financial RPC definitions against canonical repository sources. Do not apply migrations.
 - [ ] T004 Confirm historical/soft-deleted record policy and approved receipt display format (ISO code plus localized label).
 
