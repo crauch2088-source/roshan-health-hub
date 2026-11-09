@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
-import { s, useRows, useSave, type Row } from "@/lib/db";
+import { ROSHAN_CURRENCY, s, useRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
@@ -24,14 +24,14 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 // Every key this page manages is intentionally public/UI configuration
-// (center identity, currency, invoice text) — never a secret. See the
+// (center identity and invoice text) — never a secret. Currency is a fixed
+// application invariant (SDG) and is deliberately excluded. See the
 // Phase 1 migration for the `is_public` column this relies on.
 const KEYS = [
   "center_name",
   "center_name_ar",
   "phone",
   "address",
-  "currency",
   "tax_percent",
   "invoice_footer",
   "pharmacy_expiry_threshold_days",
@@ -117,7 +117,12 @@ function SettingsPageInner() {
             <Input value={form["address"] ?? ""} onChange={set("address")} />
           </Field>
           <Field label={t("currency")}>
-            <Input dir="ltr" value={form["currency"] ?? ""} onChange={set("currency")} />
+            <div className="text-sm font-medium" dir="ltr">{ROSHAN_CURRENCY}</div>
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "عملة المركز ثابتة: الجنيه السوداني (SDG)، ولا يمكن تغييرها من الإعدادات."
+                : "The center currency is fixed to Sudanese pounds (SDG) and cannot be changed here."}
+            </p>
           </Field>
           <Field label={t("tax_percent")}>
             <Input
