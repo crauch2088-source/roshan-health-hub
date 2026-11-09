@@ -6,6 +6,8 @@ Source: live Supabase migration ledger, read-only.
 
 This table records the exact version/name pairs returned by Supabase. A read-only query on 2026-10-15 computed the byte length and MD5 checksum of each ledger `statements` value to make later source recovery verifiable. The checksums cover the stored JSON representation of `statements`, not normalized SQL text. This inventory is still not a claim of repository parity: Git history contains no `supabase/migrations` or `supabase/config.toml`, and the existing `db/*.sql` files must be content-compared before deciding which ledger entries they cover. No SQL was written back to the repository in this step.
 
+> **Freshness notice (2026-11-09):** this is a historical 94-row Production inventory ending at `20261017133157`, not the current live ledger. Current read-only metadata shows 129 Production rows and 22 QA rows. See [`LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md`](LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md) for the complete current version/name/fingerprint lists. No raw SQL statement bodies were exported for that comparison.
+
 | Version | Applied migration name | SQL bytes | Ledger SQL MD5 | Repository SQL mapping | Content parity |
 |---|---|---:|---|---|---|
 | `20260818162003` | `fix_duplicate_unique_constraint` | 103 | `61a0f9e47443649d4616936ff42f79ca` | No matching constraint cleanup in checked-in db SQL set | Drops the duplicate role_permissions unique constraint; verify final constraint/index definitions before replaying role seed or RBAC migrations |
