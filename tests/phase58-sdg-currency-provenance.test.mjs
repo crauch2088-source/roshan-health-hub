@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const migration = readFileSync(
-  "db/roshan_phase58_single_sdg_currency_provenance.sql",
-  "utf8",
-);
+const migration = readFileSync("db/roshan_phase58_single_sdg_currency_provenance.sql", "utf8");
 const integration = readFileSync(
   "db/tests/phase58_sdg_currency_provenance_integration.sql",
   "utf8",
