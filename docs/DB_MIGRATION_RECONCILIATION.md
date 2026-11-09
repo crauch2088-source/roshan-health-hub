@@ -780,3 +780,26 @@ The Supabase migration-history API was queried independently for Production proj
 **Do not attempt a mechanical repair.** Do not replay Production history onto QA, replay QA history onto Production, insert/delete migration-history rows to make counts match, or rename/reuse a previously recorded version. Any future reconciliation must be a separately reviewed, forward-only environment-specific plan based on live schema/function fingerprints, canonical repository source, and explicit environment approvals. A ledger row alone is not evidence that the SQL was applied as intended.
 
 No migration, SQL write, DDL/DML, role/grant/RLS/Auth/Storage change, or application deployment was performed to collect these facts.
+
+
+### Read-only financial RPC/function definition fingerprints — 2026-11-09
+
+A single read-only catalog query was run against both environments for public/private functions whose names match payment, dispense, cashbox, expense, supplier-bill, or invoice. Fingerprints are `md5(pg_get_functiondef(oid))`; these compare the currently returned function definitions, not repository migration bytes.
+
+- Production: **30** matching functions.
+- QA: **32** matching functions.
+- Same signature and same definition fingerprint: **28**.
+- Definition differences: **2**.
+- QA-only functions: **2**.
+- No matching function in this targeted set was Production-only.
+
+| Function signature | Production fingerprint | QA fingerprint | Finding |
+|---|---|---|---|
+| `public.fn_dispense_prescription_with_invoice(uuid, boolean)` | `162794975fc4f6a9cc39d7314252e37f` | `a3ac609632561becbe6442bbdb9d9021` | Different deployed definitions |
+| `public.reverse_cashbox_entry(uuid, text)` | `a353566d8cc7a20875cfbe88f831203f` | `4b6ffe06589122b16919b3f9ddfbd34e` | Different deployed definitions |
+| `public.get_invoice_payment_receipt_status(uuid[])` | absent | `574931b981d8592bbde2ae0657e60a54` | QA-only read RPC |
+| `public.reverse_invoice_payment(uuid, text)` | absent | `3f8aa83e664a3372eb3c402f8fc7bbfc` | QA-only write RPC |
+
+The two differing write functions are release-critical. The QA-only reversal RPCs must not be assumed to exist in Production or be called by an application release until their exact source, grants, branch guards, and audit/ledger effects have been independently reconciled. The new Phase 59 receipt RPC is an additive candidate in PR #211; it has not been installed in either hosted environment.
+
+This fingerprint inventory supplements (does not replace) the migration-ledger comparison above. It does not authorize replacing functions, synchronizing migration histories, or deploying QA-only RPCs.
