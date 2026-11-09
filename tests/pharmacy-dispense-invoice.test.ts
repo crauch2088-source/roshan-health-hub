@@ -45,6 +45,22 @@ test("pharmacy dispense and billing are one server-side transaction", () => {
   );
 });
 
+const quantityGuardMigration = readFileSync(
+  new URL("../db/roshan_phase57_pharmacy_quantity_required_guard.sql", import.meta.url),
+  "utf8",
+);
+
+test("dispensing rejects NULL quantities instead of silently treating them as one unit", () => {
+  assert.match(quantityGuardMigration, /pi\.quantity IS NULL/);
+  assert.match(quantityGuardMigration, /prescription quantity is required/);
+  assert.doesNotMatch(quantityGuardMigration, /COALESCE\(pi\.quantity\s*,\s*1\)/i);
+  assert.match(quantityGuardMigration, /v_item\.qty <= 0/);
+  assert.match(integration, /null quantity unexpectedly dispensed/);
+  assert.match(integration, /null quantity rejection changed pharmacy stock/);
+  assert.match(integration, /null quantity rejection created invoice lines/);
+  assert.match(integration, /legacy non-idempotent dispense RPC remains executable/);
+});
+
 test("pharmacy UI exposes a deliberate separate-invoice option only to billing-authorized users", () => {
   assert.match(pharmacyRoute, /can\("billing\.create"\)/);
   assert.match(pharmacyRoute, /separateInvoice/);
