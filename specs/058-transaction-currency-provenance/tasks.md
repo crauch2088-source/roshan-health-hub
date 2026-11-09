@@ -24,8 +24,8 @@
 - [ ] T010 Update the invoice creation RPC to persist the authoritative currency at invoice creation.
 - [ ] T011 Update `post_invoice_payment` to copy the locked invoice currency and include it in idempotency semantics.
 - [ ] T012 Update payment ledger triggers and reversal RPCs to preserve currency provenance atomically.
-- [ ] T013 Update the authorized receipt read path to return persisted currency and validate invoice/payment/ledger agreement.
-- [ ] T014 Update `buildInvoicePaymentReceiptModel` to use persisted currency and remove mutable settings fallback.
+- [x] T013 Add candidate `get_invoice_payment_receipt_status_v2(uuid[])` with permission/branch guards, source-ledger uniqueness checks, and payment/invoice/cashbox/reversal currency outputs. Legacy NULL and inconsistent provenance returns a negative currency match.
+- [x] T014 Update the PR #181 receipt model/route to use persisted currency only; require all applicable records to agree on SDG and fail closed for legacy NULL, missing, duplicate, or mismatched ledger provenance. The UI branch remains dependent on PR #211/Phase 59 and is not deployable alone.
 
 ## Phase 3 — QA acceptance
 
@@ -56,4 +56,4 @@
 - [ ] T003 Full Production/QA migration and financial-function provenance reconciliation remains open. Fingerprints match for invoice create/payment, expense, supplier bill/payment and ordinary ledger triggers; pharmacy dispense and reversal functions differ, and invoice-payment reversal is QA-only.
 - [ ] T004 Legacy-row evidence and official receipt/reprint policy remain open. NULL provenance is not inferred from settings.
 
-PR #211 contains the additive SDG-default/immutability migration and disposable PostgreSQL 17 tests. Its schema/test slice is implemented in the candidate branch, but exact-head CI and independent review are still required. No hosted migration or historical backfill has occurred.
+PR #211 now contains Phase 58 schema guards plus Phase 59 receipt-currency RPC and disposable PostgreSQL 17 integration tests. The Phase 58 and Phase 59 PostgreSQL 17 jobs passed on the candidate branch. Full exact-head CI and independent review remain in progress. PR #181 was updated separately and must be rebased/revalidated after #211 is merged. No hosted migration or historical backfill has occurred.
