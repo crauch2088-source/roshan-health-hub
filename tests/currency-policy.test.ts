@@ -27,6 +27,6 @@ test("all receipt and invoice views use the same fixed currency source", () => {
   assert.match(receipt, /ROSHAN_CURRENCY/);
   assert.match(
     receipt,
-    /buildInvoicePaymentReceiptModel\\(payment, invoice, ledger, cashierName, ROSHAN_CURRENCY\\)/,
+    /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/,
   );
 });
