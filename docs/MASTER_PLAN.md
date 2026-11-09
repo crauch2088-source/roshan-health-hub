@@ -2766,3 +2766,28 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 - Receipt currency provenance is a separate Spec Kit gate in `specs/058-transaction-currency-provenance/`: historical receipts must not derive currency from mutable `system_settings.currency`; persisted transaction/invoice currency is required before PR #181 can be accepted.
 
 **Next task:** complete the content/effective-catalog source reconciliation in the linked report, then synchronize PR #191 with current main and rerun its PG17 regression suite. Keep it Draft until isolated QA and synthetic pharmacist acceptance exist. No Production DDL/DML or external backup dispatch in this step.
+
+
+## Phase 58 — immutable SDG-only financial provenance (2026-11-09)
+
+**Owner decision confirmed:** Roshan is permanently SDG-only. There is no currency selector, currency switching, multi-currency operation, FX conversion, or cross-currency settlement. This supersedes the earlier Phase 58 question that left single- versus multi-currency unresolved.
+
+### Read-only schema and function inventory
+- Production and QA have matching monetary schema for the inspected tables. Currency-code columns are absent from invoices, payments, cashbox transactions, expenses, supplier bills/payments, and pharmacy inventory batches.
+- The approved first implementation scope is those seven posted financial source/ledger tables. Insurance claim tables are deferred for now per the owner's earlier scope decision. Master price catalogues remain SDG under the global invariant; invoice line items inherit the parent invoice currency.
+- Production and QA definitions match for invoice creation/payment, expense posting, supplier bill/payment posting, and ordinary ledger triggers. They differ for pharmacy dispense and cashbox reversal; invoice-payment reversal is present in QA only. No function replacement is included in Phase 58.
+- Existing write paths insert through authorized RPCs/triggers. The candidate schema default supplies SDG without changing their signatures; a private trigger rejects explicit NULL/non-SDG inserts and prevents a populated currency code from being mutated.
+
+### Candidate implementation
+- Draft branch: feat/phase58-single-sdg-provenance-20261109.
+- Adds nullable currency_code with default SDG for new records on invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory.
+- Legacy rows remain NULL. No automatic backfill, historical relabelling, or setting-derived fallback is included. A future legacy reconciliation requires separate evidence and approval.
+- Disposable PostgreSQL 17 tests cover default SDG, explicit NULL rejection, foreign-currency rejection, immutability, and preservation of unknown legacy rows.
+- Candidate SQL and tests are source-only; no hosted QA/Production DDL/DML, RPC replacement, grant/RLS change, Auth/Storage mutation, or deployment promotion.
+
+### Remaining gates
+1. Exact-head PostgreSQL 17 integration and full CI.
+2. Independent SQL/security review of the migration and trigger boundary.
+3. Reconcile live migration/function source provenance before any hosted application.
+4. Decide and evidence the treatment of existing NULL-provenance rows before receipts/reprints are enabled.
+5. Separate owner approval for QA application, then separate approval for any Production migration.

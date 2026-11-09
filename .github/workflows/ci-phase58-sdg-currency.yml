@@ -1,0 +1,55 @@
+name: Phase 58 SDG currency provenance
+
+on:
+  pull_request:
+    paths:
+      - "db/roshan_phase58_single_sdg_currency_provenance.sql"
+      - "db/tests/phase58_sdg_currency_provenance_*.sql"
+      - "tests/phase58-sdg-currency-provenance.test.mjs"
+      - ".github/workflows/ci-phase58-sdg-currency.yml"
+  push:
+    branches: [main]
+    paths:
+      - "db/roshan_phase58_single_sdg_currency_provenance.sql"
+      - "db/tests/phase58_sdg_currency_provenance_*.sql"
+      - "tests/phase58-sdg-currency-provenance.test.mjs"
+      - ".github/workflows/ci-phase58-sdg-currency.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase58-sdg-currency-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-17:
+    name: SDG provenance and immutability (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Run source contract tests
+        run: node --test tests/phase58-sdg-currency-provenance.test.mjs
+      - name: Run migration and integration assertions on disposable PostgreSQL 17
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/phase58_sdg_currency_provenance_fixture.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
+            -f db/tests/phase58_sdg_currency_provenance_integration.sql
