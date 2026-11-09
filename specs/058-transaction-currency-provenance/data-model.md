@@ -1,38 +1,81 @@
-# Data Model: Single-Currency SDG Provenance
+# Data Model: Transaction Currency Provenance
 
-## Currency invariant
-Roshan supports one currency only: ISO 4217 SDG. It is a permanent product invariant.
+## Currency Code
 
-## Included records
+- **Representation**: ISO 4217 three-letter code (for example, `SDG`).
+- **Validation**: Must match the supported currency registry and be uppercase.
+- **Immutability**: Currency is immutable after the monetary record is posted. Corrections use an audited reversal/reissue workflow, never an in-place currency relabel.
 
-| Table | Meaning | Currency rule |
-|---|---|---|
-| invoices | Posted patient/corporate invoice | Persist SDG |
-| payments | Posted settlement against invoice | Persist SDG |
-| cashbox_transactions | Payment, expense, supplier and reversal ledger rows | Persist SDG |
-| expenses | Posted operating expense | Persist SDG |
-| supplier_bills | Posted supplier obligation | Persist SDG |
-| supplier_payments | Posted supplier settlement | Persist SDG |
-| pharmacy_inventory | Received inventory batch with purchase/selling prices | Persist SDG |
+## Entities
 
-## Inherited/global values
+### Clinic Currency Configuration
 
-- invoice_items inherit the parent invoice currency; no conflicting independent code is assigned.
-- Current medicine, lab-test, procedure and service catalogue prices are expressed in SDG.
-- Clinical order line prices are not independent ledger settlements; final posted amounts are captured on invoices.
-- Cashbox aggregate views inherit the currency of source ledger rows; no cross-currency totals exist.
+Represents the clinic's approved operating currency.
 
-## Deferred scope
+- Current Production setting: `system_settings.currency = SDG`.
+- QA currently has no currency setting row.
+- The setting is configuration for new operations, not the source of truth for historical records.
+- Whether the setting is immutable after the first monetary record or supports multi-currency is an owner decision.
 
-- Insurance claim headers, items, payments, plans and coverage rules are deferred.
-- Employee salary/payroll is deferred until a payroll transaction workflow exists.
-- No FX rate, conversion, or multi-currency fields are introduced.
+### Invoice
 
-## Column semantics
+Proposed attribute:
 
-Each included table receives currency_code text:
-- DEFAULT 'SDG' for new records.
-- CHECK (currency_code IS NULL OR currency_code = 'SDG').
-- Existing rows remain NULL after the additive migration.
-- A private trigger rejects explicit NULL on new rows, rejects non-SDG values, and prevents a populated code from being changed or cleared.
-- A legacy NULL can only be assigned SDG through an explicit, separately reviewed reconciliation.
+- `currency_code`: non-null ISO 4217 code captured at invoice creation.
+
+Invariant:
+
+- All invoice item amounts and totals inherit the invoice currency.
+- Currency cannot be changed after invoice posting.
+
+### Payment
+
+Proposed attribute:
+
+- `currency_code`: non-null ISO 4217 code copied from the locked parent invoice during payment posting.
+
+Invariants:
+
+- Payment currency must equal invoice currency.
+- Client input cannot override the invoice currency.
+- Idempotency payload comparison includes the effective currency or verifies it from the locked invoice.
+- Reversal does not mutate the original payment currency.
+
+### Cashbox Transaction
+
+Proposed attribute:
+
+- `currency_code`: non-null ISO 4217 code inherited from its source payment or reversal.
+- Manual cashbox entries use the approved clinic currency at posting time.
+
+Invariants:
+
+- A payment ledger row must match its payment currency.
+- A reversal ledger row must match the original ledger currency.
+- No ledger row may be created with an unknown or mismatched currency.
+
+### Receipt
+
+Read-only projection:
+
+- Payment ID, invoice identity, patient identity, amount, currency code, method, received timestamp, cashier, current balance, and ledger/reversal status.
+- Currency must come from persisted payment/invoice data and be checked against the ledger source.
+- Missing or contradictory currency makes the receipt incomplete and non-printable.
+
+## Relationships
+
+- One invoice has zero or more payments.
+- Each payment belongs to one invoice.
+- A payment may have one original cashbox ledger entry and zero or one reversal entry.
+- The receipt represents one saved payment and its parent invoice plus verified ledger state.
+
+## Scope Boundary
+
+This proposed model covers invoice/payment/cashbox receipt provenance. It does not silently solve currency semantics for expenses, supplier bills/payments, insurance, pharmacy purchase prices, or lab/service catalogues. Those must be inventoried and included before any global currency-setting lock or multi-currency reporting is implemented.
+
+
+## Superseding single-SDG model — 2026-11-09
+
+Roshan supports SDG only. The first persisted-provenance scope is invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory batches. Each receives nullable currency_code with DEFAULT 'SDG' for new rows. A private trigger rejects explicit NULL/non-SDG inserts and prevents changing or clearing a populated code.
+
+Existing rows remain NULL until an explicitly reviewed evidence-backed reconciliation assigns SDG. Invoice line items inherit invoice currency; master catalogue prices use global SDG. Insurance tables and payroll are deferred. No FX or multi-currency semantics are introduced.
