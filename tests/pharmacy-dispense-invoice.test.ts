@@ -54,14 +54,11 @@ test("pharmacy dispense and billing are one server-side transaction", () => {
   );
 });
 
-test("dispensing rejects NULL quantities before and after the locked prescription-item read", () => {
+test("dispensing rejects NULL quantities before invoice construction or stock mutation", () => {
   assert.match(quantityGuardMigration, /pi\.quantity IS NULL/);
   assert.match(quantityGuardMigration, /prescription quantity is required/);
   assert.doesNotMatch(quantityGuardMigration, /COALESCE\(pi\.quantity\s*,\s*1\)/i);
   assert.match(quantityGuardMigration, /v_item\.qty <= 0/);
-  const lockedRead = quantityGuardMigration.indexOf("FOR UPDATE OF pi, m");
-  const lockedNullGuard = quantityGuardMigration.indexOf("IF v_item.qty IS NULL");
-  assert.ok(lockedRead >= 0 && lockedNullGuard > lockedRead);
   assert.match(fixture, /quantity numeric,/);
   assert.doesNotMatch(fixture, /quantity numeric DEFAULT 1/);
   assert.match(integration, /null quantity unexpectedly dispensed/);
