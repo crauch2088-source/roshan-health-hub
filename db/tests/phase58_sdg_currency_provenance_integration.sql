@@ -27,6 +27,11 @@ BEGIN
 END;
 $phase58$;
 
+INSERT INTO public.invoices (id, note)
+VALUES ('58000000-0000-0000-0000-000000000101', 'new SDG invoice');
+INSERT INTO public.supplier_bills (id, note)
+VALUES ('58000000-0000-0000-0000-000000000111', 'new SDG supplier bill');
+
 DO $phase58$
 DECLARE
   v_table text;
@@ -52,8 +57,20 @@ BEGIN
     END IF;
 
     v_new_id := gen_random_uuid();
-    EXECUTE format('INSERT INTO public.%I (id, note) VALUES ($1, %L) RETURNING currency_code', v_table, 'new')
-      INTO v_currency USING v_new_id;
+    IF v_table = 'payments' THEN
+      EXECUTE format(
+        'INSERT INTO public.%I (id, note, invoice_id) VALUES ($1, %L, $2) RETURNING currency_code',
+        v_table, 'new'
+      ) INTO v_currency USING v_new_id, '58000000-0000-0000-0000-000000000101'::uuid;
+    ELSIF v_table = 'supplier_payments' THEN
+      EXECUTE format(
+        'INSERT INTO public.%I (id, note, supplier_bill_id) VALUES ($1, %L, $2) RETURNING currency_code',
+        v_table, 'new'
+      ) INTO v_currency USING v_new_id, '58000000-0000-0000-0000-000000000111'::uuid;
+    ELSE
+      EXECUTE format('INSERT INTO public.%I (id, note) VALUES ($1, %L) RETURNING currency_code', v_table, 'new')
+        INTO v_currency USING v_new_id;
+    END IF;
     IF v_currency IS DISTINCT FROM 'SDG' THEN
       RAISE EXCEPTION 'new % row did not receive SDG: %', v_table, v_currency;
     END IF;
@@ -169,8 +186,6 @@ SELECT 'PASS: Phase 58 SDG currency provenance, legacy NULL preservation, and im
 
 
 -- A new payment must inherit a known SDG invoice, not merely its own column default.
-INSERT INTO public.invoices (id, note)
-VALUES ('58000000-0000-0000-0000-000000000101', 'new SDG invoice');
 INSERT INTO public.payments (id, invoice_id, note)
 VALUES (
   '58000000-0000-0000-0000-000000000102',
@@ -202,8 +217,6 @@ END;
 $phase58$;
 
 -- Supplier payments linked to a bill must inherit the bill's persisted SDG provenance.
-INSERT INTO public.supplier_bills (id, note)
-VALUES ('58000000-0000-0000-0000-000000000111', 'new SDG supplier bill');
 INSERT INTO public.supplier_payments (id, supplier_bill_id, note)
 VALUES (
   '58000000-0000-0000-0000-000000000112',
