@@ -28,10 +28,6 @@ const quantityGuardMigration = readFileSync(
   new URL("../db/roshan_phase57_pharmacy_quantity_required_guard.sql", import.meta.url),
   "utf8",
 );
-const pharmacyQuantity = readFileSync(
-  new URL("../src/lib/pharmacy-quantity.ts", import.meta.url),
-  "utf8",
-);
 
 test("pharmacy dispense and billing are one server-side transaction", () => {
   assert.match(

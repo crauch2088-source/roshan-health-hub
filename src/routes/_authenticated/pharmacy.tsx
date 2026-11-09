@@ -275,7 +275,10 @@ function PharmacyPageInner() {
                   </div>
                   <SectionTitle>{t("medicines")}</SectionTitle>
                   {hasInvalidQuantity ? (
-                    <p role="alert" className="mb-3 rounded-md border border-destructive/40 p-3 text-sm text-destructive">
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-md border border-destructive/40 p-3 text-sm text-destructive"
+                    >
                       {lang === "ar"
                         ? "توجد كمية مفقودة أو غير صالحة. أوقفنا الصرف حتى يراجع الطبيب الوصفة ويصحح الكمية."
                         : "A prescribed quantity is missing or invalid. Dispensing is blocked until the prescriber corrects it."}
@@ -289,34 +292,34 @@ function PharmacyPageInner() {
                           ? null
                           : quantity * n(rel(i, "medicines"), "selling_price");
                       return (
-                      <li
-                        key={s(i, "id")}
-                        className="flex items-start justify-between gap-3 p-2.5 text-sm"
-                      >
-                        <div className="min-w-0 space-y-0.5">
-                          <p className="font-medium">{s(rel(i, "medicines"), "name")}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
-                              .filter(Boolean)
-                              .join(" · ") || "—"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("quantity")}{" "}
-                            <span dir="ltr">
-                              {quantity === null
-                                ? lang === "ar"
-                                  ? "غير محددة"
-                                  : "Missing"
-                                : quantity}
-                            </span>{" "}
-                            · {t("stock")}{" "}
-                            <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
-                          </p>
-                        </div>
-                        <span className="shrink-0 font-semibold">
-                          {lineTotal === null ? "—" : money(lineTotal, currency)}
-                        </span>
-                      </li>
+                        <li
+                          key={s(i, "id")}
+                          className="flex items-start justify-between gap-3 p-2.5 text-sm"
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="font-medium">{s(rel(i, "medicines"), "name")}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                                .filter(Boolean)
+                                .join(" · ") || "—"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {t("quantity")}{" "}
+                              <span dir="ltr">
+                                {quantity === null
+                                  ? lang === "ar"
+                                    ? "غير محددة"
+                                    : "Missing"
+                                  : quantity}
+                              </span>{" "}
+                              · {t("stock")}{" "}
+                              <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
+                            </p>
+                          </div>
+                          <span className="shrink-0 font-semibold">
+                            {lineTotal === null ? "—" : money(lineTotal, currency)}
+                          </span>
+                        </li>
                       );
                     })}
                   </ul>
@@ -339,29 +342,29 @@ function PharmacyPageInner() {
                               ? null
                               : quantity * n(rel(i, "medicines"), "selling_price");
                           return (
-                          <TableRow key={s(i, "id")}>
-                            <TableCell className="font-medium">
-                              {s(rel(i, "medicines"), "name")}
-                            </TableCell>
-                            <TableCell>
-                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
-                                .filter(Boolean)
-                                .join(" · ") || "—"}
-                            </TableCell>
-                            <TableCell dir="ltr">
-                              {quantity === null
-                                ? lang === "ar"
-                                  ? "غير محددة"
-                                  : "Missing"
-                                : quantity}
-                            </TableCell>
-                            <TableCell dir="ltr">
-                              {n(rel(i, "medicines"), "stock_quantity")}
-                            </TableCell>
-                            <TableCell>
-                              {lineTotal === null ? "—" : money(lineTotal, currency)}
-                            </TableCell>
-                          </TableRow>
+                            <TableRow key={s(i, "id")}>
+                              <TableCell className="font-medium">
+                                {s(rel(i, "medicines"), "name")}
+                              </TableCell>
+                              <TableCell>
+                                {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                                  .filter(Boolean)
+                                  .join(" · ") || "—"}
+                              </TableCell>
+                              <TableCell dir="ltr">
+                                {quantity === null
+                                  ? lang === "ar"
+                                    ? "غير محددة"
+                                    : "Missing"
+                                  : quantity}
+                              </TableCell>
+                              <TableCell dir="ltr">
+                                {n(rel(i, "medicines"), "stock_quantity")}
+                              </TableCell>
+                              <TableCell>
+                                {lineTotal === null ? "—" : money(lineTotal, currency)}
+                              </TableCell>
+                            </TableRow>
                           );
                         })}
                       </TableBody>
