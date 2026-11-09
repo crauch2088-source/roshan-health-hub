@@ -12,6 +12,14 @@ CREATE TABLE public.invoices (
  corporate_account_id uuid, branch_id uuid, updated_at timestamptz DEFAULT now(),
  invoice_date date, partner_id uuid
 );
+CREATE TABLE public.payments (id uuid PRIMARY KEY, invoice_id uuid);
+CREATE TABLE public.cashbox_transactions (
+ id uuid PRIMARY KEY, source_type text, source_id uuid, reversal_of uuid
+);
+CREATE TABLE public.expenses (id uuid PRIMARY KEY);
+CREATE TABLE public.supplier_bills (id uuid PRIMARY KEY);
+CREATE TABLE public.supplier_payments (id uuid PRIMARY KEY, supplier_bill_id uuid);
+CREATE TABLE public.pharmacy_inventory (id uuid PRIMARY KEY);
 CREATE TABLE public.invoice_items (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), invoice_id uuid NOT NULL, item_type varchar,
  item_name varchar, quantity numeric, unit_price numeric, total_price numeric,
