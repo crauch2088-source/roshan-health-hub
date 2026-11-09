@@ -12,7 +12,7 @@ CREATE TABLE public.suppliers (
 );
 CREATE TABLE public.cashbox_transactions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, transaction_type text, amount numeric,
- payment_method text, category text, description text, source_type text, transaction_date timestamptz, created_by uuid
+ payment_method text, category text, description text, source_type text, source_id uuid, reversal_of uuid, transaction_date timestamptz, created_by uuid
 );
 CREATE TABLE public.expenses (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, category text, amount numeric, description text,
