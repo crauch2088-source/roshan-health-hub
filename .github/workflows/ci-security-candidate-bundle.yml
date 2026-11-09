@@ -142,4 +142,6 @@ jobs:
             -f db/roshan_invoice_payment_money_precision.sql \
             -f db/roshan_phase27_revoke_legacy_invoice_number.sql \
             -f db/roshan_insurance_prior_authorization_branch_isolation.sql \
+            -f db/roshan_post_expense_finite_amount.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
             -f db/tests/security_candidate_combined_integration.sql
