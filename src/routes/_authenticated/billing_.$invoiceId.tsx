@@ -38,7 +38,7 @@ import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/d
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
-import { buildInvoicePaymentReceiptModel } from "@/lib/print/receipt";
+import { buildInvoicePaymentReceiptModel, ROSHAN_CURRENCY } from "@/lib/print/receipt";
 
 export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
   head: () => ({
@@ -199,7 +199,7 @@ function InvoicePageInner() {
           ? s(receivedUser, "full_name")
           : "";
     const ledger = receiptStatuses.find((status) => s(status, "payment_id") === s(payment, "id"));
-    return buildInvoicePaymentReceiptModel(payment, invoice, ledger, cashierName, currency);
+    return buildInvoicePaymentReceiptModel(payment, invoice, ledger, cashierName, ROSHAN_CURRENCY);
   };
   const selectedPayment = paymentRows.find((payment) => s(payment, "id") === printingPaymentId);
   const selectedReceipt = selectedPayment ? receiptModelFor(selectedPayment) : null;
