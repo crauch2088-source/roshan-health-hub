@@ -34,7 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import { ROSHAN_CURRENCY, n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
+import { n, rel, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
@@ -87,7 +87,7 @@ function InvoicePageInner() {
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, branch_id, deleted_at, patients(id, full_name, mrn, phone, branch_id, deleted_at), partners(name)",
+        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, currency_code, notes, branch_id, deleted_at, patients(id, full_name, mrn, phone, branch_id, deleted_at), partners(name)",
       )
       .eq("id", invoiceId)
       .limit(1),
@@ -103,7 +103,7 @@ function InvoicePageInner() {
     supabase
       .from("payments")
       .select(
-        "id, invoice_id, amount, payment_method, method, reference_no, reference, received_at, received_by, branch_id, deleted_at, created_at, received_user:users!payments_received_by_fkey(full_name, deleted_at, active)",
+        "id, invoice_id, amount, currency_code, payment_method, method, reference_no, reference, received_at, received_by, branch_id, deleted_at, created_at, received_user:users!payments_received_by_fkey(full_name, deleted_at, active)",
       )
       .eq("invoice_id", invoiceId)
       .order("created_at", { ascending: false }),
@@ -122,7 +122,7 @@ function InvoicePageInner() {
       }
       const results = await Promise.all(
         batches.map((ids) =>
-          rpc<Row[]>("get_invoice_payment_receipt_status", { _payment_ids: ids }),
+          rpc<Row[]>("get_invoice_payment_receipt_status_v2", { _payment_ids: ids }),
         ),
       );
       return results.flat();
@@ -199,7 +199,7 @@ function InvoicePageInner() {
           ? s(receivedUser, "full_name")
           : "";
     const ledger = receiptStatuses.find((status) => s(status, "payment_id") === s(payment, "id"));
-    return buildInvoicePaymentReceiptModel(payment, invoice, ledger, cashierName, ROSHAN_CURRENCY);
+    return buildInvoicePaymentReceiptModel(payment, invoice, ledger, cashierName);
   };
   const selectedPayment = paymentRows.find((payment) => s(payment, "id") === printingPaymentId);
   const selectedReceipt = selectedPayment ? receiptModelFor(selectedPayment) : null;
@@ -482,8 +482,8 @@ function InvoicePageInner() {
                   {can("payments.read") && receiptStatusQ.error && (
                     <p role="status" className="mt-3 text-xs text-muted-foreground">
                       {lang === "ar"
-                        ? "طباعة الإيصالات غير مفعّلة في هذه البيئة حتى يتوفر فحص سلامة سجل الدفع."
-                        : "Receipt printing is unavailable in this environment until payment-ledger verification is deployed."}
+                        ? "طباعة الإيصالات غير مفعّلة حتى يتوفر فحص سلامة سجل الدفع وإثبات العملة المحفوظ."
+                        : "Receipt printing is unavailable until payment-ledger and persisted-currency verification are deployed."}
                     </p>
                   )}
                 </>

@@ -7,6 +7,7 @@ const source = () => ({
     id: "payment-1",
     invoice_id: "invoice-1",
     amount: "125.50",
+    currency_code: "SDG",
     payment_method: "bankak",
     method: "bankak",
     reference_no: "BANKAK-REF-1",
@@ -18,6 +19,7 @@ const source = () => ({
   invoice: {
     id: "invoice-1",
     invoice_number: "INV-0001",
+    currency_code: "SDG",
     branch_id: "branch-1",
     deleted_at: null,
     net_amount: "500.00",
@@ -37,6 +39,11 @@ const source = () => ({
     ledger_is_reversed: false,
     reversal_reason: null,
     reversal_at: null,
+    payment_currency_code: "SDG",
+    invoice_currency_code: "SDG",
+    ledger_currency_code: "SDG",
+    reversal_currency_code: null,
+    currency_matches: true,
   },
 });
 
@@ -46,8 +53,7 @@ test("receipt model preserves posted payment values and authoritative current in
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -71,8 +77,7 @@ test("receipt model refuses payments without a matching posted cashbox ledger ro
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -87,8 +92,7 @@ test("receipt model refuses ledger amount or branch mismatches", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -103,8 +107,7 @@ test("receipt model refuses branchless or cross-branch source rows even when cal
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -120,8 +123,7 @@ test("receipt model can rely on the ledger and authorized parent read when a leg
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -132,6 +134,7 @@ test("receipt model permits a soft-deleted payment only when the authoritative l
   const data = source();
   data.payment.deleted_at = "2026-11-03T11:00:00.000Z";
   data.ledger.ledger_is_reversed = true;
+  data.ledger.reversal_currency_code = "SDG";
   data.ledger.reversal_reason = "Duplicate payment";
   data.ledger.reversal_at = "2026-11-03T11:00:00.000Z";
 
@@ -139,8 +142,7 @@ test("receipt model permits a soft-deleted payment only when the authoritative l
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -158,8 +160,7 @@ test("receipt model blocks a deleted payment whose ledger is not reversed", () =
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -176,8 +177,7 @@ test("receipt model blocks an active payment whose ledger is reversed", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -192,7 +192,7 @@ test("receipt model never invents missing cashier, received timestamp, method, o
   data.payment.method = null;
   data.invoice.invoice_number = null;
 
-  const model = buildInvoicePaymentReceiptModel(data.payment, data.invoice, data.ledger, "", "SDG");
+  const model = buildInvoicePaymentReceiptModel(data.payment, data.invoice, data.ledger, "");
 
   assert.ok(model);
   assert.equal(model.complete, false);
@@ -210,8 +210,7 @@ test("receipt model rejects a payment linked to a different invoice", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -245,8 +244,7 @@ test("receipt model rejects conflicting legacy and canonical payment method fiel
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
@@ -263,11 +261,71 @@ test("receipt model rejects missing or negative invoice balance inputs", () => {
     data.payment,
     data.invoice,
     data.ledger,
-    "Recorded Cashier",
-    "SDG",
+    "Recorded Cashier"
   );
 
   assert.ok(model);
   assert.equal(model.complete, false);
   assert.ok(model.missingFields.includes("invoice balance"));
+});
+
+test("receipt model refuses legacy rows with unknown persisted currency provenance", () => {
+  const data = source();
+  data.payment.currency_code = null;
+  data.invoice.currency_code = null;
+  data.ledger.payment_currency_code = null;
+  data.ledger.invoice_currency_code = null;
+  data.ledger.ledger_currency_code = null;
+  data.ledger.currency_matches = false;
+
+  const model = buildInvoicePaymentReceiptModel(
+    data.payment,
+    data.invoice,
+    data.ledger,
+    "Recorded Cashier",
+  );
+
+  assert.ok(model);
+  assert.equal(model.complete, false);
+  assert.equal(model.currency, "");
+  assert.ok(model.missingFields.includes("currency provenance"));
+});
+
+test("receipt model refuses any disagreement between persisted payment, invoice and ledger currency", () => {
+  const data = source();
+  data.ledger.ledger_currency_code = null;
+  data.ledger.currency_matches = false;
+
+  const model = buildInvoicePaymentReceiptModel(
+    data.payment,
+    data.invoice,
+    data.ledger,
+    "Recorded Cashier",
+  );
+
+  assert.ok(model);
+  assert.equal(model.complete, false);
+  assert.equal(model.currency, "");
+  assert.ok(model.missingFields.includes("currency provenance"));
+});
+
+test("receipt model requires persisted SDG on a reversal row before printing a reversed receipt", () => {
+  const data = source();
+  data.payment.deleted_at = "2026-11-03T11:00:00.000Z";
+  data.ledger.ledger_is_reversed = true;
+  data.ledger.reversal_reason = "Duplicate payment";
+  data.ledger.reversal_at = "2026-11-03T11:00:00.000Z";
+  data.ledger.reversal_currency_code = null;
+  data.ledger.currency_matches = false;
+
+  const model = buildInvoicePaymentReceiptModel(
+    data.payment,
+    data.invoice,
+    data.ledger,
+    "Recorded Cashier",
+  );
+
+  assert.ok(model);
+  assert.equal(model.complete, false);
+  assert.ok(model.missingFields.includes("currency provenance"));
 });

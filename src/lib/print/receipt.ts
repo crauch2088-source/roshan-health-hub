@@ -26,6 +26,11 @@ type ReceiptLedgerStatus = {
   ledger_is_reversed?: unknown;
   reversal_reason?: unknown;
   reversal_at?: unknown;
+  payment_currency_code?: unknown;
+  invoice_currency_code?: unknown;
+  ledger_currency_code?: unknown;
+  reversal_currency_code?: unknown;
+  currency_matches?: unknown;
 };
 
 function text(row: ReceiptRow | null | undefined, key: string): string {
@@ -52,15 +57,14 @@ function validTimestamp(value: string): boolean {
 
 /**
  * Builds a read-only receipt model from one saved payment, its invoice,
- * and the Phase54C ledger-integrity result. Incomplete or contradictory
- * records remain non-printable; no values are inferred or defaulted.
+ * and the Phase59 ledger-integrity and persisted-currency result. Incomplete
+ * or contradictory records remain non-printable; no values are inferred.
  */
 export function buildInvoicePaymentReceiptModel(
   payment: ReceiptRow,
   invoice: ReceiptRow,
   ledger: ReceiptLedgerStatus | null | undefined,
   cashierNameValue: string,
-  currencyValue: string,
 ): InvoicePaymentReceiptModel | null {
   const paymentId = text(payment, "id");
   const invoiceId = text(invoice, "id");
@@ -72,7 +76,22 @@ export function buildInvoicePaymentReceiptModel(
   const patientName = text(patient, "full_name");
   const patientMrn = text(patient, "mrn");
   const cashierName = cashierNameValue.trim();
-  const currency = currencyValue.trim();
+  const paymentCurrency = text(payment, "currency_code");
+  const invoiceCurrency = text(invoice, "currency_code");
+  const ledgerPaymentCurrency = text(ledger as ReceiptRow, "payment_currency_code");
+  const ledgerInvoiceCurrency = text(ledger as ReceiptRow, "invoice_currency_code");
+  const ledgerCurrency = text(ledger as ReceiptRow, "ledger_currency_code");
+  const reversalCurrency = text(ledger as ReceiptRow, "reversal_currency_code");
+  const isReversed = ledger?.ledger_is_reversed === true;
+  const currencyMatches =
+    ledger?.currency_matches === true &&
+    paymentCurrency === "SDG" &&
+    invoiceCurrency === "SDG" &&
+    ledgerPaymentCurrency === paymentCurrency &&
+    ledgerInvoiceCurrency === invoiceCurrency &&
+    ledgerCurrency === "SDG" &&
+    (isReversed ? reversalCurrency === "SDG" : !reversalCurrency);
+  const currency = currencyMatches ? "SDG" : "";
 
   if (text(payment, "invoice_id") !== invoiceId) missing.add("invoice linkage");
   if (text(invoice, "deleted_at")) missing.add("active invoice");
@@ -80,7 +99,7 @@ export function buildInvoicePaymentReceiptModel(
   if (!invoiceNumber) missing.add("invoice number");
   if (!patientName) missing.add("patient");
   if (!cashierName) missing.add("cashier");
-  if (!currency) missing.add("currency");
+  if (!currencyMatches) missing.add("currency provenance");
 
   const paymentBranch = text(payment, "branch_id");
   const invoiceBranch = text(invoice, "branch_id");
@@ -129,7 +148,6 @@ export function buildInvoicePaymentReceiptModel(
     missing.add("ledger integrity");
   }
 
-  const isReversed = ledger?.ledger_is_reversed === true;
   const paymentIsDeleted = Boolean(text(payment, "deleted_at"));
   if (paymentIsDeleted !== isReversed) missing.add("payment state");
 

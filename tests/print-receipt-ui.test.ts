@@ -15,7 +15,9 @@ test("receipt UI reads persisted payment and invoice fields only", () => {
     /branch_id, deleted_at, patients\(id, full_name, mrn, phone, branch_id, deleted_at\)/,
   );
   assert.match(source, /received_user:users!payments_received_by_fkey/);
-  assert.match(source, /get_invoice_payment_receipt_status/);
+  assert.match(source, /get_invoice_payment_receipt_status_v2/);
+  assert.match(source, /currency_code, payment_method/);
+  assert.match(source, /net_amount, paid_amount, currency_code/);
   assert.match(source, /index \+= 200/);
   assert.doesNotMatch(source, /created_by.*cashier/i);
   assert.doesNotMatch(source, /payment_date.*receivedAt/i);
@@ -55,6 +57,8 @@ test("historical payment receipts use Roshan's fixed SDG currency, not mutable d
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   const db = read("src/lib/db.ts");
   assert.match(db, /export const ROSHAN_CURRENCY = "SDG" as const/);
-  assert.match(source, /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/);
+  assert.match(source, /buildInvoicePaymentReceiptModel\(payment, invoice, ledger, cashierName\)/);
+  assert.match(source, /get_invoice_payment_receipt_status_v2/);
+  assert.doesNotMatch(source, /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/);
   assert.doesNotMatch(source, /buildInvoicePaymentReceiptModel.*cashierName, currency/);
 });
