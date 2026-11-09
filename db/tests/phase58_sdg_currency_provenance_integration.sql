@@ -166,3 +166,116 @@ END;
 $phase58$;
 
 SELECT 'PASS: Phase 58 SDG currency provenance, legacy NULL preservation, and immutability' AS result;
+
+
+-- A new payment must inherit a known SDG invoice, not merely its own column default.
+INSERT INTO public.invoices (id, note)
+VALUES ('58000000-0000-0000-0000-000000000101', 'new SDG invoice');
+INSERT INTO public.payments (id, invoice_id, note)
+VALUES (
+  '58000000-0000-0000-0000-000000000102',
+  '58000000-0000-0000-0000-000000000101',
+  'new SDG payment'
+);
+DO $phase58$
+DECLARE
+  v_state text;
+BEGIN
+  IF (SELECT currency_code FROM public.payments WHERE id = '58000000-0000-0000-0000-000000000102') IS DISTINCT FROM 'SDG' THEN
+    RAISE EXCEPTION 'payment did not persist SDG';
+  END IF;
+
+  BEGIN
+    INSERT INTO public.payments (id, invoice_id, note)
+    VALUES (
+      '58000000-0000-0000-0000-000000000103',
+      '58000000-0000-0000-0000-000000000001',
+      'payment against legacy unknown-currency invoice'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'payment against legacy unknown-currency invoice was not rejected';
+  END IF;
+END;
+$phase58$;
+
+-- Supplier payments linked to a bill must inherit the bill's persisted SDG provenance.
+INSERT INTO public.supplier_bills (id, note)
+VALUES ('58000000-0000-0000-0000-000000000111', 'new SDG supplier bill');
+INSERT INTO public.supplier_payments (id, supplier_bill_id, note)
+VALUES (
+  '58000000-0000-0000-0000-000000000112',
+  '58000000-0000-0000-0000-000000000111',
+  'new SDG supplier payment'
+);
+DO $phase58$
+DECLARE
+  v_state text;
+BEGIN
+  IF (SELECT currency_code FROM public.supplier_payments WHERE id = '58000000-0000-0000-0000-000000000112') IS DISTINCT FROM 'SDG' THEN
+    RAISE EXCEPTION 'supplier payment did not persist SDG';
+  END IF;
+
+  BEGIN
+    INSERT INTO public.supplier_payments (id, supplier_bill_id, note)
+    VALUES (
+      '58000000-0000-0000-0000-000000000113',
+      '58000000-0000-0000-0000-000000000005',
+      'payment against legacy unknown-currency supplier bill'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'supplier payment against legacy unknown-currency bill was not rejected';
+  END IF;
+END;
+$phase58$;
+
+-- Source-linked cashbox rows and reversals must carry the source's persisted currency.
+INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+VALUES (
+  '58000000-0000-0000-0000-000000000121',
+  'payment',
+  '58000000-0000-0000-0000-000000000102'
+);
+INSERT INTO public.cashbox_transactions (id, reversal_of)
+VALUES (
+  '58000000-0000-0000-0000-000000000122',
+  '58000000-0000-0000-0000-000000000121'
+);
+DO $phase58$
+DECLARE
+  v_state text;
+BEGIN
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000123',
+      'payment',
+      '58000000-0000-0000-0000-000000000002'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'cashbox ledger accepted a payment with unknown currency provenance';
+  END IF;
+
+  v_state := NULL;
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, reversal_of)
+    VALUES (
+      '58000000-0000-0000-0000-000000000124',
+      '58000000-0000-0000-0000-000000000003'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'cashbox reversal accepted an original row with unknown currency provenance';
+  END IF;
+END;
+$phase58$;

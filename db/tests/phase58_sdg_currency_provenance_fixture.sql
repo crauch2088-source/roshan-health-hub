@@ -2,11 +2,11 @@
 CREATE SCHEMA private;
 
 CREATE TABLE public.invoices (id uuid PRIMARY KEY, note text);
-CREATE TABLE public.payments (id uuid PRIMARY KEY, note text);
-CREATE TABLE public.cashbox_transactions (id uuid PRIMARY KEY, note text);
+CREATE TABLE public.payments (id uuid PRIMARY KEY, note text, invoice_id uuid);
+CREATE TABLE public.cashbox_transactions (id uuid PRIMARY KEY, note text, source_type text, source_id uuid, reversal_of uuid);
 CREATE TABLE public.expenses (id uuid PRIMARY KEY, note text);
 CREATE TABLE public.supplier_bills (id uuid PRIMARY KEY, note text);
-CREATE TABLE public.supplier_payments (id uuid PRIMARY KEY, note text);
+CREATE TABLE public.supplier_payments (id uuid PRIMARY KEY, note text, supplier_bill_id uuid);
 CREATE TABLE public.pharmacy_inventory (id uuid PRIMARY KEY, note text);
 
 -- Preserve the deployed cashbox immutability boundary in this synthetic fixture.
