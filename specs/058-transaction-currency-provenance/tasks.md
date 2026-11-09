@@ -29,7 +29,7 @@
 
 ## Phase 3 — QA acceptance
 
-- [ ] T015 Verify exact-head unit, typecheck, lint, build, source parity, and disposable PostgreSQL 17 tests.
+- [x] T015 Verify exact-head unit, typecheck, lint, build, source parity, and disposable PostgreSQL 17 tests. Exact candidate head `995cfbd0e0bc1ee1af463ef474e028ada46cda2f` passed all required CI checks, including Phase 58 and Phase 59 PostgreSQL 17 integration, security candidate bundle, migration source parity, CodeQL, dependency audit, typecheck, lint, and build.
 - [ ] T016 Run authenticated synthetic QA role/branch tests for posting, receipt, reprint, idempotency, and reversal.
 - [ ] T017 Prove changing current settings cannot change any historical receipt currency.
 - [ ] T018 Verify Arabic RTL, English LTR, A4 browser preview, Android print path, and selected-document isolation.
@@ -64,3 +64,17 @@ PR #211 now contains Phase 58 schema guards plus Phase 59 receipt-currency RPC a
 The approved single-currency policy makes RPC replacement unnecessary and less safe than enforcing provenance at the database write boundary. Phase 58 uses a private trigger to apply SDG defaults and validate parent/source relationships while preserving the existing Production/QA RPC definitions. Phase 59 adds a branch-guarded receipt read RPC; PR #181 consumes only persisted values and remains non-printable for legacy NULL or inconsistent records.
 
 At head `70becde517557cfb18c2718988fe0cf9f5c712a8`, focused PG17 Phase 58/59, invoice RPC, finance RPC, security-bundle and insurance UI checks passed. Exact-head full CI and independent review remain open. Hosted QA/Production apply and authenticated staff/print acceptance remain blocked.
+
+
+## Exact-head regression closure — 2026-11-09, PR #211 head `995cfbd0e0bc1ee1af463ef474e028ada46cda2f`
+
+- Added a regression test first to prove that an existing SDG payment could previously be re-pointed to a legacy invoice whose currency provenance is NULL; the same gap existed for supplier payments and legacy supplier bills. The disposable PostgreSQL 17 run failed on the new payment-source assertion before the implementation change (run 42629344093).
+- Updated `private.enforce_roshan_sdg_currency()` to revalidate parent/source currency whenever a payment's `invoice_id`, supplier payment's `supplier_bill_id`, or cashbox source/reversal reference changes. Unrelated updates to legacy NULL rows remain possible; the immutable currency field itself still cannot be changed or backfilled.
+- The new update-link regression passed on the fixed candidate head. Exact-head CI run 42629610078 passed, including Phase 58 and Phase 59 PostgreSQL 17 integrations, finance-only RPC isolation, cashbox reversal concurrency, security-candidate bundle, migration source parity, dependency audits, role tests, typecheck, lint, and build. The PR workflow 42629603090 also passed.
+- PR #211 checks at this head: 29 successful, 1 intentionally skipped (canonical baseline/authenticated acceptance gate); no failures or pending checks. PR remains Draft and 40 commits ahead of main, 0 behind.
+- PR #181 receipt UI branch head `00f09d956c0632d6e193e4864bdb0401b092b09a` also has all exact-head checks complete (29 successful, 1 intentionally skipped). It remains dependent on Phase 59 in PR #211 and must be rebased/revalidated after that migration is separately reviewed and merged.
+- PRs #208, #209, and #210 also remain exact-head green and 0 commits behind main; all remain Draft pending their separate product/operational acceptance gates.
+
+**No hosted change:** no QA/Production migration, DDL/DML, legacy backfill, RPC deployment, grant/RLS/Auth/Storage mutation, financial data write, or Vercel promotion was performed. All database integration ran only against disposable PostgreSQL 17 in GitHub Actions.
+
+**Remaining Phase 58/59 blockers:** independent SQL/security review; Production/QA live migration and function-source reconciliation; evidence-backed legacy NULL receipt policy; separate QA and Production rollout approvals; authenticated finance staff acceptance; and Arabic/English browser, A4, Android printer acceptance.

@@ -2803,3 +2803,19 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 - PR #211 and dependent PR #181 remain Draft. No hosted migration, historical backfill, Production DDL/DML, role/grant/RLS/Auth/Storage change, or deployment promotion occurred.
 
 **Release gates remain unchanged:** independent SQL/security review, exact-head full CI, Production/QA migration and function-source reconciliation, evidence-backed legacy policy, separate QA/Production approvals, authenticated finance/pharmacist acceptance, and Android/A4 print acceptance.
+
+
+## Phase 58/59 exact-head closure — 2026-11-09
+
+**Candidate PR #211:** [Phase 58 immutable SDG provenance + Phase 59 receipt currency provenance](https://github.com/crauch2088-source/roshan-health-hub/pull/211)  
+**Verified head:** `995cfbd0e0bc1ee1af463ef474e028ada46cda2f`
+
+- A test-first regression exposed that a posted payment or supplier payment could be re-pointed to a legacy parent row with unknown (NULL) currency. The new PG17 test failed on the original implementation, then passed after the trigger was tightened.
+- The private SDG enforcement trigger now revalidates parent/source provenance when payment invoice, supplier bill, or cashbox source/reversal references change. It does not interfere with unrelated updates to historical NULL-provenance rows, and does not permit currency backfill or mutation.
+- Exact-head GitHub Actions passed: Phase 58 and Phase 59 PostgreSQL 17 integration; finance-only RPC write isolation; cashbox reversal concurrency; security candidate bundle; migration source parity; dependency audits; role guards; typecheck; lint; build; and CodeQL. CI run: [42629610078](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42629610078). PR workflow: [42629603090](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42629603090).
+- PR #211 has 29 successful checks and one intentionally skipped baseline/authenticated-acceptance gate; no failed or pending checks. PR #181 receipt UI branch also has 29 successful checks and one intentionally skipped gate, but remains dependent on PR #211 and must be rebased/revalidated after the database candidate is independently reviewed and merged.
+- PR #208 free GitHub-first automation routing, PR #209 pharmacy quantity guard, and PR #210 medicine identity editor are also exact-head green and have zero commits behind main. All five PRs remain Draft; none has been merged or deployed.
+
+**Scope/safety:** all database tests used disposable PostgreSQL 17 in GitHub Actions. No hosted QA/Production migration or write, historical currency backfill, RPC/grant/RLS/Auth/Storage mutation, or deployment promotion occurred.
+
+**Still blocking first safe release:** independent SQL/security review; Production/QA migration and function-source reconciliation; evidence-backed handling of historical NULL currency; separate QA and Production approvals; authenticated finance/pharmacy staff acceptance; and RTL/LTR browser, A4, and Android printer acceptance.
