@@ -6,7 +6,7 @@ GRANT USAGE ON SCHEMA private TO authenticated;
 CREATE TABLE public.users (
  id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz, active boolean NOT NULL DEFAULT true
 );
-CREATE TABLE public.suppliers (
+CREATE TABLE public.pharmacy_inventory (id uuid PRIMARY KEY, quantity_remaining numeric DEFAULT 0, quantity numeric DEFAULT 0, note text);\nCREATE TABLE public.suppliers (
  id uuid PRIMARY KEY, active boolean NOT NULL DEFAULT true, deleted_at timestamptz
 );
 CREATE TABLE public.cashbox_transactions (
