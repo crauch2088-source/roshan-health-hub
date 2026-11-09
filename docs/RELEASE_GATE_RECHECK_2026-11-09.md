@@ -34,6 +34,38 @@ This update supersedes the earlier statements below that device-side decryptabil
 
 **Release boundary:** successful backup and recovery do not authorize Production Phase 57, Phase 54C promotion, production DDL/DML, permission changes, deployment promotion, or clinical launch. No production business data is to be used for acceptance testing.
 
+
+## Live operational release-gate recheck — 2026-11-09 08:46 Africa/Khartoum
+
+This is the latest read-only snapshot and supersedes earlier current-state summaries in this file. Historical sections below are retained for audit chronology.
+
+### Repository and CI
+- Main `cc2d59912144e1ebaa7497ce05c0dcf7b1f8422c`; CI [42541355920](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42541355920) passed 18 jobs with one intentional authenticated clinical-acceptance skip; finance-only integration [42541355913](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42541355913) passed 2/2.
+- PR #203 pre-refresh head `55d5513497c2c1f5269cccce859c2af4adeed6ef`: CI [42575154783](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42575154783) passed 18 jobs with one intentional clinical skip; Spec Kit validation [42575154876](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42575154876) passed; CodeQL [42575151638](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42575151638) passed both analyses. These checks predate this documentation refresh.
+- Eight open PRs: #203, #157, #191, #189, #185, #179, #181, #112. Open release tracker: [Issue #199](https://github.com/crauch2088-source/roshan-health-hub/issues/199). PRs #191 and #189 are each four commits behind main and remain Draft.
+
+### Supabase
+- Production: 129 migrations, latest `20261102232941`, PostgreSQL 17.6. QA: 22 migrations, latest `20261104065852`, PostgreSQL 17.11. The live ledgers are not identical; source-parity CI is not live-ledger reconciliation.
+- Phase 57 (`20261104065852_roshan_phase57_pharmacy_quantity_required_guard`) is QA-only. QA explicitly rejects NULL prescription quantity and has no NULL-to-one fallback. Production retains three `COALESCE(pi.quantity,1)` fallbacks. Both projects currently have zero active non-deleted NULL-quantity prescription items; the quantity column remains nullable.
+- Health advisors: zero findings in both projects. Security findings: Production—2 private RLS-without-policy INFO, 1 `pg_trgm`-in-public WARN, 1 anon-callable SECURITY DEFINER `setup_required()` WARN, 26 authenticated-callable SECURITY DEFINER WARN, 1 leaked-password-protection WARN. QA—1 private RLS-without-policy INFO, the same extension/anon/password warnings, and 28 authenticated-callable SECURITY DEFINER WARN. Performance: Production—95 unused-index INFO and 2 unindexed foreign keys on the legacy private idempotency table; QA—143 unused-index INFO. No broad privilege or index changes are justified by these advisory counts alone.
+
+### Deployment
+- READY Production deployment: [`dpl_E5m6Z8CLf3uaFRwt1dAxiRMpADPv`](https://vercel.com/roshan45/roshan-health-hub/E5m6Z8CLf3uaFRwt1dAxiRMpADPv), application SHA `6daf1f15be23aa391bd40bc38f671c00c842b446`, canonical alias `roshan-health-hub.vercel.app`, `aliasError=null`.
+- Main is 10 commits ahead and zero behind that deployment; the delta consists of workflow/documentation files, with no application source changes. The latest main documentation deployment `dpl_F1BMSx6ff5BYx2A6kFcSps4htVjG` was CANCELED by the expected ignore-build path.
+
+### Backup and recovery
+- Backup-runner main: `ed41574bb278325e7bc06fd034e767db1544c55a`; PR #2 merged at `07ca69125da7cc702f9306da55cccf4916146b2f`.
+- Latest workflow [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) ran on `fix/portable-backup-checksum-20261109` at `bca6eeed81b5b76f6cac0312fd370651cdfde20c`: validation passed, backup was skipped, and no artifact was produced. It is not a completed backup.
+- Latest full successful backup remains [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237): PostgreSQL 17 dump, isolated restore rehearsal, critical row-count comparison, age encryption and ciphertext-only upload all passed. Artifact [13639676572](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) was 305,317 bytes, SHA-256 `3b3df1aa9056c70a0d6c9fc40f98a5ba6f23e4889040c24ec8f3302f270df355`; the artifact was not expired at 06:47 UTC and expires at 23:40:05 UTC. The Drive copy was re-verified at 06:47 UTC: 305,317 bytes, MD5 `875a85ac23e8b7a671c371cca41f7732`, not trashed, owned by the connected account.
+- The owner-device inner-payload SHA-256 matched the manifest; age decryption and gzip/tar listing succeeded; temporary plaintext was removed. Backup is manual, with no recurring schedule. It covers PostgreSQL only; Storage object bytes and Vault secret values were absent at backup time and are not included.
+
+### Gate result and next task
+- Passed: encrypted off-site database backup, runner-side PostgreSQL 17 restore rehearsal and row-count comparison, owner-device decryption/archive check, current main CI, PR #203 pre-refresh CI/CodeQL/Spec Kit checks, canonical Vercel alias, and zero health-advisor findings.
+- Blocked/unverified: live Production/QA migration-to-source reconciliation, Production Phase 57, authenticated QA pharmacist acceptance, authenticated doctor/pharmacy clinical E2E, staff UAT, and physical A4/mobile/RTL/LTR printer acceptance. Clinical E2E remains deferred until a suitable isolated free environment and synthetic doctor/pharmacist identities are available.
+- Next: perform a read-only, version-by-version comparison of both live ledgers with the canonical migration manifest and source files, classify intentional QA baseline/QA-only entries, and prepare a reviewed Production rollout sequence. Do not apply Production DDL/DML or change privileges in that task.
+
+No Production or QA writes, migrations, privilege changes, backup dispatches, merges or deployments were performed during this recheck.
+
 ## 1. Encrypted Production backup — completed
 
 - Private runner PR [#2](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/2) is merged at `07ca69125da7cc702f9306da55cccf4916146b2f`.
