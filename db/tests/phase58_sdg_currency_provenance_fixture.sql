@@ -11,11 +11,11 @@ CREATE TABLE public.pharmacy_inventory (id uuid PRIMARY KEY, note text);
 
 -- Preserve the deployed cashbox immutability boundary in this synthetic fixture.
 CREATE FUNCTION public.fn_cashbox_immutable()
-RETURNS trigger LANGUAGE plpgsql AS $
-BEGIN
-  RAISE EXCEPTION 'cashbox entries are immutable' USING ERRCODE = '55000';
-END;
-$;
+RETURNS trigger
+LANGUAGE plpgsql
+AS 'BEGIN
+  RAISE EXCEPTION ''cashbox entries are immutable'' USING ERRCODE = ''55000'';
+END;';
 CREATE TRIGGER trg_cashbox_immutable
 BEFORE UPDATE OR DELETE ON public.cashbox_transactions
 FOR EACH ROW EXECUTE FUNCTION public.fn_cashbox_immutable();
