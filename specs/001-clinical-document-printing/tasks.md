@@ -2,7 +2,7 @@
 
 **Input**: spec.md, plan.md, research.md, data-model.md, and contracts/print-document-contract.md.
 
-**Status**: QA-only implementation is in draft PRs #179 and #181. PR #178's invoice/certificate fix is merged and deployed. No Production migration or data write has occurred. Checkboxes below track accepted work, not merely code present in an unmerged branch.
+**Status**: QA-only implementation remains in draft PRs #179 and #181. PR #178's invoice/certificate fix is merged and deployed. The encrypted Production backup, isolated PostgreSQL 17 restore rehearsal, and owner-device decryption/archive verification are now complete; this closes the backup/recovery sub-gate only. No Production migration, application data write, or release promotion has occurred. Checkboxes below track accepted work, not merely code present in an unmerged branch.
 
 ## Phase 0: Source and permission contracts
 
@@ -63,3 +63,34 @@
 - Prescription and invoice/certificate QA work can proceed with synthetic records while role E2E is prepared.
 - Receipt UI can be developed against QA Phase54C but cannot be enabled in Production until encrypted backup/restore evidence exists and Phase54C is promoted.
 - Physical thermal validation and staff acceptance are release gates, not assumptions.
+
+
+## Evidence refresh — 2026-11-09
+
+This section supersedes earlier backup-status notes in this task file. Historical task checkboxes remain unchanged unless the corresponding acceptance criterion is fully evidenced.
+
+### Completed infrastructure evidence
+
+- The private backup-runner PR #2 is merged. Workflow [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) completed the PostgreSQL 17 dump, isolated restore rehearsal, critical row-count comparison, age encryption, and ciphertext-only artifact upload.
+- The encrypted bundle was copied to private Google Drive. The owner verified the encrypted payload SHA-256 on Android/Termux, decrypted it using the locally held age identity, confirmed archive readability with `tar -tzf`, and removed the temporary plaintext archive. The private identity and decrypted SQL were not shared.
+- Backup scope was database-only. At backup time there were zero Storage objects, zero Vault secrets, and three empty Storage buckets. No recurring backup schedule is configured.
+- PR #201 (device-side recovery evidence) and PR #202 (engineering acceleration review) are merged. The Spec Kit CLI remains pinned at v1.2.6 with the agent-neutral `none` integration.
+
+### Current implementation and release state
+
+- PR #179 contains saved-prescription printing and authoring safeguards; PR #181 contains persisted-payment receipt printing. Both remain Draft and are not accepted for release. Their automated tests do not replace authenticated role/branch acceptance, browser print-preview checks, Android print-path checks, or physical printer/staff acceptance.
+- PR #191 remains Draft. Its Phase 57 quantity guard and mixed catalogue/free-text prescription rejection are covered by the disposable PostgreSQL 17 integration workflow. Exact-head CI is recorded as 18 successful jobs, zero failures, and one intentionally skipped authenticated clinical-acceptance job. Persistent-QA pharmacist acceptance and independent review remain outstanding.
+- PR #189 remains Draft. Its medicine identity implementation is present, but `pharmacy.update` is shared by admin and pharmacist roles; the catalogue is global (no `branch_id`); and the physical-pack acknowledgement is not a persisted audit attestation. These are unresolved product/access decisions, not checkbox-only documentation issues.
+- Production migration head remains `20261102232941`; QA remains `20261104065852` with Phase 57 applied in QA only. Production and QA ledgers are not yet reconciled. Phase 54C receipt-integrity RPC is not yet available in Production.
+- Issue [#199](https://github.com/crauch2088-source/roshan-health-hub/issues/199) remains the canonical release-gate tracker.
+
+### Remaining acceptance gates (not marked passed)
+
+1. Obtain an authorized synthetic QA pharmacist sign-in path and complete Phase 57 rejection, valid FEFO dispensing, invoice atomicity, idempotency, and audit acceptance in persistent QA.
+2. Complete independent review of PR #191; retain the Production gate until the owner explicitly approves the release plan.
+3. Resolve PR #189's permission scope, shared-catalogue branch semantics, and durable physical-pack verification/audit requirements.
+4. Complete browser print-preview and Android/mobile checks for Arabic RTL and English LTR, page breaks, print cancellation, and selected-document isolation; validate actual A4 hardware and only claim thermal support after testing the target printer/browser.
+5. Complete role/branch E2E and staff UAT across reception → GP → lab → pharmacy → billing.
+6. Reconcile Production and QA migration ledgers against canonical migration source and quarantine evidence before any Production rollout.
+
+**Safety boundary:** the backup/recovery sub-gate is passed, but this does not authorize Production Phase 57, Phase 54C promotion, DDL/DML, permission changes, deployment promotion, or clinical launch. Do not create synthetic clinical or financial records in Production.
