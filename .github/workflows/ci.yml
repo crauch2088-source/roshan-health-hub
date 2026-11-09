@@ -527,6 +527,7 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/phase58_sdg_currency_provenance_fixture.sql \
             -f db/roshan_phase58_single_sdg_currency_provenance.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
             -f db/tests/phase58_sdg_currency_provenance_integration.sql
 
 

@@ -65,3 +65,8 @@ test("Phase 58 binds payment and source-ledger currency to known SDG parent reco
   assert.match(integration, /cashbox ledger accepted a payment with unknown currency provenance/);
   assert.match(integration, /cashbox reversal accepted an original row with unknown currency provenance/);
 });
+
+  assert.match(migration, /source expense currency provenance is missing or inconsistent/);
+  assert.match(migration, /source supplier payment currency provenance is missing or inconsistent/);
+  assert.match(integration, /cashbox ledger accepted an expense with unknown currency provenance/);
+  assert.match(integration, /cashbox ledger accepted a supplier payment with unknown currency provenance/);

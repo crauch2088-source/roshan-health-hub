@@ -279,3 +279,53 @@ BEGIN
   END IF;
 END;
 $phase58$;
+
+
+INSERT INTO public.expenses (id, note)
+VALUES ('58000000-0000-0000-0000-000000000131', 'new SDG expense');
+INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+VALUES (
+  '58000000-0000-0000-0000-000000000132',
+  'expense',
+  '58000000-0000-0000-0000-000000000131'
+);
+INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+VALUES (
+  '58000000-0000-0000-0000-000000000133',
+  'supplier_payment',
+  '58000000-0000-0000-0000-000000000112'
+);
+DO $phase58$
+DECLARE
+  v_state text;
+BEGIN
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000134',
+      'expense',
+      '58000000-0000-0000-0000-000000000004'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'cashbox ledger accepted an expense with unknown currency provenance';
+  END IF;
+
+  v_state := NULL;
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000135',
+      'supplier_payment',
+      '58000000-0000-0000-0000-000000000006'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'cashbox ledger accepted a supplier payment with unknown currency provenance';
+  END IF;
+END;
+$phase58$;
