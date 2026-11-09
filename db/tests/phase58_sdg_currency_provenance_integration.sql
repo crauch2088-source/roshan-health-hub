@@ -342,3 +342,34 @@ BEGIN
   END IF;
 END;
 $phase58$;
+
+
+-- Changing a source link after insert must not bypass the persisted-currency guard.
+DO $phase58$
+DECLARE
+  v_state text;
+BEGIN
+  BEGIN
+    UPDATE public.payments
+    SET invoice_id = '58000000-0000-0000-0000-000000000001'
+    WHERE id = '58000000-0000-0000-0000-000000000102';
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'payment source could be changed to a legacy NULL-currency invoice (got %)', v_state;
+  END IF;
+
+  v_state := NULL;
+  BEGIN
+    UPDATE public.supplier_payments
+    SET supplier_bill_id = '58000000-0000-0000-0000-000000000005'
+    WHERE id = '58000000-0000-0000-0000-000000000112';
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'supplier payment source could be changed to a legacy NULL-currency bill (got %)', v_state;
+  END IF;
+END;
+$phase58$;
