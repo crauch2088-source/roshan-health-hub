@@ -104,3 +104,40 @@ Before any future function-level grant change, require:
 5. Apply a narrowly scoped migration and verify live grants immediately after.
 
 Clinical end-to-end browser acceptance remains deferred per user instruction. This triage is a catalog/guard-pattern review, not a claim that every function has passed a complete adversarial security audit.
+
+
+## Live recheck addendum — 2026-11-09
+
+This addendum supersedes the historical counts above; the 2026-10-19 review remains a valid snapshot for its date.
+
+### Current exact catalog counts
+
+| Finding | Production | QA | Triage |
+|---|---:|---:|---|
+| Authenticated-executable SECURITY DEFINER functions | 26 | 28 | Expected API RPC surface; keep function-by-function authorization review. |
+| Anon-executable SECURITY DEFINER functions | 1 | 1 | `public.setup_required()` only; minimal first-run boolean signal, intentional pending continued onboarding need. |
+| `pg_trgm` installed in public | 1 | 1 | Defer relocation until dependency/operator-class review. |
+| Leaked-password protection disabled | 1 | 1 | Auth configuration/plan decision; unchanged. |
+| Public RLS tables without policies | 0 | 0 | 56/56 public base tables have RLS enabled in each project. |
+| Health advisor findings | 0 | 0 | No current health-category advisor findings. |
+
+Production has 53 public SECURITY DEFINER functions; QA has 55. The two QA-only authenticated functions are `get_invoice_payment_receipt_status(uuid[])` and `reverse_invoice_payment(uuid,text)`, introduced by QA Phase54C and not yet in Production. Both use fixed empty search_path; the receipt-status function checks `payments.read` and `billing.read` plus branch access, and the reversal function checks `cashbox.update`/super-admin plus actor and branch context.
+
+### New anon-executable function
+
+`public.setup_required()` delegates to `private.setup_required()`, which returns only `NOT EXISTS (SELECT 1 FROM public.users)`. It does not return user rows or personal data. Its public EXECUTE grant is consistent with the first-run setup flow. Keep the grant only while the public onboarding probe is required; add a regression ensuring it remains a boolean-only signal.
+
+### Private idempotency tables
+
+Production and QA both have `private.pharmacy_dispense_idempotency` with RLS enabled and no policies. Production also has a legacy copy. Read-only privilege checks found no direct SELECT/INSERT/UPDATE privilege for anon, authenticated, or service_role on these private tables. This is consistent with the table being accessed only by the owning controlled RPC. Do not add broad policies to silence the advisor; preserve the no-direct-grant boundary and test it.
+
+### Function guard-pattern spot checks
+
+The current source-text catalog scan found the expected permission/actor/branch marker patterns across the authenticated RPC surface, with intentional exceptions for the caller-scoped profile read and the thin `complete_visit_atomic` wrapper that delegates to the separately guarded `complete_clinical_visit_and_bill`. The Phase54C receipt/reversal RPCs were also inspected directly. This is a triage scan plus targeted body inspection, not a complete adversarial review of all 26/28 functions.
+
+### Performance and release notes
+
+- Performance advisor: 95 unused-index informational findings in Production and 143 in QA; Production also reports two unindexed foreign keys on the legacy idempotency table. Do not drop indexes on this low-volume clinic based only on advisor counters.
+- Both environments report `pg_trgm` in public and leaked-password protection disabled. No extension move or Auth setting change was performed.
+- Live catalog snapshot: 56 public base tables and 842 public columns in each environment; all 56 tables have RLS and zero are missing a policy. Production ledger is 129 migrations through `20261102232941`; QA is 22 through `20261104065852`. Different migration ledgers remain a release blocker until reconciled against canonical source.
+- No grant, function, Auth setting, extension, index, migration, or business data was changed during this read-only recheck.
