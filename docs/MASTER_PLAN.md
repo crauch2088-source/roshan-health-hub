@@ -2702,3 +2702,42 @@ The owner completed the end-user recovery check on an Android device using Termu
 **Scope limitation:** the backup contains the PostgreSQL database only. At backup time there were zero Storage objects and zero Vault secrets, and three empty Storage buckets. Storage object bytes and Vault secret material are not included. The backup workflow remains manual; no recurring schedule is configured.
 
 **Release boundary:** this evidence closes the device-decryptability item only. It does not authorize Production Phase 57, application deployment, or clinical launch. QA pharmacist acceptance, staff UAT, physical A4/mobile printing, and live migration-ledger reconciliation remain separate gates.
+
+
+## Current execution checkpoint — 2026-11-09 (supersedes earlier operational snapshots)
+
+This is the current consolidated checkpoint after PR #203 was merged. Older entries above are retained as historical evidence; where they describe the backup as pending or the main branch at an earlier SHA, this section is authoritative.
+
+### Repository and automation evidence
+
+- Main HEAD: `5a75fcca8db0e352d9e1ec0d7098ce61e539f9cf` (PR #203 merged as `5a75fcca8db0e352d9e1ec0d7098ce61e539f9cf`).
+- Exact-main checks: 23 successful, zero failed, one intentionally skipped: `Canonical PG17 baseline replay and authenticated clinical acceptance`. The skip is not a pass for clinical acceptance.
+- Exact-main workflows: [CI](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42575361744), [Spec Kit validation](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42575361740), and [finance-only RPC write isolation](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42575361761) completed successfully.
+- PR #203 is merged. Its documentation-only changes reconcile Spec Kit Phase 53 and the release-gate recheck with verified encrypted backup, isolated PostgreSQL 17 restore rehearsal, and owner-device decryptability evidence.
+- Spec Kit CLI remains pinned at v1.2.6 with the agent-neutral `none` integration. Feature specifications live under `specs/`; this Master Plan remains the single execution roadmap.
+
+### Current open implementation work
+
+- PR #179 (saved-prescription printing) and PR #181 (persisted-payment receipt printing) remain Draft. Their model/UI tests do not replace authenticated role/branch E2E, Arabic RTL/English LTR browser preview, Android print-path checks, actual A4 hardware validation, or staff acceptance.
+- PR #181 has a newly recorded financial-fidelity blocker: receipt currency is currently read from mutable `system_settings.currency`, not persisted on the historical transaction. A later settings change can relabel an old amount when reprinted. Do not merge/release this receipt path as authoritative until currency is immutable by policy for all existing records or transaction currency is persisted and used by the receipt model. No currency policy is assumed by this checkpoint.
+- PR #191 remains Draft. Phase 57 rejects missing catalogue quantities and mixed catalogue/free-text prescriptions in the atomic dispense path. Its latest exact-head CI has passed, and a focused independent code-review comment was submitted; persistent-QA pharmacist acceptance and independent human review remain outstanding.
+- PR #189 remains Draft. Its current permission `pharmacy.update` is shared by admin and pharmacist roles; the medicine catalogue has no `branch_id`; and the UI pack-comparison acknowledgement is not a durable audit attestation. Resolve these product/access decisions before acceptance.
+- PR #185 remains Draft and contains the evidence-based prescribing decision-support specification only. No regimen, dose rule, interaction rule, or clinical protocol is approved or activated.
+
+### Database and release boundary
+
+- Last documented Production migration: `20261102232941`; QA: `20261104065852`, with Phase 57 QA-only. Re-read live ledgers before any rollout; the environments have not been declared reconciled.
+- Encrypted Production database backup, isolated PostgreSQL 17 restore rehearsal, checksum verification, Android/Termux decryption, archive readability, and temporary plaintext cleanup are complete. Backup is database-only; Storage objects and Vault secrets were zero at backup time, three buckets were empty, and no recurring backup schedule is configured.
+- Phase 57, Phase 54C receipt integrity, permissions, and application changes are not authorized for Production by backup completion or green CI.
+- No Production migration, DDL/DML, business-data write, Auth/Storage mutation, permission change, or deployment promotion is part of this checkpoint.
+
+### Next execution order
+
+1. Finish source review and acceptance of PR #191, then perform the authenticated synthetic pharmacist scenario in persistent QA (NULL/mixed-item rejection; valid FEFO; invoice atomicity; idempotency; audit).
+2. Resolve PR #189's permission scope, shared-catalogue branch semantics, and durable pack-verification audit design.
+3. Resolve the receipt-currency policy/model for PR #181 without relabeling historical transactions.
+4. Complete PR #179/#181 browser and Android print checks, role/branch authorization, actual A4 validation, and staff acceptance.
+5. Reconcile live Production/QA migration ledgers against canonical migration source and quarantine evidence before proposing any controlled Production rollout.
+6. Complete staff UAT across reception → GP → lab → pharmacy → billing; keep clinical launch blocked until all P0/P1 findings are resolved or explicitly accepted by the owner.
+
+**Status discipline:** automated CI, disposable PostgreSQL integration, authenticated QA acceptance, physical-device validation, staff UAT, and Production release approval are distinct evidence classes. Never substitute one for another.

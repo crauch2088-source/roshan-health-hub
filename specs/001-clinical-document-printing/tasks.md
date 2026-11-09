@@ -94,3 +94,23 @@ This section supersedes earlier backup-status notes in this task file. Historica
 6. Reconcile Production and QA migration ledgers against canonical migration source and quarantine evidence before any Production rollout.
 
 **Safety boundary:** the backup/recovery sub-gate is passed, but this does not authorize Production Phase 57, Phase 54C promotion, DDL/DML, permission changes, deployment promotion, or clinical launch. Do not create synthetic clinical or financial records in Production.
+
+
+## Additional financial-fidelity gate — receipt currency (2026-11-09)
+
+This gate is additive; existing task checkboxes remain unchanged until evidence is complete.
+
+- [ ] Confirm the owner's currency policy: single immutable SDG for the lifetime of all posted transactions, or support for multiple transaction currencies. No policy is inferred from the current settings value.
+- [ ] If currency can vary, persist the currency code with the posted payment/invoice transaction through the authoritative write boundary and expose it through the authorized Phase54C read model. Historical rows must not be relabelled from current settings.
+- [ ] If single-currency is chosen, prove that all existing posted records share SDG, prevent currency changes once any financial transaction exists, and document the enforcement boundary (not merely a UI-disabled setting).
+- [ ] Add a regression proving that changing current display settings cannot change the currency label of an already-posted/reprinted receipt.
+- [ ] Verify exact amount/currency fidelity with synthetic PostgreSQL 17 fixtures, including partial payments and reversals, before PR #181 can leave Draft.
+
+**Current finding:** PR #181 currently derives `currencyValue` from mutable `system_settings.currency`; the transaction read model does not persist a transaction currency. This can relabel a historical amount after a settings change. A focused review comment has been posted. Keep PR #181 Draft until the policy and regression are resolved.
+
+## Current evidence refresh — 2026-11-09 after PR #203
+
+- PR #203 is merged. Exact-main CI completed with 23 successes, zero failures, and one intentional skip for canonical PostgreSQL 17 baseline replay/authenticated clinical acceptance. Spec Kit validation and finance-only RPC write-isolation integration also passed.
+- PR #191 remains Draft. A focused independent code-review comment was submitted; this is not a substitute for a second human reviewer or persistent-QA pharmacist acceptance.
+- PR #179 and #181 remain Draft pending browser/mobile/physical printer, role/branch, and staff acceptance. PR #181 additionally has the currency-fidelity gate above.
+- Backup/recovery is complete at infrastructure level, but the backup is database-only and manual. No Production migration, permission change, clinical data write, or release promotion is authorized.
