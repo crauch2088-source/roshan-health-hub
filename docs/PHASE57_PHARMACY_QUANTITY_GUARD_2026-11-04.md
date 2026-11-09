@@ -57,3 +57,11 @@ Next: independent review of PR #191, then an approved synthetic pharmacist ident
 
 
 - The queue also displays the saved medication name for free-text items, explains that they must be linked to an active catalogue medicine, and disables dispense when any active item is unlinked. Soft-deleted child items are excluded from queue totals and blockers.
+
+
+## Live schema/function recheck — 2026-11-09
+
+Read-only catalog verification confirms:
+- QA has migration `20261104065852`, the quantity column remains nullable with no default, and the deployed dispense function contains the original preflight NULL guard.
+- Production does not have Phase 57; its dispense function has no Phase 57 NULL guard. The quantity column is nullable with no default in both environments.
+- The new pharmacy queue display/blocking behavior is source-only. No hosted SQL, data, Auth, grants, or deployment changes were made in this follow-up.
