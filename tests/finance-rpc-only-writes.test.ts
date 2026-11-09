@@ -9,7 +9,9 @@ const finance = read("../src/routes/_authenticated/finance.tsx");
 const expenses = read("../src/routes/_authenticated/expenses.tsx");
 const insurance = read("../src/lib/insurance.ts");
 const migration = read("../db/roshan_phase27_finance_rpc_only_writes.sql");
+const currencyMigration = read("../db/roshan_phase58_single_sdg_currency_provenance.sql");
 const integration = read("../db/tests/finance_only_rpc_writes_integration.sql");
+const financeWorkflow = read("../.github/workflows/ci-finance-only-rpc-writes.yml");
 
 test("finance UI routes financial writes through RPCs rather than direct table DML", () => {
   const directFinancialWrite =
@@ -68,4 +70,15 @@ test("finance migration preserves precision and RPC-only access", () => {
 test("finance RPC-only guard is part of the standard guard suite", () => {
   const pkg = JSON.parse(read("../package.json")) as { scripts?: Record<string, string> };
   assert.match(pkg.scripts?.["test:guard"] ?? "", /finance-rpc-only-writes\.test\.ts/);
+});
+
+
+test("Phase 58 currency provenance is exercised through the finance RPC integration workflow", () => {
+  assert.match(financeWorkflow, /roshan_phase58_single_sdg_currency_provenance\.sql/);
+  assert.match(financeWorkflow, /roshan_post_expense_finite_amount\.sql/);
+  assert.match(integration, /payment against a legacy invoice with unknown currency was accepted/);
+  assert.match(integration, /new invoice did not persist SDG/);
+  assert.match(integration, /posted payment did not persist SDG/);
+  assert.match(integration, /post_expense did not persist SDG/);
+  assert.match(currencyMigration, /invoice currency provenance is missing or inconsistent/);
 });
