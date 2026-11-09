@@ -118,6 +118,20 @@ BEGIN
     RAISE EXCEPTION 'prescription quantity is required';
   END IF;
 
+  -- A prescription may contain clinician-entered free-text items (medicine_id IS NULL).
+  -- They are valid prescribing records, but the pharmacy cannot safely dispense or
+  -- invoice them as catalogue stock. Reject the entire prescription before any
+  -- stock, invoice, movement, item, or status mutation; never silently mark it dispensed.
+  IF EXISTS (
+    SELECT 1
+      FROM public.prescription_items AS pi
+     WHERE pi.prescription_id = p_prescription_id
+       AND pi.deleted_at IS NULL
+       AND pi.medicine_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'prescription contains a free-text item that cannot be dispensed from pharmacy; link it to an active catalogue medicine first';
+  END IF;
+
   -- Build invoice lines from the active medicine catalog before any stock mutation.
   -- Only catalog-linked items that will actually be dispensed can be billed.
   FOR v_item IN
