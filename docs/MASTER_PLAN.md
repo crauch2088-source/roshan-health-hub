@@ -2683,3 +2683,22 @@ A controlled manual Production backup was completed after the earlier read-only 
 5. Resolve PR #189's broad `pharmacy.update` role scope and non-persisted physical-pack acknowledgement semantics before marking its medicine-catalogue workflow accepted.
 
 Production remains on migration `20261102232941`; QA remains on Phase 57 migration `20261104065852`. The backup closes the backup/restore rehearsal gate at infrastructure level, but does not by itself authorize Production rollout or clinical launch.
+
+
+## Device-side encrypted backup recovery verification — 2026-11-09
+
+The owner completed the end-user recovery check on an Android device using Termux. This closes the previously open device-decryptability gate for the 2026-11-08 Production database backup.
+
+- Downloaded and extracted `Roshan-Production-Backup-2026-11-08.zip` locally on the device. The Termux `pkg install unzip` attempt failed because the selected mirror returned a package-index size/hash mismatch during synchronization; this did not block extraction because `unzip` was already available.
+- `termux-setup-storage` did not create the expected `~/storage/downloads` path in that session. The archive was already present in `~/downloads`, and extraction from that directory succeeded. No assumption that the shared-storage symlink was available.
+- Inner encrypted archive SHA-256 verified on-device as `64a346c48d5db96fc4c28bd99bb60c38802f223de4938d43c2d8137fee0ffef1`, matching the expected manifest value.
+- The user ran `age -d` with the locally stored private identity `~/roshan-backup/identity.txt`. The resulting `restore-test.tar.gz` existed and was 298 KB. The private identity was not shared in chat or uploaded.
+- `tar -tzf restore-test.tar.gz >/dev/null` completed and printed `DECRYPTION_AND_ARCHIVE_OK`, confirming successful decryption and readable gzip/tar archive structure.
+- The temporary plaintext archive was removed with `rm -f restore-test.tar.gz`; the follow-up check printed `PLAINTEXT_REMOVED`. The encrypted archive and private identity were retained.
+- No decrypted SQL, database rows, patient data, password, or private key was transmitted to ChatGPT.
+
+**Gate status:** checksum verification, device-side decryption, archive readability, and temporary plaintext cleanup are complete. Combined with the runner's earlier PostgreSQL 17 isolated restore rehearsal and critical row-count comparison, this establishes both automated restore evidence and successful user-device decryption/archive validation. It does not constitute a second full database import on the Android device.
+
+**Scope limitation:** the backup contains the PostgreSQL database only. At backup time there were zero Storage objects and zero Vault secrets, and three empty Storage buckets. Storage object bytes and Vault secret material are not included. The backup workflow remains manual; no recurring schedule is configured.
+
+**Release boundary:** this evidence closes the device-decryptability item only. It does not authorize Production Phase 57, application deployment, or clinical launch. QA pharmacist acceptance, staff UAT, physical A4/mobile printing, and live migration-ledger reconciliation remain separate gates.
