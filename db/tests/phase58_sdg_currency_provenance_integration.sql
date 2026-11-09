@@ -8,6 +8,7 @@ DECLARE
   ];
   v_currency text;
   v_id uuid;
+  v_new_id uuid;
   v_state text;
   v_legacy_id uuid;
   v_index integer := 0;
@@ -22,9 +23,9 @@ BEGIN
       RAISE EXCEPTION 'legacy % row was unexpectedly backfilled: %', v_table, v_currency;
     END IF;
 
-    v_id := gen_random_uuid();
+    v_new_id := gen_random_uuid();
     EXECUTE format('INSERT INTO public.%I (id, note) VALUES ($1, %L) RETURNING currency_code', v_table, 'new')
-      INTO v_currency USING v_id;
+      INTO v_currency USING v_new_id;
     IF v_currency IS DISTINCT FROM 'SDG' THEN
       RAISE EXCEPTION 'new % row did not receive SDG: %', v_table, v_currency;
     END IF;
@@ -53,35 +54,43 @@ BEGIN
       RAISE EXCEPTION 'non-SDG insert on % was not rejected with 22023 (got %)', v_table, v_state;
     END IF;
 
-    -- Legacy NULL can only be assigned through an explicit reconciliation step.
-    EXECUTE format('UPDATE public.%I SET currency_code = %L WHERE id = $1', v_table, 'SDG')
-      USING v_legacy_id;
-    EXECUTE format('SELECT currency_code FROM public.%I WHERE id = $1', v_table)
-      INTO v_currency USING v_legacy_id;
-    IF v_currency IS DISTINCT FROM 'SDG' THEN
-      RAISE EXCEPTION 'explicit legacy reconciliation failed for %', v_table;
-    END IF;
-
+    -- This candidate never assigns currency to legacy rows. A future backfill requires a separate approved migration.
     v_state := NULL;
     BEGIN
-      EXECUTE format('UPDATE public.%I SET currency_code = NULL WHERE id = $1', v_table)
+      EXECUTE format('UPDATE public.%I SET currency_code = %L WHERE id = $1', v_table, 'SDG')
         USING v_legacy_id;
     EXCEPTION WHEN OTHERS THEN
       GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE;
     END;
-    IF v_state IS DISTINCT FROM '22023' THEN
-      RAISE EXCEPTION 'currency clear on % was not rejected with 22023 (got %)', v_table, v_state;
+    IF v_state IS NULL OR (v_table <> 'cashbox_transactions' AND v_state <> '22023')
+       OR (v_table = 'cashbox_transactions' AND v_state NOT IN ('22023','55000')) THEN
+      RAISE EXCEPTION 'legacy currency assignment on % was not blocked (got %)', v_table, v_state;
+    END IF;
+
+    -- A populated SDG value cannot be cleared or changed. The existing cashbox
+    -- immutability trigger may reject first; that stricter boundary is preserved.
+    v_state := NULL;
+    BEGIN
+      EXECUTE format('UPDATE public.%I SET currency_code = NULL WHERE id = $1', v_table)
+        USING v_new_id;
+    EXCEPTION WHEN OTHERS THEN
+      GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE;
+    END;
+    IF (v_table <> 'cashbox_transactions' AND v_state IS DISTINCT FROM '22023')
+       OR (v_table = 'cashbox_transactions' AND v_state NOT IN ('22023','55000')) THEN
+      RAISE EXCEPTION 'currency clear on % was not rejected (got %)', v_table, v_state;
     END IF;
 
     v_state := NULL;
     BEGIN
       EXECUTE format('UPDATE public.%I SET currency_code = %L WHERE id = $1', v_table, 'USD')
-        USING v_legacy_id;
+        USING v_new_id;
     EXCEPTION WHEN OTHERS THEN
       GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE;
     END;
-    IF v_state IS DISTINCT FROM '22023' THEN
-      RAISE EXCEPTION 'currency change on % was not rejected with 22023 (got %)', v_table, v_state;
+    IF (v_table <> 'cashbox_transactions' AND v_state IS DISTINCT FROM '22023')
+       OR (v_table = 'cashbox_transactions' AND v_state NOT IN ('22023','55000')) THEN
+      RAISE EXCEPTION 'currency change on % was not rejected (got %)', v_table, v_state;
     END IF;
   END LOOP;
 END;
@@ -115,6 +124,13 @@ BEGIN
     );
   IF v_count <> 7 THEN
     RAISE EXCEPTION 'expected 7 SDG immutability triggers; found %', v_count;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE NOT tgisinternal AND tgname = 'trg_cashbox_immutable'
+  ) THEN
+    RAISE EXCEPTION 'existing cashbox immutability boundary was not preserved';
   END IF;
 END;
 $$;

@@ -26,13 +26,13 @@ The migration adds nullable currency_code columns with DEFAULT 'SDG' for new row
 - rejects an explicit NULL on a new row;
 - rejects any code other than SDG;
 - prevents a populated code from being changed or cleared;
-- allows a legacy NULL to be explicitly assigned SDG only through a separately reviewed reconciliation.
+- blocks any attempt to assign a currency to a legacy NULL in this candidate; any historical reconciliation requires a separate approved migration.
 
 The migration does not read system_settings, does not backfill any row, does not change RPC signatures, and does not change grants/RLS/Auth/Storage.
 
 ## Verification
 
-The disposable PostgreSQL 17 workflow covers all seven tables: new-row defaults, explicit NULL rejection, non-SDG rejection, explicit legacy reconciliation, currency immutability, and trigger/default catalog presence. It never connects to Supabase.
+The disposable PostgreSQL 17 workflow covers all seven tables: new-row defaults, explicit NULL rejection, non-SDG rejection, legacy currency assignment rejection, currency immutability, and trigger/default catalog presence. It never connects to Supabase.
 
 ## Remaining gates
 

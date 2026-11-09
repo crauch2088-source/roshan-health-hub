@@ -62,7 +62,6 @@ BEGIN
   END IF;
 
   IF TG_OP = 'UPDATE'
-     AND OLD.currency_code IS NOT NULL
      AND NEW.currency_code IS DISTINCT FROM OLD.currency_code THEN
     RAISE EXCEPTION 'posted financial currency_code is immutable'
       USING ERRCODE = '22023';
