@@ -1,0 +1,44 @@
+name: Phase 59 receipt currency provenance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase59-receipt-currency-manual
+  cancel-in-progress: true
+
+jobs:
+  postgres-17:
+    name: Persisted receipt currency and fail-closed checks (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Run Phase 59 source contract tests
+        run: node --test tests/phase59-receipt-currency-provenance.test.mjs
+      - name: Apply Phase 58 and 59 on disposable PostgreSQL 17
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/phase59_receipt_currency_fixture.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
+            -f db/roshan_phase59_receipt_currency_provenance.sql \
+            -f db/tests/phase59_receipt_currency_integration.sql
