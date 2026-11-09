@@ -20,6 +20,14 @@ CREATE TRIGGER trg_cashbox_immutable
 BEFORE UPDATE OR DELETE ON public.cashbox_transactions
 FOR EACH ROW EXECUTE FUNCTION public.fn_cashbox_immutable();
 
+DO $
+BEGIN
+  CREATE ROLE test_writer;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$;
+GRANT INSERT ON public.invoices TO test_writer;
+
 -- Seed pre-migration legacy rows. The migration must preserve their unknown provenance.
 INSERT INTO public.invoices (id, note) VALUES ('58000000-0000-0000-0000-000000000001', 'legacy');
 INSERT INTO public.payments (id, note) VALUES ('58000000-0000-0000-0000-000000000002', 'legacy');

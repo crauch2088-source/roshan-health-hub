@@ -32,6 +32,8 @@ test("Phase 58 rejects NULL, non-SDG and post-posting currency mutation", () => 
   assert.match(migration, /posted financial currency_code is immutable/);
   assert.match(migration, /NEW\.currency_code IS DISTINCT FROM OLD\.currency_code/);
   assert.match(integration, /legacy currency assignment on/);
+  assert.match(integration, /test_writer unexpectedly has direct EXECUTE/);
+  assert.match(integration, /restricted writer/);
   assert.match(integration, /explicit NULL insert/);
   assert.match(integration, /non-SDG insert/);
   assert.match(integration, /currency clear/);

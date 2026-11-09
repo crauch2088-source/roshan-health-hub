@@ -1,5 +1,33 @@
 -- Phase 58 assertions: SDG-only new records, immutable posted currency, no inferred legacy backfill.
-DO $$
+DO $
+BEGIN
+  IF has_function_privilege('test_writer', 'private.enforce_roshan_sdg_currency()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'test_writer unexpectedly has direct EXECUTE on the private trigger function';
+  END IF;
+END;
+$;
+
+-- A restricted writer can insert through a table grant even though it cannot
+-- call the private trigger function directly and has no USAGE on private.
+SET ROLE test_writer;
+INSERT INTO public.invoices (id, note)
+VALUES ('58000000-0000-0000-0000-000000000099', 'restricted-writer');
+RESET ROLE;
+
+DO $
+DECLARE
+  v_currency text;
+BEGIN
+  SELECT currency_code INTO v_currency
+  FROM public.invoices
+  WHERE id = '58000000-0000-0000-0000-000000000099';
+  IF v_currency IS DISTINCT FROM 'SDG' THEN
+    RAISE EXCEPTION 'trigger did not enforce SDG for restricted writer';
+  END IF;
+END;
+$;
+
+DO $
 DECLARE
   v_table text;
   v_tables text[] := ARRAY[
