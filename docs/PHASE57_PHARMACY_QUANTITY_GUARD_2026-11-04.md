@@ -44,3 +44,13 @@ No patient records or production data were read or changed for this finding; onl
 - Keep PR #191 Draft. No persistent QA pharmacist scenario was run because the approved synthetic pharmacist identity/Auth Admin path is unavailable. Clinical authenticated E2E remains deferred at the owner's request; staff UAT is separate. Production rollout remains blocked by the encrypted off-site backup and isolated restore rehearsal.
 
 Next: independent review of PR #191, then an approved synthetic pharmacist identity and bounded QA-only acceptance scenario. Do not apply Phase 57 to Production before the backup/restore gate passes.
+
+
+## Pharmacy queue fail-closed display — 2026-11-09
+
+- The queue no longer substitutes `1` for a missing prescription quantity. A pure parser accepts only finite positive whole units within the dispensing integer limit.
+- Missing/invalid quantities display as missing in both mobile and desktop layouts; line and prescription totals are withheld rather than estimated from an invented unit count.
+- The dispense action is disabled while any active item has an invalid quantity, with an Arabic/English warning directing the pharmacist to return the prescription to the prescriber for correction.
+- The SQL RPC repeats the NULL check after its `FOR UPDATE` row read, so the authoritative locked item value is checked as well as the early preflight.
+- The disposable fixture now matches live QA/Production metadata: `prescription_items.quantity` is nullable and has no default. The live read-only column audit confirmed that in both projects.
+- Added unit/source assertions for NULL, blank, zero, negative, fractional, NaN/Infinity, over-limit and valid whole quantities. No hosted database change was made.

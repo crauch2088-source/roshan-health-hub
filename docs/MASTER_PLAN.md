@@ -2774,3 +2774,8 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 - Phase 57 rejects active, non-deleted catalogue-linked prescription items with NULL quantity before invoice construction or stock mutation. It does not infer a quantity, backfill data, or add a schema default/constraint.
 - The integration fixture asserts rejection leaves batch stock, aggregate medicine stock, invoice lines, prescription status, stock movements, and item dispense flags unchanged. This remains a source candidate until exact-head CI and independent SQL review pass.
 - QA already records the original Phase 57 migration; this rebased PR does not replay or apply any migration. Production remains unchanged and no migration promotion is authorized here.
+
+
+## Phase 57 — pharmacy quantity UI and locked-row guard follow-up (2026-11-09)
+
+Draft PR #209 now includes the pharmacy queue safety response to the nullable quantity defect: the UI never renders a missing quantity as one, does not calculate a misleading amount, shows an explicit bilingual warning, and disables dispensing until the prescriber corrects the record. A pure parser rejects non-finite, non-positive, fractional, and out-of-range quantities. The database function also rechecks NULL after its locked prescription-item read. The Phase 57 disposable fixture now matches the live schema (nullable quantity, no default), verified read-only in both QA and Production. This is source/test-only; QA already has the original Phase57 guard migration, but the new UI/locked-row refinements have not been applied to any hosted database. PR #209 remains Draft pending exact-head CI and authenticated pharmacist acceptance.
