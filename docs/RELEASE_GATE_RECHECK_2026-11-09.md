@@ -98,3 +98,8 @@ The two QA-only authenticated SECURITY DEFINER RPCs observed in the catalog are 
 ### Release consequence
 
 The live catalog confirms RLS is enabled on all 56 public base tables in both environments and no public RLS-enabled table lacks a policy. It does not establish that every policy is semantically correct or every SECURITY DEFINER function has safe authorization. Keep the function-by-function audit and live migration reconciliation open. No migration, grant, Auth setting, extension, index, or business-data change was performed.
+
+
+### Receipt-currency schema confirmation — 2026-11-09
+
+A direct read-only QA schema query confirmed that `public.payments`, `public.invoices`, and `public.cashbox_transactions` currently have no currency-code column. The receipt's current-currency source is therefore not backed by transaction-level currency provenance. This confirms the PR #181 historical-relabeling risk is a schema/read-model gap, not just a display formatting concern. No row values were read. Keep the owner policy decision and historical regression test open; do not add a guessed default currency or relabel existing amounts.

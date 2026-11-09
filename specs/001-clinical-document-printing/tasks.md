@@ -125,3 +125,8 @@ This gate is additive; existing task checkboxes remain unchanged until evidence 
 - [ ] Review `pg_trgm` public-schema warning and unused-index informational findings only after dependency and real workload/query-plan analysis. Do not drop indexes solely because current low-volume projects show no usage.
 
 Private idempotency-table note: RLS is enabled with no policies, and direct table grants for anon/authenticated/service_role were absent in the read-only check. Keep this table private and reachable only through the controlled RPC boundary.
+
+
+### Receipt-currency schema confirmation — 2026-11-09
+
+A direct read-only QA schema query confirmed that `public.payments`, `public.invoices`, and `public.cashbox_transactions` currently have no currency-code column. The receipt's current-currency source is therefore not backed by transaction-level currency provenance. This confirms the PR #181 historical-relabeling risk is a schema/read-model gap, not just a display formatting concern. No row values were read. Keep the owner policy decision and historical regression test open; do not add a guessed default currency or relabel existing amounts.
