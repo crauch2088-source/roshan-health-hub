@@ -28,6 +28,8 @@ INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VAL
  ('90000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
 INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VALUES
  ('90000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
+INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VALUES
+ ('90000000-0000-0000-0000-000000000007','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
 INSERT INTO public.prescription_items
  (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
  ('91000000-0000-0000-0000-000000000001','90000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001','Amoxicillin',2,'500 mg','BID','5 days'),
@@ -40,6 +42,10 @@ INSERT INTO public.prescription_items
 INSERT INTO public.prescription_items
  (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
  ('91000000-0000-0000-0000-000000000008','90000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000003','Unbatched legacy stock',1,'10 mg','OD','1 day');
+INSERT INTO public.prescription_items
+ (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
+ ('91000000-0000-0000-0000-000000000009','90000000-0000-0000-0000-000000000007','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days'),
+ ('91000000-0000-0000-0000-000000000010','90000000-0000-0000-0000-000000000007',NULL,'Custom topical medicine',1,'apply thin layer','BID','5 days');
 
 DO $$
 DECLARE v_invoice uuid;
@@ -121,6 +127,63 @@ BEGIN
  END IF;
 END;
 $$;
+
+-- A NULL quantity must fail closed; it must never be converted to one unit.
+DO $null_quantity_test$
+DECLARE
+  v_item_id uuid;
+  v_original_quantity numeric;
+  v_batch numeric;
+  v_stock integer;
+  v_invoice_lines bigint;
+BEGIN
+  SELECT pi.id, pi.quantity INTO v_item_id, v_original_quantity
+    FROM public.prescription_items AS pi
+   WHERE pi.prescription_id='90000000-0000-0000-0000-000000000005'
+     AND pi.deleted_at IS NULL AND pi.medicine_id IS NOT NULL
+   ORDER BY pi.id LIMIT 1;
+  IF v_item_id IS NULL OR v_original_quantity IS NULL THEN
+    RAISE EXCEPTION 'null-quantity test fixture is incomplete';
+  END IF;
+  SELECT quantity_remaining INTO v_batch FROM public.pharmacy_inventory
+   WHERE id='80000000-0000-0000-0000-000000000001';
+  SELECT stock_quantity INTO v_stock FROM public.medicines
+   WHERE id='70000000-0000-0000-0000-000000000001';
+  SELECT count(*) INTO v_invoice_lines FROM public.invoice_items
+   WHERE invoice_id=(SELECT id FROM public.invoices
+     WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
+     AND deleted_at IS NULL;
+
+  UPDATE public.prescription_items SET quantity=NULL WHERE id=v_item_id;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      '90000000-0000-0000-0000-000000000005',false
+    );
+    RAISE EXCEPTION 'test failed: null quantity unexpectedly dispensed';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='test failed: null quantity unexpectedly dispensed' THEN RAISE; END IF;
+    IF SQLERRM <> 'prescription quantity is required' THEN RAISE; END IF;
+  END;
+  UPDATE public.prescription_items SET quantity=v_original_quantity WHERE id=v_item_id;
+
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+       WHERE id='80000000-0000-0000-0000-000000000001') <> v_batch
+     OR (SELECT stock_quantity FROM public.medicines
+       WHERE id='70000000-0000-0000-0000-000000000001') <> v_stock THEN
+    RAISE EXCEPTION 'null quantity rejection changed pharmacy stock';
+  END IF;
+  IF (SELECT status FROM public.prescriptions
+       WHERE id='90000000-0000-0000-0000-000000000005') <> 'pending' THEN
+    RAISE EXCEPTION 'null quantity rejection changed prescription status';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+       WHERE invoice_id=(SELECT id FROM public.invoices
+         WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
+         AND deleted_at IS NULL) <> v_invoice_lines THEN
+    RAISE EXCEPTION 'null quantity rejection created invoice lines';
+  END IF;
+END;
+$null_quantity_test$;
 
 -- Paid primary invoice: default append must roll back stock; deliberate secondary invoice may proceed.
 UPDATE public.invoices SET paid_amount=45,status='paid',payment_status='paid'
@@ -210,6 +273,70 @@ BEGIN
 END;
 $legacy_stock_test$;
 
+-- A mixed catalogue/free-text prescription must fail closed as a whole.
+-- The UI intentionally permits clinician-entered free-text medicines. Dispensing
+-- only the catalogue-linked subset and then marking the parent dispensed would
+-- silently lose the remaining prescribed item.
+DO $mixed_free_text_test$
+DECLARE
+  v_batch numeric;
+  v_stock integer;
+  v_invoice_lines bigint;
+  v_stock_movements bigint;
+BEGIN
+  SELECT quantity_remaining INTO v_batch FROM public.pharmacy_inventory
+   WHERE id='80000000-0000-0000-0000-000000000001';
+  SELECT stock_quantity INTO v_stock FROM public.medicines
+   WHERE id='70000000-0000-0000-0000-000000000001';
+  SELECT count(*) INTO v_invoice_lines FROM public.invoice_items
+   WHERE invoice_id=(SELECT id FROM public.invoices
+     WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
+     AND deleted_at IS NULL;
+  SELECT count(*) INTO v_stock_movements FROM public.stock_movements
+   WHERE reference_id='90000000-0000-0000-0000-000000000007'
+     AND reference_table='prescriptions';
+
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      '90000000-0000-0000-0000-000000000007',false
+    );
+    RAISE EXCEPTION 'test failed: mixed catalogue/free-text prescription unexpectedly dispensed';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='test failed: mixed catalogue/free-text prescription unexpectedly dispensed' THEN RAISE; END IF;
+    IF SQLERRM <> 'prescription contains a free-text item that cannot be dispensed from pharmacy; link it to an active catalogue medicine first' THEN
+      RAISE;
+    END IF;
+  END;
+
+  IF (SELECT status FROM public.prescriptions
+       WHERE id='90000000-0000-0000-0000-000000000007') <> 'pending' THEN
+    RAISE EXCEPTION 'mixed prescription rejection changed parent status';
+  END IF;
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+       WHERE id='80000000-0000-0000-0000-000000000001') <> v_batch
+     OR (SELECT stock_quantity FROM public.medicines
+       WHERE id='70000000-0000-0000-0000-000000000001') <> v_stock THEN
+    RAISE EXCEPTION 'mixed prescription rejection changed stock';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+       WHERE invoice_id=(SELECT id FROM public.invoices
+         WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
+         AND deleted_at IS NULL) <> v_invoice_lines THEN
+    RAISE EXCEPTION 'mixed prescription rejection created invoice lines';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+       WHERE reference_id='90000000-0000-0000-0000-000000000007'
+         AND reference_table='prescriptions') <> v_stock_movements THEN
+    RAISE EXCEPTION 'mixed prescription rejection created stock movements';
+  END IF;
+  IF (SELECT count(*) FROM public.prescription_items
+       WHERE prescription_id='90000000-0000-0000-0000-000000000007'
+         AND deleted_at IS NULL AND is_dispensed IS TRUE) <> 0 THEN
+    RAISE EXCEPTION 'mixed prescription rejection marked any item dispensed';
+  END IF;
+END;
+$mixed_free_text_test$;
+
 DO $privilege_test$
 BEGIN
  IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE') THEN
@@ -218,8 +345,15 @@ BEGIN
  IF has_function_privilege('anon','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE') THEN
    RAISE EXCEPTION 'anon can execute dispense-and-invoice RPC';
  END IF;
- IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription(uuid)','EXECUTE') THEN
-   RAISE EXCEPTION 'legacy dispense RPC must remain callable during the compatibility window';
+ IF NOT has_function_privilege('authenticated','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
+   RAISE EXCEPTION 'authenticated cannot execute the idempotent dispense RPC';
+ END IF;
+ IF has_function_privilege('anon','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
+   RAISE EXCEPTION 'anon can execute the idempotent dispense RPC';
+ END IF;
+ IF has_function_privilege('authenticated','public.fn_dispense_prescription(uuid)','EXECUTE')
+    OR has_function_privilege('anon','public.fn_dispense_prescription(uuid)','EXECUTE') THEN
+   RAISE EXCEPTION 'legacy non-idempotent dispense RPC remains executable';
  END IF;
 END;
 $privilege_test$;
