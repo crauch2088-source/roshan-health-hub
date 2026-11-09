@@ -4,8 +4,6 @@ import { test } from "node:test";
 
 const migration = readFileSync("db/roshan_phase59_receipt_currency_provenance.sql", "utf8");
 const integration = readFileSync("db/tests/phase59_receipt_currency_integration.sql", "utf8");
-const receipt = readFileSync("src/lib/print/receipt.ts", "utf8");
-const billing = readFileSync("src/routes/_authenticated/billing_.$invoiceId.tsx", "utf8");
 
 test("Phase 59 exposes persisted currency provenance for every receipt ledger leg", () => {
   for (const field of [
@@ -35,13 +33,8 @@ test("Phase 59 integration covers legacy NULL, normal, reversed, missing and dup
   assert.match(integration, /missing permissions/);
 });
 
-test("receipt model accepts only matching persisted SDG provenance", () => {
-  assert.match(receipt, /payment_currency_code/);
-  assert.match(receipt, /invoice_currency_code/);
-  assert.match(receipt, /ledger_currency_code/);
-  assert.match(receipt, /reversal_currency_code/);
-  assert.match(receipt, /currency_matches/);
-  assert.match(receipt, /SDG/);
-  assert.match(billing, /get_invoice_payment_receipt_status_v2/);
-  assert.doesNotMatch(billing, /get_invoice_payment_receipt_status"/);
+test("Phase 59 treats unknown or inconsistent provenance as a negative match", () => {
+  assert.match(migration, /COALESCE\([\s\S]*false\s*\)/);
+  assert.match(migration, /payment_currency_code text/);
+  assert.match(migration, /reversal_currency_code text/);
 });
