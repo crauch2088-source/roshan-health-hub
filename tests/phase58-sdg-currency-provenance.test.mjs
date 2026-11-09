@@ -51,22 +51,23 @@ test("Phase 58 rejects NULL, non-SDG and post-posting currency mutation", () => 
   assert.match(integration, /restricted writer/);
 });
 
-
-test("Phase 58 binds payment and source-ledger currency to known SDG parent records", () => {
+test("Phase 58 binds payment and supplier-payment currency to known SDG parents", () => {
   assert.match(migration, /TG_TABLE_NAME = 'payments'/);
   assert.match(migration, /TG_TABLE_NAME = 'supplier_payments'/);
-  assert.match(migration, /TG_TABLE_NAME = 'cashbox_transactions'/);
   assert.match(migration, /invoice currency provenance is missing or inconsistent/);
   assert.match(migration, /supplier bill currency provenance is missing or inconsistent/);
-  assert.match(migration, /source payment currency provenance is missing or inconsistent/);
-  assert.match(migration, /reversal currency provenance is missing or inconsistent/);
   assert.match(integration, /payment against legacy unknown-currency invoice/);
   assert.match(integration, /payment against legacy unknown-currency supplier bill/);
-  assert.match(integration, /cashbox ledger accepted a payment with unknown currency provenance/);
-  assert.match(integration, /cashbox reversal accepted an original row with unknown currency provenance/);
 });
 
+test("Phase 58 binds source-ledger and reversal currency to their original records", () => {
+  assert.match(migration, /TG_TABLE_NAME = 'cashbox_transactions'/);
+  assert.match(migration, /source payment currency provenance is missing or inconsistent/);
   assert.match(migration, /source expense currency provenance is missing or inconsistent/);
   assert.match(migration, /source supplier payment currency provenance is missing or inconsistent/);
+  assert.match(migration, /reversal currency provenance is missing or inconsistent/);
+  assert.match(integration, /cashbox ledger accepted a payment with unknown currency provenance/);
   assert.match(integration, /cashbox ledger accepted an expense with unknown currency provenance/);
   assert.match(integration, /cashbox ledger accepted a supplier payment with unknown currency provenance/);
+  assert.match(integration, /cashbox reversal accepted an original row with unknown currency provenance/);
+});
