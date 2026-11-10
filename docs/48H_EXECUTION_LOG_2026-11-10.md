@@ -139,3 +139,41 @@ No Production/QA writes, migration application, business-data reads/writes, perm
 - Backup runner main remains `ed41574bb278325e7bc06fd034e767db1544c55a`. The latest run `42537677251` only validated and skipped backup; the previous full run `42535939237` passed dump, PostgreSQL 17 restore, row-count comparison, age encryption and ciphertext upload. Its GitHub artifact expired, but the Drive copy and owner-device decryption/archive-readability evidence remain. A full backup using the current main checksum helper remains unverified.
 
 **Next P0:** complete current 129/22 source-to-ledger and effective-catalog reconciliation. Keep Phase 57 unapplied in Production until this is complete and the backup/current-runner evidence is refreshed. Keep clinical E2E deferred until the isolated free environment and synthetic doctor/pharmacist identities exist.
+
+
+## H+1 execution update — 2026-11-10 10:07:34 Africa/Khartoum
+
+**Elapsed:** 00:58:26. **Remaining to H48 decision deadline:** 47:01:34. **Main baseline remains:** `bed6ff4c87d582107bf62ee353be4eb35958481b`.
+
+### Revised evidence-weighted Engineering RC estimate
+
+| Workstream | Weight | H+1 completion | Evidence-backed reason | Remaining blockers |
+|---|---:|---:|---|---|
+| A. Orchestration, scope, evidence | 10% | 95% | Charter and Constitution v1.1.0 merged; H0 ledger and exact-head tracking documented; live-state and candidate PRs continuously checked | Keep decision/evidence log current; merge the H0 ledger documentation after review |
+| B. Pharmacy + medicine catalogue | 20% | 65% | PR #209 Phase57 quantity + external-prescription guards passed all five workflows; PR #210 Phase60 role/attestation candidate passed all five workflows including dedicated PG17 behavioral role tests | Actionable free-text/unlinked prescription correction path; independent security review; QA pharmacist acceptance; decide separately whether INSERT/medicine creation should share the same three-role restriction |
+| C. SDG finance + receipts | 20% | 60% | Phase58/59 candidate previously passed ten workflows; new Phase59 metadata-redaction hardening and cross-branch PG17 regression are in a fresh exact-head run | Finish new CI; independent SQL review; receipt UI integration and print acceptance; migration-history reconciliation; authenticated finance QA |
+| D. Migration provenance + security | 25% | 25% | Production/QA ledgers and SECURITY DEFINER inventories remain captured read-only; no broad RLS gaps discovered | Material ledger divergence remains unresolved; individual function/ACL review and forward-only rollout design remain mandatory |
+| E. Mobile, bilingual UX, printing | 10% | 30% | Receipt and prescription print candidates exist; RTL/LTR automated coverage remains available | Real Android/browser workflow, A4/thermal printer, and staff acceptance are not evidenced |
+| F. QA, recovery, release decision | 15% | 20% | PG17 candidate checks are expanding; encrypted DB backup/restore and owner-side archive readability were previously evidenced | Latest portable backup helper E2E run; Storage/Vault recovery; authenticated QA; clinical/staff UAT; rollback/release decision |
+
+**Weighted Engineering RC progress: 46.75% (reported as 47%), up from the H0 44.25% (44%).** This denominator measures launch-critical Engineering RC evidence only, not all product features.
+
+**Operational acceptance remains 10.5% (reported as 11%)** on its separate denominator. No authenticated staff/clinician/pharmacist/finance sign-off, target-device acceptance, physical printer acceptance, or production rollout approval has been added.
+
+### Exact candidate-head evidence
+
+- PR #209 current candidate head `48fc38e867e6f1387881862e9ab806b93cda6c9c`: all five PR-triggered workflows passed, including PG17 dispense/invoice integration and UI validation. External prescriptions are now rejected before stock/invoice mutation. The free-text correction path remains open.
+- PR #210 current candidate head `a7bf975247cbfbd5b67512e291af717b08402344`: all five PR-triggered workflows passed, including aggregate install/audit/typecheck/lint/build and the dedicated Phase60 PG17 behavioral test. The test verifies Admin, Pharmacist, Legacy Admin and Super Admin behavior, actor-bound attestations, audit rows, and UPDATE/DELETE/TRUNCATE rejection.
+- PR #211 current candidate head `9a35bddd1669c836137e0f54767d0f8094e43b82`: Phase59 receipt metadata redaction was added after independent review; exact-head CI is running again. The previous synchronized candidate head `c4600dbdd042afcc489ca7d4b3bf07ff7f380155` had all ten workflows successful.
+- PRs #209, #210 and #211 remain Draft. No candidate migration has been applied to hosted QA or Production; no live role mapping, business data, Auth/Storage settings, or deployment promotion was changed.
+
+### H+1 stop-ship status
+
+1. Production dispensing still has the NULL quantity → one-unit fallback; do not release dispensing changes to Production before approved forward-only migration and QA pharmacist acceptance.
+2. Production/QA migration histories remain materially divergent; no hosted migration application is authorized.
+3. Free-text prescription items fail closed but still lack an actionable prescriber correction loop.
+4. Phase60 controls **editing** existing shared medicine identity; medicine INSERT remains on the existing `pharmacy.create` role map pending a separate owner decision. No live role mapping was changed.
+5. Phase59 mismatch metadata redaction is under exact-head PG17/CI revalidation.
+6. Staff UAT, authenticated role acceptance, Android/browser acceptance, and physical printer acceptance remain external gates.
+
+**Safety boundary unchanged:** H48 targets an evidence-backed Engineering RC. It does not authorize Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, or backup dispatch.
