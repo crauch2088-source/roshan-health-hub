@@ -82,10 +82,27 @@ CREATE TRIGGER medicine_pack_verifications_no_truncate
 BEFORE TRUNCATE ON public.medicine_pack_verifications
 FOR EACH STATEMENT EXECUTE FUNCTION private.reject_medicine_pack_verification_mutation();
 
+CREATE OR REPLACE FUNCTION private.audit_medicine_pack_verification_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+DECLARE
+  v_actor uuid := public.current_app_user_id();
+BEGIN
+  INSERT INTO public.audit_logs (user_id, action, table_name, record_id, old_data, new_data)
+  VALUES (v_actor, 'INSERT', 'medicine_pack_verifications', NEW.id, NULL, to_jsonb(NEW));
+  RETURN NEW;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION private.audit_medicine_pack_verification_insert() FROM PUBLIC, anon, authenticated, service_role;
+
 DROP TRIGGER IF EXISTS trg_audit_medicine_pack_verifications ON public.medicine_pack_verifications;
 CREATE TRIGGER trg_audit_medicine_pack_verifications
 AFTER INSERT ON public.medicine_pack_verifications
-FOR EACH ROW EXECUTE FUNCTION public.audit_row_change();
+FOR EACH ROW EXECUTE FUNCTION private.audit_medicine_pack_verification_insert();
 
 CREATE OR REPLACE FUNCTION public.verify_medicine_physical_pack(p_medicine_id uuid)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
