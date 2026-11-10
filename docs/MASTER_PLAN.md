@@ -2809,3 +2809,8 @@ The owner approved a 48-hour accelerated execution sprint. The binding execution
 **Sprint baseline:** `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
 
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
+
+
+## 48-hour sprint baseline and H0 log — 2026-11-10
+
+The owner-approved sprint began at **2026-11-10 09:09:08 Africa/Khartoum** and has a 48-hour decision deadline of **2026-11-12 09:09:08 Africa/Khartoum**. The evidence-backed weighted baseline, live migration/security inventory, candidate PR heads, workstream scores, stop-ship findings, and operational-acceptance score are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). This is a sprint-specific denominator, not a percentage of all historical product features.
