@@ -2843,3 +2843,8 @@ The current source-parity workflow verifies a frozen 93-entry source hash set an
 ## H+1 sprint progress — 2026-11-10
 
 The 48-hour sprint's first evidence-backed update records **47% Engineering RC progress** (weighted, up from 44% at H0) and **11% operational acceptance** on a separate denominator. Exact candidate-head CI and remaining stop-ship blockers are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). PR #209 and #210 candidate suites are green; PR #211 is re-running after a receipt metadata-redaction security correction. No hosted database or live role mapping was changed.
+
+
+## H+2 security review — 2026-11-10
+
+The public SECURITY DEFINER inventory was reviewed by exact function in both environments: Production 26 and QA 28 authenticated-executable functions; only `complete_visit_atomic` (delegates to a guarded implementation) and `setup_required` (documented boolean signal) lacked a direct in-body guard. No bulk revocation is warranted. Weighted Engineering RC estimate is now 48%; operational acceptance remains 11%. Detailed evidence and remaining migration/search-path review are in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md).
