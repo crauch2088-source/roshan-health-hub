@@ -218,8 +218,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
           >
             {lang === "ar"
-              ? "تعذّر التحقق من عمر المريض من تاريخ الميلاد المسجّل. تحقّق من تاريخ الميلاد والاحتياطات المرتبطة بالعمر قبل اعتماد الوصفة."
-              : "Patient age could not be verified from the recorded date of birth. Confirm the date of birth and age-specific precautions before approving this prescription."}
+              ? "تعذّر التحقق من عمر المريض من تاريخ الميلاد المسجّل. تحقّق من تاريخ الميلاد والاحتياطات المرتبطة بالعمر قبل اعتماد الوصفة. وإذا كان المريض قد يكون طفلًا، فتحقّق من تسجيل وزن حالي مرتبط بهذه الزيارة قبل اعتماد أي جرعة تعتمد على الوزن."
+              : "Patient age could not be verified from the recorded date of birth. Confirm the date of birth and age-specific precautions. If the patient may be a child, verify a current visit-linked weight before any weight-based dosing."}
           </div>
         ) : null}
         {isPediatric ? (
@@ -438,6 +438,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
               </SelectContent>
             </Select>
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "خيارات المدة هنا لتسهيل الإدخال فقط وليست توصيات علاجية؛ حدّد المدة وفق الاستطباب والإرشادات المعتمدة وحالة المريض."
+                : "Duration shortcuts are for data entry only, not treatment recommendations. Choose duration for the indication, applicable guidance and patient context."}
+            </p>
             {!isKnownDuration ? (
               <Input
                 value={form.duration}
@@ -484,6 +489,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 placeholder={lang === "ar" ? "أدخل طريق الإعطاء" : "Enter administration route"}
               />
             ) : null}
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "خيارات طريق الإعطاء عامة ولا يتحقق النظام من توافقها مع المنتج المحدد؛ تحقّق من ملصق المستحضر قبل الاختيار."
+                : "Route options are generic; the system does not validate them against the selected product. Verify the exact product label before choosing a route."}
+            </p>
           </div>
           <Input
             value={form.instructions}

@@ -2536,6 +2536,15 @@ Next: reconcile the overlapping route/custom-field PRs into #179, then complete 
 
 Next: obtain a current authorized preview for #179 without weakening SSO or bypassing build limits; complete non-staff Arabic RTL/English LTR print-preview checks and actual A4 printer validation. Only after that should the clinic/pharmacy staff acceptance session be scheduled. Authenticated clinical E2E remains deferred until the isolated free test environment and synthetic doctor identity gates are met.
 
+
+### Prescription composer follow-up — 2026-11-10
+
+- Baseline main at recheck: bd3d6fa57de1628f2bbf4846f004ba285d4021c5. PR #179 head at recheck: a9a8ddd703f0c92febc1a563a94515b3090effc9, 35 commits ahead / 1 behind main, still Draft.
+- Exact-head CI run 42866378708 (run 1908) completed with 279/280 tests passing. The sole failure was the existing test 'medicine search includes dosage form when the picker advertises form search': the UI promised form search and the query selected dosage_form, but buildMedicineSearchFilter() omitted dosage_form.ilike from its PostgREST OR filter.
+- The follow-up adds dosage_form to the search filter. It also clarifies that duration shortcuts are data-entry aids, not treatment recommendations; clarifies that route choices are not checked against the exact selected product; and extends the unknown-age warning to prompt a current visit-linked weight check if the patient may be a child.
+- These are search/UX safety clarifications only. No dose, frequency, duration rule, route mapping, treatment template, product identity, database schema, patient/financial record, or hosted environment was changed. No universal duration cap was introduced.
+- Exact-head checks for the follow-up commit are pending at the time of this note. Keep PR #179 Draft until they pass and authorized Arabic RTL/English LTR browser, mobile print-preview, A4 output and staff acceptance gates are evidenced. Authenticated clinical E2E remains deferred until the isolated free environment and synthetic doctor identity are available.
+
 ## Verified continuation update — 2026-11-04
 
 ### Pharmacy quantity and Phase 57

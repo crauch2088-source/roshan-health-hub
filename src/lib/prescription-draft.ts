@@ -84,6 +84,7 @@ export function buildMedicineSearchFilter(term: string): string | null {
     "generic_name.ilike." + pattern,
     "brand_name.ilike." + pattern,
     "strength.ilike." + pattern,
+    "dosage_form.ilike." + pattern,
   ].join(",");
 }
 

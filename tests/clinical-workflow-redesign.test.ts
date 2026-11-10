@@ -94,6 +94,20 @@ test("medicine search includes dosage form when the picker advertises form searc
   assert.match(filter, /dosage_form\.ilike\.%capsule%/);
 });
 
+test("unknown-age cue prompts a current visit weight check if the patient may be a child", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(ui, /If the patient may be a child, verify a current visit-linked weight/);
+  assert.match(ui, /إذا كان المريض قد يكون طفلًا/);
+});
+
+test("route and duration quick choices are clearly marked as unvalidated entry aids", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(ui, /Route options are generic; the system does not validate them against the selected product/);
+  assert.match(ui, /خيارات طريق الإعطاء عامة/);
+  assert.match(ui, /Duration shortcuts are for data entry only, not treatment recommendations/);
+  assert.match(ui, /خيارات المدة هنا لتسهيل الإدخال فقط وليست توصيات علاجية/);
+});
+
 test("medicine search results show brand and dosage form for product disambiguation", () => {
   const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
   const pickerStart = ui.indexOf("{filtered.map");
