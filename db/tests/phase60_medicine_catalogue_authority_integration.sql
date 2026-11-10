@@ -52,12 +52,15 @@ BEGIN
 
   IF EXISTS (
     SELECT 1
-    FROM unnest(ARRAY[
-      'id','barcode','active','created_at','created_by','updated_by',
-      'deleted_at','deleted_by','unit','is_active','selling_price','cost_price',
-      'stock_quantity','reorder_level','expiry_date','batch_number','updated_at'
-    ]) AS forbidden(column_name)
-    WHERE has_column_privilege('authenticated', 'public.medicines', forbidden.column_name, 'UPDATE')
+    FROM information_schema.columns AS c
+    WHERE c.table_schema = 'public'
+      AND c.table_name = 'medicines'
+      AND c.column_name NOT IN (
+        'name', 'generic_name', 'brand_name', 'strength', 'dosage_form'
+      )
+      AND has_column_privilege(
+        'authenticated', 'public.medicines', c.column_name, 'UPDATE'
+      )
   ) THEN
     RAISE EXCEPTION 'authenticated retains UPDATE on a non-identity medicine column';
   END IF;
