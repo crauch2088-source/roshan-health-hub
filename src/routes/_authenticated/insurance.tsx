@@ -667,7 +667,6 @@ function ClaimsTab({ currency }: { currency: string }) {
   const [decision, setDecision] = useState<{ claim: Row; status: ClaimStatus } | null>(null);
   const [approvedAmount, setApprovedAmount] = useState("0");
 
-
   const membership = useRows<Row[]>(["patient-insurance-picker"], () =>
     supabase
       .from("patient_insurance")
