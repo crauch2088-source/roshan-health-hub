@@ -274,7 +274,6 @@ testRunner(
   },
 );
 
-
 testRunner("medicine identity and physical-pack roles follow the owner-approved split", () => {
   assert.equal(isMedicineIdentityEditorRole("admin"), true);
   assert.equal(isMedicineIdentityEditorRole("pharmacist"), true);
