@@ -25,7 +25,7 @@ A pharmacist reviewing a saved, pending, internal prescription sees an active it
 The original `prescribed_by` doctor sees open requests for prescriptions they authored, inspects the saved item snapshot, and explicitly selects an active catalogue medicine.
 
 - Only the original prescriber with `emr.update` and matching branch may resolve or reject.
-- Another doctor in the same branch is denied. Pharmacists cannot resolve. Admin/super-admin status alone does not confer prescribing authority.
+- Another doctor in the same branch is denied. Pharmacists cannot resolve. Admin/super-admin status alone does not confer prescribing authority; the caller must equal the original prescribed_by identity and their assigned users.branch_id must equal the prescription branch.
 - Replacement uses an explicit medicine UUID; no fuzzy matching or automatic substitution.
 - The RPC locks and revalidates the request, prescription and item; stale state fails closed.
 - Item regimen (quantity, dose, frequency, duration, instructions, route) is preserved unless a separately specified clinical edit is explicitly approved.
@@ -41,7 +41,7 @@ When the original prescriber chooses not to edit the item in place, they can can
 ### US4 — Read in correct context (P1)
 - Pharmacy readers require `pharmacy.read` and branch access.
 - Prescriber readers require `emr.read`, matching `prescribed_by`, and branch access.
-- Other doctors cannot enumerate requests merely because they share a branch.
+- Other doctors cannot enumerate requests merely because they share a branch. Super-admin branch bypass must not apply: assigned branch equality is mandatory.
 - Request/event tables have RLS enabled and forced; browser roles have no direct write grants.
 
 ## Invariants

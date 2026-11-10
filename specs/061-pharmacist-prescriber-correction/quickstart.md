@@ -10,7 +10,7 @@ Future isolated-QA path only; not permission to write to hosted QA or Production
 
 ## Pharmacist
 1. Create synthetic patient, active visit and pending internal prescription with one linked and one free-text item.
-2. Sign in as same-branch pharmacist with pharmacy.read/update.
+2. Sign in as same-branch pharmacist (including strict branch equality for super-admin) with pharmacy.read/update.
 3. Submit a correction request for the free-text item.
 4. Retry same request key and verify same request id; submit a different key and verify one-open-request conflict.
 5. Verify queue still blocks dispensing and no stock/invoice/ledger state changes.

@@ -29,7 +29,7 @@
 
 ## Read scope
 
-RLS enabled and forced. Pharmacist requires `pharmacy.read` + branch access. Prescriber requires `emr.read`, matching original prescriber id and branch access. No direct browser writes. Revoke function EXECUTE from PUBLIC/anon; grant only required authenticated callers.
+RLS enabled and forced. Pharmacist requires `pharmacy.read` + strict assigned-branch equality; super-admin branch bypass is not allowed. Prescriber requires `emr.read`, matching original prescriber id and branch access. No direct browser writes. Revoke function EXECUTE from PUBLIC/anon; grant only required authenticated callers.
 
 ## Side-effect assertion
 

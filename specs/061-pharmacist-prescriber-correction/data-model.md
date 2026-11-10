@@ -36,6 +36,6 @@ Append-only event log:
 
 ## Security and side-effect invariants
 
-Request linkage and item snapshot are derived from locked database rows. Requester requires pharmacy.update and branch access. Reader requires pharmacy.read + branch access or emr.read + original prescriber identity + branch access. Resolver/rejector requires emr.update and original prescriber identity. Super-admin status is not a clinical authorship substitute.
+Request linkage and item snapshot are derived from locked database rows. Requester requires pharmacy.update and branch access. Reader requires pharmacy.read + branch access or emr.read + original prescriber identity + branch access. Resolver/rejector requires emr.update and original prescriber identity. Super-admin status is not a clinical authorship substitute. Strict assigned-branch equality is also mandatory; do not rely only on the generic branch helper because it bypasses branch equality for super-admin.
 
 Request, reject and replace actions must leave medicines, pharmacy_inventory, stock_movements, invoices, invoice_items, payments, cashbox_transactions and ledger state unchanged.

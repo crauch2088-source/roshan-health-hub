@@ -23,7 +23,7 @@
 - `reject_prescription_correction_request(uuid, text)`: original prescriber rejects with required reason; no clinical/financial/inventory mutation.
 
 ### Authorization
-- Create: active authenticated caller, `pharmacy.update`, branch access.
+- Create: active authenticated caller, `pharmacy.update`, and strict `users.branch_id = prescriptions.branch_id` equality; the generic branch helper's super-admin bypass is insufficient.
 - Pharmacy read: `pharmacy.read` plus branch access.
 - Prescriber read: `emr.read`, caller equals original `prescribed_by`, branch access.
 - Resolve/reject: `emr.update` and caller equals original `prescribed_by`; admin/super-admin does not override clinical authorship.
@@ -44,3 +44,8 @@ Lock request → prescription → item in a consistent order. Recheck status, so
 ## Pre-implementation verification
 
 Confirm exact deployed/canonical column types, foreign keys, active-user helper, permission helper, branch helper, audit triggers and migration chronology. Do not assume field types from this plan. Do not rewrite Phase 57/57B history.
+
+
+## Dependency note
+
+Phase 57B is candidate code in Draft PR #209, not current main and not confirmed applied to QA/Production. This spec assumes the intended fail-closed behavior, but implementation must wait for PR #209 integration or explicitly include that reviewed dependency. See [research.md](research.md).
