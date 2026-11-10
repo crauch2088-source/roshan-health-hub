@@ -153,8 +153,6 @@ BEGIN
   );
   v_new_item := v_result.corrected_item_id;
   IF v_result.status IS DISTINCT FROM 'resolved' OR v_new_item IS NULL THEN RAISE EXCEPTION 'replacement did not resolve request'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescription_items WHERE id=v_new_item AND prescription_id='61700000-0000-0000-0000-000000000001' AND medicine_id='61600000-0000-0000-0000-000000000001' AND medication_name='Amoxicillin 500 mg' AND unit_price=12.50 AND quantity=10) THEN RAISE EXCEPTION 'replacement item was not derived from the active catalogue'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescription_items WHERE id='61800000-0000-0000-0000-000000000002' AND deleted_at IS NULL AND medicine_id IS NULL) THEN RAISE EXCEPTION 'partial correction silently removed or linked another unrequested item'; END IF;
   SELECT count(*) INTO v_count FROM public.prescription_item_correction_events WHERE request_id=v_request;
   IF v_count <> 2 THEN RAISE EXCEPTION 'request and replacement events are not both present'; END IF;
 END;
@@ -171,6 +169,32 @@ BEGIN
       AND deleted_at IS NOT NULL
   ) THEN
     RAISE EXCEPTION 'original item history was not retained as soft-deleted';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prescription_item_correction_requests AS r
+    JOIN public.prescription_items AS pi ON pi.id = r.corrected_item_id
+    WHERE r.prescription_item_id = '61800000-0000-0000-0000-000000000001'
+      AND r.status = 'resolved'
+      AND pi.prescription_id = '61700000-0000-0000-0000-000000000001'
+      AND pi.medicine_id = '61600000-0000-0000-0000-000000000001'
+      AND pi.medication_name = 'Amoxicillin 500 mg'
+      AND pi.unit_price = 12.50
+      AND pi.quantity = 10
+      AND pi.deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'replacement item was not derived from the active catalogue';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prescription_items
+    WHERE id = '61800000-0000-0000-0000-000000000002'
+      AND deleted_at IS NULL
+      AND medicine_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'partial correction silently removed or linked another unrequested item';
   END IF;
 END;
 $phase61_replace_history$;
