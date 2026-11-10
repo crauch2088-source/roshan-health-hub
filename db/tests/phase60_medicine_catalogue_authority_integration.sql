@@ -92,6 +92,12 @@ BEGIN
     RAISE EXCEPTION 'pack attestation audit trigger must use an empty search_path';
   END IF;
 
+  IF has_function_privilege('anon', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE')
+     OR has_function_privilege('service_role', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'trigger-only append-only guard must not be directly executable by application/service roles';
+  END IF;
+
   IF NOT EXISTS (
        SELECT 1 FROM pg_trigger
        WHERE tgrelid = 'public.medicine_pack_verifications'::regclass
