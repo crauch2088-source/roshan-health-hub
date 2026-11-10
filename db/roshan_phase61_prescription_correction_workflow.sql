@@ -92,7 +92,7 @@ CREATE POLICY prescription_correction_events_select ON public.prescription_corre
     OR (public.app_has_perm('emr.read') AND r.prescriber_id=public.current_app_user_id()))
 ));
 
-REVOKE ALL ON public.prescription_correction_requests,public.prescription_correction_events FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON public.prescription_correction_requests,public.prescription_correction_events FROM PUBLIC,anon,authenticated,service_role,authenticator;
 GRANT SELECT ON public.prescription_correction_requests,public.prescription_correction_events TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.create_prescription_correction_request(
@@ -137,6 +137,16 @@ BEGIN
  SELECT i.* INTO v_item FROM public.prescription_items i
  WHERE i.id=p_item_id AND i.prescription_id=p_prescription_id AND i.deleted_at IS NULL FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'active_prescription_item_not_found' USING ERRCODE='22023'; END IF;
+ -- Recheck after acquiring parent/item locks so concurrent retries with the same key are idempotent.
+ SELECT r.* INTO v_old FROM public.prescription_correction_requests r WHERE r.request_key=p_request_key FOR UPDATE;
+ IF FOUND THEN
+  IF v_old.prescription_id IS DISTINCT FROM p_prescription_id OR v_old.prescription_item_id IS DISTINCT FROM p_item_id
+   OR v_old.requested_by IS DISTINCT FROM v_uid OR v_old.reason_code IS DISTINCT FROM p_reason_code
+   OR v_old.reason_text IS DISTINCT FROM btrim(p_reason_text) THEN
+   RAISE EXCEPTION 'correction_request_idempotency_key_conflict' USING ERRCODE='23505';
+  END IF;
+  RETURN QUERY SELECT v_old.id,v_old.status; RETURN;
+ END IF;
  IF v_item.medicine_id IS NOT NULL THEN RAISE EXCEPTION 'item_not_unlinked' USING ERRCODE='22023'; END IF;
  IF COALESCE(v_item.is_dispensed,false) OR COALESCE(v_item.dispensed_quantity,0)>0 THEN
   RAISE EXCEPTION 'prescription_item_already_dispensed' USING ERRCODE='22023';
@@ -151,6 +161,15 @@ BEGIN
   VALUES(p_request_key,p_prescription_id,p_item_id,v_rx.patient_id,v_rx.visit_id,v_rx.branch_id,
    v_rx.prescribed_by,v_uid,v_snap,p_reason_code,btrim(p_reason_text)) RETURNING id INTO v_id;
  EXCEPTION WHEN unique_violation THEN
+  SELECT r.* INTO v_old FROM public.prescription_correction_requests r WHERE r.request_key=p_request_key;
+  IF FOUND THEN
+   IF v_old.prescription_id IS DISTINCT FROM p_prescription_id OR v_old.prescription_item_id IS DISTINCT FROM p_item_id
+    OR v_old.requested_by IS DISTINCT FROM v_uid OR v_old.reason_code IS DISTINCT FROM p_reason_code
+    OR v_old.reason_text IS DISTINCT FROM btrim(p_reason_text) THEN
+    RAISE EXCEPTION 'correction_request_idempotency_key_conflict' USING ERRCODE='23505';
+   END IF;
+   RETURN QUERY SELECT v_old.id,v_old.status; RETURN;
+  END IF;
   RAISE EXCEPTION 'correction_request_already_open' USING ERRCODE='23505';
  END;
  INSERT INTO public.prescription_correction_events(request_id,event_type,actor_id,after_snapshot,reason_text)
@@ -267,8 +286,8 @@ BEGIN
  RETURN QUERY SELECT v_req.id,'rejected'::text;
 END $$;
 
-REVOKE ALL ON FUNCTION private.current_user_assigned_branch_access(uuid) FROM PUBLIC,anon;
-REVOKE ALL ON FUNCTION private.guard_prescription_correction_request_immutable() FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION private.current_user_assigned_branch_access(uuid) FROM PUBLIC,anon,service_role,authenticator;
+REVOKE ALL ON FUNCTION private.guard_prescription_correction_request_immutable() FROM PUBLIC,anon,authenticated,service_role,authenticator;
 REVOKE ALL ON FUNCTION private.prevent_prescription_correction_event_mutation() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION private.current_user_assigned_branch_access(uuid) TO authenticated;
 REVOKE ALL ON FUNCTION public.create_prescription_correction_request(uuid,uuid,text,text,uuid) FROM PUBLIC,anon;
