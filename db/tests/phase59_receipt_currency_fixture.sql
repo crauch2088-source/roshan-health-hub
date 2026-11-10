@@ -13,6 +13,12 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END;
 $phase59$;
+DO $phase59$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$phase59$;
 
 CREATE FUNCTION public.app_has_perm(_permission text)
 RETURNS boolean
