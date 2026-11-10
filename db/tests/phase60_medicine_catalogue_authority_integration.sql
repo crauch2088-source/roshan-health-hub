@@ -108,6 +108,14 @@ WHERE r.code IN ('admin', 'pharmacist', 'legacy_admin')
   AND p.code IN ('pharmacy.read', 'pharmacy.update')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO auth.users (id, aud, role, email, created_at, updated_at)
+VALUES
+  ('62000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'phase60-admin@example.invalid', clock_timestamp(), clock_timestamp()),
+  ('62000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'phase60-pharmacist@example.invalid', clock_timestamp(), clock_timestamp()),
+  ('62000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'phase60-superadmin@example.invalid', clock_timestamp(), clock_timestamp()),
+  ('62000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'phase60-legacy-admin@example.invalid', clock_timestamp(), clock_timestamp())
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO public.users (id, auth_user_id, role_id, full_name, active)
 SELECT x.user_id, x.auth_uid, r.id, x.full_name, true
 FROM (VALUES
