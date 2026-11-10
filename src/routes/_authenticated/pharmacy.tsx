@@ -197,7 +197,8 @@ function PharmacyPageInner() {
             const quantityFor = (item: Row) => parseDispenseQuantity(item["quantity"]);
             const hasInvalidQuantity = items.some((item) => quantityFor(item) === null);
             const hasUnlinkedItem = items.some((item) => !s(item, "medicine_id"));
-            const hasDispenseBlocker = hasInvalidQuantity || hasUnlinkedItem;
+            const hasExternalPrescription = p["is_external"] === true;
+            const hasDispenseBlocker = hasInvalidQuantity || hasUnlinkedItem || hasExternalPrescription;
             const total = hasDispenseBlocker
               ? null
               : items.reduce(
@@ -278,6 +279,16 @@ function PharmacyPageInner() {
                     </div>
                   </div>
                   <SectionTitle>{t("medicines")}</SectionTitle>
+                  {hasExternalPrescription ? (
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-md border border-amber-500/40 p-3 text-sm text-amber-700"
+                    >
+                      {lang === "ar"
+                        ? "هذه وصفة خارجية؛ لا يجوز صرفها من مخزون المركز أو إنشاء فاتورة صرف داخلية لها."
+                        : "This is an external prescription. It must not be dispensed from clinic stock or billed as an internal pharmacy dispense."}
+                    </p>
+                  ) : null}
                   {hasInvalidQuantity ? (
                     <p
                       role="alert"
