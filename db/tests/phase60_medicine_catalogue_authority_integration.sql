@@ -60,6 +60,7 @@ BEGIN
   END IF;
 
   IF has_function_privilege('anon', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE')
+     OR has_function_privilege('service_role', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE')
      OR NOT has_function_privilege('authenticated', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'verification RPC EXECUTE grants are incorrect';
   END IF;
