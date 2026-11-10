@@ -26,6 +26,12 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END;
 $phase58$;
+DO $phase58$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$phase58$;
 GRANT INSERT ON public.invoices TO test_writer;
 
 -- Seed pre-migration legacy rows. The migration must preserve their unknown provenance.
