@@ -1,14 +1,18 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { calcAge } from "../src/lib/medical.ts";
 import {
+  buildMedicineSearchFilter,
   createEmptyPrescriptionDraft,
+  createPrescriptionDraftForMedicine,
   validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
 import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
 import { shouldBlockUnsavedClinicalNoteNavigation } from "../src/lib/clinical-navigation-guard.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+const pharmacyQueue = read("../src/routes/_authenticated/pharmacy.tsx");
 
 test("prescription completeness guard rejects empty and incomplete regimens", () => {
   assert.equal(validatePrescriptionDrafts([]), "empty");
@@ -20,10 +24,102 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
   draft.frequency = "twice daily";
   assert.equal(validatePrescriptionDrafts([draft]), "missing-duration");
   draft.duration = "5 days";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-dosage-form");
+  draft.dosage_form = "tablet";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-route");
+  draft.route = "oral";
+  assert.equal(draft.quantity, "");
+  assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "0";
   assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "10";
   assert.equal(validatePrescriptionDrafts([draft]), null);
+});
+
+test("medicine catalogue selection never infers an administration route from dosage form", () => {
+  for (const dosage_form of ["tablet", "capsule", "syrup", "suspension", "injection", "cream"]) {
+    const draft = createPrescriptionDraftForMedicine({ id: "medicine-1", dosage_form });
+    assert.equal(draft.dosage_form, dosage_form);
+    assert.equal(draft.route, "");
+    assert.equal(draft.quantity, "");
+  }
+});
+
+test("patient age treats missing, malformed, impossible, and future DOB values as unknown", () => {
+  assert.equal(calcAge(null), null);
+  assert.equal(calcAge(""), null);
+  assert.equal(calcAge("not-a-date"), null);
+  assert.equal(calcAge("2026-02-30"), null);
+  assert.equal(calcAge("2026-13-01"), null);
+  assert.equal(calcAge("2999-01-01"), null);
+  assert.equal(typeof calcAge("2000-02-29"), "number");
+});
+
+test("prescription quantity is required and has no one-unit default in the composer", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  const quantityField = ui.slice(
+    ui.indexOf("value={form.quantity}") - 160,
+    ui.indexOf("value={form.quantity}") + 300,
+  );
+  assert.match(quantityField, /required/);
+  assert.match(quantityField, /Required quantity/);
+});
+test("prescription custom fields remain editable and dose entry requests a unit", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(ui, /Dose and unit/);
+  assert.match(ui, /Dose including unit/);
+  assert.match(ui, /!isKnownDosageForm/);
+  assert.match(ui, /!isKnownFrequency/);
+  assert.match(ui, /!isKnownDuration/);
+  assert.match(ui, /!isKnownRoute/);
+  assert.match(ui, /Custom dosage form/);
+  assert.match(ui, /Custom frequency/);
+  assert.match(ui, /Custom duration/);
+  assert.match(ui, /Custom administration route/);
+});
+
+test("pharmacy queue preserves formulation, route and instructions on mobile and desktop", () => {
+  const pharmacy = read("../src/routes/_authenticated/pharmacy.tsx");
+  assert.match(
+    pharmacy,
+    /prescription_items\(id, quantity, dosage, dosage_form, route, instructions, frequency, duration/,
+  );
+  assert.match(pharmacy, /s\(i, "dosage_form"\)/);
+  assert.match(pharmacy, /s\(i, "route"\)/);
+  assert.match(pharmacy, /s\(i, "instructions"\)/);
+});
+test("medicine search includes dosage form when the picker advertises form search", () => {
+  const filter = buildMedicineSearchFilter("capsule");
+  assert.ok(filter);
+  assert.match(filter, /dosage_form\.ilike\.%capsule%/);
+});
+
+test("unknown-age cue prompts a current visit weight check if the patient may be a child", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(ui, /If the patient may be a child, verify a current visit-linked weight/);
+  assert.match(ui, /إذا كان المريض قد يكون طفلًا/);
+});
+
+test("route and duration quick choices are clearly marked as unvalidated entry aids", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(
+    ui,
+    /Route options are generic; the system does not validate them against the selected product/,
+  );
+  assert.match(ui, /خيارات طريق الإعطاء عامة/);
+  assert.match(ui, /Duration shortcuts are for data entry only, not treatment recommendations/);
+  assert.match(ui, /خيارات المدة هنا لتسهيل الإدخال فقط وليست توصيات علاجية/);
+});
+
+test("medicine search results show brand and dosage form for product disambiguation", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  const pickerStart = ui.indexOf("{filtered.map");
+  const pickerEnd = ui.indexOf("</button>", pickerStart);
+  assert.ok(pickerStart >= 0 && pickerEnd > pickerStart);
+  const picker = ui.slice(pickerStart, pickerEnd);
+  assert.match(picker, /s\(m, "brand_name"\)/);
+  assert.match(picker, /s\(m, "dosage_form"\)/);
+  assert.match(ui, /Search name, brand, generic, strength or form/);
 });
 
 test("consultation tabs expose accessible tab semantics, bilingual labels and arrow navigation", () => {
@@ -145,6 +241,8 @@ test("pediatric prescriptions prompt for weight-based review without calculating
   assert.match(ui, /Pediatric safety: no current visit weight is recorded/);
   assert.match(ui, /Could not verify the recorded weight/);
   assert.match(ui, /system does not calculate pediatric doses/);
+  assert.match(ui, /ageVerificationNeeded/);
+  assert.match(ui, /Patient age could not be verified from the recorded date of birth/);
 });
 
 test("responsive, focus, dark-mode and print guardrails are present in source", () => {
@@ -165,4 +263,11 @@ test("blank or nonnumeric lab values are not classified as out of range", async 
   assert.equal(isAbnormalLabResult("3.4", 3.5, 5.5), true);
   assert.equal(isAbnormalLabResult("5.6", 3.5, 5.5), true);
   assert.equal(isAbnormalLabResult("4.5", 3.5, 5.5), false);
+});
+
+test("pharmacy queue never invents quantity one and blocks invalid dispensing", () => {
+  assert.match(pharmacyQueue, /parsePositiveWholeQuantity/);
+  assert.match(pharmacyQueue, /disabled=\{dispense\.isPending \|\| cannotDispense\}/);
+  assert.doesNotMatch(pharmacyQueue, /n\(i, "quantity"\)\s*\|\|\s*1/);
+  assert.match(pharmacyQueue, /Dispensing blocked: a medicine quantity is missing or invalid/);
 });
