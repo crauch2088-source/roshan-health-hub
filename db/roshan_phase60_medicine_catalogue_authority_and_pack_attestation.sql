@@ -144,7 +144,7 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.verify_medicine_physical_pack(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.verify_medicine_physical_pack(uuid) FROM PUBLIC, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.verify_medicine_physical_pack(uuid) TO authenticated;
 
 COMMIT;
