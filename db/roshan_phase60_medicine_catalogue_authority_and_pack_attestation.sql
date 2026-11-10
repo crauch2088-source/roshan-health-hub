@@ -32,6 +32,35 @@ FOR UPDATE TO authenticated
 USING ((SELECT public.app_has_perm('pharmacy.catalogue_identity.update')))
 WITH CHECK ((SELECT public.app_has_perm('pharmacy.catalogue_identity.update')));
 
+-- RLS controls which medicine rows may be edited; column privileges control which
+-- fields an identity editor may change. Do not let this permission mutate prices,
+-- stock, batches, expiry, lifecycle, or audit metadata.
+REVOKE UPDATE ON TABLE public.medicines FROM authenticated;
+
+DO $phase60_medicine_column_update_acl$
+DECLARE
+  v_columns text;
+BEGIN
+  SELECT string_agg(format('%I', column_name), ', ' ORDER BY ordinal_position)
+    INTO v_columns
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = 'medicines';
+
+  IF v_columns IS NULL THEN
+    RAISE EXCEPTION 'Phase 60 could not resolve public.medicines columns';
+  END IF;
+
+  EXECUTE format(
+    'REVOKE UPDATE (%s) ON TABLE public.medicines FROM authenticated',
+    v_columns
+  );
+END;
+$phase60_medicine_column_update_acl$;
+
+GRANT UPDATE (name, generic_name, brand_name, strength, dosage_form)
+  ON TABLE public.medicines TO authenticated;
+
 CREATE TABLE IF NOT EXISTS public.medicine_pack_verifications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   medicine_id uuid NOT NULL REFERENCES public.medicines(id) ON DELETE RESTRICT,

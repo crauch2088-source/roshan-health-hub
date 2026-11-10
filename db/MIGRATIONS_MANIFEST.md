@@ -259,5 +259,7 @@ As checked on 2026-11-03 after Phase55 QA application, Production records 129 mi
 - Identity edits are restricted to `admin`, `pharmacist`, and the explicit Super Admin bypass through `pharmacy.catalogue_identity.update`; direct `medicines_update` RLS no longer accepts broad `pharmacy.update`.
 - Physical-pack verification is restricted to `pharmacist` and the explicit Super Admin bypass through `pharmacy.pack.verify`. The RPC writes an immutable actor/time/identity-snapshot/SHA-256 event and an audit-log entry.
 - The attestation table is RLS-forced, SELECT-only for authenticated users, has direct writes revoked including service_role, and rejects UPDATE/DELETE/TRUNCATE.
+- Authenticated UPDATE on `public.medicines` is restricted at the column-grant boundary to `name`, `generic_name`, `brand_name`, `strength`, and `dosage_form`; direct writes to prices, stock, batch/expiry, lifecycle and audit columns are denied. Stock/dispense RPCs retain their SECURITY DEFINER + `pharmacy.update` contract.
+- PostgreSQL 17 assertions verify table-level UPDATE is absent, only the five identity columns remain writable, and Admin identity permission cannot mutate selling price or stock directly.
 - Candidate only: not applied to QA or Production. Migration history is not reconciled; do not apply or hand-edit migration ledgers.
 

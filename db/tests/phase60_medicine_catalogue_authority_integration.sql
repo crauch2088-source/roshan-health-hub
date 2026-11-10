@@ -36,6 +36,32 @@ BEGIN
     RAISE EXCEPTION 'medicines UPDATE RLS policy does not enforce the dedicated identity permission';
   END IF;
 
+  IF has_table_privilege('authenticated', 'public.medicines', 'UPDATE') THEN
+    RAISE EXCEPTION 'authenticated must not retain table-level UPDATE on medicines';
+  END IF;
+
+  IF NOT (
+    has_column_privilege('authenticated', 'public.medicines', 'name', 'UPDATE')
+    AND has_column_privilege('authenticated', 'public.medicines', 'generic_name', 'UPDATE')
+    AND has_column_privilege('authenticated', 'public.medicines', 'brand_name', 'UPDATE')
+    AND has_column_privilege('authenticated', 'public.medicines', 'strength', 'UPDATE')
+    AND has_column_privilege('authenticated', 'public.medicines', 'dosage_form', 'UPDATE')
+  ) THEN
+    RAISE EXCEPTION 'authenticated must retain UPDATE only on the five medicine identity columns';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM unnest(ARRAY[
+      'id','barcode','active','created_at','created_by','updated_by',
+      'deleted_at','deleted_by','unit','is_active','selling_price','cost_price',
+      'stock_quantity','reorder_level','expiry_date','batch_number','updated_at'
+    ]) AS forbidden(column_name)
+    WHERE has_column_privilege('authenticated', 'public.medicines', forbidden.column_name, 'UPDATE')
+  ) THEN
+    RAISE EXCEPTION 'authenticated retains UPDATE on a non-identity medicine column';
+  END IF;
+
   SELECT count(*) INTO v_count
   FROM pg_policy
   WHERE polrelid = 'public.medicines'::regclass AND polcmd = 'w';
@@ -182,6 +208,18 @@ BEGIN
    WHERE id = '63000000-0000-0000-0000-000000000001';
   GET DIAGNOSTICS v_rows = ROW_COUNT;
   IF v_rows <> 1 THEN RAISE EXCEPTION 'Admin must be able to edit shared medicine identity'; END IF;
+
+  v_denied := false;
+  BEGIN
+    UPDATE public.medicines
+       SET selling_price = 999, stock_quantity = 999
+     WHERE id = '63000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Admin identity permission must not allow direct price or stock mutation';
+  END IF;
 
   BEGIN
     PERFORM public.verify_medicine_physical_pack('63000000-0000-0000-0000-000000000001');
