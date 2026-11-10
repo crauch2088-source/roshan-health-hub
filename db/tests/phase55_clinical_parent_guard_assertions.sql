@@ -91,14 +91,31 @@ BEGIN
   END IF;
 END
 $claim_helper_caller$;
-UPDATE public.lab_order_items SET value='trigger-authenticated-role' WHERE id='00000000-0000-0000-0000-000000009111';
+-- Direct clinical-child DML remains intentionally unavailable to authenticated.
+-- Trigger execution was exercised above as the table owner after the ACL revocation.
+DO $direct_dml_guard$
+DECLARE
+  v_rejected boolean := false;
+BEGIN
+  BEGIN
+    UPDATE public.lab_order_items
+       SET value='unauthorized-direct-write'
+     WHERE id='00000000-0000-0000-0000-000000009111';
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'authenticated unexpectedly retained direct UPDATE on lab_order_items';
+  END IF;
+END
+$direct_dml_guard$;
 UPDATE public.users SET role_id='00000000-0000-0000-0000-000000009197'
  WHERE id='00000000-0000-0000-0000-000000009198';
 RESET ROLE;
 DROP FUNCTION public.phase55_test_claim_helper_definer(uuid);
 DO $trigger_acl$
 BEGIN
-  IF (SELECT value FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000009111') <> 'trigger-authenticated-role' THEN
+  IF (SELECT value FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000009111') <> 'trigger-still-active' THEN
     RAISE EXCEPTION 'clinical trigger stopped working after direct EXECUTE was revoked';
   END IF;
   IF (SELECT role FROM public.users WHERE id='00000000-0000-0000-0000-000000009198') <> 'sync-fired' THEN
