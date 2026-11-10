@@ -64,3 +64,8 @@ At candidate head `70becde517557cfb18c2718988fe0cf9f5c712a8`, focused Phase 58, 
 ## Deferred insurance cashbox source guard — 2026-11-10
 
 Independent review found that Phase 54 names `insurance_claim_payment` as a payment-ledger source, while Phase 58 deliberately excludes insurance claim/payment tables from the persisted-currency scope. The cashbox trigger now rejects new rows with that source type using SQLSTATE `23514` until a dedicated persisted-currency source workflow is approved. This is a fail-closed deferral, not insurance functionality. A PostgreSQL 17 integration regression covers the rejection.
+
+
+## Final exact-head CI — 2026-11-10
+
+At PR #211 head `6d2440381e78710fc5579598ff7684b1909884a8`, the Phase 58 SDG provenance and Phase 59 receipt-currency PostgreSQL 17 jobs passed in CI run [42775216135](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216135). The full CI completed with 20 successful jobs and one intentional skip for authenticated clinical acceptance. Insurance UI validation [42775216669](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216669) and PR validation [42775210843](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775210843) also passed. These are isolated candidate tests; no hosted migration was applied.
