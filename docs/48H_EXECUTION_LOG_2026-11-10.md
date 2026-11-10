@@ -245,3 +245,28 @@ The denominator and workstream weights are unchanged. Credit is updated only whe
 6. Keep Production read-only until source reconciliation, recovery gates and separate explicit rollout authorization are complete.
 
 **Sprint clock:** H0 2026-11-10 09:09:08 Africa/Khartoum; H48 deadline 2026-11-12 09:09:08 Africa/Khartoum. At the 10:11 local checkpoint, 46h 58m remained. The sprint exit remains Engineering RC complete, blocked RC, or no-go; operational acceptance is a separate decision.
+
+
+## 9. Progress update — 2026-11-10, exact-head review checkpoint
+
+### Current candidate evidence
+
+- **PR #209 — pharmacy quantity/external-prescription guard:** code head 48fc38e867e6f1387881862e9ab806b93cda6c9c. CI run 42778194392: 18 successful jobs, zero failures, one intentional skip for authenticated clinical acceptance. Vercel preview status is successful. The candidate blocks invalid/NULL quantities and external prescriptions from internal dispensing. Free-text/unlinked items still fail closed; the correction workflow is tracked separately in Issue #217.
+- **PR #210 — shared medicine identity and physical-pack attestation:** code head 324a2cb479380aab58e81bad1e695e998852e20d. CI run 42782438963: 19 successful jobs, zero failures, one intentional skip. The Phase 60 PostgreSQL 17 job passed after the candidate added an idempotent medicine row-audit trigger for clean v112 baseline replay, asserted exactly one dedicated UPDATE policy, and tested that direct writes/trigger-guard execution are unavailable to application/service roles. Vercel preview returned build-rate-limit failure; this is not a code-test failure and no Production deployment occurred.
+- **PR #211 — single-SDG provenance and receipt integrity:** code head faec5ddd9fdec54081332628ab037a2f7e770243. CI run 42783350744: 20 successful jobs, zero failures, one intentional skip. Phase 58 and Phase 59 PostgreSQL 17 jobs passed. Cashbox source types are fail-closed; trigger-only currency enforcement is not directly executable by PUBLIC/anon/authenticated/service_role; receipt-status RPC is executable only by authenticated. A documentation-only follow-up commit was added after this tested code head; recheck current PR head before any merge. Vercel preview returned build-rate-limit failure; no Production deployment or hosted DB change occurred.
+- **PR #181 — saved receipt UI:** its earlier exact-head CI run 42596877669 passed 18 jobs with one intentional authenticated-acceptance skip. It still needs cross-contract verification against the latest Phase 58/59 exact code, browser/mobile testing and physical print acceptance; it is not a substitute for the financial source migration.
+- **Issue #217** now tracks the auditable pharmacist-to-prescriber correction workflow for free-text/unlinked prescription items, with strict no-fuzzy-linking/no-stock-or-invoice-side-effects acceptance criteria.
+
+### Current release interpretation
+
+The weighted Engineering RC estimate remains **49%**; the operational-acceptance estimate remains **11%**. Automated evidence is improving, but the remaining work is disproportionately in high-risk reconciliation and real-world acceptance rather than ordinary feature coding.
+
+Current estimated time to a defensible, explicitly qualified Engineering RC: **24–40 hours**, conditional on completing the migration source/effective-catalog reconciliation and closing independent reviews. This is an estimate, not a promise. Initial operational acceptance remains a separate, likely **1–3 week** process because real pharmacist/doctor/finance sign-off, staff UAT, Android/browser and physical printer checks cannot be replaced by CI.
+
+### Vercel/free-build discipline
+
+The repeated candidate commits caused Vercel preview checks on PR #210 and PR #211 to return the platform's build-rate-limit status. These are preview checks only; the GitHub Actions suites are green and no Production deployment was attempted. Avoid further nonessential commits, rebases or preview-triggering updates. Batch remaining documentation changes and do not spend additional free build capacity on cosmetic iterations.
+
+### Non-negotiable boundary
+
+All three candidate PRs remain Draft. Do not merge, apply migrations, alter Auth/Storage/roles, reconcile migration history by replay, or promote a deployment until independent review, source/effective-catalog reconciliation, backup/recovery evidence and the applicable human acceptance gates are satisfied.
