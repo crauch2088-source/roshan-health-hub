@@ -719,6 +719,7 @@ jobs:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/baseline/0000_roshan_pg17_baseline_v112.sql
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS \\$\\$ SELECT NULLIF(current_setting('request.jwt.claim.role', true), '') \\$\\$;"
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c "
             INSERT INTO public.roles (id, name, code) VALUES
               ('60000000-0000-0000-0000-000000000001', 'Admin', 'admin'),
