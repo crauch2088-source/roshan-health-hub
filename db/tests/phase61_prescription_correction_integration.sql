@@ -357,6 +357,70 @@ BEGIN
 END;
 $phase61_reissue_state$;
 
+-- Pharmacy creation authority may record external prescriptions but must not create internal orders.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+DO $phase61_pharmacist_prescription_scope$
+DECLARE v_denied boolean := false; v_external_id uuid;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.create') OR public.app_has_perm('emr.create') THEN
+    RAISE EXCEPTION 'fixture pharmacist does not model the live pharmacy-only permission scope';
+  END IF;
+
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61500000-0000-0000-0000-000000000001',
+      false,
+      '[{"medication_name":"Unauthorized internal order","quantity":1}]'::jsonb
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist created an internal prescription through the SECURITY DEFINER RPC';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61500000-0000-0000-0000-000000000001',
+      NULL,
+      '[{"medication_name":"Ambiguous prescription type","quantity":1}]'::jsonb
+    );
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist created a prescription with an implicit external/internal type';
+  END IF;
+
+  v_external_id := public.create_prescription_atomic(
+    '61500000-0000-0000-0000-000000000001',
+    true,
+    '[{"medication_name":"External prescription recorded by pharmacy","quantity":1}]'::jsonb
+  );
+  PERFORM set_config('phase61.external_prescription_id', v_external_id::text, false);
+END;
+$phase61_pharmacist_prescription_scope$;
+RESET ROLE;
+
+DO $phase61_pharmacist_external_prescription$
+DECLARE v_external_id uuid := current_setting('phase61.external_prescription_id')::uuid;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescriptions
+    WHERE id = v_external_id
+      AND prescription_type = 'external'
+      AND is_external IS TRUE
+      AND prescribed_by = '61300000-0000-0000-0000-000000000001'
+      AND created_by = '61300000-0000-0000-0000-000000000001'
+  ) THEN
+    RAISE EXCEPTION 'pharmacist external prescription was not persisted as external';
+  END IF;
+END;
+$phase61_pharmacist_external_prescription$;
+
 -- A missing catalogue price must fail closed rather than silently becoming a zero-price item.
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);

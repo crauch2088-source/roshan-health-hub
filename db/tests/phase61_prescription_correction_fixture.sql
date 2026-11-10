@@ -25,6 +25,19 @@ JOIN public.permissions AS p ON p.code = 'emr.create'
 WHERE r.code = 'doctor'
 ON CONFLICT DO NOTHING;
 
+-- The live pharmacist role has pharmacy.create; seed it to exercise the
+-- SECURITY DEFINER prescription-creation authorization boundary.
+INSERT INTO public.permissions (code, name, module, action)
+VALUES ('pharmacy.create', 'Create pharmacy records', 'pharmacy', 'create')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles AS r
+JOIN public.permissions AS p ON p.code = 'pharmacy.create'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
 INSERT INTO public.branches (id, branch_code, branch_name, name, code, active, is_active) VALUES
  ('61100000-0000-0000-0000-000000000001', 'TST-A', 'Correction Test A', 'Correction Test A', 'TST-A', true, true),
  ('61100000-0000-0000-0000-000000000002', 'TST-B', 'Correction Test B', 'Correction Test B', 'TST-B', true, true)

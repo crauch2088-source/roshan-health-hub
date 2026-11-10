@@ -83,6 +83,13 @@ test("Phase 61 denies unassigned and wrong-branch doctors", () => {
   assert.ok(integration.includes("wrong-branch doctor resolved a correction request"));
 });
 
+test("Phase 61 restricts pharmacy.create to explicitly external prescriptions", () => {
+  assert.match(migration, /p_is_external IS NULL/);
+  assert.match(migration, /p_is_external IS TRUE/);
+  assert.ok(integration.includes("pharmacist created an internal prescription"));
+  assert.ok(integration.includes("pharmacist created a prescription with an implicit external/internal type"));
+});
+
 test("Phase 61 runs a real two-session concurrent resolution regression", () => {
   assert.ok(workflow.includes("phase61_prescription_correction_concurrency.sh"));
   assert.ok(concurrency.includes("pg_sleep"));
