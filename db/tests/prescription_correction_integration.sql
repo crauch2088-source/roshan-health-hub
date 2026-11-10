@@ -50,7 +50,7 @@ BEGIN
   PERFORM public.create_prescription_correction_request(
    '60000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001',
    'unlinked_free_text','Duplicate','80000000-0000-0000-0000-000000000002');
- EXCEPTION WHEN unique_violation OR OTHERS THEN v_conflict:=true;
+ EXCEPTION WHEN OTHERS THEN v_conflict:=true;
  END;
  IF NOT v_conflict THEN RAISE EXCEPTION 'duplicate open request was accepted'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.prescription_correction_requests WHERE id=v_id AND status='open'
