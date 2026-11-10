@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverified).
+Last reviewed: 2026-11-10 (live backup destination hierarchy reverified).
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -330,3 +330,10 @@ Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverifie
 - Owner-device check passed: inner SHA-256 matched the manifest, age decryption and gzip/tar readability succeeded, temporary plaintext was removed.
 - Backup-runner main is `ed41574bb278325e7bc06fd034e767db1544c55a`. Latest overall run [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) passed validation but skipped backup and produced no artifact. The portable checksum-manifest helper on current main has not yet been exercised by a new full backup. Workflow is manual, not scheduled.
 - Database archive scope only: Storage object bytes and Vault secret values were absent at backup time and are not included. Do not infer complete platform recovery from this database-only archive.
+
+
+## Canonical encrypted-backup destination — 2026-11-10
+
+- Use the private Drive folder **Roshan Health Hub - Encrypted Backups** and dated child folders (the verified snapshot is in **2026-11-09**). Do not use the similarly named legacy **Roshan Health Hub Backups** folder; its direct child listing was empty.
+- The exact README correction is tracked in backup-runner Draft PR #4. This is documentation only; it does not move existing Drive files or trigger a backup.
+- Latest runner workflow 42537677251 validated but skipped the backup job. The prior full dump/restore/encryption run 42535939237 remains the evidence for the existing snapshot. A new full run using current runner main checksum-helper code has not yet been performed.

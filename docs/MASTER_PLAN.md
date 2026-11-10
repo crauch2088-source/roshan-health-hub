@@ -2800,3 +2800,8 @@ A single batched read-only catalog/function check was run against Production (`j
 This checkpoint used read-only Supabase operations and GitHub inspection. No hosted DDL/DML, migration application, patient/clinical/financial writes, Auth/Storage mutation, permission changes, production deployment or backup dispatch occurred. The failed attempt to merge Draft PR #207 made no repository change; it remains Draft and was not force-promoted to ready.
 
 **Next order:** correct and retest PR #210's stale pack acknowledgement; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. Do not promote a candidate solely because disposable PG17 and CI checks are green.
+
+
+### Backup destination hierarchy correction — 2026-11-10
+
+Read-only Drive metadata confirmed that the encrypted 2026-11-08 Production snapshot is stored under **Roshan Health Hub - Encrypted Backups / 2026-11-09**, not the separate empty folder named “Roshan Health Hub Backups”. The backup-runner README destination correction is in Draft PR #4; detailed metadata and the latest-run distinction are recorded in [BACKUP_DESTINATION_RECONCILIATION_2026-11-10.md](BACKUP_DESTINATION_RECONCILIATION_2026-11-10.md). No Drive object was moved or written.
