@@ -2818,3 +2818,8 @@ The owner approved a 48-hour accelerated execution sprint. The binding execution
 **Sprint baseline:** `bed6ff4c87d582107bf62ee353be4eb35958481b`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
 
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
+
+
+## Phase 60 — medicine catalogue authority and pack attestation
+
+The owner-approved role split, append-only pack evidence design, migration and PostgreSQL 17 test are documented in [PHASE56_CATALOGUE_IDENTITY_EDIT_2026-11-04.md](PHASE56_CATALOGUE_IDENTITY_EDIT_2026-11-04.md). PR #210 remains Draft. The Phase 60 migration is a candidate only: no hosted DB or live role mappings have changed. Physical-pack attestation is currently an immutable audit event, not yet a dispensing prerequisite; that would require a separate clinical/product decision.
