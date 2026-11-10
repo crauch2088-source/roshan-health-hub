@@ -186,7 +186,7 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION private.enforce_roshan_sdg_currency() FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.enforce_roshan_sdg_currency() FROM PUBLIC, anon, authenticated, service_role;
 
 DO $$
 DECLARE
