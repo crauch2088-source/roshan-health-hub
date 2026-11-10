@@ -70,3 +70,16 @@ Next: resolve the role-scope question (the existing `pharmacy.update` map includ
 - Exact-head CI [42350748375](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748375): 18 success, zero failures, one intentional clinical-acceptance skip. Supporting integration and CodeQL workflows passed: [42350748366](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748366), [42350748371](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748371), [42350748403](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748403), [42350748448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350748448), and [42350745706](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42350745706).
 - Vercel status is successful; no protected-preview browser/visual acceptance or physical pack workflow was performed. SSO remains enabled.
 - No QA/Production database changes, migration application, Auth-user creation, clinical/financial records, or deployment promotion occurred. Keep the PR Draft pending independent review, role-scope decision and authorized mobile/RTL/LTR acceptance.
+
+
+## Owner-approved authority and attestation extension — Phase 60 (2026-11-10)
+
+The owner approved the following exact model for the global, cross-branch medicine catalogue:
+
+- Shared identity editing is allowed only to current `admin`, `pharmacist`, and `super_admin` roles. The candidate uses a dedicated `pharmacy.catalogue_identity.update` permission and replaces the direct `medicines_update` RLS policy; the broad `pharmacy.update` permission is not sufficient for direct catalogue identity edits. Super Admin keeps the existing explicit `app_has_perm()` bypass.
+- Physical-pack verification is a separate pharmacist-only action (`pharmacy.pack.verify`), with Super Admin bypass. It is not a transient checkbox attached to saving an identity edit.
+- The server-side `verify_medicine_physical_pack(uuid)` RPC reads the currently saved identity under a row lock and creates an append-only record containing application-user actor, server timestamp, canonical identity snapshot and SHA-256 fingerprint. Historical attestations are never rewritten when the catalogue identity changes.
+- Attestation rows are RLS-forced, authenticated SELECT-only, direct table writes are revoked (including service_role), UPDATE/DELETE/TRUNCATE are blocked, and INSERT is written to `audit_logs` through a dedicated empty-search-path trigger function.
+- The attestation is an immutable audit event in this phase; it is **not yet a hard dispensing prerequisite**. A separate clinical/product decision is required before making verification a dispense gate, especially for legacy catalogue rows.
+
+Candidate SQL: `db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql`. PostgreSQL 17 assertions: `db/tests/phase60_medicine_catalogue_authority_integration.sql`, wired into a dedicated CI job that replays the disposable v112 baseline. No hosted QA/Production database or live role mapping has been changed. Keep PR #210 Draft until exact-head CI, independent SQL/security review, migration-history reconciliation and authenticated QA pharmacist acceptance pass.
