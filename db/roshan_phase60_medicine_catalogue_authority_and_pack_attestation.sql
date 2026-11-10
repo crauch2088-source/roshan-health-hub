@@ -59,7 +59,7 @@ CREATE POLICY medicine_pack_verifications_select ON public.medicine_pack_verific
 FOR SELECT TO authenticated
 USING ((SELECT public.app_has_perm('pharmacy.read')));
 
-REVOKE ALL ON TABLE public.medicine_pack_verifications FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.medicine_pack_verifications FROM PUBLIC, anon, authenticated, service_role;
 GRANT SELECT ON TABLE public.medicine_pack_verifications TO authenticated;
 
 CREATE OR REPLACE FUNCTION private.reject_medicine_pack_verification_mutation()
