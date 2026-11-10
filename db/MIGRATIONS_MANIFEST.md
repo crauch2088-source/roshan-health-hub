@@ -251,3 +251,13 @@ The historical entries above remain unchanged. Current environment ledgers and f
 As checked on 2026-11-03 after Phase55 QA application, Production records 129 migrations and QA records 21. These counts do not establish schema parity; see `docs/SCHEMA_PARITY_AUDIT_2026-11-03.md` for read-only catalog fingerprints and known function/ACL differences. Phase54/54B/54C/55 are applied only in QA. Production remains unchanged.
 
 **Production safety:** no production Phase54/54B/54C/55 DDL is authorized until an encrypted backup and isolated restore are verified. Do not replay the redacted production migration `20261102232941`.
+
+## Phase 60 candidate — medicine catalogue authority and physical-pack attestation (2026-11-10)
+
+- Source: `db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql`.
+- PostgreSQL 17 assertions: `db/tests/phase60_medicine_catalogue_authority_integration.sql`; dedicated CI job replays the disposable v112 baseline, seeds synthetic roles, and exercises permission boundaries and append-only evidence.
+- Identity edits are restricted to `admin`, `pharmacist`, and the explicit Super Admin bypass through `pharmacy.catalogue_identity.update`; direct `medicines_update` RLS no longer accepts broad `pharmacy.update`.
+- Physical-pack verification is restricted to `pharmacist` and the explicit Super Admin bypass through `pharmacy.pack.verify`. The RPC writes an immutable actor/time/identity-snapshot/SHA-256 event and an audit-log entry.
+- The attestation table is RLS-forced, SELECT-only for authenticated users, has direct writes revoked including service_role, and rejects UPDATE/DELETE/TRUNCATE.
+- Candidate only: not applied to QA or Production. Migration history is not reconciled; do not apply or hand-edit migration ledgers.
+
