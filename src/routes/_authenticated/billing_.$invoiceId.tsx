@@ -209,6 +209,7 @@ function InvoicePageInner() {
     document.body.classList.add("print-scope-active");
     const printRoot = document.getElementById("payment-receipt-print-document");
     if (!printRoot) {
+      document.body.classList.remove("print-scope-active");
       setPrintingPaymentId(null);
       return;
     }
