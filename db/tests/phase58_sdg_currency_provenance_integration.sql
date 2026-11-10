@@ -254,9 +254,10 @@ VALUES (
   'payment',
   '58000000-0000-0000-0000-000000000102'
 );
-INSERT INTO public.cashbox_transactions (id, reversal_of)
+INSERT INTO public.cashbox_transactions (id, source_type, reversal_of)
 VALUES (
   '58000000-0000-0000-0000-000000000122',
+  'reversal',
   '58000000-0000-0000-0000-000000000121'
 );
 DO $phase58$
@@ -279,9 +280,10 @@ BEGIN
 
   v_state := NULL;
   BEGIN
-    INSERT INTO public.cashbox_transactions (id, reversal_of)
+    INSERT INTO public.cashbox_transactions (id, source_type, reversal_of)
     VALUES (
       '58000000-0000-0000-0000-000000000124',
+      'reversal',
       '58000000-0000-0000-0000-000000000003'
     );
   EXCEPTION WHEN check_violation THEN
@@ -314,6 +316,77 @@ BEGIN
   END IF;
 END;
 $phase58_deferred_insurance_source$;
+
+-- The source discriminator is itself part of the provenance boundary.
+-- Only documented source types may be persisted; linked rows cannot masquerade as manual.
+INSERT INTO public.cashbox_transactions (id, source_type)
+VALUES ('58000000-0000-0000-0000-000000000137', 'manual');
+
+DO $phase58_source_type$
+DECLARE
+  v_state text;
+BEGIN
+  v_state := NULL;
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000138',
+      'manual',
+      '58000000-0000-0000-0000-000000000102'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'manual cashbox source accepted a linked payment id (got %)', v_state;
+  END IF;
+
+  v_state := NULL;
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000139',
+      'unregistered_source',
+      '58000000-0000-0000-0000-000000000102'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'unregistered cashbox source type bypassed provenance validation (got %)', v_state;
+  END IF;
+
+  v_state := NULL;
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000140',
+      '58000000-0000-0000-0000-000000000102'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'cashbox row with an untyped source id bypassed provenance validation (got %)', v_state;
+  END IF;
+
+  v_state := NULL;
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id, reversal_of)
+    VALUES (
+      '58000000-0000-0000-0000-000000000141',
+      'reversal',
+      '58000000-0000-0000-0000-000000000102',
+      '58000000-0000-0000-0000-000000000121'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'reversal row accepted a second unrelated source id (got %)', v_state;
+  END IF;
+END;
+$phase58_source_type$;
 
 INSERT INTO public.expenses (id, note)
 VALUES ('58000000-0000-0000-0000-000000000131', 'new SDG expense');
