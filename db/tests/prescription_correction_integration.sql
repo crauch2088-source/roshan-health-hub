@@ -31,6 +31,8 @@ INSERT INTO public.prescription_items(id,prescription_id,medicine_id,medication_
  ('70000000-0000-0000-0000-000000000004','60000000-0000-0000-0000-000000000003',NULL,'Cancelled free text',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,false),
  ('70000000-0000-0000-0000-000000000005','60000000-0000-0000-0000-000000000004',NULL,'Dispensed free text',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,true),
  ('70000000-0000-0000-0000-000000000006','60000000-0000-0000-0000-000000000005',NULL,'Wrong branch free text',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,false);
+INSERT INTO public.prescription_items(id,prescription_id,medicine_id,medication_name,quantity)
+VALUES('70000000-0000-0000-0000-000000000008','60000000-0000-0000-0000-000000000006',NULL,'Replacement order free text',3);
 INSERT INTO public.prescription_items(id,prescription_id,medicine_id,medication_name,quantity) VALUES
  ('70000000-0000-0000-0000-000000000007','60000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','Deleted item',1);
 UPDATE public.prescription_items SET deleted_at=now() WHERE id='70000000-0000-0000-0000-000000000007';
