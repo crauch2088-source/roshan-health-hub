@@ -163,3 +163,19 @@ Weighted Engineering RC is **58.75%, rounded to 59%**. Operational acceptance re
 5. Complete authenticated pharmacist/doctor/finance acceptance with synthetic identities.
 6. Test Android/browser, Arabic RTL/English LTR and actual A4/thermal printers.
 7. Run the current backup runner end-to-end, including encrypted artifact, destination verification, isolated PG17 restore, row-count/checksum comparison and separately scoped Storage/Vault recovery evidence.
+
+## 10. Phase 61 database implementation and concurrency proof — 2026-11-10
+
+Draft PR [#226](https://github.com/crauch2088-source/roshan-health-hub/pull/226), exact head `6e2b034f3d17f3df261525f5a093a64d3ebf6c52`, implements the database layer for Issue #217. Exact-head PR validation, full CI, Spec Kit, PostgreSQL 17 Phase 61 integration, insurance UI/integrity, prescription atomicity and privileged-role workflows all passed.
+
+The PostgreSQL 17 suite now proves:
+- A pharmacist can request correction for one eligible unlinked item; retries return the same request and do not append duplicate events.
+- The responsible prescriber can read and resolve the request. A same-branch doctor not assigned to the visit, a doctor from another branch, a wrong-branch pharmacist and an ordinary Admin cannot read or resolve it.
+- Replacement derives from an active catalogue medicine, retains the original item as soft-deleted history and leaves unrelated items untouched.
+- Rejection changes request/event state only; cancel-and-reissue cancels the original pending order and creates a replacement in the same branch without dispensing or billing.
+- The two-session race test forces overlapping resolution attempts. One reaches the terminal state; the other is rejected as already resolved. No stock or financial table counts change.
+
+This closes the DB candidate test scope, not the user journey. No pharmacist/prescriber UI is included; Arabic RTL/English LTR browser acceptance and real staff UAT remain open. Keep PR #226 Draft and Issue #217 open. Release must be sequenced with the Phase 57/57B fail-closed pharmacy guard (PR #209). No QA or Production migration was applied.
+
+Read-only hosted checks still show Phase 61 tables absent from both environments; Phase 58/59 currency provenance is also unapplied. QA's Phase 57 quantity guard remains absent from Production, which retains the legacy NULL-to-one fallback. No hosted writes, deployment or backup dispatch occurred.
+
