@@ -2811,6 +2811,11 @@ The owner approved a 48-hour accelerated execution sprint. The binding execution
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
 
 
+## Phase 49 quarantine contract — additional fail-closed regression coverage (2026-11-10)
+
+Draft PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) strengthens only the disposable PG17 parameterized equivalent for the quarantined cleanup migration. It adds negative tests for invalid/duplicate/missing target identifiers, wrong-branch or duplicate reversal entries, and stock/ledger disagreement. The test helper now rejects ambiguous or wrong-branch matching adjustment rows before any synthetic soft-delete or stock mutation. The exact `20261102232819` rename remains isolated to the disposable database; the redacted `20261102232941` original is not executed or claimed as reconstructed. No hosted database was changed. Exact-head CI evidence is recorded in the PR and must pass before this test improvement is considered complete.
+
+
 ## 48-hour sprint baseline and H0 log — 2026-11-10
 
 The owner-approved sprint began at **2026-11-10 09:09:08 Africa/Khartoum** and has a 48-hour decision deadline of **2026-11-12 09:09:08 Africa/Khartoum**. The evidence-backed weighted baseline, live migration/security inventory, candidate PR heads, workstream scores, stop-ship findings, and operational-acceptance score are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). This is a sprint-specific denominator, not a percentage of all historical product features.
