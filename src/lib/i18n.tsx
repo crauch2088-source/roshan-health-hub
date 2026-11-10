@@ -399,17 +399,45 @@ const dict: Record<string, { ar: string; en: string }> = {
     ar: "هذا سجل موحّد في دليل الأدوية؛ أي تعديل هنا يسري على جميع الفروع.",
     en: "This is a shared medicine catalogue record; changes apply across all branches.",
   },
-  confirm_pack_identity: {
-    ar: "أؤكد أنني قارنت الاسم والتركيز والشكل الدوائي بالعبوة الفعلية قبل الحفظ.",
-    en: "I compared the medicine name, strength and dosage form against the physical pack before saving.",
+  medicine_identity_permission_required: {
+    ar: "تحتاج إلى صلاحية تعديل هوية الدواء.",
+    en: "Medicine identity edit permission is required.",
   },
-  pharmacy_update_required: {
-    ar: "تحتاج إلى صلاحية تحديث الصيدلية لتعديل بيانات المنتج.",
-    en: "Pharmacy update permission is required to edit medicine identity.",
+  pack_verification_separate_hint: {
+    ar: "التحقق من العبوة عملية مستقلة تسجل اسم المتحقق ووقت التحقق وبصمة بيانات الدواء المحفوظة. لا يتحقق هذا الإجراء من التعديلات غير المحفوظة.",
+    en: "Pack verification is a separate action that records the verifier, server time and fingerprint of the saved medicine identity. Unsaved edits are not verified.",
   },
-  pack_check_required: {
-    ar: "يجب تأكيد مطابقة العبوة الفعلية قبل الحفظ.",
-    en: "Confirm the physical-pack check before saving.",
+  confirm_pack_inspected: {
+    ar: "أؤكد أنني فحصت العبوة الفعلية وطابقت بياناتها مع سجل الدواء المحفوظ.",
+    en: "I physically inspected the pack and matched it against the currently saved medicine identity.",
+  },
+  pack_verification_permission_required: {
+    ar: "التحقق من العبوة متاح للصيدلي ومدير النظام الأعلى فقط.",
+    en: "Physical-pack verification is restricted to Pharmacist and Super Admin.",
+  },
+  pack_inspection_confirmation_required: {
+    ar: "يجب تأكيد إجراء الفحص الفعلي قبل تسجيل التحقق.",
+    en: "Confirm the physical inspection before recording verification.",
+  },
+  pack_verification_failed: {
+    ar: "تعذر تسجيل إثبات التحقق من العبوة.",
+    en: "The physical-pack verification could not be recorded.",
+  },
+  pack_verification_saved: {
+    ar: "تم تسجيل إثبات التحقق من العبوة بصورة دائمة.",
+    en: "Physical-pack verification was recorded permanently.",
+  },
+  pack_verification_pharmacist_only: {
+    ar: "تسجيل التحقق الفعلي متاح للصيدلي ومدير النظام الأعلى فقط.",
+    en: "Only a Pharmacist or Super Admin can record physical-pack verification.",
+  },
+  verify_physical_pack: {
+    ar: "تسجيل التحقق من العبوة",
+    en: "Record physical-pack verification",
+  },
+  verifying: {
+    ar: "جارٍ التحقق...",
+    en: "Verifying...",
   },
   medicine_not_updated: {
     ar: "لم يتم تحديث سجل الدواء؛ قد تكون الصلاحية غير كافية أو أن السجل لم يعد متاحًا.",
