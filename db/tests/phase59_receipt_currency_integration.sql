@@ -147,8 +147,64 @@ BEGIN
   FROM public.get_invoice_payment_receipt_status_v2(
     ARRAY['59000000-0000-0000-0000-000000000011'::uuid]
   );
-  IF NOT FOUND OR v_status.ledger_found OR v_status.ledger_matches OR v_status.currency_matches THEN
-    RAISE EXCEPTION 'duplicate cashbox source rows were not rejected';
+  IF NOT FOUND OR v_status.ledger_found OR v_status.ledger_matches OR v_status.currency_matches
+     OR v_status.reversal_reason IS NOT NULL
+     OR v_status.reversal_at IS NOT NULL
+     OR v_status.ledger_currency_code IS NOT NULL
+     OR v_status.reversal_currency_code IS NOT NULL THEN
+    RAISE EXCEPTION 'duplicate cashbox source rows were not rejected and redacted';
+  END IF;
+
+  -- Simulate a legacy cross-branch ledger mismatch that predates Phase 58 enforcement.
+  INSERT INTO public.invoices (id, branch_id)
+  VALUES (
+    '59000000-0000-0000-0000-000000000040',
+    '59000000-0000-0000-0000-000000000099'
+  );
+  INSERT INTO public.payments (id, invoice_id, amount, branch_id)
+  VALUES (
+    '59000000-0000-0000-0000-000000000041',
+    '59000000-0000-0000-0000-000000000040',
+    100,
+    '59000000-0000-0000-0000-000000000099'
+  );
+  PERFORM pg_catalog.set_config('session_replication_role', 'replica', true);
+  INSERT INTO public.cashbox_transactions (
+    id, source_type, source_id, branch_id, amount, is_reversed, reversal_reason
+  ) VALUES (
+    '59000000-0000-0000-0000-000000000042',
+    'payment',
+    '59000000-0000-0000-0000-000000000041',
+    '59000000-0000-0000-0000-000000000098',
+    100,
+    true,
+    'cross-branch private reversal note'
+  );
+  INSERT INTO public.cashbox_transactions (
+    id, source_type, reversal_of, branch_id, amount
+  ) VALUES (
+    '59000000-0000-0000-0000-000000000043',
+    'reversal',
+    '59000000-0000-0000-0000-000000000042',
+    '59000000-0000-0000-0000-000000000098',
+    -100
+  );
+  PERFORM pg_catalog.set_config('session_replication_role', 'origin', true);
+
+  SELECT * INTO v_status
+  FROM public.get_invoice_payment_receipt_status_v2(
+    ARRAY['59000000-0000-0000-0000-000000000041'::uuid]
+  );
+  IF NOT FOUND
+     OR v_status.ledger_found IS DISTINCT FROM true
+     OR v_status.ledger_matches IS DISTINCT FROM false
+     OR v_status.ledger_is_reversed IS DISTINCT FROM false
+     OR v_status.reversal_reason IS NOT NULL
+     OR v_status.reversal_at IS NOT NULL
+     OR v_status.ledger_currency_code IS NOT NULL
+     OR v_status.reversal_currency_code IS NOT NULL
+     OR v_status.currency_matches IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'cross-branch mismatched ledger metadata was not redacted';
   END IF;
 
   -- Branch isolation and authorization are enforced inside the SECURITY DEFINER RPC.
