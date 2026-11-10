@@ -194,8 +194,12 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
   const canEditIdentity =
     can("pharmacy.catalogue_identity.update") && isMedicineIdentityEditorRole(user?.role_code);
   const canVerifyPack = can("pharmacy.pack.verify") && isMedicinePackVerifierRole(user?.role_code);
-  const updateIdentityField = (patch: Partial<MedicineCatalogueIdentityDraft>) =>
+  const updateIdentityField = (patch: Partial<MedicineCatalogueIdentityDraft>) => {
     setIdentityForm((current) => ({ ...current, ...patch }));
+    // A prior pack inspection must not remain confirmed after the identity being
+    // checked has changed; require a fresh physical inspection before attestation.
+    setPackInspectionConfirmed(false);
+  };
 
   const list = usePagedRows<Row[]>(
     ["inventory", search],
