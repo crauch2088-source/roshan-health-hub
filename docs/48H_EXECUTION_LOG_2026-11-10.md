@@ -120,4 +120,11 @@ This does not mean that only 11% of the software exists. It means that independe
 
 No Production/QA writes, migration application, business-data reads/writes, permission/Auth/Storage mutation, backup dispatch, PR merge or deployment promotion occurred. Clinical E2E remains deferred until the isolated free environment and suitable synthetic doctor/pharmacist identities exist.
 
-**Next P0:** complete the 129/22 source-to-effective-catalog map. Then build disposable PostgreSQL 17 fixtures for the quarantined `20261102232819` rename and a parameterized redacted-equivalent test for `20261102232941`; the original cleanup SQL is unavailable, so no test may claim to certify the original statement. Keep Production blocked.
+**Next P0:** complete the 129/22 source-to-effective-catalog map and independently review the remaining unmapped/redacted migration evidence. The quarantined rename and parameterized cleanup fixtures already pass; PR #216 hardens their negative cases. The original `20261102232941` SQL remains unavailable, so no fixture may claim to certify the original statement. Keep Production blocked.
+
+
+## Post-H0 verified deltas — 2026-11-10
+
+- PR #216 commit `1b2a81e807b0c867bef3742794f2c15e4f1af536` adds negative PG17 cases to the existing quarantined Phase 49 fixture. Exact-head CI [42774855081](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774855081) completed successfully: 18 jobs succeeded, one authenticated clinical-acceptance job was intentionally skipped, and the Phase 49 quarantined-remediation job passed. The fixture does not execute the redacted original cleanup SQL.
+- Independent review of PR #211 found that Phase 54 identifies `insurance_claim_payment` as a cashbox source while Phase 58 intentionally defers insurance currency provenance. PR #211 was updated at commit `6d2440381e78710fc5579598ff7684b1909884a8` to reject new cashbox rows with this deferred source type (SQLSTATE 23514), with a PG17 regression. In CI run [42775216135](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216135), the Phase 58 and Phase 59 PostgreSQL 17 jobs passed. The overall CI and insurance UI validation were still running at this snapshot; no overall pass is claimed.
+- The next P0 remains current source/effective-catalog reconciliation. Phase 57 remains QA-only; Production retains the NULL-to-one dispensing fallback.
