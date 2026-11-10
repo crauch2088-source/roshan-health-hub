@@ -109,15 +109,32 @@ BEGIN
         END IF;
       END IF;
     ELSIF TG_TABLE_NAME = 'cashbox_transactions' THEN
-      -- Insurance claim payments remain deferred and have no persisted currency source.
-      -- Do not let a cashbox row bypass the source-provenance gate with an unsupported type.
+      -- Only the documented source types are permitted for new/changed ledger links.
+      -- Insurance remains deferred until its own persisted-currency source workflow exists.
       IF NEW.source_type = 'insurance_claim_payment' THEN
         RAISE EXCEPTION 'insurance claim payment currency provenance is deferred'
           USING ERRCODE = '23514';
       END IF;
 
-      IF NEW.source_type = 'reversal' AND NEW.reversal_of IS NULL THEN
-        RAISE EXCEPTION 'cashbox reversal must reference its original ledger row'
+      IF NEW.source_type IS NULL
+         OR NEW.source_type NOT IN ('manual', 'payment', 'expense', 'supplier_payment', 'reversal') THEN
+        RAISE EXCEPTION 'cashbox source type is missing or unsupported'
+          USING ERRCODE = '23514';
+      END IF;
+
+      IF NEW.source_type = 'manual'
+         AND (NEW.source_id IS NOT NULL OR NEW.reversal_of IS NOT NULL) THEN
+        RAISE EXCEPTION 'manual cashbox entries cannot carry linked source references'
+          USING ERRCODE = '23514';
+      END IF;
+
+      IF NEW.source_type = 'reversal' THEN
+        IF NEW.reversal_of IS NULL OR NEW.source_id IS NOT NULL THEN
+          RAISE EXCEPTION 'cashbox reversal must reference exactly one original ledger row'
+            USING ERRCODE = '23514';
+        END IF;
+      ELSIF NEW.reversal_of IS NOT NULL THEN
+        RAISE EXCEPTION 'only reversal source rows may reference an original ledger row'
           USING ERRCODE = '23514';
       END IF;
 
