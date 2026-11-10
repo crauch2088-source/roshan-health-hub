@@ -28,6 +28,18 @@ END;
 $phase58$;
 DO $phase58$
 BEGIN
+  CREATE ROLE anon NOLOGIN;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$phase58$;
+DO $phase58$
+BEGIN
+  CREATE ROLE authenticated NOLOGIN;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$phase58$;
+DO $phase58$
+BEGIN
   CREATE ROLE service_role NOLOGIN BYPASSRLS;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END;
