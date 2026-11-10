@@ -48,7 +48,10 @@ test("Phase 58 rejects NULL, non-SDG and post-posting currency mutation", () => 
   assert.match(integration, /currency clear/);
   assert.match(integration, /currency change/);
   assert.match(integration, /application\/test roles must not have direct EXECUTE/);
-  assert.match(migration, /REVOKE ALL ON FUNCTION private\.enforce_roshan_sdg_currency\(\) FROM PUBLIC, anon, authenticated, service_role/);
+  assert.match(
+    migration,
+    /REVOKE ALL ON FUNCTION private\.enforce_roshan_sdg_currency\(\) FROM PUBLIC, anon, authenticated, service_role/,
+  );
   assert.match(integration, /restricted writer/);
 });
 
