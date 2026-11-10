@@ -109,6 +109,13 @@ BEGIN
         END IF;
       END IF;
     ELSIF TG_TABLE_NAME = 'cashbox_transactions' THEN
+      -- Insurance claim payments remain deferred and have no persisted currency source.
+      -- Do not let a cashbox row bypass the source-provenance gate with an unsupported type.
+      IF NEW.source_type = 'insurance_claim_payment' THEN
+        RAISE EXCEPTION 'insurance claim payment currency provenance is deferred'
+          USING ERRCODE = '23514';
+      END IF;
+
       IF NEW.source_type = 'reversal' AND NEW.reversal_of IS NULL THEN
         RAISE EXCEPTION 'cashbox reversal must reference its original ledger row'
           USING ERRCODE = '23514';

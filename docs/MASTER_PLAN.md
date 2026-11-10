@@ -2862,3 +2862,8 @@ The owner approved a 48-hour accelerated execution sprint. The binding execution
 **Sprint baseline:** `bed6ff4c87d582107bf62ee353be4eb35958481b`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
 
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
+
+
+## Phase 58 review finding — fail closed on deferred insurance cashbox source (2026-11-10)
+
+On PR [#211](https://github.com/crauch2088-source/roshan-health-hub/pull/211), the independent review found that Phase 54 explicitly treats `insurance_claim_payment` as a payment-ledger source, while Phase 58 added currency provenance only to the seven owner-approved tables and deliberately deferred insurance claim/payment tables. The Phase 58 cashbox trigger previously handled payment, expense, supplier-payment and reversal sources but let this deferred source type pass without a persisted parent currency. The candidate now rejects new `insurance_claim_payment` cashbox rows with SQLSTATE `23514`; a PG17 integration regression asserts the rejection. This is a fail-closed deferral, not implementation of insurance functionality. No hosted database was changed. The exact-head CI result is pending.

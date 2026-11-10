@@ -59,3 +59,8 @@ Additional PG17 evidence:
 - The security-candidate bundle's finance matrix and combined-schema replay also include Phase 58 in the same psql session as fixture and integration assertions, preserving session-scoped auth/permission settings.
 
 At candidate head `70becde517557cfb18c2718988fe0cf9f5c712a8`, focused Phase 58, Phase 59, invoice atomicity, finance-only RPC, security bundle, and insurance UI validation passed. Full main CI was still running. No hosted database was changed.
+
+
+## Deferred insurance cashbox source guard — 2026-11-10
+
+Independent review found that Phase 54 names `insurance_claim_payment` as a payment-ledger source, while Phase 58 deliberately excludes insurance claim/payment tables from the persisted-currency scope. The cashbox trigger now rejects new rows with that source type using SQLSTATE `23514` until a dedicated persisted-currency source workflow is approved. This is a fail-closed deferral, not insurance functionality. A PostgreSQL 17 integration regression covers the rejection.

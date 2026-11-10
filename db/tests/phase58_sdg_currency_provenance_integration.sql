@@ -294,6 +294,27 @@ END;
 $phase58$;
 
 
+-- Insurance claim payments are deliberately deferred: no persisted source currency exists yet.
+DO $phase58_deferred_insurance_source$
+DECLARE
+  v_state text;
+BEGIN
+  BEGIN
+    INSERT INTO public.cashbox_transactions (id, source_type, source_id)
+    VALUES (
+      '58000000-0000-0000-0000-000000000136',
+      'insurance_claim_payment',
+      '58000000-0000-0000-0000-000000000006'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_state := SQLSTATE;
+  END;
+  IF v_state IS DISTINCT FROM '23514' THEN
+    RAISE EXCEPTION 'deferred insurance claim payment bypassed currency provenance guard (got %)', v_state;
+  END IF;
+END;
+$phase58_deferred_insurance_source$;
+
 INSERT INTO public.expenses (id, note)
 VALUES ('58000000-0000-0000-0000-000000000131', 'new SDG expense');
 INSERT INTO public.cashbox_transactions (id, source_type, source_id)
