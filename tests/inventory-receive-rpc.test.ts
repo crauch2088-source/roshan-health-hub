@@ -266,7 +266,7 @@ testRunner(
     assert.match(source, /\.is\("deleted_at", null\)/);
     assert.match(
       medicineRlsSql,
-      /CREATE POLICY medicines_update ON public\.medicines FOR UPDATE TO authenticated USING \(\(SELECT public\.app_has_perm\('pharmacy\.update'\)\)\) WITH CHECK \(\(SELECT public\.app_has_perm\('pharmacy\.update'\)\)\)/,
+      /CREATE POLICY medicines_update\s+ON public\.medicines\s+FOR UPDATE TO authenticated\s+USING \(\(SELECT public\.app_has_perm\('pharmacy\.catalogue_identity\.update'\)\)\)\s+WITH CHECK \(\(SELECT public\.app_has_perm\('pharmacy\.catalogue_identity\.update'\)\)\)/,
     );
     assert.match(medicineAuditSql, /'medicines'/);
     assert.match(medicineAuditSql, /trigger_name := 'trg_audit_'\|\|table_name/);
