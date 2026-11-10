@@ -49,10 +49,10 @@ import {
   buildMedicineCatalogueInsert,
   buildMedicineCatalogueIdentityUpdate,
   buildMedicineCatalogueSearchFilter,
-  updateMedicineCatalogueIdentityEditorState,
+  isMedicineIdentityEditorRole,
+  isMedicinePackVerifierRole,
   type MedicineCatalogueDraft,
   type MedicineCatalogueIdentityDraft,
-  type MedicineCatalogueIdentityEditorState,
 } from "@/lib/medicine-catalogue";
 import { formatDate, money } from "@/lib/medical";
 import {
@@ -180,25 +180,21 @@ function InventoryPageInner() {
 
 function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string) => void }) {
   const { t, lang } = useLang();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const { currency } = useSettings();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<MedicineCatalogueDraft>(EMPTY_MEDICINE_FORM);
   const [editingMedicine, setEditingMedicine] = useState<Row | null>(null);
-  const [identityEditor, setIdentityEditor] = useState<MedicineCatalogueIdentityEditorState>({
-    draft: EMPTY_MEDICINE_IDENTITY_FORM,
-    packChecked: false,
-  });
-  const identityForm = identityEditor.draft;
-  const packChecked = identityEditor.packChecked;
-  const setIdentityForm = (draft: MedicineCatalogueIdentityDraft) =>
-    setIdentityEditor((current) => ({ ...current, draft }));
-  const setPackChecked = (checked: boolean) =>
-    setIdentityEditor((current) => ({ ...current, packChecked: checked }));
+  const [identityForm, setIdentityForm] = useState<MedicineCatalogueIdentityDraft>(EMPTY_MEDICINE_IDENTITY_FORM);
+  const [packInspectionConfirmed, setPackInspectionConfirmed] = useState(false);
+  const canEditIdentity =
+    can("pharmacy.catalogue_identity.update") && isMedicineIdentityEditorRole(user?.role_code);
+  const canVerifyPack =
+    can("pharmacy.pack.verify") && isMedicinePackVerifierRole(user?.role_code);
   const updateIdentityField = (patch: Partial<MedicineCatalogueIdentityDraft>) =>
-    setIdentityEditor((current) => updateMedicineCatalogueIdentityEditorState(current, patch));
+    setIdentityForm((current) => ({ ...current, ...patch }));
 
   const list = usePagedRows<Row[]>(
     ["inventory", search],
@@ -253,8 +249,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
 
   const updateIdentity = useSave(
     async (vars: { id: string; draft: MedicineCatalogueIdentityDraft }) => {
-      if (!can("pharmacy.update")) throw new Error(t("pharmacy_update_required"));
-      if (!packChecked) throw new Error(t("pack_check_required"));
+      if (!canEditIdentity) throw new Error(t("medicine_identity_permission_required"));
 
       const result = buildMedicineCatalogueIdentityUpdate(vars.draft);
       if ("error" in result) throw new Error(t(result.error.replace(/-/g, "_")));
@@ -276,8 +271,26 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
       onDone: () => {
         setEditingMedicine(null);
         setIdentityForm(EMPTY_MEDICINE_IDENTITY_FORM);
-        setPackChecked(false);
+        setPackInspectionConfirmed(false);
       },
+    },
+  );
+
+  const verifyPhysicalPack = useSave(
+    async (medicineId: string) => {
+      if (!canVerifyPack) throw new Error(t("pack_verification_permission_required"));
+      if (!packInspectionConfirmed) throw new Error(t("pack_inspection_confirmation_required"));
+      const { data, error } = await supabase.rpc("verify_medicine_physical_pack", {
+        p_medicine_id: medicineId,
+      });
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error(t("pack_verification_failed"));
+      return data;
+    },
+    {
+      invalidate: [["medicine-pack-verifications"]],
+      successMessage: t("pack_verification_saved"),
+      onDone: () => setPackInspectionConfirmed(false),
     },
   );
 
@@ -294,7 +307,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
       dosage_form: isStandardForm ? storedForm : "other",
       custom_dosage_form: isStandardForm ? "" : storedForm,
     });
-    setPackChecked(false);
+    setPackInspectionConfirmed(false);
     setEditingMedicine(medicine);
   };
 
@@ -457,7 +470,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
           onOpenChange={(nextOpen) => {
             if (!nextOpen) {
               setEditingMedicine(null);
-              setPackChecked(false);
+              setPackInspectionConfirmed(false);
             }
           }}
         >
@@ -530,27 +543,48 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 />
               </Field>
             </div>
-            <label className="flex items-start gap-3 rounded-lg border p-3 text-sm leading-relaxed">
-              <input
-                type="checkbox"
-                className="mt-1 size-4 shrink-0"
-                checked={packChecked}
-                onChange={(e) => setPackChecked(e.target.checked)}
-              />
-              <span>{t("confirm_pack_identity")}</span>
-            </label>
+            <div className="rounded-lg border p-3 space-y-3">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {t("pack_verification_separate_hint")}
+              </p>
+              {canVerifyPack ? (
+                <>
+                  <label className="flex items-start gap-3 text-sm leading-relaxed">
+                    <input
+                      type="checkbox"
+                      className="mt-1 size-4 shrink-0"
+                      checked={packInspectionConfirmed}
+                      onChange={(e) => setPackInspectionConfirmed(e.target.checked)}
+                    />
+                    <span>{t("confirm_pack_inspected")}</span>
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!packInspectionConfirmed || verifyPhysicalPack.isPending || !editingMedicine}
+                    onClick={() => {
+                      if (editingMedicine) verifyPhysicalPack.mutate(s(editingMedicine, "id"));
+                    }}
+                  >
+                    {verifyPhysicalPack.isPending ? t("verifying") : t("verify_physical_pack")}
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("pack_verification_pharmacist_only")}</p>
+              )}
+            </div>
             <DialogFooter>
               <Button
                 variant="outline"
                 onClick={() => {
                   setEditingMedicine(null);
-                  setPackChecked(false);
+                  setPackInspectionConfirmed(false);
                 }}
               >
                 {t("cancel")}
               </Button>
               <Button
-                disabled={!packChecked || !identityFormReady || updateIdentity.isPending}
+                disabled={!canEditIdentity || !identityFormReady || updateIdentity.isPending}
                 onClick={() => {
                   if (editingMedicine) {
                     updateIdentity.mutate({
@@ -621,7 +655,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                       </div>
                       {can("pharmacy.update") || can("pharmacy.create") ? (
                         <div className="flex flex-col gap-2 sm:flex-row">
-                          {can("pharmacy.update") ? (
+                          {canEditIdentity ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -692,7 +726,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                           </TableCell>
                           <TableCell className="no-print text-end">
                             <div className="flex justify-end gap-2">
-                              {can("pharmacy.update") ? (
+                              {canEditIdentity ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
