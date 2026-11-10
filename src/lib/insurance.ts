@@ -95,16 +95,3 @@ export function updateInsuranceClaimStatus(args: {
   });
 }
 
-export function postInsuranceClaimPayment(args: {
-  claimId: string;
-  amount: number;
-  method?: string;
-  reference?: string | null;
-}): Promise<string> {
-  return rpc<string>("post_insurance_claim_payment", {
-    _claim_id: args.claimId,
-    _amount: args.amount,
-    _method: args.method ?? "bank",
-    _reference: args.reference ?? null,
-  });
-}
