@@ -10,6 +10,7 @@ on:
       - "db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql"
       - "db/roshan_phase46_uat_schema_compatibility.sql"
       - "tests/phase61-prescription-correction-contract.test.mjs"
+      - "tests/phase61-prescription-correction-ui.test.mjs"
   workflow_dispatch:
 
 permissions:
@@ -66,4 +67,4 @@ jobs:
           PGPASSWORD: postgres
         run: bash db/tests/phase61_prescription_correction_concurrency.sh
       - name: Run Phase 61 source-contract tests
-        run: node --test tests/phase61-prescription-correction-contract.test.mjs
+        run: node --test tests/phase61-prescription-correction-contract.test.mjs tests/phase61-prescription-correction-ui.test.mjs

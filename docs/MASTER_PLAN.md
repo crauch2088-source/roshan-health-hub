@@ -2853,3 +2853,14 @@ The public SECURITY DEFINER inventory was reviewed by exact function in both env
 ## Parallel engineering review — 2026-11-10
 
 The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
+
+## H+3 Phase 61 correction workflow candidate — 2026-11-10
+
+- PR #229 exact head `b1a85ad1f3ce94596575f4b9140c094020f8c0a6` implements the pharmacist request, RLS/permission-scoped prescriber inbox, single-item replacement/rejection, and full multi-item `cancel_and_reissue`. Every replacement item requires explicit catalogue selection and clinician-entered dose, frequency, duration, quantity, dosage form and route. No fuzzy matching, inferred regimen, dispensing, stock or financial side effect is permitted.
+- Phase 61 intentionally narrows `create_prescription_atomic` to the dedicated `prescriptions.create` permission. The existing `PrescriptionTab` is now gated by the same permission; the broader `emr.create` and `pharmacy.create` permissions no longer expose prescription authoring.
+- Exact-head validation: all eight PR workflows passed; full CI run [42905200880](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42905200880) completed 20 jobs (19 success, one intentional skip for authenticated clinical acceptance). The Phase 61 PostgreSQL 17 authorization, audit, concurrency and no-side-effects job passed.
+- PR #229 remains Draft and stacked on #226, carrying forward #228 pharmacy fail-closed UI. It is not mergeable as a release unit until both dependencies are integrated and mobile/browser plus pharmacist/prescriber UAT are completed.
+- PR #216 was rebased to current main at head `22a43bfaa93a83d2349516bc5c8fb250f4979d3d`; CI [42902388063](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42902388063) completed 19 jobs (18 success, one intentional clinical-acceptance skip). It is ready for review, but merge is held because the Vercel preview status is blocked by the free build-rate limit.
+- Documentation PRs #207 and #208 were merged. Superseded drafts #221, #223 and #224 were closed with consolidation notes. No hosted QA/Production DDL/DML, Auth/Storage/role mutation, business-data write, or deployment promotion occurred.
+- Vercel preview rate limiting remains active; do not retry or force deployment.
+

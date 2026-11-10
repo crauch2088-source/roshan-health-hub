@@ -292,3 +292,38 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Removed the unconditional shell-level `PGOPTIONS=-c jit=true` override so only the URL builder controls the temporary-token JIT option; database-password fallback remains without the token-only option.
 - Added Python regression tests for credential mode and shell option isolation. Static source inspection passed, but a fresh validation-only Actions run has not yet executed these tests. No backup was dispatched.
 - This improves documentation and connection-mode correctness but does not change the previously reported backup/recovery acceptance score until the test suite and current-runner end-to-end rehearsal pass.
+
+## H+3.5 evidence checkpoint — 2026-11-10
+
+### New exact-head evidence
+
+- PR #229 head `b1a85ad1f3ce94596575f4b9140c094020f8c0a6`: all eight PR-triggered workflows passed. Full CI [42905200880](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42905200880) completed 20 jobs: 19 successful and one intentionally skipped (canonical baseline replay/authenticated clinical acceptance). The dedicated Phase 61 PostgreSQL 17 job passed authorization, RLS, audit, concurrent-resolution and no-stock/no-financial-side-effect assertions.
+- The UI candidate now supports pharmacist correction requests, a prescriber inbox, replace-one-item, reject-with-reason, and complete multi-item cancel-and-reissue. The existing prescription composer is gated by `prescriptions.create`, matching the Phase 61 RPC authorization. Source tests cover the required fields, no inferred regimen, RTL/LTR and bounded small-screen dialog scrolling; physical-device/browser acceptance is still outstanding.
+- PR #216 rebased head `22a43bfaa93a83d2349516bc5c8fb250f4979d3d`: CI [42902388063](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42902388063) completed 19 jobs: 18 successful and one intentionally skipped for authenticated clinical acceptance. It is ready for review; merge is held while Vercel preview remains rate-limited.
+- PR #207 and #208 were merged as documentation-only changes. Duplicate/superseded drafts #221, #223 and #224 were closed with rationale. PR #226 and #228 remain dependency gates; PR #229 remains Draft.
+- No hosted QA or Production database, role map, Auth/Storage setting, patient/financial data, backup, or deployment was changed. Vercel retries were deliberately avoided.
+
+### Evidence-weighted sprint progress
+
+| Workstream | Weight | H+2 | H+3.5 | Reason for delta |
+|---|---:|---:|---:|---|
+| A. Orchestration, scope, evidence | 10% | 90% | 91% | Documentation policy merged; stale duplicate PRs consolidated; exact-head evidence ledger updated |
+| B. Pharmacy + medicine catalogue | 20% | 65% | 72% | Exact pharmacist-to-prescriber correction path and full replacement-order UI now pass exact-head CI/PG17 |
+| C. SDG finance + receipts | 20% | 70% | 70% | No new finance/receipt acceptance evidence in this round |
+| D. Migration provenance + security | 25% | 25% | 25% | Live 129/22 source/effective-catalog reconciliation remains the dominant stop-ship blocker |
+| E. Mobile, bilingual UX, printing | 10% | 30% | 33% | RTL/LTR and bounded mobile-height source contracts added; no physical-device/browser sign-off |
+| F. QA, recovery, release decision | 15% | 25% | 25% | Automated candidate CI improved, but authenticated QA/staff acceptance and current backup rehearsal remain outstanding |
+
+**Weighted Engineering RC progress: 50.8% (reported as 51%).** Operational acceptance remains **10.5% (reported as 11%)**. This sprint denominator is evidence-weighted and is not directly comparable to earlier broad product-completion estimates.
+
+**Remaining estimate to a defensible, explicitly qualified Engineering RC: 20–34 hours**, conditional on source/effective-catalog reconciliation, dependency review, QA migration rehearsal, backup/recovery evidence and the remaining high-risk fixes. Operational acceptance remains a separate **1–3 week** process because real pharmacist/doctor/finance UAT, target Android/browser checks and physical printer sign-off require people and devices.
+
+### Next execution order
+
+1. Complete current source-to-ledger and effective-catalog reconciliation across Production (129 migration rows) and QA (22); do not replay either ledger.
+2. Finish independent review and dependency integration of #226/#228/#229; keep all candidate migrations unapplied until isolated QA rehearsal and rollback proof.
+3. Resolve Phase 57 NULL-to-one Production dispensing fallback only after source mapping and QA evidence.
+4. Complete Phase 58/59 SDG provenance and receipt integration; retain fail-closed handling of legacy NULL/mismatched currency.
+5. Complete Phase 60 pharmacist identity/physical-pack acceptance and Phase 61 mobile/browser acceptance.
+6. Refresh current backup-runner end-to-end evidence, then conduct authenticated staff UAT and explicit release decision.
+

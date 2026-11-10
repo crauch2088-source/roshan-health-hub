@@ -17,6 +17,7 @@ import {
   Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
+import { PharmacyCorrectionRequest } from "@/components/prescription-correction";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,7 @@ import { n, rel, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { formatDateTime, money } from "@/lib/medical";
 import { dispensePrescriptionFefo, type DispenseResultRow } from "@/lib/pharmacy";
+import { parseDispenseQuantity } from "@/lib/pharmacy-quantity";
 import { supabase } from "@/lib/supabase";
 import { useBranchRealtime } from "@/lib/realtime";
 
@@ -89,7 +91,7 @@ function PharmacyPageInner() {
       let q = supabase
         .from("prescriptions")
         .select(
-          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, dosage, frequency, duration, medicine_id, medicines(name, selling_price, stock_quantity))",
+          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, medication_name, dosage, frequency, duration, medicine_id, deleted_at, medicines(name, selling_price, stock_quantity))",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -190,11 +192,22 @@ function PharmacyPageInner() {
       ) : (
         <div className="grid gap-4">
           {rows.map((p) => {
-            const items = (p["prescription_items"] as Row[]) ?? [];
-            const total = items.reduce(
-              (sum, i) => sum + (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-              0,
+            const items = ((p["prescription_items"] as Row[]) ?? []).filter(
+              (item) => item["deleted_at"] == null,
             );
+            const quantityFor = (item: Row) => parseDispenseQuantity(item["quantity"]);
+            const hasInvalidQuantity = items.some((item) => quantityFor(item) === null);
+            const hasUnlinkedItem = items.some((item) => !s(item, "medicine_id"));
+            const hasExternalPrescription = p["is_external"] === true;
+            const hasDispenseBlocker =
+              hasInvalidQuantity || hasUnlinkedItem || hasExternalPrescription;
+            const total = hasDispenseBlocker
+              ? null
+              : items.reduce(
+                  (sum, item) =>
+                    sum + (quantityFor(item) ?? 0) * n(rel(item, "medicines"), "selling_price"),
+                  0,
+                );
             const usedBatches = dispenseDetail[s(p, "id")];
             return (
               <DataPanel key={s(p, "id")}>
@@ -245,7 +258,7 @@ function PharmacyPageInner() {
                             </Button>
                           ) : null}
                           <Button
-                            disabled={dispense.isPending}
+                            disabled={dispense.isPending || hasDispenseBlocker}
                             onClick={() => {
                               const prescriptionId = s(p, "id");
                               const requestId =
@@ -268,33 +281,104 @@ function PharmacyPageInner() {
                     </div>
                   </div>
                   <SectionTitle>{t("medicines")}</SectionTitle>
+                  {hasExternalPrescription ? (
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-md border border-amber-500/40 p-3 text-sm text-amber-700"
+                    >
+                      {t("external_prescription_internal_stock_blocked")}
+                    </p>
+                  ) : null}
+                  {hasInvalidQuantity ? (
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-md border border-destructive/40 p-3 text-sm text-destructive"
+                    >
+                      {lang === "ar"
+                        ? "توجد كمية مفقودة أو غير صالحة. أوقفنا الصرف حتى يراجع الطبيب الوصفة ويصحح الكمية."
+                        : "A prescribed quantity is missing or invalid. Dispensing is blocked until the prescriber corrects it."}
+                    </p>
+                  ) : null}
+                  {hasUnlinkedItem ? (
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-md border border-destructive/40 p-3 text-sm text-destructive"
+                    >
+                      {lang === "ar"
+                        ? "تحتوي الوصفة على دواء غير مرتبط بدليل الأدوية. يجب ربطه بدواء نشط قبل الصرف."
+                        : "This prescription contains a medicine not linked to the active catalogue. Link it before dispensing."}
+                    </p>
+                  ) : null}
+                  {can("pharmacy.correction.request") &&
+                  s(p, "status") === "pending" &&
+                  !hasExternalPrescription &&
+                  items.some((item) => !s(item, "medicine_id")) ? (
+                    <div className="mb-3 space-y-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                      <p className="text-sm font-medium">
+                        {lang === "ar"
+                          ? "يمكنك طلب توضيح الطبيب للبنود غير المرتبطة."
+                          : "You can ask the responsible prescriber to clarify unlinked items."}
+                      </p>
+                      {items
+                        .filter((item) => !s(item, "medicine_id"))
+                        .map((item) => (
+                          <div
+                            key={s(item, "id")}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-2"
+                          >
+                            <span className="min-w-0 text-sm">
+                              {s(item, "medication_name") ||
+                                (lang === "ar" ? "دواء غير محدد" : "Unspecified medicine")}
+                            </span>
+                            <PharmacyCorrectionRequest
+                              itemId={s(item, "id")}
+                              itemLabel={s(item, "medication_name")}
+                              lang={lang}
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  ) : null}
                   <ul className="divide-y rounded-md border md:hidden">
-                    {items.map((i) => (
-                      <li
-                        key={s(i, "id")}
-                        className="flex items-start justify-between gap-3 p-2.5 text-sm"
-                      >
-                        <div className="min-w-0 space-y-0.5">
-                          <p className="font-medium">{s(rel(i, "medicines"), "name")}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
-                              .filter(Boolean)
-                              .join(" · ") || "—"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("quantity")} <span dir="ltr">{n(i, "quantity") || 1}</span> ·{" "}
-                            {t("stock")}{" "}
-                            <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
-                          </p>
-                        </div>
-                        <span className="shrink-0 font-semibold">
-                          {money(
-                            (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-                            currency,
-                          )}
-                        </span>
-                      </li>
-                    ))}
+                    {items.map((i) => {
+                      const quantity = quantityFor(i);
+                      const lineTotal =
+                        quantity === null || !s(i, "medicine_id")
+                          ? null
+                          : quantity * n(rel(i, "medicines"), "selling_price");
+                      return (
+                        <li
+                          key={s(i, "id")}
+                          className="flex items-start justify-between gap-3 p-2.5 text-sm"
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="font-medium">
+                              {s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                                .filter(Boolean)
+                                .join(" · ") || "—"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {t("quantity")}{" "}
+                              <span dir="ltr">
+                                {quantity === null
+                                  ? lang === "ar"
+                                    ? "غير محددة"
+                                    : "Missing"
+                                  : quantity}
+                              </span>{" "}
+                              · {t("stock")}{" "}
+                              <span dir="ltr">{n(rel(i, "medicines"), "stock_quantity")}</span>
+                            </p>
+                          </div>
+                          <span className="shrink-0 font-semibold">
+                            {lineTotal === null ? "—" : money(lineTotal, currency)}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                   <div className="hidden md:block">
                     <Table density="compact">
@@ -308,33 +392,43 @@ function PharmacyPageInner() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {items.map((i) => (
-                          <TableRow key={s(i, "id")}>
-                            <TableCell className="font-medium">
-                              {s(rel(i, "medicines"), "name")}
-                            </TableCell>
-                            <TableCell>
-                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
-                                .filter(Boolean)
-                                .join(" · ") || "—"}
-                            </TableCell>
-                            <TableCell dir="ltr">{n(i, "quantity") || 1}</TableCell>
-                            <TableCell dir="ltr">
-                              {n(rel(i, "medicines"), "stock_quantity")}
-                            </TableCell>
-                            <TableCell>
-                              {money(
-                                (n(i, "quantity") || 1) * n(rel(i, "medicines"), "selling_price"),
-                                currency,
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {items.map((i) => {
+                          const quantity = quantityFor(i);
+                          const lineTotal =
+                            quantity === null || !s(i, "medicine_id")
+                              ? null
+                              : quantity * n(rel(i, "medicines"), "selling_price");
+                          return (
+                            <TableRow key={s(i, "id")}>
+                              <TableCell className="font-medium">
+                                {s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}
+                              </TableCell>
+                              <TableCell>
+                                {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                                  .filter(Boolean)
+                                  .join(" · ") || "—"}
+                              </TableCell>
+                              <TableCell dir="ltr">
+                                {quantity === null
+                                  ? lang === "ar"
+                                    ? "غير محددة"
+                                    : "Missing"
+                                  : quantity}
+                              </TableCell>
+                              <TableCell dir="ltr">
+                                {n(rel(i, "medicines"), "stock_quantity")}
+                              </TableCell>
+                              <TableCell>
+                                {lineTotal === null ? "—" : money(lineTotal, currency)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
                   <p className="mt-2 text-end text-sm font-semibold">
-                    {t("total")}: {money(total, currency)}
+                    {t("total")}: {total === null ? "—" : money(total, currency)}
                   </p>
 
                   {usedBatches && usedBatches.length > 0 ? (
