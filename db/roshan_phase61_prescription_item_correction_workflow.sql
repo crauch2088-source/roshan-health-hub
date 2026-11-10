@@ -768,7 +768,7 @@ BEGIN
         USING ERRCODE = '22023';
     END IF;
 
-    IF NOT public.app_has_perm('emr.create') THEN
+    IF NOT (public.is_super_admin() OR public.app_has_perm('prescriptions.create')) THEN
       RAISE EXCEPTION 'prescription_create_permission_required_for_reissue'
         USING ERRCODE = '42501';
     END IF;

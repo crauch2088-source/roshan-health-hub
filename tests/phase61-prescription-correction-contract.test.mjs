@@ -92,6 +92,7 @@ test("Phase 61 keeps clinical prescription authoring out of pharmacy.create", ()
     migration,
     /public\.app_has_perm\('pharmacy\.create'\) OR public\.app_has_perm\('emr\.create'\)/,
   );
+  assert.doesNotMatch(migration, /public\.app_has_perm\('emr\.create'\)/);
   assert.ok(integration.includes("pharmacist created an internal prescription"));
   assert.ok(integration.includes("ordinary Admin created a clinical prescription"));
   assert.ok(
