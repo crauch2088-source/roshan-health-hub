@@ -2779,3 +2779,37 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 ## Phase 57 — pharmacy quantity UI fail-closed follow-up (2026-11-09)
 
 Draft PR #209 now includes the pharmacy queue safety response to the nullable quantity defect: the UI never renders a missing quantity as one, does not calculate a misleading amount, shows an explicit bilingual warning, and disables dispensing until the prescriber corrects the record. A pure parser rejects non-finite, non-positive, fractional, and out-of-range quantities. The database function also rechecks NULL after its locked prescription-item read. The Phase 57 disposable fixture now matches the live schema (nullable quantity, no default), verified read-only in both QA and Production. Read-only catalog verification confirms QA has the original Phase 57 preflight guard, while Production does not. This is source/test-only; the new UI refinements have not been applied to any hosted database. PR #209 remains Draft pending exact-head CI and authenticated pharmacist acceptance.
+
+
+## Live release-gate recheck — 2026-11-10 (read-only)
+
+Main at the start of this checkpoint: `969074279a4cc7c06db1c320e311b72a5b7003ac`; it advanced during the run to `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69` through a documentation-only commit. This section supersedes older operational snapshots where they conflict; historical evidence above is retained.
+
+### Live Production and QA database facts
+
+A single batched read-only catalog/function check was run against Production (`jewzonxplxhogqrnhosl`) and QA (`hopfohcnrtbiqjkgeukz`):
+
+- Both environments: 56 public base tables, 842 public columns, RLS enabled on all 56 public tables, and 210 public RLS policies.
+- Production migration ledger: 129 rows; latest version `20261102232941`.
+- QA migration ledger: 22 rows; latest version `20261104065852`.
+- `prescription_items.quantity` remains nullable with no default in both environments.
+- The live `fn_dispense_prescription_with_invoice(uuid, boolean)` definitions still differ materially: Production contains the `COALESCE(pi.quantity, 1)` fallback and no explicit NULL rejection; QA has explicit NULL rejection and no fallback. Phase 57 remains QA-only. Do not replay QA's migration or alter migration-ledger rows. Production must remain gated until source/migration reconciliation, backup/restore and a separately approved forward-only rollout.
+
+### Current security-advisor snapshot
+
+- Production: two private RLS-enabled tables without policies (the current and quarantined legacy pharmacy idempotency tables); one `pg_trgm`-in-public warning; one anon-executable SECURITY DEFINER warning (`setup_required()`); 26 authenticated-executable SECURITY DEFINER warnings; leaked-password protection disabled.
+- QA: one private RLS-enabled table without policies (the active pharmacy idempotency table); the same extension and anon-function warnings; 28 authenticated-executable SECURITY DEFINER warnings; leaked-password protection disabled.
+- These are advisor findings, not proof that every authenticated SECURITY DEFINER RPC is unsafe. Preserve intended RPC access while continuing per-function permission, branch-scope and search_path review. No bulk revokes, Auth changes, extension moves, grants, indexes or database objects were changed.
+
+### Active candidate review
+
+- PR #209 is the rebased Phase 57 pharmacy quantity guard, head `5c07ad63b4c7b302175bc61b9737c34457678142`: 44 successful exact-head checks, 2 intentionally skipped authenticated clinical-acceptance jobs, zero failures (latest CI run `42602365308`; supporting PostgreSQL 17 runs `42602365232`, `42602365104`, `42602365123`; CodeQL `42598862767`). It remains Draft. QA already has the earlier Phase 57 SQL guard; this PR has not changed either hosted database.
+- PR #210 is the rebased medicine-catalogue identity editor, updated head `fb2810898e2bb28264234f7bedf8be9389b4b66a`. The stale physical-pack acknowledgement is corrected: edits to all six identity fields now reset the acknowledgement through a pure state transition helper. Regression coverage exercises all six fields. Exact-head CI run `42771972448`: 18 successful jobs, 1 intentionally skipped authenticated clinical-acceptance job, 0 failures. Shared-catalogue role scope and non-durable audit attestation remain separate gates.
+- PR #211 is the additive SDG provenance / receipt-integrity candidate, updated branch head `4f256eb228feffef50c1ceea81bda8b96c967976` (code head `36c7d404c4c32a79d63de093ddd1bba68a11607`): 40 successful code-head checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. The branch was synced with current main via a normal merge commit; no hosted migration was applied. It remains Draft pending independent SQL/security review, legacy NULL policy and environment-specific migration reconciliation.
+- PR #181 receipt UI remains dependent on Phase 58/59; do not merge it independently or print legacy NULL/mismatched currency records. PR #179 still needs authenticated browser/mobile and physical printer acceptance.
+
+### Execution and safety record
+
+This checkpoint used read-only Supabase operations and GitHub inspection. No hosted DDL/DML, migration application, patient/clinical/financial writes, Auth/Storage mutation, permission changes, production deployment or backup dispatch occurred. The failed attempt to merge Draft PR #207 made no repository change; it remains Draft and was not force-promoted to ready.
+
+**Next order:** complete independent review of PR #210 shared-catalogue role scope and durable audit-attestation design; independently review Phase 58/59 in #211; obtain synthetic authenticated QA pharmacist acceptance for #209; then reconcile Production/QA migration sources and execute the separately approved release gates. All three remain Draft. Do not promote a candidate solely because disposable PG17 and CI checks are green.
