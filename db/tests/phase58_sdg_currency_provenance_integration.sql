@@ -57,7 +57,12 @@ BEGIN
     END IF;
 
     v_new_id := gen_random_uuid();
-    IF v_table = 'payments' THEN
+    IF v_table = 'cashbox_transactions' THEN
+      EXECUTE format(
+        'INSERT INTO public.%I (id, note, source_type) VALUES ($1, %L, %L) RETURNING currency_code',
+        v_table, 'new', 'manual'
+      ) INTO v_currency USING v_new_id;
+    ELSIF v_table = 'payments' THEN
       EXECUTE format(
         'INSERT INTO public.%I (id, note, invoice_id) VALUES ($1, %L, $2) RETURNING currency_code',
         v_table, 'new'
@@ -78,8 +83,15 @@ BEGIN
     v_id := gen_random_uuid();
     v_state := NULL;
     BEGIN
-      EXECUTE format('INSERT INTO public.%I (id, note, currency_code) VALUES ($1, %L, NULL)', v_table, 'explicit-null')
-        USING v_id;
+      IF v_table = 'cashbox_transactions' THEN
+        EXECUTE format(
+          'INSERT INTO public.%I (id, note, source_type, currency_code) VALUES ($1, %L, %L, NULL)',
+          v_table, 'explicit-null', 'manual'
+        ) USING v_id;
+      ELSE
+        EXECUTE format('INSERT INTO public.%I (id, note, currency_code) VALUES ($1, %L, NULL)', v_table, 'explicit-null')
+          USING v_id;
+      END IF;
     EXCEPTION WHEN OTHERS THEN
       GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE;
     END;
@@ -90,8 +102,15 @@ BEGIN
     v_id := gen_random_uuid();
     v_state := NULL;
     BEGIN
-      EXECUTE format('INSERT INTO public.%I (id, note, currency_code) VALUES ($1, %L, %L)', v_table, 'foreign-currency', 'USD')
-        USING v_id;
+      IF v_table = 'cashbox_transactions' THEN
+        EXECUTE format(
+          'INSERT INTO public.%I (id, note, source_type, currency_code) VALUES ($1, %L, %L, %L)',
+          v_table, 'foreign-currency', 'manual', 'USD'
+        ) USING v_id;
+      ELSE
+        EXECUTE format('INSERT INTO public.%I (id, note, currency_code) VALUES ($1, %L, %L)', v_table, 'foreign-currency', 'USD')
+          USING v_id;
+      END IF;
     EXCEPTION WHEN OTHERS THEN
       GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE;
     END;
