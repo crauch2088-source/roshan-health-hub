@@ -82,3 +82,62 @@ The zero count is a snapshot, not protection against future bad writes. Producti
 ## Verification boundary
 
 This report is evidence about migration history and source mapping only. It does not prove a full migration-chain replay, full effective-catalog parity, authenticated clinical/pharmacy acceptance, or authorization for any hosted change. Production remains read-only and gated.
+
+
+## Current-row source/disposition matrix — 2026-11-10 addendum
+
+The following matrix records every row in the current 14-row Production tail and all 22 current QA rows. “Repo blob” is the Git object ID of the tracked candidate/source file, not a hash of the stored live SQL. Except where the Phase 49–52 provenance artifact explicitly says otherwise, these rows are path/disposition mapped only; no live SQL bodies were read or exported.
+
+### Production tail — all 14 rows after the 115-row checkpoint
+
+| Version | Live migration name | Tracked source/artifact | Repo blob | Evidence/disposition |
+|---|---|---|---|---|
+| 20261031071119 | roshan_phase46_uat_schema_compatibility | db/roshan_phase46_uat_schema_compatibility.sql | 75b35475ea1aa048110ea74208b7fc59b2301b9d | Path mapped; exact stored fingerprint also matches QA version 20261031065937; no live-body export |
+| 20261031071122 | roshan_phase47_queue_branch_attribution | db/roshan_phase47_queue_branch_attribution.sql | ba6daf5ec90266399e0db96aaf2ccb576d894e2b | Path mapped; exact stored fingerprint also matches QA version 20261031070544; no live-body export |
+| 20261031103927 | roshan_phase48_storage_entity_branch_binding | db/roshan_phase48_storage_entity_branch_binding.sql | da16042eee5ef5a2261070e526fc3d4d416b69d7 | Path mapped; exact stored fingerprint also matches QA version 20261031103912; no live-body export |
+| 20261102122437 | superseded_placeholder_phase49_atomic_pharmacy_dispense | No SQL source | — | 138-byte placeholder only; not the Phase 49 migration |
+| 20261102133658 | superseded_placeholder_phase50_clinical_visit_bill_completion | No SQL source | — | 138-byte placeholder only; not the Phase 50 migration |
+| 20261102133734 | superseded_placeholder_phase51_public_setup_required_anon | No SQL source | — | 138-byte placeholder only; not the Phase 51 migration |
+| 20261102140000 | superseded_placeholder_phase52_reporting_analytics | No SQL source | — | 138-byte placeholder only; not the Phase 52 migration |
+| 20261102232813 | roshan_remediation_archive_container | No tracked forward source | — | Archive-container ledger entry; not a replayable forward schema migration |
+| 20261102232819 | roshan_phase49_isolate_malformed_idempotency_table | docs/recovered-migrations/sql/20261102232819_roshan_phase49_isolate_malformed_idempotency_table.sql | d443a3610832492b4e6e1953bd2656a4c7d3a432 | Exact recovered quarantine artifact; rename-only disposition; replay blocked |
+| 20261102232823 | roshan_phase49_atomic_pharmacy_dispense_repaired | db/roshan_phase49_atomic_pharmacy_dispense.sql | cf3f67291601d7513d758570b8d46c35d6bc56f1 | Scoped normalized-source equality documented in phase49-52-provenance.json; terminal COMMIT wrapper/trailing whitespace removed |
+| 20261102232849 | roshan_phase50_clinical_visit_bill_completion_reconciled | db/roshan_phase50_clinical_visit_bill_completion.sql | 031cca46782d5821f05d936ff7d35d9c19fef28c | Scoped normalized-source equality documented in phase49-52-provenance.json; terminal COMMIT wrapper/trailing whitespace removed |
+| 20261102232852 | roshan_phase51_public_setup_required_anon_reconciled | db/roshan_phase51_public_setup_required_anon.sql | fc124e36b1435c9e135ed2ec282581f585f93a26 | Scoped normalized-source equality documented in phase49-52-provenance.json; terminal COMMIT wrapper/trailing whitespace removed |
+| 20261102232855 | roshan_phase52_reporting_analytics_reconciled | db/roshan_phase52_reporting_analytics.sql | b86ccade80bc88e4a09d2e027389a1bd3782ad17 | Scoped normalized-source equality documented in phase49-52-provenance.json; terminal COMMIT wrapper/trailing whitespace removed |
+| 20261102232941 | roshan_synthetic_patient_cleanup_and_stock_ledger_reversal | docs/recovered-migrations/sql/20261102232941_roshan_synthetic_patient_cleanup_and_stock_ledger_reversal.sql | 6466457b05e76580d5e4389597efa45107682e5b | Redacted quarantine artifact only; original SQL unavailable; replay blocked pending owner review and disposable-PG17 equivalence tests |
+
+### QA ledger — all 22 rows
+
+| Version | Live migration name | Tracked source/artifact | Repo blob | Evidence/disposition |
+|---|---|---|---|---|
+| 20261023182629 | qa_schema_baseline_v112_platform_preserving | db/baseline/0000_roshan_pg17_baseline_v112.sql (related baseline only) | cfde594e3710e79529439b637b2703cc1ed6e727 | No exact source/body equality claimed; QA-specific platform-preserving baseline |
+| 20261023182742 | roshan_phase34_consolidated_storage_realtime_lab_verify | db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql | 03432ada7c7a11cf2530ba9aadab35ab6bd0a1a6 | Historical source-path mapping; no independent stored-body hash |
+| 20261023182746 | roshan_phase36_audit_coverage_and_visit_lifecycle_guards | db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql | c52c65cdd50767a71298de47682294ad45ffed89 | Source path present; no independent stored-body hash |
+| 20261023182750 | roshan_phase39_permissions_lab_catalog_and_audit_closure | db/roshan_phase39_permissions_lab_catalog_and_audit_closure.sql | 72875833745f580ad7e3cb063aa1d6d04d7d8daa | Source path present; no independent stored-body hash |
+| 20261023182756 | roshan_phase45_atomic_visit_queue_completion_retry | db/roshan_phase45_atomic_visit_queue_completion_retry.sql | 89c8cbdb4a77ca1852834cf477e5d36c612272e3 | Source path present; no independent stored-body hash |
+| 20261023182855 | qa_phase31_contract_security_cutover | db/roshan_phase31_contract_security_cutover.sql | 27e4cbb44e8127e956188414a5673c5907a6d87b | Related source path; QA-specific variant not independently body-matched |
+| 20261023183515 | qa_acl_reconciliation_from_production_catalog | No tracked source file found | — | Environment-specific QA ACL reconciliation; retain as a non-replayable historical event |
+| 20261023183623 | qa_authenticator_acl_and_default_privileges_reconciliation | No tracked source file found | — | Environment-specific QA authenticator/default-privilege reconciliation; retain as a non-replayable historical event |
+| 20261031065937 | roshan_phase46_uat_schema_compatibility | db/roshan_phase46_uat_schema_compatibility.sql | 75b35475ea1aa048110ea74208b7fc59b2301b9d | Stored fingerprint exactly matches Production Phase 46 under a different version |
+| 20261031070544 | roshan_phase47_queue_branch_attribution | db/roshan_phase47_queue_branch_attribution.sql | ba6daf5ec90266399e0db96aaf2ccb576d894e2b | Stored fingerprint exactly matches Production Phase 47 under a different version |
+| 20261031071243 | qa_restore_security_invoker_on_exposed_views | db/qa/20261030_restore_security_invoker_on_qa_views.sql | 31ce968972b0e55942a48c5f364029e4ec940bd7 | QA-only view-option reconciliation; not a Production migration |
+| 20261031103912 | roshan_phase48_storage_entity_branch_binding | db/roshan_phase48_storage_entity_branch_binding.sql | da16042eee5ef5a2261070e526fc3d4d416b69d7 | Stored fingerprint exactly matches Production Phase 48 under a different version |
+| 20261102122437 | roshan_phase51_public_setup_required_anon | db/roshan_phase51_public_setup_required_anon.sql | fc124e36b1435c9e135ed2ec282581f585f93a26 | SQL body/ACL statements match the source; QA copy omits three leading comments and one blank line |
+| 20261102133658 | roshan_phase49_atomic_pharmacy_dispense | db/roshan_phase49_atomic_pharmacy_dispense.sql | cf3f67291601d7513d758570b8d46c35d6bc56f1 | Exact current source-file match documented in phase49-52-provenance.json |
+| 20261102133734 | roshan_phase50_clinical_visit_bill_completion | db/roshan_phase50_clinical_visit_bill_completion.sql | 031cca46782d5821f05d936ff7d35d9c19fef28c | Current source path mapped; separate QA fingerprint recorded; no new independent hash claim beyond the scoped provenance artifact |
+| 20261102232858 | superseded_duplicate_roshan_phase50_clinical_visit_bill_completion | db/roshan_phase50_clinical_visit_bill_completion.sql | 031cca46782d5821f05d936ff7d35d9c19fef28c | Same stored statement fingerprint as Production Phase 50 version 20261102232849 |
+| 20261102232905 | roshan_phase52_reporting_analytics_reconciled | db/roshan_phase52_reporting_analytics.sql | b86ccade80bc88e4a09d2e027389a1bd3782ad17 | Scoped normalized-source equality documented in phase49-52-provenance.json |
+| 20261103114242 | roshan_phase54_source_aware_financial_reversal | db/roshan_phase54_source_aware_financial_reversal.sql | 8c33e99f7b9d3772eb5136d4c957d5b9c1970659 | Source path present on main; no independent stored-body hash |
+| 20261103114612 | roshan_phase54b_payment_updated_at_compat | db/roshan_phase54b_payment_updated_at_compat.sql | 3f68b6a4e4c74b265388fb822ea96c77d336fea2 | Source path present on main; no independent stored-body hash |
+| 20261103115649 | roshan_phase54c_branchless_receipt_integrity | db/roshan_phase54c_branchless_receipt_integrity.sql | 1a061929f9a564ce1ddc917ad8c29b8252609593 | Source path present on main; no independent stored-body hash |
+| 20261103155227 | roshan_phase55_clinical_parent_guard_acl_reconciliation | db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql | 081d5e97169786e23cd1990cf9f6dbb1c49e4a1f | Source path present on main; no independent stored-body hash |
+| 20261104065852 | roshan_phase57_pharmacy_quantity_required_guard | db/roshan_phase57_pharmacy_quantity_required_guard.sql (Draft PR #209) | dafd4e494ce86244452cd40048da84577dd7618f | Source path exists on PR #209 branch, not main; QA-applied/Production-unapplied divergence remains |
+
+### What this matrix closes — and what it does not
+
+- The previously unmapped current ledger tail now has a row-level path or explicit non-replayable/environment-specific disposition: 14/14 Production tail rows and 22/22 QA rows.
+- This does **not** turn path mapping into proof that the live stored SQL equals the repository file. Exact stored/source normalization is claimed only where the scoped Phase 49–52 provenance artifact records it.
+- The four untracked QA-specific baseline/ACL rows, Production archive-container entry, four Production placeholders, and two quarantine artifacts remain non-replayable or review-only. They must not be recreated by manually inserting ledger records.
+- The older 115-row Production checkpoint and historical QA source set still require a single consolidated per-row matrix if a future reviewer needs one artifact spanning every historical row. Their evidence remains in the 79-row, 93-entry and 2026-10-18 source-mapping artifacts cited above.
+
