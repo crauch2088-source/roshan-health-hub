@@ -1,0 +1,1069 @@
+{
+  "captured_on": "2026-11-10",
+  "main_sha": "bed6ff4c87d582107bf62ee353be4eb35958481b",
+  "query_scope": "Read-only migration metadata only: version, name, octet_length(statements::text), md5(statements::text). No SQL statement bodies were retrieved.",
+  "fingerprint_definition": "MD5 is a comparison fingerprint of PostgreSQL's text serialization of the stored statements array. It is not a cryptographic attestation or a normalized source-SQL hash.",
+  "production": {
+    "project_ref": "jewzonxplxhogqrnhosl",
+    "postgres_version": "17.6",
+    "row_count": 129,
+    "latest": {
+      "version": "20261102232941",
+      "name": "roshan_synthetic_patient_cleanup_and_stock_ledger_reversal",
+      "bytes": 3289,
+      "md5": "eedfc4ec43dc90edf1765a23790516b0"
+    },
+    "rows": [
+      {
+        "version": "20260818162003",
+        "name": "fix_duplicate_unique_constraint",
+        "bytes": 103,
+        "md5": "61a0f9e47443649d4616936ff42f79ca"
+      },
+      {
+        "version": "20260818191254",
+        "name": "fix_patients_rls_and_admin_link",
+        "bytes": 1084,
+        "md5": "f4e22a4ed44c5f423cb11cac897d06e0"
+      },
+      {
+        "version": "20260818191556",
+        "name": "install_safe_visit_number_function",
+        "bytes": 737,
+        "md5": "07cffd7a16337644b1585d6bc74de0aa"
+      },
+      {
+        "version": "20260818192452",
+        "name": "fix_daily_queue_numbers_v4",
+        "bytes": 1565,
+        "md5": "88910b769fcf4e9de21116221f7113d2"
+      },
+      {
+        "version": "20260818194104",
+        "name": "fix_daily_queue_numbering",
+        "bytes": 2180,
+        "md5": "49b6db1c9c75724444676a9f627b15ee"
+      },
+      {
+        "version": "20260818194429",
+        "name": "repair_queue_and_harden_queue_security",
+        "bytes": 4892,
+        "md5": "80a66f6704da724185a7ce5be3da0b61"
+      },
+      {
+        "version": "20260818194457",
+        "name": "consolidate_queue_triggers",
+        "bytes": 3157,
+        "md5": "d6755cb678b0566deed766ad3a482ed4"
+      },
+      {
+        "version": "20260818195753",
+        "name": "fix_visit_queue_numbering",
+        "bytes": 2292,
+        "md5": "89d78b1689ad934b4f4484a500bd5656"
+      },
+      {
+        "version": "20260818195811",
+        "name": "sync_existing_queue_tickets",
+        "bytes": 285,
+        "md5": "116e6960f69905e86691f47e58ff25e0"
+      },
+      {
+        "version": "20260818200206",
+        "name": "fix_queue_numbering_authoritative",
+        "bytes": 2689,
+        "md5": "1788f1c5c07c56f1524639c40c408687"
+      },
+      {
+        "version": "20260818200246",
+        "name": "harden_visit_queue_rls_and_cleanup",
+        "bytes": 2096,
+        "md5": "2723798f30e0c66149f9dece79c4ffc6"
+      },
+      {
+        "version": "20260818200336",
+        "name": "finalize_non_recycling_queue_allocator",
+        "bytes": 1368,
+        "md5": "08d337b9dc9add2d77091e79c2d087b2"
+      },
+      {
+        "version": "20260818202356",
+        "name": "fix_appointments_rls_auth_and_audit",
+        "bytes": 828,
+        "md5": "bf439a86b9fd31c5282a61361ad96f7a"
+      },
+      {
+        "version": "20260818232848",
+        "name": "harden_core_indexes_and_legacy_compatibility_v2",
+        "bytes": 7636,
+        "md5": "e8813fabc4451694071ab43f76e8ae7a"
+      },
+      {
+        "version": "20260818233558",
+        "name": "harden_security_definer_helpers_and_duplicate_index_v2",
+        "bytes": 5656,
+        "md5": "2a5cd75eac385055a01dd3db53cfdf05"
+      },
+      {
+        "version": "20260818234039",
+        "name": "harden_rls_permissions_and_public_grants_v1",
+        "bytes": 29681,
+        "md5": "7a20a1b456d5ac28b7939264cd85fb0c"
+      },
+      {
+        "version": "20260818234050",
+        "name": "harden_services_rls_v1",
+        "bytes": 676,
+        "md5": "0736405983339e302a4363ae83b7aa43"
+      },
+      {
+        "version": "20260818234146",
+        "name": "repair_roshan_rbac_role_links_v1",
+        "bytes": 2174,
+        "md5": "33a9375f8f84f73b213b256d52257840"
+      },
+      {
+        "version": "20260819000003",
+        "name": "harden_public_defaults_and_sync_user_roles",
+        "bytes": 1739,
+        "md5": "83601720d0bd6443dc85b3c463b39794"
+      },
+      {
+        "version": "20260819000016",
+        "name": "tighten_public_default_privileges",
+        "bytes": 389,
+        "md5": "c7abfd29bad141caa28cf0d901438c7c"
+      },
+      {
+        "version": "20260819100756",
+        "name": "roshan_phase1_pagination_and_settings",
+        "bytes": 1129,
+        "md5": "33e550dacd27b9007897dbaa1fd42bd4"
+      },
+      {
+        "version": "20260819105146",
+        "name": "roshan_settings_public_enforcement",
+        "bytes": 942,
+        "md5": "5fc9082104fc8cdf9b65776478895a36"
+      },
+      {
+        "version": "20260819123920",
+        "name": "grant_authenticated_execute_next_mrn",
+        "bytes": 65,
+        "md5": "8997024e51ab6ffc93be3ffb4aef3032"
+      },
+      {
+        "version": "20260819124045",
+        "name": "fix_next_mrn_rpc_access",
+        "bytes": 494,
+        "md5": "3febc123265bfaf81d777533064f65f9"
+      },
+      {
+        "version": "20260819125755",
+        "name": "add_missing_audit_relationships",
+        "bytes": 1052,
+        "md5": "c409776a912a1f55c4fd961d5325e65e"
+      },
+      {
+        "version": "20260819125807",
+        "name": "add_followups_users_computed_relationship",
+        "bytes": 455,
+        "md5": "388272b5e71cb49ac177945f32384edd"
+      },
+      {
+        "version": "20260819130039",
+        "name": "compat_patients_patient_number",
+        "bytes": 254,
+        "md5": "652a89bec1fe269fbafc5e7ac936fb68"
+      },
+      {
+        "version": "20260819222434",
+        "name": "add_prescription_ux_fields",
+        "bytes": 358,
+        "md5": "a86f52c024524c8fa937fcfc88b413e2"
+      },
+      {
+        "version": "20260819223342",
+        "name": "add_medical_certificates_soft_delete_columns",
+        "bytes": 290,
+        "md5": "a3c703eb0319e1f1ef98a4156120cd3d"
+      },
+      {
+        "version": "20260820000007",
+        "name": "add_medicines_2_stock_quantity_compatibility",
+        "bytes": 956,
+        "md5": "a49ef8d739e6cb267888a0c1b7ec9a73"
+      },
+      {
+        "version": "20260820000143",
+        "name": "add_medicines_2_stock_quantity",
+        "bytes": 102,
+        "md5": "1d32e0cc340a46f6d5bf252caec99d24"
+      },
+      {
+        "version": "20260820000336",
+        "name": "fix_medicines_stock_quantity_schema_cache",
+        "bytes": 356,
+        "md5": "241bbbb27bf3edafeb60191bdaa0a630"
+      },
+      {
+        "version": "20260820000656",
+        "name": "add_medicines_reorder_level",
+        "bytes": 99,
+        "md5": "1e478733e1e978283a4fb06bc0dde2ee"
+      },
+      {
+        "version": "20260820000725",
+        "name": "add_medicines_expiry_date",
+        "bytes": 75,
+        "md5": "34caa91bdc2b6b1051202d380336d4ca"
+      },
+      {
+        "version": "20260820005417",
+        "name": "fix_followups_user_relationship",
+        "bytes": 507,
+        "md5": "75d47f32e8627e2d587990284791fa63"
+      },
+      {
+        "version": "20260820010030",
+        "name": "fix_medicines_batch_number",
+        "bytes": 190,
+        "md5": "857c21fd0dff64de9f3a8c5cb6555e8b"
+      },
+      {
+        "version": "20260820150215",
+        "name": "roshan_phase2_clinical_workflow",
+        "bytes": 640,
+        "md5": "3b13a90d96e8d878c97be72b8c21c905"
+      },
+      {
+        "version": "20260822094358",
+        "name": "roshan_workflow_performance_20260822",
+        "bytes": 2230,
+        "md5": "a47d2b6af7e90cf6c9375af0308ae32f"
+      },
+      {
+        "version": "20260822094405",
+        "name": "roshan_drop_duplicate_prescription_index_20260822",
+        "bytes": 64,
+        "md5": "013b6f046a1cc5d09636d142232ce8b1"
+      },
+      {
+        "version": "20260906142737",
+        "name": "roshan_phase3_allow_pharmacy_setting_public",
+        "bytes": 1199,
+        "md5": "2c21995b7a241df642b44c06d8202eb9"
+      },
+      {
+        "version": "20260906142803",
+        "name": "roshan_phase3_pharmacy_batches",
+        "bytes": 9097,
+        "md5": "5af0b31a2ae1998a57a4dd3e8f510759"
+      },
+      {
+        "version": "20260906144008",
+        "name": "roshan_phase4_finance_cashbox_debts",
+        "bytes": 14679,
+        "md5": "bc611918fa30c7aa33622350d63c4f1e"
+      },
+      {
+        "version": "20260906161023",
+        "name": "roshan_phase4_finance_security_verification_patch",
+        "bytes": 3589,
+        "md5": "49626f4e7b252184c147402f4639f3ba"
+      },
+      {
+        "version": "20260906203143",
+        "name": "roshan_phase3_pharmacy_runtime_hardening",
+        "bytes": 6980,
+        "md5": "a7a95cc25eb5e395af595ab2192c9d34"
+      },
+      {
+        "version": "20260908210824",
+        "name": "roshan_phase4_finance_v2",
+        "bytes": 24052,
+        "md5": "4be9232e7e06b03ff5827ae9af046ec0"
+      },
+      {
+        "version": "20260909110657",
+        "name": "roshan_phase5_insurance",
+        "bytes": 7616,
+        "md5": "0270b37760a90ace769c63cee95d7bfa"
+      },
+      {
+        "version": "20260909110735",
+        "name": "roshan_phase5_insurance_functions",
+        "bytes": 10859,
+        "md5": "20fa5cff06280170d2d4a2cb85e63e0b"
+      },
+      {
+        "version": "20260909110753",
+        "name": "roshan_phase5_insurance_permissions_rls",
+        "bytes": 4922,
+        "md5": "0eacc16749f50f8401dfdeb48699c486"
+      },
+      {
+        "version": "20260911120231",
+        "name": "roshan_phase12_invoice_visit_unique",
+        "bytes": 425,
+        "md5": "5182147d2ed12b1a7df402b763c5a1c5"
+      },
+      {
+        "version": "20260911130749",
+        "name": "harden_security_and_fk_indexes_20260911",
+        "bytes": 7111,
+        "md5": "2cbc5a3b8a370baae854dc1883604aa2"
+      },
+      {
+        "version": "20260911130812",
+        "name": "restrict_security_definer_api_execution_20260911",
+        "bytes": 2164,
+        "md5": "52b0166fba689c66bf81454aa91b200c"
+      },
+      {
+        "version": "20260911131456",
+        "name": "deep_audit_branch_isolation_rpc_hardening",
+        "bytes": 8077,
+        "md5": "2e229e263b04b6144047fcabbbd87d94"
+      },
+      {
+        "version": "20260911133229",
+        "name": "harden_mrn_invoice_number_concurrency",
+        "bytes": 1009,
+        "md5": "0fd7b0b1afb1ef6cb390a0b6657de5d2"
+      },
+      {
+        "version": "20260911133255",
+        "name": "enforce_branch_isolation_rls",
+        "bytes": 1566,
+        "md5": "7cb965a4218bb2772115ac51c62ade30"
+      },
+      {
+        "version": "20260911133312",
+        "name": "harden_insurance_branch_isolation",
+        "bytes": 10214,
+        "md5": "807b9c4f3b44051dfcce405d9134ea91"
+      },
+      {
+        "version": "20260911133319",
+        "name": "harden_insurance_coverage_rpc_branch",
+        "bytes": 3256,
+        "md5": "729d5bcf5413cd22f9e55cf567339536"
+      },
+      {
+        "version": "20260911133334",
+        "name": "harden_finance_branch_context",
+        "bytes": 5439,
+        "md5": "a71cfe441881bc3b5c446d278004f141"
+      },
+      {
+        "version": "20260911133353",
+        "name": "fix_insurance_ledger_branch",
+        "bytes": 2412,
+        "md5": "69c264478ac420a24e4f220628991008"
+      },
+      {
+        "version": "20260911134639",
+        "name": "grant_next_invoice_number_authenticated",
+        "bytes": 76,
+        "md5": "689073830d971ea3797b9134cf742e54"
+      },
+      {
+        "version": "20260911135036",
+        "name": "grant_stock_movements_authenticated_access",
+        "bytes": 74,
+        "md5": "1f8872b32f0155a028f92f6fe7abf63a"
+      },
+      {
+        "version": "20260911135318",
+        "name": "fix_dispense_prescription_nullable_join_lock",
+        "bytes": 4530,
+        "md5": "f19b9e9be96dd1576bcea4a5905466f6"
+      },
+      {
+        "version": "20260911135417",
+        "name": "fix_dispense_prescription_branch_resolution",
+        "bytes": 4942,
+        "md5": "245bb5f291ab0d66a3b50a1cf67d384f"
+      },
+      {
+        "version": "20260911135547",
+        "name": "fix_dispense_batch_number_ambiguity",
+        "bytes": 4514,
+        "md5": "b97b78aebc298b59968f5b61ed4f0fc5"
+      },
+      {
+        "version": "20260911135644",
+        "name": "add_medicines_updated_at_column",
+        "bytes": 202,
+        "md5": "fe9d4a0aeab1f2d43387afe8fc75ee42"
+      },
+      {
+        "version": "20260911135738",
+        "name": "add_prescription_items_updated_at",
+        "bytes": 209,
+        "md5": "6ec0de79ef268dde821bc900141f4d5a"
+      },
+      {
+        "version": "20260911135858",
+        "name": "add_prescriptions_updated_at",
+        "bytes": 199,
+        "md5": "7ef79eb4301246c5d8ccd11e0c98f36c"
+      },
+      {
+        "version": "20260911140337",
+        "name": "add_cashbox_reversal_columns",
+        "bytes": 352,
+        "md5": "7ee3c7aa0e90cdef42c673ddb1400c79"
+      },
+      {
+        "version": "20260911140514",
+        "name": "allow_cashbox_reversal_transaction_type",
+        "bytes": 458,
+        "md5": "8902149a901a8b8d98d17d7c81025995"
+      },
+      {
+        "version": "20260911141036",
+        "name": "harden_cashbox_reversal_type",
+        "bytes": 2019,
+        "md5": "43ebb562e681f2573d5da1b18cc88eeb"
+      },
+      {
+        "version": "20260911141142",
+        "name": "fix_payment_ledger_transaction_type",
+        "bytes": 463,
+        "md5": "bfa156ad16dc182f9c0f6d12db669d0e"
+      },
+      {
+        "version": "20260911141502",
+        "name": "fix_medicines_generic_name_compatibility",
+        "bytes": 1205,
+        "md5": "7cd494cb4719e2aea283093afa056648"
+      },
+      {
+        "version": "20261011074344",
+        "name": "harden_patient_invoice_number_rpc_permissions",
+        "bytes": 1369,
+        "md5": "fa85bc51d4fe743b5a5762718e46e736"
+      },
+      {
+        "version": "20261011074437",
+        "name": "harden_insurance_coverage_rpc_permissions",
+        "bytes": 3835,
+        "md5": "8504c98d1e4d3cee48826e41e5d69408"
+      },
+      {
+        "version": "20261011075101",
+        "name": "harden_pharmacy_batch_branch_isolation",
+        "bytes": 2639,
+        "md5": "2e632526be6a5021352adcb533d20b09"
+      },
+      {
+        "version": "20261011080253",
+        "name": "harden_supplier_bill_rpc_branch_and_search_path",
+        "bytes": 2418,
+        "md5": "5d6254563c77eba7445c7cd441761598"
+      },
+      {
+        "version": "20261011080319",
+        "name": "harden_finance_pharmacy_rpc_search_paths",
+        "bytes": 971,
+        "md5": "c03361836985e996c05206b78f0b5127"
+      },
+      {
+        "version": "20261011080434",
+        "name": "enforce_branch_isolation_on_clinical_child_tables",
+        "bytes": 6804,
+        "md5": "78010a0852d06cdae5d19c7743387478"
+      },
+      {
+        "version": "20261011080524",
+        "name": "preserve_super_admin_supplier_bill_compatibility",
+        "bytes": 2439,
+        "md5": "f057895df5f103ba2dd6740e5dbc8152"
+      },
+      {
+        "version": "20261014164131",
+        "name": "roshan_cashbox_reversal_concurrency",
+        "bytes": 2217,
+        "md5": "ae4f73ae273554f14fc0f5cf8052f9ef"
+      },
+      {
+        "version": "20261016161923",
+        "name": "roshan_phase18_dedupe_finance_audit_triggers_20261016",
+        "bytes": 492,
+        "md5": "e98df7f7d58a48ca7e0b02d1b1539ef7"
+      },
+      {
+        "version": "20261016162410",
+        "name": "roshan_phase21_patient_registration_atomicity_20261016",
+        "bytes": 2723,
+        "md5": "18635b1e9bd434a14eb12fe10b2332af"
+      },
+      {
+        "version": "20261016170816",
+        "name": "roshan_security_privileged_role_guard_20261016",
+        "bytes": 9015,
+        "md5": "387ec6e2f1e7e3611f39ec23c8d85aba"
+      },
+      {
+        "version": "20261016172209",
+        "name": "roshan_phase7_atomic_prescription_20261016",
+        "bytes": 6126,
+        "md5": "77f316403d348341afc746352460f044"
+      },
+      {
+        "version": "20261016183123",
+        "name": "roshan_phase8_atomic_invoice",
+        "bytes": 5877,
+        "md5": "649c7e2823b07eda341b54f48a1305b3"
+      },
+      {
+        "version": "20261016183130",
+        "name": "roshan_phase13_consolidated_visit_invoice",
+        "bytes": 16831,
+        "md5": "d8b64bfde09ec8a62edc83e70e7fd641"
+      },
+      {
+        "version": "20261016183136",
+        "name": "roshan_phase14_dispense_invoice_atomic_compat",
+        "bytes": 10613,
+        "md5": "ff0da5cccabdd3b1029e02bdfea39e3e"
+      },
+      {
+        "version": "20261016183145",
+        "name": "roshan_phase15_manual_invoice_consolidation",
+        "bytes": 4137,
+        "md5": "12c8bc97d2491185fe66fde0992b6716"
+      },
+      {
+        "version": "20261016183152",
+        "name": "roshan_phase16_billing_idempotency",
+        "bytes": 5005,
+        "md5": "3846e3e7cd2692b0c65aca5fd5d2c7b1"
+      },
+      {
+        "version": "20261016204859",
+        "name": "roshan_phase21_patient_registration_privileges_20261016",
+        "bytes": 246,
+        "md5": "f8b6284f3e72e8b231e755ab5817776a"
+      },
+      {
+        "version": "20261016211342",
+        "name": "roshan_phase22_clinic_local_queue_date_20261016",
+        "bytes": 1534,
+        "md5": "4674f5bca39b8a3c81e1c869df905d3f"
+      },
+      {
+        "version": "20261016215806",
+        "name": "roshan_phase23_legacy_queue_allocator_20261016",
+        "bytes": 1024,
+        "md5": "c500691c6c6dec3ea92f90c785d79854"
+      },
+      {
+        "version": "20261016221553",
+        "name": "roshan_phase24_visit_form_options_20261016",
+        "bytes": 1588,
+        "md5": "c866539de52f70644cfd9226e42f23da"
+      },
+      {
+        "version": "20261016222009",
+        "name": "roshan_phase25_current_app_profile_20261016",
+        "bytes": 2016,
+        "md5": "8f321030af405a2e54627a0bc0511396"
+      },
+      {
+        "version": "20261017125924",
+        "name": "roshan_security_candidate_bundle_20261017",
+        "bytes": 29978,
+        "md5": "60269c5efa4d8be85581f14849f1667d"
+      },
+      {
+        "version": "20261017125934",
+        "name": "roshan_insurance_claim_amount_integrity_20261017",
+        "bytes": 7361,
+        "md5": "4473480eafeaf155dde074db1782ec71"
+      },
+      {
+        "version": "20261017125936",
+        "name": "roshan_insurance_coverage_validity_20261017",
+        "bytes": 7338,
+        "md5": "563596abd9ac7cab76e7e5cd8523558f"
+      },
+      {
+        "version": "20261017133157",
+        "name": "roshan_revoke_legacy_invoice_number_20261017",
+        "bytes": 260,
+        "md5": "5d7259780affcb29ec995858a6d3c520"
+      },
+      {
+        "version": "20261017225523",
+        "name": "roshan_insurance_prior_authorization_branch_isolation",
+        "bytes": 1894,
+        "md5": "39bc12e5dc47ddf445211f4777b20430"
+      },
+      {
+        "version": "20261017225540",
+        "name": "roshan_post_expense_finite_amount",
+        "bytes": 1482,
+        "md5": "9736250e430c712c687d46b0840812b5"
+      },
+      {
+        "version": "20261017230623",
+        "name": "roshan_post_expense_money_precision",
+        "bytes": 1570,
+        "md5": "bed511038aad5ece9d06bf743b79108a"
+      },
+      {
+        "version": "20261017230645",
+        "name": "roshan_insurance_claim_money_precision",
+        "bytes": 5293,
+        "md5": "9799a03e105c1465fda2805e10594df9"
+      },
+      {
+        "version": "20261017231612",
+        "name": "roshan_invoice_payment_money_precision",
+        "bytes": 3652,
+        "md5": "5955bd258f9c9f4e0ba8eaf3f534033f"
+      },
+      {
+        "version": "20261017231629",
+        "name": "roshan_pharmacy_batch_money_precision",
+        "bytes": 3078,
+        "md5": "d799b199850edb28c4a4c064746046ed"
+      },
+      {
+        "version": "20261018061746",
+        "name": "roshan_pharmacy_batch_receipt_idempotency",
+        "bytes": 5701,
+        "md5": "34f4a16b5fbab81a0c4f892bb7f95ba1"
+      },
+      {
+        "version": "20261018062939",
+        "name": "roshan_pharmacy_batch_receipt_guards",
+        "bytes": 8353,
+        "md5": "683571b0350a9ea2e17f376f16d26c7e"
+      },
+      {
+        "version": "20261018063549",
+        "name": "roshan_phase19_invoice_rpc_only_writes",
+        "bytes": 2164,
+        "md5": "086f07c62117660dd5012dca353b41fa"
+      },
+      {
+        "version": "20261018064139",
+        "name": "roshan_phase20_clinical_child_branch_isolation",
+        "bytes": 13474,
+        "md5": "4b0c2e855ce08879c9cf9bc074c39897"
+      },
+      {
+        "version": "20261018064638",
+        "name": "roshan_clinical_child_write_rpcs",
+        "bytes": 3613,
+        "md5": "690778a46c97d3886cbb203599b6584d"
+      },
+      {
+        "version": "20261018065708",
+        "name": "roshan_clinical_child_rpc_only_writes",
+        "bytes": 520,
+        "md5": "737b78e71cb5d5f0fd6cb7323f5d9f9b"
+      },
+      {
+        "version": "20261018201642",
+        "name": "roshan_phase31_clinical_financial_security_hardening",
+        "bytes": 18493,
+        "md5": "b49393f160d5c097973bbbe3ea3499ed"
+      },
+      {
+        "version": "20261018201758",
+        "name": "roshan_phase31_contract_security_cutover",
+        "bytes": 1197,
+        "md5": "9ed77769bf921a7c7c397e16b8372ba7"
+      },
+      {
+        "version": "20261019061315",
+        "name": "roshan_phase32_medical_certificate_visit_index",
+        "bytes": 107,
+        "md5": "8ffa48d50ddc55eedd19e9ebce224090"
+      },
+      {
+        "version": "20261020090350",
+        "name": "roshan_phase34_storage_guard_lab_verify_realtime",
+        "bytes": 20212,
+        "md5": "704c7a6127d9a2f7056f42d8ba35ae85"
+      },
+      {
+        "version": "20261020111126",
+        "name": "roshan_phase36_audit_coverage_and_visit_lifecycle_guards",
+        "bytes": 4116,
+        "md5": "709b9cde24364271cab45c801cf256da"
+      },
+      {
+        "version": "20261020232033",
+        "name": "roshan_phase39_permissions_lab_catalog_and_audit_closure",
+        "bytes": 3211,
+        "md5": "1739b0eb57bfd70d978955bebd603378"
+      },
+      {
+        "version": "20261031071119",
+        "name": "roshan_phase46_uat_schema_compatibility",
+        "bytes": 5239,
+        "md5": "c762c78af47bc2521fa21af0f07fe739"
+      },
+      {
+        "version": "20261031071122",
+        "name": "roshan_phase47_queue_branch_attribution",
+        "bytes": 6568,
+        "md5": "dc616222eae5d6e5d2c6b9de5aa47ffc"
+      },
+      {
+        "version": "20261031103927",
+        "name": "roshan_phase48_storage_entity_branch_binding",
+        "bytes": 5663,
+        "md5": "f5ee865d0429bf532977924ef60978fa"
+      },
+      {
+        "version": "20261102122437",
+        "name": "superseded_placeholder_phase49_atomic_pharmacy_dispense",
+        "bytes": 138,
+        "md5": "99219a63dc008c857c674f0a198fac42"
+      },
+      {
+        "version": "20261102133658",
+        "name": "superseded_placeholder_phase50_clinical_visit_bill_completion",
+        "bytes": 138,
+        "md5": "99219a63dc008c857c674f0a198fac42"
+      },
+      {
+        "version": "20261102133734",
+        "name": "superseded_placeholder_phase51_public_setup_required_anon",
+        "bytes": 138,
+        "md5": "99219a63dc008c857c674f0a198fac42"
+      },
+      {
+        "version": "20261102140000",
+        "name": "superseded_placeholder_phase52_reporting_analytics",
+        "bytes": 138,
+        "md5": "99219a63dc008c857c674f0a198fac42"
+      },
+      {
+        "version": "20261102232813",
+        "name": "roshan_remediation_archive_container",
+        "bytes": 443,
+        "md5": "a39956f8bbc2fe44fb6c4bc10fcab39a"
+      },
+      {
+        "version": "20261102232819",
+        "name": "roshan_phase49_isolate_malformed_idempotency_table",
+        "bytes": 227,
+        "md5": "34856827a2ac18a01d5065e5fa896a00"
+      },
+      {
+        "version": "20261102232823",
+        "name": "roshan_phase49_atomic_pharmacy_dispense_repaired",
+        "bytes": 19149,
+        "md5": "5e9082b7f8efa2733eac3463080552bc"
+      },
+      {
+        "version": "20261102232849",
+        "name": "roshan_phase50_clinical_visit_bill_completion_reconciled",
+        "bytes": 4478,
+        "md5": "381936b092c5c5a85983b198cb2524c1"
+      },
+      {
+        "version": "20261102232852",
+        "name": "roshan_phase51_public_setup_required_anon_reconciled",
+        "bytes": 792,
+        "md5": "ce740f50fdf5f0d3d6f279c427e65fca"
+      },
+      {
+        "version": "20261102232855",
+        "name": "roshan_phase52_reporting_analytics_reconciled",
+        "bytes": 14310,
+        "md5": "f3e301313a7541d087264f50083e99bb"
+      },
+      {
+        "version": "20261102232941",
+        "name": "roshan_synthetic_patient_cleanup_and_stock_ledger_reversal",
+        "bytes": 3289,
+        "md5": "eedfc4ec43dc90edf1765a23790516b0"
+      }
+    ]
+  },
+  "qa": {
+    "project_ref": "hopfohcnrtbiqjkgeukz",
+    "postgres_version": "17.11",
+    "row_count": 22,
+    "latest": {
+      "version": "20261104065852",
+      "name": "roshan_phase57_pharmacy_quantity_required_guard",
+      "bytes": 10958,
+      "md5": "7bffc0d979d925cc3633a21e7292625d"
+    },
+    "rows": [
+      {
+        "version": "20261023182629",
+        "name": "qa_schema_baseline_v112_platform_preserving",
+        "bytes": 430993,
+        "md5": "f3a1dede1deddcfe74b8cba3e9566932"
+      },
+      {
+        "version": "20261023182742",
+        "name": "roshan_phase34_consolidated_storage_realtime_lab_verify",
+        "bytes": 20610,
+        "md5": "1c77a2ce8d9134d9ed43a24b5ee4af7e"
+      },
+      {
+        "version": "20261023182746",
+        "name": "roshan_phase36_audit_coverage_and_visit_lifecycle_guards",
+        "bytes": 4069,
+        "md5": "dc53f0787d2d1883c4fff492fc8b9b1e"
+      },
+      {
+        "version": "20261023182750",
+        "name": "roshan_phase39_permissions_lab_catalog_and_audit_closure",
+        "bytes": 2524,
+        "md5": "42d8f6df5f1cb9625569a9056a2cfd22"
+      },
+      {
+        "version": "20261023182756",
+        "name": "roshan_phase45_atomic_visit_queue_completion_retry",
+        "bytes": 2926,
+        "md5": "960988cf6d716604a65d6b1ef5a7363a"
+      },
+      {
+        "version": "20261023182855",
+        "name": "qa_phase31_contract_security_cutover",
+        "bytes": 1213,
+        "md5": "d9bf16614626e5bce2715caa6182eb2a"
+      },
+      {
+        "version": "20261023183515",
+        "name": "qa_acl_reconciliation_from_production_catalog",
+        "bytes": 15171,
+        "md5": "d9a60abdff07ae8f6ed84b15ebe31b9b"
+      },
+      {
+        "version": "20261023183623",
+        "name": "qa_authenticator_acl_and_default_privileges_reconciliation",
+        "bytes": 16190,
+        "md5": "227ec9804038d39c92988a32d571f699"
+      },
+      {
+        "version": "20261031065937",
+        "name": "roshan_phase46_uat_schema_compatibility",
+        "bytes": 5239,
+        "md5": "c762c78af47bc2521fa21af0f07fe739"
+      },
+      {
+        "version": "20261031070544",
+        "name": "roshan_phase47_queue_branch_attribution",
+        "bytes": 6568,
+        "md5": "dc616222eae5d6e5d2c6b9de5aa47ffc"
+      },
+      {
+        "version": "20261031071243",
+        "name": "qa_restore_security_invoker_on_exposed_views",
+        "bytes": 2410,
+        "md5": "c81b917f1665ec105ff4ba1166472ff2"
+      },
+      {
+        "version": "20261031103912",
+        "name": "roshan_phase48_storage_entity_branch_binding",
+        "bytes": 5663,
+        "md5": "f5ee865d0429bf532977924ef60978fa"
+      },
+      {
+        "version": "20261102122437",
+        "name": "roshan_phase51_public_setup_required_anon",
+        "bytes": 556,
+        "md5": "f5ee887188ec948f083aba0f0e87b02a"
+      },
+      {
+        "version": "20261102133658",
+        "name": "roshan_phase49_atomic_pharmacy_dispense",
+        "bytes": 19159,
+        "md5": "12ddaceff592d8e7559056a47ce178b7"
+      },
+      {
+        "version": "20261102133734",
+        "name": "roshan_phase50_clinical_visit_bill_completion",
+        "bytes": 4488,
+        "md5": "5db588886b2741e4759479dc9e9a0b1f"
+      },
+      {
+        "version": "20261102232858",
+        "name": "superseded_duplicate_roshan_phase50_clinical_visit_bill_completion",
+        "bytes": 4478,
+        "md5": "381936b092c5c5a85983b198cb2524c1"
+      },
+      {
+        "version": "20261102232905",
+        "name": "roshan_phase52_reporting_analytics_reconciled",
+        "bytes": 14310,
+        "md5": "f3e301313a7541d087264f50083e99bb"
+      },
+      {
+        "version": "20261103114242",
+        "name": "roshan_phase54_source_aware_financial_reversal",
+        "bytes": 7817,
+        "md5": "8329dbfe9a51b588a3c0244e21736726"
+      },
+      {
+        "version": "20261103114612",
+        "name": "roshan_phase54b_payment_updated_at_compat",
+        "bytes": 4983,
+        "md5": "8fef1495c28875c149ace54c133b61b2"
+      },
+      {
+        "version": "20261103115649",
+        "name": "roshan_phase54c_branchless_receipt_integrity",
+        "bytes": 10409,
+        "md5": "78baf5a4d3f03d1af45ebdcaf3a858cc"
+      },
+      {
+        "version": "20261103155227",
+        "name": "roshan_phase55_clinical_parent_guard_acl_reconciliation",
+        "bytes": 2308,
+        "md5": "6b8e017911641a60ec1599362d4351bd"
+      },
+      {
+        "version": "20261104065852",
+        "name": "roshan_phase57_pharmacy_quantity_required_guard",
+        "bytes": 10958,
+        "md5": "7bffc0d979d925cc3633a21e7292625d"
+      }
+    ]
+  },
+  "comparison": {
+    "shared_version_ids": 3,
+    "production_only": 126,
+    "qa_only": 19,
+    "shared_version_mismatches": [
+      {
+        "version": "20261102122437",
+        "production": {
+          "version": "20261102122437",
+          "name": "superseded_placeholder_phase49_atomic_pharmacy_dispense",
+          "bytes": 138,
+          "md5": "99219a63dc008c857c674f0a198fac42"
+        },
+        "qa": {
+          "version": "20261102122437",
+          "name": "roshan_phase51_public_setup_required_anon",
+          "bytes": 556,
+          "md5": "f5ee887188ec948f083aba0f0e87b02a"
+        }
+      },
+      {
+        "version": "20261102133658",
+        "production": {
+          "version": "20261102133658",
+          "name": "superseded_placeholder_phase50_clinical_visit_bill_completion",
+          "bytes": 138,
+          "md5": "99219a63dc008c857c674f0a198fac42"
+        },
+        "qa": {
+          "version": "20261102133658",
+          "name": "roshan_phase49_atomic_pharmacy_dispense",
+          "bytes": 19159,
+          "md5": "12ddaceff592d8e7559056a47ce178b7"
+        }
+      },
+      {
+        "version": "20261102133734",
+        "production": {
+          "version": "20261102133734",
+          "name": "superseded_placeholder_phase51_public_setup_required_anon",
+          "bytes": 138,
+          "md5": "99219a63dc008c857c674f0a198fac42"
+        },
+        "qa": {
+          "version": "20261102133734",
+          "name": "roshan_phase50_clinical_visit_bill_completion",
+          "bytes": 4488,
+          "md5": "5db588886b2741e4759479dc9e9a0b1f"
+        }
+      }
+    ],
+    "same_statement_fingerprint_across_different_versions": [
+      {
+        "production": {
+          "version": "20261031071119",
+          "name": "roshan_phase46_uat_schema_compatibility",
+          "bytes": 5239,
+          "md5": "c762c78af47bc2521fa21af0f07fe739"
+        },
+        "qa": {
+          "version": "20261031065937",
+          "name": "roshan_phase46_uat_schema_compatibility",
+          "bytes": 5239,
+          "md5": "c762c78af47bc2521fa21af0f07fe739"
+        }
+      },
+      {
+        "production": {
+          "version": "20261031071122",
+          "name": "roshan_phase47_queue_branch_attribution",
+          "bytes": 6568,
+          "md5": "dc616222eae5d6e5d2c6b9de5aa47ffc"
+        },
+        "qa": {
+          "version": "20261031070544",
+          "name": "roshan_phase47_queue_branch_attribution",
+          "bytes": 6568,
+          "md5": "dc616222eae5d6e5d2c6b9de5aa47ffc"
+        }
+      },
+      {
+        "production": {
+          "version": "20261031103927",
+          "name": "roshan_phase48_storage_entity_branch_binding",
+          "bytes": 5663,
+          "md5": "f5ee865d0429bf532977924ef60978fa"
+        },
+        "qa": {
+          "version": "20261031103912",
+          "name": "roshan_phase48_storage_entity_branch_binding",
+          "bytes": 5663,
+          "md5": "f5ee865d0429bf532977924ef60978fa"
+        }
+      },
+      {
+        "production": {
+          "version": "20261102232849",
+          "name": "roshan_phase50_clinical_visit_bill_completion_reconciled",
+          "bytes": 4478,
+          "md5": "381936b092c5c5a85983b198cb2524c1"
+        },
+        "qa": {
+          "version": "20261102232858",
+          "name": "superseded_duplicate_roshan_phase50_clinical_visit_bill_completion",
+          "bytes": 4478,
+          "md5": "381936b092c5c5a85983b198cb2524c1"
+        }
+      },
+      {
+        "production": {
+          "version": "20261102232855",
+          "name": "roshan_phase52_reporting_analytics_reconciled",
+          "bytes": 14310,
+          "md5": "f3e301313a7541d087264f50083e99bb"
+        },
+        "qa": {
+          "version": "20261102232905",
+          "name": "roshan_phase52_reporting_analytics_reconciled",
+          "bytes": 14310,
+          "md5": "f3e301313a7541d087264f50083e99bb"
+        }
+      }
+    ]
+  },
+  "safety": {
+    "sql_bodies_read": false,
+    "production_or_qa_writes": false,
+    "migration_ledger_mutation": false,
+    "migration_replay": false,
+    "patient_or_financial_rows_read": false
+  }
+}
