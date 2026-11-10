@@ -93,6 +93,7 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
   assert.match(ui, /\.limit\(30\)/);
   assert.doesNotMatch(ui, /\.limit\(500\)/);
   assert.match(prescriptionDraft, /brand_name\.ilike/);
+  assert.match(prescriptionDraft, /dosage_form\.ilike/);
   assert.match(ui, /Could not load medicines/);
   assert.match(ui, /No matching medicines/);
 });
@@ -100,11 +101,11 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
 test("medicine search removes SQL LIKE wildcards and PostgREST filter grammar", () => {
   assert.equal(
     buildMedicineSearchFilter("amox%_cillin"),
-    "name.ilike.%amox cillin%,generic_name.ilike.%amox cillin%,brand_name.ilike.%amox cillin%,strength.ilike.%amox cillin%",
+    "name.ilike.%amox cillin%,generic_name.ilike.%amox cillin%,brand_name.ilike.%amox cillin%,strength.ilike.%amox cillin%,dosage_form.ilike.%amox cillin%",
   );
   assert.equal(
     buildMedicineSearchFilter("amox),status.eq.active,(brand"),
-    "name.ilike.%amox status.eq.active brand%,generic_name.ilike.%amox status.eq.active brand%,brand_name.ilike.%amox status.eq.active brand%,strength.ilike.%amox status.eq.active brand%",
+    "name.ilike.%amox status.eq.active brand%,generic_name.ilike.%amox status.eq.active brand%,brand_name.ilike.%amox status.eq.active brand%,strength.ilike.%amox status.eq.active brand%,dosage_form.ilike.%amox status.eq.active brand%",
   );
 });
 
