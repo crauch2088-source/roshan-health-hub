@@ -10,6 +10,23 @@ BEGIN
      OR (p.code='prescriptions.correction.resolve' AND r.code='doctor');
   IF v_count <> 2 THEN RAISE EXCEPTION 'dedicated correction permissions are not assigned only to pharmacist and doctor'; END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM public.role_permissions rp
+    JOIN public.roles r ON r.id=rp.role_id
+    JOIN public.permissions p ON p.id=rp.permission_id
+    WHERE r.code='doctor' AND p.code='prescriptions.create'
+  ) THEN
+    RAISE EXCEPTION 'doctor is missing the dedicated prescription-authoring permission';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.role_permissions rp
+    JOIN public.roles r ON r.id=rp.role_id
+    JOIN public.permissions p ON p.id=rp.permission_id
+    WHERE r.code IN ('admin','pharmacist') AND p.code='prescriptions.create'
+  ) THEN
+    RAISE EXCEPTION 'Admin or pharmacist unexpectedly received prescription-authoring permission';
+  END IF;
+
   IF NOT (SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE oid='public.prescription_item_correction_requests'::regclass)
      OR NOT (SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE oid='public.prescription_item_correction_events'::regclass) THEN
     RAISE EXCEPTION 'correction request/event tables must enable and force RLS';
@@ -76,6 +93,18 @@ BEGIN
   SELECT count(*) INTO v_count FROM public.prescription_item_correction_events WHERE request_id=v_first AND event_type='requested';
   IF v_count <> 1 THEN RAISE EXCEPTION 'duplicate retry appended another request event'; END IF;
   IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 1 THEN RAISE EXCEPTION 'pharmacist cannot read own branch request'; END IF;
+
+  v_count := 0;
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61700000-0000-0000-0000-000000000001',
+      false,
+      '[{"medicine_id":"61600000-0000-0000-0000-000000000001","medication_name":"Amoxicillin 500 mg","dose":"500 mg","frequency":"BID","duration":"5 days","quantity":10,"dosage_form":"capsule","route":"oral"}]'::jsonb
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_count := 1;
+  END;
+  IF v_count <> 1 THEN RAISE EXCEPTION 'pharmacist with pharmacy.create can still author a prescription'; END IF;
 END;
 $phase61_request$;
 
@@ -157,6 +186,18 @@ BEGIN
   v_denied := false;
   BEGIN PERFORM public.request_prescription_item_correction('61800000-0000-0000-0000-000000000002','Admin must not request correction.'); EXCEPTION WHEN OTHERS THEN v_denied := true; END;
   IF NOT v_denied THEN RAISE EXCEPTION 'ordinary Admin created a correction request'; END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61700000-0000-0000-0000-000000000001',
+      false,
+      '[{"medicine_id":"61600000-0000-0000-0000-000000000001","medication_name":"Amoxicillin 500 mg","dose":"500 mg","frequency":"BID","duration":"5 days","quantity":10,"dosage_form":"capsule","route":"oral"}]'::jsonb
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Admin with emr.create can still author a prescription'; END IF;
 END;
 $phase61_admin$;
 RESET ROLE;
