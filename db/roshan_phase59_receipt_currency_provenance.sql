@@ -41,36 +41,28 @@ BEGIN
   SELECT
     p.id,
     COALESCE(c.ledger_count, 0) = 1,
-    COALESCE(c.ledger_count, 0) = 1
-      AND c.branch_id IS NOT NULL
-      AND p.branch_id IS NOT NULL
-      AND i.branch_id IS NOT NULL
-      AND c.branch_id = p.branch_id
-      AND p.branch_id = i.branch_id
-      AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount)
-      AND (
-        (
-          NOT COALESCE(c.is_reversed, false)
-          AND COALESCE(r.reversal_count, 0) = 0
-        )
-        OR (
-          c.is_reversed
-          AND r.reversal_count = 1
-          AND r.reversal_matches IS TRUE
-        )
-      ),
-    COALESCE(c.is_reversed, false),
-    CASE WHEN c.is_reversed THEN c.reversal_reason ELSE NULL END,
-    r.transaction_date,
+    integrity.ledger_matches,
+    CASE WHEN integrity.ledger_matches THEN COALESCE(c.is_reversed, false) ELSE false END,
+    CASE
+      WHEN integrity.ledger_matches AND c.is_reversed THEN c.reversal_reason
+      ELSE NULL
+    END,
+    CASE
+      WHEN integrity.ledger_matches AND c.is_reversed THEN r.transaction_date
+      ELSE NULL
+    END,
     p.currency_code,
     i.currency_code,
-    c.currency_code,
-    r.currency_code,
+    CASE WHEN integrity.ledger_matches THEN c.currency_code ELSE NULL END,
+    CASE
+      WHEN integrity.ledger_matches AND c.is_reversed THEN r.currency_code
+      ELSE NULL
+    END,
     COALESCE(
-      p.currency_code = 'SDG'
+      integrity.ledger_matches
+        AND p.currency_code = 'SDG'
         AND i.currency_code = 'SDG'
         AND c.currency_code = 'SDG'
-        AND COALESCE(c.ledger_count, 0) = 1
         AND (
           (
             NOT COALESCE(c.is_reversed, false)
@@ -115,6 +107,28 @@ BEGIN
     FROM public.cashbox_transactions r
     WHERE r.reversal_of = c.id
   ) r ON true
+  CROSS JOIN LATERAL (
+    SELECT (
+      COALESCE(c.ledger_count, 0) = 1
+      AND c.branch_id IS NOT NULL
+      AND p.branch_id IS NOT NULL
+      AND i.branch_id IS NOT NULL
+      AND c.branch_id = p.branch_id
+      AND p.branch_id = i.branch_id
+      AND c.amount IS NOT DISTINCT FROM pg_catalog.abs(p.amount)
+      AND (
+        (
+          NOT COALESCE(c.is_reversed, false)
+          AND COALESCE(r.reversal_count, 0) = 0
+        )
+        OR (
+          c.is_reversed
+          AND r.reversal_count = 1
+          AND r.reversal_matches IS TRUE
+        )
+      )
+    ) AS ledger_matches
+  ) integrity
   WHERE p.id = ANY(_payment_ids)
     AND private.app_has_branch_access(p.branch_id)
     AND private.app_has_branch_access(i.branch_id);
