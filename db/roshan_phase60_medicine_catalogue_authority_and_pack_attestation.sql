@@ -29,8 +29,14 @@ ON CONFLICT DO NOTHING;
 DROP POLICY IF EXISTS medicines_update ON public.medicines;
 CREATE POLICY medicines_update ON public.medicines
 FOR UPDATE TO authenticated
-USING ((SELECT public.app_has_perm('pharmacy.catalogue_identity.update')))
-WITH CHECK ((SELECT public.app_has_perm('pharmacy.catalogue_identity.update')));
+USING (
+  (SELECT public.app_has_perm('pharmacy.catalogue_identity.update'))
+  AND deleted_at IS NULL
+)
+WITH CHECK (
+  (SELECT public.app_has_perm('pharmacy.catalogue_identity.update'))
+  AND deleted_at IS NULL
+);
 
 -- RLS controls which medicine rows may be edited; column privileges control which
 -- fields an identity editor may change. Do not let this permission mutate prices,

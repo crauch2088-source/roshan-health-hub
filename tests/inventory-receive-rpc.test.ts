@@ -264,10 +264,12 @@ testRunner(
     assert.match(source, /\.update\(result\.data\)/);
     assert.match(source, /\.eq\("id", vars\.id\)/);
     assert.match(source, /\.is\("deleted_at", null\)/);
-    assert.match(
-      medicineRlsSql,
-      /CREATE POLICY medicines_update\s+ON public\.medicines\s+FOR UPDATE TO authenticated\s+USING \(\(SELECT public\.app_has_perm\('pharmacy\.catalogue_identity\.update'\)\)\)\s+WITH CHECK \(\(SELECT public\.app_has_perm\('pharmacy\.catalogue_identity\.update'\)\)\)/,
-    );
+    const medicineUpdatePolicy =
+      medicineRlsSql.match(/CREATE POLICY medicines_update[\s\S]*?;/)?.[0] ?? "";
+    assert.match(medicineUpdatePolicy, /USING[\s\S]*pharmacy\.catalogue_identity\.update/);
+    assert.match(medicineUpdatePolicy, /USING[\s\S]*deleted_at IS NULL/);
+    assert.match(medicineUpdatePolicy, /WITH CHECK[\s\S]*pharmacy\.catalogue_identity\.update/);
+    assert.match(medicineUpdatePolicy, /WITH CHECK[\s\S]*deleted_at IS NULL/);
     assert.match(medicineAuditSql, /'medicines'/);
     assert.match(medicineAuditSql, /trigger_name := 'trg_audit_'\|\|table_name/);
     assert.match(medicineAuditSql, /EXECUTE FUNCTION public\.audit_row_change\(\)/);
