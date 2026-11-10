@@ -269,8 +269,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
               lang === "ar"
-                ? "ابحث باسم الدواء أو المادة أو القوة"
-                : "Search medicine, generic or strength"
+                ? "ابحث باسم الدواء أو العلامة أو المادة أو القوة أو الشكل"
+                : "Search name, brand, generic, strength or form"
             }
           />
           {search.trim().length === 1 && (
@@ -320,11 +320,29 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                   className="flex w-full items-center justify-between rounded-md px-3 py-2 text-start text-sm hover:bg-muted"
                   onClick={() => chooseMedicine(s(m, "id"))}
                 >
-                  <span>
+                  <span className="flex min-w-0 flex-col">
                     <span className="font-medium">{s(m, "name") || s(m, "generic_name")}</span>
-                    {s(m, "strength") && (
-                      <span className="ms-2 text-xs text-muted-foreground">{s(m, "strength")}</span>
-                    )}
+                    {[
+                      s(m, "generic_name"),
+                      s(m, "brand_name"),
+                      s(m, "strength"),
+                      s(m, "dosage_form"),
+                    ]
+                      .filter((value) => value && value !== s(m, "name"))
+                      .filter((value, index, values) => values.indexOf(value) === index)
+                      .join(" · ") ? (
+                      <span className="text-xs text-muted-foreground">
+                        {[
+                          s(m, "generic_name"),
+                          s(m, "brand_name"),
+                          s(m, "strength"),
+                          s(m, "dosage_form"),
+                        ]
+                          .filter((value) => value && value !== s(m, "name"))
+                          .filter((value, index, values) => values.indexOf(value) === index)
+                          .join(" · ")}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {s(m, "stock_quantity") || "0"}
