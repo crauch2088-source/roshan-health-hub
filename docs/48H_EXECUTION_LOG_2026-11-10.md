@@ -270,3 +270,17 @@ The repeated candidate commits caused Vercel preview checks on PR #210 and PR #2
 ### Non-negotiable boundary
 
 All three candidate PRs remain Draft. Do not merge, apply migrations, alter Auth/Storage/roles, reconcile migration history by replay, or promote a deployment until independent review, source/effective-catalog reconciliation, backup/recovery evidence and the applicable human acceptance gates are satisfied.
+
+
+## Parallel review checkpoint — 2026-11-10
+
+- PR #209 exact head `48fc38e867e6f1387881862e9ab806b93cda6c9c`: five of five PR workflows successful.
+- PR #210 follow-up exact head `44700856406213f32e5683ad38bfaff981a81f97`: a regression fix now clears pending physical-pack confirmation after every identity-field edit. The immediately preceding head `324a2cb479380aab58e81bad1e695e998852e20d` passed five of five workflows. The follow-up head's workflow run was not yet visible at this checkpoint; do not claim the fix is validated until it is.
+- PR #211 exact head `2b0e35bb2bbff585f4a9942709bc39f842d5855e`: ten of ten PR workflows successful, including Phase58/59 PostgreSQL17 and finance/security/source/Spec Kit checks.
+- PR #181 exact head `00f09d956c0632d6e193e4864bdb0401b092b09a`: eight of eight PR workflows successful. Its body now explicitly records the Phase58/59 dependency and fail-closed handling of legacy NULL/mismatched currency. Browser/mobile/physical printing and authenticated finance acceptance remain pending.
+- PR #215 documentation baseline merged; its exact head `8f0e3073aa222d25197354c4ab7d780df91986d8` had successful CI.
+- Vercel previews for PR #210 and #211 continue to report free-plan build-rate-limit status. Do not spend additional preview capacity on cosmetic changes.
+
+A fresh SELECT-only query against both hosted projects reconfirmed Production migration ledger 129 rows/latest `20261102232941` and QA 22 rows/latest `20261104065852`. Neither project currently has `currency_code` on the seven Phase58 financial tables. A whitespace-normalized function-definition check reconfirmed Production still contains the `COALESCE(pi.quantity,1)` fallback and lacks explicit NULL rejection, while QA has explicit NULL rejection and no fallback. The initial whitespace-sensitive probe was inconclusive and was discarded; only the normalized result is authoritative for this checkpoint.
+
+The weighted Engineering RC estimate remains **49%**; operational acceptance remains **11%**. The PR #210 UI correction is not credited until exact-head CI passes. No live DDL/DML, migration, permission, Auth/Storage, business-data, deployment or backup operation occurred. Full details: [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md).
