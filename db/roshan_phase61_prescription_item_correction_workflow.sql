@@ -430,6 +430,8 @@ AS $function$
 DECLARE
   v_uid uuid := public.current_app_user_id();
   v_request public.prescription_item_correction_requests%ROWTYPE;
+  v_prescription_id uuid;
+  v_prescription_item_id uuid;
   v_parent record;
   v_item public.prescription_items%ROWTYPE;
   v_user_branch uuid;
@@ -456,13 +458,13 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  IF p_request_id IS NULL OR p_action NOT IN ('replace_item', 'reject', 'cancel_and_reissue') THEN
+  IF p_request_id IS NULL OR p_action IS NULL OR p_action NOT IN ('replace_item', 'reject', 'cancel_and_reissue') THEN
     RAISE EXCEPTION 'prescription_correction_action_invalid'
       USING ERRCODE = '22023';
   END IF;
 
   SELECT r.prescription_id, r.prescription_item_id
-    INTO v_parent
+    INTO v_prescription_id, v_prescription_item_id
   FROM public.prescription_item_correction_requests AS r
   WHERE r.id = p_request_id;
 
@@ -494,7 +496,7 @@ BEGIN
   FROM public.prescriptions AS p
   JOIN public.visits AS v ON v.id = p.visit_id AND v.patient_id = p.patient_id
   JOIN public.patients AS pt ON pt.id = p.patient_id
-  WHERE p.id = v_parent.prescription_id
+  WHERE p.id = v_prescription_id
   FOR UPDATE OF p, v, pt;
 
   IF NOT FOUND THEN
@@ -505,7 +507,7 @@ BEGIN
   SELECT pi.*
     INTO v_item
   FROM public.prescription_items AS pi
-  WHERE pi.id = v_parent.prescription_item_id
+  WHERE pi.id = v_prescription_item_id
     AND pi.prescription_id = v_parent.id
   FOR UPDATE;
 
@@ -527,6 +529,12 @@ BEGIN
 
   IF v_request.status IS DISTINCT FROM 'pending' THEN
     RAISE EXCEPTION 'prescription_correction_request_already_resolved'
+      USING ERRCODE = '40001';
+  END IF;
+
+  IF v_request.prescription_id IS DISTINCT FROM v_prescription_id
+     OR v_request.prescription_item_id IS DISTINCT FROM v_prescription_item_id THEN
+    RAISE EXCEPTION 'prescription_correction_request_identity_changed'
       USING ERRCODE = '40001';
   END IF;
 
@@ -721,8 +729,11 @@ BEGIN
     v_status := 'resolved';
 
   ELSE
-    IF jsonb_typeof(p_replacement) IS DISTINCT FROM 'array'
-       OR jsonb_array_length(p_replacement) = 0 THEN
+    IF jsonb_typeof(p_replacement) IS DISTINCT FROM 'array' THEN
+      RAISE EXCEPTION 'complete_replacement_order_required'
+        USING ERRCODE = '22023';
+    END IF;
+    IF jsonb_array_length(p_replacement) = 0 THEN
       RAISE EXCEPTION 'complete_replacement_order_required'
         USING ERRCODE = '22023';
     END IF;
