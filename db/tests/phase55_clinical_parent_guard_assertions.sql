@@ -80,6 +80,9 @@ AS $function$
   SELECT private.app_has_claim_branch(_claim_id)
 $function$;
 GRANT EXECUTE ON FUNCTION public.phase55_test_claim_helper_definer(uuid) TO authenticated;
+INSERT INTO public.users (id, role_id, role)
+VALUES ('00000000-0000-0000-0000-000000009198', NULL, 'before');
+GRANT SELECT, UPDATE ON public.users TO authenticated;
 SET LOCAL ROLE authenticated;
 DO $claim_helper_caller$
 BEGIN
@@ -89,12 +92,17 @@ BEGIN
 END
 $claim_helper_caller$;
 UPDATE public.lab_order_items SET value='trigger-authenticated-role' WHERE id='00000000-0000-0000-0000-000000009111';
+UPDATE public.users SET role_id='00000000-0000-0000-0000-000000009197'
+ WHERE id='00000000-0000-0000-0000-000000009198';
 RESET ROLE;
 DROP FUNCTION public.phase55_test_claim_helper_definer(uuid);
 DO $trigger_acl$
 BEGIN
   IF (SELECT value FROM public.lab_order_items WHERE id='00000000-0000-0000-0000-000000009111') <> 'trigger-authenticated-role' THEN
     RAISE EXCEPTION 'clinical trigger stopped working after direct EXECUTE was revoked';
+  END IF;
+  IF (SELECT role FROM public.users WHERE id='00000000-0000-0000-0000-000000009198') <> 'sync-fired' THEN
+    RAISE EXCEPTION 'role synchronization trigger stopped working after direct EXECUTE was revoked';
   END IF;
 END
 $trigger_acl$;
