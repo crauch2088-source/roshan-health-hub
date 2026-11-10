@@ -2822,3 +2822,46 @@ The owner approved a 48-hour accelerated execution sprint. The binding execution
 **Sprint baseline:** `bed6ff4c87d582107bf62ee353be4eb35958481b`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
 
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
+
+## 48-hour sprint baseline and H0 log — 2026-11-10
+
+The owner-approved sprint began at **2026-11-10 09:09:08 Africa/Khartoum** and has a 48-hour decision deadline of **2026-11-12 09:09:08 Africa/Khartoum**. The evidence-backed weighted baseline, live migration/security inventory, candidate PR heads, workstream scores, stop-ship findings, and operational-acceptance score are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). This is a sprint-specific denominator, not a percentage of all historical product features.
+
+## Live migration fingerprint and source-map recheck — 2026-11-10
+
+The current read-only ledger fingerprint capture is recorded in [LIVE_MIGRATION_SOURCE_MAPPING_2026-11-10.md](LIVE_MIGRATION_SOURCE_MAPPING_2026-11-10.md) and [LIVE_MIGRATION_LEDGER_FINGERPRINTS_2026-11-10.json](LIVE_MIGRATION_LEDGER_FINGERPRINTS_2026-11-10.json). Production remains at 129 rows/latest `20261102232941`; QA at 22/latest `20261104065852`. The three shared version IDs still collide, but a fresh comparison found **five** identical statement fingerprints under different version IDs (Phases 46, 47, 48, 50 and 52). This corrects the narrower two-pair summary in the prior 2026-11-09 report.
+
+The current source-parity workflow verifies a frozen 93-entry source hash set and forward-source delta; it does not query or compare the live 129/22 ledgers. The 79-row manifest, 93-entry report and 94-row applied inventory are historical snapshots. Phase 57 remains QA-only; Production still has the NULL-to-one dispense fallback. Do not replay, repair ledger rows or apply Production DDL/DML. Next P0: finish current source/effective-catalog mapping and add disposable PG17 fixtures for the quarantined 20261102232819 rename and redacted-equivalent 20261102232941 cleanup behavior.
+
+
+## Post-H0 verified deltas — 2026-11-10
+
+- PR #216 commit `1b2a81e807b0c867bef3742794f2c15e4f1af536` adds negative PG17 cases to the existing quarantined Phase 49 fixture. Exact-head CI [42774855081](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774855081) completed successfully: 18 jobs succeeded, one authenticated clinical-acceptance job was intentionally skipped, and the Phase 49 quarantined-remediation job passed. The fixture does not execute the redacted original cleanup SQL.
+- Independent review of PR #211 found that Phase 54 identifies `insurance_claim_payment` as a cashbox source while Phase 58 intentionally defers insurance currency provenance. PR #211 was updated at commit `6d2440381e78710fc5579598ff7684b1909884a8` to reject new cashbox rows with this deferred source type (SQLSTATE 23514), with a PG17 regression. In CI run [42775216135](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216135), the Phase 58 and Phase 59 PostgreSQL 17 jobs passed. The overall CI and insurance UI validation were still running at this snapshot; no overall pass is claimed.
+- The next P0 remains current source/effective-catalog reconciliation. Phase 57 remains QA-only; Production retains the NULL-to-one dispensing fallback.
+
+
+## Run 7 final completion record — 2026-11-10
+
+- PR #216 head `1b2a81e807b0c867bef3742794f2c15e4f1af536`: CI [42774855081](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774855081) completed with 18 successful jobs and one intentional clinical-acceptance skip. The `Phase 49 quarantined remediation contracts (PostgreSQL 17)` job passed. PR validation [42774852127](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774852127) and prescription/insurance/role integrations [42774855005](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774855005), [42774855064](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774855064), [42774855065](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42774855065) passed.
+- PR #211 head `6d2440381e78710fc5579598ff7684b1909884a8`: CI [42775216135](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216135) completed with 20 successful jobs and one intentional clinical-acceptance skip. Phase 58 and Phase 59 PostgreSQL 17 jobs passed; insurance UI [42775216669](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216669), finance-only RPC [42775216157](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216157), security candidate bundle [42775216066](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216066), historical migration source check [42775216129](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216129), Spec Kit [42775216527](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216527), and PR validation [42775210843](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775210843) passed. Phase58/59 remain candidate-only and are not applied to QA or Production.
+- PR #215 prior head `5e571000e1c8b15bd7e2c876eca737fbef7de5dc` passed CI [42775366974](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775366974) and PR validation [42775363102](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775363102). This final log update is a new docs-only commit and will receive its own check run.
+- The existing encrypted archive is confirmed in Drive: root folder **Roshan Health Hub - Encrypted Backups** (`1m-1JA2yT_NZxo0Drb4qGjyd24UW_Mta5`), dated child **2026-11-09** (`14q8YQbDddwzJ1tEyM0t8bK9f5ExRezF7`), file **Roshan-Production-Backup-2026-11-08.zip** (`1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv`), 305,317 bytes, Drive MD5 `875a85ac23e8b7a671c371cca41f7732`, `trashed=false`, owned by the connected account. The separate legacy folder **Roshan Health Hub Backups** (`1ak6tu379LSxfmjioeQsxUN5eJ_FWitd6`) is empty and is not the archive parent. Draft PR #213 records the canonical destination correction.
+- Backup runner main remains `ed41574bb278325e7bc06fd034e767db1544c55a`. The latest run `42537677251` only validated and skipped backup; the previous full run `42535939237` passed dump, PostgreSQL 17 restore, row-count comparison, age encryption and ciphertext upload. Its GitHub artifact expired, but the Drive copy and owner-device decryption/archive-readability evidence remain. A full backup using the current main checksum helper remains unverified.
+
+**Next P0:** complete current 129/22 source-to-ledger and effective-catalog reconciliation. Keep Phase 57 unapplied in Production until this is complete and the backup/current-runner evidence is refreshed. Keep clinical E2E deferred until the isolated free environment and synthetic doctor/pharmacist identities exist.
+
+
+## H+1 sprint progress — 2026-11-10
+
+The 48-hour sprint's first evidence-backed update records **47% Engineering RC progress** (weighted, up from 44% at H0) and **11% operational acceptance** on a separate denominator. Exact candidate-head CI and remaining stop-ship blockers are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). PR #209 and #210 candidate suites are green; PR #211 is re-running after a receipt metadata-redaction security correction. No hosted database or live role mapping was changed.
+
+
+## H+2 security review — 2026-11-10
+
+The public SECURITY DEFINER inventory was reviewed by exact function in both environments: Production 26 and QA 28 authenticated-executable functions; only `complete_visit_atomic` (delegates to a guarded implementation) and `setup_required` (documented boolean signal) lacked a direct in-body guard. No bulk revocation is warranted. Weighted Engineering RC estimate is now 48%; operational acceptance remains 11%. Detailed evidence and remaining migration/search-path review are in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md).
+
+
+## Parallel engineering review — 2026-11-10
+
+The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
