@@ -1,5 +1,11 @@
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+DO $service_role$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$service_role$;
 CREATE SCHEMA private;
 CREATE TABLE public.users (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
 CREATE TABLE public.patients (id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz);
