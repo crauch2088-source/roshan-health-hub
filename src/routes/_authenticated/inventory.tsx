@@ -187,7 +187,9 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<MedicineCatalogueDraft>(EMPTY_MEDICINE_FORM);
   const [editingMedicine, setEditingMedicine] = useState<Row | null>(null);
-  const [identityForm, setIdentityForm] = useState<MedicineCatalogueIdentityDraft>(EMPTY_MEDICINE_IDENTITY_FORM);
+  const [identityForm, setIdentityForm] = useState<MedicineCatalogueIdentityDraft>(
+    EMPTY_MEDICINE_IDENTITY_FORM,
+  );
   const [packInspectionConfirmed, setPackInspectionConfirmed] = useState(false);
   const canEditIdentity =
     can("pharmacy.catalogue_identity.update") && isMedicineIdentityEditorRole(user?.role_code);
@@ -561,7 +563,9 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={!packInspectionConfirmed || verifyPhysicalPack.isPending || !editingMedicine}
+                    disabled={
+                      !packInspectionConfirmed || verifyPhysicalPack.isPending || !editingMedicine
+                    }
                     onClick={() => {
                       if (editingMedicine) verifyPhysicalPack.mutate(s(editingMedicine, "id"));
                     }}
@@ -570,7 +574,9 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">{t("pack_verification_pharmacist_only")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("pack_verification_pharmacist_only")}
+                </p>
               )}
             </div>
             <DialogFooter>
