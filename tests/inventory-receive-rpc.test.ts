@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import testRunner from "node:test";
 import {
+  isMedicineIdentityEditorRole,
+  isMedicinePackVerifierRole,
   buildMedicineCatalogueInsert,
   buildMedicineCatalogueIdentityUpdate,
   buildMedicineCatalogueSearchFilter,
-  updateMedicineCatalogueIdentityEditorState,
 } from "../src/lib/medicine-catalogue.ts";
 
 const source = readFileSync(
@@ -18,7 +19,7 @@ const medicineAuditSql = readFileSync(
 );
 const medicineRlsSql = readFileSync(
   new URL(
-    "../docs/recovered-migrations/sql/20260818234039_harden_rls_permissions_and_public_grants_v1.sql",
+    "../db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql",
     import.meta.url,
   ),
   "utf8",
@@ -251,51 +252,13 @@ testRunner("medicine identity update validates custom form and required product 
   });
 });
 
-testRunner("editing any medicine identity field invalidates physical-pack confirmation", () => {
-  const base = {
-    name: "Amoxil 500 mg capsule",
-    generic_name: "amoxicillin",
-    brand_name: "Amoxil",
-    strength: "500 mg",
-    dosage_form: "capsule",
-    custom_dosage_form: "",
-  };
-  const current = { draft: base, packChecked: true };
-  const patches = [
-    { name: "Amoxil 250 mg capsule" },
-    { generic_name: "amoxicillin trihydrate" },
-    { brand_name: "Amoxil Forte" },
-    { strength: "250 mg" },
-    { dosage_form: "tablet" },
-    { custom_dosage_form: "nasal spray" },
-  ];
-
-  for (const patch of patches) {
-    const next = updateMedicineCatalogueIdentityEditorState(current, patch);
-    assert.deepEqual(next, { draft: { ...base, ...patch }, packChecked: false });
-  }
-
-  for (const field of [
-    "name",
-    "generic_name",
-    "brand_name",
-    "strength",
-    "dosage_form",
-    "custom_dosage_form",
-  ]) {
-    assert.match(
-      source,
-      new RegExp("updateIdentityField\\(\\{[^}]*\\s" + field + ":"),
-      field + " edits must invalidate the physical-pack acknowledgement",
-    );
-  }
-});
-
 testRunner(
-  "medicine identity editing is permission-gated, pack-confirmed and covered by existing RLS/audit controls",
+  "medicine identity editing and physical-pack verification use separate permissions and audit paths",
   () => {
-    assert.match(source, /can\("pharmacy\.update"\)/);
-    assert.match(source, /if \(!packChecked\)/);
+    assert.match(source, /can\("pharmacy.catalogue_identity.update"\)/);
+    assert.match(source, /can\("pharmacy.pack.verify"\)/);
+    assert.match(source, /verify_medicine_physical_pack/);
+    assert.doesNotMatch(source, /pack_check_required/);
     assert.match(source, /medicine_identity_shared_hint/);
     assert.match(source, /buildMedicineCatalogueIdentityUpdate\(vars\.draft\)/);
     assert.match(source, /\.update\(result\.data\)/);
@@ -310,3 +273,26 @@ testRunner(
     assert.match(medicineAuditSql, /EXECUTE FUNCTION public\.audit_row_change\(\)/);
   },
 );
+
+
+testRunner("medicine identity and physical-pack roles follow the owner-approved split", () => {
+  assert.equal(isMedicineIdentityEditorRole("admin"), true);
+  assert.equal(isMedicineIdentityEditorRole("pharmacist"), true);
+  assert.equal(isMedicineIdentityEditorRole("super_admin"), true);
+  assert.equal(isMedicineIdentityEditorRole("legacy_admin"), false);
+  assert.equal(isMedicinePackVerifierRole("pharmacist"), true);
+  assert.equal(isMedicinePackVerifierRole("super_admin"), true);
+  assert.equal(isMedicinePackVerifierRole("admin"), false);
+  assert.equal(isMedicinePackVerifierRole("legacy_admin"), false);
+});
+
+testRunner("Phase 60 SQL persists immutable pack verification evidence", () => {
+  assert.match(medicineRlsSql, /pharmacy\.catalogue_identity\.update/);
+  assert.match(medicineRlsSql, /pharmacy\.pack\.verify/);
+  assert.match(medicineRlsSql, /identity_snapshot jsonb NOT NULL/);
+  assert.match(medicineRlsSql, /identity_sha256 text NOT NULL/);
+  assert.match(medicineRlsSql, /BEFORE UPDATE OR DELETE ON public\.medicine_pack_verifications/);
+  assert.match(medicineRlsSql, /BEFORE TRUNCATE ON public\.medicine_pack_verifications/);
+  assert.match(medicineRlsSql, /verify_medicine_physical_pack/);
+  assert.match(medicineRlsSql, /current_app_user_id\(\)/);
+});
