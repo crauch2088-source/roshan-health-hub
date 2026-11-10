@@ -83,3 +83,10 @@ The owner approved the following exact model for the global, cross-branch medici
 - The attestation is an immutable audit event in this phase; it is **not yet a hard dispensing prerequisite**. A separate clinical/product decision is required before making verification a dispense gate, especially for legacy catalogue rows.
 
 Candidate SQL: `db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql`. PostgreSQL 17 assertions: `db/tests/phase60_medicine_catalogue_authority_integration.sql`, wired into a dedicated CI job that replays the disposable v112 baseline. No hosted QA/Production database or live role mapping has been changed. Keep PR #210 Draft until exact-head CI, independent SQL/security review, migration-history reconciliation and authenticated QA pharmacist acceptance pass.
+
+
+## Audit-coverage reconciliation and exact-head verification — 2026-11-10
+
+Independent review of the disposable v112 baseline found that it did not contain the medicine row-audit trigger, even though read-only catalog inspection confirmed that both live Production and QA currently have trg_audit_medicines calling public.audit_row_change(). Phase 60 now installs that exact trigger idempotently when absent, so a clean baseline replay cannot silently omit audit coverage for catalogue identity edits. The integration test also requires exactly one UPDATE policy on medicines and confirms that it is the dedicated catalogue-identity permission policy; this prevents an additional permissive policy from OR-bypassing the restriction.
+
+The first PostgreSQL 17 run failed on the missing baseline audit trigger, as intended. After adding the idempotent trigger installation, the Phase 60 PostgreSQL 17 job passed on exact code head c781c312755c550acc15a1efccf7529c64394066. Full CI run 42781835755 completed with 19 successful jobs, zero failures and one intentional skip for canonical baseline/authenticated clinical acceptance. The other four reported PR workflows also completed successfully. PR #210 remains Draft; no hosted QA/Production changes, migration application, role changes or deployment promotion occurred.
