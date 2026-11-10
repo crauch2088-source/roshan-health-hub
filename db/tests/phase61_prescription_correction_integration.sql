@@ -138,6 +138,12 @@ SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002'
 DO $phase61_replace$
 DECLARE v_request uuid; v_result record; v_count integer; v_new_item uuid;
 BEGIN
+  IF NOT public.app_has_perm('prescriptions.correction.resolve') THEN
+    RAISE EXCEPTION 'responsible doctor lacks the dedicated correction permission';
+  END IF;
+  IF NOT private.app_can_resolve_prescription_item_correction('61700000-0000-0000-0000-000000000001') THEN
+    RAISE EXCEPTION 'responsible doctor is not recognized by the branch-bound resolver scope';
+  END IF;
   SELECT id INTO v_request FROM public.prescription_item_correction_requests WHERE prescription_item_id='61800000-0000-0000-0000-000000000001';
   IF v_request IS NULL THEN RAISE EXCEPTION 'request missing for responsible doctor'; END IF;
   SELECT * INTO v_result FROM public.resolve_prescription_item_correction(

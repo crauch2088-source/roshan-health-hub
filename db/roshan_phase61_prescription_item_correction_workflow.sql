@@ -103,6 +103,36 @@ ALTER TABLE public.prescription_item_correction_requests FORCE ROW LEVEL SECURIT
 ALTER TABLE public.prescription_item_correction_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prescription_item_correction_events FORCE ROW LEVEL SECURITY;
 
+CREATE OR REPLACE FUNCTION private.app_can_resolve_prescription_item_correction(
+  _prescription_id uuid
+)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.prescriptions AS p
+    JOIN public.visits AS v
+      ON v.id = p.visit_id
+     AND v.patient_id = p.patient_id
+    WHERE p.id = _prescription_id
+      AND private.app_has_prescription_branch_access(p.id)
+      AND (
+        p.prescribed_by = private.current_app_user_id()
+        OR p.doctor_id = private.current_app_user_id()
+        OR v.doctor_id = private.current_app_user_id()
+      )
+  )
+$function$;
+
+REVOKE ALL ON FUNCTION private.app_can_resolve_prescription_item_correction(uuid)
+  FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION private.app_can_resolve_prescription_item_correction(uuid)
+  TO authenticated;
+
 DROP POLICY IF EXISTS prescription_item_correction_requests_select
   ON public.prescription_item_correction_requests;
 CREATE POLICY prescription_item_correction_requests_select
@@ -116,18 +146,7 @@ USING (
   )
   OR (
     (SELECT public.app_has_perm('prescriptions.correction.resolve'))
-    AND (SELECT private.app_has_prescription_branch_access(prescription_id))
-    AND EXISTS (
-      SELECT 1
-      FROM public.prescriptions AS p
-      JOIN public.visits AS v ON v.id = p.visit_id
-      WHERE p.id = prescription_item_correction_requests.prescription_id
-        AND (
-          p.prescribed_by = (SELECT public.current_app_user_id())
-          OR p.doctor_id = (SELECT public.current_app_user_id())
-          OR v.doctor_id = (SELECT public.current_app_user_id())
-        )
-    )
+    AND (SELECT private.app_can_resolve_prescription_item_correction(prescription_id))
   )
 );
 

@@ -38,6 +38,8 @@ test("Phase 61 RPCs enforce lock order, snapshot validation and explicit actions
   assert.match(migration, /cancel_and_reissue/);
   assert.match(migration, /reject/);
   assert.match(migration, /create_prescription_atomic/);
+  assert.match(migration, /app_can_resolve_prescription_item_correction/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION private\.app_can_resolve_prescription_item_correction/);
 });
 
 test("Phase 61 integration covers authorization, no-side-effects and state transitions", () => {
