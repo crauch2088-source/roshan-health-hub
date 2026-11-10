@@ -2838,3 +2838,8 @@ The current source-parity workflow verifies a frozen 93-entry source hash set an
 - Backup runner main remains `ed41574bb278325e7bc06fd034e767db1544c55a`. The latest run `42537677251` only validated and skipped backup; the previous full run `42535939237` passed dump, PostgreSQL 17 restore, row-count comparison, age encryption and ciphertext upload. Its GitHub artifact expired, but the Drive copy and owner-device decryption/archive-readability evidence remain. A full backup using the current main checksum helper remains unverified.
 
 **Next P0:** complete current 129/22 source-to-ledger and effective-catalog reconciliation. Keep Phase 57 unapplied in Production until this is complete and the backup/current-runner evidence is refreshed. Keep clinical E2E deferred until the isolated free environment and synthetic doctor/pharmacist identities exist.
+
+
+## H+1 sprint progress — 2026-11-10
+
+The 48-hour sprint's first evidence-backed update records **47% Engineering RC progress** (weighted, up from 44% at H0) and **11% operational acceptance** on a separate denominator. Exact candidate-head CI and remaining stop-ship blockers are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). PR #209 and #210 candidate suites are green; PR #211 is re-running after a receipt metadata-redaction security correction. No hosted database or live role mapping was changed.
