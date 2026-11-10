@@ -36,6 +36,23 @@ BEGIN
     RAISE EXCEPTION 'medicines UPDATE RLS policy does not enforce the dedicated identity permission';
   END IF;
 
+  SELECT count(*) INTO v_count
+  FROM pg_policy
+  WHERE polrelid = 'public.medicines'::regclass AND polcmd = 'w';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'medicine identity UPDATE must have exactly one dedicated RLS policy (got %)', v_count;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgrelid = 'public.medicines'::regclass
+      AND tgname = 'trg_audit_medicines'
+      AND tgfoid = 'public.audit_row_change()'::regprocedure
+      AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'medicine identity updates must retain their row-audit trigger';
+  END IF;
+
   IF NOT has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'SELECT')
      OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'INSERT')
      OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'UPDATE')
