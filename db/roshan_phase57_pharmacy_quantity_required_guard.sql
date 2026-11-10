@@ -37,6 +37,7 @@ DECLARE
   v_visit_id uuid;
   v_visit_branch uuid;
   v_status text;
+  v_is_external boolean;
   v_invoice_items jsonb := '[]'::jsonb;
   v_item_count integer := 0;
 BEGIN
@@ -60,13 +61,17 @@ BEGIN
     RAISE EXCEPTION 'user branch is not configured' USING ERRCODE = '42501';
   END IF;
 
-  SELECT p.patient_id, p.visit_id, p.status
-    INTO v_patient_id, v_visit_id, v_status
+  SELECT p.patient_id, p.visit_id, p.status, p.is_external
+    INTO v_patient_id, v_visit_id, v_status, v_is_external
     FROM public.prescriptions AS p
    WHERE p.id = p_prescription_id AND p.deleted_at IS NULL
    FOR UPDATE;
   IF NOT FOUND OR v_status IS DISTINCT FROM 'pending' THEN
     RAISE EXCEPTION 'prescription_not_pending';
+  END IF;
+  IF v_is_external IS TRUE THEN
+    RAISE EXCEPTION 'external_prescription_not_eligible_for_internal_dispense'
+      USING ERRCODE = '22023';
   END IF;
 
   SELECT p.branch_id INTO v_patient_branch
