@@ -213,4 +213,8 @@ BEGIN
 END;
 $$;
 
+-- Insurance claim payments remain deferred until a persisted-currency source workflow is approved.
+REVOKE ALL ON FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text)
+  FROM PUBLIC, anon, authenticated, service_role;
+
 COMMIT;

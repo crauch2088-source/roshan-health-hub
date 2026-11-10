@@ -489,3 +489,32 @@ BEGIN
   END IF;
 END;
 $phase58$;
+
+
+-- Insurance claim posting is deferred; no application role may execute the legacy RPC.
+DO $phase58_insurance_payment_acl$
+BEGIN
+  IF has_function_privilege(
+    'authenticated',
+    'public.post_insurance_claim_payment(uuid,numeric,text,text)',
+    'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'authenticated role can still post deferred insurance claim payments';
+  END IF;
+  IF has_function_privilege(
+    'anon',
+    'public.post_insurance_claim_payment(uuid,numeric,text,text)',
+    'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'anon role can execute deferred insurance claim payment RPC';
+  END IF;
+  IF has_function_privilege(
+    'service_role',
+    'public.post_insurance_claim_payment(uuid,numeric,text,text)',
+    'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'service_role can execute deferred insurance claim payment RPC';
+  END IF;
+END;
+$phase58_insurance_payment_acl$;
+

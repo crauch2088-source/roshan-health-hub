@@ -96,3 +96,13 @@ The currency enforcement function is trigger-only: EXECUTE is explicitly revoked
 The first ACL-hardening run exposed incomplete role modeling in the isolated fixtures; the fixtures were corrected to include the Supabase roles. The source-contract assertion was also updated to match the expanded deny message. No application permission was weakened and trigger execution continues to work under normal DML.
 
 Exact code head faec5ddd9fdec54081332628ab037a2f7e770243 passed the complete PR workflow: 20 CI jobs succeeded, zero failed, and one canonical-baseline/authenticated-clinical-acceptance job was intentionally skipped. Phase 58 and Phase 59 PostgreSQL 17 integration jobs both passed. The Vercel preview status is a build-rate-limit failure, not a build/test result; no Production deployment or hosted database change occurred. PR #211 remains Draft.
+
+## Deferred insurance claim cash posting
+
+The Phase 58 currency-provenance guard rejects `insurance_claim_payment` ledger rows because the insurance source workflow does not yet persist and validate the same SDG provenance contract. To avoid leaving an apparently usable action that must fail after this migration, the candidate now:
+- revokes `post_insurance_claim_payment(uuid,numeric,text,text)` from PUBLIC, anon, authenticated and service_role;
+- removes the payment mutation/dialog from the insurance claims UI and shows a bilingual deferred-state notice;
+- keeps claim creation and review available; only cash posting is disabled until the insurance provenance phase is explicitly approved;
+- verifies the RPC is not executable by application roles in the PostgreSQL 17 integration test.
+
+This is a fail-closed deferral, not an insurance implementation. No existing claim or ledger row is rewritten.
