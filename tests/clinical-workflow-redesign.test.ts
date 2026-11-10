@@ -87,6 +87,17 @@ test("pharmacy queue preserves formulation, route and instructions on mobile and
   assert.match(pharmacy, /s\(i, "route"\)/);
   assert.match(pharmacy, /s\(i, "instructions"\)/);
 });
+test("medicine search results show brand and dosage form for product disambiguation", () => {
+  const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  const pickerStart = ui.indexOf("{filtered.map");
+  const pickerEnd = ui.indexOf("</button>", pickerStart);
+  assert.ok(pickerStart >= 0 && pickerEnd > pickerStart);
+  const picker = ui.slice(pickerStart, pickerEnd);
+  assert.match(picker, /s\(m, "brand_name"\)/);
+  assert.match(picker, /s\(m, "dosage_form"\)/);
+  assert.match(ui, /Search name, brand, generic, strength or form/);
+});
+
 test("consultation tabs expose accessible tab semantics, bilingual labels and arrow navigation", () => {
   const ui = read("../src/features/clinic/consultation/ConsultationPage.tsx");
   assert.match(ui, /role="tablist"/);
