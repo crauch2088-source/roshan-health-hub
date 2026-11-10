@@ -215,11 +215,30 @@ BEGIN
   SELECT id INTO v_request FROM public.prescription_item_correction_requests WHERE prescription_item_id='61800000-0000-0000-0000-000000000007';
   SELECT * INTO v_result FROM public.resolve_prescription_item_correction(v_request,'reject',NULL,'The supplied free-text name is clinically ambiguous; please issue a corrected order.');
   IF v_result.status IS DISTINCT FROM 'rejected' THEN RAISE EXCEPTION 'request rejection status is incorrect'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescriptions WHERE id='61700000-0000-0000-0000-000000000006' AND status='pending') THEN RAISE EXCEPTION 'rejection changed the prescription state'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescription_items WHERE id='61800000-0000-0000-0000-000000000007' AND deleted_at IS NULL AND medicine_id IS NULL) THEN RAISE EXCEPTION 'rejection changed the original item'; END IF;
 END;
 $phase61_reject$;
 RESET ROLE;
+
+-- Verify rejection's no-mutation guarantee outside the clinician's RLS read scope.
+DO $phase61_reject_state$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescriptions
+    WHERE id = '61700000-0000-0000-0000-000000000006'
+      AND status = 'pending'
+  ) THEN
+    RAISE EXCEPTION 'rejection changed the prescription state';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+    WHERE id = '61800000-0000-0000-0000-000000000007'
+      AND deleted_at IS NULL
+      AND medicine_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'rejection changed the original item';
+  END IF;
+END;
+$phase61_reject_state$;
 
 -- Cancel-and-reissue is atomic, retains the old order, and does not bill or dispense.
 SET ROLE authenticated;
@@ -240,12 +259,48 @@ BEGIN
     'Original order replaced after pharmacist clarification.'
   );
   IF v_result.status IS DISTINCT FROM 'resolved' OR v_result.replacement_prescription_id IS NULL THEN RAISE EXCEPTION 'cancel-and-reissue did not resolve'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescriptions WHERE id='61700000-0000-0000-0000-000000000007' AND status='cancelled') THEN RAISE EXCEPTION 'original prescription was not cancelled'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescriptions WHERE id=v_result.replacement_prescription_id AND status='pending' AND branch_id='61100000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'replacement prescription was not created in the original branch'; END IF;
-  IF EXISTS (SELECT 1 FROM public.prescription_items WHERE prescription_id=v_result.replacement_prescription_id AND medicine_id IS NULL AND deleted_at IS NULL) THEN RAISE EXCEPTION 'replacement order contains an unlinked item'; END IF;
 END;
 $phase61_reissue$;
 RESET ROLE;
+
+-- Verify the replacement prescription and catalogue links as the database owner.
+DO $phase61_reissue_state$
+DECLARE v_replacement_id uuid;
+BEGIN
+  SELECT replacement_prescription_id
+    INTO v_replacement_id
+  FROM public.prescription_item_correction_requests
+  WHERE prescription_item_id = '61800000-0000-0000-0000-000000000008'
+    AND status = 'resolved';
+
+  IF v_replacement_id IS NULL THEN
+    RAISE EXCEPTION 'cancel-and-reissue replacement id was not persisted';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescriptions
+    WHERE id = '61700000-0000-0000-0000-000000000007'
+      AND status = 'cancelled'
+  ) THEN
+    RAISE EXCEPTION 'original prescription was not cancelled';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescriptions
+    WHERE id = v_replacement_id
+      AND status = 'pending'
+      AND branch_id = '61100000-0000-0000-0000-000000000001'
+  ) THEN
+    RAISE EXCEPTION 'replacement prescription was not created in the original branch';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.prescription_items
+    WHERE prescription_id = v_replacement_id
+      AND medicine_id IS NULL
+      AND deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'replacement order contains an unlinked item';
+  END IF;
+END;
+$phase61_reissue_state$;
 
 -- Super Admin explicit bypass is retained for a cross-branch remediation.
 SET ROLE authenticated;
