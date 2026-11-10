@@ -295,3 +295,14 @@ testRunner("Phase 60 SQL persists immutable pack verification evidence", () => {
   assert.match(medicineRlsSql, /verify_medicine_physical_pack/);
   assert.match(medicineRlsSql, /current_app_user_id\(\)/);
 });
+
+
+testRunner("editing medicine identity invalidates any pending physical-pack confirmation", () => {
+  const updateField = source.match(/const updateIdentityField = \(patch: Partial<MedicineCatalogueIdentityDraft>\) =>([\s\S]*?);\n/);
+  assert.ok(updateField, "identity field updates must use the shared update handler");
+  assert.match(
+    updateField[0],
+    /setPackInspectionConfirmed\(false\)/,
+    "a pack confirmation must be cleared whenever identity fields change",
+  );
+});
