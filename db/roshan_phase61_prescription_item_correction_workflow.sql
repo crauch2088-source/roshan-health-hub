@@ -846,13 +846,13 @@ BEGIN
       v_normalized_items
     );
 
-    UPDATE public.prescriptions
+    UPDATE public.prescriptions AS original_prescription
     SET status = 'cancelled',
         updated_by = v_uid,
         updated_at = clock_timestamp()
-    WHERE id = v_parent.id
-      AND status = 'pending'
-      AND deleted_at IS NULL;
+    WHERE original_prescription.id = v_parent.id
+      AND original_prescription.status = 'pending'
+      AND original_prescription.deleted_at IS NULL;
 
     IF NOT FOUND THEN
       RAISE EXCEPTION 'original_prescription_changed_before_reissue'
