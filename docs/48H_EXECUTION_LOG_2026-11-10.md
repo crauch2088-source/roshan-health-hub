@@ -177,3 +177,32 @@ No Production/QA writes, migration application, business-data reads/writes, perm
 6. Staff UAT, authenticated role acceptance, Android/browser acceptance, and physical printer acceptance remain external gates.
 
 **Safety boundary unchanged:** H48 targets an evidence-backed Engineering RC. It does not authorize Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, or backup dispatch.
+
+
+## H+2 security review update — 2026-11-10 10:10:47 Africa/Khartoum
+
+A second read-only pass classified every public-schema SECURITY DEFINER function executable by `authenticated` in both environments:
+
+- Production: 26 functions; QA: 28 functions.
+- In each environment, all but two contain an explicit permission, authenticated-actor, branch, or Super Admin check in their own body.
+- The two low-signal exceptions were individually inspected: `complete_visit_atomic(uuid)` is a thin wrapper around `complete_clinical_visit_and_bill(uuid)`, which enforces `visits.update`, current application actor, and visit/patient branch binding; `setup_required()` is the documented first-run boolean signal, with an empty search path.
+- Therefore the 26/28 advisor warnings do **not** justify bulk revocation. Continue per-function review and preserve the deliberate setup signal.
+
+This adds evidence to workstream D; the migration-history divergence and the separate 18 Production public functions using `search_path=public` or `public, pg_temp` (not directly executable by anon/authenticated) remain to be reconciled/reviewed individually.
+
+### H+2 revised weighted estimate
+
+| Workstream | Weight | H+2 completion |
+|---|---:|---:|
+| A. Orchestration, scope, evidence | 10% | 95% |
+| B. Pharmacy + medicine catalogue | 20% | 65% |
+| C. SDG finance + receipts | 20% | 60% |
+| D. Migration provenance + security | 25% | 30% |
+| E. Mobile, bilingual UX, printing | 10% | 30% |
+| F. QA, recovery, release decision | 15% | 20% |
+
+**Weighted Engineering RC progress: 48.0% (reported as 48%).** Operational acceptance remains **10.5% (reported as 11%)**; no external acceptance evidence has changed.
+
+At this timestamp, PR #209 head `48fc38e867e6f1387881862e9ab806b93cda6c9c` and PR #210 head `a7bf975247cbfbd5b67512e291af717b08402344` each have all five workflows successful. PR #211 head `18eba21018d7314cf1a44d5f3a6024ede429c2cd` is re-running after the Phase59 cross-branch metadata-redaction fix and a source-test formatting correction; its Phase59 PostgreSQL 17 behavioral test passed on the preceding candidate head. PR #215 documentation CI is in progress.
+
+**Time:** elapsed 01:01:39; remaining 46:58:21 to the H48 decision deadline. No hosted DB, live permission map, business data, Auth/Storage setting, or deployment was changed.
