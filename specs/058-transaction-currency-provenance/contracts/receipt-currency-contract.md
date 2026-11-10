@@ -22,16 +22,16 @@ The `currency_code` MUST be sourced from the persisted financial record, not fro
 
 ### Invoice creation
 
-- The authorized invoice RPC obtains the effective clinic currency from the authoritative configuration inside the transaction.
-- It persists the currency with the invoice.
+- The authorized invoice RPC assigns the fixed code `SDG` internally and persists it with the invoice.
+- It persists `SDG` with the invoice.
 - Invoice line items inherit the invoice currency; no client-supplied currency override is accepted.
 
 ### Payment posting
 
 - `post_invoice_payment` locks the invoice and reads its persisted currency.
-- The new payment stores the exact invoice currency.
-- The generated cashbox ledger row stores the same currency.
-- A mismatch, missing currency, or invalid code aborts the entire transaction.
+- The new payment stores `SDG` copied from the locked invoice.
+- The generated cashbox ledger row stores `SDG`.
+- A missing or non-SDG code aborts the entire transaction.
 - Idempotent retry returns the original payment and does not recalculate currency from mutable settings.
 
 ### Reversal
