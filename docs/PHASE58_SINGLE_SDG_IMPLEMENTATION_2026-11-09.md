@@ -87,3 +87,12 @@ The candidate now fails closed on new/changed cashbox source references:
 The PostgreSQL 17 integration suite now covers unknown, untyped, disguised-manual, malformed-reversal, and valid-manual cases. The first exact-head run exposed the new guard's interaction with the generic cashbox fixture; the fixture was corrected to model a valid manual source rather than weakening the guard.
 
 At PR #211 exact head 7e7b610f9ef2d99534e0f06d39fb1a1424865b22, the complete pull-request workflow run 42781299925 completed with 20 successful jobs, zero failures, and one intentional skip for the canonical PostgreSQL baseline/authenticated clinical acceptance. The dedicated Phase 58 and Phase 59 PostgreSQL 17 jobs both passed on this exact head. No hosted Supabase database was changed; the PR remains Draft pending independent review, migration provenance reconciliation, and separate QA/Production approvals.
+
+
+## Trigger/RPC execution ACL closure — 2026-11-10
+
+The currency enforcement function is trigger-only: EXECUTE is explicitly revoked from PUBLIC, anon, authenticated and service_role. The receipt-status RPC is explicitly revoked from those same principals, then EXECUTE is granted only to authenticated. The integration fixtures now create the Supabase anon, authenticated and service_role roles so the PG17 checks exercise the intended ACL boundary rather than relying on absent fixture roles.
+
+The first ACL-hardening run exposed incomplete role modeling in the isolated fixtures; the fixtures were corrected to include the Supabase roles. The source-contract assertion was also updated to match the expanded deny message. No application permission was weakened and trigger execution continues to work under normal DML.
+
+Exact code head faec5ddd9fdec54081332628ab037a2f7e770243 passed the complete PR workflow: 20 CI jobs succeeded, zero failed, and one canonical-baseline/authenticated-clinical-acceptance job was intentionally skipped. Phase 58 and Phase 59 PostgreSQL 17 integration jobs both passed. The Vercel preview status is a build-rate-limit failure, not a build/test result; no Production deployment or hosted database change occurred. PR #211 remains Draft.
