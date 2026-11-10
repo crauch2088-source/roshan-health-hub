@@ -7,6 +7,7 @@ const integration = readFileSync(
   "db/tests/phase58_sdg_currency_provenance_integration.sql",
   "utf8",
 );
+const insuranceUi = readFileSync("src/routes/_authenticated/insurance.tsx", "utf8");
 
 const financialTables = [
   "invoices",
@@ -79,5 +80,25 @@ test("Phase 58 binds source-ledger and reversal currency to their original recor
   assert.match(
     integration,
     /cashbox reversal accepted an original row with unknown currency provenance/,
+  );
+});
+
+test("deferred insurance claim payments are disabled in both UI and RPC access", () => {
+  assert.match(
+    migration,
+    /REVOKE ALL ON FUNCTION public\.post_insurance_claim_payment\(uuid, numeric, text, text\) FROM PUBLIC, anon, authenticated, service_role/,
+  );
+  assert.match(
+    integration,
+    /has_function_privilege\('authenticated', 'public\.post_insurance_claim_payment\(uuid,numeric,text,text\)', 'EXECUTE'\)/,
+  );
+  assert.doesNotMatch(insuranceUi, /postInsuranceClaimPayment|payTarget|payAmount|record_payment/);
+  assert.match(
+    insuranceUi,
+    /Claims can still be created and reviewed; payment posting is temporarily disabled/,
+  );
+  assert.match(
+    insuranceUi,
+    /يمكن إنشاء المطالبات ومراجعتها، لكن تسجيل دفعاتها معطّل مؤقتًا/,
   );
 });
