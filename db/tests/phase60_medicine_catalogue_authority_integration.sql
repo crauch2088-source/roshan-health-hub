@@ -52,7 +52,7 @@ BEGIN
     RAISE EXCEPTION 'pack attestation table must enable and force RLS';
   END IF;
 
-  SELECT prosecconfig INTO v_config
+  SELECT proconfig INTO v_config
   FROM pg_proc
   WHERE oid = 'public.verify_medicine_physical_pack(uuid)'::regprocedure;
   IF v_config IS NULL OR NOT ('search_path=""' = ANY(v_config)) THEN
@@ -65,7 +65,7 @@ BEGIN
     RAISE EXCEPTION 'verification RPC EXECUTE grants are incorrect';
   END IF;
 
-  SELECT prosecconfig INTO v_config
+  SELECT proconfig INTO v_config
   FROM pg_proc
   WHERE oid = 'private.audit_medicine_pack_verification_insert()'::regprocedure;
   IF v_config IS NULL OR NOT ('search_path=""' = ANY(v_config)) THEN
