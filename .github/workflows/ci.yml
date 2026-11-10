@@ -691,3 +691,51 @@ jobs:
         run: |
           psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
             -f db/tests/phase49_quarantine_remediation_assertions.sql
+
+  prescription-correction-postgres17:
+    name: Auditable prescription correction workflow (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+        with:
+          node-version: 22
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Replay canonical PostgreSQL 17 baseline and required forward contracts
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \\
+            -f db/roshan_phase46_uat_schema_compatibility.sql \\
+            -f db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql
+      - name: Seed synthetic branch, users, patient, visit and medicine fixtures
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/prescription_correction_fixture.sql
+      - name: Apply candidate correction migration and run integration assertions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
+            -f db/roshan_phase61_prescription_correction_workflow.sql \\
+            -f db/tests/prescription_correction_integration.sql
+      - name: Run source contract guard
+        run: node --test --experimental-strip-types tests/prescription-correction-workflow.test.ts
+
