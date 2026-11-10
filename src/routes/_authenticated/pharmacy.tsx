@@ -198,7 +198,8 @@ function PharmacyPageInner() {
             const hasInvalidQuantity = items.some((item) => quantityFor(item) === null);
             const hasUnlinkedItem = items.some((item) => !s(item, "medicine_id"));
             const hasExternalPrescription = p["is_external"] === true;
-            const hasDispenseBlocker = hasInvalidQuantity || hasUnlinkedItem || hasExternalPrescription;
+            const hasDispenseBlocker =
+              hasInvalidQuantity || hasUnlinkedItem || hasExternalPrescription;
             const total = hasDispenseBlocker
               ? null
               : items.reduce(
