@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverified).
+Last reviewed: 2026-11-10 (live Supabase, Vercel, runner and Drive metadata reverified).
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -330,3 +330,11 @@ Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverifie
 - Owner-device check passed: inner SHA-256 matched the manifest, age decryption and gzip/tar readability succeeded, temporary plaintext was removed.
 - Backup-runner main is `ed41574bb278325e7bc06fd034e767db1544c55a`. Latest overall run [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) passed validation but skipped backup and produced no artifact. The portable checksum-manifest helper on current main has not yet been exercised by a new full backup. Workflow is manual, not scheduled.
 - Database archive scope only: Storage object bytes and Vault secret values were absent at backup time and are not included. Do not infer complete platform recovery from this database-only archive.
+
+
+## Live backup and release routing — 2026-11-10
+
+- The verified canonical private Drive destination is **Roshan Health Hub - Encrypted Backups** (dated child folders such as 2026-11-09). The older similarly named “Roshan Health Hub Backups” folder is empty and is not the canonical destination. Backup-runner README correction is in Draft PR #4 at 56b458f4c1f2a4cc7380eaa70df11d36c0190f67.
+- Backup-runner main is ed41574bb278325e7bc06fd034e767db1544c55a. Latest workflow 42537677251 validated the runner but skipped its backup job; do not count that as a backup. The prior complete backup/restore run 42535939237 and encrypted Drive copy remain valid evidence for the 2026-11-08 snapshot. A full backup on the current checksum-helper code is still unverified.
+- Phase 58/59 candidate code is in Draft PR #211, not hosted. Exact-head disposable PostgreSQL 17 CI passed 40 checks with one intentional clinical-acceptance skip. PR #181 depends on the new receipt-status RPC and must remain behind #211.
+- Continue to prefer GitHub native/Composio for repo work and repository-owned Playwright for repeatable browser checks. Do not use metered browser tools when the existing harness covers the workflow. Keep clinical E2E deferred until the free isolated environment and synthetic doctor/pharmacist identities are ready.

@@ -2766,3 +2766,50 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 - Receipt currency provenance is a separate Spec Kit gate in `specs/058-transaction-currency-provenance/`: historical receipts must not derive currency from mutable `system_settings.currency`; persisted transaction/invoice currency is required before PR #181 can be accepted.
 
 **Next task:** complete the content/effective-catalog source reconciliation in the linked report, then synchronize PR #191 with current main and rerun its PG17 regression suite. Keep it Draft until isolated QA and synthetic pharmacist acceptance exist. No Production DDL/DML or external backup dispatch in this step.
+
+
+## Live release-gate recheck — 2026-11-10 (read-only)
+
+Main at the start of this checkpoint: `969074279a4cc7c06db1c320e311b72a5b7003ac`. This section supersedes older operational snapshots where they conflict; historical evidence above is retained.
+
+### Live Production and QA database facts
+
+A single batched read-only catalog/function check was run against Production (`jewzonxplxhogqrnhosl`) and QA (`hopfohcnrtbiqjkgeukz`):
+
+- Both environments: 56 public base tables, 842 public columns, RLS enabled on all 56 public tables, and 210 public RLS policies.
+- Production migration ledger: 129 rows; latest version `20261102232941`.
+- QA migration ledger: 22 rows; latest version `20261104065852`.
+- `prescription_items.quantity` remains nullable with no default in both environments.
+- The live `fn_dispense_prescription_with_invoice(uuid, boolean)` definitions still differ materially: Production contains the `COALESCE(pi.quantity, 1)` fallback and no explicit NULL rejection; QA has explicit NULL rejection and no fallback. Phase 57 remains QA-only. Do not replay QA's migration or alter migration-ledger rows. Production must remain gated until source/migration reconciliation, backup/restore and a separately approved forward-only rollout.
+
+### Current security-advisor snapshot
+
+- Production: two private RLS-enabled tables without policies (the current and quarantined legacy pharmacy idempotency tables); one `pg_trgm`-in-public warning; one anon-executable SECURITY DEFINER warning (`setup_required()`); 26 authenticated-executable SECURITY DEFINER warnings; leaked-password protection disabled.
+- QA: one private RLS-enabled table without policies (the active pharmacy idempotency table); the same extension and anon-function warnings; 28 authenticated-executable SECURITY DEFINER warnings; leaked-password protection disabled.
+- These are advisor findings, not proof that every authenticated SECURITY DEFINER RPC is unsafe. Preserve intended RPC access while continuing per-function permission, branch-scope and search_path review. No bulk revokes, Auth changes, extension moves, grants, indexes or database objects were changed.
+
+### Active candidate review
+
+- PR #209 is the rebased Phase 57 pharmacy queue correction, head `5c07ad63b4c7b302175bc61b9737c34457678142`: 22 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft. Its UI refinements have not been applied to either hosted database; QA already has the earlier Phase 57 SQL guard.
+- PR #210 is the rebased medicine-catalogue identity editor, head `c72b449688b8ec276a19e42ae0d626b587baaa81`. Review found that the physical-pack acknowledgement remains checked after identity fields are edited. A regression correction is required: invalidate the acknowledgement on every identity-field edit or bind it to the exact normalized payload. Review note: [#6760979016](https://github.com/crauch2088-source/roshan-health-hub/pull/210#issuecomment-6760979016). Shared-catalogue role scope and non-durable audit attestation remain separate gates.
+- PR #211 is the additive SDG provenance / receipt-integrity candidate, head `36c7d404c4c32a79d63de093ddd1bba68a11607`: 29 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft pending independent SQL/security review, legacy NULL policy and environment-specific migration reconciliation.
+- PR #181 receipt UI remains dependent on Phase 58/59; do not merge it independently or print legacy NULL/mismatched currency records. PR #179 still needs authenticated browser/mobile and physical printer acceptance.
+
+### Execution and safety record
+
+This checkpoint used read-only Supabase operations and GitHub inspection. No hosted DDL/DML, migration application, patient/clinical/financial writes, Auth/Storage mutation, permission changes, production deployment or backup dispatch occurred. The failed attempt to merge Draft PR #207 made no repository change; it remains Draft and was not force-promoted to ready.
+
+**Next order:** correct and retest PR #210's stale pack acknowledgement; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. Do not promote a candidate solely because disposable PG17 and CI checks are green.
+
+
+## Daily release-readiness checkpoint — 2026-11-10
+
+Current main: 969074279a4cc7c06db1c320e311b72a5b7003ac. Main checks: 23 success, 1 intentionally skipped clinical-acceptance job, 0 failures (CI 42577899480, finance integration 42577899543, CodeQL 42577899119, Spec Kit 42577899611). Open PRs: #211, #210, #209, #208, #207, #185, #181, #179, #157 and #112; open release issue #199.
+
+Live Supabase remains Production 129 migrations (latest 20261102232941) and QA 22 (latest 20261104065852), with only three shared version IDs and all three names mismatched. Phase 57 is QA-only: QA has explicit NULL rejection and zero NULL-to-one fallbacks; Production has no guard and three fallbacks. Both quantity columns remain nullable and both currently have zero active NULL-quantity items. Phase 58/59 are Draft in PR #211 (head 36c7d404c4c32a79d63de093ddd1bba68a11607d), exact-head checks 40 success/1 intentional clinical skip; neither the seven currency columns nor the v2 receipt RPC are present in hosted QA/Production.
+
+Supabase Health advisors are clear (0 findings each). Security findings remain 5 groups per project; performance has 94 unused indexes plus 2 legacy unindexed FKs in Production and 142 unused indexes in QA. No blanket grants/index changes are authorized. Vercel's latest current-main docs-only deployment dpl_GbuBeUsyKShUzAgGKSQq2MxfKkgK was CANCELED by the expected build skip; canonical alias remains READY on dpl_E5m6Z8CLf3uaFRwt1dAxiRMpADPv / app SHA 6daf1f15be23aa391bd40bc38f671c00c842b446.
+
+Backup runner main is ed41574bb278325e7bc06fd034e767db1544c55a. Latest run 42537677251 passed validation but skipped backup; prior full run 42535939237 passed PostgreSQL 17 restore, row-count comparison, encryption and artifact upload. The GitHub artifact has expired, but the private Drive copy remains at the verified canonical folder Roshan Health Hub - Encrypted Backups/2026-11-09; owner-device decryption/archive readability and plaintext cleanup were recorded. Latest-helper full backup remains unverified. Draft backup-runner PR #4 corrects the README's legacy Drive-folder name.
+
+**Next:** complete canonical effective-catalog/source mapping for the live ledgers; independently review Phase 58/59; then revalidate #181 after its backend dependency is accepted. Keep #209 Draft and Phase 57 QA-only until authorized synthetic pharmacist acceptance. Do not apply Production migrations, trigger backups, merge PRs, or deploy in this checkpoint. Clinical E2E remains deferred as requested.
