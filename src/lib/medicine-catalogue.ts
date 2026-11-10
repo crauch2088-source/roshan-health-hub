@@ -16,6 +16,25 @@ export type MedicineCatalogueIdentityDraft = Pick<
   "name" | "generic_name" | "brand_name" | "strength" | "dosage_form" | "custom_dosage_form"
 >;
 
+export type MedicineCatalogueIdentityEditorState = {
+  draft: MedicineCatalogueIdentityDraft;
+  packChecked: boolean;
+};
+
+/**
+ * Any identity edit invalidates the physical-pack acknowledgement. The user
+ * must reconfirm the exact current product identity before saving.
+ */
+export function updateMedicineCatalogueIdentityEditorState(
+  state: MedicineCatalogueIdentityEditorState,
+  patch: Partial<MedicineCatalogueIdentityDraft>,
+): MedicineCatalogueIdentityEditorState {
+  return {
+    draft: { ...state.draft, ...patch },
+    packChecked: false,
+  };
+}
+
 export type MedicineCatalogueIdentityBuildResult =
   | {
       data: {

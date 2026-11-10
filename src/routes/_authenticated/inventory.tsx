@@ -49,8 +49,10 @@ import {
   buildMedicineCatalogueInsert,
   buildMedicineCatalogueIdentityUpdate,
   buildMedicineCatalogueSearchFilter,
+  updateMedicineCatalogueIdentityEditorState,
   type MedicineCatalogueDraft,
   type MedicineCatalogueIdentityDraft,
+  type MedicineCatalogueIdentityEditorState,
 } from "@/lib/medicine-catalogue";
 import { formatDate, money } from "@/lib/medical";
 import {
@@ -185,10 +187,18 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<MedicineCatalogueDraft>(EMPTY_MEDICINE_FORM);
   const [editingMedicine, setEditingMedicine] = useState<Row | null>(null);
-  const [identityForm, setIdentityForm] = useState<MedicineCatalogueIdentityDraft>(
-    EMPTY_MEDICINE_IDENTITY_FORM,
-  );
-  const [packChecked, setPackChecked] = useState(false);
+  const [identityEditor, setIdentityEditor] = useState<MedicineCatalogueIdentityEditorState>({
+    draft: EMPTY_MEDICINE_IDENTITY_FORM,
+    packChecked: false,
+  });
+  const identityForm = identityEditor.draft;
+  const packChecked = identityEditor.packChecked;
+  const setIdentityForm = (draft: MedicineCatalogueIdentityDraft) =>
+    setIdentityEditor((current) => ({ ...current, draft }));
+  const setPackChecked = (checked: boolean) =>
+    setIdentityEditor((current) => ({ ...current, packChecked: checked }));
+  const updateIdentityField = (patch: Partial<MedicineCatalogueIdentityDraft>) =>
+    setIdentityEditor((current) => updateMedicineCatalogueIdentityEditorState(current, patch));
 
   const list = usePagedRows<Row[]>(
     ["inventory", search],
@@ -465,21 +475,19 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
               <Field label={`${t("generic_name")} *`}>
                 <Input
                   value={identityForm.generic_name}
-                  onChange={(e) =>
-                    setIdentityForm({ ...identityForm, generic_name: e.target.value })
-                  }
+                  onChange={(e) => updateIdentityField({ generic_name: e.target.value })}
                 />
               </Field>
               <Field label={t("brand_name")}>
                 <Input
                   value={identityForm.brand_name}
-                  onChange={(e) => setIdentityForm({ ...identityForm, brand_name: e.target.value })}
+                  onChange={(e) => updateIdentityField({ brand_name: e.target.value })}
                 />
               </Field>
               <Field label={`${t("strength")} *`}>
                 <Input
                   value={identityForm.strength}
-                  onChange={(e) => setIdentityForm({ ...identityForm, strength: e.target.value })}
+                  onChange={(e) => updateIdentityField({ strength: e.target.value })}
                   placeholder={t("strength_placeholder")}
                   dir="ltr"
                 />
@@ -488,8 +496,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 <Select
                   value={identityForm.dosage_form}
                   onValueChange={(value) =>
-                    setIdentityForm({
-                      ...identityForm,
+                    updateIdentityField({
                       dosage_form: value,
                       custom_dosage_form: value === "other" ? identityForm.custom_dosage_form : "",
                     })
@@ -512,7 +519,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                   <Input
                     value={identityForm.custom_dosage_form}
                     onChange={(e) =>
-                      setIdentityForm({ ...identityForm, custom_dosage_form: e.target.value })
+                      updateIdentityField({ custom_dosage_form: e.target.value })
                     }
                   />
                 </Field>
@@ -520,7 +527,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
               <Field label={t("medicine_display_name")} className="sm:col-span-2">
                 <Input
                   value={identityForm.name}
-                  onChange={(e) => setIdentityForm({ ...identityForm, name: e.target.value })}
+                  onChange={(e) => updateIdentityField({ name: e.target.value })}
                   placeholder={t("medicine_display_name_hint")}
                 />
               </Field>

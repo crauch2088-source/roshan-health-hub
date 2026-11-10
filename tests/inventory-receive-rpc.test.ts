@@ -5,6 +5,7 @@ import {
   buildMedicineCatalogueInsert,
   buildMedicineCatalogueIdentityUpdate,
   buildMedicineCatalogueSearchFilter,
+  updateMedicineCatalogueIdentityEditorState,
 } from "../src/lib/medicine-catalogue.ts";
 
 const source = readFileSync(
@@ -248,6 +249,46 @@ testRunner("medicine identity update validates custom form and required product 
   assert.deepEqual(buildMedicineCatalogueIdentityUpdate({ ...base, strength: " " }), {
     error: "missing-strength",
   });
+});
+
+testRunner("editing any medicine identity field invalidates physical-pack confirmation", () => {
+  const base = {
+    name: "Amoxil 500 mg capsule",
+    generic_name: "amoxicillin",
+    brand_name: "Amoxil",
+    strength: "500 mg",
+    dosage_form: "capsule",
+    custom_dosage_form: "",
+  };
+  const current = { draft: base, packChecked: true };
+  const patches = [
+    { name: "Amoxil 250 mg capsule" },
+    { generic_name: "amoxicillin trihydrate" },
+    { brand_name: "Amoxil Forte" },
+    { strength: "250 mg" },
+    { dosage_form: "tablet" },
+    { custom_dosage_form: "nasal spray" },
+  ];
+
+  for (const patch of patches) {
+    const next = updateMedicineCatalogueIdentityEditorState(current, patch);
+    assert.deepEqual(next, { draft: { ...base, ...patch }, packChecked: false });
+  }
+
+  for (const field of [
+    "name",
+    "generic_name",
+    "brand_name",
+    "strength",
+    "dosage_form",
+    "custom_dosage_form",
+  ]) {
+    assert.match(
+      source,
+      new RegExp("updateIdentityField\\(\\{[^}]*" + field + ":"),
+      field + " edits must invalidate the physical-pack acknowledgement",
+    );
+  }
 });
 
 testRunner(
