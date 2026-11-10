@@ -2,6 +2,14 @@ name: Phase 59 receipt currency provenance
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/ci-phase59-receipt-currency.yml"
+      - "db/roshan_phase58_single_sdg_currency_provenance.sql"
+      - "db/roshan_phase59_receipt_currency_provenance.sql"
+      - "db/tests/phase59_receipt_currency_fixture.sql"
+      - "db/tests/phase59_receipt_currency_integration.sql"
+      - "tests/phase59-receipt-currency-provenance.test.mjs"
 
 permissions:
   contents: read
