@@ -2853,3 +2853,10 @@ The public SECURITY DEFINER inventory was reviewed by exact function in both env
 ## Parallel engineering review — 2026-11-10
 
 The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
+
+## Phase 61 — Pharmacist-to-prescriber correction workflow (2026-11-10)
+
+- Drafted Issue #217 specification and contracts in `specs/061-pharmacist-prescriber-correction/`.
+- Pharmacists may request correction of active free-text prescription items; only the original prescriber with clinical permission may replace an item or cancel-and-reissue a complete order.
+- Phase 57/57B fail-closed dispensing guards remain unchanged. No fuzzy matching, inventory/financial side effects, direct browser DML, or hosted database writes are in scope.
+- Implementation is gated on canonical schema, permission, branch, audit-trigger and migration verification; PostgreSQL 17 tests must be written first.
