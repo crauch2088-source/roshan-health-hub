@@ -2848,3 +2848,8 @@ The 48-hour sprint's first evidence-backed update records **47% Engineering RC p
 ## H+2 security review — 2026-11-10
 
 The public SECURITY DEFINER inventory was reviewed by exact function in both environments: Production 26 and QA 28 authenticated-executable functions; only `complete_visit_atomic` (delegates to a guarded implementation) and `setup_required` (documented boolean signal) lacked a direct in-body guard. No bulk revocation is warranted. Weighted Engineering RC estimate is now 48%; operational acceptance remains 11%. Detailed evidence and remaining migration/search-path review are in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md).
+
+
+## Parallel engineering review — 2026-11-10
+
+The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
