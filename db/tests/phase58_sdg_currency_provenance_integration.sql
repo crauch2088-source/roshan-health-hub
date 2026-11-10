@@ -1,8 +1,11 @@
 -- Phase 58 assertions: SDG-only new records, immutable posted currency, no inferred legacy backfill.
 DO $phase58$
 BEGIN
-  IF has_function_privilege('test_writer', 'private.enforce_roshan_sdg_currency()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'test_writer unexpectedly has direct EXECUTE on the private trigger function';
+  IF has_function_privilege('test_writer', 'private.enforce_roshan_sdg_currency()', 'EXECUTE')
+     OR has_function_privilege('anon', 'private.enforce_roshan_sdg_currency()', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'private.enforce_roshan_sdg_currency()', 'EXECUTE')
+     OR has_function_privilege('service_role', 'private.enforce_roshan_sdg_currency()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'application/test roles must not have direct EXECUTE on the private currency trigger function';
   END IF;
 END;
 $phase58$;
