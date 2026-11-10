@@ -232,8 +232,9 @@ BEGIN
   END IF;
   PERFORM pg_catalog.set_config('test.allow_perm', 'on', true);
 
-  IF has_function_privilege('anon', 'public.get_invoice_payment_receipt_status_v2(uuid[])', 'EXECUTE') THEN
-    RAISE EXCEPTION 'anon unexpectedly has receipt status RPC execute';
+  IF has_function_privilege('anon', 'public.get_invoice_payment_receipt_status_v2(uuid[])', 'EXECUTE')
+     OR has_function_privilege('service_role', 'public.get_invoice_payment_receipt_status_v2(uuid[])', 'EXECUTE') THEN
+    RAISE EXCEPTION 'anon/service_role must not have receipt status RPC execute';
   END IF;
   IF NOT has_function_privilege('authenticated', 'public.get_invoice_payment_receipt_status_v2(uuid[])', 'EXECUTE') THEN
     RAISE EXCEPTION 'authenticated lacks receipt status RPC execute';
