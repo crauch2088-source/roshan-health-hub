@@ -92,7 +92,10 @@ test("deferred insurance claim payments are disabled in both UI and RPC access",
     integration,
     /has_function_privilege\(\s*'authenticated',\s*'public\.post_insurance_claim_payment\(uuid,numeric,text,text\)',\s*'EXECUTE'/,
   );
-  assert.doesNotMatch(insuranceUi, /postInsuranceClaimPayment|payTarget|payAmount|record_payment/);
+  assert.doesNotMatch(
+    insuranceUi,
+    /postInsuranceClaimPayment|payTarget|payAmount|record_payment/,
+  );
   assert.match(
     insuranceUi,
     /Claims can still be created and reviewed; payment posting is temporarily disabled/,
