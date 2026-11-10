@@ -18,8 +18,14 @@ test("Phase 59 exposes persisted currency provenance for every receipt ledger le
   assert.match(migration, /get_invoice_payment_receipt_status_v2/);
   assert.match(migration, /private\.app_has_branch_access/);
   assert.match(migration, /CROSS JOIN LATERAL \([\s\S]*AS ledger_matches\s*\) integrity/);
-  assert.match(migration, /CASE WHEN integrity\.ledger_matches THEN c\.currency_code ELSE NULL END/);
-  assert.match(migration, /CASE[\s\S]*WHEN integrity\.ledger_matches AND c\.is_reversed THEN c\.reversal_reason[\s\S]*ELSE NULL/);
+  assert.match(
+    migration,
+    /CASE WHEN integrity\.ledger_matches THEN c\.currency_code ELSE NULL END/,
+  );
+  assert.match(
+    migration,
+    /CASE[\s\S]*WHEN integrity\.ledger_matches AND c\.is_reversed THEN c\.reversal_reason[\s\S]*ELSE NULL/,
+  );
   assert.match(migration, /payments\.read/);
   assert.match(migration, /billing\.read/);
   assert.match(migration, /FROM PUBLIC, anon/);
