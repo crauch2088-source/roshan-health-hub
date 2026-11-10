@@ -518,9 +518,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
                 <Field label={`${t("other_dosage_form")} *`}>
                   <Input
                     value={identityForm.custom_dosage_form}
-                    onChange={(e) =>
-                      updateIdentityField({ custom_dosage_form: e.target.value })
-                    }
+                    onChange={(e) => updateIdentityField({ custom_dosage_form: e.target.value })}
                   />
                 </Field>
               ) : null}

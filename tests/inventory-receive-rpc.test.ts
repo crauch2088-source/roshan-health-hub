@@ -285,7 +285,7 @@ testRunner("editing any medicine identity field invalidates physical-pack confir
   ]) {
     assert.match(
       source,
-      new RegExp("updateIdentityField\\(\\{[^}]*" + field + ":"),
+      new RegExp("updateIdentityField\\(\\{[^}]*\\s" + field + ":"),
       field + " edits must invalidate the physical-pack acknowledgement",
     );
   }
