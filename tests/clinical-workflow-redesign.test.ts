@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { calcAge } from "../src/lib/medical.ts";
 import {
+  buildMedicineSearchFilter,
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
   validatePrescriptionDrafts,
@@ -87,6 +88,12 @@ test("pharmacy queue preserves formulation, route and instructions on mobile and
   assert.match(pharmacy, /s\(i, "route"\)/);
   assert.match(pharmacy, /s\(i, "instructions"\)/);
 });
+test("medicine search includes dosage form when the picker advertises form search", () => {
+  const filter = buildMedicineSearchFilter("capsule");
+  assert.ok(filter);
+  assert.match(filter, /dosage_form\.ilike\.%capsule%/);
+});
+
 test("medicine search results show brand and dosage form for product disambiguation", () => {
   const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
   const pickerStart = ui.indexOf("{filtered.map");
