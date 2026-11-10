@@ -138,7 +138,7 @@ SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002'
 DO $phase61_replace$
 DECLARE v_request uuid; v_result record; v_count integer; v_new_item uuid;
 BEGIN
-  SELECT id INTO v_request FROM public.prescription_item_correction_requests WHERE prescription_item_id='61800000-000000000001';
+  SELECT id INTO v_request FROM public.prescription_item_correction_requests WHERE prescription_item_id='61800000-0000-0000-0000-000000000001';
   IF v_request IS NULL THEN RAISE EXCEPTION 'request missing for responsible doctor'; END IF;
   SELECT * INTO v_result FROM public.resolve_prescription_item_correction(
     v_request,'replace_item',
@@ -190,7 +190,7 @@ SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002'
 DO $phase61_reissue$
 DECLARE v_request uuid; v_result record;
 BEGIN
-  SELECT id INTO v_request FROM public.prescription_item_correction_requests WHERE prescription_item_id='61800000-000000-0000-000000000008';
+  SELECT id INTO v_request FROM public.prescription_item_correction_requests WHERE prescription_item_id='61800000-0000-0000-0000-000000000008';
   SELECT * INTO v_result FROM public.resolve_prescription_item_correction(
     v_request,'cancel_and_reissue',
     '[{"medicine_id":"61600000-0000-0000-0000-000000000001","medication_name":"Amoxicillin 500 mg","dose":"500 mg","frequency":"BID","duration":"5 days","quantity":10,"instructions":"After food","dosage_form":"capsule","route":"oral"}]'::jsonb,

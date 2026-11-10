@@ -2,8 +2,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const migration = readFileSync("db/roshan_phase61_prescription_item_correction_workflow.sql", "utf8");
-const integration = readFileSync("db/tests/phase61_prescription_correction_integration.sql", "utf8");
+const migration = readFileSync(
+  "db/roshan_phase61_prescription_item_correction_workflow.sql",
+  "utf8",
+);
+const integration = readFileSync(
+  "db/tests/phase61_prescription_correction_integration.sql",
+  "utf8",
+);
 
 test("Phase 61 exposes only dedicated pharmacist and responsible-doctor permissions", () => {
   assert.match(migration, /pharmacy\.correction\.request/);
@@ -35,7 +41,7 @@ test("Phase 61 RPCs enforce lock order, snapshot validation and explicit actions
 });
 
 test("Phase 61 integration covers authorization, no-side-effects and state transitions", () => {
-  for (const assertion of [
+  const assertions = [
     "duplicate request retry did not return the existing request",
     "wrong-branch pharmacist created a correction request",
     "ordinary Admin created a correction request",
@@ -45,5 +51,24 @@ test("Phase 61 integration covers authorization, no-side-effects and state trans
     "cancel-and-reissue",
     "Super Admin explicit bypass",
     "correction workflow changed inventory, stock movement or financial tables",
-  ]) assert.ok(integration.includes(assertion), `missing regression: ${assertion}`);
+  ];
+
+  for (const assertion of assertions) {
+    assert.ok(
+      integration.includes(assertion),
+      `missing regression: ${assertion}`,
+    );
+  }
+});
+
+test("Phase 61 integration fixture uses canonical UUID literals", () => {
+  const uuidCandidates = integration.match(/\\b[0-9a-f]{8}-[0-9a-f-]{12,}\\b/gi) ?? [];
+
+  for (const candidate of uuidCandidates) {
+    assert.match(
+      candidate,
+      /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i,
+      `malformed UUID literal in integration fixture: ${candidate}`,
+    );
+  }
 });
