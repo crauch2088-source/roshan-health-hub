@@ -214,7 +214,15 @@ END;
 $$;
 
 -- Insurance claim payments remain deferred until a persisted-currency source workflow is approved.
-REVOKE ALL ON FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text)
-  FROM PUBLIC, anon, authenticated, service_role;
+-- The RPC exists in current hosted schemas but is absent from the canonical PG17 baseline.
+DO $phase58_deferred_insurance_payment$
+DECLARE
+  v_rpc regprocedure := to_regprocedure('public.post_insurance_claim_payment(uuid,numeric,text,text)');
+BEGIN
+  IF v_rpc IS NOT NULL THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text) FROM PUBLIC, anon, authenticated, service_role';
+  END IF;
+END;
+$phase58_deferred_insurance_payment$;
 
 COMMIT;

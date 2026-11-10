@@ -87,11 +87,15 @@ test("Phase 58 binds source-ledger and reversal currency to their original recor
 test("deferred insurance claim payments are disabled in both UI and RPC access", () => {
   assert.match(
     migration,
-    /REVOKE ALL ON FUNCTION public\.post_insurance_claim_payment\(uuid, numeric, text, text\)\s+FROM PUBLIC, anon, authenticated, service_role/,
+    /to_regprocedure\('public\.post_insurance_claim_payment\(uuid,numeric,text,text\)'\)/,
+  );
+  assert.match(
+    migration,
+    /REVOKE ALL ON FUNCTION public\.post_insurance_claim_payment\(uuid, numeric, text, text\) FROM PUBLIC, anon, authenticated, service_role/,
   );
   assert.match(
     integration,
-    /has_function_privilege\(\s*'authenticated',\s*'public\.post_insurance_claim_payment\(uuid,numeric,text,text\)',\s*'EXECUTE'/,
+    /has_function_privilege\('authenticated', v_rpc, 'EXECUTE'\)/,
   );
   assert.doesNotMatch(
     insuranceUi,

@@ -492,28 +492,21 @@ $phase58$;
 
 
 -- Insurance claim posting is deferred; no application role may execute the legacy RPC.
+-- The canonical PG17 baseline does not contain this legacy hosted-only RPC.
 DO $phase58_insurance_payment_acl$
+DECLARE
+  v_rpc regprocedure := to_regprocedure('public.post_insurance_claim_payment(uuid,numeric,text,text)');
 BEGIN
-  IF has_function_privilege(
-    'authenticated',
-    'public.post_insurance_claim_payment(uuid,numeric,text,text)',
-    'EXECUTE'
-  ) THEN
-    RAISE EXCEPTION 'authenticated role can still post deferred insurance claim payments';
-  END IF;
-  IF has_function_privilege(
-    'anon',
-    'public.post_insurance_claim_payment(uuid,numeric,text,text)',
-    'EXECUTE'
-  ) THEN
-    RAISE EXCEPTION 'anon role can execute deferred insurance claim payment RPC';
-  END IF;
-  IF has_function_privilege(
-    'service_role',
-    'public.post_insurance_claim_payment(uuid,numeric,text,text)',
-    'EXECUTE'
-  ) THEN
-    RAISE EXCEPTION 'service_role can execute deferred insurance claim payment RPC';
+  IF v_rpc IS NOT NULL THEN
+    IF has_function_privilege('authenticated', v_rpc, 'EXECUTE') THEN
+      RAISE EXCEPTION 'authenticated role can still post deferred insurance claim payments';
+    END IF;
+    IF has_function_privilege('anon', v_rpc, 'EXECUTE') THEN
+      RAISE EXCEPTION 'anon role can execute deferred insurance claim payment RPC';
+    END IF;
+    IF has_function_privilege('service_role', v_rpc, 'EXECUTE') THEN
+      RAISE EXCEPTION 'service_role can execute deferred insurance claim payment RPC';
+    END IF;
   END IF;
 END;
 $phase58_insurance_payment_acl$;
