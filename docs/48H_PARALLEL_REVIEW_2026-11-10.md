@@ -7,7 +7,7 @@
 | Workstream | Candidate | Exact head checked | GitHub Actions | Interpretation |
 |---|---|---|---|---|
 | Pharmacy dispensing | PR #209 | `48fc38e867e6f1387881862e9ab806b93cda6c9c` | 5/5 workflows successful | Quantity and external-prescription guard candidate passes automated CI; free-text/unlinked prescription correction remains open in Issue #217 |
-| Medicine catalogue | PR #210 | `44700856406213f32e5683ad38bfaff981a81f97` | New follow-up head; workflow run not yet returned at review time | Previous head `324a2cb479380aab58e81bad1e695e998852e20d` passed 5/5 workflows. A stale pack-confirmation state was found and corrected; do not credit the new fix until exact-head CI passes |
+| Medicine catalogue | PR #210 | `7e64287d754f737e9e82a05e27279ccecf90c595` | Current follow-up head; no PR-triggered workflow run is visible through the connected GitHub status endpoint at review time | Previous head `324a2cb479380aab58e81bad1e695e998852e20d` passed 5/5 workflows. A stale pack-confirmation state was found and corrected; do not credit the new fix until exact-head CI passes |
 | SDG provenance and receipt integrity | PR #211 | `2b0e35bb2bbff585f4a9942709bc39f842d5855e` | 10/10 workflows successful | Phase 58/59 candidate checks pass, including PostgreSQL 17, finance-only RPC isolation, security bundle, historical-source checks and Spec Kit |
 | Receipt UI | PR #181 | `00f09d956c0632d6e193e4864bdb0401b092b09a` | 8/8 workflows successful | UI candidate checks pass; it depends on Phase 58/59's v2 receipt-status RPC and persisted currency provenance; real browser/mobile and physical printer acceptance remain open |
 | Sprint evidence ledger | PR #215 | `8f0e3073aa222d25197354c4ab7d780df91986d8` | CI successful; PR merged | H0/48-hour charter evidence is now part of main |
@@ -20,7 +20,7 @@ Independent review of PR #210 found that the pack-inspection checkbox could rema
 
 - Added a regression assertion to `tests/inventory-receive-rpc.test.ts`.
 - Changed `updateIdentityField` in `src/routes/_authenticated/inventory.tsx` to clear `packInspectionConfirmed` on every identity edit.
-- Exact follow-up head: `44700856406213f32e5683ad38bfaff981a81f97`.
+- Exact follow-up head: `7e64287d754f737e9e82a05e27279ccecf90c595`. The regression assertion was refined to capture the complete block-bodied handler rather than stopping at its first statement.
 - PR #210 remains Draft pending exact-head CI and independent review.
 - The database verification RPC still captures the saved identity snapshot under row lock; this UI fix does not weaken or replace the server-side attestation.
 
