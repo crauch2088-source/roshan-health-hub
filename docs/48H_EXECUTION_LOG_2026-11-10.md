@@ -206,3 +206,42 @@ This adds evidence to workstream D; the migration-history divergence and the sep
 At this timestamp, PR #209 head `48fc38e867e6f1387881862e9ab806b93cda6c9c` and PR #210 head `a7bf975247cbfbd5b67512e291af717b08402344` each have all five workflows successful. PR #211 head `18eba21018d7314cf1a44d5f3a6024ede429c2cd` is re-running after the Phase59 cross-branch metadata-redaction fix and a source-test formatting correction; its Phase59 PostgreSQL 17 behavioral test passed on the preceding candidate head. PR #215 documentation CI is in progress.
 
 **Time:** elapsed 01:01:39; remaining 46:58:21 to the H48 decision deadline. No hosted DB, live permission map, business data, Auth/Storage setting, or deployment was changed.
+
+
+## 8. Progress update — 2026-11-10, after H0
+
+### Evidence-backed Engineering RC recalculation
+
+The denominator and workstream weights are unchanged. Credit is updated only where an exact code head has passed its relevant automated checks.
+
+| Workstream | Weight | H0 | Current | New evidence | Remaining release-critical gap |
+|---|---:|---:|---:|---|---|
+| A. Orchestration, scope, evidence | 10% | 90% | 90% | Charter/constitution and H0 evidence ledger remain current | Keep exact-head evidence and stop rules current |
+| B. Pharmacy + medicine catalogue | 20% | 55% | 65% | PR #209 exact code head 48fc38e passed all five reported workflows; PR #210 exact code head a7bf975 passed all five reported workflows, including the dedicated Phase 60 PostgreSQL 17 authority/attestation job | Independent clinical/security review; actionable prescriber correction for free-text/unlinked items; pharmacist acceptance |
+| C. SDG finance + receipts | 20% | 60% | 70% | PR #211 code head 7e7b610 passed 20 CI jobs, including Phase 58 and Phase 59 PostgreSQL 17; added fail-closed cashbox source-discriminator regression | Independent SQL/ACL review; receipt UI exact-head integration and print acceptance; legacy NULL governance; finance acceptance |
+| D. Migration provenance + security | 25% | 25% | 25% | Current 129/22 ledger and source-mapping evidence remains documented; source-parity CI passed | Complete per-row source mapping and effective catalog/function/ACL reconciliation; no hosted rollout before this |
+| E. Mobile, bilingual UX, printing | 10% | 30% | 30% | Existing automated RTL/LTR and print model evidence unchanged | Browser/mobile journeys, actual A4/thermal print, staff workflow acceptance |
+| F. QA, recovery, release decision | 15% | 20% | 25% | Exact candidate CI/PG17 evidence improved; Phase 58/59 and Phase 60 integration jobs passed | Authenticated QA and staff acceptance; latest full backup-helper run; Storage/Vault scope and rollback/release review |
+
+**Current weighted Engineering RC estimate: 49%** (from 44.25% at H0). This is a measured sprint workstream estimate, not a claim that 49% of the whole product exists or that the clinic is launch-ready.
+
+**Operational-acceptance estimate remains 10.5% (11%).** No authenticated role/branch acceptance, real staff UAT, target Android/browser/physical-printer sign-off, or Production migration authorization has been evidenced since H0.
+
+### Exact-head test evidence
+
+- PR #209, code head 48fc38e867e6f1387881862e9ab806b93cda6c9c: all five reported workflows completed successfully. The candidate rejects NULL/invalid quantities and external prescriptions from internal stock dispensing. Free-text/unlinked prescription items still block the whole order; the prescriber correction workflow is not yet implemented.
+- PR #210, code head a7bf975247cbfbd5b67512e291af717b08402344: all five reported workflows completed successfully. Its dedicated Phase 60 PostgreSQL 17 job passed. Identity editing and physical-pack verification now use separate permissions; verification is an append-only, audited event bound to the saved identity snapshot. PR remains Draft.
+- PR #211, code head 7e7b610f9ef2d99534e0f06d39fb1a1424865b22: workflow 42781299925 completed with 20 successes, zero failures, and one intentional skip for canonical baseline/authenticated clinical acceptance. Phase 58 and Phase 59 PostgreSQL 17 jobs passed. A follow-up documentation-only commit was added after this tested code head; verify its current PR head before merge. PR remains Draft.
+- The first source-discriminator test run failed because the generic cashbox test fixture attempted to create an untyped new row. The fixture was corrected to use the valid manual source; the guard was not weakened. The corrected exact code head passed the Phase 58 PostgreSQL 17 job.
+- No candidate PR above has been merged. No Production or QA database was changed by this sprint update. No Auth, Storage, permissions, deployment, or business-data writes were performed.
+
+### Updated execution priorities
+
+1. Complete independent review of PRs #209, #210 and #211; preserve Draft state until the findings are closed.
+2. Define a safe, auditable prescriber correction path for free-text/unlinked prescription items. Do not auto-link by fuzzy name or silently drop an item.
+3. Complete current live migration source/effective-catalog reconciliation; the 129-row Production and 22-row QA histories remain divergent and are not repairable by replaying either ledger.
+4. Integrate and validate receipt UI PR #181 only against the Phase 58/59 contract; legacy NULL currency must remain non-printable.
+5. Obtain real authenticated pharmacist/doctor/finance acceptance, staff workflow UAT, target Android/browser checks and physical printer evidence.
+6. Keep Production read-only until source reconciliation, recovery gates and separate explicit rollout authorization are complete.
+
+**Sprint clock:** H0 2026-11-10 09:09:08 Africa/Khartoum; H48 deadline 2026-11-12 09:09:08 Africa/Khartoum. At the 10:11 local checkpoint, 46h 58m remained. The sprint exit remains Engineering RC complete, blocked RC, or no-go; operational acceptance is a separate decision.
