@@ -99,3 +99,12 @@ These percentages measure the accelerated sprint's launch-critical Engineering R
 ## Safety record
 
 All fresh Supabase operations in this review were SELECT/catalog-definition reads. No Production or QA DDL/DML, migration application, business-data write, Auth/Storage mutation, permission change, deployment promotion or backup dispatch occurred. All candidate PRs remain Draft unless separately noted (#215 merged).
+
+
+## 7. Backup-runner hardening and destination correction
+
+A read-only review of the private backup-runner repository found that its README still directed the encrypted artifact to the legacy empty Drive folder `Roshan Health Hub Backups`, despite the canonical destination being `Roshan Health Hub - Encrypted Backups`. The README was corrected and now explicitly warns against the legacy folder.
+
+The same review found the shell runner unconditionally exported `PGOPTIONS=-c jit=true` for both temporary-token and database-password connections, while the URL builder and README specify that the JIT connection option belongs only to temporary-token mode. The shell-level override was removed so the credential-specific URL builder remains the single source of connection-option behavior. Added `tests/test_backup_connection_options.py` covering token JIT option, password fallback without JIT, ambiguous-credential rejection and absence of a shell-level override.
+
+Backup-runner commits: README destination correction `342e6fe7b2b5ea83f300324699d01e344eb176ef`; regression test `8cefd20a6876ac56ae6c56feea9f549ba2480408`; shell fix `7a3409ad84b4394014aeff36431a95a69813b90d`. Static source inspection confirms the shell no longer sets PGOPTIONS and the URL builder still adds JIT only when the temporary token is supplied. **The new Python tests have not yet been executed in a fresh workflow run**, and no backup was dispatched. The Production backup remains database-only; Storage object bytes and Vault secrets remain separate recovery scope.
