@@ -64,6 +64,13 @@ BEGIN
     RAISE EXCEPTION 'verification RPC EXECUTE grants are incorrect';
   END IF;
 
+  SELECT prosecconfig INTO v_config
+  FROM pg_proc
+  WHERE oid = 'private.audit_medicine_pack_verification_insert()'::regprocedure;
+  IF v_config IS NULL OR NOT ('search_path=""' = ANY(v_config)) THEN
+    RAISE EXCEPTION 'pack attestation audit trigger must use an empty search_path';
+  END IF;
+
   IF NOT EXISTS (
        SELECT 1 FROM pg_trigger
        WHERE tgrelid = 'public.medicine_pack_verifications'::regclass
