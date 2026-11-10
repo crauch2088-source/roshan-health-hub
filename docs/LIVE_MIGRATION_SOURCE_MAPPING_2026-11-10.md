@@ -132,7 +132,7 @@ The following matrix records every row in the current 14-row Production tail and
 | 20261103114612 | roshan_phase54b_payment_updated_at_compat | db/roshan_phase54b_payment_updated_at_compat.sql | 3f68b6a4e4c74b265388fb822ea96c77d336fea2 | Source path present on main; no independent stored-body hash |
 | 20261103115649 | roshan_phase54c_branchless_receipt_integrity | db/roshan_phase54c_branchless_receipt_integrity.sql | 1a061929f9a564ce1ddc917ad8c29b8252609593 | Source path present on main; no independent stored-body hash |
 | 20261103155227 | roshan_phase55_clinical_parent_guard_acl_reconciliation | db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql | 081d5e97169786e23cd1990cf9f6dbb1c49e4a1f | Source path present on main; no independent stored-body hash |
-| 20261104065852 | roshan_phase57_pharmacy_quantity_required_guard | db/roshan_phase57_pharmacy_quantity_required_guard.sql (Draft PR #209) | dafd4e494ce86244452cd40048da84577dd7618f | Source path exists on PR #209 branch, not main; QA-applied/Production-unapplied divergence remains |
+| 20261104065852 | roshan_phase57_pharmacy_quantity_required_guard | db/roshan_phase57_pharmacy_quantity_required_guard.sql (immutable original) | 9db6768999352c32081f69b5e665c3cc95452616 | Exact byte-for-byte match to QA stored SQL body: 10,954 bytes; MD5 921970d4d86b32dccd430a0ea0ef8745. Production has no Phase 57 row. |
 
 ### What this matrix closes — and what it does not
 
@@ -141,3 +141,27 @@ The following matrix records every row in the current 14-row Production tail and
 - The four untracked QA-specific baseline/ACL rows, Production archive-container entry, four Production placeholders, and two quarantine artifacts remain non-replayable or review-only. They must not be recreated by manually inserting ledger records.
 - The older 115-row Production checkpoint and historical QA source set still require a single consolidated per-row matrix if a future reviewer needs one artifact spanning every historical row. Their evidence remains in the 79-row, 93-entry and 2026-10-18 source-mapping artifacts cited above.
 
+
+
+### Direct stored-SQL body comparison — read-only, 2026-11-10
+
+Selected stored statements were retrieved from `supabase_migrations.schema_migrations` and compared with exact repository source files. This is stronger than path mapping, but remains a selected subset rather than a complete 129/22-row source replay.
+
+| Phase | Environment / version | Source bytes | Stored bytes | Result |
+|---|---|---:|---:|---|
+| 46 | Production `20261031071119`; QA `20261031065937` | 5,254 | 5,235 | Executable SQL equal after stripping line comments and normalizing whitespace; header comments differ |
+| 47 | Production `20261031071122`; QA `20261031070544` | 6,650 | 6,564 | Executable SQL equal after stripping line comments and normalizing whitespace |
+| 48 | Production `20261031103927`; QA `20261031103912` | — | — | Byte-for-byte exact |
+| 49 | Production `20261102232823`; QA `20261102133658` | 19,155 | 19,145 / 19,155 | Production differs only by terminal wrapper/whitespace; QA byte-for-byte exact |
+| 50 | Production `20261102232849`; QA `20261102133734` | 4,484 | 4,474 / 4,484 | Production differs only by terminal wrapper/whitespace; QA byte-for-byte exact |
+| 51 | Production `20261102232852`; QA `20261102122437` | 798 | 788 / 552 | Both normalized executable SQL bodies equal; QA omits comments and transaction wrapper |
+| 52 | Production `20261102232855`; QA `20261102232905` | 14,315 | 14,296 | Normalized executable SQL equal after comments/wrapper/whitespace normalization |
+| 54 | QA `20261103114242` | 7,809 | 7,809 | Byte-for-byte exact |
+| 54B | QA `20261103114612` | 4,977 | 4,977 | Byte-for-byte exact |
+| 54C | QA `20261103115649` | 10,405 | 10,405 | Byte-for-byte exact |
+| 55 | QA `20261103155227` | 2,305 | 2,304 | Normalized executable SQL equal; one trailing newline differs |
+| 57 | QA `20261104065852` | 10,954 | 10,954 | Byte-for-byte exact; source blob `9db6768999352c32081f69b5e665c3cc95452616` |
+
+Normalization removes line comments, outer BEGIN/COMMIT wrappers, and whitespace differences; it is not a SQL parser or semantic proof. No Production ledger rows exist for Phases 54, 54B, 54C, 55, or 57. Phase 57B is a candidate-only forward migration, not an applied ledger row.
+
+The original Phase 57 migration source is now immutable and exact to QA. The subsequent free-text and external-prescription guards are tracked separately as `db/roshan_phase57b_free_text_external_prescription_guard.sql`; this candidate is not applied to QA or Production.

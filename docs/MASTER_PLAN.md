@@ -2865,3 +2865,11 @@ The public SECURITY DEFINER inventory was reviewed by exact function in both env
 ## Parallel engineering review — 2026-11-10
 
 The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
+
+
+## Phase 57 source immutability and Phase 57B candidate — 2026-11-10
+
+- QA ledger row `20261104065852` was read back directly: the stored Phase 57 SQL body is 10,954 bytes and matches MD5 `921970d4d86b32dccd430a0ea0ef8745`. PR #209 restores the immutable source file from blob `9db6768999352c32081f69b5e665c3cc95452616`.
+- The later free-text and external-prescription database guards are now a separate Phase 57B forward migration. CI applies Phase 57 then Phase 57B on disposable PostgreSQL 17; neither Phase 57B nor any other hosted migration was applied during this review.
+- Current live behavior is asymmetric: QA rejects NULL quantities but has no database-level free-text/external guard; Production still has the legacy `COALESCE(pi.quantity,1)` fallback and no Phase 57 NULL guard. Both environments have `prescriptions.is_external`.
+- Production release remains blocked by backup/restore verification and explicit approval. No patient, prescription, invoice, payment, inventory, or stock-movement rows were read or changed.

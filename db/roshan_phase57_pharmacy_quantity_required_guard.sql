@@ -37,7 +37,6 @@ DECLARE
   v_visit_id uuid;
   v_visit_branch uuid;
   v_status text;
-  v_is_external boolean;
   v_invoice_items jsonb := '[]'::jsonb;
   v_item_count integer := 0;
 BEGIN
@@ -61,17 +60,13 @@ BEGIN
     RAISE EXCEPTION 'user branch is not configured' USING ERRCODE = '42501';
   END IF;
 
-  SELECT p.patient_id, p.visit_id, p.status, p.is_external
-    INTO v_patient_id, v_visit_id, v_status, v_is_external
+  SELECT p.patient_id, p.visit_id, p.status
+    INTO v_patient_id, v_visit_id, v_status
     FROM public.prescriptions AS p
    WHERE p.id = p_prescription_id AND p.deleted_at IS NULL
    FOR UPDATE;
   IF NOT FOUND OR v_status IS DISTINCT FROM 'pending' THEN
     RAISE EXCEPTION 'prescription_not_pending';
-  END IF;
-  IF v_is_external IS TRUE THEN
-    RAISE EXCEPTION 'external_prescription_not_eligible_for_internal_dispense'
-      USING ERRCODE = '22023';
   END IF;
 
   SELECT p.branch_id INTO v_patient_branch
@@ -121,20 +116,6 @@ BEGIN
        AND pi.quantity IS NULL
   ) THEN
     RAISE EXCEPTION 'prescription quantity is required';
-  END IF;
-
-  -- A prescription may contain clinician-entered free-text items (medicine_id IS NULL).
-  -- They are valid prescribing records, but the pharmacy cannot safely dispense or
-  -- invoice them as catalogue stock. Reject the entire prescription before any
-  -- stock, invoice, movement, item, or status mutation; never silently mark it dispensed.
-  IF EXISTS (
-    SELECT 1
-      FROM public.prescription_items AS pi
-     WHERE pi.prescription_id = p_prescription_id
-       AND pi.deleted_at IS NULL
-       AND pi.medicine_id IS NULL
-  ) THEN
-    RAISE EXCEPTION 'prescription contains a free-text item that cannot be dispensed from pharmacy; link it to an active catalogue medicine first';
   END IF;
 
   -- Build invoice lines from the active medicine catalog before any stock mutation.

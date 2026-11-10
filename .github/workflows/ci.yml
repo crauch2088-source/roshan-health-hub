@@ -323,6 +323,7 @@ jobs:
             -f db/roshan_phase49_atomic_pharmacy_dispense.sql \
             -f db/roshan_phase17_revoke_legacy_dispense_rpc.sql \
             -f db/roshan_phase57_pharmacy_quantity_required_guard.sql \
+            -f db/roshan_phase57b_free_text_external_prescription_guard.sql \
             -f db/tests/pharmacy_dispense_invoice_integration.sql \
             -f db/tests/legacy_dispense_revocation_integration.sql
 

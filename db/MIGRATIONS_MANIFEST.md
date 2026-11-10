@@ -5,7 +5,7 @@ Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema s
 
 ## Live ledger freshness notice — 2026-11-09
 
-Read-only live ledgers contain 129 Production rows (latest `20261102232941`) and 22 QA rows (latest `20261104065852`). This manifest's catalog fingerprint remains v115 and is not a full current ledger/source map. See [`docs/LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md`](../docs/LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md). The CI source-parity job validates the tracked subset only; it does not prove live-ledger parity. Phase 57 is QA-applied but its source is currently only on Draft PR #191, not main. Do not replay historical ledger rows or infer that Production is reconciled.
+Read-only live ledgers contain 129 Production rows (latest `20261102232941`) and 22 QA rows (latest `20261104065852`). This manifest's catalog fingerprint remains v115 and is not a full current ledger/source map. See [`docs/LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md`](../docs/LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md). The CI source-parity job validates the tracked subset only; it does not prove live-ledger parity. Phase 57 is QA-applied as `20261104065852`. Its immutable source is restored byte-for-byte on Draft PR #209 (10,954 stored/source bytes; MD5 `921970d4d86b32dccd430a0ea0ef8745`; Git blob `9db6768999352c32081f69b5e665c3cc95452616`). PR #209 carries a separate Phase 57B candidate for free-text/external-prescription rejection; it is not applied to QA or Production. Production has no Phase 57 ledger row and its current function still uses `COALESCE(pi.quantity,1)`. Do not replay historical ledger rows or infer that Production is reconciled.
 
 ## Canonical clean-room baseline
 
@@ -247,6 +247,8 @@ The historical entries above remain unchanged. Current environment ledgers and f
 | 54B | `db/roshan_phase54b_payment_updated_at_compat.sql` | `20261103114612` | Not applied |
 | 54C | `db/roshan_phase54c_branchless_receipt_integrity.sql` | `20261103115649` | Not applied |
 | 55 | `db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql` | `20261103155227` | Not applied |
+| 57 | `db/roshan_phase57_pharmacy_quantity_required_guard.sql` (immutable QA-applied body) | `20261104065852` | Not applied |
+| 57B | `db/roshan_phase57b_free_text_external_prescription_guard.sql` (forward-only candidate) | Candidate only | Not applied |
 
 As checked on 2026-11-03 after Phase55 QA application, Production records 129 migrations and QA records 21. These counts do not establish schema parity; see `docs/SCHEMA_PARITY_AUDIT_2026-11-03.md` for read-only catalog fingerprints and known function/ACL differences. Phase54/54B/54C/55 are applied only in QA. Production remains unchanged.
 

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { parseDispenseQuantity } from "../src/lib/pharmacy-quantity.ts";
@@ -26,6 +27,10 @@ const fixture = readFileSync(
 );
 const quantityGuardMigration = readFileSync(
   new URL("../db/roshan_phase57_pharmacy_quantity_required_guard.sql", import.meta.url),
+  "utf8",
+);
+const sourceGuardMigration = readFileSync(
+  new URL("../db/roshan_phase57b_free_text_external_prescription_guard.sql", import.meta.url),
   "utf8",
 );
 
@@ -65,6 +70,25 @@ test("dispensing rejects NULL quantities before invoice construction or stock mu
   assert.match(integration, /null quantity rejection changed pharmacy stock/);
   assert.match(integration, /null quantity rejection created invoice lines/);
   assert.match(integration, /legacy non-idempotent dispense RPC remains executable/);
+});
+
+test("Phase 57 source remains byte-identical to the QA-applied migration", () => {
+  assert.equal(
+    createHash("md5").update(quantityGuardMigration).digest("hex"),
+    "921970d4d86b32dccd430a0ea0ef8745",
+  );
+  assert.doesNotMatch(quantityGuardMigration, /p\.is_external|free-text item/);
+});
+
+test("Phase 57B rejects free-text and external prescriptions before any mutation", () => {
+  assert.match(sourceGuardMigration, /pi\.medicine_id IS NULL/);
+  assert.match(sourceGuardMigration, /free-text item/);
+  assert.match(sourceGuardMigration, /p\.is_external/);
+  assert.match(sourceGuardMigration, /external_prescription_not_eligible_for_internal_dispense/);
+  assert.match(integration, /mixed prescription rejection changed stock/);
+  assert.match(integration, /mixed prescription rejection changed parent status/);
+  assert.match(integration, /external prescription rejection changed stock/);
+  assert.match(integration, /external prescription rejection changed status/);
 });
 
 test("pharmacy UI exposes a deliberate separate-invoice option only to billing-authorized users", () => {
@@ -127,8 +151,8 @@ test("dispense quantity parser accepts only finite positive whole units", () => 
 });
 
 test("external prescriptions cannot enter the internal stock dispense flow", () => {
-  assert.match(quantityGuardMigration, /p\.is_external/);
-  assert.match(quantityGuardMigration, /external_prescription_not_eligible_for_internal_dispense/);
+  assert.match(sourceGuardMigration, /p\.is_external/);
+  assert.match(sourceGuardMigration, /external_prescription_not_eligible_for_internal_dispense/);
   assert.match(pharmacyRoute, /hasExternalPrescription/);
   assert.match(pharmacyRoute, /external_prescription_internal_stock_blocked/);
   assert.match(integration, /external prescription rejection changed stock/);

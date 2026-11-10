@@ -65,3 +65,12 @@ Read-only catalog verification confirms:
 - QA has migration `20261104065852`, the quantity column remains nullable with no default, and the deployed dispense function contains the original preflight NULL guard.
 - Production does not have Phase 57; its dispense function has no Phase 57 NULL guard. The quantity column is nullable with no default in both environments.
 - The new pharmacy queue display/blocking behavior is source-only. No hosted SQL, data, Auth, grants, or deployment changes were made in this follow-up.
+
+
+## Historical source integrity and Phase 57B follow-up — 2026-11-10
+
+- Read-only retrieval of QA ledger row `20261104065852` confirmed one stored SQL statement, 10,954 bytes, MD5 `921970d4d86b32dccd430a0ea0ef8745`. The original Phase 57 source was restored from code-bearing commit `809ca724b9ec991a31c5a860edd820267e9d427e` (Git blob `9db6768999352c32081f69b5e665c3cc95452616`) and is byte-identical to the QA-applied body.
+- The later free-text and external-prescription guards were not part of the QA-applied Phase 57 body. They are now separated into `db/roshan_phase57b_free_text_external_prescription_guard.sql`, a forward-only replacement that retains the explicit NULL/whole-unit guard and rejects unlinked free-text items and externally sourced prescriptions before invoice, stock, movement, item, or status mutation.
+- Disposable PostgreSQL 17 CI applies Phase 57 and then Phase 57B before the integration assertions. The Phase 57B migration is **not applied** to QA or Production.
+- Read-only live function checks: QA has the explicit NULL-quantity guard but not the free-text/external guards; Production has neither the Phase 57 NULL guard nor the Phase 57B guards and still contains the legacy `COALESCE(pi.quantity,1)` fallback. The `prescriptions.is_external` column exists in both environments.
+- No hosted migration, business-row write, stock movement, or Production action was performed. Production remains gated by verified encrypted backup, isolated restore, and explicit release approval.
