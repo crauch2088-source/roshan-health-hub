@@ -108,3 +108,58 @@ A read-only review of the private backup-runner repository found that its README
 The same review found the shell runner unconditionally exported `PGOPTIONS=-c jit=true` for both temporary-token and database-password connections, while the URL builder and README specify that the JIT connection option belongs only to temporary-token mode. The shell-level override was removed so the credential-specific URL builder remains the single source of connection-option behavior. Added `tests/test_backup_connection_options.py` covering token JIT option, password fallback without JIT, ambiguous-credential rejection and absence of a shell-level override.
 
 Backup-runner commits: README destination correction `342e6fe7b2b5ea83f300324699d01e344eb176ef`; regression test `8cefd20a6876ac56ae6c56feea9f549ba2480408`; shell fix `7a3409ad84b4394014aeff36431a95a69813b90d`. Static source inspection confirms the shell no longer sets PGOPTIONS and the URL builder still adds JIT only when the temporary token is supplied. **The new Python tests have not yet been executed in a fresh workflow run**, and no backup was dispatched. The Production backup remains database-only; Storage object bytes and Vault secrets remain separate recovery scope.
+
+
+## 8. H+2 evidence checkpoint — 2026-11-10
+
+### Exact-head candidate status
+
+| PR | Head | Full CI | Notable evidence |
+|---|---|---|---|
+| #209 | `fd248df024d9a7e17b703555b4750da68582fa57` | 18 pass / 1 skipped | Phase 57 source restored byte-identically to QA; Phase 57B is a separate candidate; PG17 dispense/invoice integration replays both in order |
+| #210 | `ba1ff828c4f42cd2b5170cf75dcab4f849486cdd` | 19 pass / 1 skipped | Shared medicine catalogue authority and pack-attestation integration passed |
+| #211 | `6afb586a333b667dfad305893c913f20b14f9491` | 20 pass / 1 skipped | Phase 58 SDG currency provenance and Phase 59 receipt currency provenance PG17 jobs passed |
+| #181 | `c127d016fd687e6ed3e228981f53002d7662ea97` | 18 pass / 1 skipped | Persisted receipt/print UI, typecheck, lint and build passed after syncing to current main |
+
+The one skipped job in each full suite is the canonical baseline plus authenticated clinical acceptance gate; it is not a failure and is not counted as a pass. All four PRs remain Draft and mergeable against main `e1153f3fff07b75d93ac983d7a8a640d1b9236ab`.
+
+### Live database and migration findings
+
+- Production remains at 129 migration rows/latest `20261102232941`; QA remains at 22/latest `20261104065852`.
+- Nineteen stored SQL bodies across 12 variants were directly compared with source. Phases 46–52 are executable-SQL equal after documented normalization or byte-exact; QA Phases 54/54B/54C are byte-exact; Phase 55 is equal except one trailing newline; QA Phase 57 is byte-exact to the restored original source.
+- Production has no ledger rows for Phases 54, 54B, 54C, 55 or 57. Do not infer that QA's quantity guard is present in Production.
+- QA currently has the explicit NULL-quantity guard but not the later free-text/external-prescription guards. Production still has the legacy `COALESCE(pi.quantity,1)` fallback. Phase 57B remains candidate-only.
+- No hosted DDL/DML or business-data writes occurred.
+
+### Authorization finding for Issue #217
+
+The pharmacist role has `pharmacy.create/read/update`. `create_prescription_atomic` is a SECURITY DEFINER RPC executable by authenticated users and currently accepts `pharmacy.create` OR `emr.create`; it does not constrain pharmacy-authorized creation to external prescriptions. The clinic route's `visits.read` gate hides the UI but does not protect direct RPC calls. Conversely, authenticated users currently have no direct table INSERT/UPDATE/DELETE grants on `prescriptions` or `prescription_items`. The correction workflow must close the RPC authorization gap and preserve the RPC-only write boundary.
+
+Draft spec-only PR [#221](https://github.com/crauch2088-source/roshan-health-hub/pull/221) records the behavior and asks for review of the default that only the exact `prescribed_by` clinician can resolve in V1. No plan/tasks or implementation have been created pending the Spec Kit review-spec gate.
+
+### Backup-runner validation
+
+Run [42791754738](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42791754738) passed 22 Python tests, ShellCheck and Supabase CLI dump-help validation. The actual backup job was intentionally skipped. This validates helper scripts only; it does not constitute a new backup, encryption, upload or restore rehearsal.
+
+### Recalibrated progress
+
+| Workstream | Weight | Score |
+|---|---:|---:|
+| A — orchestration / integration | 10% | 95% |
+| B — pharmacy / medicine catalogue | 20% | 75% |
+| C — SDG / finance / receipt | 20% | 75% |
+| D — migration source / effective catalog | 25% | 40% |
+| E — user journeys / printing | 10% | 40% |
+| F — backup / recovery | 15% | 35% |
+
+Weighted Engineering RC is **58.75%, rounded to 59%**. Operational acceptance remains **11%**. This replaces the earlier informal 70% estimate, which was not calculated from the weighted evidence ledger. Estimated Engineering RC time remaining is **18–30 hours**; operational acceptance remains **1–3 weeks** after RC.
+
+## 9. Updated execution order
+
+1. Obtain owner approval for spec PR #221's review-spec gate and prescriber delegation rule.
+2. Complete independent review of PRs #209, #210, #211 and #181; keep them Draft until the applicable clinical, finance and print acceptance gates are met.
+3. Extend source-body/effective-catalog reconciliation beyond the 19 selected SQL bodies to the full 129 Production and 22 QA ledger rows.
+4. Prepare a controlled QA migration plan for Phase57B, Phase58/59 and Phase60; no hosted apply without separate approval.
+5. Complete authenticated pharmacist/doctor/finance acceptance with synthetic identities.
+6. Test Android/browser, Arabic RTL/English LTR and actual A4/thermal printers.
+7. Run the current backup runner end-to-end, including encrypted artifact, destination verification, isolated PG17 restore, row-count/checksum comparison and separately scoped Storage/Vault recovery evidence.

@@ -292,3 +292,54 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Removed the unconditional shell-level `PGOPTIONS=-c jit=true` override so only the URL builder controls the temporary-token JIT option; database-password fallback remains without the token-only option.
 - Added Python regression tests for credential mode and shell option isolation. Static source inspection passed, but a fresh validation-only Actions run has not yet executed these tests. No backup was dispatched.
 - This improves documentation and connection-mode correctness but does not change the previously reported backup/recovery acceptance score until the test suite and current-runner end-to-end rehearsal pass.
+
+
+## H+2 evidence checkpoint — 2026-11-10, approximately 11:13 Africa/Khartoum
+
+The current main head is `e1153f3fff07b75d93ac983d7a8a640d1b9236ab` (PR #219 merged). Four implementation candidates are now synchronized to current main, mergeable, Draft, and have exact-head full CI evidence:
+
+| Stream | PR / exact head | Full CI run | Result |
+|---|---|---|---|
+| Pharmacy quantity and dispense guards | [#209](https://github.com/crauch2088-source/roshan-health-hub/pull/209), `fd248df024d9a7e17b703555b4750da68582fa57` | [42793420023](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42793420023) | 18 success, 1 intentional skip, 0 failures |
+| Medicine catalogue authority / pack attestation | [#210](https://github.com/crauch2088-source/roshan-health-hub/pull/210), `ba1ff828c4f42cd2b5170cf75dcab4f849486cdd` | [42791359322](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42791359322) | 19 success, 1 intentional skip, 0 failures |
+| SDG and receipt currency provenance | [#211](https://github.com/crauch2088-source/roshan-health-hub/pull/211), `6afb586a333b667dfad305893c913f20b14f9491` | [42791014954](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42791014954) | 20 success, 1 intentional skip, 0 failures |
+| Persisted receipt UI / print path | [#181](https://github.com/crauch2088-source/roshan-health-hub/pull/181), `c127d016fd687e6ed3e228981f53002d7662ea97` | [42791925701](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42791925701) | 18 success, 1 intentional skip, 0 failures |
+
+The skipped job in each suite is the canonical PostgreSQL 17 baseline replay plus authenticated clinical acceptance gate. It is intentionally not counted as passed. PR #209's pharmacy integration job log confirms that the immutable Phase 57 source and the separate Phase 57B candidate were applied sequentially in the disposable PostgreSQL 17 fixture.
+
+### Material pharmacy provenance correction
+
+- QA ledger row `20261104065852` was read back directly. Its Phase 57 SQL body is 10,954 bytes with MD5 `921970d4d86b32dccd430a0ea0ef8745`; PR #209 restores the original source blob `9db6768999352c32081f69b5e665c3cc95452616` byte-for-byte.
+- The later free-text and external-prescription guards are now a separate forward-only Phase 57B candidate. It is not applied to QA or Production.
+- Live function behavior remains asymmetric: QA has explicit NULL-quantity rejection but not the Phase 57B free-text/external guards; Production still has the legacy `COALESCE(pi.quantity,1)` fallback and no Phase 57 NULL guard. Both environments have `prescriptions.is_external`.
+- No hosted migration was applied.
+
+### Migration source-body reconciliation
+
+Read-only comparison now covers **19 environment-specific stored SQL bodies across 12 migration variants**: Phases 46–52 in Production/QA, and QA Phases 54, 54B, 54C, 55 and 57. Results are byte-exact or normalized executable-SQL equal after comments/outer transaction wrappers/whitespace are removed. This is still a selected subset, not complete source-body proof for all 129 Production and 22 QA ledger rows. Production has no ledger rows for Phases 54, 54B, 54C, 55 or 57. The detailed comparison is recorded on PR #209's source-reconciliation branch.
+
+### Backup-runner validation
+
+The current backup-runner main `7a3409ad84b4394014aeff36431a95a69813b90d` passed validation-only run [42791754738](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42791754738): 22 Python tests, ShellCheck and Supabase CLI dump-help validation succeeded. The actual backup job was skipped by design. No dump, encryption, artifact upload, Drive transfer or restore was performed in this run.
+
+### New correction-workflow specification
+
+Draft spec-only PR [#221](https://github.com/crauch2088-source/roshan-health-hub/pull/221) records Issue #217 and the role/branch/prescriber model. Read-only review found that `create_prescription_atomic` currently accepts `pharmacy.create` OR `emr.create`; the pharmacist role has `pharmacy.create`, so a direct RPC call can create an internal prescription even though the clinic route is hidden by `visits.read`. Direct authenticated table DML on prescriptions/items is denied; the RPC authorization is the gap. PR #221 intentionally contains only `spec.md`; the Spec Kit review-spec gate must be approved before plan/tasks or implementation.
+
+### Recalibrated progress
+
+The earlier conversational 70% estimate was not supported by the weighted sprint ledger and is superseded by this evidence-based checkpoint:
+
+| Workstream | Weight | Current score | Weighted contribution |
+|---|---:|---:|---:|
+| A — orchestration / integration | 10% | 95% | 9.50 |
+| B — pharmacy / medicine catalogue | 20% | 75% | 15.00 |
+| C — SDG / finance / receipt | 20% | 75% | 15.00 |
+| D — migration source / effective catalog | 25% | 40% | 10.00 |
+| E — user journeys / printing | 10% | 40% | 4.00 |
+| F — backup / recovery | 15% | 35% | 5.25 |
+| **Engineering RC** | **100%** |  | **58.75% → 59%** |
+
+**Operational acceptance remains 11%** on its separate denominator. No authenticated staff UAT, physical printer acceptance, QA/Production migration, Production deployment, or current-runner full backup/restore was performed. The Engineering RC estimate is now **18–30 hours**, conditional on source reconciliation and review; operational acceptance is still estimated at **1–3 weeks** after Engineering RC.
+
+At this checkpoint approximately **46 hours remain** in the 48-hour sprint window. All candidate PRs remain Draft; no merge, hosted DDL/DML, deployment promotion, or backup dispatch is authorized by this checkpoint. Avoid nonessential Vercel preview builds because the free-plan build-rate limit has already constrained previews.

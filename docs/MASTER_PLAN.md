@@ -2853,3 +2853,16 @@ The public SECURITY DEFINER inventory was reviewed by exact function in both env
 ## Parallel engineering review — 2026-11-10
 
 The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
+
+
+## H+2 evidence checkpoint — 2026-11-10
+
+Current main is `e1153f3fff07b75d93ac983d7a8a640d1b9236ab`, including merged PR #219. Four candidate branches now have exact-head full CI evidence: PR #209 (Phase57/57B pharmacy guards), #210 (medicine catalogue authority/pack attestation), #211 (SDG and receipt currency provenance), and #181 (persisted receipt/print UI). All remain Draft; the canonical authenticated clinical acceptance gate is skipped in each suite, and no hosted migration or deployment was performed.
+
+A read-only source-body comparison covers 19 stored SQL statements across 12 variants. It confirms QA-only Phase54/54B/54C/55/57 ledger entries absent from Production; QA Phase57 source is byte-identical to its stored SQL, while Phase57B is a separate unapplied candidate. Production still has the legacy NULL-quantity fallback. Detailed evidence is in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md) and [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md).
+
+Draft spec-only PR #221 documents Issue #217 and a confirmed authorization gap: `create_prescription_atomic` accepts `pharmacy.create` as sufficient authorization, and the pharmacist role has that permission. The Spec Kit review-spec gate remains open; no implementation plan or migration has been created.
+
+**Evidence-based weighted Engineering RC: 59%** (A 95, B 75, C 75, D 40, E 40, F 35). Operational acceptance remains **11%**. Estimated Engineering RC time remaining: **18–30 hours**; operational acceptance: **1–3 weeks** after RC. This supersedes the earlier informal 70% estimate.
+
+No hosted DDL/DML, business-data writes, Auth/Storage changes, Production deployment, or backup dispatch occurred. The latest backup-runner validation-only workflow passed 22 tests plus ShellCheck and CLI-help validation; the actual backup job was skipped.
