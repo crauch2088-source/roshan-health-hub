@@ -101,7 +101,7 @@ Exact code head faec5ddd9fdec54081332628ab037a2f7e770243 passed the complete PR 
 
 The Phase 58 currency-provenance guard rejects `insurance_claim_payment` ledger rows because the insurance source workflow does not yet persist and validate the same SDG provenance contract. To avoid leaving an apparently usable action that must fail after this migration, the candidate now:
 - conditionally revokes `post_insurance_claim_payment(uuid,numeric,text,text)` from PUBLIC, anon, authenticated and service_role when present. It exists in current hosted schemas but is absent from the canonical PG17 baseline, so the migration and tests tolerate both states;
-- removes the payment mutation/dialog from the insurance claims UI and shows a bilingual deferred-state notice;
+- removes the payment mutation/dialog from the insurance claims UI, removes the unused RPC wrapper from `src/lib/insurance.ts`, and shows a bilingual deferred-state notice;
 - keeps claim creation and review available; only cash posting is disabled until the insurance provenance phase is explicitly approved;
 - verifies the RPC is not executable by application roles in the PostgreSQL 17 integration test.
 

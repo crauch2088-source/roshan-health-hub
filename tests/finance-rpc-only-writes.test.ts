@@ -37,7 +37,11 @@ test("finance UI routes financial writes through RPCs rather than direct table D
   assert.match(accounting, /rpc\(["']post_supplier_payment["']/);
   assert.match(expenses, /rpc\(["']post_expense["']/);
   assert.match(insurance, /rpc(?:<[^>]+>)?\(["']create_insurance_claim["']/);
-  assert.match(insurance, /rpc(?:<[^>]+>)?\(["']post_insurance_claim_payment["']/);
+  assert.doesNotMatch(
+    insurance,
+    /post_insurance_claim_payment|postInsuranceClaimPayment/,
+    "insurance claim cash posting is deferred until the SDG provenance workflow is approved",
+  );
   assert.match(insurance, /rpc(?:<[^>]+>)?\(["']update_insurance_claim_status["']/);
 });
 
