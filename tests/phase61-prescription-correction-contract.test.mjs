@@ -83,11 +83,11 @@ test("Phase 61 denies unassigned and wrong-branch doctors", () => {
   assert.ok(integration.includes("wrong-branch doctor resolved a correction request"));
 });
 
-test("Phase 61 restricts pharmacy.create to explicitly external prescriptions", () => {
+test("Phase 61 keeps clinical prescription authoring out of pharmacy.create", () => {
   assert.match(migration, /p_is_external IS NULL/);
-  assert.match(migration, /p_is_external IS TRUE/);
+  assert.match(migration, /public\.app_has_perm\('emr\.create'\)/);
   assert.ok(integration.includes("pharmacist created an internal prescription"));
-  assert.ok(integration.includes("pharmacist created a prescription with an implicit external/internal type"));
+  assert.ok(integration.includes("pharmacist created a prescription through the clinical authoring RPC"));
 });
 
 test("Phase 61 runs a real two-session concurrent resolution regression", () => {
