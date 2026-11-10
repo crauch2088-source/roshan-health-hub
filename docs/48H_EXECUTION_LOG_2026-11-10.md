@@ -275,7 +275,7 @@ All three candidate PRs remain Draft. Do not merge, apply migrations, alter Auth
 ## Parallel review checkpoint — 2026-11-10
 
 - PR #209 exact head `48fc38e867e6f1387881862e9ab806b93cda6c9c`: five of five PR workflows successful.
-- PR #210 follow-up exact head `44700856406213f32e5683ad38bfaff981a81f97`: a regression fix now clears pending physical-pack confirmation after every identity-field edit. The immediately preceding head `324a2cb479380aab58e81bad1e695e998852e20d` passed five of five workflows. The follow-up head's workflow run was not yet visible at this checkpoint; do not claim the fix is validated until it is.
+- PR #210 follow-up exact head `7e64287d754f737e9e82a05e27279ccecf90c595`: a regression fix now clears pending physical-pack confirmation after every identity-field edit. The immediately preceding head `324a2cb479380aab58e81bad1e695e998852e20d` passed five of five workflows. The latest follow-up head has no visible PR-triggered workflow run through the connected status endpoint at this checkpoint; do not claim the fix is validated until a workflow run or equivalent full test execution is evidenced.
 - PR #211 exact head `2b0e35bb2bbff585f4a9942709bc39f842d5855e`: ten of ten PR workflows successful, including Phase58/59 PostgreSQL17 and finance/security/source/Spec Kit checks.
 - PR #181 exact head `00f09d956c0632d6e193e4864bdb0401b092b09a`: eight of eight PR workflows successful. Its body now explicitly records the Phase58/59 dependency and fail-closed handling of legacy NULL/mismatched currency. Browser/mobile/physical printing and authenticated finance acceptance remain pending.
 - PR #215 documentation baseline merged; its exact head `8f0e3073aa222d25197354c4ab7d780df91986d8` had successful CI.
