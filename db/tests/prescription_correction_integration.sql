@@ -17,6 +17,7 @@ INSERT INTO public.medicines(id,name,generic_name,selling_price,active,is_active
  ('50000000-0000-0000-0000-000000000001','Amoxicillin 500 mg','Amoxicillin',12.50,true,true),
  ('50000000-0000-0000-0000-000000000002','Inactive medicine','Inactive',2.00,true,false);
 CREATE TEMP TABLE phase61_ids(request_id uuid, prescription_id uuid, item_id uuid, replacement_id uuid) ON COMMIT PRESERVE ROWS;
+GRANT SELECT,INSERT,UPDATE ON phase61_ids TO authenticated;
 INSERT INTO public.prescriptions(id,patient_id,visit_id,prescribed_by,doctor_id,branch_id,status,is_external,created_by) VALUES
  ('60000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','pending',false,'10000000-0000-0000-0000-000000000002'),
  ('60000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','pending',true,'10000000-0000-0000-0000-000000000002'),
@@ -40,6 +41,7 @@ UPDATE public.prescription_items SET deleted_at=now() WHERE id='70000000-0000-00
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
 SELECT set_config('test.permissions','pharmacy.update,pharmacy.read',false);
 SELECT set_config('test.super_admin','false',false);
+SET ROLE authenticated;
 DO $request$
 DECLARE v_id uuid; v_retry uuid; v_conflict boolean:=false; v_denied boolean:=false;
 BEGIN
@@ -75,20 +77,38 @@ BEGIN
  IF (SELECT count(*) FROM public.prescription_correction_requests)<>1 THEN RAISE EXCEPTION 'denied request created a row'; END IF;
 END
 $request$;
+RESET ROLE;
 
 -- Pharmacist can read the branch request; another branch cannot.
-SET LOCAL ROLE authenticated;
+SET ROLE authenticated;
 DO $pharmacy_read$
 BEGIN
  IF (SELECT count(*) FROM public.prescription_correction_requests)<>1 THEN RAISE EXCEPTION 'same-branch pharmacist cannot read request'; END IF;
 END
 $pharmacy_read$;
+SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000003',false);
+SELECT set_config('test.permissions','emr.read',false);
+DO $other_doctor_read$
+BEGIN
+ IF (SELECT count(*) FROM public.prescription_correction_requests)<>0 THEN RAISE EXCEPTION 'other same-branch doctor can read another prescribers request'; END IF;
+END
+$other_doctor_read$;
+SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000005',false);
+SELECT set_config('test.permissions','pharmacy.read',false);
+SELECT set_config('test.super_admin','true',false);
+DO $super_admin_read$
+BEGIN
+ IF (SELECT count(*) FROM public.prescription_correction_requests)<>0 THEN RAISE EXCEPTION 'super-admin branch bypass exposed another branch correction request'; END IF;
+END
+$super_admin_read$;
 RESET ROLE;
+SELECT set_config('test.super_admin','false',false);
 
 -- Even a super-admin cannot use the generic branch bypass for this workflow.
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000005',false);
 SELECT set_config('test.permissions','pharmacy.update',false);
 SELECT set_config('test.super_admin','true',false);
+SET ROLE authenticated;
 DO $super_admin_wrong_branch$
 DECLARE v_denied boolean:=false;
 BEGIN
@@ -100,9 +120,11 @@ BEGIN
  IF NOT v_denied THEN RAISE EXCEPTION 'super-admin crossed assigned branch'; END IF;
 END
 $super_admin_wrong_branch$;
+RESET ROLE;
 SELECT set_config('test.super_admin','false',false);
 
 -- A pharmacist cannot resolve a clinical correction.
+SET ROLE authenticated;
 DO $pharmacist_resolve$
 DECLARE v_denied boolean:=false;
 BEGIN
@@ -114,10 +136,12 @@ BEGIN
  IF NOT v_denied THEN RAISE EXCEPTION 'pharmacist resolved a clinical correction'; END IF;
 END
 $pharmacist_resolve$;
+RESET ROLE;
 
 -- Other doctor and administrator have emr.update but cannot resolve another author's prescription.
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000003',false);
 SELECT set_config('test.permissions','emr.update,emr.read',false);
+SET ROLE authenticated;
 DO $other_doctor$
 DECLARE v_denied boolean:=false;
 BEGIN
@@ -128,8 +152,10 @@ BEGIN
  IF NOT v_denied THEN RAISE EXCEPTION 'other same-branch doctor resolved request'; END IF;
 END
 $other_doctor$;
+RESET ROLE;
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000004',false);
 SELECT set_config('test.permissions','emr.update,emr.create,pharmacy.update',false);
+SET ROLE authenticated;
 DO $admin$
 DECLARE v_denied boolean:=false;
 BEGIN
@@ -140,10 +166,12 @@ BEGIN
  IF NOT v_denied THEN RAISE EXCEPTION 'admin without authorship resolved request'; END IF;
 END
 $admin$;
+RESET ROLE;
 
 -- Original prescriber can replace exactly one item; regimen remains unchanged.
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000002',false);
 SELECT set_config('test.permissions','emr.update,emr.create,emr.read',false);
+SET ROLE authenticated;
 DO $prescriber$
 DECLARE v_result record;
 BEGIN
@@ -167,6 +195,22 @@ BEGIN
  END IF;
 END
 $prescriber$;
+RESET ROLE;
+
+-- Idempotent retry after terminal resolution returns the same resolved request.
+SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
+SELECT set_config('test.permissions','pharmacy.update',false);
+SET ROLE authenticated;
+DO $resolved_retry$
+DECLARE v_status text;
+BEGIN
+ SELECT status INTO v_status FROM public.create_prescription_correction_request(
+  '60000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001',
+  'unlinked_free_text','Please link the intended catalogue medicine','80000000-0000-0000-0000-000000000001');
+ IF v_status<>'resolved' THEN RAISE EXCEPTION 'resolved idempotent retry did not return terminal status'; END IF;
+END
+$resolved_retry$;
+RESET ROLE;
 
 -- Cancel-and-reissue is a distinct atomic disposition: old order is cancelled only
 -- when a complete replacement order is successfully created.
@@ -174,12 +218,17 @@ SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
 SELECT set_config('test.permissions','pharmacy.update',false);
 INSERT INTO phase61_ids(request_id,prescription_id,item_id)
 SELECT request_id,'60000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000008'
+SET ROLE authenticated;
+INSERT INTO phase61_ids(request_id,prescription_id,item_id)
+SELECT request_id,'60000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000008'
 FROM public.create_prescription_correction_request(
  '60000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000008',
  'unlinked_free_text','Please replace the entire order','80000000-0000-0000-0000-000000000005');
+RESET ROLE;
 
 SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000002',false);
 SELECT set_config('test.permissions','emr.update,emr.create',false);
+SET ROLE authenticated;
 DO $cancel_reissue$
 DECLARE v_req uuid; v_new uuid; v_denied boolean:=false;
 BEGIN
@@ -204,6 +253,7 @@ BEGIN
  UPDATE phase61_ids SET replacement_id=v_new WHERE request_id=v_req;
 END
 $cancel_reissue$;
+RESET ROLE;
 
 -- Correction actions must not touch stock or financial tables.
 DO $no_side_effects$
