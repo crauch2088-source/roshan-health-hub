@@ -285,9 +285,7 @@ function PharmacyPageInner() {
                       role="alert"
                       className="mb-3 rounded-md border border-amber-500/40 p-3 text-sm text-amber-700"
                     >
-                      {lang === "ar"
-                        ? "هذه وصفة خارجية؛ لا يجوز صرفها من مخزون المركز أو إنشاء فاتورة صرف داخلية لها."
-                        : "This is an external prescription. It must not be dispensed from clinic stock or billed as an internal pharmacy dispense."}
+                      {t("external_prescription_internal_stock_blocked")}
                     </p>
                   ) : null}
                   {hasInvalidQuantity ? (
