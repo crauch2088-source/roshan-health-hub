@@ -2809,3 +2809,12 @@ A single batched read-only catalog/function check was run against Production (`j
 This checkpoint used read-only Supabase operations and GitHub inspection. No hosted DDL/DML, migration application, patient/clinical/financial writes, Auth/Storage mutation, permission changes, production deployment or backup dispatch occurred. The failed attempt to merge Draft PR #207 made no repository change; it remains Draft and was not force-promoted to ready.
 
 **Next order:** complete independent review of PR #210 shared-catalogue role scope and durable audit-attestation design; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. The transient checkbox remains a confirmation control, not a durable audit attestation. Do not promote a candidate solely because disposable PG17 and CI checks are green.
+
+
+## Owner-approved accelerated execution — 2026-11-10
+
+The owner approved a 48-hour accelerated execution sprint. The binding execution rules, six parallel workstreams, dependency-aware schedule, P0/P1/P2 stop rules, evidence requirements, separate engineering/operational metrics, and end-of-sprint decision states are defined in [48H_ACCELERATED_EXECUTION_CHARTER.md](48H_ACCELERATED_EXECUTION_CHARTER.md) and ratified in the Spec Kit Constitution v1.1.0.
+
+**Sprint baseline:** `bed6ff4c87d582107bf62ee353be4eb35958481b`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
+
+**Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
