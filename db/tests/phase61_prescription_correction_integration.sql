@@ -357,6 +357,77 @@ BEGIN
 END;
 $phase61_reissue_state$;
 
+-- A missing catalogue price must fail closed rather than silently becoming a zero-price item.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61_unpriced_request$
+BEGIN
+  PERFORM public.request_prescription_item_correction(
+    '61800000-0000-0000-0000-000000000014',
+    'The catalogue item has no configured selling price; request clinical review.'
+  );
+END;
+$phase61_unpriced_request$;
+RESET ROLE;
+UPDATE public.medicines
+SET selling_price = NULL
+WHERE id = '61600000-0000-0000-0000-000000000001';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002',false);
+DO $phase61_unpriced_replacement$
+DECLARE v_request uuid; v_denied boolean := false;
+BEGIN
+  SELECT id INTO v_request
+  FROM public.prescription_item_correction_requests
+  WHERE prescription_item_id = '61800000-0000-0000-0000-000000000014';
+
+  BEGIN
+    PERFORM * FROM public.resolve_prescription_item_correction(
+      v_request,
+      'replace_item',
+      '{"medicine_id":"61600000-0000-0000-0000-000000000001","dose":"500 mg","frequency":"BID","duration":"5 days","quantity":10,"dosage_form":"capsule","route":"oral"}'::jsonb,
+      'Do not accept an unpriced catalogue medicine.'
+    );
+  EXCEPTION WHEN SQLSTATE '23514' THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'unpriced catalogue medicine was silently converted to a zero-price prescription item';
+  END IF;
+END;
+$phase61_unpriced_replacement$;
+RESET ROLE;
+
+DO $phase61_unpriced_state$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prescription_item_correction_requests
+    WHERE prescription_item_id = '61800000-0000-0000-0000-000000000014'
+      AND status = 'pending'
+      AND corrected_item_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'unpriced replacement attempt changed the correction request';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prescription_items
+    WHERE id = '61800000-0000-0000-0000-000000000014'
+      AND deleted_at IS NULL
+      AND medicine_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'unpriced replacement attempt mutated the original prescription item';
+  END IF;
+END;
+$phase61_unpriced_state$;
+
+UPDATE public.medicines
+SET selling_price = 12.50
+WHERE id = '61600000-0000-0000-0000-000000000001';
+
 -- Super Admin explicit bypass is retained for a cross-branch remediation.
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006',false);

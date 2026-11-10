@@ -41,6 +41,7 @@ test("Phase 61 RPCs enforce lock order, snapshot validation and explicit actions
   assert.match(migration, /reject/);
   assert.match(migration, /create_prescription_atomic/);
   assert.match(migration, /app_can_resolve_prescription_item_correction/);
+  assert.match(migration, /catalog_medicine_price_invalid/);
   assert.match(
     migration,
     /GRANT EXECUTE ON FUNCTION private\.app_can_resolve_prescription_item_correction/,
