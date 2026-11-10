@@ -51,6 +51,24 @@ COMMENT ON COLUMN public.medicine_pack_verifications.identity_sha256 IS
 CREATE INDEX IF NOT EXISTS idx_medicine_pack_verifications_medicine_verified
 ON public.medicine_pack_verifications (medicine_id, verified_at DESC, id DESC);
 
+-- Keep the shared catalogue's identity edits under the established row-audit trail.
+-- Live environments already have this trigger; the v112 replay baseline does not.
+DO $medicine_identity_audit$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgrelid = 'public.medicines'::regclass
+      AND tgname = 'trg_audit_medicines'
+      AND tgfoid = 'public.audit_row_change()'::regprocedure
+      AND NOT tgisinternal
+  ) THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS trg_audit_medicines ON public.medicines';
+    EXECUTE 'CREATE TRIGGER trg_audit_medicines AFTER INSERT OR UPDATE OR DELETE ON public.medicines FOR EACH ROW EXECUTE FUNCTION public.audit_row_change()';
+  END IF;
+END;
+$medicine_identity_audit$;
+
 ALTER TABLE public.medicine_pack_verifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.medicine_pack_verifications FORCE ROW LEVEL SECURITY;
 
