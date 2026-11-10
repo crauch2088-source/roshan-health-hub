@@ -13,9 +13,10 @@ const integration = readFileSync(
 const workflow = readFileSync(".github/workflows/ci-phase61-prescription-correction.yml", "utf8");
 const concurrency = readFileSync("db/tests/phase61_prescription_correction_concurrency.sh", "utf8");
 
-test("Phase 61 exposes only dedicated pharmacist and responsible-doctor permissions", () => {
+test("Phase 61 exposes only dedicated correction and clinical-prescription permissions", () => {
   assert.match(migration, /pharmacy\.correction\.request/);
   assert.match(migration, /prescriptions\.correction\.resolve/);
+  assert.match(migration, /prescriptions\.create/);
   assert.match(migration, /WHERE r\.code = 'pharmacist'/);
   assert.match(migration, /WHERE r\.code = 'doctor'/);
   assert.doesNotMatch(migration, /WHERE r\.code IN \('admin', 'doctor'\)/);
@@ -53,6 +54,7 @@ test("Phase 61 integration covers authorization, no-side-effects and state trans
     "duplicate request retry did not return the existing request",
     "wrong-branch pharmacist created a correction request",
     "ordinary Admin created a correction request",
+    "ordinary Admin created a clinical prescription through the SECURITY DEFINER RPC",
     "invalid item state unexpectedly accepted",
     "partial correction silently removed or linked another unrequested item",
     "request rejection",
@@ -85,9 +87,16 @@ test("Phase 61 denies unassigned and wrong-branch doctors", () => {
 
 test("Phase 61 keeps clinical prescription authoring out of pharmacy.create", () => {
   assert.match(migration, /p_is_external IS NULL/);
-  assert.match(migration, /public\.app_has_perm\('emr\.create'\)/);
+  assert.match(migration, /public\.app_has_perm\('prescriptions\.create'\)/);
+  assert.doesNotMatch(
+    migration,
+    /public\.app_has_perm\('pharmacy\.create'\) OR public\.app_has_perm\('emr\.create'\)/,
+  );
   assert.ok(integration.includes("pharmacist created an internal prescription"));
-  assert.ok(integration.includes("pharmacist created a prescription through the clinical authoring RPC"));
+  assert.ok(integration.includes("ordinary Admin created a clinical prescription"));
+  assert.ok(
+    integration.includes("pharmacist created a prescription through the clinical authoring RPC"),
+  );
 });
 
 test("Phase 61 runs a real two-session concurrent resolution regression", () => {

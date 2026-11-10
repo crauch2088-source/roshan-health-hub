@@ -412,6 +412,36 @@ END;
 $phase61_pharmacist_prescription_scope$;
 RESET ROLE;
 
+-- Admin has broad EMR and pharmacy permissions in the live role matrix, but not clinical prescribing authority.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000005',false);
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+DO $phase61_admin_prescription_scope$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('emr.create')
+     OR NOT public.app_has_perm('pharmacy.create')
+     OR public.app_has_perm('prescriptions.create') THEN
+    RAISE EXCEPTION 'fixture Admin does not model the live broad-but-nonclinical permission scope';
+  END IF;
+
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61500000-0000-0000-0000-000000000001',
+      false,
+      '[{"medication_name":"Unauthorized Admin order","quantity":1}]'::jsonb
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'ordinary Admin created a clinical prescription through the SECURITY DEFINER RPC';
+  END IF;
+END;
+$phase61_admin_prescription_scope$;
+RESET ROLE;
+
 -- A missing catalogue price must fail closed rather than silently becoming a zero-price item.
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);

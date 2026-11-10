@@ -25,6 +25,25 @@ JOIN public.permissions AS p ON p.code = 'emr.create'
 WHERE r.code = 'doctor'
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.permissions (code, name, module, action)
+VALUES ('prescriptions.create', 'Create clinical prescriptions', 'prescriptions', 'create')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles AS r
+JOIN public.permissions AS p ON p.code = 'prescriptions.create'
+WHERE r.code = 'doctor'
+ON CONFLICT DO NOTHING;
+
+-- Match the live broad Admin and Super Admin permission sets without granting clinical prescription authority.
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles AS r
+JOIN public.permissions AS p ON p.code IN ('emr.create', 'pharmacy.create')
+WHERE r.code IN ('admin', 'super_admin')
+ON CONFLICT DO NOTHING;
+
 -- The live pharmacist role has pharmacy.create; seed it to exercise the
 -- SECURITY DEFINER prescription-creation authorization boundary.
 INSERT INTO public.permissions (code, name, module, action)
