@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-11-02 (incremental capability update; historical entries remain time-stamped). Purpose: turn available integrations into repeatable project progress, not a list of logos. Consult before each major workstream and revise when connection state/capabilities change.
+Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverified).
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -68,7 +68,7 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 | Firecrawl (web/docs research) | Medium-high | Use for multi-page official documentation and guideline research when a task requires a broad, sourced evidence review; not needed for ordinary web searches. | Connected and callable (verified 2026-10-16). |
 | GitHub MCP connector | Low / optional | Consider only if it offers a missing repository/action surface not covered by the active GitHub connector + Composio. | Composio search reported no active connection; existing GitHub connector already works for reads. |
 | Notion | Low / optional | Connect only if user chooses Notion as a separate knowledge base; otherwise keep project plan in GitHub to avoid duplicate sources of truth. | Available but not connected. |
-| Google Drive / Calendar | Low / conditional | Connect only for a specific workflow such as shared SOPs, staff scheduling, or documents stored there. | Not verified as connected; no immediate project blocker depends on them. |
+| Google Drive / Calendar | High for encrypted-backup delivery; low for other workflows | Use the existing Google Drive connection only to transfer verified encrypted backup ciphertext after a successful runner and restore gate; Calendar remains unverified. | Google Drive connection verified active 2026-11-08. The private folder “Roshan Health Hub Backups” exists, is owned by the connected account, and is not shared or trashed. Direct-child searches returned no files; no shared drives were listed. Historical 2026-11-08 observation; superseded by the 2026-11-09 live verification below. Never upload plaintext dumps, credentials, or the private age identity. |
 | Additional project trackers / CRM | Low | Only if the clinic later needs external operational coordination; avoid adding process overhead before launch. | Not required for current MVP. |
 
 ## Clinical product-specific tool opportunities
@@ -313,3 +313,20 @@ Last reviewed: 2026-11-02 (incremental capability update; historical entries rem
 - Pilot: specs/001-clinical-document-printing/spec.md is a Draft derived from Phase 53. It has no implementation plan/tasks while QR verification, role permissions, clinic identity source, and print/PDF mechanism remain to be verified.
 - .github/workflows/spec-kit-validation.yml validates the pinned CLI, repository contract, and a disposable none project. It does not connect to Supabase or Vercel.
 - Never put real clinical/financial records, credentials, production exports, or secrets in specs or model prompts. Spec completion does not authorize production changes.
+
+
+## Google Drive encrypted backup — verified delivery (2026-11-09)
+- Google Drive connection is active. The dated folder “2026-11-09” contains the encrypted archive [Roshan-Production-Backup-2026-11-08.zip](https://drive.google.com/file/d/1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv/view?usp=drivesdk), 305,317 bytes, Drive MD5 `875a85ac23e8b7a671c371cca41f7732`.
+- The backup runner completed a PostgreSQL 17 dump, isolated restore rehearsal, critical row-count comparison, age encryption and ciphertext-only artifact upload in workflow [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237). Artifact SHA-256: `3b3df1aa9056c70a0d6c9fc40f98a5ba6f23e4889040c24ec8f3302f270df355`.
+- The local restore rehearsal passed. Device-side checksum/decryptability passed on 2026-11-09; keep the private age identity offline and never upload it.
+- Storage objects and Vault secrets were zero at backup time; three Storage buckets were empty. This backup does not include Storage object bytes or Vault secret material.
+- The workflow is manual, not scheduled. The one-time database-password Actions secret was removed after the successful run. Google Calendar remains unverified.
+
+
+## Live backup integration verification — 2026-11-09
+
+- Google Drive metadata and exact-name search both succeeded. Encrypted archive `Roshan-Production-Backup-2026-11-08.zip`: 305,317 bytes, MD5 `875a85ac23e8b7a671c371cca41f7732`, owner is connected account, `trashed=false`. File contents were not downloaded in this check.
+- Full backup run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) passed PostgreSQL 17 isolated restore, critical row-count comparison, age encryption and ciphertext-only upload. Artifact [13639676572](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) is `expired=false`, 305,317 bytes, SHA-256 `3b3df1aa9056c70a0d6c9fc40f98a5ba6f23e4889040c24ec8f3302f270df355`, expiry 2026-11-09 23:40:05 UTC.
+- Owner-device check passed: inner SHA-256 matched the manifest, age decryption and gzip/tar readability succeeded, temporary plaintext was removed.
+- Backup-runner main is `ed41574bb278325e7bc06fd034e767db1544c55a`. Latest overall run [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) passed validation but skipped backup and produced no artifact. The portable checksum-manifest helper on current main has not yet been exercised by a new full backup. Workflow is manual, not scheduled.
+- Database archive scope only: Storage object bytes and Vault secret values were absent at backup time and are not included. Do not infer complete platform recovery from this database-only archive.

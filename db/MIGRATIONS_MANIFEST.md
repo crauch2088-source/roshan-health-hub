@@ -2,6 +2,11 @@
 
 Last captured catalog fingerprint: **2026-10-21**, PostgreSQL **17.6**, schema snapshot at migration **115** (`20261020232033_roshan_phase39_permissions_lab_catalog_and_audit_closure`). The seven-category SHA-256 fingerprint is recorded in `docs/live-catalog-fingerprint-v115.json`; clean-room CI replays migrations 113–115 and requires exact count + digest matches.
 
+
+## Live ledger freshness notice — 2026-11-09
+
+Read-only live ledgers contain 129 Production rows (latest `20261102232941`) and 22 QA rows (latest `20261104065852`). This manifest's catalog fingerprint remains v115 and is not a full current ledger/source map. See [`docs/LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md`](../docs/LIVE_MIGRATION_LEDGER_RECONCILIATION_2026-11-09.md). The CI source-parity job validates the tracked subset only; it does not prove live-ledger parity. Phase 57 is QA-applied but its source is currently only on Draft PR #191, not main. Do not replay historical ledger rows or infer that Production is reconciled.
+
 ## Canonical clean-room baseline
 
 - File: db/baseline/0000_roshan_pg17_baseline_v112.sql

@@ -38,4 +38,7 @@ Prefer free and already-connected capabilities. Do not add paid services, produc
 
 This Constitution is the durable engineering baseline for Roshan Health Hub. docs/MASTER_PLAN.md remains the execution source of truth. Amendments require a documented reason, explicit owner-approved decision, and review of affected specifications, tests, and operating guidance. If a requirement conflicts with clinical safety, patient privacy, or production protection, stop and resolve it before implementation.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-03
+## IX. Accelerated Execution Without Safety Erosion
+Time-boxed delivery is an optimization constraint, never a clinical or security exception. Parallelize independent work, sequence dependent work explicitly, and measure completion from a deduplicated evidence-backed ledger. A Release Candidate is distinct from operational acceptance and Production authorization. A skipped test is not a pass; a merged change is not clinical validation; a successful deployment is not staff acceptance. The owner retains authority over clinical policy, residual-risk acceptance, Production changes, and launch. The binding execution procedure is documented in [docs/48H_ACCELERATED_EXECUTION_CHARTER.md](../../docs/48H_ACCELERATED_EXECUTION_CHARTER.md).
+
+**Version**: 1.1.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-10

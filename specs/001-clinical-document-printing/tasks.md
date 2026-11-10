@@ -2,7 +2,7 @@
 
 **Input**: spec.md, plan.md, research.md, data-model.md, and contracts/print-document-contract.md.
 
-**Status**: QA-only implementation is in draft PRs #179 and #181. PR #178's invoice/certificate fix is merged and deployed. No Production migration or data write has occurred. Checkboxes below track accepted work, not merely code present in an unmerged branch.
+**Status**: QA-only implementation remains in draft PRs #179 and #181. PR #178's invoice/certificate fix is merged and deployed. The encrypted Production backup, isolated PostgreSQL 17 restore rehearsal, and owner-device decryption/archive verification are now complete; this closes the backup/recovery sub-gate only. No Production migration, application data write, or release promotion has occurred. Checkboxes below track accepted work, not merely code present in an unmerged branch.
 
 ## Phase 0: Source and permission contracts
 
@@ -63,3 +63,70 @@
 - Prescription and invoice/certificate QA work can proceed with synthetic records while role E2E is prepared.
 - Receipt UI can be developed against QA Phase54C but cannot be enabled in Production until encrypted backup/restore evidence exists and Phase54C is promoted.
 - Physical thermal validation and staff acceptance are release gates, not assumptions.
+
+
+## Evidence refresh — 2026-11-09
+
+This section supersedes earlier backup-status notes in this task file. Historical task checkboxes remain unchanged unless the corresponding acceptance criterion is fully evidenced.
+
+### Completed infrastructure evidence
+
+- The private backup-runner PR #2 is merged. Workflow [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) completed the PostgreSQL 17 dump, isolated restore rehearsal, critical row-count comparison, age encryption, and ciphertext-only artifact upload.
+- The encrypted bundle was copied to private Google Drive. The owner verified the encrypted payload SHA-256 on Android/Termux, decrypted it using the locally held age identity, confirmed archive readability with `tar -tzf`, and removed the temporary plaintext archive. The private identity and decrypted SQL were not shared.
+- Backup scope was database-only. At backup time there were zero Storage objects, zero Vault secrets, and three empty Storage buckets. No recurring backup schedule is configured.
+- PR #201 (device-side recovery evidence) and PR #202 (engineering acceleration review) are merged. The Spec Kit CLI remains pinned at v1.2.6 with the agent-neutral `none` integration.
+
+### Current implementation and release state
+
+- PR #179 contains saved-prescription printing and authoring safeguards; PR #181 contains persisted-payment receipt printing. Both remain Draft and are not accepted for release. Their automated tests do not replace authenticated role/branch acceptance, browser print-preview checks, Android print-path checks, or physical printer/staff acceptance.
+- PR #191 remains Draft. Its Phase 57 quantity guard and mixed catalogue/free-text prescription rejection are covered by the disposable PostgreSQL 17 integration workflow. Exact-head CI is recorded as 18 successful jobs, zero failures, and one intentionally skipped authenticated clinical-acceptance job. Persistent-QA pharmacist acceptance and independent review remain outstanding.
+- PR #189 remains Draft. Its medicine identity implementation is present, but `pharmacy.update` is shared by admin and pharmacist roles; the catalogue is global (no `branch_id`); and the physical-pack acknowledgement is not a persisted audit attestation. These are unresolved product/access decisions, not checkbox-only documentation issues.
+- Production migration head remains `20261102232941`; QA remains `20261104065852` with Phase 57 applied in QA only. Production and QA ledgers are not yet reconciled. Phase 54C receipt-integrity RPC is not yet available in Production.
+- Issue [#199](https://github.com/crauch2088-source/roshan-health-hub/issues/199) remains the canonical release-gate tracker.
+
+### Remaining acceptance gates (not marked passed)
+
+1. Obtain an authorized synthetic QA pharmacist sign-in path and complete Phase 57 rejection, valid FEFO dispensing, invoice atomicity, idempotency, and audit acceptance in persistent QA.
+2. Complete independent review of PR #191; retain the Production gate until the owner explicitly approves the release plan.
+3. Resolve PR #189's permission scope, shared-catalogue branch semantics, and durable physical-pack verification/audit requirements.
+4. Complete browser print-preview and Android/mobile checks for Arabic RTL and English LTR, page breaks, print cancellation, and selected-document isolation; validate actual A4 hardware and only claim thermal support after testing the target printer/browser.
+5. Complete role/branch E2E and staff UAT across reception → GP → lab → pharmacy → billing.
+6. Reconcile Production and QA migration ledgers against canonical migration source and quarantine evidence before any Production rollout.
+
+**Safety boundary:** the backup/recovery sub-gate is passed, but this does not authorize Production Phase 57, Phase 54C promotion, DDL/DML, permission changes, deployment promotion, or clinical launch. Do not create synthetic clinical or financial records in Production.
+
+
+## Additional financial-fidelity gate — receipt currency (2026-11-09)
+
+This gate is additive; existing task checkboxes remain unchanged until evidence is complete.
+
+- [ ] Confirm the owner's currency policy: single immutable SDG for the lifetime of all posted transactions, or support for multiple transaction currencies. No policy is inferred from the current settings value.
+- [ ] If currency can vary, persist the currency code with the posted payment/invoice transaction through the authoritative write boundary and expose it through the authorized Phase54C read model. Historical rows must not be relabelled from current settings.
+- [ ] If single-currency is chosen, prove that all existing posted records share SDG, prevent currency changes once any financial transaction exists, and document the enforcement boundary (not merely a UI-disabled setting).
+- [ ] Add a regression proving that changing current display settings cannot change the currency label of an already-posted/reprinted receipt.
+- [ ] Verify exact amount/currency fidelity with synthetic PostgreSQL 17 fixtures, including partial payments and reversals, before PR #181 can leave Draft.
+
+**Current finding:** PR #181 currently derives `currencyValue` from mutable `system_settings.currency`; the transaction read model does not persist a transaction currency. This can relabel a historical amount after a settings change. A focused review comment has been posted. Keep PR #181 Draft until the policy and regression are resolved.
+
+## Current evidence refresh — 2026-11-09 after PR #203
+
+- PR #203 is merged. Exact-main CI completed with 23 successes, zero failures, and one intentional skip for canonical PostgreSQL 17 baseline replay/authenticated clinical acceptance. Spec Kit validation and finance-only RPC write-isolation integration also passed.
+- PR #191 remains Draft. A focused independent code-review comment was submitted; this is not a substitute for a second human reviewer or persistent-QA pharmacist acceptance.
+- PR #179 and #181 remain Draft pending browser/mobile/physical printer, role/branch, and staff acceptance. PR #181 additionally has the currency-fidelity gate above.
+- Backup/recovery is complete at infrastructure level, but the backup is database-only and manual. No Production migration, permission change, clinical data write, or release promotion is authorized.
+
+
+## Live database verification addendum — 2026-11-09
+
+- [x] Read-only Production/QA catalog count check: 56 public base tables each, 842 public columns each, all 56 public tables have RLS enabled, and no public RLS-enabled table lacks a policy.
+- [ ] Reconcile the live migration ledgers to canonical migration source before any rollout: Production 129 migrations through `20261102232941`; QA 22 migrations through `20261104065852`. These are different and are not declared reconciled.
+- [ ] Complete per-function authorization review for SECURITY DEFINER RPCs. Advisor counts are Production 53 total / 26 authenticated-executable / 1 anon-executable; QA 55 total / 28 authenticated-executable / 1 anon-executable. The anon function is `setup_required()`, a minimal first-run boolean signal. Sampled dispensing and receipt RPCs use empty search_path and permission/branch checks; the full set remains to be reviewed.
+- [ ] Owner/security decision on disabled leaked-password protection in both Auth projects.
+- [ ] Review `pg_trgm` public-schema warning and unused-index informational findings only after dependency and real workload/query-plan analysis. Do not drop indexes solely because current low-volume projects show no usage.
+
+Private idempotency-table note: RLS is enabled with no policies, and direct table grants for anon/authenticated/service_role were absent in the read-only check. Keep this table private and reachable only through the controlled RPC boundary.
+
+
+### Receipt-currency schema confirmation — 2026-11-09
+
+A direct read-only QA schema query confirmed that `public.payments`, `public.invoices`, and `public.cashbox_transactions` currently have no currency-code column. The receipt's current-currency source is therefore not backed by transaction-level currency provenance. This confirms the PR #181 historical-relabeling risk is a schema/read-model gap, not just a display formatting concern. No row values were read. Keep the owner policy decision and historical regression test open; do not add a guessed default currency or relabel existing amounts.

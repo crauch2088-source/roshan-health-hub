@@ -10,7 +10,17 @@ AS $function$ SELECT false $function$;
 
 CREATE OR REPLACE FUNCTION private.sync_user_role_text()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $function$ BEGIN RETURN NEW; END $function$;
+AS $function$ BEGIN NEW.role := 'sync-fired'; RETURN NEW; END $function$;
+
+CREATE TABLE IF NOT EXISTS public.users (
+  id uuid PRIMARY KEY,
+  role_id uuid,
+  role text
+);
+DROP TRIGGER IF EXISTS trg_sync_user_role_text ON public.users;
+CREATE TRIGGER trg_sync_user_role_text
+BEFORE UPDATE OF role_id ON public.users
+FOR EACH ROW EXECUTE FUNCTION private.sync_user_role_text();
 
 CREATE OR REPLACE FUNCTION private.phase36_guard_clinical_visit_links()
 RETURNS trigger
