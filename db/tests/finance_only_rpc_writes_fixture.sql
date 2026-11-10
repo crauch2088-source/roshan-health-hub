@@ -1,5 +1,11 @@
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+DO $service_role$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$service_role$;
 CREATE SCHEMA private;
 GRANT USAGE ON SCHEMA private TO authenticated;
 
