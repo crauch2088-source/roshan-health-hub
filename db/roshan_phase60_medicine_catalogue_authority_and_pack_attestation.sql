@@ -88,7 +88,7 @@ BEGIN
     USING ERRCODE = '55000';
 END;
 $function$;
-REVOKE ALL ON FUNCTION private.reject_medicine_pack_verification_mutation() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION private.reject_medicine_pack_verification_mutation() FROM PUBLIC, anon, authenticated, service_role;
 
 DROP TRIGGER IF EXISTS medicine_pack_verifications_no_update_delete ON public.medicine_pack_verifications;
 CREATE TRIGGER medicine_pack_verifications_no_update_delete
