@@ -87,7 +87,7 @@ INSERT INTO public.prescription_items (
  id,prescription_id,medicine_id,medication_name,dose,dosage,frequency,duration,quantity,
  instructions,dosage_form,route,unit_price,created_by,updated_by,is_dispensed,dispensed_quantity
 ) VALUES
- ('61800000-0000-0000-0000-000000000001','61700000-0000-0000-0000-000000000001',NULL,'Unlinked item A','500 mg','500 mg','BID','5 days',10,'After food','capsule','oral',0,'61300000-0000-0000-000000000002','61300000-0000-0000-000000000002',false,0),
+ ('61800000-0000-0000-0000-000000000001','61700000-0000-0000-0000-000000000001',NULL,'Unlinked item A','500 mg','500 mg','BID','5 days',10,'After food','capsule','oral',0,'61300000-0000-0000-0000-000000000002','61300000-0000-0000-000000000002',false,0),
  ('61800000-0000-0000-0000-000000000002','61700000-0000-0000-0000-000000000001',NULL,'Unlinked item B','250 mg','250 mg','TID','3 days',9,'After food','tablet','oral',0,'61300000-0000-0000-000000000002','61300000-0000-0000-0000-000000000002',false,0),
  ('61800000-0000-0000-0000-000000000003','61700000-0000-0000-0000-000000000002',NULL,'External item','500 mg','500 mg','BID','5 days',10,NULL,'capsule','oral',0,'61300000-0000-0000-0000-000000000002','61300000-0000-0000-000000000002',false,0),
  ('61800000-0000-0000-0000-000000000004','61700000-0000-0000-0000-000000000003',NULL,'Cancelled item','500 mg','500 mg','BID','5 days',10,NULL,'capsule','oral',0,'61300000-0000-0000-000000000002','61300000-0000-0000-000000000002',false,0),
