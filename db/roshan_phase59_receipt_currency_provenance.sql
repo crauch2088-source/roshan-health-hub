@@ -135,7 +135,7 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.get_invoice_payment_receipt_status_v2(uuid[]) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_invoice_payment_receipt_status_v2(uuid[]) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_invoice_payment_receipt_status_v2(uuid[]) TO authenticated;
 
 COMMIT;
