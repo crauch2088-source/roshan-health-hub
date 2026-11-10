@@ -288,11 +288,11 @@ END $$;
 
 REVOKE ALL ON FUNCTION private.current_user_assigned_branch_access(uuid) FROM PUBLIC,anon,service_role,authenticator;
 REVOKE ALL ON FUNCTION private.guard_prescription_correction_request_immutable() FROM PUBLIC,anon,authenticated,service_role,authenticator;
-REVOKE ALL ON FUNCTION private.prevent_prescription_correction_event_mutation() FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION private.prevent_prescription_correction_event_mutation() FROM PUBLIC,anon,authenticated,service_role,authenticator;
 GRANT EXECUTE ON FUNCTION private.current_user_assigned_branch_access(uuid) TO authenticated;
-REVOKE ALL ON FUNCTION public.create_prescription_correction_request(uuid,uuid,text,text,uuid) FROM PUBLIC,anon;
-REVOKE ALL ON FUNCTION public.resolve_prescription_correction_request(uuid,text,uuid,jsonb) FROM PUBLIC,anon;
-REVOKE ALL ON FUNCTION public.reject_prescription_correction_request(uuid,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.create_prescription_correction_request(uuid,uuid,text,text,uuid) FROM PUBLIC,anon,service_role,authenticator;
+REVOKE ALL ON FUNCTION public.resolve_prescription_correction_request(uuid,text,uuid,jsonb) FROM PUBLIC,anon,service_role,authenticator;
+REVOKE ALL ON FUNCTION public.reject_prescription_correction_request(uuid,text) FROM PUBLIC,anon,service_role,authenticator;
 GRANT EXECUTE ON FUNCTION public.create_prescription_correction_request(uuid,uuid,text,text,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.resolve_prescription_correction_request(uuid,text,uuid,jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reject_prescription_correction_request(uuid,text) TO authenticated;
