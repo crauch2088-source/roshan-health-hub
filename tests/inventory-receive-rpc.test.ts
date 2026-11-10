@@ -298,10 +298,10 @@ testRunner("Phase 60 SQL persists immutable pack verification evidence", () => {
 
 
 testRunner("editing medicine identity invalidates any pending physical-pack confirmation", () => {
-  const updateField = source.match(/const updateIdentityField = \(patch: Partial<MedicineCatalogueIdentityDraft>\) =>([\s\S]*?);\n/);
+  const updateField = source.match(/const updateIdentityField = \(patch: Partial<MedicineCatalogueIdentityDraft>\) => \{([\s\S]*?)\n  \};/);
   assert.ok(updateField, "identity field updates must use the shared update handler");
   assert.match(
-    updateField[0],
+    updateField[1],
     /setPackInspectionConfirmed\(false\)/,
     "a pack confirmation must be cleared whenever identity fields change",
   );
