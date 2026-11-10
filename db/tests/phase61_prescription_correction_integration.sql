@@ -153,7 +153,6 @@ BEGIN
   );
   v_new_item := v_result.corrected_item_id;
   IF v_result.status IS DISTINCT FROM 'resolved' OR v_new_item IS NULL THEN RAISE EXCEPTION 'replacement did not resolve request'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.prescription_items WHERE id='61800000-0000-0000-0000-000000000001' AND deleted_at IS NOT NULL) THEN RAISE EXCEPTION 'original item history was not retained as soft-deleted'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.prescription_items WHERE id=v_new_item AND prescription_id='61700000-0000-0000-0000-000000000001' AND medicine_id='61600000-0000-0000-0000-000000000001' AND medication_name='Amoxicillin 500 mg' AND unit_price=12.50 AND quantity=10) THEN RAISE EXCEPTION 'replacement item was not derived from the active catalogue'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.prescription_items WHERE id='61800000-0000-0000-0000-000000000002' AND deleted_at IS NULL AND medicine_id IS NULL) THEN RAISE EXCEPTION 'partial correction silently removed or linked another unrequested item'; END IF;
   SELECT count(*) INTO v_count FROM public.prescription_item_correction_events WHERE request_id=v_request;
@@ -161,6 +160,20 @@ BEGIN
 END;
 $phase61_replace$;
 RESET ROLE;
+
+-- Verify retained soft-deleted history as the database owner; authenticated RLS intentionally hides it.
+DO $phase61_replace_history$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prescription_items
+    WHERE id = '61800000-0000-0000-0000-000000000001'
+      AND deleted_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'original item history was not retained as soft-deleted';
+  END IF;
+END;
+$phase61_replace_history$;
 
 -- Rejection changes request/event state only; original clinical item remains unchanged and pending.
 SET ROLE authenticated;
