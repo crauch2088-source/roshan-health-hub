@@ -47,7 +47,10 @@ test("Phase 61 RPCs enforce lock order, snapshot validation and explicit actions
   assert.match(migration, /reject/);
   assert.match(migration, /create_prescription_atomic/);
   assert.match(migration, /app_can_resolve_prescription_item_correction/);
-  assert.match(migration, /GRANT EXECUTE ON FUNCTION private\.app_can_resolve_prescription_item_correction/);
+  assert.match(
+    migration,
+    /GRANT EXECUTE ON FUNCTION private\.app_can_resolve_prescription_item_correction/,
+  );
 });
 
 test("Phase 61 integration covers authorization, no-side-effects and state transitions", () => {
@@ -69,7 +72,7 @@ test("Phase 61 integration covers authorization, no-side-effects and state trans
 });
 
 test("Phase 61 integration fixture uses canonical UUID literals", () => {
-  const uuidCandidates = integration.match(/\\b[0-9a-f]{8}-[0-9a-f-]{12,}\\b/gi) ?? [];
+  const uuidCandidates = integration.match(/\b[0-9a-f]{8}-[0-9a-f-]{12,}\b/gi) ?? [];
 
   for (const candidate of uuidCandidates) {
     assert.match(
