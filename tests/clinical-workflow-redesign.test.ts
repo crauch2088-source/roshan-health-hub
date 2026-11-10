@@ -102,7 +102,10 @@ test("unknown-age cue prompts a current visit weight check if the patient may be
 
 test("route and duration quick choices are clearly marked as unvalidated entry aids", () => {
   const ui = read("../src/features/clinic/consultation/components/PrescriptionTab.tsx");
-  assert.match(ui, /Route options are generic; the system does not validate them against the selected product/);
+  assert.match(
+    ui,
+    /Route options are generic; the system does not validate them against the selected product/,
+  );
   assert.match(ui, /خيارات طريق الإعطاء عامة/);
   assert.match(ui, /Duration shortcuts are for data entry only, not treatment recommendations/);
   assert.match(ui, /خيارات المدة هنا لتسهيل الإدخال فقط وليست توصيات علاجية/);
