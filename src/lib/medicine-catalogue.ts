@@ -16,23 +16,12 @@ export type MedicineCatalogueIdentityDraft = Pick<
   "name" | "generic_name" | "brand_name" | "strength" | "dosage_form" | "custom_dosage_form"
 >;
 
-export type MedicineCatalogueIdentityEditorState = {
-  draft: MedicineCatalogueIdentityDraft;
-  packChecked: boolean;
-};
+export function isMedicineIdentityEditorRole(roleCode: string | null | undefined): boolean {
+  return roleCode === "admin" || roleCode === "pharmacist" || roleCode === "super_admin";
+}
 
-/**
- * Any identity edit invalidates the physical-pack acknowledgement. The user
- * must reconfirm the exact current product identity before saving.
- */
-export function updateMedicineCatalogueIdentityEditorState(
-  state: MedicineCatalogueIdentityEditorState,
-  patch: Partial<MedicineCatalogueIdentityDraft>,
-): MedicineCatalogueIdentityEditorState {
-  return {
-    draft: { ...state.draft, ...patch },
-    packChecked: false,
-  };
+export function isMedicinePackVerifierRole(roleCode: string | null | undefined): boolean {
+  return roleCode === "pharmacist" || roleCode === "super_admin";
 }
 
 export type MedicineCatalogueIdentityBuildResult =
