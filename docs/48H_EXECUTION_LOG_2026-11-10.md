@@ -327,3 +327,16 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 5. Complete Phase 60 pharmacist identity/physical-pack acceptance and Phase 61 mobile/browser acceptance.
 6. Refresh current backup-runner end-to-end evidence, then conduct authenticated staff UAT and explicit release decision.
 
+## H+4 Phase 61 authorization regression closure — 2026-11-10
+
+- Rebased UI stack head: `83aee76f1ef18e58f52b9712f78e3b271602b797`.
+- Added direct database regression tests proving `doctor` receives `prescriptions.create`, while `admin` and `pharmacist` do not; both broader legacy permissions (`emr.create` and `pharmacy.create`) are insufficient to call `create_prescription_atomic`.
+- The existing `PrescriptionTab` is permission-gated to the same dedicated `prescriptions.create` permission. The correction inbox and full cancel/reissue UI use the same server-enforced prescriber authority.
+- Dedicated PostgreSQL 17 workflow [42906257604](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42906257604) passed, including canonical baseline replay, authorization/RLS, append-only audit, concurrent resolution serialization, direct role-denial tests and no stock/financial side effects.
+- Full repository CI [42906258019](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42906258019) passed: 20 jobs, 19 successful and one intentionally skipped (authenticated clinical acceptance). All PR-triggered workflows on this head passed, including typecheck, ESLint, production build, Spec Kit, prescription atomicity, privileged-role guard and insurance checks.
+- PR #226 and #229 remain Draft; #229 is stacked on #226 and still carries #228 pharmacy fail-closed UI. No candidate migration was applied to hosted QA/Production.
+- PR #216 remains ready for review but unmerged: its synthetic Phase 49 tests passed (19 jobs: 18 success, one intentional skip); Vercel preview remains blocked by the free build-rate limit.
+- PR #207/#208 are merged documentation-only changes. Superseded PRs #221/#223/#224 were closed with consolidation notes.
+- No hosted QA/Production DDL/DML, Auth/Storage/role mutation, business-data write, backup mutation, or deployment promotion occurred. No Vercel retry was attempted.
+- Progress remains **51% evidence-weighted Engineering RC** and **11% Operational Acceptance**; estimate remains **20–34 engineering hours** to a defensible Engineering RC, with real staff/device acceptance a separate **1–3 week** process.
+
