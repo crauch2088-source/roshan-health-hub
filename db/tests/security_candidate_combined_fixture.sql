@@ -2,6 +2,12 @@
 -- Synthetic rows only. This fixture is not the production migration baseline.
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+DO $service_role$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$service_role$;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
 GRANT USAGE ON SCHEMA private TO authenticated;
