@@ -16,12 +16,14 @@ INSERT INTO public.visits(id,patient_id,branch_id,status) VALUES
 INSERT INTO public.medicines(id,name,generic_name,selling_price,active,is_active) VALUES
  ('50000000-0000-0000-0000-000000000001','Amoxicillin 500 mg','Amoxicillin',12.50,true,true),
  ('50000000-0000-0000-0000-000000000002','Inactive medicine','Inactive',2.00,true,false);
+CREATE TEMP TABLE phase61_ids(request_id uuid, prescription_id uuid, item_id uuid, replacement_id uuid) ON COMMIT PRESERVE ROWS;
 INSERT INTO public.prescriptions(id,patient_id,visit_id,prescribed_by,doctor_id,branch_id,status,is_external,created_by) VALUES
  ('60000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','pending',false,'10000000-0000-0000-0000-000000000002'),
  ('60000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','pending',true,'10000000-0000-0000-0000-000000000002'),
  ('60000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','cancelled',false,'10000000-0000-0000-0000-000000000002'),
  ('60000000-0000-0000-0000-000000000004','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','dispensed',false,'10000000-0000-0000-0000-000000000002'),
- ('60000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','pending',false,'10000000-0000-0000-0000-000000000002');
+ ('60000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','pending',false,'10000000-0000-0000-0000-000000000002'),
+ ('60000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','pending',false,'10000000-0000-0000-0000-000000000002');
 INSERT INTO public.prescription_items(id,prescription_id,medicine_id,medication_name,quantity,dose,dosage,frequency,duration,instructions,dosage_form,route,unit_price,is_dispensed) VALUES
  ('70000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001',NULL,'Unlinked Amoxicillin',10,'500 mg','500 mg','BID','5 days','After food','capsule','oral',0,false),
  ('70000000-0000-0000-0000-000000000002','60000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','Linked medicine',2,'1 tablet','1 tablet','OD','2 days',NULL,'tablet','oral',12.50,false),
@@ -53,6 +55,7 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN v_conflict:=true;
  END;
  IF NOT v_conflict THEN RAISE EXCEPTION 'duplicate open request was accepted'; END IF;
+ INSERT INTO phase61_ids(request_id,prescription_id,item_id) VALUES(v_id,'60000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001');
  IF NOT EXISTS(SELECT 1 FROM public.prescription_correction_requests WHERE id=v_id AND status='open'
    AND branch_id='20000000-0000-0000-0000-000000000001'
    AND patient_id='30000000-0000-0000-0000-000000000001'
@@ -79,6 +82,23 @@ BEGIN
 END
 $pharmacy_read$;
 RESET ROLE;
+
+-- Even a super-admin cannot use the generic branch bypass for this workflow.
+SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000005',false);
+SELECT set_config('test.permissions','pharmacy.update',false);
+SELECT set_config('test.super_admin','true',false);
+DO $super_admin_wrong_branch$
+DECLARE v_denied boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM public.create_prescription_correction_request(
+   '60000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001',
+   'unlinked_free_text','wrong branch','80000000-0000-0000-0000-000000000004');
+ EXCEPTION WHEN OTHERS THEN v_denied:=true; END;
+ IF NOT v_denied THEN RAISE EXCEPTION 'super-admin crossed assigned branch'; END IF;
+END
+$super_admin_wrong_branch$;
+SELECT set_config('test.super_admin','false',false);
 
 -- A pharmacist cannot resolve a clinical correction.
 DO $pharmacist_resolve$
@@ -145,6 +165,43 @@ BEGIN
  END IF;
 END
 $prescriber$;
+
+-- Cancel-and-reissue is a distinct atomic disposition: old order is cancelled only
+-- when a complete replacement order is successfully created.
+SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000001',false);
+SELECT set_config('test.permissions','pharmacy.update',false);
+INSERT INTO phase61_ids(request_id,prescription_id,item_id)
+SELECT request_id,'60000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000008'
+FROM public.create_prescription_correction_request(
+ '60000000-0000-0000-0000-000000000006','70000000-0000-0000-0000-000000000008',
+ 'unlinked_free_text','Please replace the entire order','80000000-0000-0000-0000-000000000005');
+
+SELECT set_config('test.user_id','10000000-0000-0000-0000-000000000002',false);
+SELECT set_config('test.permissions','emr.update,emr.create',false);
+DO $cancel_reissue$
+DECLARE v_req uuid; v_new uuid; v_denied boolean:=false;
+BEGIN
+ SELECT request_id INTO v_req FROM phase61_ids WHERE prescription_id='60000000-0000-0000-0000-000000000006';
+ BEGIN
+  PERFORM public.resolve_prescription_correction_request(v_req,'cancel_and_reissue',NULL,'[]'::jsonb);
+ EXCEPTION WHEN OTHERS THEN v_denied:=true; END;
+ IF NOT v_denied THEN RAISE EXCEPTION 'empty cancel-and-reissue payload accepted'; END IF;
+ IF (SELECT status FROM public.prescriptions WHERE id='60000000-0000-0000-0000-000000000006')<>'pending'
+    OR (SELECT status FROM public.prescription_correction_requests WHERE id=v_req)<>'open' THEN
+   RAISE EXCEPTION 'failed reissue partially cancelled the original';
+ END IF;
+ SELECT replacement_prescription_id INTO v_new
+ FROM public.resolve_prescription_correction_request(v_req,'cancel_and_reissue',NULL,
+  '[{"medicine_id":"50000000-0000-0000-0000-000000000001","medication_name":"ignored client value","quantity":3,"dose":"1 tablet","frequency":"TID","duration":"3 days"}]'::jsonb);
+ IF v_new IS NULL OR (SELECT status FROM public.prescriptions WHERE id='60000000-0000-0000-0000-000000000006')<>'cancelled'
+    OR NOT EXISTS(SELECT 1 FROM public.prescriptions WHERE id=v_new AND status='pending' AND is_external=false)
+    OR NOT EXISTS(SELECT 1 FROM public.prescription_correction_events WHERE request_id=v_req
+      AND event_type='prescription_cancelled_and_reissued' AND replacement_prescription_id=v_new) THEN
+   RAISE EXCEPTION 'cancel-and-reissue did not atomically preserve the replacement order';
+ END IF;
+ UPDATE phase61_ids SET replacement_id=v_new WHERE request_id=v_req;
+END
+$cancel_reissue$;
 
 -- Correction actions must not touch stock or financial tables.
 DO $no_side_effects$

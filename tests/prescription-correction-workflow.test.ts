@@ -12,7 +12,7 @@ test("correction request schema is branch-scoped, snapshot-based and idempotent"
   assert.match(migration, /CREATE TABLE public\.prescription_correction_events/);
   assert.match(migration, /item_snapshot jsonb NOT NULL/);
   assert.match(migration, /request_key uuid NOT NULL/);
-  assert.match(migration, /UNIQUE INDEX[\s\S]*prescription_item_id[\s\S]*status = 'open'/i);
+  assert.match(migration, //UNIQUE INDEX[\\s\\S]*prescription_item_id[\\s\\S]*status\\s*=\\s*'open'/i/i);
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
 });
 
@@ -29,9 +29,9 @@ test("RPCs enforce empty search_path, active permission, strict branch and origi
 });
 
 test("replacement derives catalogue identity and preserves the clinical regimen", () => {
-  assert.match(migration, /medicine_id = p_medicine_id/);
-  assert.match(migration, /medication_name = v_medicine_name/);
-  assert.match(migration, /unit_price = v_unit_price/);
+  assert.match(migration, /medicine_id\s*=\s*p_medicine_id/);
+  assert.match(migration, /medication_name\s*=\s*v_medicine_name/);
+  assert.match(migration, /unit_price\s*=\s*v_unit_price/);
   assert.match(migration, /item_replaced/);
   assert.match(migration, /before_snapshot/);
   assert.match(migration, /after_snapshot/);
