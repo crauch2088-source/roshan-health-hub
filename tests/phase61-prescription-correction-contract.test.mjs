@@ -10,6 +10,14 @@ const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
 );
+const workflow = readFileSync(
+  ".github/workflows/ci-phase61-prescription-correction.yml",
+  "utf8",
+);
+const concurrency = readFileSync(
+  "db/tests/phase61_prescription_correction_concurrency.sh",
+  "utf8",
+);
 
 test("Phase 61 exposes only dedicated pharmacist and responsible-doctor permissions", () => {
   assert.match(migration, /pharmacy\.correction\.request/);
@@ -73,4 +81,17 @@ test("Phase 61 integration fixture uses canonical UUID literals", () => {
       `malformed UUID literal in integration fixture: ${candidate}`,
     );
   }
+});
+
+test("Phase 61 denies unassigned and wrong-branch doctors", () => {
+  assert.ok(integration.includes("unassigned doctor resolved a correction request"));
+  assert.ok(integration.includes("wrong-branch doctor resolved a correction request"));
+});
+
+test("Phase 61 runs a real two-session concurrent resolution regression", () => {
+  assert.ok(workflow.includes("phase61_prescription_correction_concurrency.sh"));
+  assert.ok(concurrency.includes("pg_sleep"));
+  assert.ok(concurrency.includes("prescription_correction_request_already_resolved"));
+  assert.ok(concurrency.includes("stock_movements"));
+  assert.ok(concurrency.includes("cashbox_transactions"));
 });

@@ -61,5 +61,9 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/roshan_phase61_prescription_item_correction_workflow.sql \
             -f db/tests/phase61_prescription_correction_integration.sql
+      - name: Prove concurrent correction resolution is serialized
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/phase61_prescription_correction_concurrency.sh
       - name: Run Phase 61 source-contract tests
         run: node --test tests/phase61-prescription-correction-contract.test.mjs

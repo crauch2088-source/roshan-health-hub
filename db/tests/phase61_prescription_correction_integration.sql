@@ -79,6 +79,61 @@ BEGIN
 END;
 $phase61_request$;
 
+-- An unrelated same-branch doctor has the role-level permission but not this visit's authority.
+RESET ROLE;
+SELECT set_config(
+  'phase61.primary_request_id',
+  (SELECT id::text FROM public.prescription_item_correction_requests
+   WHERE prescription_item_id = '61800000-0000-0000-0000-000000000001'),
+  false
+);
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000003',false);
+DO $phase61_unassigned_doctor$
+DECLARE v_denied boolean; v_request_id uuid := current_setting('phase61.primary_request_id')::uuid;
+BEGIN
+  IF NOT public.app_has_perm('prescriptions.correction.resolve') THEN
+    RAISE EXCEPTION 'fixture doctor is missing the dedicated role permission';
+  END IF;
+  IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 0 THEN
+    RAISE EXCEPTION 'unassigned doctor can read another prescribers correction request';
+  END IF;
+  v_denied := false;
+  BEGIN
+    PERFORM public.resolve_prescription_item_correction(
+      v_request_id,'reject',NULL,'An unrelated doctor must not resolve this request.'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'unassigned doctor resolved a correction request';
+  END IF;
+END;
+$phase61_unassigned_doctor$;
+
+-- A doctor assigned to another branch must also be unable to read or resolve the request.
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000007',false);
+DO $phase61_wrong_branch_doctor$
+DECLARE v_denied boolean; v_request_id uuid := current_setting('phase61.primary_request_id')::uuid;
+BEGIN
+  IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 0 THEN
+    RAISE EXCEPTION 'wrong-branch doctor can read another branch correction request';
+  END IF;
+  v_denied := false;
+  BEGIN
+    PERFORM public.resolve_prescription_item_correction(
+      v_request_id,'reject',NULL,'A doctor from another branch must not resolve this request.'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'wrong-branch doctor resolved a correction request';
+  END IF;
+END;
+$phase61_wrong_branch_doctor$;
+
 -- Wrong-branch pharmacist, ordinary Admin, external/cancelled/dispensed/deleted/linked items fail closed.
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000004',false);
 DO $phase61_wrong_branch$
