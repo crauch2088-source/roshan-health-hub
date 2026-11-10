@@ -221,9 +221,9 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \\
-            -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \\
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
             -f db/roshan_phase46_uat_schema_compatibility.sql
       - name: Seed synthetic roles, branches, users and prescriptions
         env:
@@ -233,9 +233,13 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-            -f db/roshan_phase61_prescription_item_correction_workflow.sql \\
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/roshan_phase61_prescription_item_correction_workflow.sql \
             -f db/tests/phase61_prescription_correction_integration.sql
+      - name: Prove concurrent correction resolution is serialized
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/phase61_prescription_correction_concurrency.sh
       - name: Run Phase 61 source-contract tests
         run: node --test tests/phase61-prescription-correction-contract.test.mjs
 

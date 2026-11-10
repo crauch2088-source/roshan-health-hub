@@ -64,10 +64,7 @@ test("Phase 61 integration covers authorization, no-side-effects and state trans
   ];
 
   for (const assertion of assertions) {
-    assert.ok(
-      integration.includes(assertion),
-      `missing regression: ${assertion}`,
-    );
+    assert.ok(integration.includes(assertion), `missing regression: ${assertion}`);
   }
 });
 
