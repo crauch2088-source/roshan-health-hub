@@ -284,3 +284,11 @@ All three candidate PRs remain Draft. Do not merge, apply migrations, alter Auth
 A fresh SELECT-only query against both hosted projects reconfirmed Production migration ledger 129 rows/latest `20261102232941` and QA 22 rows/latest `20261104065852`. Neither project currently has `currency_code` on the seven Phase58 financial tables. A whitespace-normalized function-definition check reconfirmed Production still contains the `COALESCE(pi.quantity,1)` fallback and lacks explicit NULL rejection, while QA has explicit NULL rejection and no fallback. The initial whitespace-sensitive probe was inconclusive and was discarded; only the normalized result is authoritative for this checkpoint.
 
 The weighted Engineering RC estimate remains **49%**; operational acceptance remains **11%**. The PR #210 UI correction is not credited until exact-head CI passes. No live DDL/DML, migration, permission, Auth/Storage, business-data, deployment or backup operation occurred. Full details: [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md).
+
+
+### Backup-runner review delta — 2026-11-10
+
+- Corrected the private backup-runner README to target the canonical Drive folder **Roshan Health Hub - Encrypted Backups** and identify **Roshan Health Hub Backups** as the legacy empty folder.
+- Removed the unconditional shell-level `PGOPTIONS=-c jit=true` override so only the URL builder controls the temporary-token JIT option; database-password fallback remains without the token-only option.
+- Added Python regression tests for credential mode and shell option isolation. Static source inspection passed, but a fresh validation-only Actions run has not yet executed these tests. No backup was dispatched.
+- This improves documentation and connection-mode correctness but does not change the previously reported backup/recovery acceptance score until the test suite and current-runner end-to-end rehearsal pass.
