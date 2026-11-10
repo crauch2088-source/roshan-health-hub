@@ -721,9 +721,9 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \\
-            -f db/roshan_phase46_uat_schema_compatibility.sql \\
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/roshan_phase46_uat_schema_compatibility.sql \
             -f db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql
       - name: Seed synthetic branch, users, patient, visit and medicine fixtures
         env:
@@ -733,8 +733,8 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \\
-            -f db/roshan_phase61_prescription_correction_workflow.sql \\
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/roshan_phase61_prescription_correction_workflow.sql \
             -f db/tests/prescription_correction_integration.sql
       - name: Run source contract guard
         run: node --test --experimental-strip-types tests/prescription-correction-workflow.test.ts

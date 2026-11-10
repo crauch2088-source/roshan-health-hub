@@ -54,10 +54,12 @@ test("resolver authorizes the responsible doctor and serializes prescription-ite
   assert.match(migration, /CREATE OR REPLACE FUNCTION public\.resolve_prescription_item_correction\(p_request_id uuid, p_action text, p_replacement jsonb, p_reason text\)/i);
   assert.match(migration, /app_has_perm\('prescriptions\.correction\.resolve'\)/i);
   assert.match(migration, /prescribed_by[\s\S]*doctor_id[\s\S]*visit_doctor_id/i);
-  const prescriptionLock = migration.indexOf("FROM public.prescriptions");
-  const itemLock = migration.indexOf("FROM public.prescription_items", prescriptionLock + 1);
-  const requestLock = migration.indexOf("FROM public.prescription_item_correction_requests", itemLock + 1);
-  assert.ok(prescriptionLock >= 0 && itemLock > prescriptionLock && requestLock > itemLock);
+  const resolverStart = migration.indexOf("CREATE OR REPLACE FUNCTION public.resolve_prescription_item_correction");
+  const resolver = migration.slice(resolverStart);
+  const prescriptionLock = resolver.indexOf("FROM public.prescriptions p");
+  const itemLock = resolver.indexOf("FROM public.prescription_items pi", prescriptionLock + 1);
+  const requestLock = resolver.indexOf("FROM public.prescription_item_correction_requests r", itemLock + 1);
+  assert.ok(resolverStart >= 0 && prescriptionLock >= 0 && itemLock > prescriptionLock && requestLock > itemLock);
   assert.match(migration, /FOR UPDATE/i);
   assert.match(migration, /stale correction request/i);
 });
