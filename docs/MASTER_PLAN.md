@@ -2814,3 +2814,9 @@ The owner approved a 48-hour accelerated execution sprint. The binding execution
 ## 48-hour sprint baseline and H0 log — 2026-11-10
 
 The owner-approved sprint began at **2026-11-10 09:09:08 Africa/Khartoum** and has a 48-hour decision deadline of **2026-11-12 09:09:08 Africa/Khartoum**. The evidence-backed weighted baseline, live migration/security inventory, candidate PR heads, workstream scores, stop-ship findings, and operational-acceptance score are recorded in [48H_EXECUTION_LOG_2026-11-10.md](48H_EXECUTION_LOG_2026-11-10.md). This is a sprint-specific denominator, not a percentage of all historical product features.
+
+## Live migration fingerprint and source-map recheck — 2026-11-10
+
+The current read-only ledger fingerprint capture is recorded in [LIVE_MIGRATION_SOURCE_MAPPING_2026-11-10.md](LIVE_MIGRATION_SOURCE_MAPPING_2026-11-10.md) and [LIVE_MIGRATION_LEDGER_FINGERPRINTS_2026-11-10.json](LIVE_MIGRATION_LEDGER_FINGERPRINTS_2026-11-10.json). Production remains at 129 rows/latest `20261102232941`; QA at 22/latest `20261104065852`. The three shared version IDs still collide, but a fresh comparison found **five** identical statement fingerprints under different version IDs (Phases 46, 47, 48, 50 and 52). This corrects the narrower two-pair summary in the prior 2026-11-09 report.
+
+The current source-parity workflow verifies a frozen 93-entry source hash set and forward-source delta; it does not query or compare the live 129/22 ledgers. The 79-row manifest, 93-entry report and 94-row applied inventory are historical snapshots. Phase 57 remains QA-only; Production still has the NULL-to-one dispense fallback. Do not replay, repair ledger rows or apply Production DDL/DML. Next P0: finish current source/effective-catalog mapping and add disposable PG17 fixtures for the quarantined 20261102232819 rename and redacted-equivalent 20261102232941 cleanup behavior.
