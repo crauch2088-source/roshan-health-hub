@@ -193,8 +193,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
   const [packInspectionConfirmed, setPackInspectionConfirmed] = useState(false);
   const canEditIdentity =
     can("pharmacy.catalogue_identity.update") && isMedicineIdentityEditorRole(user?.role_code);
-  const canVerifyPack =
-    can("pharmacy.pack.verify") && isMedicinePackVerifierRole(user?.role_code);
+  const canVerifyPack = can("pharmacy.pack.verify") && isMedicinePackVerifierRole(user?.role_code);
   const updateIdentityField = (patch: Partial<MedicineCatalogueIdentityDraft>) =>
     setIdentityForm((current) => ({ ...current, ...patch }));
 
