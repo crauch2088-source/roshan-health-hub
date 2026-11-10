@@ -683,7 +683,7 @@ BEGIN
     SELECT
       m.name,
       m.generic_name,
-      COALESCE(m.selling_price, 0)
+      m.selling_price
     INTO v_medicine_name, v_generic_name, v_unit_price
     FROM public.medicines AS m
     WHERE m.id = v_medicine_id
@@ -703,7 +703,7 @@ BEGIN
         USING ERRCODE = '23514';
     END IF;
 
-    IF v_unit_price::text IN ('NaN', 'Infinity', '-Infinity') OR v_unit_price < 0 THEN
+    IF v_unit_price IS NULL OR v_unit_price::text IN ('NaN', 'Infinity', '-Infinity') OR v_unit_price < 0 THEN
       RAISE EXCEPTION 'catalog_medicine_price_invalid'
         USING ERRCODE = '23514';
     END IF;
@@ -811,7 +811,7 @@ BEGIN
 
       SELECT
         COALESCE(NULLIF(btrim(m.name), ''), NULLIF(btrim(m.generic_name), '')),
-        COALESCE(m.selling_price, 0)
+        m.selling_price
       INTO v_medicine_name, v_unit_price
       FROM public.medicines AS m
       WHERE m.id = v_medicine_id
@@ -825,7 +825,7 @@ BEGIN
           USING ERRCODE = 'P0002';
       END IF;
 
-      IF v_unit_price::text IN ('NaN', 'Infinity', '-Infinity') OR v_unit_price < 0 THEN
+      IF v_unit_price IS NULL OR v_unit_price::text IN ('NaN', 'Infinity', '-Infinity') OR v_unit_price < 0 THEN
         RAISE EXCEPTION 'replacement_catalog_medicine_price_invalid'
           USING ERRCODE = '23514';
       END IF;

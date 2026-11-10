@@ -509,6 +509,56 @@ BEGIN
 END;
 $phase61_unpriced_state$;
 
+-- Cancel-and-reissue must also reject an unpriced catalogue item before creating a replacement order.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002',false);
+DO $phase61_unpriced_reissue$
+DECLARE v_request uuid; v_denied boolean := false;
+BEGIN
+  SELECT id INTO v_request
+  FROM public.prescription_item_correction_requests
+  WHERE prescription_item_id = '61800000-0000-0000-0000-000000000014'
+    AND status = 'pending';
+
+  BEGIN
+    PERFORM * FROM public.resolve_prescription_item_correction(
+      v_request,
+      'cancel_and_reissue',
+      '[{"medicine_id":"61600000-0000-0000-0000-000000000001","dose":"500 mg","frequency":"BID","duration":"5 days","quantity":10,"instructions":"After food","dosage_form":"capsule","route":"oral"}]'::jsonb,
+      'Do not issue a replacement order from an unpriced catalogue item.'
+    );
+  EXCEPTION WHEN SQLSTATE '23514' THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'cancel-and-reissue accepted an unpriced catalogue medicine';
+  END IF;
+END;
+$phase61_unpriced_reissue$;
+RESET ROLE;
+
+DO $phase61_unpriced_reissue_state$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescriptions
+    WHERE id = '61700000-0000-0000-0000-000000000008'
+      AND status = 'pending'
+      AND deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'unpriced cancel-and-reissue changed the original prescription';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_item_correction_requests
+    WHERE prescription_item_id = '61800000-0000-0000-0000-000000000014'
+      AND status = 'pending'
+      AND replacement_prescription_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'unpriced cancel-and-reissue changed the correction request';
+  END IF;
+END;
+$phase61_unpriced_reissue_state$;
+
 UPDATE public.medicines
 SET selling_price = 12.50
 WHERE id = '61600000-0000-0000-0000-000000000001';
