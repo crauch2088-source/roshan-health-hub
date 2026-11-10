@@ -69,3 +69,21 @@ Independent review found that Phase 54 names `insurance_claim_payment` as a paym
 ## Final exact-head CI — 2026-11-10
 
 At PR #211 head `6d2440381e78710fc5579598ff7684b1909884a8`, the Phase 58 SDG provenance and Phase 59 receipt-currency PostgreSQL 17 jobs passed in CI run [42775216135](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216135). The full CI completed with 20 successful jobs and one intentional skip for authenticated clinical acceptance. Insurance UI validation [42775216669](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216669) and PR validation [42775210843](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775210843) also passed. These are isolated candidate tests; no hosted migration was applied.
+
+
+## Cashbox source-discriminator hardening — 2026-11-10
+
+Independent review found that the original source-currency trigger validated known linked source types but did not reject an unknown source_type, an untyped source_id, or a payment ID disguised as a manual entry. The source field is independent of transaction_type; the latter's CHECK constraint does not close this gap.
+
+The candidate now fails closed on new/changed cashbox source references:
+- accepted source types are exactly manual, payment, expense, supplier_payment, and reversal;
+- insurance_claim_payment remains explicitly deferred and rejected until its own persisted-currency workflow exists;
+- unknown or NULL source types are rejected;
+- manual rows cannot carry source_id or reversal_of;
+- reversal rows must carry exactly one reversal_of reference and cannot also carry source_id;
+- non-reversal rows cannot carry reversal_of;
+- payment, expense, and supplier-payment sources must resolve to a persisted source row with matching SDG provenance.
+
+The PostgreSQL 17 integration suite now covers unknown, untyped, disguised-manual, malformed-reversal, and valid-manual cases. The first exact-head run exposed the new guard's interaction with the generic cashbox fixture; the fixture was corrected to model a valid manual source rather than weakening the guard.
+
+At PR #211 exact head 7e7b610f9ef2d99534e0f06d39fb1a1424865b22, the complete pull-request workflow run 42781299925 completed with 20 successful jobs, zero failures, and one intentional skip for the canonical PostgreSQL baseline/authenticated clinical acceptance. The dedicated Phase 58 and Phase 59 PostgreSQL 17 jobs both passed on this exact head. No hosted Supabase database was changed; the PR remains Draft pending independent review, migration provenance reconciliation, and separate QA/Production approvals.
