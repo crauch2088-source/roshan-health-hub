@@ -99,6 +99,7 @@ BEGIN
       pg_catalog.count(*) AS reversal_count,
       pg_catalog.bool_and(
         r.source_type = 'reversal'
+        AND r.source_id IS NULL
         AND r.branch_id = c.branch_id
         AND r.amount = -c.amount
       ) AS reversal_matches,
