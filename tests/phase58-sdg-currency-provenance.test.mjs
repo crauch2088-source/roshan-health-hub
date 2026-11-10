@@ -9,6 +9,7 @@ const integration = readFileSync(
 );
 const insuranceUi = readFileSync("src/routes/_authenticated/insurance.tsx", "utf8");
 const insuranceLib = readFileSync("src/lib/insurance.ts", "utf8");
+const fixture = readFileSync("db/tests/phase58_sdg_currency_provenance_fixture.sql", "utf8");
 
 const financialTables = [
   "invoices",
@@ -92,6 +93,11 @@ test("deferred insurance claim payments are disabled in both UI and RPC access",
   assert.match(
     migration,
     /REVOKE ALL ON FUNCTION public\.post_insurance_claim_payment\(uuid, numeric, text, text\) FROM PUBLIC, anon, authenticated, service_role/,
+  );
+  assert.match(fixture, /CREATE OR REPLACE FUNCTION public\.post_insurance_claim_payment/);
+  assert.match(
+    fixture,
+    /GRANT EXECUTE ON FUNCTION public\.post_insurance_claim_payment\(uuid, numeric, text, text\)[\s\S]*TO anon, authenticated, service_role/,
   );
   assert.match(
     integration,

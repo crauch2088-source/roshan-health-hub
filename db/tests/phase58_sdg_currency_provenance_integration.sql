@@ -497,8 +497,10 @@ DO $phase58_insurance_payment_acl$
 DECLARE
   v_rpc regprocedure := to_regprocedure('public.post_insurance_claim_payment(uuid,numeric,text,text)');
 BEGIN
-  IF v_rpc IS NOT NULL THEN
-    IF has_function_privilege('authenticated', v_rpc, 'EXECUTE') THEN
+  IF v_rpc IS NULL THEN
+    RAISE EXCEPTION 'synthetic legacy insurance payment RPC fixture is missing';
+  END IF;
+  IF has_function_privilege('authenticated', v_rpc, 'EXECUTE') THEN
       RAISE EXCEPTION 'authenticated role can still post deferred insurance claim payments';
     END IF;
     IF has_function_privilege('anon', v_rpc, 'EXECUTE') THEN
@@ -507,7 +509,6 @@ BEGIN
     IF has_function_privilege('service_role', v_rpc, 'EXECUTE') THEN
       RAISE EXCEPTION 'service_role can execute deferred insurance claim payment RPC';
     END IF;
-  END IF;
 END;
 $phase58_insurance_payment_acl$;
 

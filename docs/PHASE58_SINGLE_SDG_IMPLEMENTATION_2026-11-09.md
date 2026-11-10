@@ -103,6 +103,6 @@ The Phase 58 currency-provenance guard rejects `insurance_claim_payment` ledger 
 - conditionally revokes `post_insurance_claim_payment(uuid,numeric,text,text)` from PUBLIC, anon, authenticated and service_role when present. It exists in current hosted schemas but is absent from the canonical PG17 baseline, so the migration and tests tolerate both states;
 - removes the payment mutation/dialog from the insurance claims UI, removes the unused RPC wrapper from `src/lib/insurance.ts`, and shows a bilingual deferred-state notice;
 - keeps claim creation and review available; only cash posting is disabled until the insurance provenance phase is explicitly approved;
-- verifies the RPC is not executable by application roles in the PostgreSQL 17 integration test.
+- seeds a synthetic legacy-only RPC in the disposable PostgreSQL 17 fixture so the conditional revoke is exercised (rather than silently skipped), then verifies it is not executable by application roles. The canonical baseline and hosted data remain untouched.
 
 This is a fail-closed deferral, not an insurance implementation. No existing claim or ledger row is rewritten.

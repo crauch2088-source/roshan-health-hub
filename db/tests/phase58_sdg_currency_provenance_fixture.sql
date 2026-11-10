@@ -54,3 +54,24 @@ INSERT INTO public.expenses (id, note) VALUES ('58000000-0000-0000-0000-00000000
 INSERT INTO public.supplier_bills (id, note) VALUES ('58000000-0000-0000-0000-000000000005', 'legacy');
 INSERT INTO public.supplier_payments (id, note) VALUES ('58000000-0000-0000-0000-000000000006', 'legacy');
 INSERT INTO public.pharmacy_inventory (id, note) VALUES ('58000000-0000-0000-0000-000000000007', 'legacy');
+
+-- Simulate the legacy hosted-only insurance payment RPC so the migration's conditional
+-- privilege revocation is exercised in disposable PostgreSQL 17 CI.
+CREATE OR REPLACE FUNCTION public.post_insurance_claim_payment(
+  p_claim_id uuid,
+  p_amount numeric,
+  p_method text,
+  p_reference text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  RAISE EXCEPTION 'synthetic legacy insurance payment RPC must never be called';
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.post_insurance_claim_payment(uuid, numeric, text, text)
+  TO anon, authenticated, service_role;
