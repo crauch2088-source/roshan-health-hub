@@ -111,6 +111,27 @@ BEGIN
      OR v_status.reversal_at IS NULL THEN
     RAISE EXCEPTION 'valid SDG reversal provenance was not accepted';
   END IF;
+  -- A legacy malformed reversal with an extra source_id must not validate.
+  -- Bypass triggers only to represent historical corruption; ordinary writes are guarded.
+  PERFORM pg_catalog.set_config('session_replication_role', 'replica', true);
+  UPDATE public.cashbox_transactions
+  SET source_id = '59000000-0000-0000-0000-000000000024'
+  WHERE id = '59000000-0000-0000-0000-000000000023';
+  PERFORM pg_catalog.set_config('session_replication_role', 'origin', true);
+
+  SELECT * INTO v_status
+  FROM public.get_invoice_payment_receipt_status_v2(
+    ARRAY['59000000-0000-0000-0000-000000000021'::uuid]
+  );
+  IF NOT FOUND
+     OR v_status.ledger_matches IS DISTINCT FROM false
+     OR v_status.ledger_is_reversed IS DISTINCT FROM false
+     OR v_status.reversal_reason IS NOT NULL
+     OR v_status.reversal_at IS NOT NULL
+     OR v_status.reversal_currency_code IS NOT NULL
+     OR v_status.currency_matches IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'malformed reversal source metadata was accepted or disclosed';
+  END IF;
 
   -- A payment without a cashbox source must not be marked receipt-complete.
   INSERT INTO public.invoices (id, branch_id)
