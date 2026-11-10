@@ -40,7 +40,10 @@ BEGIN
      OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'INSERT')
      OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'UPDATE')
      OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'DELETE')
-     OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'TRUNCATE') THEN
+     OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'TRUNCATE')
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'INSERT')
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'UPDATE')
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'DELETE') THEN
     RAISE EXCEPTION 'authenticated table privileges must be SELECT-only for pack attestations';
   END IF;
 
