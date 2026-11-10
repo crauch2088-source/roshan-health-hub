@@ -29,7 +29,8 @@ INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VAL
 INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VALUES
  ('90000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
 INSERT INTO public.prescriptions (id,patient_id,visit_id,status,is_external) VALUES
- ('90000000-0000-0000-0000-000000000007','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false);
+ ('90000000-0000-0000-0000-000000000007','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',false),
+ ('90000000-0000-0000-0000-000000000008','30000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','pending',true);
 INSERT INTO public.prescription_items
  (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
  ('91000000-0000-0000-0000-000000000001','90000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001','Amoxicillin',2,'500 mg','BID','5 days'),
@@ -45,7 +46,8 @@ INSERT INTO public.prescription_items
 INSERT INTO public.prescription_items
  (id,prescription_id,medicine_id,medication_name,quantity,dosage,frequency,duration) VALUES
  ('91000000-0000-0000-0000-000000000009','90000000-0000-0000-0000-000000000007','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days'),
- ('91000000-0000-0000-0000-000000000010','90000000-0000-0000-0000-000000000007',NULL,'Custom topical medicine',1,'apply thin layer','BID','5 days');
+ ('91000000-0000-0000-0000-000000000010','90000000-0000-0000-0000-000000000007',NULL,'Custom topical medicine',1,'apply thin layer','BID','5 days'),
+ ('91000000-0000-0000-0000-000000000011','90000000-0000-0000-0000-000000000008','70000000-0000-0000-0000-000000000001','Amoxicillin',1,'500 mg','BID','5 days');
 
 DO $$
 DECLARE v_invoice uuid;
@@ -376,3 +378,62 @@ BEGIN
 END;
 $privilege_test$;
 SELECT 'pharmacy dispense + invoice integration tests passed' AS result;
+
+
+-- External prescriptions may be displayed for reference but cannot consume internal clinic stock.
+DO $external_prescription_test$
+DECLARE
+  v_batch numeric;
+  v_stock integer;
+  v_invoice_lines bigint;
+  v_stock_movements bigint;
+BEGIN
+  SELECT quantity_remaining INTO v_batch FROM public.pharmacy_inventory
+   WHERE id='80000000-0000-0000-0000-000000000001';
+  SELECT stock_quantity INTO v_stock FROM public.medicines
+   WHERE id='70000000-0000-0000-0000-000000000001';
+  SELECT count(*) INTO v_invoice_lines FROM public.invoice_items
+   WHERE invoice_id=(SELECT id FROM public.invoices
+     WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
+     AND deleted_at IS NULL;
+  SELECT count(*) INTO v_stock_movements FROM public.stock_movements
+   WHERE reference_id='90000000-0000-0000-0000-000000000008'
+     AND reference_table='prescriptions';
+
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      '90000000-0000-0000-0000-000000000008',false
+    );
+    RAISE EXCEPTION 'test failed: external prescription unexpectedly dispensed internally';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='test failed: external prescription unexpectedly dispensed internally' THEN RAISE; END IF;
+    IF SQLERRM <> 'external_prescription_not_eligible_for_internal_dispense' THEN RAISE; END IF;
+  END;
+
+  IF (SELECT status FROM public.prescriptions WHERE id='90000000-0000-0000-0000-000000000008') <> 'pending' THEN
+    RAISE EXCEPTION 'external prescription rejection changed status';
+  END IF;
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+       WHERE id='80000000-0000-0000-0000-000000000001') <> v_batch
+     OR (SELECT stock_quantity FROM public.medicines
+       WHERE id='70000000-0000-0000-0000-000000000001') <> v_stock THEN
+    RAISE EXCEPTION 'external prescription rejection changed stock';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+       WHERE invoice_id=(SELECT id FROM public.invoices
+         WHERE visit_id='50000000-0000-0000-0000-000000000001' AND is_primary IS TRUE)
+         AND deleted_at IS NULL) <> v_invoice_lines THEN
+    RAISE EXCEPTION 'external prescription rejection created invoice lines';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+       WHERE reference_id='90000000-0000-0000-0000-000000000008'
+         AND reference_table='prescriptions') <> v_stock_movements THEN
+    RAISE EXCEPTION 'external prescription rejection created stock movements';
+  END IF;
+  IF (SELECT count(*) FROM public.prescription_items
+       WHERE prescription_id='90000000-0000-0000-0000-000000000008'
+         AND deleted_at IS NULL AND is_dispensed IS TRUE) <> 0 THEN
+    RAISE EXCEPTION 'external prescription rejection marked item dispensed';
+  END IF;
+END;
+$external_prescription_test$;
