@@ -125,3 +125,12 @@ test("dispense quantity parser accepts only finite positive whole units", () => 
   assert.equal(parseDispenseQuantity(1), 1);
   assert.equal(parseDispenseQuantity("2"), 2);
 });
+
+test("external prescriptions cannot enter the internal stock dispense flow", () => {
+  assert.match(quantityGuardMigration, /p\.is_external/);
+  assert.match(quantityGuardMigration, /external_prescription_not_eligible_for_internal_dispense/);
+  assert.match(pharmacyRoute, /hasExternalPrescription/);
+  assert.match(pharmacyRoute, /external_prescription_internal_stock_blocked/);
+  assert.match(integration, /external prescription rejection changed stock/);
+  assert.match(integration, /external prescription rejection changed status/);
+});
