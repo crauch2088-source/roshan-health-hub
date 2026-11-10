@@ -60,8 +60,11 @@ BEGIN
      OR has_table_privilege('authenticated', 'public.medicine_pack_verifications', 'TRUNCATE')
      OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'INSERT')
      OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'UPDATE')
-     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'DELETE') THEN
-    RAISE EXCEPTION 'authenticated table privileges must be SELECT-only for pack attestations';
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'DELETE')
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'TRUNCATE')
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'REFERENCES')
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'TRIGGER') THEN
+    RAISE EXCEPTION 'authenticated/service_role must not have direct write privileges on pack attestations';
   END IF;
 
   IF NOT (SELECT relrowsecurity AND relforcerowsecurity
