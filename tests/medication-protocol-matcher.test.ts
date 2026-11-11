@@ -291,56 +291,66 @@ test("blocks a source whose population or jurisdiction differs from the protocol
 });
 
 test("does not match a protocol outside the explicit patient population or jurisdiction", () => {
+  const expected = {
+    status: "no_match",
+    reason: "no_matching_protocol",
+  };
   assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, population: "adult" }), {
-      status: "no_match",
-      reason: "no_matching_protocol",
-    });
+    matchMedicationProtocol([protocol], { ...context, population: "adult" }),
+    expected,
+  );
   assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, jurisdiction: "another jurisdiction" }), {
-      status: "no_match",
-      reason: "no_matching_protocol",
-    });
+    matchMedicationProtocol([protocol], { ...context, jurisdiction: "another jurisdiction" }),
+    expected,
+  );
 });
 
 test("requires explicit population and jurisdiction context", () => {
+  const expected = {
+    status: "blocked",
+    reason: "invalid_context",
+  };
   assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, population: "" }), {
-      status: "blocked",
-      reason: "invalid_context",
-    });
+    matchMedicationProtocol([protocol], { ...context, population: "" }),
+    expected,
+  );
   assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }), {
-      status: "blocked",
-      reason: "invalid_context",
-    });
+    matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }),
+    expected,
+  );
 });
 
 test("does not return needs_data for a protocol with an invalid dose basis or missing route", () => {
+  const invalidRule = {
+    status: "blocked",
+    reason: "invalid_protocol_rule",
+  };
+  const invalidProvenance = {
+    status: "blocked",
+    reason: "invalid_protocol_provenance",
+  };
   assert.deepEqual(
     matchMedicationProtocol(
       [{ ...protocol, doseBasis: { kind: "unknown" } as never }],
-      {
-        ...context,
-        ageDays: null,
-      },
-    ), {
-      status: "blocked",
-      reason: "invalid_protocol_rule",
-    });
+      { ...context, ageDays: null },
+    ),
+    invalidRule,
+  );
   assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, route: "" }], { ...context, ageDays: null }), {
-      status: "blocked",
-      reason: "invalid_protocol_provenance",
-    });
+    matchMedicationProtocol([{ ...protocol, route: "" }], { ...context, ageDays: null }),
+    invalidProvenance,
+  );
 });
 
 test("blocks a malformed source object before either recommendation or needs_data", () => {
+  const expected = {
+    status: "blocked",
+    reason: "invalid_protocol_provenance",
+  };
   assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, source: null as never }], context), {
-      status: "blocked",
-      reason: "invalid_protocol_provenance",
-    });
+    matchMedicationProtocol([{ ...protocol, source: null as never }], context),
+    expected,
+  );
 });
 
 test("does not allow an unverified or malformed source to pass the evidence gate", () => {
@@ -349,30 +359,44 @@ test("does not allow an unverified or malformed source to pass the evidence gate
       [{ ...protocol, source: { ...source, licenseStatus: "unverified" } as never }],
       context,
     ),
-    { status: "blocked", reason: "invalid_protocol_provenance" },
+    {
+      status: "blocked",
+      reason: "invalid_protocol_provenance",
+    },
   );
 });
 
 test("blocks a source whose revalidation deadline has passed", () => {
+  const expected = {
+    status: "blocked",
+    reason: "invalid_protocol_provenance",
+  };
   assert.deepEqual(
     matchMedicationProtocol(
       [{ ...protocol, source: { ...source, revalidateBy: "2026-11-10" } }],
       context,
     ),
-    { status: "blocked", reason: "invalid_protocol_provenance" },
+    expected,
   );
 });
 
 test("blocks source provenance without an explicit revalidation deadline", () => {
   const { revalidateBy: _revalidateBy, ...sourceWithoutDeadline } = source;
+  const expected = {
+    status: "blocked",
+    reason: "invalid_protocol_provenance",
+  };
   assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, source: sourceWithoutDeadline as never }], context), {
-      status: "blocked",
-      reason: "invalid_protocol_provenance",
-    });
+    matchMedicationProtocol([{ ...protocol, source: sourceWithoutDeadline as never }], context),
+    expected,
+  );
 });
 
 test("blocks a source retrieved before its stated publication date", () => {
+  const expected = {
+    status: "blocked",
+    reason: "invalid_protocol_provenance",
+  };
   assert.deepEqual(
     matchMedicationProtocol(
       [
@@ -382,8 +406,7 @@ test("blocks a source retrieved before its stated publication date", () => {
         },
       ],
       context,
-    ), {
-      status: "blocked",
-      reason: "invalid_protocol_provenance",
-    });
+    ),
+    expected,
+  );
 });
