@@ -293,50 +293,18 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Added Python regression tests for credential mode and shell option isolation. Static source inspection passed, but a fresh validation-only Actions run has not yet executed these tests. No backup was dispatched.
 - This improves documentation and connection-mode correctness but does not change the previously reported backup/recovery acceptance score until the test suite and current-runner end-to-end rehearsal pass.
 
-## H+3.5 evidence checkpoint — 2026-11-10
+### H+13 — Phase 61 database backend and Phase 57 mainline recovery — 2026-11-10
 
-### New exact-head evidence
+- Phase 61 exact candidate head `763985fafe52c83ca65b808ec67c50569ed35752`: **30/30 checks passed**, zero failures; one canonical authenticated clinical-acceptance gate intentionally skipped. The PostgreSQL 17 correction workflow test passed after two genuine regressions were found and fixed: broad permission leakage into clinical prescription creation, and zero-price fallback for unpriced catalogue medicines in both replacement paths.
+- Phase 61 remains a database/backend candidate only. No front-end correction request/resolution flow, authenticated doctor/pharmacist E2E, or staff acceptance is claimed.
+- Phase 57 has been reconstructed on a fresh branch from current main to avoid the dirty/stale PR #209 base. The branch preserves the exact QA-applied Phase 57 source body and separates Phase 57B free-text/external-prescription guards. The pharmacy UI now blocks invalid/missing quantities and unlinked/external items without substituting quantity 1. Full exact-head CI is pending.
+- Production remains on the old dispense fallback; QA has Phase 57. No Supabase writes, migration replay, role changes, Production deployment, or backup dispatch occurred.
+- Weighted Engineering RC remains **49%** pending Phase 57 exact-head validation and independent review; operational acceptance remains **11%**. Estimated Engineering RC remaining remains **24–40 hours**, conditional on migration reconciliation and release-gate evidence.
+ 
+## H+14 — Phase 61 UI/mainline reconciliation — 2026-11-11
 
-- PR #229 head `b1a85ad1f3ce94596575f4b9140c094020f8c0a6`: all eight PR-triggered workflows passed. Full CI [42905200880](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42905200880) completed 20 jobs: 19 successful and one intentionally skipped (canonical baseline replay/authenticated clinical acceptance). The dedicated Phase 61 PostgreSQL 17 job passed authorization, RLS, audit, concurrent-resolution and no-stock/no-financial-side-effect assertions.
-- The UI candidate now supports pharmacist correction requests, a prescriber inbox, replace-one-item, reject-with-reason, and complete multi-item cancel-and-reissue. The existing prescription composer is gated by `prescriptions.create`, matching the Phase 61 RPC authorization. Source tests cover the required fields, no inferred regimen, RTL/LTR and bounded small-screen dialog scrolling; physical-device/browser acceptance is still outstanding.
-- PR #216 rebased head `22a43bfaa93a83d2349516bc5c8fb250f4979d3d`: CI [42902388063](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42902388063) completed 19 jobs: 18 successful and one intentionally skipped for authenticated clinical acceptance. It is ready for review; merge is held while Vercel preview remains rate-limited.
-- PR #207 and #208 were merged as documentation-only changes. Duplicate/superseded drafts #221, #223 and #224 were closed with rationale. PR #226 and #228 remain dependency gates; PR #229 remains Draft.
-- No hosted QA or Production database, role map, Auth/Storage setting, patient/financial data, backup, or deployment was changed. Vercel retries were deliberately avoided.
-
-### Evidence-weighted sprint progress
-
-| Workstream | Weight | H+2 | H+3.5 | Reason for delta |
-|---|---:|---:|---:|---|
-| A. Orchestration, scope, evidence | 10% | 90% | 91% | Documentation policy merged; stale duplicate PRs consolidated; exact-head evidence ledger updated |
-| B. Pharmacy + medicine catalogue | 20% | 65% | 72% | Exact pharmacist-to-prescriber correction path and full replacement-order UI now pass exact-head CI/PG17 |
-| C. SDG finance + receipts | 20% | 70% | 70% | No new finance/receipt acceptance evidence in this round |
-| D. Migration provenance + security | 25% | 25% | 25% | Live 129/22 source/effective-catalog reconciliation remains the dominant stop-ship blocker |
-| E. Mobile, bilingual UX, printing | 10% | 30% | 33% | RTL/LTR and bounded mobile-height source contracts added; no physical-device/browser sign-off |
-| F. QA, recovery, release decision | 15% | 25% | 25% | Automated candidate CI improved, but authenticated QA/staff acceptance and current backup rehearsal remain outstanding |
-
-**Weighted Engineering RC progress: 50.8% (reported as 51%).** Operational acceptance remains **10.5% (reported as 11%)**. This sprint denominator is evidence-weighted and is not directly comparable to earlier broad product-completion estimates.
-
-**Remaining estimate to a defensible, explicitly qualified Engineering RC: 20–34 hours**, conditional on source/effective-catalog reconciliation, dependency review, QA migration rehearsal, backup/recovery evidence and the remaining high-risk fixes. Operational acceptance remains a separate **1–3 week** process because real pharmacist/doctor/finance UAT, target Android/browser checks and physical printer sign-off require people and devices.
-
-### Next execution order
-
-1. Complete current source-to-ledger and effective-catalog reconciliation across Production (129 migration rows) and QA (22); do not replay either ledger.
-2. Finish independent review and dependency integration of #226/#228/#229; keep all candidate migrations unapplied until isolated QA rehearsal and rollback proof.
-3. Resolve Phase 57 NULL-to-one Production dispensing fallback only after source mapping and QA evidence.
-4. Complete Phase 58/59 SDG provenance and receipt integration; retain fail-closed handling of legacy NULL/mismatched currency.
-5. Complete Phase 60 pharmacist identity/physical-pack acceptance and Phase 61 mobile/browser acceptance.
-6. Refresh current backup-runner end-to-end evidence, then conduct authenticated staff UAT and explicit release decision.
-
-## H+4 Phase 61 authorization regression closure — 2026-11-10
-
-- Rebased UI stack head: `83aee76f1ef18e58f52b9712f78e3b271602b797`.
-- Added direct database regression tests proving `doctor` receives `prescriptions.create`, while `admin` and `pharmacist` do not; both broader legacy permissions (`emr.create` and `pharmacy.create`) are insufficient to call `create_prescription_atomic`.
-- The existing `PrescriptionTab` is permission-gated to the same dedicated `prescriptions.create` permission. The correction inbox and full cancel/reissue UI use the same server-enforced prescriber authority.
-- Dedicated PostgreSQL 17 workflow [42906257604](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42906257604) passed, including canonical baseline replay, authorization/RLS, append-only audit, concurrent resolution serialization, direct role-denial tests and no stock/financial side effects.
-- Full repository CI [42906258019](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42906258019) passed: 20 jobs, 19 successful and one intentionally skipped (authenticated clinical acceptance). All PR-triggered workflows on this head passed, including typecheck, ESLint, production build, Spec Kit, prescription atomicity, privileged-role guard and insurance checks.
-- PR #226 and #229 remain Draft; #229 is stacked on #226 and still carries #228 pharmacy fail-closed UI. No candidate migration was applied to hosted QA/Production.
-- PR #216 remains ready for review but unmerged: its synthetic Phase 49 tests passed (19 jobs: 18 success, one intentional skip); Vercel preview remains blocked by the free build-rate limit.
-- PR #207/#208 are merged documentation-only changes. Superseded PRs #221/#223/#224 were closed with consolidation notes.
-- No hosted QA/Production DDL/DML, Auth/Storage/role mutation, business-data write, backup mutation, or deployment promotion occurred. No Vercel retry was attempted.
-- Progress remains **51% evidence-weighted Engineering RC** and **11% Operational Acceptance**; estimate remains **20–34 engineering hours** to a defensible Engineering RC, with real staff/device acceptance a separate **1–3 week** process.
-
+- PR #229's UI candidate includes pharmacist correction requests, a permission/RLS-scoped prescriber inbox, replace-one-item, reject-with-reason and full cancel-and-reissue. Replacement entries require explicit re-entry of every medicine and regimen field; no old regimen is inferred or copied.
+- Historical code head 83aee76f1ef18e58f52b9712f78e3b271602b797 passed its documented 20-job suite (19 successful, one intentional authenticated clinical-acceptance skip). The retargeted PR head is not covered by that historical result.
+- Reconciliation uses the current mainline Phase 57/57B quantity/external-prescription guards, preserving fail-closed dispense behavior. The matching pharmacy-quantity helper is byte-identical to main.
+- A normal two-parent merge commit is being prepared; no force-push or history rewrite. Fresh exact-head CI is the next gate.
+- Remains Draft until exact-head CI, independent SQL/security review, 320–430px Android RTL/LTR acceptance and real pharmacist/prescriber UAT. No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion.

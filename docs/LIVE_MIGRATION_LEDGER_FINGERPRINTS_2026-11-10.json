@@ -1,7 +1,7 @@
 {
   "captured_on": "2026-11-10",
-  "main_sha": "bed6ff4c87d582107bf62ee353be4eb35958481b",
-  "query_scope": "Read-only migration metadata only: version, name, octet_length(statements::text), md5(statements::text). No SQL statement bodies were retrieved.",
+  "main_sha": "e1153f3fff07b75d93ac983d7a8a640d1b9236ab",
+  "query_scope": "Read-only migration metadata plus selected stored SQL statement bodies for Production/QA Phases 46-52 and QA Phases 54-55/57. No business rows or patient data were retrieved.",
   "fingerprint_definition": "MD5 is a comparison fingerprint of PostgreSQL's text serialization of the stored statements array. It is not a cryptographic attestation or a normalized source-SQL hash.",
   "production": {
     "project_ref": "jewzonxplxhogqrnhosl",
@@ -1065,5 +1065,212 @@
     "migration_ledger_mutation": false,
     "migration_replay": false,
     "patient_or_financial_rows_read": false
-  }
+  },
+  "stored_sql_body_comparisons": [
+    {
+      "phase": "46",
+      "environment": "production",
+      "version": "20261031071119",
+      "source_path": "db/roshan_phase46_uat_schema_compatibility.sql",
+      "source_bytes": 5254,
+      "stored_bytes": 5235,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "strip line comments; collapse whitespace"
+    },
+    {
+      "phase": "46",
+      "environment": "qa",
+      "version": "20261031065937",
+      "source_path": "db/roshan_phase46_uat_schema_compatibility.sql",
+      "source_bytes": 5254,
+      "stored_bytes": 5235,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "strip line comments; collapse whitespace"
+    },
+    {
+      "phase": "47",
+      "environment": "production",
+      "version": "20261031071122",
+      "source_path": "db/roshan_phase47_queue_branch_attribution.sql",
+      "source_bytes": 6650,
+      "stored_bytes": 6564,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "strip line comments; collapse whitespace"
+    },
+    {
+      "phase": "47",
+      "environment": "qa",
+      "version": "20261031070544",
+      "source_path": "db/roshan_phase47_queue_branch_attribution.sql",
+      "source_bytes": 6650,
+      "stored_bytes": 6564,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "strip line comments; collapse whitespace"
+    },
+    {
+      "phase": "48",
+      "environment": "production",
+      "version": "20261031103927",
+      "source_path": "db/roshan_phase48_storage_entity_branch_binding.sql",
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "48",
+      "environment": "qa",
+      "version": "20261031103912",
+      "source_path": "db/roshan_phase48_storage_entity_branch_binding.sql",
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "49",
+      "environment": "production",
+      "version": "20261102232823",
+      "source_path": "db/roshan_phase49_atomic_pharmacy_dispense.sql",
+      "source_bytes": 19155,
+      "stored_bytes": 19145,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "terminal COMMIT wrapper and trailing whitespace"
+    },
+    {
+      "phase": "49",
+      "environment": "qa",
+      "version": "20261102133658",
+      "source_path": "db/roshan_phase49_atomic_pharmacy_dispense.sql",
+      "source_bytes": 19155,
+      "stored_bytes": 19155,
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "50",
+      "environment": "production",
+      "version": "20261102232849",
+      "source_path": "db/roshan_phase50_clinical_visit_bill_completion.sql",
+      "source_bytes": 4484,
+      "stored_bytes": 4474,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "terminal COMMIT wrapper and trailing whitespace"
+    },
+    {
+      "phase": "50",
+      "environment": "qa",
+      "version": "20261102133734",
+      "source_path": "db/roshan_phase50_clinical_visit_bill_completion.sql",
+      "source_bytes": 4484,
+      "stored_bytes": 4484,
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "51",
+      "environment": "production",
+      "version": "20261102232852",
+      "source_path": "db/roshan_phase51_public_setup_required_anon.sql",
+      "source_bytes": 798,
+      "stored_bytes": 788,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "comments, terminal wrapper and whitespace"
+    },
+    {
+      "phase": "51",
+      "environment": "qa",
+      "version": "20261102122437",
+      "source_path": "db/roshan_phase51_public_setup_required_anon.sql",
+      "source_bytes": 798,
+      "stored_bytes": 552,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "comments, transaction wrapper and whitespace"
+    },
+    {
+      "phase": "52",
+      "environment": "production",
+      "version": "20261102232855",
+      "source_path": "db/roshan_phase52_reporting_analytics.sql",
+      "source_bytes": 14315,
+      "stored_bytes": 14296,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "comments, terminal wrapper and whitespace"
+    },
+    {
+      "phase": "52",
+      "environment": "qa",
+      "version": "20261102232905",
+      "source_path": "db/roshan_phase52_reporting_analytics.sql",
+      "source_bytes": 14315,
+      "stored_bytes": 14296,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "comments, terminal wrapper and whitespace"
+    },
+    {
+      "phase": "54",
+      "environment": "qa",
+      "version": "20261103114242",
+      "source_path": "db/roshan_phase54_source_aware_financial_reversal.sql",
+      "source_bytes": 7809,
+      "stored_bytes": 7809,
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "54B",
+      "environment": "qa",
+      "version": "20261103114612",
+      "source_path": "db/roshan_phase54b_payment_updated_at_compat.sql",
+      "source_bytes": 4977,
+      "stored_bytes": 4977,
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "54C",
+      "environment": "qa",
+      "version": "20261103115649",
+      "source_path": "db/roshan_phase54c_branchless_receipt_integrity.sql",
+      "source_bytes": 10405,
+      "stored_bytes": 10405,
+      "result": "byte_for_byte_exact"
+    },
+    {
+      "phase": "55",
+      "environment": "qa",
+      "version": "20261103155227",
+      "source_path": "db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql",
+      "source_bytes": 2305,
+      "stored_bytes": 2304,
+      "result": "normalized_executable_sql_equal",
+      "normalization": "trailing newline"
+    },
+    {
+      "phase": "57",
+      "environment": "qa",
+      "version": "20261104065852",
+      "source_path": "db/roshan_phase57_pharmacy_quantity_required_guard.sql",
+      "source_bytes": 10954,
+      "stored_bytes": 10954,
+      "statement_md5": "921970d4d86b32dccd430a0ea0ef8745",
+      "source_blob_sha": "9db6768999352c32081f69b5e665c3cc95452616",
+      "result": "byte_for_byte_exact"
+    }
+  ],
+  "production_missing_qa_applied_phases": [
+    "54",
+    "54B",
+    "54C",
+    "55",
+    "57"
+  ],
+  "candidate_only_sources": [
+    {
+      "phase": "57B",
+      "source_path": "db/roshan_phase57b_free_text_external_prescription_guard.sql",
+      "applied": false,
+      "description": "Forward-only full function replacement; retains NULL quantity guard and adds free-text/external prescription rejection."
+    },
+    {
+      "phase": "58/59",
+      "source_path": "PR #211",
+      "applied": false
+    },
+    {
+      "phase": "60",
+      "source_path": "PR #210",
+      "applied": false
+    }
+  ]
 }
