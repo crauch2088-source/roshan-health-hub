@@ -196,3 +196,23 @@ test("rejects invalid context dates and malformed patient measurements", () => {
     { status: "blocked", reason: "invalid_patient_data" },
   );
 });
+
+
+test("requires GP and pharmacist approvals from two distinct human actors", () => {
+  const sharedActorApprovals = [
+    { role: "gp" as const, actorId: "shared-clinician", approvedAt: "2026-01-02" },
+    { role: "pharmacist" as const, actorId: "shared-clinician", approvedAt: "2026-01-03" },
+  ];
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, approvals: sharedActorApprovals }], context),
+    { status: "blocked", reason: "missing_dual_approval" },
+  );
+});
+
+test("ignores malformed approval entries without throwing or granting approval", () => {
+  const malformedApprovals = [null, approvals[0]] as never;
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, approvals: malformedApprovals }], context),
+    { status: "blocked", reason: "missing_dual_approval" },
+  );
+});

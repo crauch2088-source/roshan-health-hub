@@ -141,17 +141,31 @@ function hasDualApproval(
   asOfDate: string,
 ): boolean {
   if (!Array.isArray(approvals)) return false;
-  const validRoles = new Set(
-    approvals
-      .filter(
-        (approval) =>
-          nonEmpty(approval.actorId) &&
-          isIsoDate(approval.approvedAt) &&
-          approval.approvedAt <= asOfDate,
-      )
-      .map((approval) => approval.role),
+
+  // A dual-control approval must represent two different people. Treat malformed
+  // persisted JSON as missing approval; never let it throw or satisfy the gate.
+  const validApprovals = approvals.filter((approval) => {
+    if (!approval || typeof approval !== "object") return false;
+    return (
+      (approval.role === "gp" || approval.role === "pharmacist") &&
+      nonEmpty(approval.actorId) &&
+      isIsoDate(approval.approvedAt) &&
+      approval.approvedAt <= asOfDate
+    );
+  });
+
+  const gpActors = new Set(
+    validApprovals
+      .filter((approval) => approval.role === "gp")
+      .map((approval) => approval.actorId.trim()),
   );
-  return validRoles.has("gp") && validRoles.has("pharmacist");
+  const pharmacistActors = validApprovals
+    .filter((approval) => approval.role === "pharmacist")
+    .map((approval) => approval.actorId.trim());
+
+  return [...gpActors].some((gpActor) =>
+    pharmacistActors.some((pharmacistActor) => pharmacistActor !== gpActor),
+  );
 }
 
 function hasValidAgeRange(protocol: MedicationProtocol): boolean {
