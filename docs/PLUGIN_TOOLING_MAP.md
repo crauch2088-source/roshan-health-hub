@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverified).
+Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted Drive metadata reverified).
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -330,3 +330,11 @@ Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverifie
 - Owner-device check passed: inner SHA-256 matched the manifest, age decryption and gzip/tar readability succeeded, temporary plaintext was removed.
 - Backup-runner main is `ed41574bb278325e7bc06fd034e767db1544c55a`. Latest overall run [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) passed validation but skipped backup and produced no artifact. The portable checksum-manifest helper on current main has not yet been exercised by a new full backup. Workflow is manual, not scheduled.
 - Database archive scope only: Storage object bytes and Vault secret values were absent at backup time and are not included. Do not infer complete platform recovery from this database-only archive.
+
+## Encrypted backup integration — live recheck 2026-11-11
+
+- Canonical private destination: **Roshan Health Hub - Encrypted Backups** (folder `1m-1JA2yT_NZxo0Drb4qGjyd24UW_Mta5`) → dated child **2026-11-09** (`14q8YQbDddwzJ1tEyM0t8bK9f5ExRezF7`). The encrypted archive `Roshan-Production-Backup-2026-11-08.zip` (`1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv`) is present, owned by the connected account, not trashed, 305,317 bytes, Drive MD5 `875a85ac23e8b7a671c371cca41f7732`. The similarly named legacy folder is not the archive parent.
+- Backup-runner main is `7a3409ad84b4394014aeff36431a95a69813b90d`. Latest main run [42791754738](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42791754738) passed validation but skipped the backup job and produced no artifact. Do not report it as a backup.
+- Prior full run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) passed PostgreSQL 17 isolated restore, critical count comparison, age encryption and ciphertext upload on a feature branch; the GitHub artifact has since expired/been removed. The Drive ciphertext remains. Owner-device checksum/decryption/archive readability passed on 2026-11-09.
+- Current runner main has not yet produced a full backup. A new run would write an external encrypted backup and is not triggered automatically; require owner authorization. The archive covers PostgreSQL only, not Storage object bytes or Vault secrets. Workflow is manual, not scheduled.
+
