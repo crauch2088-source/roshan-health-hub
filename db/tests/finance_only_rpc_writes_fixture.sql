@@ -1,17 +1,24 @@
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+DO $service_role$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$service_role$;
 CREATE SCHEMA private;
 GRANT USAGE ON SCHEMA private TO authenticated;
 
 CREATE TABLE public.users (
  id uuid PRIMARY KEY, branch_id uuid, deleted_at timestamptz, active boolean NOT NULL DEFAULT true
 );
+CREATE TABLE public.pharmacy_inventory (id uuid PRIMARY KEY, quantity_remaining numeric DEFAULT 0, quantity numeric DEFAULT 0, note text);
 CREATE TABLE public.suppliers (
  id uuid PRIMARY KEY, active boolean NOT NULL DEFAULT true, deleted_at timestamptz
 );
 CREATE TABLE public.cashbox_transactions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, transaction_type text, amount numeric,
- payment_method text, category text, description text, source_type text, transaction_date timestamptz, created_by uuid
+ payment_method text, category text, description text, source_type text, source_id uuid, reversal_of uuid, transaction_date timestamptz, created_by uuid
 );
 CREATE TABLE public.expenses (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, category text, amount numeric, description text,

@@ -51,10 +51,21 @@ BEGIN
  END LOOP;
 END
 $test$;
+RESET ROLE;
+
+-- A new invoice is created after Phase 58 and receives persisted SDG provenance.
+INSERT INTO public.invoices (id, branch_id, net_amount, total_amount, paid_amount)
+VALUES (
+ '40000000-0000-0000-0000-000000000003',
+ '20000000-0000-0000-0000-000000000001',
+ 10,10,0
+);
+SET ROLE authenticated;
 
 -- Cashbox RPC: positive, signed amount, server-assigned branch and invalid amount rejection.
 SELECT public.post_cashbox_entry('deposit',10,'cash','manual','synthetic test',now());
 SELECT public.post_cashbox_entry('withdrawal',2,'cash','manual','synthetic test',now());
+SELECT public.post_expense('office',4,'synthetic SDG expense',current_date,'cash','test');
 DO $test$
 BEGIN
  IF (SELECT count(*) FROM public.cashbox_transactions)<>2 THEN RAISE EXCEPTION 'cashbox RPC row count mismatch'; END IF;
@@ -67,32 +78,39 @@ BEGIN
 END
 $test$;
 
--- Invoice payment RPC: overpayment rejection, idempotent retry, payload conflict and branch isolation.
+-- Invoice payment RPC: legacy unknown currency is rejected; SDG payments retain idempotency.
 DO $payment_test$
 DECLARE first_id uuid; retry_id uuid; msg text; rejected boolean;
 BEGIN
  rejected:=false;
- BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',11,'cash','overpay','key-overpay');
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',1,'cash','legacy invoice','key-legacy');
+ EXCEPTION WHEN check_violation THEN rejected:=true; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'payment against a legacy invoice with unknown currency was accepted'; END IF;
+ IF EXISTS (SELECT 1 FROM public.payments WHERE invoice_id='40000000-0000-0000-0000-000000000001') THEN
+  RAISE EXCEPTION 'legacy invoice rejection left a payment row';
+ END IF;
+ rejected:=false;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000003',11,'cash','overpay','key-overpay');
  EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%exceeds outstanding balance%'; END;
  IF NOT rejected THEN RAISE EXCEPTION 'overpayment was not rejected'; END IF;
  rejected:=false;
- BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001','NaN'::numeric,'cash','invalid NaN','key-nan'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000003','NaN'::numeric,'cash','invalid NaN','key-nan'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
  IF NOT rejected THEN RAISE EXCEPTION 'NaN invoice payment amount was accepted'; END IF;
  rejected:=false;
- BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001','Infinity'::numeric,'cash','invalid infinity','key-infinity'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000003','Infinity'::numeric,'cash','invalid infinity','key-infinity'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
  IF NOT rejected THEN RAISE EXCEPTION 'infinite invoice payment amount was accepted'; END IF;
  rejected:=false;
- BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',1.001,'cash','fractional minor unit','key-precision'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000003',1.001,'cash','fractional minor unit','key-precision'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
  IF NOT rejected THEN RAISE EXCEPTION 'fractional minor-unit payment amount was accepted'; END IF;
- first_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000001',3,'cash','test','key-valid');
- retry_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000001',3,'cash','test','key-valid');
+ first_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000003',3,'cash','test','key-valid');
+ retry_id:=public.post_invoice_payment('40000000-0000-0000-0000-000000000003',3,'cash','test','key-valid');
  IF first_id IS DISTINCT FROM retry_id THEN RAISE EXCEPTION 'idempotent retry returned different ID'; END IF;
  rejected:=false;
- BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',4,'cash','different','key-valid');
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000003',4,'cash','different','key-valid');
  EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%idempotency key reused with different payment request%'; END;
  IF NOT rejected THEN RAISE EXCEPTION 'idempotency key accepted a different payload'; END IF;
  rejected:=false;
- BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000001',8,'cash','second','key-second');
+ BEGIN PERFORM public.post_invoice_payment('40000000-0000-0000-0000-000000000003',8,'cash','second','key-second');
  EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT; rejected:=msg LIKE '%exceeds outstanding balance%'; END;
  IF NOT rejected THEN RAISE EXCEPTION 'payment exceeding post-payment balance was accepted'; END IF;
 END
@@ -138,7 +156,13 @@ SELECT set_config('test.super_admin','false',false);
 DO $test$
 BEGIN
  IF (SELECT count(*) FROM public.payments)<>1 THEN RAISE EXCEPTION 'payment idempotency did not preserve one payment'; END IF;
- IF (SELECT paid_amount FROM public.invoices WHERE id='40000000-0000-0000-0000-000000000001')<>3 THEN RAISE EXCEPTION 'invoice paid amount did not match one payment'; END IF;
+ IF (SELECT paid_amount FROM public.invoices WHERE id='40000000-0000-0000-0000-000000000003')<>3 THEN RAISE EXCEPTION 'invoice paid amount did not match one payment'; END IF;
+ IF (SELECT currency_code FROM public.invoices WHERE id='40000000-0000-0000-0000-000000000003') IS DISTINCT FROM 'SDG' THEN RAISE EXCEPTION 'new invoice did not persist SDG'; END IF;
+ IF (SELECT currency_code FROM public.invoices WHERE id='40000000-0000-0000-0000-000000000001') IS NOT NULL THEN RAISE EXCEPTION 'legacy invoice currency was inferred'; END IF;
+ IF (SELECT currency_code FROM public.payments WHERE invoice_id='40000000-0000-0000-0000-000000000003') IS DISTINCT FROM 'SDG' THEN RAISE EXCEPTION 'posted payment did not persist SDG'; END IF;
+ IF (SELECT count(*) FROM public.expenses WHERE currency_code='SDG')<>1 THEN RAISE EXCEPTION 'post_expense did not persist SDG'; END IF;
+ IF (SELECT count(*) FROM public.supplier_bills WHERE currency_code='SDG')<>2 THEN RAISE EXCEPTION 'supplier bills did not persist SDG'; END IF;
+ IF (SELECT count(*) FROM public.cashbox_transactions WHERE currency_code='SDG')<>2 THEN RAISE EXCEPTION 'manual cashbox entries did not persist SDG'; END IF;
  IF (SELECT count(*) FROM public.cashbox_transactions)<>2 THEN RAISE EXCEPTION 'cashbox direct-write guard changed RPC writes'; END IF;
  IF (SELECT count(*) FROM public.supplier_bills)<>2 THEN RAISE EXCEPTION 'supplier bill invalid attempts or compatibility path changed row count'; END IF;
  IF NOT EXISTS (SELECT 1 FROM public.supplier_bills WHERE invoice_number='BILL-QA' AND branch_id='20000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'branch-scoped supplier bill missing'; END IF;
