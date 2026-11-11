@@ -2944,3 +2944,39 @@ No hosted DDL/DML, migration application, permission/Auth/Storage mutation, pati
 - Draft PR #229 head `21dea75c5b509045e00cd29b37dbcabafec1bfc1` is 27 commits ahead / 6 behind main with merge base `d42baae4f5bdbb6319cd389630f0b4ad349150ab`. The current comparison identifies five overlapping files: `.github/workflows/ci.yml`, `docs/48H_EXECUTION_LOG_2026-11-10.md`, `docs/MASTER_PLAN.md`, `src/lib/pharmacy-quantity.ts`, and `src/routes/_authenticated/pharmacy.tsx`.
 - Its last exact-head CI and Phase 61 PostgreSQL 17/supporting integration checks passed before reconciliation, but Vercel failed due the free build-rate limit. No retry or quota bypass was attempted. These checks do not certify the merged tree.
 - Next: reconcile #229 with a normal two-parent merge commit and manually resolve the five overlaps; preserve dedicated `prescriptions.create` authorization and no-side-effect contracts, then run exact-head CI/PG17 once. Keep Draft pending independent review and pharmacist/prescriber RTL/LTR acceptance.
+
+
+## Independent live verification addendum — 2026-11-11 (08:08 UTC Supabase Advisor snapshot)
+
+This addendum supersedes older contradictory status notes in this document where they differ from the exact live/API evidence below. Read-only verification only; no hosted database, branch, PR merge, backup dispatch, or deployment was changed.
+
+### Confirmed repository state
+- Main remained `ecdc7d6a1704bb07ca8e799e0afe50a8bc9197bb` at the time of review.
+- PR #228 is merged. PR #232 remains Draft/open; its exact head `43a17aeb3983e0762bde0e56b1758957838d44c0` passed CI run [42978481322](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42978481322) (18 successful jobs, zero failures, one intentional clinical-acceptance skip) and CodeQL run [42978475024](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42978475024) (success). It is documentation-only.
+- PR #229 remains Draft/open/non-mergeable at head `21dea75c5b509045e00cd29b37dbcabafec1bfc1`; GitHub reports 27 commits ahead / 6 behind and `mergeable_state=dirty`. The current checkpoint records three conflicts: `docs/48H_EXECUTION_LOG_2026-11-10.md`, `docs/MASTER_PLAN.md`, and `src/routes/_authenticated/pharmacy.tsx`. Its older green exact-head CI predates reconciliation and does not validate a reconciled tree. Vercel preview is quota-blocked; do not retry or bypass.
+- PR #211 remains Draft/open/non-mergeable at head `cd4c1a5ccfa34c54c307d922f8acf7cd9612c988`. Its latest recorded checks include passing Phase 58/59 PostgreSQL 17 workflows, but the repository Install/audit/typecheck/lint/build job failed; no current-main reconciliation is evidenced.
+- PR #216 remains open and mergeable (not merged). Its reconciled head `d24bf9feddd50384281ade242f6562ac250fb550` had 18 successful CI jobs, zero failures, and one intentional clinical-acceptance skip, including its PostgreSQL 17 quarantine contract.
+- Main's CI run [42974906291](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42974906291) had 18 successful jobs, zero failures and one intentional clinical-acceptance skip; finance integration [42974906293](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42974906293) passed 2/2 PostgreSQL 17 jobs.
+
+### Direct hosted Supabase ledger check
+- Production `jewzonxplxhogqrnhosl`: ACTIVE_HEALTHY, PostgreSQL 17.6. Migration ledger contains 129 rows; latest is `20261102232941`. Phase 57, 57B, 58/59 and 61 are not recorded as applied.
+- QA `hopfohcnrtbiqjkgeukz`: ACTIVE_HEALTHY, PostgreSQL 17.11. Migration ledger contains 22 rows; latest is `20261104065852`. Phase 57 is recorded; Phase 57B, 58/59 and 61 are not recorded as applied.
+- This confirms the critical rollout split: Phase 57 is QA-only; Production still lacks its quantity NOT NULL/NULL-rejection guard and retains the legacy NULL-to-one dispensing fallback as described by the current release-gate record. Phase 57B remains candidate-only. Do not promote frontend or migrations on the assumption that the two hosted schemas are at the same phase.
+
+### Direct Supabase Advisor recheck (observed 2026-11-11 08:08 UTC)
+| Project | Security | Performance | Health |
+|---|---:|---:|---:|
+| Production | 5 groups / 31 findings | 2 groups / 96 findings | 0 |
+| QA | 5 groups / 32 findings | 1 group / 142 findings | 0 |
+
+- Production security details include 2 private RLS-enabled tables without policies, `pg_trgm` installed in `public`, 1 anon-callable SECURITY DEFINER (`setup_required()`), 26 authenticated-callable SECURITY DEFINER RPCs, and leaked-password protection disabled.
+- QA shows 1 private RLS-enabled table without policies, the same public extension and `setup_required()` findings, 28 authenticated-callable SECURITY DEFINER RPCs, and leaked-password protection disabled.
+- Production performance findings: 2 unindexed foreign keys on the legacy private idempotency table and 94 unused-index notices. QA: 142 unused-index notices. Unused-index notices are not a reason for bulk deletion, particularly before launch.
+- These are Advisor observations, not proof that every SECURITY DEFINER RPC is exploitable. Review function bodies, ACLs, permission checks and branch constraints individually; do not apply blanket revocations or alter private RLS without a deliberate access model.
+
+### Progress accounting and decision
+- The informal 68% Engineering RC figure in the external handover is not reproducible from the current canonical repository evidence and is not adopted. The last explicitly documented evidence-weighted baseline in `MASTER_PLAN.md` is 51% Engineering RC and 11% Operational Acceptance; those are historical baselines, not a fresh re-weight. Do not report a newer percentage until the workstream weights and completed gates are recalculated.
+- Operational acceptance remains materially blocked by hosted migration split, missing full backup on current runner main, no current isolated authenticated clinical/finance acceptance, and outstanding pharmacist/prescriber, printer/device and staff rehearsals.
+- Next safe sequence: (1) reconcile PR #229 against current main with a normal two-parent merge commit and resolve only the three current conflicts; (2) run one exact-head CI/PG17 pass; (3) independently review Phase 58/59 SQL/ACL and fix the failed PR #211 general check; (4) continue isolated QA, backup/restore evidence and operational acceptance. Keep Production migration/promotion, ACL/Auth/Storage changes, external backup dispatch and PR merges behind their explicit gates.
+
+No hosted DDL/DML, migration application, ACL/Auth/Storage mutation, business-data write, backup dispatch, PR merge or deployment promotion occurred during this verification.
