@@ -760,3 +760,54 @@ jobs:
         run: |
           psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
             -f db/tests/phase49_quarantine_remediation_assertions.sql
+
+  sql-medicine-catalogue-authority:
+    name: Shared medicine catalogue authority and pack attestation (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Replay disposable v112 baseline and seed role fixtures
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/baseline/0000_roshan_pg17_baseline_v112.sql
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE OR REPLACE FUNCTION auth.role() RETURNS text
+          LANGUAGE sql STABLE
+          AS $auth_role$
+            SELECT NULLIF(current_setting('request.jwt.claim.role', true), '')
+          $auth_role$;
+          SQL
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c "
+            INSERT INTO public.roles (id, name, code) VALUES
+              ('60000000-0000-0000-0000-000000000001', 'Admin', 'admin'),
+              ('60000000-0000-0000-0000-000000000002', 'Pharmacist', 'pharmacist'),
+              ('60000000-0000-0000-0000-000000000003', 'Super Admin', 'super_admin'),
+              ('60000000-0000-0000-0000-000000000004', 'Legacy Admin', 'legacy_admin')
+            ON CONFLICT DO NOTHING;
+          "
+      - name: Apply Phase 60 candidate and assert PostgreSQL 17 role, RLS and append-only contracts
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql \
+            -f db/tests/phase60_medicine_catalogue_authority_integration.sql
+

@@ -377,6 +377,116 @@ const dict: Record<string, { ar: string; en: string }> = {
   brand_name: { ar: "الاسم التجاري", en: "Brand name" },
   strength: { ar: "التركيز", en: "Strength" },
   dosage_form: { ar: "الشكل الدوائي", en: "Dosage form" },
+  medicine_display_name: {
+    ar: "اسم العرض",
+    en: "Display name",
+  },
+  medicine_display_name_hint: {
+    ar: "يُنشأ تلقائيًا من الاسم التجاري والتركيز والشكل إذا تركته فارغًا",
+    en: "Generated from brand, strength and form when left blank",
+  },
+  medicine_identity_hint: {
+    ar: "أدخل الاسم العلمي والتركيز والشكل الدوائي كما تظهر على العبوة. الشكل الدوائي لا يحدد طريق الإعطاء.",
+    en: "Enter the generic ingredient, exact strength and dosage form as shown on the pack. Dosage form does not determine administration route.",
+  },
+  edit_identity: { ar: "تعديل البيانات", en: "Edit details" },
+  edit_medicine_identity: { ar: "تعديل بيانات المنتج", en: "Edit medicine identity" },
+  medicine_identity_edit_hint: {
+    ar: "عدّل الاسم العلمي والاسم التجاري والتركيز والشكل الدوائي واسم العرض فقط. لا تغيّر وحدة المخزون أو الأسعار أو حد إعادة الطلب من هذه الشاشة.",
+    en: "Edit only the generic, brand, strength, dosage form and display name. Stock unit, prices and reorder level are not editable here.",
+  },
+  medicine_identity_shared_hint: {
+    ar: "هذا سجل موحّد في دليل الأدوية؛ أي تعديل هنا يسري على جميع الفروع.",
+    en: "This is a shared medicine catalogue record; changes apply across all branches.",
+  },
+  medicine_identity_permission_required: {
+    ar: "تحتاج إلى صلاحية تعديل هوية الدواء.",
+    en: "Medicine identity edit permission is required.",
+  },
+  pack_verification_separate_hint: {
+    ar: "التحقق من العبوة عملية مستقلة تسجل اسم المتحقق ووقت التحقق وبصمة بيانات الدواء المحفوظة. لا يتحقق هذا الإجراء من التعديلات غير المحفوظة.",
+    en: "Pack verification is a separate action that records the verifier, server time and fingerprint of the saved medicine identity. Unsaved edits are not verified.",
+  },
+  confirm_pack_inspected: {
+    ar: "أؤكد أنني فحصت العبوة الفعلية وطابقت بياناتها مع سجل الدواء المحفوظ.",
+    en: "I physically inspected the pack and matched it against the currently saved medicine identity.",
+  },
+  pack_verification_permission_required: {
+    ar: "التحقق من العبوة متاح للصيدلي ومدير النظام الأعلى فقط.",
+    en: "Physical-pack verification is restricted to Pharmacist and Super Admin.",
+  },
+  pack_inspection_confirmation_required: {
+    ar: "يجب تأكيد إجراء الفحص الفعلي قبل تسجيل التحقق.",
+    en: "Confirm the physical inspection before recording verification.",
+  },
+  pack_verification_failed: {
+    ar: "تعذر تسجيل إثبات التحقق من العبوة.",
+    en: "The physical-pack verification could not be recorded.",
+  },
+  pack_verification_saved: {
+    ar: "تم تسجيل إثبات التحقق من العبوة بصورة دائمة.",
+    en: "Physical-pack verification was recorded permanently.",
+  },
+  pack_verification_pharmacist_only: {
+    ar: "تسجيل التحقق الفعلي متاح للصيدلي ومدير النظام الأعلى فقط.",
+    en: "Only a Pharmacist or Super Admin can record physical-pack verification.",
+  },
+  verify_physical_pack: {
+    ar: "تسجيل التحقق من العبوة",
+    en: "Record physical-pack verification",
+  },
+  verifying: {
+    ar: "جارٍ التحقق...",
+    en: "Verifying...",
+  },
+  medicine_not_updated: {
+    ar: "لم يتم تحديث سجل الدواء؛ قد تكون الصلاحية غير كافية أو أن السجل لم يعد متاحًا.",
+    en: "The medicine was not updated; permission may be missing or the record is no longer available.",
+  },
+  inventory_unit_hint: {
+    ar: "وحدة المخزون أو العبوة فقط؛ لا تعني طريق الإعطاء.",
+    en: "Stock or packaging unit only; it is not an administration route.",
+  },
+  strength_placeholder: {
+    ar: "مثال: 500 mg أو 125 mg/5 mL أو 1%",
+    en: "e.g. 500 mg, 125 mg/5 mL, or 1%",
+  },
+  select_dosage_form: {
+    ar: "اختر الشكل الدوائي",
+    en: "Select dosage form",
+  },
+  other_dosage_form: {
+    ar: "حدد الشكل الدوائي الآخر",
+    en: "Specify other dosage form",
+  },
+  missing_generic_name: {
+    ar: "الاسم العلمي مطلوب",
+    en: "Generic ingredient is required",
+  },
+  missing_strength: {
+    ar: "تركيز المستحضر مطلوب",
+    en: "Exact product strength is required",
+  },
+  missing_dosage_form: {
+    ar: "الشكل الدوائي مطلوب",
+    en: "Dosage form is required",
+  },
+  missing_custom_dosage_form: {
+    ar: "حدد الشكل الدوائي الآخر",
+    en: "Specify the other dosage form",
+  },
+  invalid_cost_price: {
+    ar: "أدخل سعر تكلفة صحيحًا غير سالب",
+    en: "Enter a valid non-negative cost price",
+  },
+  invalid_selling_price: {
+    ar: "أدخل سعر بيع صحيحًا غير سالب",
+    en: "Enter a valid non-negative selling price",
+  },
+  invalid_reorder_level: {
+    ar: "حد إعادة الطلب يجب أن يكون عددًا صحيحًا غير سالب",
+    en: "Reorder level must be a non-negative whole number",
+  },
   batch_number: { ar: "رقم التشغيلة", en: "Batch no." },
   expiry_date: { ar: "تاريخ الانتهاء", en: "Expiry date" },
   expiry_required: { ar: "تاريخ انتهاء الدفعة مطلوب", en: "Batch expiry date is required" },

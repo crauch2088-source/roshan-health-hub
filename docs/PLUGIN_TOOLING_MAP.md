@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted Drive metadata reverified).
+Last reviewed: 2026-11-09 (live encrypted backup and recovery metadata reverified).
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -35,7 +35,7 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 
 | Integration / tool family | Best project use | Trigger it when | Guardrails / limitations |
 |---|---|---|---|
-| GitHub native connector | Read repo, inspect commits/branches, issues/PRs, CI, file diffs | Every new phase; before code changes; when verifying CI or merge readiness | Native file writes previously returned 403. If that recurs, use active Composio GitHub tools; do not repeatedly retry the failing path. |
+| GitHub native connector | Read repo, inspect commits/branches, issues/PRs, CI, file diffs; create atomic Git blobs/trees/commits and update branch refs | Every new phase; before code changes; when verifying CI or merge readiness | Native reads and Git-object/ref writes verified 2026-11-09. For an unavailable action or 403, discover the exact active Composio GitHub action and use its returned schema; do not repeatedly retry a failing path. |
 | Composio | Cross-app tool discovery, parallel independent batches, GitHub writes when native connector fails, reusable workflows | Multi-system task, need to inspect multiple services, or native connector lacks write capability | Always search tools first, follow returned plan, load full schemas, confirm ACTIVE connection and correct account, use exact returned slugs. Never batch dependent calls or guess inputs. |
 | Supabase | Read schema and migration history; RLS/policy/grant audit; security/performance advisors; Edge Functions, auth, logs; controlled SQL/migrations | Any database, auth, branch/tenant, financial atomicity, clinical workflow, or security task | Current project has 56 public tables with RLS enabled and 93 migration-ledger entries through `20261016222009` as of 2026-10-16; migration replay parity is unresolved. The last two entries are the Phase 24 visit-options RPC and Phase 25 self-profile RPC, both applied after CI and verified with simulated authenticated role contexts. Advisor findings are leads, not automatic permission to delete indexes. Validate writes and use tracked migrations. |
 | Vercel | Canonical project/domain verification, deployment status/logs, env-key names/targets, runtime settings | After each main change; production incident; deployment or environment audit | Canonical project is `roshan-health-hub`; duplicate `roshan-health-hub-hjfy` was retired. Never expose env values; audit keys/targets with decryption off unless a specific permitted diagnostic requires otherwise. |
@@ -330,11 +330,3 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 - Owner-device check passed: inner SHA-256 matched the manifest, age decryption and gzip/tar readability succeeded, temporary plaintext was removed.
 - Backup-runner main is `ed41574bb278325e7bc06fd034e767db1544c55a`. Latest overall run [42537677251](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42537677251) passed validation but skipped backup and produced no artifact. The portable checksum-manifest helper on current main has not yet been exercised by a new full backup. Workflow is manual, not scheduled.
 - Database archive scope only: Storage object bytes and Vault secret values were absent at backup time and are not included. Do not infer complete platform recovery from this database-only archive.
-
-## Encrypted backup integration — live recheck 2026-11-11
-
-- Canonical private destination: **Roshan Health Hub - Encrypted Backups** (folder `1m-1JA2yT_NZxo0Drb4qGjyd24UW_Mta5`) → dated child **2026-11-09** (`14q8YQbDddwzJ1tEyM0t8bK9f5ExRezF7`). The encrypted archive `Roshan-Production-Backup-2026-11-08.zip` (`1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv`) is present, owned by the connected account, not trashed, 305,317 bytes, Drive MD5 `875a85ac23e8b7a671c371cca41f7732`. The similarly named legacy folder is not the archive parent.
-- Backup-runner main is `7a3409ad84b4394014aeff36431a95a69813b90d`. Latest main run [42791754738](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42791754738) passed validation but skipped the backup job and produced no artifact. Do not report it as a backup.
-- Prior full run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) passed PostgreSQL 17 isolated restore, critical count comparison, age encryption and ciphertext upload on a feature branch; the GitHub artifact has since expired/been removed. The Drive ciphertext remains. Owner-device checksum/decryption/archive readability passed on 2026-11-09.
-- Current runner main has not yet produced a full backup. A new run would write an external encrypted backup and is not triggered automatically; require owner authorization. The archive covers PostgreSQL only, not Storage object bytes or Vault secrets. Workflow is manual, not scheduled.
-

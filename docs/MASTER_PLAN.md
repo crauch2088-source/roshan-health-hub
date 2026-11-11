@@ -2915,3 +2915,16 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - A read-only catalog query found zero currency_code columns across the seven Phase 58 target tables in both environments and zero public.get_invoice_payment_receipt_status_v2 functions in both environments. Phase 58/59 migrations and receipt RPC are therefore not applied/available in QA or Production.
 - The deployed application includes the intentionally deferred/disabled insurance claim-payment UI. The new financial schema is not active; do not enable receipt-v2 frontend paths until Phase 58/59 are separately rehearsed and applied under approved release gates.
 - No financial records, patient/clinical records, roles, Auth, Storage or database schema were changed by this deployment. Encrypted backup/restore and QA migration rehearsal remain mandatory before any hosted schema change.
+
+## H+1 Phase 60 exact-head validation and scope boundary — 2026-11-11
+
+- Reconciled PR #210 with current main; branch is 57 commits ahead and zero behind. Exact code head 3eb6e4e4ebd25ef8b8ebb7bdfddd3d8b0412f5ee passed 28 checks (27 success, one intentional authenticated clinical-acceptance skip, zero failures), including Phase 60 PostgreSQL 17, typecheck, lint, build, security audits, source parity, pharmacy/clinical integrations and Spec Kit.
+- Phase 60 identity updates are limited to the existing name/generic/brand/strength/dosage-form fields and explicit role permission. Pack verification is currently an append-only human attestation event with saved identity snapshot/hash only.
+- It is not photo/barcode/lot/expiry evidence, not branch-scoped, and not a dispensing prerequisite. Do not infer package conversion or activate medication-engine rules from this event. Stronger evidence or dispensing hard-stop requires a separate pharmacist/owner decision.
+- PR remains Draft for independent SQL/security review and physical-pack workflow acceptance. No hosted migration, catalogue backfill, inventory write, role mapping change or production deployment occurred.
+ 
+## H+2 Phase 60 validation after Phase 58/59 mainline merge — 2026-11-11
+
+- PR #210's mainline-reconciled code head 230fb8ebcc8ac6c820f82dd8714b8050f0c30251 passed 28 checks: 27 success, one intentional authenticated clinical-acceptance skip, zero failures. This run includes Phase 58/59 currency and receipt PG17 suites plus Phase 60 PG17, migration source parity, typecheck, lint, build and security checks.
+- Phase 60 remains an audit-only identity/pack-attestation slice. It does not prove pack contents by image/barcode/lot/expiry, is not branch-scoped, and is not a dispense prerequisite.
+- PR remains Draft pending independent SQL/security review and pharmacist physical-pack workflow acceptance. No QA/Production migration, catalogue backfill, inventory mutation or role change occurred.
