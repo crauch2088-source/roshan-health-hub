@@ -1,0 +1,51 @@
+# ADR-056: Phased deterministic medication engine
+
+- **Status:** Accepted for phased engineering; clinical activation gated
+- **Date:** 2026-11-11
+
+## Context
+Roshan needs an integrated medication engine connecting verified product identity, confirmed indication, encounter context, source-backed protocols, transparent calculations, medication safety and clinician review. PR #185 is useful research but carries an older explicit scope deferral; it must be reconciled rather than merged as-is.
+
+## Decision
+Build the full capability incrementally with deterministic, versioned, explainable rules. Run engineering in parallel with the core release. The first code slice is a pure arithmetic kernel with no drug-specific regimen.
+
+## Options
+- Static templates only: too limited for indication, weight, formulation and context.
+- LLM-generated doses: rejected as non-deterministic and not sufficiently auditable or bounded.
+- Full enterprise FHIR server from day one: disproportionate and likely to delay core launch.
+- Phased deterministic engine: selected.
+
+## Consequences
+The calculation logic is independently testable, evidence and approvals are traceable, and core release can proceed while clinical knowledge is validated. Local primary guidelines, verified formulary data, licensing, clinician review and structured context remain dependencies.
+
+## Follow-up
+Implement/verify the kernel in #233; reconcile catalogue with #210 and prescription UI with #179/#229; obtain current Federal/Gezira guidance; design structured allergy/current-medication context; activate no protocol without GP and pharmacist approval.
+
+
+# Medication Engine Execution Plan
+
+**Canonical PR:** #233 | **Baseline:** current main 2026-11-11 | **Delivery:** parallel workstreams, serial safety gates.
+
+## Architecture
+Verified product catalogue → encounter context → confirmed indication and setting → versioned source-backed protocol matcher → deterministic arithmetic and safety evaluator → recommendation / needs_data / no_match / blocked → clinician review and explicit acceptance → existing atomic prescription and pharmacy workflow + audit.
+
+The evaluator is pure and deterministic. DB access, source retrieval, AI and UI state remain outside the arithmetic kernel.
+
+## Workstreams
+- **W0 Foundation (active):** typed fixed/mg/kg/dose/mg/kg/day arithmetic; explicit frequency; separate dose/day ceilings; missing weight blocks; invalid numeric values fail closed; rounding is opt-in and bounded. No drug recommendation.
+- **W1 Catalogue:** reconcile PR #210; verify ingredient, brand, strength, concentration, form, pack and label. No guessed backfill or duplicate stock/batch model.
+- **W2 Context:** current visit-linked weight, freshness policy, age-at-encounter, structured allergy status, current medication reconciliation and structured indication. Preserve atomic visit/invoice/vitals contracts.
+- **W3 Evidence:** immutable source and protocol versions, jurisdiction/population/setting, exclusions, licensing, reviewers, expiry and golden cases. Verify Federal/Gezira primary guidance.
+- **W4 Matcher:** confirmed structured indication only; product and patient predicates; recommendation/needs_data/no_match/blocked; no free-text trigger, network fetch, LLM or silent fallback.
+- **W5 Safety:** allergy, interaction, contraindication, duplicate therapy, age, pregnancy, renal and hepatic rules; source-specific and coverage-transparent.
+- **W6 Workflow:** show source and matched facts; explicit accept/edit; use existing atomic prescription RPC; audit suggestion/edits/alerts/override/final order; exact persisted regimen to pharmacy.
+- **W7 Release:** unit/integration/PG17/RLS/branch/browser tests, Arabic RTL/English LTR, synthetic GP/pharmacist E2E, independent approvals and staff acceptance.
+
+## Parallel execution
+Run W0, W1, W3 and W2 contract design concurrently. Build W4 against typed interfaces while W1–W3 supply verified data. Develop W5 framework in parallel but do not activate it until structured context and evidence exist. W6 UI integration waits for PR #229 conflict reconciliation to avoid overlapping pharmacy/prescription edits.
+
+## Stop conditions
+No verified source → no protocol. No verified product → no product route/concentration. No current weight → no weight-based calculation. No confirmed indication → no match. Expired/unreviewed/conflicting source → no recommendation. No GP + pharmacist approval → no activation. Any RLS/branch/atomicity regression → stop integration.
+
+## Current status
+Test contract is committed first in PR #233. Pure calculator implementation is now added on the same branch. No hosted database, patient data, clinical protocol, production deployment or role/ACL change has occurred.

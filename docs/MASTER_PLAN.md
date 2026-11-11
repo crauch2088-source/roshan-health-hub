@@ -2884,3 +2884,22 @@ The cross-workstream review, exact candidate-head status, fresh read-only Produc
 - The last canonical evidence-weighted score in this Master Plan is **51% Engineering RC** and **11% Operational Acceptance**. The previously stated conversational **59%** is not supported by the canonical repository record and is withdrawn pending a documented re-weight; do not use it as the project baseline.
 - Retain the last documented estimate of **20–34 engineering hours** to a defensible Engineering RC until a fresh workstream-by-workstream re-weight is completed. Real staff/device acceptance remains a separate **1–3 week** process.
 - Next: reconcile PR #229 with current `main` without rewriting published history, run exact-head CI once on the reconciled tree, complete independent review, then obtain pharmacist/prescriber mobile RTL/LTR UAT. Separately resolve PR #216's mainline/Vercel status and complete migration source/effective-catalog reconciliation plus verified backup/restore before any Production rollout.
+
+ 
+## Medication engine — owner-approved phased implementation (2026-11-11)
+
+**Decision:** Build the full medication intelligence and clinical decision-support capability as a first-class Roshan workstream in parallel with the core release. Do not make unvalidated clinical recommendations a prerequisite for opening the clinic.
+
+- Canonical implementation PR: [#233](https://github.com/crauch2088-source/roshan-health-hub/pull/233), branch feat/medication-engine-foundation-20261111. It begins with a pure dose arithmetic kernel; it is not a protocol recommender and contains no approved clinical regimen.
+- Reconcile and supersede the older conceptual Spec Kit package in PR #185; do not merge #185 as-is or duplicate the existing catalogue, inventory, batch, FEFO, dispensing or prescription-correction systems.
+- Architecture: verified product/formulation knowledge → encounter-specific patient context → versioned evidence registry → deterministic protocol matcher and typed calculator → medication safety rules → clinician-reviewed prescription draft → provenance/audit.
+- Calculation basis: fixed mg, mg/kg/dose and mg/kg/day. Frequency is explicit, never inferred. Per-dose and per-day ceilings are distinct. Missing current encounter weight returns needs_data. Rounding is opt-in and may not exceed a safety ceiling.
+- Initial kernel is arithmetic only. It does not select medicine, indication, route, frequency, duration, concentration, volume, interactions, contraindications or monitoring. No clinical rule is active.
+- Evidence hierarchy: verified current Sudan Federal/Gezira MoH guidance; current WHO guidance; appropriate specialty guidance; verified product label/SmPC. Record exact source/version/date/section, population, setting, jurisdiction, licensing, reviewer and revalidation. Never represent unavailable or unverified local guidance as current.
+- Safety: unknown allergy is not NKDA; free-text history is not a complete structured allergy record; old weight is not silently reused; product identity is distinct from route/regimen; free-text diagnosis cannot activate a protocol; AI cannot generate or alter doses; prescriber explicitly reviews every suggestion.
+- Parallel workstreams: (A) pure engine/tests; (B) catalogue identity and pack verification with #210; (C) source acquisition/provenance; (D) patient-context/allergy design and clinical UX integration review with #179/#229. Avoid overlapping pharmacy/prescription UI edits until #229 conflicts are reconciled.
+- Release gates: exact-head CI/typecheck/lint/build; deterministic golden/boundary cases; disposable PG17/RLS/branch tests for future schema; GP and pharmacist approval per protocol; synthetic clinician/pharmacist E2E; 320–430px Android Arabic RTL/English LTR; staff acceptance; separate production backup/restore and owner release approval.
+- Full plan and ADR: [MEDICATION_ENGINE_IMPLEMENTATION_PLAN_2026-11-11.md](MEDICATION_ENGINE_IMPLEMENTATION_PLAN_2026-11-11.md) and specs/056-evidence-based-prescribing/.
+- No hosted Supabase DDL/DML, clinical data, production deployment, role/ACL/Storage change or PR merge occurred.
+
+Progress remains at the last canonical baseline until exact-head checks and independent review: Engineering RC 51%; Operational Acceptance 11%. This PR is not yet counted as merged completion.
