@@ -2980,3 +2980,10 @@ This addendum supersedes older contradictory status notes in this document where
 - Next safe sequence: (1) reconcile PR #229 against current main with a normal two-parent merge commit and resolve only the three current conflicts; (2) run one exact-head CI/PG17 pass; (3) independently review Phase 58/59 SQL/ACL and fix the failed PR #211 general check; (4) continue isolated QA, backup/restore evidence and operational acceptance. Keep Production migration/promotion, ACL/Auth/Storage changes, external backup dispatch and PR merges behind their explicit gates.
 
 No hosted DDL/DML, migration application, ACL/Auth/Storage mutation, business-data write, backup dispatch, PR merge or deployment promotion occurred during this verification.
+
+
+## Corrected external execution plan — 2026-11-11
+
+- Added `docs/ENGINEERING_CORRECTED_EXECUTION_SPEC_2026-11-11.md` after source-level review of the existing pharmacy/inventory architecture. Do not create a parallel `medicine_batches` table or replace the existing idempotent receipt/FEFO dispense RPCs.
+- Confirmed inventory-statistics client aggregation and the 500-row client-filtered batch list as genuine candidates; both require branch and aggregate semantics before implementation.
+- Reframed Bankak uniqueness, pack attestation, clinical CDS, SECURITY DEFINER ACL review, keep-alive, backup/restore and operational acceptance as evidence-gated workstreams. No code, hosted DB, Auth/ACL/Storage, deployment, or business data was changed.
