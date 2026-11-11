@@ -300,6 +300,13 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Phase 57 has been reconstructed on a fresh branch from current main to avoid the dirty/stale PR #209 base. The branch preserves the exact QA-applied Phase 57 source body and separates Phase 57B free-text/external-prescription guards. The pharmacy UI now blocks invalid/missing quantities and unlinked/external items without substituting quantity 1. Full exact-head CI is pending.
 - Production remains on the old dispense fallback; QA has Phase 57. No Supabase writes, migration replay, role changes, Production deployment, or backup dispatch occurred.
 - Weighted Engineering RC remains **49%** pending Phase 57 exact-head validation and independent review; operational acceptance remains **11%**. Estimated Engineering RC remaining remains **24–40 hours**, conditional on migration reconciliation and release-gate evidence.
+ 
+## H+17 — PR #211 merge and automatic Vercel Production deployment verification — 2026-11-11
+
+- PR #211 was merged to main as code/migration source only. The merge automatically triggered Vercel Production deployment dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz for commit fb54651533ffd04b2f20387a976f88293110c513; deployment is READY and the production alias roshan-health-hub.vercel.app points to it.
+- Read-only Supabase check after deployment: Production 129 migrations, latest 20261102232941; QA 22 migrations, latest 20261104065852. Both have zero Phase58 target currency_code columns and zero get_invoice_payment_receipt_status_v2 functions.
+- The application code is deployed, but Phase58/59 database schema and RPC are not. Insurance claim payment UI is intentionally deferred/disabled; no financial or patient data changed.
+- No QA/Production migration, DDL/DML, legacy backfill, role/ACL/Auth/Storage mutation, backup dispatch or Vercel promotion was performed manually. A verified encrypted backup/restore and QA rehearsal remain prerequisites for any future schema rollout.
 
 ## H+14 — Phase 61 UI/mainline reconciliation — 2026-11-11
 
@@ -323,7 +330,7 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Exact head c946f1486c1f0f0b8e4f327bb70b50a0cfe22038: **30 checks, 29 successful, one intentional authenticated clinical-acceptance skip, zero failures**. Full CI, Phase 61 PG17, Spec Kit, insurance, prescription atomicity and privileged-role checks passed.
 - PR remains Draft for independent SQL/security review, 320–430px Android Arabic RTL/English LTR acceptance and real pharmacist/prescriber UAT. No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion.
  
-## H+17 — Phase 61 exact-head validation after finance integration — 2026-11-11
+## H+18 — Phase 61 exact-head validation after finance integration and deployment documentation — 2026-11-11
 
 - PR #229 was reconciled with current main after Phase58/59 merge using a normal two-parent merge commit; branch remains zero behind main.
 - Exact code head 7f558a4279d97082eefb721019709ca9aeab7bb3 passed 29 successful checks and one intentional authenticated clinical-acceptance skip, with zero failures. Phase58/59 PG17, Phase61 PG17, prescription atomicity, insurance, typecheck, lint, build, security audits and Spec Kit passed.
