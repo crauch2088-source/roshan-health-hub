@@ -14,6 +14,7 @@ const source = {
   setting: "outpatient",
   publishedAt: "2025-01-01",
   retrievedAt: "2026-01-01",
+  revalidateBy: "2027-01-01",
   licenseStatus: "verified" as const,
 };
 
@@ -340,6 +341,38 @@ test("does not allow an unverified or malformed source to pass the evidence gate
   assert.deepEqual(
     matchMedicationProtocol(
       [{ ...protocol, source: { ...source, licenseStatus: "unverified" } as never }],
+      context,
+    ),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+});
+
+
+test("blocks a source whose revalidation deadline has passed", () => {
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, source: { ...source, revalidateBy: "2026-11-10" } }],
+      context,
+    ),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+});
+
+test("blocks source provenance without an explicit revalidation deadline", () => {
+  const { revalidateBy: _revalidateBy, ...sourceWithoutDeadline } = source;
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, source: sourceWithoutDeadline as never }],
+      context,
+    ),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+});
+
+test("blocks a source retrieved before its stated publication date", () => {
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, source: { ...source, publishedAt: "2026-02-01", retrievedAt: "2026-01-01" } }],
       context,
     ),
     { status: "blocked", reason: "invalid_protocol_provenance" },

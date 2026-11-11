@@ -2920,7 +2920,7 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 
 **Decision:** Build the full medication intelligence and clinical decision-support capability as a first-class Roshan workstream in parallel with the core release. Do not make unvalidated clinical recommendations a prerequisite for opening the clinic.
 
-- Canonical implementation PR: [#233](https://github.com/crauch2088-source/roshan-health-hub/pull/233), branch feat/medication-engine-foundation-20261111. Its pure dose arithmetic kernel passed exact-head CI on 2026-11-11 (283/283 guard tests; typecheck, lint, build, security audits and applicable PG17 integrations passed; the authenticated clinical acceptance gate was intentionally skipped). It is not a protocol recommender and contains no approved clinical regimen.
+- Canonical implementation PR: [#233](https://github.com/crauch2088-source/roshan-health-hub/pull/233), branch feat/medication-engine-foundation-20261111. An earlier historical head had a reported green run; that result does not certify the current PR head. Only exact-head checks count, and the current head's Actions runs must be independently verified before claiming CI acceptance. It is not a protocol recommender and contains no approved clinical regimen.
 - Reconcile and supersede the older conceptual Spec Kit package in PR #185; do not merge #185 as-is or duplicate the existing catalogue, inventory, batch, FEFO, dispensing or prescription-correction systems.
 - Architecture: verified product/formulation knowledge → encounter-specific patient context → versioned evidence registry → deterministic protocol matcher and typed calculator → medication safety rules → clinician-reviewed prescription draft → provenance/audit.
 - Calculation basis: fixed mg, mg/kg/dose and mg/kg/day. Frequency is explicit, never inferred. Per-dose and per-day ceilings are distinct. Missing current encounter weight returns needs_data. Rounding is opt-in and may not exceed a safety ceiling.
@@ -2932,7 +2932,7 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - Full plan and ADR: [MEDICATION_ENGINE_IMPLEMENTATION_PLAN_2026-11-11.md](MEDICATION_ENGINE_IMPLEMENTATION_PLAN_2026-11-11.md) and specs/056-evidence-based-prescribing/.
 - No hosted Supabase DDL/DML, clinical data, production deployment, role/ACL/Storage change or PR merge occurred.
 
-Progress remains at the last canonical baseline until exact-head checks and independent review: Engineering RC 51%; Operational Acceptance 11%. This PR is not yet counted as merged completion.
+Historical Engineering RC 51% / Operational Acceptance 11% figures are withdrawn because their denominator and evidence weighting were not reproducible. Do not use them as current progress. No replacement percentage or ETA is claimed.
 
 
  
@@ -2982,3 +2982,8 @@ The Sudan Journal of Medical Sciences article's reference [6] identifies the off
 https://fmoh.gov.sd/fmoh/fmoh/public/SudanMalariaCaseManagementProtocol2023.pdf
 
 The Ministry-hosted URL did not respond to retrieval in this research pass. A complete 2023 protocol copy was readable at a non-Ministry mirror; its cover identifies the Federal Ministry of Health and its foreword bears the names/titles of the Director General of PHC and the Undersecretary. The mirror is not treated as proof of file integrity or as the canonical source. The peer-reviewed article states that the official document is on the FMoH website and that the recommendations were formally adopted by the Ministry. Until the Ministry-hosted file is retrieved and its checksum recorded, store the official URL as canonical provenance and the mirror only as a provisional access copy. Do not activate dose tables from the mirror alone.
+
+
+### Medication source freshness hard-stop — 2026-11-11
+
+The medication protocol matcher now requires every evidence source to carry an explicit `revalidateBy` date. A source is blocked when that date is missing, malformed, or earlier than the encounter's explicit `asOfDate`; publication must not post-date retrieval. This is a deterministic provenance gate, not a clinical approval or evidence of source currency beyond the declared revalidation date. Synthetic regression tests cover expired, missing and chronologically inconsistent provenance. No protocol is activated by this change.

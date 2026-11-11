@@ -110,3 +110,8 @@ The Sudan Journal of Medical Sciences article's reference [6] identifies the off
 https://fmoh.gov.sd/fmoh/fmoh/public/SudanMalariaCaseManagementProtocol2023.pdf
 
 The Ministry-hosted URL did not respond to retrieval in this research pass. A complete 2023 protocol copy was readable at a non-Ministry mirror; its cover identifies the Federal Ministry of Health and its foreword bears the names/titles of the Director General of PHC and the Undersecretary. The mirror is not treated as proof of file integrity or as the canonical source. The peer-reviewed article states that the official document is on the FMoH website and that the recommendations were formally adopted by the Ministry. Until the Ministry-hosted file is retrieved and its checksum recorded, store the official URL as canonical provenance and the mirror only as a provisional access copy. Do not activate dose tables from the mirror alone.
+
+
+## Source freshness hard-stop — 2026-11-11
+
+Every protocol source must include a mandatory `revalidateBy` ISO date. The matcher blocks sources when revalidation is overdue, missing or malformed, and rejects publication dates later than retrieval. This closes the prior gap where an old source with a verified licence could remain eligible indefinitely. The deadline must be assigned by a qualified reviewer based on the issuing authority's update cadence and clinical risk; it is not inferred automatically. Regression tests use synthetic dates only.

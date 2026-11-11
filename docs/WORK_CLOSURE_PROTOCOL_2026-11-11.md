@@ -74,3 +74,11 @@ A closed engineering workstream does not automatically mean the product is clini
 - Regression coverage added for source/protocol setting mismatch, case-insensitive duplicate approver identity, and malformed non-array protocol collections.
 - Matcher now blocks source-setting mismatch, canonicalizes actor IDs for the dual-approval gate, and fails closed for malformed collection input.
 - This is engineering hardening only. It does not establish clinical validity, add clinical protocols, or authorize activation.
+
+
+### Source freshness hard-stop — 2026-11-11
+
+- Added mandatory source `revalidateBy` provenance and a fail-closed matcher gate: expired/missing/malformed revalidation dates and publication-after-retrieval are rejected.
+- Added synthetic regression cases for each condition.
+- This is a code-level evidence freshness guard only; it does not verify that the source itself is authentic/current, and it does not authorize clinical activation.
+- The PR head changed after the previous queued CI run; therefore that queued run cannot certify the new head. A fresh exact-head workflow set is required.

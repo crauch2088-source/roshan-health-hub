@@ -15,6 +15,8 @@ export type MedicationProtocolSource = {
   setting: string;
   publishedAt: string;
   retrievedAt: string;
+  /** Latest date through which this source has been explicitly revalidated. */
+  revalidateBy: string;
   licenseStatus: "verified" | "unverified" | "review_required";
 };
 
@@ -139,8 +141,10 @@ function hasValidSource(
     candidate["licenseStatus"] === "verified" &&
     isIsoDate(candidate["publishedAt"]) &&
     isIsoDate(candidate["retrievedAt"]) &&
-    candidate["publishedAt"] <= asOfDate &&
-    candidate["retrievedAt"] <= asOfDate
+    isIsoDate(candidate["revalidateBy"]) &&
+    candidate["publishedAt"] <= candidate["retrievedAt"] &&
+    candidate["retrievedAt"] <= asOfDate &&
+    candidate["revalidateBy"] >= asOfDate
   );
 }
 
