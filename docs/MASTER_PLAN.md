@@ -2930,3 +2930,10 @@ Verified against live GitHub, Supabase, Vercel and connected Drive records. This
 
 No hosted DDL/DML, migration application, permission/Auth/Storage mutation, patient/clinical/financial business-data write, external backup dispatch, PR merge or deployment promotion occurred in this recheck.
 
+
+
+## Release-gate recheck verification follow-up — 2026-11-11
+
+- Daily evidence PR #232 initial head `be142c6372be06c3d9d906f19675eced3911633d` passed CI [42975739280] (18 success, one intentional clinical-acceptance skip, zero failures) and CodeQL [42975736393] (Python and JavaScript/TypeScript passed). Its docs-only Vercel preview was ignored by the repository's build-step policy.
+- PR #216's Phase 49 quarantine regression branch was reconciled with current main using merge commit `d24bf9feddd50384281ade242f6562ac250fb550`, preserving both parents: prior PR head `22a43bfaa93a83d2349516bc5c8fb250f4979d3d` and main `ecdc7d6a1704bb07ca8e799e0afe50a8bc9197bb`. The PR was not merged. Exact-head CI [42976273030] was queued and supporting integrations [42976272854], [42976272962], [42976272795] were running; completion is not yet claimed.
+- Next: inspect exact-head PR #216 PostgreSQL 17 quarantine tests and all supporting checks; then continue the higher-risk Phase 61 PR #229 reconciliation without rewriting history. Keep clinical acceptance deferred and do not apply Production migrations or ACL changes.

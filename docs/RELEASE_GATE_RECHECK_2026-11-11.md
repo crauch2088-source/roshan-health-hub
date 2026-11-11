@@ -7,7 +7,7 @@ This record distinguishes source code, hosted migrations, deployed application c
 - Main SHA: `ecdc7d6a1704bb07ca8e799e0afe50a8bc9197bb`.
 - PR #228 merged at `1eb6b273f01e190f8862d54a23734983512784d9`; PR #230 at `bed4ef10ba282d052e7ecb8d90c05d14d8443dcb`; PR #231 at `ecdc7d6a1704bb07ca8e799e0afe50a8bc9197bb`.
 - Main CI [42974906291](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42974906291): 18 successful jobs, 0 failed, 1 intentional clinical-acceptance skip. Finance integration [42974906293](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42974906293): 2/2 successful PostgreSQL 17 jobs.
-- 11 open PRs and 3 open Issues. #229 is Draft/non-mergeable; #211 Draft/non-mergeable; #216 open/mergeable but Vercel preview is quota-blocked. Issues #199, #217, #218 remain open.
+- 11 pre-existing open PRs and 3 open Issues; the new documentation recheck PR #232 brings the current total to 12. #229 is Draft/non-mergeable; #211 Draft/non-mergeable; #216 open/mergeable but Vercel preview is quota-blocked. Issues #199, #217, #218 remain open.
 
 ## Production and QA Supabase
 
@@ -42,7 +42,7 @@ Production deployment `dpl_ALmRL8NKie3WdCamcBagVacDSsEE` is READY on app commit 
 
 - Backup-runner main: `7a3409ad84b4394014aeff36431a95a69813b90d`.
 - Latest main run [42791754738](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42791754738): validation succeeded, backup job skipped, no artifact. This is not a backup.
-- Prior full run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237), on feature branch SHA `713ee4edf47429df9e02c475e5909e4c4f62a744), passed PostgreSQL 17 isolated restore, critical count comparison, age encryption and ciphertext upload. Its Actions artifact is no longer available.
+- Prior full run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237), on feature branch SHA `713ee4edf47429df9e02c475e5909e4c4f62a744`, passed PostgreSQL 17 isolated restore, critical count comparison, age encryption and ciphertext upload. Its Actions artifact is no longer available.
 - The encrypted Drive copy remains present in **Roshan Health Hub - Encrypted Backups / 2026-11-09**: `Roshan-Production-Backup-2026-11-08.zip`, 305,317 bytes, MD5 `875a85ac23e8b7a671c371cca41f7732`, not trashed. Device-side checksum/decryption/archive-readability passed 2026-11-09. The archive is database-only; Storage object bytes and Vault secrets were not included (both counts were zero at backup time).
 - No full backup has exercised current runner main. No external backup write was triggered. Workflow remains manual.
 
@@ -54,3 +54,10 @@ Production deployment `dpl_ALmRL8NKie3WdCamcBagVacDSsEE` is READY on app commit 
 - **Next:** reconcile Draft PR #229 with main using a normal merge commit, preserve its dedicated prescription-authoring permission and no-side-effect tests, then run exact-head CI/PG17. Keep Draft pending independent review and mobile pharmacist/prescriber acceptance. Obtain explicit owner authorization before any full backup dispatch on current runner main.
 
 No hosted DDL/DML, migration, privilege/Auth/Storage change, business-data write, backup dispatch, PR merge or deployment promotion occurred.
+
+
+## Exact-head verification after initial publication
+
+- PR #232 initial head `be142c6372be06c3d9d906f19675eced3911633d` completed CI [42975739280](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42975739280): 18 successful jobs, 0 failures, 1 intentional authenticated clinical-acceptance skip.
+- CodeQL [42975736393](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42975736393) passed both Python and JavaScript/TypeScript analyses. Vercel Ignore Build Step skipped a docs-only preview; no deployment was created.
+- PR #216 was reconciled with current main by normal two-parent merge commit `d24bf9feddd50384281ade242f6562ac250fb550` (parents: previous PR head `22a43bfaa93a83d2349516bc5c8fb250f4979d3d` and main `ecdc7d6a1704bb07ca8e799e0afe50a8bc9197bb`). The PR remains open; this was a branch update, not a PR merge. Exact-head CI [42976273030] is queued; integration runs [42976272854], [42976272962] and [42976272795] are in progress at this snapshot. Do not count these as passes until complete.
