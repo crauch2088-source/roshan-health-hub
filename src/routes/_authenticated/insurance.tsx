@@ -773,8 +773,6 @@ function ClaimsTab({ currency }: { currency: string }) {
     },
   );
 
-
-
   const rows = (claims.data ?? []) as Row[];
   const pendingCount = rows.filter((r) =>
     ["submitted", "under_review"].includes(s(r, "status")),
@@ -874,7 +872,6 @@ function ClaimsTab({ currency }: { currency: string }) {
                                 </Button>
                               ))
                             : null}
-
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1063,7 +1060,6 @@ function ClaimsTab({ currency }: { currency: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
