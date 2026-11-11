@@ -2897,6 +2897,25 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - No hosted QA/Production migration, currency-column DDL, legacy backfill, financial record write, RPC deployment or production release has occurred. Production remains on its current schema until separate backup/restore and owner rollout approval.
 - PR #181 persisted payment receipts depend on Phase 59 and must be rebased/revalidated after #211's candidate is independently reviewed and merged.
 
+## Independent review of Gemini Argon 4 completion blueprint — 2026-11-11
+
+- Added [`docs/GEMINI_ARGON4_INDEPENDENT_REVIEW_2026-11-11.md`](GEMINI_ARGON4_INDEPENDENT_REVIEW_2026-11-11.md) after a fresh read-only check of main, PRs, deployments, live Production/QA schema metadata, migration ledgers, Supabase Advisors and official platform documentation.
+- Disposition: partially accepted as a source of candidate improvements, not an execution script. Corrected stale claims about direct `addStock`, CI concurrency, PR #219/#225/#210, persisted receipt state, Bankak columns, and backup scheduling/Drive upload.
+- Retained the genuine work: server-side inventory aggregates, batch pagination, Bankak reference integrity after schema/policy design, PR #229/#211 integration, QA-first migration reconciliation, backup/restore proof and real staff/device acceptance.
+- Deferred the Phase 63 dosing engine in accordance with the explicit MVP simplification in PR #185. No clinical rules are approved or active.
+- Rejected the proposed 64%/15% baseline and 92–95% two-day forecast as unweighted/unverified. The last canonical 51% Engineering RC / 11% Operational Acceptance remains historical pending a fresh weighted gate review.
+- No code, migration, hosted database, Auth/ACL/Storage, business data, PR state or deployment was changed. This is a documentation-only review branch update.
+
+
+ 
+## H+1 Production deployment verification after PR #211 merge — 2026-11-11
+
+- Merging PR #211 automatically triggered Vercel Production deployment dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz from main commit fb54651533ffd04b2f20387a976f88293110c513. State: READY; target: Production; aliases: roshan-health-hub.vercel.app, roshan-health-hub-roshan45.vercel.app, and roshan-health-hub-git-main-roshan45.vercel.app.
+- This is an application-code deployment, not a database rollout. Read-only Supabase verification after deployment: Production remains at 129 migrations (latest 20261102232941), QA at 22 migrations (latest 20261104065852).
+- A read-only catalog query found zero currency_code columns across the seven Phase 58 target tables in both environments and zero public.get_invoice_payment_receipt_status_v2 functions in both environments. Phase 58/59 migrations and receipt RPC are therefore not applied/available in QA or Production.
+- The deployed application includes the intentionally deferred/disabled insurance claim-payment UI. The new financial schema is not active; do not enable receipt-v2 frontend paths until Phase 58/59 are separately rehearsed and applied under approved release gates.
+- No financial records, patient/clinical records, roles, Auth, Storage or database schema were changed by this deployment. Encrypted backup/restore and QA migration rehearsal remain mandatory before any hosted schema change.
+
 ## H+1 Phase 60 exact-head validation and scope boundary — 2026-11-11
 
 - Reconciled PR #210 with current main; branch is 57 commits ahead and zero behind. Exact code head 3eb6e4e4ebd25ef8b8ebb7bdfddd3d8b0412f5ee passed 28 checks (27 success, one intentional authenticated clinical-acceptance skip, zero failures), including Phase 60 PostgreSQL 17, typecheck, lint, build, security audits, source parity, pharmacy/clinical integrations and Spec Kit.
