@@ -21,7 +21,7 @@ test("calculates mg/kg/day using only the explicit doses-per-day input", () => {
   }
 });
 
-test("applies the stricter per-dose or daily safety ceiling", () => {
+test("records both active ceilings when both constrain the uncapped dose", () => {
   const result = calculateDose({
     basis: { kind: "mg_per_kg_per_dose", amountMgPerKg: 10, dosesPerDay: 3, maxPerDoseMg: 80, maxPerDayMg: 180 },
     weightKg: 10,
@@ -30,7 +30,7 @@ test("applies the stricter per-dose or daily safety ceiling", () => {
   if (result.status === "calculated") {
     assert.equal(result.doseMg, 60);
     assert.equal(result.dailyDoseMg, 180);
-    assert.deepEqual(result.appliedCaps, ["max_per_day"]);
+    assert.deepEqual(result.appliedCaps, ["max_per_dose", "max_per_day"]);
   }
 });
 
