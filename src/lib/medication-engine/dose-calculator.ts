@@ -143,10 +143,8 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
     }
   }
 
-  doseMg = normalize(doseMg);
-  if (!positiveFinite(doseMg)) {
-    return { status: "invalid", reason: "calculation_out_of_range" };
-  }
+  // Keep the unnormalised decimal value until directional rounding is complete.
+  // Early normalisation could move a value across the requested increment boundary.
   let rounded = false;
 
   if (input.rounding) {
@@ -172,6 +170,11 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
 
     rounded = Math.abs(candidate - doseMg) > 1e-10;
     doseMg = candidate;
+  }
+
+  doseMg = normalize(doseMg);
+  if (!positiveFinite(doseMg)) {
+    return { status: "invalid", reason: "calculation_out_of_range" };
   }
 
   const dailyDoseMg = normalize(doseMg * basis.dosesPerDay);

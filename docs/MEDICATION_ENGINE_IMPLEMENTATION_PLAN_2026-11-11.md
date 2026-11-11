@@ -75,3 +75,8 @@ Test contract is committed first in PR #233. Pure calculator implementation is n
 - "Down" can no longer cross upward and "up" can no longer cross downward merely because a value is within a fixed epsilon of an increment boundary.
 - Rounding increments below the kernel's declared 1e-10 mg precision are rejected as invalid parameters rather than silently normalised.
 - Added near-boundary directional and 0.3/0.1 decimal regression cases. No clinical regimen is supplied or activated.
+
+
+### Rounding-order correction — 2026-11-11
+
+The calculator now retains the full raw/capped decimal value until directional rounding has completed. Normalising to the 1e-10 mg output precision before rounding could erase a value's position just below or above an increment boundary. The boundary regression tests cover both directions; output normalisation occurs only after the rounding decision.
