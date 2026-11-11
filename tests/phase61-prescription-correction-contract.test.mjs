@@ -137,9 +137,9 @@ test("Phase 61 revokes inherited authenticator table-write privileges", () => {
 });
 
 test("Phase 61 integration proves the migration itself grants prescription authoring", () => {
-  assert.doesNotMatch(
-    fixture,
-    "VALUES ('prescriptions.create', 'Create clinical prescriptions'",
+  assert.equal(
+    fixture.includes("VALUES ('prescriptions.create', 'Create clinical prescriptions'"),
+    false,
     "the fixture must not pre-seed the permission that Phase 61 is supposed to create",
   );
   assert.ok(
