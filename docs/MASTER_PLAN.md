@@ -2915,3 +2915,80 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - A read-only catalog query found zero currency_code columns across the seven Phase 58 target tables in both environments and zero public.get_invoice_payment_receipt_status_v2 functions in both environments. Phase 58/59 migrations and receipt RPC are therefore not applied/available in QA or Production.
 - The deployed application includes the intentionally deferred/disabled insurance claim-payment UI. The new financial schema is not active; do not enable receipt-v2 frontend paths until Phase 58/59 are separately rehearsed and applied under approved release gates.
 - No financial records, patient/clinical records, roles, Auth, Storage or database schema were changed by this deployment. Encrypted backup/restore and QA migration rehearsal remain mandatory before any hosted schema change.
+
+## Medication engine — owner-approved phased implementation (2026-11-11)
+
+**Decision:** Build the full medication intelligence and clinical decision-support capability as a first-class Roshan workstream in parallel with the core release. Do not make unvalidated clinical recommendations a prerequisite for opening the clinic.
+
+- Canonical implementation PR: [#233](https://github.com/crauch2088-source/roshan-health-hub/pull/233), branch feat/medication-engine-foundation-20261111. An earlier historical head had a reported green run; that result does not certify the current PR head. Only exact-head checks count, and the current head's Actions runs must be independently verified before claiming CI acceptance. It is not a protocol recommender and contains no approved clinical regimen.
+- Reconcile and supersede the older conceptual Spec Kit package in PR #185; do not merge #185 as-is or duplicate the existing catalogue, inventory, batch, FEFO, dispensing or prescription-correction systems.
+- Architecture: verified product/formulation knowledge → encounter-specific patient context → versioned evidence registry → deterministic protocol matcher and typed calculator → medication safety rules → clinician-reviewed prescription draft → provenance/audit.
+- Calculation basis: fixed mg, mg/kg/dose and mg/kg/day. Frequency is explicit, never inferred. Per-dose and per-day ceilings are distinct. Missing current encounter weight returns needs_data. Rounding is opt-in and may not exceed a safety ceiling.
+- Initial kernel is arithmetic only. It does not select medicine, indication, route, frequency, duration, concentration, volume, interactions, contraindications or monitoring. No clinical rule is active.
+- Evidence hierarchy: verified current Sudan Federal/Gezira MoH guidance; current WHO guidance; appropriate specialty guidance; verified product label/SmPC. Record exact source/version/date/section, population, setting, jurisdiction, licensing, reviewer and revalidation. Never represent unavailable or unverified local guidance as current.
+- Safety: unknown allergy is not NKDA; free-text history is not a complete structured allergy record; old weight is not silently reused; product identity is distinct from route/regimen; free-text diagnosis cannot activate a protocol; AI cannot generate or alter doses; prescriber explicitly reviews every suggestion.
+- Parallel workstreams: (A) pure engine/tests; (B) catalogue identity and pack verification with #210; (C) source acquisition/provenance; (D) patient-context/allergy design and clinical UX integration review with #179/#229. Avoid overlapping pharmacy/prescription UI edits until #229 conflicts are reconciled.
+- Release gates: exact-head CI/typecheck/lint/build; deterministic golden/boundary cases; disposable PG17/RLS/branch tests for future schema; GP and pharmacist approval per protocol; synthetic clinician/pharmacist E2E; 320–430px Android Arabic RTL/English LTR; staff acceptance; separate production backup/restore and owner release approval.
+- Full plan and ADR: [MEDICATION_ENGINE_IMPLEMENTATION_PLAN_2026-11-11.md](MEDICATION_ENGINE_IMPLEMENTATION_PLAN_2026-11-11.md) and specs/056-evidence-based-prescribing/.
+- No hosted Supabase DDL/DML, clinical data, production deployment, role/ACL/Storage change or PR merge occurred.
+
+Historical Engineering RC 51% / Operational Acceptance 11% figures are withdrawn because their denominator and evidence weighting were not reproducible. Do not use them as current progress. No replacement percentage or ETA is claimed.
+
+
+ 
+## H+1 Medication engine foundation after Phase 58/59 mainline merge — 2026-11-11
+
+- PR #233's mainline-reconciled code head 60ea37e499f2733020cd32706d43e5c76fbeac20 passed 20 successful workflow jobs and one intentional authenticated clinical-acceptance skip; zero failures. The full guard suite passed 292/292 tests, including medication arithmetic, Phase58/59 finance, TypeScript, lint, build, security audits, source parity and PostgreSQL 17 integrations.
+- Dose kernel rejects missing weight for weight-based rules, invalid parameters, dose-ceiling violations, precision underflow and non-finite rounding overflow. Rounding is opt-in and source-defined.
+- This remains arithmetic infrastructure only. No drug/indication protocol, frequency inference, route, duration, concentration conversion, interaction/allergy/contraindication logic or AI-generated dose is active.
+- Keep Draft for independent clinical/software review. No clinical rule can be activated until current source provenance, GP+pharmacist dual approval, golden cases, synthetic role E2E and staff acceptance are completed.
+
+
+## Owner-approved work-closure agreement — 2026-11-11
+
+The mandatory execution and reporting rules are recorded in `AGENTS.md` and the dedicated `docs/WORK_CLOSURE_PROTOCOL_2026-11-11.md`. The operating change is binding: close a primary workstream against observable criteria; parallelize only independent work; verify the exact commit; trace failures to logs; keep engineering and operational readiness separate; protect Production and free-tier quotas.
+
+**Verified blocker at this documentation point:** PR #233 head `c288390cfe4a697bb42e5d6d0ead863dfd4ac597` failed lint with five Prettier errors in `src/lib/medication-engine/protocol-matcher.ts`. The separate Insurance claim UI validation run failed at the combined typecheck/lint/build gate for the same lint errors; its focused insurance tests passed. Typecheck, dependency security audits, role-guard tests and applicable PG17 integration jobs in the main CI run passed; build was skipped after lint failed. Vercel's free daily deployment cap is exhausted, so preview retries are stopped. A formatting-only correction is being bundled with this policy documentation; it does not activate any clinical rule or authorize hosted database changes.
+
+
+### Follow-up validation of the work-closure repair — 2026-11-11
+
+Commit `528bc3caddef708111de1ffd92796750a992797c` reduced the five initial Prettier findings to one remaining status-union formatting issue. Its exact-head CI run `43092737006` failed lint; typecheck and completed security/PG17/integration checks passed, with build skipped. The focused insurance validation tests passed, but its aggregate gate failed on that same lint issue. The remaining one-line formatting correction is now bundled with this evidence update; closure still depends on a new exact-head CI result.
+
+
+### Second formatter correction — 2026-11-11
+
+Exact-head run `43093172320` completed with 27 successful checks, one intentional authenticated clinical-acceptance skip, and one Prettier lint failure in the medication protocol status union. The insurance aggregate validation failed on the same formatting issue after its focused tests passed. All other completed checks, including CodeQL and applicable PG17 integrations, passed. The union formatting is corrected in the following commit; the branch remains unaccepted until exact-head CI and insurance validation pass.
+
+
+### Third formatter pass — 2026-11-11
+
+Exact-head run `43093492158` had 27 successful checks, one intentional authenticated clinical-acceptance skip, and one remaining Prettier failure on the status union. Insurance aggregate run `43093492239` failed on the same formatting finding. The union is now in the exact two-line shape requested by the formatter. No behavioral change was made; await the next exact-head CI before acceptance.
+
+
+### Medication evidence hierarchy — Sudan malaria source confirmation (2026-11-11)
+
+- The Federal Ministry of Health Sudan's National Malaria Control Program statement published through the Ministry's official channel in September/October 2026 reiterates that the 2023 Sudan National Malaria Diagnosis and Treatment Protocol remains the sole approved national reference until an official Ministry update is announced. It warns against substituting external-country recommendations for Sudan's national policy. Evidence: [official Ministry statement](https://ae.linkedin.com/posts/federal-ministry-of-health-sudan_%D8%A8%D9%8A%D8%A7%D9%86-%D9%85%D9%87%D9%85-%D9%85%D9%86-%D8%A7%D9%84%D8%A8%D8%B1%D9%86%D8%A7%D9%85%D8%AC-%D8%A7%D9%84%D9%82%D9%88%D9%85%D9%8A-%D9%84%D9%85%D9%83%D8%A7%D9%81%D8%AD%D8%A9-%D8%A7%D9%84%D9%85%D9%84%D8%A7%D8%B1%D9%8A%D8%A7-activity-7507797911620136960--P1s) and [September 2026 report reproducing the statement](https://sudannabaa.com/en/health/malaria-program-warns-against-external-prescriptions-says-2023-protocol-is-sudans-approved-reference/93037/).
+- WHO's consolidated malaria guideline was updated 10 September 2026, replacing the August 2025 edition. Its global recommendations are monitoring/comparison references; they do not silently override Sudan's declared national protocol. Any conflict requires an explicit Federal MoH/NMCP update or documented local authority decision before protocol activation.
+- The Sudan-adapted 2023 malaria protocol is a priority local source for a future limited cohort. This does not itself establish permission to encode recommendations: obtain and verify the primary signed PDF, exact sections, edition, licence, population/setting, local availability, and current NMCP status; have independent GP and pharmacist review; create synthetic golden cases; and retain an expiry/revalidation date.
+- Separate treatment guidelines from product-registration/formulary catalogues, stock-shortage notices, and observational studies. Only treatment guidance can support a treatment regimen; only verified registration/label data can support product identity; shortage notices inform availability only.
+- No malaria regimen or any other clinical protocol was added or activated in this change.
+
+
+#### Primary document location verified from the peer-reviewed article
+
+The Sudan Journal of Medical Sciences article's reference [6] identifies the official Federal Ministry of Health PDF URL as:
+
+https://fmoh.gov.sd/fmoh/fmoh/public/SudanMalariaCaseManagementProtocol2023.pdf
+
+The Ministry-hosted URL did not respond to retrieval in this research pass. A complete 2023 protocol copy was readable at a non-Ministry mirror; its cover identifies the Federal Ministry of Health and its foreword bears the names/titles of the Director General of PHC and the Undersecretary. The mirror is not treated as proof of file integrity or as the canonical source. The peer-reviewed article states that the official document is on the FMoH website and that the recommendations were formally adopted by the Ministry. Until the Ministry-hosted file is retrieved and its checksum recorded, store the official URL as canonical provenance and the mirror only as a provisional access copy. Do not activate dose tables from the mirror alone.
+
+
+### Medication source freshness hard-stop — 2026-11-11
+
+The medication protocol matcher now requires every evidence source to carry an explicit `revalidateBy` date. A source is blocked when that date is missing, malformed, or earlier than the encounter's explicit `asOfDate`; publication must not post-date retrieval. This is a deterministic provenance gate, not a clinical approval or evidence of source currency beyond the declared revalidation date. Synthetic regression tests cover expired, missing and chronologically inconsistent provenance. No protocol is activated by this change.
+
+
+### Dose-basis validation before needs-data responses — 2026-11-11
+
+The matcher validates the full arithmetic rule through the same pure calculator before returning `needs_data` for missing age. This prevents malformed numeric rules (for example zero daily frequency or non-positive amounts) from being concealed behind an incomplete patient context. The calculator returns `needs_data` for a structurally valid weight-based rule with no weight and `calculated` for a valid fixed rule; only `invalid` blocks the protocol. A synthetic regression test covers zero frequency with age absent.

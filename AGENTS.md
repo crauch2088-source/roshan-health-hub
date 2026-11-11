@@ -65,3 +65,52 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Use installed general TDD/debugging/security/documentation skills when they add distinct value; avoid duplication and overlapping Roshan skills.
 - Simplicity/YAGNI must never weaken clinical safety, data fidelity, clinician confirmation, authentication, permissions, RLS, branch isolation, auditability, atomic finance/stock operations, or test coverage.
 - Skills do not authorize Production migrations, grants/RLS changes, Auth/Storage mutations, live business-data writes, deployment promotion, paid services, or clinical/staff acceptance.
+
+
+## Work-closure protocol — owner-approved 2026-11-11
+
+These rules govern every Roshan task. They override conversational momentum and informal progress claims.
+
+1. **Close work, do not accumulate phases.** Select one primary workstream with explicit acceptance criteria. Parallelize only genuinely independent tasks with non-overlapping files and contracts.
+2. **Definition of done.** A task is complete only when observable acceptance criteria are met, behavior changes have regression tests, required checks pass on the exact current commit, the diff is reviewed, and the documentation records evidence and remaining external gates.
+3. **Exact-head evidence.** CI on an ancestor commit never certifies a newer head. Record the exact SHA, workflow/run, passed/failed/skipped jobs, and intentional skip reasons. A Vercel status is not a substitute for CI or clinical acceptance.
+4. **Failure closure.** Retrieve failing job logs, identify the concrete cause, fix only that cause, and rerun affected checks plus required dependent gates. Never relabel a failed check as passed.
+5. **No false completion.** Code written, a PR opened, a migration authored, a passing test subset, or a preview does not itself complete a phase. Distinguish engineering readiness, database rollout, clinical review, staff/device acceptance, and production release.
+6. **No unsupported percentages or dates.** Recalculate progress from documented weighted acceptance gates. Keep Engineering RC and Operational Acceptance separate. If a defensible re-weight is unavailable, say so rather than recycling a historical percentage or inventing an ETA.
+7. **Protect production and quotas.** No production DDL/DML, migration, Auth/Storage/ACL/RLS mutation, deployment promotion, paid upgrade, or quota bypass without separate authorization. When the Vercel free daily limit is exhausted, stop preview retries and continue verifiable work that does not require deployment.
+8. **Atomic delivery.** Bundle source, tests and relevant documentation into one logical commit. Preserve published history, use expected-SHA ref updates, and squash-merge only after exact-head checks and review.
+9. **User reporting.** Report concrete artifacts, commit/PR links, actual test results, untouched areas and blockers. Do not substitute status narration for work.
+
+### Session baseline discovered 2026-11-11
+
+- PR #233 is open and Draft; inspected head: `c288390cfe4a697bb42e5d6d0ead863dfd4ac597`.
+- Exact-head CI run `43090861346` failed at lint due to five Prettier errors in `src/lib/medication-engine/protocol-matcher.ts`. Typecheck, security audits, role-guard tests and the other listed integration jobs passed; build was skipped after lint failure.
+- Insurance claim UI validation run `43090861400` passed its focused insurance tests but failed its combined typecheck/lint/build step because the same shared lint errors remained. This is not evidence of an insurance-behavior defect.
+- Vercel reported the free daily deployment cap (`api-deployments-free-per-day`). No retry or quota bypass is authorized.
+- No clinical protocol was activated and no hosted Supabase DDL/DML, production data, Auth, Storage, role or ACL mutation was performed during this inspection.
+- This baseline is superseded only by a new exact-head result after the formatting repair; the failed run remains historical evidence and must not be described as green.
+
+
+### Follow-up exact-head validation — 2026-11-11
+
+- Commit `528bc3caddef708111de1ffd92796750a992797c` corrected four of the five Prettier findings. Its exact-head CI run `43092737006` still failed on one remaining status-union formatting line in `protocol-matcher.ts`; typecheck and all completed security/PG17/integration jobs passed, while build was skipped after lint failure.
+- Insurance validation run `43092736912` passed its focused tests but failed the combined lint/build gate on the same single Prettier issue.
+- The remaining formatting correction is included in the next commit. Do not count this as fixed until exact-head lint/build and all required workflows finish successfully.
+
+
+### Second formatter correction — 2026-11-11
+
+- Exact-head run `43093172320` completed with 27 successful checks, one intentional authenticated clinical-acceptance skip, and one lint failure: Prettier requires the protocol status union's first line to begin on the line after the assignment. The separate insurance aggregate run failed on the same one-line formatting issue; its focused tests passed.
+- All other completed checks, including CodeQL and applicable PostgreSQL 17 integration workflows, passed. The remaining issue is formatting-only; no clinical or insurance behavior regression was reported.
+- The exact formatter layout is now corrected in the following commit. Final acceptance still requires a fresh exact-head CI and the insurance validation workflow.
+
+
+### Third formatter pass — 2026-11-11
+
+- Exact-head run `43093492158` reached 27 successful checks and one intentional authenticated clinical-acceptance skip; the only failure was still the Prettier union layout in `protocol-matcher.ts`. The insurance aggregate run `43093492239` failed on the same formatter finding; its workflow is downstream of the same lint gate.
+- The source line is now consolidated to the formatter's required two-line union form. No behavioral code changed. The next exact-head run is the acceptance check; do not repeat the previous failed outcomes as if green.
+
+
+### Medication matcher safety hardening — 2026-11-11
+
+The matcher now rejects a protocol when the cited source's care setting differs from the protocol setting; GP/pharmacist distinct-actor comparison trims and case-folds identifiers; malformed non-array protocol payloads return a blocked result. Regression tests cover these conditions. Exact-head CI is required before acceptance.
