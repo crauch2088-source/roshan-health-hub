@@ -14,7 +14,7 @@ BEGIN
   '30000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001',DATE '2026-10-15',5,
   '[{"item_name":"Consultation","item_type":"consultation","quantity":2,"unit_price":15},{"item_name":"CBC","item_type":"lab","quantity":1,"unit_price":20}]'::jsonb
  );
- IF NOT EXISTS (SELECT 1 FROM public.invoices WHERE id=v_invoice AND invoice_number='INV-TEST-00001' AND branch_id='20000000-0000-0000-0000-000000000001' AND total_amount=50 AND subtotal=50 AND discount_amount=5 AND net_amount=45 AND status='unpaid' AND created_by='10000000-0000-0000-0000-000000000001') THEN
+ IF NOT EXISTS (SELECT 1 FROM public.invoices WHERE id=v_invoice AND invoice_number='INV-TEST-00001' AND branch_id='20000000-0000-0000-0000-000000000001' AND total_amount=50 AND subtotal=50 AND discount_amount=5 AND net_amount=45 AND status='unpaid' AND created_by='10000000-0000-0000-0000-000000000001' AND currency_code='SDG') THEN
   RAISE EXCEPTION 'invoice header totals or ownership are incorrect';
  END IF;
  IF (SELECT count(*) FROM public.invoice_items WHERE invoice_id=v_invoice) <> 2 THEN RAISE EXCEPTION 'invoice items missing'; END IF;

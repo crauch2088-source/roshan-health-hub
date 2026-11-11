@@ -26,9 +26,11 @@ Read-only catalog queries against Production and QA on 2026-11-09 found:
 - Production does not yet have Phase54C. This feature does not authorize promoting Phase54C or any other migration to Production.
 - Direct browser writes to finance tables are intended to remain denied; all currency provenance must be written inside existing authorized RPC/trigger boundaries.
 
-## Owner Decision — Recorded
+## Owner Decision
 
-The owner has explicitly decided that Roshan is a **permanent SDG-only clinic system**. There is no anticipated reason to change the clinic currency. Do not build a currency selector, multi-currency transactions, FX rates, currency conversion, or cross-currency reports. Enforce `SDG` at authorized database write boundaries and persist it on financial source and ledger rows. The mutable `system_settings.currency` value is display/configuration metadata only and must never determine the currency of an already-posted receipt. Any future policy reversal requires a separate owner-authorized accounting and migration project.
+The owner has not yet selected single-currency or multi-currency behavior. The recommended low-complexity initial operating model is a single immutable clinic currency (currently configured as SDG in Production), with the code persisted on every relevant monetary source/ledger row. Currency changes after monetary activity should be blocked unless a separately approved migration/reconciliation workflow is performed.
+
+If multi-currency is chosen, each monetary record and report must carry/group by currency; FX rates and converted totals require a separate feature specification.
 
 ## Supabase Security and Source Guidance
 
@@ -37,14 +39,18 @@ The owner has explicitly decided that Roshan is a **permanent SDG-only clinic sy
 - Do not grant browser roles direct financial table DML.
 - Do not apply migrations through the Supabase MCP for this feature. Candidate migration source and disposable PG17 validation must precede any owner-approved rollout.
 
-## Remaining Design Questions
+## Open Questions
 
-1. Complete the inventory of every monetary table, catalogue price, write RPC, trigger, report and export so the SDG-only invariant covers all financial surfaces.
-2. Determine evidence-backed treatment of any legacy soft-deleted monetary records with missing provenance before enabling historical reprints.
-3. Confirm the localized display presentation of SDG (ISO code plus approved Arabic/English label); the stored canonical code remains `SDG`.
+1. Owner policy: single immutable clinic currency or multi-currency?
+2. Which monetary tables and price catalogues must be included in the setting-change lock or currency provenance model? Current inventory includes invoices, invoice items, payments, cashbox transactions, expenses, insurance claims/payments, supplier bills/payments, lab/procedure/service prices, and pharmacy inventory prices.
+3. How should legacy soft-deleted records be treated if historical reprint is later enabled for them?
+4. Does the owner require a displayed currency symbol, an ISO code, or both on official receipts? The safe default is ISO code plus localized display name.
 
 
+## Superseding owner decision and live inventory — 2026-11-09
 
-1. Complete the inventory of every monetary table, catalogue price, write RPC, trigger, report and export so the SDG-only invariant covers all financial surfaces.
-2. Determine evidence-backed treatment of any legacy soft-deleted monetary records with missing provenance before enabling historical reprints.
-3. Confirm the localized display presentation of SDG (ISO code plus approved Arabic/English label); the stored canonical code remains `SDG`.
+The owner has confirmed Roshan is permanently SDG-only; no future currency switch, multi-currency, FX, or cross-currency settlement is required.
+
+Read-only Production/QA schema inspection found no currency_code columns on invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, or pharmacy_inventory. No business row values were read. Insurance is deferred per the owner's earlier instruction; payroll is deferred; catalogue prices remain global SDG and invoice line items inherit invoice currency.
+
+Read-only function-definition fingerprints match for invoice creation/payment, expense posting, supplier bill/payment posting, and standard ledger triggers. They differ for pharmacy dispense and cashbox reversal; invoice-payment reversal exists in QA only. No function was replaced. PR #211 therefore uses additive defaults/triggers without changing RPC signatures, and preserves legacy rows as NULL.

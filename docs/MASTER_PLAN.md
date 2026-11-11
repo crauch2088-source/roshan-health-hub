@@ -2889,15 +2889,14 @@ The cross-workstream review, exact candidate-head status, fresh read-only Produc
 
 PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) strengthens only the disposable PG17 parameterized equivalent for the quarantined cleanup migration. It adds negative tests for invalid/duplicate/missing target identifiers, wrong-branch or duplicate reversal entries, and stock/ledger disagreement. The test helper now rejects ambiguous or wrong-branch matching adjustment rows before any synthetic soft-delete or stock mutation. The exact `20261102232819` rename remains isolated to the disposable database; the redacted `20261102232941` original is not executed or claimed as reconstructed. No hosted database was changed. Exact-head CI evidence is recorded in the PR and must pass before this test improvement is considered complete.
  
-## Phase 60 medicine catalogue identity — mainline reconciliation 2026-11-11
+## Phase 58/59 SDG-only provenance candidate — mainline reconciliation 2026-11-11
 
-- PR #210 introduces canonical medicine catalogue identity and immutable physical-pack attestation, with explicit catalogue identity permission and append-only evidence.
-- It does not create a duplicate inventory/batch subsystem and does not replace the existing atomic receive/dispense workflow.
-- Physical-pack attestation remains an auditable evidence event, not a dispensing prerequisite. Do not convert it into a hard stop without a separate owner and clinical/pharmacy decision.
-- The current live schema has no verified pack_size/units_per_pack contract; do not backfill or infer package conversion from stock units.
-- The branch is being reconciled with current main; CI must preserve Phase49/57/57B pharmacy replay and the dedicated Phase60 PG17 suite. Fresh exact-head CI and independent SQL review are required.
-- No hosted QA/Production migration, catalogue backfill, inventory mutation or role mapping change occurred. Physical pack and pharmacist acceptance remain open.
- 
+- PR #211 remains the candidate for permanent SDG-only financial provenance and receipt verification. The owner policy is fixed SDG-only; no currency switching, FX, or multi-currency is in scope.
+- The candidate contains Phase 58 source/ledger provenance and Phase 59 fail-closed receipt verification, with disposable PostgreSQL 17 tests. Exact reconciled head b0d1b5aca7facb1e6ca167c5c542f64568522dfe passed 29 checks, one intentional authenticated clinical-acceptance skip, zero failures; Phase 58/59 PG17, finance-only RPC isolation, receipt fail-closed, typecheck, lint, build, dependency audits and Spec Kit passed. Formatting-only issues were corrected.
+- This branch is being reconciled with current main so it preserves Phase 49/57/57B pharmacy replay, Phase 61 CI additions, and current migration source manifest. Exact-head full CI has passed after reconciliation and formatting fixes; independent review and separate QA/Production rollout gates remain open.
+- No hosted QA/Production migration, currency-column DDL, legacy backfill, financial record write, RPC deployment or production release has occurred. Production remains on its current schema until separate backup/restore and owner rollout approval.
+- PR #181 persisted payment receipts depend on Phase 59 and must be rebased/revalidated after #211's candidate is independently reviewed and merged.
+
 ## H+1 Phase 60 exact-head validation and scope boundary — 2026-11-11
 
 - Reconciled PR #210 with current main; branch is 57 commits ahead and zero behind. Exact code head 3eb6e4e4ebd25ef8b8ebb7bdfddd3d8b0412f5ee passed 28 checks (27 success, one intentional authenticated clinical-acceptance skip, zero failures), including Phase 60 PostgreSQL 17, typecheck, lint, build, security audits, source parity, pharmacy/clinical integrations and Spec Kit.

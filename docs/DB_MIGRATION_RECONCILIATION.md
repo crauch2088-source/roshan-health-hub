@@ -752,3 +752,75 @@ The live preflight confirmed 109 ledger entries through 20261018065708. After Ph
 - Exact-head PR check inventory: **27 success, 1 intentionally skipped, 0 failures**. The skipped canonical PG17/authenticated clinical acceptance job remains deferred by design. Local Node 24 source regressions also passed 4/4 (`phase33-storage-realtime`) and 11/11 (`phase34-consolidated`); the temporary shell's full guard attempt was 220/221 because it lacked installed `zod`, so GitHub CI is the authoritative complete runtime check.
 - No QA/production migration, Storage configuration, object, patient, clinical, or financial record was changed. PR #148 remains draft/open pending independent review and separate live-apply authorization; Issue #95 remains open and authenticated clinical E2E remains deferred.
 - **Next:** obtain independent review of the Phase 48 candidate and assess the separate release gate; then address the 14 moderate development-tree `minimatch` advisories without forced major downgrades, followed by Issue #146's setup RPC exposure. Do not apply Phase 48 to QA or production without separate explicit authorization.
+
+
+## Live Production/QA migration ledger reconciliation — 2026-11-09 (read-only)
+
+The Supabase migration-history API was queried independently for Production project `jewzonxplxhogqrnhosl` and QA project `hopfohcnrtbiqjkgeukz`. This is a ledger read-back only; it does not expose stored migration SQL bytes or establish byte-for-byte source parity.
+
+| Environment | Ledger entries | Latest version | Latest recorded name |
+|---|---:|---|---|
+| Production | 129 | `20261102232941` | `roshan_synthetic_patient_cleanup_and_stock_ledger_reversal` |
+| QA | 22 | `20261104065852` | `roshan_phase57_pharmacy_quantity_required_guard` |
+
+**Version-set comparison:**
+- Shared version IDs: **3**; all three have different names between environments.
+- Production-only version IDs: **126**.
+- QA-only version IDs: **19**.
+- The three collisions are:
+
+| Version | Production name | QA name |
+|---|---|---|
+| `20261102122437` | `superseded_placeholder_phase49_atomic_pharmacy_dispense` | `roshan_phase51_public_setup_required_anon` |
+| `20261102133658` | `superseded_placeholder_phase50_clinical_visit_bill_completion` | `roshan_phase49_atomic_pharmacy_dispense` |
+| `20261102133734` | `superseded_placeholder_phase51_public_setup_required_anon` | `roshan_phase50_clinical_visit_bill_completion` |
+
+**Interpretation:** QA is not a forward-migration continuation of the Production ledger. The three version collisions are semantic/name conflicts, not proof that the corresponding SQL is equivalent. QA's latest Phase 57 entry is not represented in the Production ledger. Production's four placeholder Phase 49–52 entries do not represent the final reconciled implementations; later Production ledger entries record the repaired Phase 49–52 candidates.
+
+**Do not attempt a mechanical repair.** Do not replay Production history onto QA, replay QA history onto Production, insert/delete migration-history rows to make counts match, or rename/reuse a previously recorded version. Any future reconciliation must be a separately reviewed, forward-only environment-specific plan based on live schema/function fingerprints, canonical repository source, and explicit environment approvals. A ledger row alone is not evidence that the SQL was applied as intended.
+
+No migration, SQL write, DDL/DML, role/grant/RLS/Auth/Storage change, or application deployment was performed to collect these facts.
+
+
+### Read-only financial RPC/function definition fingerprints — 2026-11-09
+
+A single read-only catalog query was run against both environments for public/private functions whose names match payment, dispense, cashbox, expense, supplier-bill, or invoice. Fingerprints are `md5(pg_get_functiondef(oid))`; these compare the currently returned function definitions, not repository migration bytes.
+
+- Production: **30** matching functions.
+- QA: **32** matching functions.
+- Same signature and same definition fingerprint: **28**.
+- Definition differences: **2**.
+- QA-only functions: **2**.
+- No matching function in this targeted set was Production-only.
+
+| Function signature | Production fingerprint | QA fingerprint | Finding |
+|---|---|---|---|
+| `public.fn_dispense_prescription_with_invoice(uuid, boolean)` | `162794975fc4f6a9cc39d7314252e37f` | `a3ac609632561becbe6442bbdb9d9021` | Different deployed definitions |
+| `public.reverse_cashbox_entry(uuid, text)` | `a353566d8cc7a20875cfbe88f831203f` | `4b6ffe06589122b16919b3f9ddfbd34e` | Different deployed definitions |
+| `public.get_invoice_payment_receipt_status(uuid[])` | absent | `574931b981d8592bbde2ae0657e60a54` | QA-only read RPC |
+| `public.reverse_invoice_payment(uuid, text)` | absent | `3f8aa83e664a3372eb3c402f8fc7bbfc` | QA-only write RPC |
+
+The two differing write functions are release-critical. The QA-only reversal RPCs must not be assumed to exist in Production or be called by an application release until their exact source, grants, branch guards, and audit/ledger effects have been independently reconciled. The new Phase 59 receipt RPC is an additive candidate in PR #211; it has not been installed in either hosted environment.
+
+This fingerprint inventory supplements (does not replace) the migration-ledger comparison above. It does not authorize replacing functions, synchronizing migration histories, or deploying QA-only RPCs.
+
+
+### Functional meaning of the deployed finance/pharmacy definition drift
+
+The live definitions were read with `pg_get_functiondef` (read-only) to distinguish harmless formatting from behavioral drift:
+
+1. **Prescription dispensing — `fn_dispense_prescription_with_invoice(uuid, boolean)`:**
+   - Production uses `COALESCE(pi.quantity, 1)` in the dispense selection and stock aggregation. A missing prescription quantity is therefore treated as one unit.
+   - QA explicitly rejects any active prescription item with `quantity IS NULL` before invoice construction, stock locks, or mutation, with `prescription quantity is required`; the stock aggregation then uses the persisted quantity directly.
+   - This is a clinically significant safety difference. Phase 57's candidate/QA behavior is the intended fail-closed direction. Production must not be considered quantity-safe until the reviewed forward migration is separately applied and read back.
+
+2. **Generic cashbox reversal — `reverse_cashbox_entry(uuid, text)`:**
+   - Production's shorter implementation checks the basic permission/reason, locks the original row, and creates a reversal, but does not enforce the QA version's active application-user check, non-null branch binding, and explicit branch authorization in the same manner.
+   - QA also rejects generic reversal of payment, supplier-payment, and insurance-claim-payment ledger sources; those require their source-specific reversal workflow. It verifies the original row remains unreversed at update time and uses explicit SQLSTATEs.
+   - This is a behavior/security difference, not a candidate to resolve by copying QA's body blindly. Reconcile against the canonical repository source, existing triggers, and Phase 54 source-aware reversal contract first.
+
+3. **Invoice-payment reversal — `reverse_invoice_payment(uuid, text)`:**
+   - QA alone has this RPC. It locks invoice then payment (matching the payment-posting lock order), checks active invoice/payment state, branch equality and caller branch, locates and locks the original payment ledger row, validates amount/branch consistency, creates a reversal row, marks the original ledger reversed, soft-deletes the payment, and relies on the existing recompute/audit triggers.
+   - Production has no function with this signature. Any future application change that calls it would fail in Production until a reviewed Production migration exists. Its grants and source must be separately reconciled; it is not part of the current Phase 58/59 candidate.
+
+These differences are now explicit release blockers in addition to the migration-ledger collisions. Do not infer that QA is a complete Production mirror or promote a UI path solely because it works in QA.
