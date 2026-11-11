@@ -78,3 +78,17 @@ At head `70becde517557cfb18c2718988fe0cf9f5c712a8`, focused PG17 Phase 58/59, in
 **No hosted change:** no QA/Production migration, DDL/DML, legacy backfill, RPC deployment, grant/RLS/Auth/Storage mutation, financial data write, or Vercel promotion was performed. All database integration ran only against disposable PostgreSQL 17 in GitHub Actions.
 
 **Remaining Phase 58/59 blockers:** independent SQL/security review; Production/QA live migration and function-source reconciliation; evidence-backed legacy NULL receipt policy; separate QA and Production rollout approvals; authenticated finance staff acceptance; and Arabic/English browser, A4, Android printer acceptance.
+
+
+## H+1 reconciled exact-head validation — 2026-11-11
+
+- [x] Reconcile PR #211 with current main using a normal two-parent merge commit; 86 commits ahead, zero behind.
+- [x] Verify exact head b0d1b5aca7facb1e6ca167c5c542f64568522dfe: 29 successful checks, one intentional authenticated clinical-acceptance skip, zero failures.
+- [x] Phase 58 and Phase 59 PostgreSQL 17 tests, receipt fail-closed checks, finance-only RPC isolation, invoice-payment idempotency concurrency, migration source parity, security bundle, typecheck, lint, build and dependency audit pass.
+- [ ] Independent SQL/security review and live Production/QA migration/function provenance reconciliation.
+- [ ] Evidence-backed policy for legacy NULL receipt records; no currency inferred from settings.
+- [ ] Rebase and revalidate PR #181 only after Phase 59 is separately reviewed/merged.
+- [ ] Authenticated synthetic QA finance roles, receipt/reprint, idempotency, reversal, Arabic/English, A4 and Android acceptance.
+- [ ] Separate owner approval, encrypted backup and isolated restore before any hosted migration.
+
+**No hosted changes:** no QA/Production migration, DDL/DML, backfill, RPC deployment, financial data write, role/ACL/Storage mutation or Vercel promotion.
