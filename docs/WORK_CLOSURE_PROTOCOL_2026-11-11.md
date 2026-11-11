@@ -47,3 +47,10 @@ A closed engineering workstream does not automatically mean the product is clini
 - No hosted database writes, clinical protocol activation, production data changes, Auth/Storage/ACL mutation or deployment promotion occurred during this inspection.
 
 **Status:** Protocol documented. The CI formatting defect is being corrected in the existing PR branch; PR #233 remains Draft pending exact-head CI and independent review.
+
+
+### Follow-up exact-head validation — 2026-11-11
+
+- Commit `528bc3caddef708111de1ffd92796750a992797c` corrected four of the five Prettier findings. Its exact-head CI run `43092737006` still failed on one remaining status-union formatting line in `protocol-matcher.ts`; typecheck and all completed security/PG17/integration jobs passed, while build was skipped after lint failure.
+- Insurance validation run `43092736912` passed its focused tests but failed the combined lint/build gate on the same single Prettier issue.
+- The remaining formatting correction is included in the next commit. Do not count this as fixed until exact-head lint/build and all required workflows finish successfully.
