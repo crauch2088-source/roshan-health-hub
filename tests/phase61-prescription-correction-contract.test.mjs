@@ -130,7 +130,7 @@ test("Phase 61 revokes inherited authenticator table-write privileges", () => {
     );
   }
   assert.equal(
-    (integration.match(/has_table_privilege\\('authenticator'/g) ?? []).length,
+    (integration.match(/has_table_privilege\('authenticator'/g) ?? []).length,
     8,
     "integration must check INSERT/UPDATE/DELETE/TRUNCATE on both tables",
   );
