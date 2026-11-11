@@ -10,6 +10,10 @@ const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
 );
+const fixture = readFileSync(
+  "db/tests/phase61_prescription_correction_fixture.sql",
+  "utf8",
+);
 const workflow = readFileSync(".github/workflows/ci-phase61-prescription-correction.yml", "utf8");
 const concurrency = readFileSync("db/tests/phase61_prescription_correction_concurrency.sh", "utf8");
 
@@ -111,4 +115,34 @@ test("Phase 61 runs a real two-session concurrent resolution regression", () => 
   assert.ok(concurrency.includes("prescription_correction_request_already_resolved"));
   assert.ok(concurrency.includes("stock_movements"));
   assert.ok(concurrency.includes("cashbox_transactions"));
+});
+
+test("Phase 61 revokes inherited authenticator table-write privileges", () => {
+  for (const table of [
+    "prescription_item_correction_requests",
+    "prescription_item_correction_events",
+  ]) {
+    assert.ok(
+      migration.includes(
+        `REVOKE ALL ON TABLE public.${table}\n  FROM PUBLIC, anon, authenticated, service_role, authenticator;`,
+      ),
+      `missing authenticator privilege revocation for ${table}`,
+    );
+  }
+  assert.equal(
+    (integration.match(/has_table_privilege\\('authenticator'/g) ?? []).length,
+    8,
+    "integration must check INSERT/UPDATE/DELETE/TRUNCATE on both tables",
+  );
+});
+
+test("Phase 61 integration proves the migration itself grants prescription authoring", () => {
+  assert.doesNotMatch(
+    fixture,
+    /VALUES \\('prescriptions\\.create', 'Create clinical prescriptions'/,
+    "the fixture must not pre-seed the permission that Phase 61 is supposed to create",
+  );
+  assert.ok(
+    integration.includes("doctor is missing the dedicated prescription-authoring permission"),
+  );
 });

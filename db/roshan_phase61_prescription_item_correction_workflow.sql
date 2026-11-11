@@ -175,9 +175,9 @@ USING (
 );
 
 REVOKE ALL ON TABLE public.prescription_item_correction_requests
-  FROM PUBLIC, anon, authenticated, service_role;
+  FROM PUBLIC, anon, authenticated, service_role, authenticator;
 REVOKE ALL ON TABLE public.prescription_item_correction_events
-  FROM PUBLIC, anon, authenticated, service_role;
+  FROM PUBLIC, anon, authenticated, service_role, authenticator;
 GRANT SELECT ON TABLE public.prescription_item_correction_requests,
   public.prescription_item_correction_events TO authenticated;
 

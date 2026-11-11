@@ -39,7 +39,15 @@ BEGIN
      OR has_table_privilege('authenticated','public.prescription_item_correction_events','UPDATE')
      OR has_table_privilege('authenticated','public.prescription_item_correction_events','DELETE')
      OR has_table_privilege('service_role','public.prescription_item_correction_requests','INSERT')
-     OR has_table_privilege('service_role','public.prescription_item_correction_events','INSERT') THEN
+     OR has_table_privilege('service_role','public.prescription_item_correction_events','INSERT')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_requests','INSERT')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_requests','UPDATE')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_requests','DELETE')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_requests','TRUNCATE')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_events','INSERT')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_events','UPDATE')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_events','DELETE')
+     OR has_table_privilege('authenticator','public.prescription_item_correction_events','TRUNCATE') THEN
     RAISE EXCEPTION 'application/service roles must not have direct correction-table writes';
   END IF;
 
