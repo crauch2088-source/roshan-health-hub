@@ -10,10 +10,7 @@ const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
 );
-const fixture = readFileSync(
-  "db/tests/phase61_prescription_correction_fixture.sql",
-  "utf8",
-);
+const fixture = readFileSync("db/tests/phase61_prescription_correction_fixture.sql", "utf8");
 const workflow = readFileSync(".github/workflows/ci-phase61-prescription-correction.yml", "utf8");
 const concurrency = readFileSync("db/tests/phase61_prescription_correction_concurrency.sh", "utf8");
 
