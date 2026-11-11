@@ -2,8 +2,7 @@ import { calculateDose } from "./dose-calculator.ts";
 import type { DoseBasis, DoseCalculationResult } from "./types.ts";
 
 export type MedicationProtocolStatus =
-  "draft" | "reviewed" | "approved" | "active" | "suspended"
-  | "retired";
+  "draft" | "reviewed" | "approved" | "active" | "suspended" | "retired";
 
 export type MedicationProtocolSource = {
   sourceId: string;

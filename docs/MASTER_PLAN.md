@@ -2959,3 +2959,8 @@ Commit `528bc3caddef708111de1ffd92796750a992797c` reduced the five initial Prett
 ### Second formatter correction — 2026-11-11
 
 Exact-head run `43093172320` completed with 27 successful checks, one intentional authenticated clinical-acceptance skip, and one Prettier lint failure in the medication protocol status union. The insurance aggregate validation failed on the same formatting issue after its focused tests passed. All other completed checks, including CodeQL and applicable PG17 integrations, passed. The union formatting is corrected in the following commit; the branch remains unaccepted until exact-head CI and insurance validation pass.
+
+
+### Third formatter pass — 2026-11-11
+
+Exact-head run `43093492158` had 27 successful checks, one intentional authenticated clinical-acceptance skip, and one remaining Prettier failure on the status union. Insurance aggregate run `43093492239` failed on the same formatting finding. The union is now in the exact two-line shape requested by the formatter. No behavioral change was made; await the next exact-head CI before acceptance.
