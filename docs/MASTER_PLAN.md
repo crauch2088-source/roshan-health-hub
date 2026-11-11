@@ -2918,3 +2918,9 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - The existing events policy uses an EXISTS subquery against the RLS-protected correction-request table. The new tests passed, confirming PostgreSQL applies the request table's RLS visibility within that subquery; no unnecessary policy rewrite was made.
 - New exact head c946f1486c1f0f0b8e4f327bb70b50a0cfe22038 passed 30 checks: 29 success, one intentional authenticated clinical-acceptance skip, zero failures. Phase 61 PostgreSQL 17, full CI, Spec Kit, insurance, prescription atomicity and privileged-role checks passed.
 - PR #229 remains Draft pending independent SQL/security review, Android RTL/LTR acceptance and pharmacist/prescriber UAT. No hosted migration or production action occurred.
+ 
+## H+17 Phase 61 validation after Phase 58/59 mainline merge — 2026-11-11
+
+- PR #229's mainline-reconciled code head 7f558a4279d97082eefb721019709ca9aeab7bb3 passed 29 checks, one intentional authenticated clinical-acceptance skip, zero failures. Phase 58/59 currency/receipt PG17, Phase 61 authorization/RLS/audit/concurrency/no-side-effects, prescription atomicity, insurance, typecheck, lint, build, security and Spec Kit passed.
+- Four negative event-visibility assertions continue to pass: unassigned doctor, wrong-branch doctor, wrong-branch pharmacist and ordinary Admin cannot read correction events for another prescriber/branch. The EXISTS subquery inherits RLS visibility from the protected request table.
+- PR remains Draft pending independent SQL/security review, 320–430px Android RTL/LTR acceptance and real pharmacist/prescriber UAT. No hosted migration or production action occurred.

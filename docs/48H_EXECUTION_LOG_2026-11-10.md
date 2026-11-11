@@ -322,3 +322,10 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - PostgreSQL 17 exact-head run confirms the EXISTS subquery against the RLS-protected correction-request table inherits its row visibility restrictions. All four assertions pass; no policy rewrite was necessary.
 - Exact head c946f1486c1f0f0b8e4f327bb70b50a0cfe22038: **30 checks, 29 successful, one intentional authenticated clinical-acceptance skip, zero failures**. Full CI, Phase 61 PG17, Spec Kit, insurance, prescription atomicity and privileged-role checks passed.
 - PR remains Draft for independent SQL/security review, 320–430px Android Arabic RTL/English LTR acceptance and real pharmacist/prescriber UAT. No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion.
+ 
+## H+17 — Phase 61 exact-head validation after finance integration — 2026-11-11
+
+- PR #229 was reconciled with current main after Phase58/59 merge using a normal two-parent merge commit; branch remains zero behind main.
+- Exact code head 7f558a4279d97082eefb721019709ca9aeab7bb3 passed 29 successful checks and one intentional authenticated clinical-acceptance skip, with zero failures. Phase58/59 PG17, Phase61 PG17, prescription atomicity, insurance, typecheck, lint, build, security audits and Spec Kit passed.
+- Four negative event-visibility assertions for unassigned doctor, wrong-branch doctor, wrong-branch pharmacist and ordinary Admin pass; no policy rewrite was needed.
+- PR remains Draft for independent SQL/security review, 320–430px Android Arabic RTL/English LTR acceptance and real pharmacist/prescriber UAT. No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion.
