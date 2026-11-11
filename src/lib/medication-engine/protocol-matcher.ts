@@ -113,7 +113,11 @@ function isDoseBasis(value: unknown): value is DoseBasis {
   return false;
 }
 
-function hasValidSource(source: MedicationProtocolSource, asOfDate: string): boolean {
+function hasValidSource(
+  source: MedicationProtocolSource,
+  asOfDate: string,
+  expectedSetting: string,
+): boolean {
   return (
     nonEmpty(source.sourceId) &&
     nonEmpty(source.issuer) &&
@@ -123,6 +127,7 @@ function hasValidSource(source: MedicationProtocolSource, asOfDate: string): boo
     nonEmpty(source.jurisdiction) &&
     nonEmpty(source.population) &&
     nonEmpty(source.setting) &&
+    source.setting === expectedSetting &&
     source.licenseStatus === "verified" &&
     isIsoDate(source.publishedAt) &&
     isIsoDate(source.retrievedAt) &&
@@ -149,11 +154,11 @@ function hasDualApproval(approvals: MedicationProtocolApproval[], asOfDate: stri
   const gpActors = new Set(
     validApprovals
       .filter((approval) => approval.role === "gp")
-      .map((approval) => approval.actorId.trim()),
+      .map((approval) => approval.actorId.trim().toLowerCase()),
   );
   const pharmacistActors = validApprovals
     .filter((approval) => approval.role === "pharmacist")
-    .map((approval) => approval.actorId.trim());
+    .map((approval) => approval.actorId.trim().toLowerCase());
 
   return [...gpActors].some((gpActor) =>
     pharmacistActors.some((pharmacistActor) => pharmacistActor !== gpActor),
@@ -196,6 +201,7 @@ export function matchMedicationProtocol(
 ): MedicationProtocolMatchResult {
   if (
     !context ||
+    !Array.isArray(protocols) ||
     !isIsoDate(context.asOfDate) ||
     !nonEmpty(context.indicationCode) ||
     !nonEmpty(context.setting) ||
@@ -254,7 +260,7 @@ export function matchMedicationProtocol(
       !nonEmpty(protocol.id) ||
       !nonEmpty(protocol.version) ||
       !protocol.source ||
-      !hasValidSource(protocol.source, context.asOfDate)
+      !hasValidSource(protocol.source, context.asOfDate, protocol.setting)
     ) {
       return { status: "blocked", reason: "invalid_protocol_provenance" };
     }

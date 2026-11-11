@@ -49,3 +49,12 @@ No verified source → no protocol. No verified product → no product route/con
 
 ## Current status
 Test contract is committed first in PR #233. Pure calculator implementation is now added on the same branch. No hosted database, patient data, clinical protocol, production deployment or role/ACL change has occurred.
+
+
+## Matcher safety hardening — 2026-11-11
+
+- Added a regression test for a source whose stated care setting conflicts with the protocol's care setting; such a protocol must be blocked as invalid provenance.
+- Source-setting equality is now enforced at both matcher branches (including the missing-age path), not merely recorded as descriptive metadata.
+- Dual approval actor IDs are normalized by trimming and case-folding before distinct-person comparison, preventing the same UUID-like actor represented with different hex casing from satisfying two-person control.
+- A non-array protocol payload now fails closed as invalid context rather than throwing at runtime.
+- Regression tests added for all three boundaries. No real protocols, patient data, database changes or clinical activation.

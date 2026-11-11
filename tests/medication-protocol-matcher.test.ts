@@ -264,3 +264,11 @@ test("treats actor identifiers case-insensitively when enforcing distinct approv
     },
   );
 });
+
+
+test("fails closed when the protocol collection is not an array", () => {
+  assert.deepEqual(matchMedicationProtocol(null as never, context), {
+    status: "blocked",
+    reason: "invalid_context",
+  });
+});

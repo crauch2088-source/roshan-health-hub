@@ -109,3 +109,8 @@ These rules govern every Roshan task. They override conversational momentum and 
 
 - Exact-head run `43093492158` reached 27 successful checks and one intentional authenticated clinical-acceptance skip; the only failure was still the Prettier union layout in `protocol-matcher.ts`. The insurance aggregate run `43093492239` failed on the same formatter finding; its workflow is downstream of the same lint gate.
 - The source line is now consolidated to the formatter's required two-line union form. No behavioral code changed. The next exact-head run is the acceptance check; do not repeat the previous failed outcomes as if green.
+
+
+### Medication matcher safety hardening — 2026-11-11
+
+The matcher now rejects a protocol when the cited source's care setting differs from the protocol setting; GP/pharmacist distinct-actor comparison trims and case-folds identifiers; malformed non-array protocol payloads return a blocked result. Regression tests cover these conditions. Exact-head CI is required before acceptance.
