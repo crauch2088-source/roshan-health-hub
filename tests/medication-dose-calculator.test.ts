@@ -172,7 +172,7 @@ test("rejects non-finite results from extreme source-defined rounding increments
       basis: { kind: "fixed", amountMg: 1, dosesPerDay: 1 },
       rounding: { incrementMg: Number.MIN_VALUE, mode: "up" },
     }),
-    { status: "invalid", reason: "calculation_out_of_range" },
+    { status: "invalid", reason: "invalid_rule_parameters" },
   );
 });
 
@@ -202,4 +202,33 @@ test("fails closed for null input, malformed basis, and null rounding payloads",
     } as never),
     { status: "invalid", reason: "invalid_rule_parameters" },
   );
+});
+
+
+test("rounds down without crossing upward near an increment boundary", () => {
+  assert.deepEqual(
+    calculateDose({
+      basis: { kind: "fixed", amountMg: 0.99999999995, dosesPerDay: 1 },
+      rounding: { incrementMg: 1, mode: "down" },
+    }),
+    { status: "invalid", reason: "rounding_not_positive" },
+  );
+});
+
+test("rounds up without crossing downward near an increment boundary", () => {
+  const result = calculateDose({
+    basis: { kind: "fixed", amountMg: 1.00000000005, dosesPerDay: 1 },
+    rounding: { incrementMg: 1, mode: "up" },
+  });
+  assert.equal(result.status, "calculated");
+  if (result.status === "calculated") assert.equal(result.doseMg, 2);
+});
+
+test("decimal rounding preserves exact decimal increments without binary-float drift", () => {
+  const result = calculateDose({
+    basis: { kind: "fixed", amountMg: 0.3, dosesPerDay: 1 },
+    rounding: { incrementMg: 0.1, mode: "down" },
+  });
+  assert.equal(result.status, "calculated");
+  if (result.status === "calculated") assert.equal(result.doseMg, 0.3);
 });

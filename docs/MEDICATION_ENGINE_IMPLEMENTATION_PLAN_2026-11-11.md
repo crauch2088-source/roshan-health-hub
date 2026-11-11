@@ -67,3 +67,11 @@ Test contract is committed first in PR #233. Pure calculator implementation is n
 - Dose calculation rejects malformed runtime payloads without throwing and requires a positive safe-integer doses-per-day count. Non-daily interval regimens need a separate interval representation.
 - Regression coverage added for source/context scope mismatches, missing context, malformed calculator payloads and fractional frequency.
 - This remains a non-clinical foundation: no active clinical protocols or patient-specific recommendations.
+
+
+## Decimal rounding safety correction — 2026-11-11
+
+- Replaced epsilon-adjusted binary floating-point floor/ceil with exact decimal-rational quotient/remainder rounding using BigInt.
+- "Down" can no longer cross upward and "up" can no longer cross downward merely because a value is within a fixed epsilon of an increment boundary.
+- Rounding increments below the kernel's declared 1e-10 mg precision are rejected as invalid parameters rather than silently normalised.
+- Added near-boundary directional and 0.3/0.1 decimal regression cases. No clinical regimen is supplied or activated.

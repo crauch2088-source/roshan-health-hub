@@ -36,3 +36,8 @@ A protocol and encounter context must both carry explicit population and jurisdi
 ## Runtime input validation
 
 The arithmetic kernel accepts only positive safe-integer doses-per-day counts. It rejects null/malformed input, basis and rounding payloads without throwing. Interval-based schedules require a future explicit interval model.
+
+
+## Rounding precision
+
+Rounding uses decimal coefficient/scale arithmetic so binary floating-point representation does not invert upward/downward direction near an increment boundary. The minimum supported increment is 1e-10 mg, matching the kernel output precision; smaller increments are rejected. Interval schedules and unit conversions remain out of scope.

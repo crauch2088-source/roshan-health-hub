@@ -21,19 +21,39 @@ function validRounding(value: unknown): value is DoseRounding | undefined {
   const candidate = value as Record<string, unknown>;
   return (
     positiveFinite(candidate["incrementMg"]) &&
+    candidate["incrementMg"] >= 1e-10 &&
     ["nearest", "down", "up"].includes(String(candidate["mode"]))
   );
 }
 
+type DecimalParts = { coefficient: bigint; scale: number };
+
+function decimalParts(value: number): DecimalParts {
+  const [mantissa = "0", exponentText] = value.toString().split("e");
+  const exponent = Number(exponentText ?? "0");
+  const [whole = "0", fraction = ""] = mantissa.split(".");
+  const coefficient = BigInt(`${whole}${fraction}`);
+  const scale = fraction.length - exponent;
+
+  return scale < 0
+    ? { coefficient: coefficient * 10n ** BigInt(-scale), scale: 0 }
+    : { coefficient, scale };
+}
+
 function roundDose(value: number, rule: DoseRounding): number {
-  const units = value / rule.incrementMg;
-  if (rule.mode === "down") {
-    return normalize(Math.floor(units + 1e-10) * rule.incrementMg);
-  }
-  if (rule.mode === "up") {
-    return normalize(Math.ceil(units - 1e-10) * rule.incrementMg);
-  }
-  return normalize(Math.round(units) * rule.incrementMg);
+  const valueParts = decimalParts(value);
+  const incrementParts = decimalParts(rule.incrementMg);
+  const numerator = valueParts.coefficient * 10n ** BigInt(incrementParts.scale);
+  const denominator = incrementParts.coefficient * 10n ** BigInt(valueParts.scale);
+  const quotient = numerator / denominator;
+  const remainder = numerator % denominator;
+
+  let roundedUnits = quotient;
+  if (rule.mode === "up" && remainder > 0n) roundedUnits += 1n;
+  if (rule.mode === "nearest" && remainder * 2n >= denominator) roundedUnits += 1n;
+
+  const roundedCoefficient = roundedUnits * incrementParts.coefficient;
+  return normalize(Number(`${roundedCoefficient}e-${incrementParts.scale}`));
 }
 
 function validCeiling(value: unknown): boolean {
