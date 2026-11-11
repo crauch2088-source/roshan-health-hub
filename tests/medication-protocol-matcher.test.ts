@@ -103,13 +103,10 @@ test("does not use future or expired protocol versions", () => {
       reason: "outside_effective_dates",
     },
   );
-  assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, effectiveTo: "2026-01-01" }], context),
-    {
-      status: "no_match",
-      reason: "outside_effective_dates",
-    },
-  );
+  assert.deepEqual(matchMedicationProtocol([{ ...protocol, effectiveTo: "2026-01-01" }], context), {
+    status: "no_match",
+    reason: "outside_effective_dates",
+  });
 });
 
 test("requires age when the protocol defines an age range", () => {
