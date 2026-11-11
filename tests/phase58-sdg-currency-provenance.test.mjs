@@ -99,24 +99,12 @@ test("deferred insurance claim payments are disabled in both UI and RPC access",
     fixture,
     /GRANT EXECUTE ON FUNCTION public\.post_insurance_claim_payment\(uuid, numeric, text, text\)[\s\S]*TO anon, authenticated, service_role/,
   );
-  assert.match(
-    integration,
-    /has_function_privilege\('authenticated', v_rpc, 'EXECUTE'\)/,
-  );
-  assert.doesNotMatch(
-    insuranceUi,
-    /postInsuranceClaimPayment|payTarget|payAmount|record_payment/,
-  );
-  assert.doesNotMatch(
-    insuranceLib,
-    /postInsuranceClaimPayment|post_insurance_claim_payment/,
-  );
+  assert.match(integration, /has_function_privilege\('authenticated', v_rpc, 'EXECUTE'\)/);
+  assert.doesNotMatch(insuranceUi, /postInsuranceClaimPayment|payTarget|payAmount|record_payment/);
+  assert.doesNotMatch(insuranceLib, /postInsuranceClaimPayment|post_insurance_claim_payment/);
   assert.match(
     insuranceUi,
     /Claims can still be created and reviewed; payment posting is temporarily disabled/,
   );
-  assert.match(
-    insuranceUi,
-    /يمكن إنشاء المطالبات ومراجعتها، لكن تسجيل دفعاتها معطّل مؤقتًا/,
-  );
+  assert.match(insuranceUi, /يمكن إنشاء المطالبات ومراجعتها، لكن تسجيل دفعاتها معطّل مؤقتًا/);
 });
