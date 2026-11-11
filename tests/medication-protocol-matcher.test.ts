@@ -67,98 +67,113 @@ test("matches only an active, effective, dual-approved protocol and returns its 
 });
 
 test("does not infer a protocol from a different indication, setting or medicine", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, indicationCode: "A09" }),
-    { status: "no_match", reason: "no_matching_protocol" },
-  );
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, setting: "inpatient" }),
-    { status: "no_match", reason: "no_matching_protocol" },
-  );
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, medicineId: "other-medicine" }),
-    { status: "no_match", reason: "no_matching_protocol" },
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, indicationCode: "A09" }), {
+    status: "no_match",
+    reason: "no_matching_protocol",
+  });
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, setting: "inpatient" }), {
+    status: "no_match",
+    reason: "no_matching_protocol",
+  });
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, medicineId: "other-medicine" }), {
+    status: "no_match",
+    reason: "no_matching_protocol",
+  });
 });
 
 test("ignores draft and suspended protocols rather than recommending them", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, status: "draft" }], context),
-    { status: "no_match", reason: "no_active_protocol" },
-  );
-  assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, status: "suspended" }], context),
-    { status: "no_match", reason: "no_active_protocol" },
-  );
+  assert.deepEqual(matchMedicationProtocol([{ ...protocol, status: "draft" }], context), {
+    status: "no_match",
+    reason: "no_active_protocol",
+  });
+  assert.deepEqual(matchMedicationProtocol([{ ...protocol, status: "suspended" }], context), {
+    status: "no_match",
+    reason: "no_active_protocol",
+  });
 });
 
 test("does not use future or expired protocol versions", () => {
   assert.deepEqual(
     matchMedicationProtocol([{ ...protocol, effectiveFrom: "2027-01-01" }], context),
-    { status: "no_match", reason: "outside_effective_dates" },
+    {
+      status: "no_match",
+      reason: "outside_effective_dates",
+    },
   );
   assert.deepEqual(
     matchMedicationProtocol([{ ...protocol, effectiveTo: "2026-01-01" }], context),
-    { status: "no_match", reason: "outside_effective_dates" },
+    {
+      status: "no_match",
+      reason: "outside_effective_dates",
+    },
   );
 });
 
 test("requires age when the protocol defines an age range", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, ageDays: null }),
-    {
-      status: "needs_data",
-      protocolId: protocol.id,
-      protocolVersion: "1",
-      missing: ["age_days"],
-      source,
-    },
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, ageDays: null }), {
+    status: "needs_data",
+    protocolId: protocol.id,
+    protocolVersion: "1",
+    missing: ["age_days"],
+    source,
+  });
 });
 
 test("requires measured weight for a weight-based protocol and never falls back", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, weightKg: null }),
-    {
-      status: "needs_data",
-      protocolId: protocol.id,
-      protocolVersion: "1",
-      missing: ["weight_kg"],
-      source,
-    },
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, weightKg: null }), {
+    status: "needs_data",
+    protocolId: protocol.id,
+    protocolVersion: "1",
+    missing: ["weight_kg"],
+    source,
+  });
 });
 
 test("blocks protocols without both GP and pharmacist approval", () => {
   assert.deepEqual(
     matchMedicationProtocol([{ ...protocol, approvals: [approvals[0]] }], context),
-    { status: "blocked", reason: "missing_dual_approval" },
+    {
+      status: "blocked",
+      reason: "missing_dual_approval",
+    },
   );
 });
 
 test("blocks unverified or incomplete source provenance", () => {
   assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, source: { ...source, licenseStatus: "unverified" } }], context),
-    { status: "blocked", reason: "invalid_protocol_provenance" },
+    matchMedicationProtocol(
+      [{ ...protocol, source: { ...source, licenseStatus: "unverified" } }],
+      context,
+    ),
+    {
+      status: "blocked",
+      reason: "invalid_protocol_provenance",
+    },
   );
   assert.deepEqual(
     matchMedicationProtocol([{ ...protocol, source: { ...source, section: "" } }], context),
-    { status: "blocked", reason: "invalid_protocol_provenance" },
+    {
+      status: "blocked",
+      reason: "invalid_protocol_provenance",
+    },
   );
 });
 
 test("blocks ambiguous active protocols instead of selecting one arbitrarily", () => {
   assert.deepEqual(
     matchMedicationProtocol([protocol, { ...protocol, id: "synthetic-protocol-2" }], context),
-    { status: "blocked", reason: "ambiguous_active_protocols" },
+    {
+      status: "blocked",
+      reason: "ambiguous_active_protocols",
+    },
   );
 });
 
 test("does not match patients outside the protocol age range", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, ageDays: 3651 }),
-    { status: "no_match", reason: "outside_age_range" },
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, ageDays: 3651 }), {
+    status: "no_match",
+    reason: "outside_age_range",
+  });
 });
 
 test("blocks invalid protocol arithmetic rather than producing a recommendation", () => {
@@ -167,7 +182,10 @@ test("blocks invalid protocol arithmetic rather than producing a recommendation"
       [{ ...protocol, doseBasis: { ...protocol.doseBasis, dosesPerDay: 0 } }],
       context,
     ),
-    { status: "blocked", reason: "invalid_protocol_rule" },
+    {
+      status: "blocked",
+      reason: "invalid_protocol_rule",
+    },
   );
 });
 
@@ -183,20 +201,19 @@ test("allows fixed-dose protocols without a weight measurement", () => {
 });
 
 test("rejects invalid context dates and malformed patient measurements", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, asOfDate: "2026-02-31" }),
-    { status: "blocked", reason: "invalid_context" },
-  );
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, ageDays: -1 }),
-    { status: "blocked", reason: "invalid_context" },
-  );
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, weightKg: -1 }),
-    { status: "blocked", reason: "invalid_patient_data" },
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, asOfDate: "2026-02-31" }), {
+    status: "blocked",
+    reason: "invalid_context",
+  });
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, ageDays: -1 }), {
+    status: "blocked",
+    reason: "invalid_context",
+  });
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, weightKg: -1 }), {
+    status: "blocked",
+    reason: "invalid_patient_data",
+  });
 });
-
 
 test("requires GP and pharmacist approvals from two distinct human actors", () => {
   const sharedActorApprovals = [
@@ -205,14 +222,17 @@ test("requires GP and pharmacist approvals from two distinct human actors", () =
   ];
   assert.deepEqual(
     matchMedicationProtocol([{ ...protocol, approvals: sharedActorApprovals }], context),
-    { status: "blocked", reason: "missing_dual_approval" },
+    {
+      status: "blocked",
+      reason: "missing_dual_approval",
+    },
   );
 });
 
 test("ignores malformed approval entries without throwing or granting approval", () => {
   const malformedApprovals = [null, approvals[0]] as never;
-  assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, approvals: malformedApprovals }], context),
-    { status: "blocked", reason: "missing_dual_approval" },
-  );
+  assert.deepEqual(matchMedicationProtocol([{ ...protocol, approvals: malformedApprovals }], context), {
+    status: "blocked",
+    reason: "missing_dual_approval",
+  });
 });
