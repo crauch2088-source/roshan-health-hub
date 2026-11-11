@@ -310,10 +310,7 @@ test("requires explicit population and jurisdiction context", () => {
     status: "blocked",
     reason: "invalid_context",
   };
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, population: "" }),
-    expected,
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, population: "" }), expected);
   assert.deepEqual(
     matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }),
     expected,
@@ -330,10 +327,10 @@ test("does not return needs_data for a protocol with an invalid dose basis or mi
     reason: "invalid_protocol_provenance",
   };
   assert.deepEqual(
-    matchMedicationProtocol(
-      [{ ...protocol, doseBasis: { kind: "unknown" } as never }],
-      { ...context, ageDays: null },
-    ),
+    matchMedicationProtocol([{ ...protocol, doseBasis: { kind: "unknown" } as never }], {
+      ...context,
+      ageDays: null,
+    }),
     invalidRule,
   );
   assert.deepEqual(
