@@ -115,3 +115,12 @@ This feature does not assume the owner has selected either policy.
 - PR #181 currently passes a mutable `currencyValue` into the receipt model builder.
 - Phase54C receipt-integrity RPC exists in QA only; Production migration head remains earlier.
 - These facts do not establish a policy decision or authorize a migration.
+
+
+## Superseding owner decision and implementation addendum — 2026-11-09
+
+The owner has confirmed Roshan is permanently SDG-only. There is no future currency change, multi-currency, FX, conversion, or cross-currency settlement. This supersedes the earlier "Owner Decision Required" section above.
+
+The approved first implementation scope is invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory batches. Insurance monetary tables remain deferred per the owner's earlier instruction. Payroll is deferred until a payroll transaction workflow exists. Catalogue prices are global SDG values; invoice line items inherit their parent invoice currency.
+
+The candidate in PR #211 adds nullable currency_code with DEFAULT 'SDG' for new rows on the seven included tables, preserves all legacy rows as NULL, rejects explicit NULL/non-SDG inserts, and prevents a populated code from being changed or cleared. It does not backfill history or replace financial RPCs. Historical receipt printing remains blocked for rows with NULL or mismatched currency provenance.

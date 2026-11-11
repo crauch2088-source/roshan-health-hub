@@ -47,7 +47,6 @@ import {
   NEXT_CLAIM_STATUS,
   calculateInsuranceCoverage,
   createInsuranceClaim,
-  postInsuranceClaimPayment,
   updateInsuranceClaimStatus,
   type ClaimItemInput,
   type ClaimStatus,
@@ -667,8 +666,6 @@ function ClaimsTab({ currency }: { currency: string }) {
   });
   const [decision, setDecision] = useState<{ claim: Row; status: ClaimStatus } | null>(null);
   const [approvedAmount, setApprovedAmount] = useState("0");
-  const [payTarget, setPayTarget] = useState<Row | null>(null);
-  const [payAmount, setPayAmount] = useState("0");
 
   const membership = useRows<Row[]>(["patient-insurance-picker"], () =>
     supabase
@@ -776,24 +773,6 @@ function ClaimsTab({ currency }: { currency: string }) {
     },
   );
 
-  const pay = useSave(
-    async () => {
-      if (!payTarget) return null;
-      const amt = Number(payAmount) || 0;
-      if (amt <= 0) throw new Error(t("invalid_quantity"));
-      await postInsuranceClaimPayment({ claimId: s(payTarget, "id"), amount: amt });
-      return null;
-    },
-    {
-      invalidate: [["insurance-claims"], ["cashbox-balance"], ["cashbox-transactions"]],
-      successMessage: t("saved"),
-      onDone: () => {
-        setPayTarget(null);
-        setPayAmount("0");
-      },
-    },
-  );
-
   const rows = (claims.data ?? []) as Row[];
   const pendingCount = rows.filter((r) =>
     ["submitted", "under_review"].includes(s(r, "status")),
@@ -812,6 +791,15 @@ function ClaimsTab({ currency }: { currency: string }) {
             <Plus className="size-4" /> {t("new_claim")}
           </Button>
         ) : null}
+      </div>
+
+      <div
+        role="status"
+        className="mb-4 rounded-md border border-dashed p-3 text-sm text-muted-foreground"
+      >
+        {lang === "ar"
+          ? "يمكن إنشاء المطالبات ومراجعتها، لكن تسجيل دفعاتها معطّل مؤقتًا حتى اعتماد مسار العملة ومصدر القيد."
+          : "Claims can still be created and reviewed; payment posting is temporarily disabled until the SDG currency-provenance path is approved."}
       </div>
 
       <ErrorBox error={claims.error} />
@@ -849,7 +837,6 @@ function ClaimsTab({ currency }: { currency: string }) {
                   const pi = rel(c, "patient_insurance");
                   const status = s(c, "status") as ClaimStatus;
                   const nextOptions = NEXT_CLAIM_STATUS[status] ?? [];
-                  const outstanding = n(c, "approved_amount") - n(c, "paid_amount");
                   return (
                     <TableRow key={s(c, "id")}>
                       <TableCell dir="ltr" className="font-mono text-xs">
@@ -885,20 +872,6 @@ function ClaimsTab({ currency }: { currency: string }) {
                                 </Button>
                               ))
                             : null}
-                          {can("insurance.update") &&
-                          status !== "paid" &&
-                          ["approved", "partially_approved"].includes(status) &&
-                          outstanding > 0 ? (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setPayTarget(c);
-                                setPayAmount(String(outstanding));
-                              }}
-                            >
-                              {t("record_payment")}
-                            </Button>
-                          ) : null}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1083,31 +1056,6 @@ function ClaimsTab({ currency }: { currency: string }) {
               onClick={() => transition.mutate(undefined as never)}
             >
               {transition.isPending ? t("saving") : t("save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Payment */}
-      <Dialog open={Boolean(payTarget)} onOpenChange={(o) => (o ? null : setPayTarget(null))}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("record_payment")}</DialogTitle>
-          </DialogHeader>
-          <Field label={`${t("amount")} *`}>
-            <Input
-              type="number"
-              dir="ltr"
-              value={payAmount}
-              onChange={(e) => setPayAmount(e.target.value)}
-            />
-          </Field>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPayTarget(null)}>
-              {t("cancel")}
-            </Button>
-            <Button disabled={pay.isPending} onClick={() => pay.mutate(undefined as never)}>
-              {pay.isPending ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
         </DialogContent>

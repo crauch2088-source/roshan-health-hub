@@ -86,3 +86,17 @@ tests/
 ## Complexity Tracking
 
 No new service, provider, or architectural layer is proposed. The only justified schema work is persisted currency provenance at existing atomic write boundaries.
+
+
+## Superseding implementation addendum — 2026-11-09
+
+The owner has confirmed permanent SDG-only operation. The first candidate is additive and limited to invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory. It adds nullable currency_code columns with SDG defaults for new records, a CHECK allowing only NULL legacy values or SDG, and a private trigger that rejects explicit NULL/non-SDG inserts and prevents changing a populated code.
+
+Existing rows remain NULL; there is no settings-derived backfill. Insurance is deferred. Current Production/QA function fingerprints match for invoice creation/payment, expense posting, supplier bill/payment posting, and standard ledger triggers, but differ for pharmacy dispense and reversals; invoice-payment reversal is QA-only. Therefore this phase does not replace any existing SECURITY DEFINER RPC.
+
+Candidate SQL and disposable PostgreSQL 17 tests are in PR #211. It is not applied to hosted QA or Production. Independent review, live migration/function provenance reconciliation, legacy-row policy, and separate owner approval remain release gates.
+
+
+## Reconciled candidate status — 2026-11-11
+
+The current mainline-reconciled Phase 58/59 candidate is PR #211 head b0d1b5aca7facb1e6ca167c5c542f64568522dfe (86 commits ahead, zero behind). Exact-head CI completed with 29 successful checks, one intentional authenticated clinical-acceptance skip and zero failures. Phase58/59 PostgreSQL 17, finance-only write isolation, receipt fail-closed, idempotency concurrency, typecheck, lint, build, dependency audit and source parity passed. This does not authorize a hosted migration, legacy backfill or financial workflow release.

@@ -2,6 +2,12 @@
 -- Synthetic rows only. This fixture is not the production migration baseline.
 CREATE ROLE anon;
 CREATE ROLE authenticated;
+DO $service_role$
+BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$service_role$;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
 GRANT USAGE ON SCHEMA private TO authenticated;
@@ -37,7 +43,7 @@ CREATE TABLE public.lab_order_items (id uuid PRIMARY KEY, order_id uuid, status 
 CREATE TABLE public.suppliers (id uuid PRIMARY KEY, active boolean NOT NULL DEFAULT true, deleted_at timestamptz);
 CREATE TABLE public.cashbox_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, transaction_type text, amount numeric,
-  payment_method text, category text, description text, source_type text, transaction_date timestamptz, created_by uuid
+  payment_method text, category text, description text, source_type text, source_id uuid, reversal_of uuid, transaction_date timestamptz, created_by uuid
 );
 CREATE TABLE public.expenses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, category text, amount numeric, description text,
@@ -62,6 +68,7 @@ AS $function$
   SELECT 'INV-202610-00001'::text
 $function$;
 
+CREATE TABLE public.pharmacy_inventory (id uuid PRIMARY KEY, quantity_remaining numeric DEFAULT 0, quantity numeric DEFAULT 0, note text);
 CREATE TABLE public.supplier_payments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), branch_id uuid, supplier_bill_id uuid, supplier_id uuid,
   amount numeric, payment_method text, reference text, payment_date date, notes text, created_by uuid, deleted_at timestamptz

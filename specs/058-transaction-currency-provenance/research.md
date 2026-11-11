@@ -45,3 +45,12 @@ If multi-currency is chosen, each monetary record and report must carry/group by
 2. Which monetary tables and price catalogues must be included in the setting-change lock or currency provenance model? Current inventory includes invoices, invoice items, payments, cashbox transactions, expenses, insurance claims/payments, supplier bills/payments, lab/procedure/service prices, and pharmacy inventory prices.
 3. How should legacy soft-deleted records be treated if historical reprint is later enabled for them?
 4. Does the owner require a displayed currency symbol, an ISO code, or both on official receipts? The safe default is ISO code plus localized display name.
+
+
+## Superseding owner decision and live inventory — 2026-11-09
+
+The owner has confirmed Roshan is permanently SDG-only; no future currency switch, multi-currency, FX, or cross-currency settlement is required.
+
+Read-only Production/QA schema inspection found no currency_code columns on invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, or pharmacy_inventory. No business row values were read. Insurance is deferred per the owner's earlier instruction; payroll is deferred; catalogue prices remain global SDG and invoice line items inherit invoice currency.
+
+Read-only function-definition fingerprints match for invoice creation/payment, expense posting, supplier bill/payment posting, and standard ledger triggers. They differ for pharmacy dispense and cashbox reversal; invoice-payment reversal exists in QA only. No function was replaced. PR #211 therefore uses additive defaults/triggers without changing RPC signatures, and preserves legacy rows as NULL.

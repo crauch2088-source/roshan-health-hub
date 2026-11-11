@@ -53,3 +53,12 @@ The `currency_code` MUST be sourced from the persisted financial record, not fro
 - Financial writes remain in approved SECURITY DEFINER RPCs with fixed empty `search_path`, explicit permission/actor/branch checks, and exact decimal validation.
 - Browser roles receive no direct INSERT/UPDATE/DELETE grants on financial tables.
 - Tests must prove cross-branch rejection, idempotency, ledger atomicity, reversal consistency, and no partial writes.
+
+
+## Superseding SDG-only invariant — 2026-11-09
+
+Roshan is permanently SDG-only. No configurable currency, multi-currency, FX, or cross-currency settlement is supported.
+
+New invoices, payments, cashbox transactions, expenses, supplier bills/payments, and pharmacy inventory batches receive SDG from database defaults. Explicit NULL/non-SDG new rows are rejected, and populated currency_code cannot be changed or cleared. Existing legacy NULL values remain NULL until a separately reviewed evidence-backed reconciliation assigns SDG. The application must never infer historical currency from mutable system_settings.
+
+Official receipt/reprint must use persisted payment/invoice/ledger currency and block when provenance is missing or contradictory. PR #211 is a source-only candidate; no hosted migration or historical backfill has been performed.

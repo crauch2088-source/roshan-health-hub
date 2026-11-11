@@ -72,3 +72,10 @@ Read-only projection:
 ## Scope Boundary
 
 This proposed model covers invoice/payment/cashbox receipt provenance. It does not silently solve currency semantics for expenses, supplier bills/payments, insurance, pharmacy purchase prices, or lab/service catalogues. Those must be inventoried and included before any global currency-setting lock or multi-currency reporting is implemented.
+
+
+## Superseding single-SDG model — 2026-11-09
+
+Roshan supports SDG only. The first persisted-provenance scope is invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory batches. Each receives nullable currency_code with DEFAULT 'SDG' for new rows. A private trigger rejects explicit NULL/non-SDG inserts and prevents changing or clearing a populated code.
+
+Existing rows remain NULL until an explicitly reviewed evidence-backed reconciliation assigns SDG. Invoice line items inherit invoice currency; master catalogue prices use global SDG. Insurance tables and payroll are deferred. No FX or multi-currency semantics are introduced.
