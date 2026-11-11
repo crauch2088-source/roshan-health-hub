@@ -176,7 +176,6 @@ test("rejects non-finite results from extreme source-defined rounding increments
   );
 });
 
-
 test("rejects fractional doses-per-day because the kernel models daily dose counts, not intervals", () => {
   assert.deepEqual(
     calculateDose({
@@ -203,7 +202,6 @@ test("fails closed for null input, malformed basis, and null rounding payloads",
     { status: "invalid", reason: "invalid_rule_parameters" },
   );
 });
-
 
 test("rounds down without crossing upward near an increment boundary", () => {
   assert.deepEqual(
@@ -232,7 +230,6 @@ test("decimal rounding preserves exact decimal increments without binary-float d
   assert.equal(result.status, "calculated");
   if (result.status === "calculated") assert.equal(result.doseMg, 0.3);
 });
-
 
 test("rejects rounding increments that cannot be represented at kernel output precision", () => {
   assert.deepEqual(
