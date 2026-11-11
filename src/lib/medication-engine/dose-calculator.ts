@@ -78,7 +78,14 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
   if (input.rounding) {
     const candidate = roundDose(doseMg, input.rounding);
     if (candidate <= 0) return { status: "invalid", reason: "rounding_not_positive" };
-    if (candidate > doseMg + 1e-10) return { status: "invalid", reason: "rounding_exceeds_safety_cap" };
+    const configuredCeilings = [
+      basis.maxPerDoseMg,
+      basis.maxPerDayMg === undefined ? undefined : basis.maxPerDayMg / basis.dosesPerDay,
+    ].filter((value): value is number => value !== undefined);
+    const safetyCeiling = configuredCeilings.length ? Math.min(...configuredCeilings) : Number.POSITIVE_INFINITY;
+    if (candidate > safetyCeiling + 1e-10) {
+      return { status: "invalid", reason: "rounding_exceeds_safety_cap" };
+    }
     rounded = Math.abs(candidate - doseMg) > 1e-10;
     doseMg = candidate;
   }
