@@ -75,10 +75,13 @@ test("does not infer a protocol from a different indication, setting or medicine
     status: "no_match",
     reason: "no_matching_protocol",
   });
-  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, medicineId: "other-medicine" }), {
-    status: "no_match",
-    reason: "no_matching_protocol",
-  });
+  assert.deepEqual(
+    matchMedicationProtocol([protocol], { ...context, medicineId: "other-medicine" }),
+    {
+      status: "no_match",
+      reason: "no_matching_protocol",
+    },
+  );
 });
 
 test("ignores draft and suspended protocols rather than recommending them", () => {
@@ -130,13 +133,10 @@ test("requires measured weight for a weight-based protocol and never falls back"
 });
 
 test("blocks protocols without both GP and pharmacist approval", () => {
-  assert.deepEqual(
-    matchMedicationProtocol([{ ...protocol, approvals: [approvals[0]] }], context),
-    {
-      status: "blocked",
-      reason: "missing_dual_approval",
-    },
-  );
+  assert.deepEqual(matchMedicationProtocol([{ ...protocol, approvals: [approvals[0]] }], context), {
+    status: "blocked",
+    reason: "missing_dual_approval",
+  });
 });
 
 test("blocks unverified or incomplete source provenance", () => {
@@ -231,8 +231,11 @@ test("requires GP and pharmacist approvals from two distinct human actors", () =
 
 test("ignores malformed approval entries without throwing or granting approval", () => {
   const malformedApprovals = [null, approvals[0]] as never;
-  assert.deepEqual(matchMedicationProtocol([{ ...protocol, approvals: malformedApprovals }], context), {
-    status: "blocked",
-    reason: "missing_dual_approval",
-  });
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, approvals: malformedApprovals }], context),
+    {
+      status: "blocked",
+      reason: "missing_dual_approval",
+    },
+  );
 });
