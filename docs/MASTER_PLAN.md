@@ -2903,3 +2903,10 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - Exact-head validation completed **30 checks: 29 successful, one intentionally skipped** for canonical authenticated clinical acceptance. Typecheck, lint, build, dependency audits, CodeQL, Spec Kit, Phase 61 PostgreSQL 17 authorization/RLS/audit/concurrency/no-side-effects, prescription atomicity, insurance and mainline pharmacy integrations passed.
 - The pharmacist request, prescriber inbox and explicit cancel/reissue workflow remain Draft. Real Android RTL/LTR browser acceptance, independent SQL/security review and pharmacist/prescriber UAT remain open.
 - No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion occurred. The Phase 61 SQL is still a source candidate only.
+ 
+## H+16 Phase 61 event-visibility regression coverage — 2026-11-11
+
+- Added negative PostgreSQL 17 assertions proving an unassigned same-branch doctor, a wrong-branch doctor, a wrong-branch pharmacist and an ordinary Admin cannot read correction-event rows for another branch/prescriber.
+- The existing events policy uses an EXISTS subquery against the RLS-protected correction-request table. The new tests passed, confirming PostgreSQL applies the request table's RLS visibility within that subquery; no unnecessary policy rewrite was made.
+- New exact head c946f1486c1f0f0b8e4f327bb70b50a0cfe22038 passed 30 checks: 29 success, one intentional authenticated clinical-acceptance skip, zero failures. Phase 61 PostgreSQL 17, full CI, Spec Kit, insurance, prescription atomicity and privileged-role checks passed.
+- PR #229 remains Draft pending independent SQL/security review, Android RTL/LTR acceptance and pharmacist/prescriber UAT. No hosted migration or production action occurred.
