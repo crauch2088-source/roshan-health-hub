@@ -4,7 +4,7 @@
 
 ## Summary
 
-Persist transaction currency at the authoritative database write boundary and render historical receipts from saved currency provenance. The current receipt model receives currency from mutable application settings, while the live invoice/payment/cashbox schema has no currency-code fields. The feature must first obtain an explicit owner decision on single-currency locking versus multi-currency operation. No migration or code behavior change is authorized by this draft plan.
+Persist the fixed SDG currency at authorized financial write boundaries and render historical receipts from saved transaction provenance. The current receipt model receives currency from mutable application settings, while the live invoice/payment/cashbox schema has no currency-code fields. The owner has explicitly decided on permanent SDG-only operation: no currency switching, multi-currency support, or FX features are to be implemented. No migration or code behavior change is authorized by this draft plan.
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Persist transaction currency at the authoritative database write boundary and re
 
 **Constraints**: Atomic RPC-only financial writes; exact decimal precision; branch isolation; idempotency; no Production DDL/DML in this feature PR; no paid dependencies.
 
-**Scale/Scope**: Invoice, payment, cashbox ledger, receipt read model, and the clinic currency-setting boundary. Broader monetary modules must be inventoried before any policy lock is implemented.
+**Scale/Scope**: Invoice, payment, cashbox ledger, receipt read model, and the clinic currency-setting boundary. All monetary domains must be inventoried for the SDG-only invariant before implementation.
 
 ## Constitution Check
 
@@ -39,18 +39,18 @@ Persist transaction currency at the authoritative database write boundary and re
 
 ## Research Summary
 
-See [research.md](research.md). The existing receipt builder accepts `currencyValue` as an external mutable input. The live database has no currency-code field on invoices, payments, or cashbox ledger rows. Production has no active invoice/payment/cashbox rows and is configured as SDG; QA has no such rows and no currency setting row. This is a clean baseline for a future controlled migration, but the owner policy decision remains necessary.
+See [research.md](research.md). The existing receipt builder accepts `currencyValue` as an external mutable input. The live database has no currency-code field on invoices, payments, or cashbox ledger rows. Production has no active invoice/payment/cashbox rows and is configured as SDG; QA has no such rows and no currency setting row. This is a clean baseline for a controlled SDG-only implementation; the owner policy decision is complete.
 
 ## Proposed Data and Write Model
 
-Subject to owner approval:
+Implementation contract:
 
-1. Persist a validated ISO 4217 `currency_code` on invoices.
-2. At payment posting, copy currency from the locked invoice row; do not trust a client-supplied currency.
-3. Ensure the cashbox payment ledger row and any reversal copy the source payment currency.
-4. Expose the saved currency through the authorized receipt read model.
-5. Make the receipt model reject missing/invalid currency and remove its dependency on current settings for historical documents.
-6. Define how manual cashbox entries and other monetary modules are governed by the clinic currency policy before enabling a setting change.
+1. Persist `currency_code = 'SDG'` on invoices, payments, cashbox entries, and reversals.
+2. Authorized invoice/payment RPCs and triggers assign SDG internally; reject any client-supplied non-SDG code.
+3. Prevent changing or deleting the canonical clinic currency setting through database authorization/constraints; retain `SDG` as display metadata only.
+4. Extend the same invariant to expenses, supplier balances, insurance, pharmacy purchase/sale prices, laboratory/service prices, and reports after inventorying their authoritative write paths.
+5. Expose persisted SDG through the authorized receipt read model; remove mutable settings as a receipt fallback.
+6. Never backfill legacy monetary records blindly; require an evidence-backed strategy for each affected table.
 
 No database migration should be authored until the exact current live function definitions, canonical migration sources, and source-parity constraints are reconciled.
 
@@ -77,7 +77,7 @@ tests/
 
 ## Risks and Mitigations
 
-- **Owner policy unresolved**: keep all implementation tasks blocked at T001 until the policy is explicitly accepted.
+- **Owner policy**: decided — permanent SDG-only operation. Implementation remains blocked on complete monetary-scope inventory and canonical-source reconciliation.
 - **Live migration source drift**: compare actual Production/QA function definitions with canonical migration files before creating a forward migration.
 - **Legacy records**: require an evidence-backed backfill or explicitly quarantine non-printable records; never use the current setting as a blanket historical default.
 - **Incomplete monetary scope**: inventory all monetary tables and catalogue prices before implementing any currency-setting lock.

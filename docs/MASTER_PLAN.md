@@ -2768,18 +2768,9 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 **Next task:** complete the content/effective-catalog source reconciliation in the linked report, then synchronize PR #191 with current main and rerun its PG17 regression suite. Keep it Draft until isolated QA and synthetic pharmacist acceptance exist. No Production DDL/DML or external backup dispatch in this step.
 
 
-## Phase 56A medicine catalogue identity — rebased review candidate (2026-11-09)
-
-- A fresh candidate branch is based on current `main`; it carries the permission-gated medicine identity editor, pure builder, Arabic/English labels, and regression tests without importing the stale backup-status snapshot from the older branch.
-- The editor changes only display name, generic ingredient, brand, strength and dosage form. It does not edit stock quantity, batch/expiry, packaging unit, prices, reorder level, barcode, active flags or branch identifiers.
-- Existing live role mapping gives `pharmacy.update` to admin, legacy admin roles, pharmacist and super-admin. This is permission-gated, not pharmacist-exclusive. The catalogue is shared across branches; physical-pack acknowledgement remains transient and is not a durable attestation. Keep Draft pending owner-approved role scope, durable acknowledgement decision, independent review, and QA pharmacist acceptance.
-- Drug product identity is not a dosing recommendation. Product matching must not infer dose, route, frequency or duration; clinical protocols require separately validated current guidance.
-- No schema migration, database write, permission change or deployment is included in this candidate.
-
-
 ## Live release-gate recheck — 2026-11-10 (read-only)
 
-Main at the start of this checkpoint: `969074279a4cc7c06db1c320e311b72a5b7003ac`; it advanced during the run to `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69` through a documentation-only commit. This section supersedes older operational snapshots where they conflict; historical evidence above is retained.
+Main at the start of this checkpoint: `969074279a4cc7c06db1c320e311b72a5b7003ac`. This section supersedes older operational snapshots where they conflict; historical evidence above is retained.
 
 ### Live Production and QA database facts
 
@@ -2800,29 +2791,25 @@ A single batched read-only catalog/function check was run against Production (`j
 ### Active candidate review
 
 - PR #209 is the rebased Phase 57 pharmacy queue correction, head `5c07ad63b4c7b302175bc61b9737c34457678142`: 22 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft. Its UI refinements have not been applied to either hosted database; QA already has the earlier Phase 57 SQL guard.
-- PR #210 is the rebased medicine-catalogue identity editor, updated head `a36dfe2fc53cfd2d90fa737be790f41ce295ef91`. The stale physical-pack acknowledgement is corrected: edits to name, generic ingredient, brand, strength, dosage form, or custom dosage form now reset the acknowledgement through a pure state transition helper. Regression coverage exercises all six fields and verifies the component routes edits through that helper. Exact-head CI run [42771972448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42771972448): 18 successful jobs, 1 intentionally skipped authenticated clinical-acceptance job, 0 failures; exact-head checks: 22 success, 1 skipped. Shared-catalogue role scope and non-durable audit attestation remain separate gates.
-- PR #211 is the additive SDG provenance / receipt-integrity candidate, head `36c7d404c4c32a79d63de093ddd1bba68a11607`: 40 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft pending independent SQL/security review, legacy NULL policy and environment-specific migration reconciliation.
+- PR #210 is the rebased medicine-catalogue identity editor, head `c72b449688b8ec276a19e42ae0d626b587baaa81`. Review found that the physical-pack acknowledgement remains checked after identity fields are edited. A regression correction is required: invalidate the acknowledgement on every identity-field edit or bind it to the exact normalized payload. Review note: [#6760979016](https://github.com/crauch2088-source/roshan-health-hub/pull/210#issuecomment-6760979016). Shared-catalogue role scope and non-durable audit attestation remain separate gates.
+- PR #211 is the additive SDG provenance / receipt-integrity candidate, head `36c7d404c4c32a79d63de093ddd1bba68a11607`: 29 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft pending independent SQL/security review, legacy NULL policy and environment-specific migration reconciliation.
 - PR #181 receipt UI remains dependent on Phase 58/59; do not merge it independently or print legacy NULL/mismatched currency records. PR #179 still needs authenticated browser/mobile and physical printer acceptance.
 
 ### Execution and safety record
 
 This checkpoint used read-only Supabase operations and GitHub inspection. No hosted DDL/DML, migration application, patient/clinical/financial writes, Auth/Storage mutation, permission changes, production deployment or backup dispatch occurred. The failed attempt to merge Draft PR #207 made no repository change; it remains Draft and was not force-promoted to ready.
 
-**Next order:** complete independent review of PR #210 shared-catalogue role scope and durable audit-attestation design; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. The transient checkbox remains a confirmation control, not a durable audit attestation. Do not promote a candidate solely because disposable PG17 and CI checks are green.
+**Next order:** correct and retest PR #210's stale pack acknowledgement; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. Do not promote a candidate solely because disposable PG17 and CI checks are green.
 
 
 ## Owner-approved accelerated execution — 2026-11-10
 
 The owner approved a 48-hour accelerated execution sprint. The binding execution rules, six parallel workstreams, dependency-aware schedule, P0/P1/P2 stop rules, evidence requirements, separate engineering/operational metrics, and end-of-sprint decision states are defined in [48H_ACCELERATED_EXECUTION_CHARTER.md](48H_ACCELERATED_EXECUTION_CHARTER.md) and ratified in the Spec Kit Constitution v1.1.0.
 
-**Sprint baseline:** `bed6ff4c87d582107bf62ee353be4eb35958481b`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
+**Sprint baseline:** `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
 
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
 
-
-## Phase 60 — medicine catalogue authority and pack attestation
-
-The owner-approved role split, append-only pack evidence design, migration and PostgreSQL 17 test are documented in [PHASE56_CATALOGUE_IDENTITY_EDIT_2026-11-04.md](PHASE56_CATALOGUE_IDENTITY_EDIT_2026-11-04.md). PR #210 remains Draft. The Phase 60 migration is a candidate only: no hosted DB or live role mappings have changed. Physical-pack attestation is currently an immutable audit event, not yet a dispensing prerequisite; that would require a separate clinical/product decision.
 
 ## 48-hour sprint baseline and H0 log — 2026-11-10
 
@@ -2866,3 +2853,47 @@ The public SECURITY DEFINER inventory was reviewed by exact function in both env
 ## Parallel engineering review — 2026-11-10
 
 The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
+
+## Prescription UX, formulation and dose-entry safety review — 2026-11-10
+
+- Current-main baseline, exact PR/check evidence, read-only catalogue counts, TDD evidence and release boundaries are recorded in [PRESCRIPTION_UX_SAFETY_REVIEW_2026-11-10.md](PRESCRIPTION_UX_SAFETY_REVIEW_2026-11-10.md).
+- PR #179 remains Draft. Its current head `b9232e3daef6060762a11a4fba7db905f737c5f6` is 34 commits ahead / 0 behind current main. The picker now exposes generic/brand/strength/form details. Test-first RED was observed on commit `2f663920d37c2f211f20951c828e6fd187b0bce4`; exact-head CI [1905](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42865136031) passed 279/279 tests, with the clinical-acceptance job intentionally skipped; exact-head Vercel status is successful. This is not visual/browser/A4/staff acceptance.
+- PR #179 also removes route auto-inference, requires explicit route/form, requires quantity, uses free-text dose with a unit cue, exposes custom fields, adds unknown-age/pediatric weight warnings, and preserves saved formulation/route/instructions in the pharmacy queue and persisted print model. It still does not validate product-specific route compatibility.
+- Live read-only aggregate counts: QA has 0 active non-deleted medicine rows; Production has 9, all with generic names but all 9 missing brand, strength and dosage form. Neither environment has the Phase 60 pack-verification table or a product-route mapping column. No product rows or patient/financial data were read.
+- PR #210 is the separate shared-catalogue identity/physical-pack attestation candidate; it is not applied to either hosted database and does not provide route mapping. PR #185 remains a stale Spec 056 draft and must be reconciled, not merged as-is. Phase 61 correction workflow PRs #221/#223/#224/#226 remain separate and were not modified.
+- No doses, frequency/duration protocols, route mappings or interactions were invented. Generic duration shortcuts remain non-prescriptive entry aids; no universal cap was added. Next: complete authorized visual/A4 review of #179, reconcile #210 independently, and require verified product labels plus GP/pharmacist review before route or regimen rules are activated.
+- No hosted schema/data/security change, clinical/financial record, production deployment, authenticated clinical E2E or staff UAT occurred in this review.
+
+## H+13 prescription-correction and pharmacy safety update — 2026-11-10
+
+- Phase 61 database candidate head `763985fafe52c83ca65b808ec67c50569ed35752` completed **30/30 exact-head checks successfully**, with the canonical authenticated clinical acceptance job intentionally skipped. PostgreSQL 17 tests now enforce a dedicated `prescriptions.create` authority instead of the broad `pharmacy.create`/`emr.create` permissions, and reject unpriced catalogue replacements in both correction paths without side effects. The workflow's UI and real prescriber/pharmacist acceptance remain open; Phase 61 is not release-complete.
+- A new mainline-based Phase 57 candidate branch, `fix/phase57-quantity-guard-mainline-20261110`, carries the byte-identical QA-applied Phase 57 migration source, the separate forward-only Phase 57B free-text/external-prescription guard, and pharmacy UI handling that never displays a missing quantity as one or permits dispensing blocked prescriptions. Its exact-head CI is pending.
+- Production still has the legacy `COALESCE(pi.quantity, 1)` dispense fallback; QA has the explicit NULL-quantity rejection. No hosted migration, role/permission change, business-data write, deployment promotion or backup dispatch was performed. Production remains blocked pending current backup/restore proof and separately approved migration rollout.
+- Detailed current catalog and migration evidence: [LIVE_EFFECTIVE_CATALOG_RECONCILIATION_2026-11-10.md](LIVE_EFFECTIVE_CATALOG_RECONCILIATION_2026-11-10.md), [LIVE_MIGRATION_CONSOLIDATED_SOURCE_MAP_2026-11-10.md](LIVE_MIGRATION_CONSOLIDATED_SOURCE_MAP_2026-11-10.md), and [PHASE57_PHARMACY_QUANTITY_GUARD_2026-11-04.md](PHASE57_PHARMACY_QUANTITY_GUARD_2026-11-04.md).
+
+## H+5 execution update — 2026-11-11: Phase 57 mainline closure and Phase 61 consolidation
+
+- **PR #228 merged to `main`** by squash at `1eb6b273f01e190f8862d54a23734983512784d9`. It restores the exact QA-applied Phase 57 source (10,954 bytes; MD5 `921970d4d86b32dccd430a0ea0ef8745`; original blob `9db6768999352c32081f69b5e665c3cc95452616`), adds the separate forward-only Phase 57B external/free-text blockers, and integrates fail-closed pharmacy quantity UX. Its exact-head GitHub Actions workflows passed; canonical authenticated clinical acceptance was intentionally skipped. **No hosted migration was applied.** QA remains at Phase 57; Production remains without Phase 57 and retains the legacy NULL-to-one fallback until separately approved migration/recovery gates are satisfied.
+- **PR #230 merged to `main`** at `bed4ef10ba282d052e7ecb8d90c05d14d8443dcb`, correcting the migration manifest's stale Phase 57 provenance reference from PR #209 to merged PR #228.
+- Phase 61's database and UI work is now consolidated in Draft PR #229, retargeted to `main`. It contains the RLS/audit/branch-bound correction workflow, dedicated `prescriptions.create` authorization, the bilingual pharmacist request and prescriber inbox, and explicit multi-item cancel-and-reissue entry. The prescriber must re-enter every replacement medicine and regimen field; no old regimen is copied or inferred. Exact-head CI/PG17 workflows passed before base retargeting. Current branch comparison is 27 commits ahead / 5 behind `main`; GitHub currently reports it non-mergeable, so **do not merge until the mainline changes are reconciled and the refreshed exact-head checks pass**. Android/browser RTL/LTR acceptance and real pharmacist/prescriber UAT remain open.
+- PR #226 remains Draft and is no longer an independent merge target while #229 carries its database layer. PR #216 remains open; its synthetic PostgreSQL tests and CI passed, but its Vercel preview status is blocked by the free build-rate limit and the branch needs current-main reconciliation. No quota bypass or paid upgrade was attempted.
+- No QA/Production DDL/DML, migration application, role/Auth/Storage change, clinical/financial business-data write, backup dispatch, or deployment promotion occurred during this update.
+
+### Progress accounting and next gates
+
+- The last canonical evidence-weighted score in this Master Plan is **51% Engineering RC** and **11% Operational Acceptance**. The previously stated conversational **59%** is not supported by the canonical repository record and is withdrawn pending a documented re-weight; do not use it as the project baseline.
+- Retain the last documented estimate of **20–34 engineering hours** to a defensible Engineering RC until a fresh workstream-by-workstream re-weight is completed. Real staff/device acceptance remains a separate **1–3 week** process.
+- Next: reconcile PR #229 with current `main` without rewriting published history, run exact-head CI once on the reconciled tree, complete independent review, then obtain pharmacist/prescriber mobile RTL/LTR UAT. Separately resolve PR #216's mainline/Vercel status and complete migration source/effective-catalog reconciliation plus verified backup/restore before any Production rollout.
+
+## Phase 49 quarantine contract — additional fail-closed regression coverage (2026-11-10)
+
+PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) strengthens only the disposable PG17 parameterized equivalent for the quarantined cleanup migration. It adds negative tests for invalid/duplicate/missing target identifiers, wrong-branch or duplicate reversal entries, and stock/ledger disagreement. The test helper now rejects ambiguous or wrong-branch matching adjustment rows before any synthetic soft-delete or stock mutation. The exact `20261102232819` rename remains isolated to the disposable database; the redacted `20261102232941` original is not executed or claimed as reconstructed. No hosted database was changed. Exact-head CI evidence is recorded in the PR and must pass before this test improvement is considered complete.
+ 
+## Phase 60 medicine catalogue identity — mainline reconciliation 2026-11-11
+
+- PR #210 introduces canonical medicine catalogue identity and immutable physical-pack attestation, with explicit catalogue identity permission and append-only evidence.
+- It does not create a duplicate inventory/batch subsystem and does not replace the existing atomic receive/dispense workflow.
+- Physical-pack attestation remains an auditable evidence event, not a dispensing prerequisite. Do not convert it into a hard stop without a separate owner and clinical/pharmacy decision.
+- The current live schema has no verified pack_size/units_per_pack contract; do not backfill or infer package conversion from stock units.
+- The branch is being reconciled with current main; CI must preserve Phase49/57/57B pharmacy replay and the dedicated Phase60 PG17 suite. Fresh exact-head CI and independent SQL review are required.
+- No hosted QA/Production migration, catalogue backfill, inventory mutation or role mapping change occurred. Physical pack and pharmacist acceptance remain open.
