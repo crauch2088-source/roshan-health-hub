@@ -2897,3 +2897,10 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - The current live schema has no verified pack_size/units_per_pack contract; do not backfill or infer package conversion from stock units.
 - The branch is being reconciled with current main; CI must preserve Phase49/57/57B pharmacy replay and the dedicated Phase60 PG17 suite. Fresh exact-head CI and independent SQL review are required.
 - No hosted QA/Production migration, catalogue backfill, inventory mutation or role mapping change occurred. Physical pack and pharmacist acceptance remain open.
+ 
+## H+1 Phase 60 exact-head validation and scope boundary — 2026-11-11
+
+- Reconciled PR #210 with current main; branch is 57 commits ahead and zero behind. Exact code head 3eb6e4e4ebd25ef8b8ebb7bdfddd3d8b0412f5ee passed 28 checks (27 success, one intentional authenticated clinical-acceptance skip, zero failures), including Phase 60 PostgreSQL 17, typecheck, lint, build, security audits, source parity, pharmacy/clinical integrations and Spec Kit.
+- Phase 60 identity updates are limited to the existing name/generic/brand/strength/dosage-form fields and explicit role permission. Pack verification is currently an append-only human attestation event with saved identity snapshot/hash only.
+- It is not photo/barcode/lot/expiry evidence, not branch-scoped, and not a dispensing prerequisite. Do not infer package conversion or activate medication-engine rules from this event. Stronger evidence or dispensing hard-stop requires a separate pharmacist/owner decision.
+- PR remains Draft for independent SQL/security review and physical-pack workflow acceptance. No hosted migration, catalogue backfill, inventory write, role mapping change or production deployment occurred.
