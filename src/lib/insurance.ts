@@ -94,4 +94,3 @@ export function updateInsuranceClaimStatus(args: {
     _notes: args.notes ?? null,
   });
 }
-
