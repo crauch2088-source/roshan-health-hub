@@ -6,7 +6,7 @@
 - [x] Specify tests for fixed, mg/kg/dose and mg/kg/day arithmetic, explicit frequency, missing weight, invalid values, ceilings and rounding.
 - [x] Register focused tests in test:guard.
 - [x] Implement pure arithmetic kernel.
-- [ ] Verify exact-head focused/full tests, typecheck, lint and build.
+- [x] Verify exact-head focused/full tests, typecheck, lint and build (281/281 guard tests; CI run 42993044633; authenticated clinical acceptance intentionally skipped).
 - [ ] Independent review of dimensional semantics, rounding and safety-cap behavior.
 
 ## Phase 1 — Product catalogue and physical verification
