@@ -311,10 +311,7 @@ test("requires explicit population and jurisdiction context", () => {
     reason: "invalid_context",
   };
   assert.deepEqual(matchMedicationProtocol([protocol], { ...context, population: "" }), expected);
-  assert.deepEqual(
-    matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }),
-    expected,
-  );
+  assert.deepEqual(matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }), expected);
 });
 
 test("does not return needs_data for a protocol with an invalid dose basis or missing route", () => {
