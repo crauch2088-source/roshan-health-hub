@@ -130,3 +130,8 @@ Private idempotency-table note: RLS is enabled with no policies, and direct tabl
 ### Receipt-currency schema confirmation — 2026-11-09
 
 A direct read-only QA schema query confirmed that `public.payments`, `public.invoices`, and `public.cashbox_transactions` currently have no currency-code column. The receipt's current-currency source is therefore not backed by transaction-level currency provenance. This confirms the PR #181 historical-relabeling risk is a schema/read-model gap, not just a display formatting concern. No row values were read. Keep the owner policy decision and historical regression test open; do not add a guessed default currency or relabel existing amounts.
+
+
+## Superseding SDG-only policy update — 2026-11-09
+
+The owner has confirmed Roshan is permanently SDG-only. This resolves the earlier single- versus multi-currency policy question. PR #181 uses the fixed SDG invariant in its receipt candidate, but historical receipt printing remains gated on persisted provenance. Phase 58 candidate PR #211 adds SDG defaults and immutability to invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory while preserving legacy NULL values. Insurance remains deferred. Do not mark receipt currency tasks accepted until exact-head CI, independent SQL review, receipt-status RPC parity, and the legacy-row policy are complete. No hosted migration or historical backfill has been performed.
