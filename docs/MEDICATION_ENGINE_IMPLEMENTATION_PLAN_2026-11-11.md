@@ -80,3 +80,11 @@ Test contract is committed first in PR #233. Pure calculator implementation is n
 ### Rounding-order correction — 2026-11-11
 
 The calculator now retains the full raw/capped decimal value until directional rounding has completed. Normalising to the 1e-10 mg output precision before rounding could erase a value's position just below or above an increment boundary. The boundary regression tests cover both directions; output normalisation occurs only after the rounding decision.
+
+
+### Strict output-precision and ceiling validation — 2026-11-11
+
+- Rounding increments and configured safety ceilings must be representable at the kernel's 1e-10 mg output precision; otherwise the rule is rejected.
+- Removed epsilon allowances from dose/day ceiling enforcement. A calculated or rounded result may not exceed a configured ceiling by even a tiny tolerance.
+- The rounded flag is derived from the actual output-normalised value rather than a broad epsilon.
+- Added tests for sub-precision rounding increments and caps.

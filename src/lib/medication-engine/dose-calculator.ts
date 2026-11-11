@@ -22,6 +22,7 @@ function validRounding(value: unknown): value is DoseRounding | undefined {
   return (
     positiveFinite(candidate["incrementMg"]) &&
     candidate["incrementMg"] >= 1e-10 &&
+    normalize(candidate["incrementMg"]) === candidate["incrementMg"] &&
     ["nearest", "down", "up"].includes(String(candidate["mode"]))
   );
 }
@@ -57,7 +58,7 @@ function roundDose(value: number, rule: DoseRounding): number {
 }
 
 function validCeiling(value: unknown): boolean {
-  return value === undefined || positiveFinite(value);
+  return value === undefined || (positiveFinite(value) && normalize(value) === value);
 }
 
 function validBasis(basis: unknown): basis is DoseBasis {
@@ -164,11 +165,11 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
       ? Math.min(...configuredCeilings)
       : Number.POSITIVE_INFINITY;
 
-    if (candidate > safetyCeiling + 1e-10) {
+    if (candidate > safetyCeiling) {
       return { status: "invalid", reason: "rounding_exceeds_safety_cap" };
     }
 
-    rounded = Math.abs(candidate - doseMg) > 1e-10;
+    rounded = candidate !== normalize(doseMg);
     doseMg = candidate;
   }
 
@@ -183,8 +184,8 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
     return { status: "invalid", reason: "calculation_out_of_range" };
   }
   if (
-    (basis.maxPerDoseMg !== undefined && doseMg > basis.maxPerDoseMg + 1e-10) ||
-    (basis.maxPerDayMg !== undefined && dailyDoseMg > basis.maxPerDayMg + 1e-10)
+    (basis.maxPerDoseMg !== undefined && doseMg > basis.maxPerDoseMg) ||
+    (basis.maxPerDayMg !== undefined && dailyDoseMg > basis.maxPerDayMg)
   ) {
     return { status: "invalid", reason: "rounding_exceeds_safety_cap" };
   }

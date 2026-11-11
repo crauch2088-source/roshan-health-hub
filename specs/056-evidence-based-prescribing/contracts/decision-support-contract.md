@@ -41,3 +41,6 @@ The arithmetic kernel accepts only positive safe-integer doses-per-day counts. I
 ## Rounding precision
 
 Rounding uses decimal coefficient/scale arithmetic so binary floating-point representation does not invert upward/downward direction near an increment boundary. The minimum supported increment is 1e-10 mg, matching the kernel output precision; smaller increments are rejected. Interval schedules and unit conversions remain out of scope.
+
+
+Configured rounding increments and safety ceilings must align with the kernel's 1e-10 mg output precision. The engine rejects finer precision instead of normalising a cap or increment into a different value. Safety-ceiling comparisons are strict; no epsilon overshoot is permitted.

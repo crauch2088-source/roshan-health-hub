@@ -232,3 +232,28 @@ test("decimal rounding preserves exact decimal increments without binary-float d
   assert.equal(result.status, "calculated");
   if (result.status === "calculated") assert.equal(result.doseMg, 0.3);
 });
+
+
+test("rejects rounding increments that cannot be represented at kernel output precision", () => {
+  assert.deepEqual(
+    calculateDose({
+      basis: { kind: "fixed", amountMg: 1, dosesPerDay: 1 },
+      rounding: { incrementMg: 0.12345678901, mode: "nearest" },
+    }),
+    { status: "invalid", reason: "invalid_rule_parameters" },
+  );
+});
+
+test("rejects safety ceilings that cannot be represented at kernel output precision", () => {
+  assert.deepEqual(
+    calculateDose({
+      basis: {
+        kind: "fixed",
+        amountMg: 1,
+        dosesPerDay: 1,
+        maxPerDoseMg: 1.00000000005,
+      },
+    }),
+    { status: "invalid", reason: "invalid_rule_parameters" },
+  );
+});
