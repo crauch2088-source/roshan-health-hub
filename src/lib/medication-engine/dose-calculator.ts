@@ -108,10 +108,16 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
   }
 
   doseMg = normalize(doseMg);
+  if (!positiveFinite(doseMg)) {
+    return { status: "invalid", reason: "calculation_out_of_range" };
+  }
   let rounded = false;
 
   if (input.rounding) {
     const candidate = roundDose(doseMg, input.rounding);
+    if (!Number.isFinite(candidate)) {
+      return { status: "invalid", reason: "calculation_out_of_range" };
+    }
     if (candidate <= 0) {
       return { status: "invalid", reason: "rounding_not_positive" };
     }
@@ -133,6 +139,10 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
   }
 
   const dailyDoseMg = normalize(doseMg * basis.dosesPerDay);
+  const uncappedDoseMg = normalize(rawDoseMg);
+  if (!positiveFinite(dailyDoseMg) || !positiveFinite(uncappedDoseMg)) {
+    return { status: "invalid", reason: "calculation_out_of_range" };
+  }
   if (
     (basis.maxPerDoseMg !== undefined && doseMg > basis.maxPerDoseMg + 1e-10) ||
     (basis.maxPerDayMg !== undefined && dailyDoseMg > basis.maxPerDayMg + 1e-10)
@@ -144,7 +154,7 @@ export function calculateDose(input: DoseCalculationInput): DoseCalculationResul
     status: "calculated",
     doseMg,
     dailyDoseMg,
-    uncappedDoseMg: normalize(rawDoseMg),
+    uncappedDoseMg,
     appliedCaps,
     rounded,
   };
