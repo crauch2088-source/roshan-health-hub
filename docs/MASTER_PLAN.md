@@ -2889,6 +2889,14 @@ The cross-workstream review, exact candidate-head status, fresh read-only Produc
 
 PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) strengthens only the disposable PG17 parameterized equivalent for the quarantined cleanup migration. It adds negative tests for invalid/duplicate/missing target identifiers, wrong-branch or duplicate reversal entries, and stock/ledger disagreement. The test helper now rejects ambiguous or wrong-branch matching adjustment rows before any synthetic soft-delete or stock mutation. The exact `20261102232819` rename remains isolated to the disposable database; the redacted `20261102232941` original is not executed or claimed as reconstructed. No hosted database was changed. Exact-head CI evidence is recorded in the PR and must pass before this test improvement is considered complete.
  
+## Phase 58/59 SDG-only provenance candidate — mainline reconciliation 2026-11-11
+
+- PR #211 remains the candidate for permanent SDG-only financial provenance and receipt verification. The owner policy is fixed SDG-only; no currency switching, FX, or multi-currency is in scope.
+- The candidate contains Phase 58 source/ledger provenance and Phase 59 fail-closed receipt verification, with disposable PostgreSQL 17 tests. Exact reconciled head b0d1b5aca7facb1e6ca167c5c542f64568522dfe passed 29 checks, one intentional authenticated clinical-acceptance skip, zero failures; Phase 58/59 PG17, finance-only RPC isolation, receipt fail-closed, typecheck, lint, build, dependency audits and Spec Kit passed. Formatting-only issues were corrected.
+- This branch is being reconciled with current main so it preserves Phase 49/57/57B pharmacy replay, Phase 61 CI additions, and current migration source manifest. Exact-head full CI has passed after reconciliation and formatting fixes; independent review and separate QA/Production rollout gates remain open.
+- No hosted QA/Production migration, currency-column DDL, legacy backfill, financial record write, RPC deployment or production release has occurred. Production remains on its current schema until separate backup/restore and owner rollout approval.
+- PR #181 persisted payment receipts depend on Phase 59 and must be rebased/revalidated after #211's candidate is independently reviewed and merged.
+
 ## Phase 61 correction workflow integration — 2026-11-11
 
 - PR #229 carries the pharmacist correction-request UI, prescriber inbox, replace-one-item, reject-with-reason and explicit multi-item cancel-and-reissue flow. Every replacement medicine and regimen field must be re-entered; no previous regimen is copied or inferred.

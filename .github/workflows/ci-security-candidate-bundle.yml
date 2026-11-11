@@ -11,6 +11,8 @@ on:
       - 'db/roshan_queue_followup_branch_isolation.sql'
       - 'db/roshan_prescription_lab_child_branch_isolation.sql'
       - 'db/roshan_phase27_finance_rpc_only_writes.sql'
+      - 'db/roshan_phase58_single_sdg_currency_provenance.sql'
+      - 'db/roshan_post_expense_finite_amount.sql'
       - 'db/roshan_invoice_payment_money_precision.sql'
       - 'db/roshan_security_candidate_bundle_20261017.sql'
       - 'db/roshan_insurance_prior_authorization_branch_isolation.sql'
@@ -72,6 +74,7 @@ jobs:
           - name: Finance RPC-only writes and numeric validation
             fixture: db/tests/finance_only_rpc_writes_fixture.sql
             migration: db/roshan_phase27_finance_rpc_only_writes.sql
+            post_migrations: db/roshan_post_expense_finite_amount.sql db/roshan_phase58_single_sdg_currency_provenance.sql
             integration: db/tests/finance_only_rpc_writes_integration.sql
     services:
       postgres:
@@ -89,16 +92,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           persist-credentials: false
-      - name: Apply candidate and its focused regression suite
+      - name: Apply candidate fixture, migrations and assertions in one session
         env:
           PGPASSWORD: postgres
           FIXTURE: ${{ matrix.fixture }}
           MIGRATION: ${{ matrix.migration }}
+          POST_MIGRATIONS: ${{ matrix.post_migrations }}
           INTEGRATION: ${{ matrix.integration }}
         run: |
+          migration_args=()
+          if [[ -n "$POST_MIGRATIONS" ]]; then
+            for migration in $POST_MIGRATIONS; do
+              migration_args+=(-f "$migration")
+            done
+          fi
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f "$FIXTURE" \
             -f "$MIGRATION" \
+            "${migration_args[@]}" \
             -f "$INTEGRATION"
 
   combined-schema:
@@ -131,4 +142,6 @@ jobs:
             -f db/roshan_invoice_payment_money_precision.sql \
             -f db/roshan_phase27_revoke_legacy_invoice_number.sql \
             -f db/roshan_insurance_prior_authorization_branch_isolation.sql \
+            -f db/roshan_post_expense_finite_amount.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
             -f db/tests/security_candidate_combined_integration.sql

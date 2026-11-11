@@ -300,7 +300,7 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Phase 57 has been reconstructed on a fresh branch from current main to avoid the dirty/stale PR #209 base. The branch preserves the exact QA-applied Phase 57 source body and separates Phase 57B free-text/external-prescription guards. The pharmacy UI now blocks invalid/missing quantities and unlinked/external items without substituting quantity 1. Full exact-head CI is pending.
 - Production remains on the old dispense fallback; QA has Phase 57. No Supabase writes, migration replay, role changes, Production deployment, or backup dispatch occurred.
 - Weighted Engineering RC remains **49%** pending Phase 57 exact-head validation and independent review; operational acceptance remains **11%**. Estimated Engineering RC remaining remains **24–40 hours**, conditional on migration reconciliation and release-gate evidence.
- 
+
 ## H+14 — Phase 61 UI/mainline reconciliation — 2026-11-11
 
 - PR #229's UI candidate includes pharmacist correction requests, a permission/RLS-scoped prescriber inbox, replace-one-item, reject-with-reason and full cancel-and-reissue. Replacement entries require explicit re-entry of every medicine and regimen field; no old regimen is inferred or copied.

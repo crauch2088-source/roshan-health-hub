@@ -195,54 +195,6 @@ jobs:
             -f db/roshan_phase51_public_setup_required_anon.sql \
             -f db/tests/phase51_setup_required_anon_assertions.sql
 
-  phase61-prescription-correction:
-    name: Phase 61 prescription correction authorization, audit and no-side-effects (PostgreSQL 17)
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Replay canonical baseline and clinical parent guards
-        env:
-          PGPASSWORD: postgres
-        run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
-            -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
-            -f db/roshan_phase46_uat_schema_compatibility.sql
-      - name: Seed synthetic roles, branches, users and prescriptions
-        env:
-          PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_fixture.sql
-      - name: Apply Phase 61 and run PostgreSQL 17 behavior assertions
-        env:
-          PGPASSWORD: postgres
-        run: |
-          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            -f db/roshan_phase61_prescription_item_correction_workflow.sql \
-            -f db/tests/phase61_prescription_correction_integration.sql
-      - name: Prove concurrent correction resolution is serialized
-        env:
-          PGPASSWORD: postgres
-        run: bash db/tests/phase61_prescription_correction_concurrency.sh
-      - name: Run Phase 61 source-contract tests
-        run: node --test tests/phase61-prescription-correction-contract.test.mjs
-
   sql-patient-registration-atomicity:
     name: Atomic patient registration and MRN concurrency
     runs-on: ubuntu-latest
@@ -301,6 +253,7 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/invoice_rpc_fixture.sql \
             -f db/roshan_phase8_atomic_invoice.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
             -f db/tests/invoice_rpc_integration.sql
 
   sql-visit-invoice-consolidation:
@@ -548,6 +501,71 @@ jobs:
             -f db/tests/clinic_local_queue_date_integration.sql
 
 
+
+  phase58-sdg-currency-provenance:
+    name: Phase 58 SDG currency provenance (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Run Phase 58 source contract tests
+        run: node --test tests/phase58-sdg-currency-provenance.test.mjs
+      - name: Run migration and integration assertions on disposable PostgreSQL 17
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/phase58_sdg_currency_provenance_fixture.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
+            -f db/tests/phase58_sdg_currency_provenance_integration.sql
+
+
+  phase59-receipt-currency-provenance:
+    name: Phase 59 receipt currency provenance (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Run Phase 59 source contract tests
+        run: node --test tests/phase59-receipt-currency-provenance.test.mjs
+      - name: Apply Phase 58 and 59 on disposable PostgreSQL 17
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/phase59_receipt_currency_fixture.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
+            -f db/roshan_phase59_receipt_currency_provenance.sql \
+            -f db/tests/phase59_receipt_currency_integration.sql
+
   migration-source-parity:
     name: Migration source parity manifest
     runs-on: ubuntu-latest
@@ -742,3 +760,51 @@ jobs:
         run: |
           psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
             -f db/tests/phase49_quarantine_remediation_assertions.sql
+
+  phase61-prescription-correction:
+    name: Phase 61 prescription correction authorization, audit and no-side-effects (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Replay canonical baseline and clinical parent guards
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
+            -f db/roshan_phase46_uat_schema_compatibility.sql
+      - name: Seed synthetic roles, branches, users and prescriptions
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_fixture.sql
+      - name: Apply Phase 61 and run PostgreSQL 17 behavior assertions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/roshan_phase61_prescription_item_correction_workflow.sql \
+            -f db/tests/phase61_prescription_correction_integration.sql
+      - name: Prove concurrent correction resolution is serialized
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/phase61_prescription_correction_concurrency.sh
+      - name: Run Phase 61 source-contract tests
+        run: node --test tests/phase61-prescription-correction-contract.test.mjs
