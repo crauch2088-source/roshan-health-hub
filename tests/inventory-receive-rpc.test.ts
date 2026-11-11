@@ -312,6 +312,14 @@ testRunner("editing medicine identity invalidates any pending physical-pack conf
 
 testRunner("physical-pack verification is blocked while identity draft differs from persisted medicine", () => {
   assert.match(source, /const identityDraftChanged = Boolean\(/);
-  assert.match(source, /disabled=\{[\s\S]*?identityDraftChanged[\s\S]*?verifyPhysicalPack\.isPending/);
+  const verifyButton = source.match(
+    /<Button[\s\S]*?verifyPhysicalPack\.mutate\(s\(editingMedicine, "id"\)\)[\s\S]*?<\/Button>/,
+  );
+  assert.ok(verifyButton, "the physical-pack verification action must exist");
+  assert.match(
+    verifyButton[0],
+    /disabled=\{[\s\S]*?identityDraftChanged[\s\S]*?verifyPhysicalPack\.isPending/,
+    "verification must be disabled while the saved identity differs from the draft",
+  );
   assert.match(source, /setPackInspectionConfirmed\(false\)/);
 });
