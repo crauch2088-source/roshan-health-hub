@@ -130,7 +130,7 @@ test("Phase 61 revokes inherited authenticator table-write privileges", () => {
     );
   }
   assert.equal(
-    (integration.match(/has_table_privilege\('authenticator'/g) ?? []).length,
+    integration.split("has_table_privilege('authenticator'").length - 1,
     8,
     "integration must check INSERT/UPDATE/DELETE/TRUNCATE on both tables",
   );
@@ -139,7 +139,7 @@ test("Phase 61 revokes inherited authenticator table-write privileges", () => {
 test("Phase 61 integration proves the migration itself grants prescription authoring", () => {
   assert.doesNotMatch(
     fixture,
-    /VALUES \\('prescriptions\\.create', 'Create clinical prescriptions'/,
+    "VALUES ('prescriptions.create', 'Create clinical prescriptions'",
     "the fixture must not pre-seed the permission that Phase 61 is supposed to create",
   );
   assert.ok(
