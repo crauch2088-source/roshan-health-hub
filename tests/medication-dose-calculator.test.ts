@@ -175,3 +175,31 @@ test("rejects non-finite results from extreme source-defined rounding increments
     { status: "invalid", reason: "calculation_out_of_range" },
   );
 });
+
+
+test("rejects fractional doses-per-day because the kernel models daily dose counts, not intervals", () => {
+  assert.deepEqual(
+    calculateDose({
+      basis: { kind: "fixed", amountMg: 10, dosesPerDay: 1.5 },
+    }),
+    { status: "invalid", reason: "invalid_rule_parameters" },
+  );
+});
+
+test("fails closed for null input, malformed basis, and null rounding payloads", () => {
+  assert.deepEqual(calculateDose(null as never), {
+    status: "invalid",
+    reason: "invalid_rule_parameters",
+  });
+  assert.deepEqual(calculateDose({ basis: null } as never), {
+    status: "invalid",
+    reason: "invalid_rule_parameters",
+  });
+  assert.deepEqual(
+    calculateDose({
+      basis: { kind: "fixed", amountMg: 10, dosesPerDay: 1 },
+      rounding: null,
+    } as never),
+    { status: "invalid", reason: "invalid_rule_parameters" },
+  );
+});

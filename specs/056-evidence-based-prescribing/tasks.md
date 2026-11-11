@@ -67,3 +67,12 @@
 - [ ] No active rule until GP+pharmacist sign-off and staff UAT.
 
 **No clinical activation:** no protocol content, dose suggestion, route/frequency/duration, concentration conversion, interaction or allergy engine is active. No hosted DB changes.
+
+
+## Matcher scope and runtime hardening — 2026-11-11
+
+- [x] Require explicit population and jurisdiction in protocol and encounter context.
+- [x] Reject source/protocol scope mismatch for setting, population and jurisdiction.
+- [x] Reject fractional doses-per-day; interval regimens require a separate representation.
+- [x] Fail closed on malformed runtime calculator inputs and malformed protocol collections.
+- [ ] Verify all added cases on exact-head CI and independent review.

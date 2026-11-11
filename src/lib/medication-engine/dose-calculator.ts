@@ -7,7 +7,7 @@ import type {
 
 type CapName = "max_per_dose" | "max_per_day";
 
-function positiveFinite(value: number | null | undefined): value is number {
+function positiveFinite(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
@@ -15,10 +15,13 @@ function normalize(value: number): number {
   return Math.round(value * 1e10) / 1e10;
 }
 
-function validRounding(value: DoseRounding | undefined): boolean {
+function validRounding(value: unknown): value is DoseRounding | undefined {
+  if (value === undefined) return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as Record<string, unknown>;
   return (
-    value === undefined ||
-    (positiveFinite(value.incrementMg) && ["nearest", "down", "up"].includes(value.mode))
+    positiveFinite(candidate["incrementMg"]) &&
+    ["nearest", "down", "up"].includes(String(candidate["mode"]))
   );
 }
 
@@ -33,21 +36,29 @@ function roundDose(value: number, rule: DoseRounding): number {
   return normalize(Math.round(units) * rule.incrementMg);
 }
 
-function validCeiling(value: number | undefined): boolean {
+function validCeiling(value: unknown): boolean {
   return value === undefined || positiveFinite(value);
 }
 
-function validBasis(basis: DoseBasis): boolean {
+function validBasis(basis: unknown): basis is DoseBasis {
+  if (!basis || typeof basis !== "object" || Array.isArray(basis)) return false;
+  const candidate = basis as Record<string, unknown>;
   if (
-    !positiveFinite(basis.dosesPerDay) ||
-    !validCeiling(basis.maxPerDoseMg) ||
-    !validCeiling(basis.maxPerDayMg)
+    !Number.isSafeInteger(candidate["dosesPerDay"]) ||
+    (candidate["dosesPerDay"] as number) <= 0 ||
+    !validCeiling(candidate["maxPerDoseMg"]) ||
+    !validCeiling(candidate["maxPerDayMg"])
   ) {
     return false;
   }
-  if (basis.kind === "fixed") return positiveFinite(basis.amountMg);
-  if (basis.kind === "mg_per_kg_per_dose") return positiveFinite(basis.amountMgPerKg);
-  return positiveFinite(basis.amountMgPerKgPerDay);
+  if (candidate["kind"] === "fixed") return positiveFinite(candidate["amountMg"]);
+  if (candidate["kind"] === "mg_per_kg_per_dose") {
+    return positiveFinite(candidate["amountMgPerKg"]);
+  }
+  if (candidate["kind"] === "mg_per_kg_per_day") {
+    return positiveFinite(candidate["amountMgPerKgPerDay"]);
+  }
+  return false;
 }
 
 /**
@@ -56,7 +67,12 @@ function validBasis(basis: DoseBasis): boolean {
  * All quantities are mg and kg. Frequency must be explicitly supplied.
  */
 export function calculateDose(input: DoseCalculationInput): DoseCalculationResult {
-  if (!validBasis(input.basis) || !validRounding(input.rounding)) {
+  if (
+    !input ||
+    typeof input !== "object" ||
+    !validBasis(input.basis) ||
+    !validRounding(input.rounding)
+  ) {
     return { status: "invalid", reason: "invalid_rule_parameters" };
   }
 

@@ -58,3 +58,12 @@ Test contract is committed first in PR #233. Pure calculator implementation is n
 - Dual approval actor IDs are normalized by trimming and case-folding before distinct-person comparison, preventing the same UUID-like actor represented with different hex casing from satisfying two-person control.
 - A non-array protocol payload now fails closed as invalid context rather than throwing at runtime.
 - Regression tests added for all three boundaries. No real protocols, patient data, database changes or clinical activation.
+
+
+## Explicit protocol scope and runtime-input hardening — 2026-11-11
+
+- Protocol and encounter context now require explicit population and jurisdiction in addition to indication, setting and medicine identity. The matcher does not infer these dimensions from age or diagnosis text.
+- Source provenance must exactly agree with protocol setting, population and jurisdiction; mismatches block.
+- Dose calculation rejects malformed runtime payloads without throwing and requires a positive safe-integer doses-per-day count. Non-daily interval regimens need a separate interval representation.
+- Regression coverage added for source/context scope mismatches, missing context, malformed calculator payloads and fractional frequency.
+- This remains a non-clinical foundation: no active clinical protocols or patient-specific recommendations.

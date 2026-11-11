@@ -44,3 +44,12 @@ Pure calculations are deterministic and boundary-tested. Protocol matching retur
 
 ## Release policy
 The arithmetic kernel may merge as an internal non-clinical library after engineering review. The clinical evaluator and UI remain inactive until all content and governance gates pass. The engine is parallel to, not a blocker for, the core Roshan release.
+
+
+## Matcher scope and arithmetic boundary update — 2026-11-11
+
+- Every protocol and encounter context must explicitly identify population and jurisdiction.
+- Source setting, population and jurisdiction must match the protocol exactly; context population and jurisdiction must match the protocol exactly.
+- No age-based or text-based population inference is permitted in this matcher slice.
+- Doses-per-day is a positive safe integer. Non-daily interval regimens are out of scope until represented by an explicit interval unit.
+- Malformed runtime inputs fail closed without exceptions.

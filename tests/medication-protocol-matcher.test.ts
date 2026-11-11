@@ -12,6 +12,8 @@ const source = {
   jurisdiction: "test jurisdiction",
   population: "paediatric",
   setting: "outpatient",
+  population: "paediatric",
+  jurisdiction: "test jurisdiction",
   publishedAt: "2025-01-01",
   retrievedAt: "2026-01-01",
   licenseStatus: "verified" as const,
@@ -30,6 +32,8 @@ const protocol = {
   effectiveTo: null,
   indicationCode: "J18.9",
   setting: "outpatient",
+  population: "paediatric",
+  jurisdiction: "test jurisdiction",
   medicineId: "synthetic-medicine-1",
   route: "oral",
   minAgeDays: 365,
@@ -271,4 +275,41 @@ test("fails closed when the protocol collection is not an array", () => {
     status: "blocked",
     reason: "invalid_context",
   });
+});
+
+
+test("blocks a source whose population or jurisdiction differs from the protocol", () => {
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, source: { ...source, population: "adult" } }], context),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, source: { ...source, jurisdiction: "another jurisdiction" } }],
+      context,
+    ),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+});
+
+test("does not match a protocol outside the explicit patient population or jurisdiction", () => {
+  assert.deepEqual(
+    matchMedicationProtocol([protocol], { ...context, population: "adult" }),
+    { status: "no_match", reason: "no_matching_protocol" },
+  );
+  assert.deepEqual(
+    matchMedicationProtocol([protocol], { ...context, jurisdiction: "another jurisdiction" }),
+    { status: "no_match", reason: "no_matching_protocol" },
+  );
+});
+
+test("requires explicit population and jurisdiction context", () => {
+  assert.deepEqual(
+    matchMedicationProtocol([protocol], { ...context, population: "" }),
+    { status: "blocked", reason: "invalid_context" },
+  );
+  assert.deepEqual(
+    matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }),
+    { status: "blocked", reason: "invalid_context" },
+  );
 });

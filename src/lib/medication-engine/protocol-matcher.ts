@@ -32,6 +32,8 @@ export type MedicationProtocol = {
   effectiveTo?: string | null;
   indicationCode: string;
   setting: string;
+  population: string;
+  jurisdiction: string;
   medicineId: string;
   route: string;
   minAgeDays?: number;
@@ -46,6 +48,8 @@ export type MedicationProtocolMatchContext = {
   asOfDate: string;
   indicationCode: string;
   setting: string;
+  population: string;
+  jurisdiction: string;
   medicineId: string;
   ageDays?: number | null;
   /** Encounter-linked measured weight only; no patient-master fallback. */
@@ -116,7 +120,7 @@ function isDoseBasis(value: unknown): value is DoseBasis {
 function hasValidSource(
   source: MedicationProtocolSource,
   asOfDate: string,
-  expectedSetting: string,
+  protocol: MedicationProtocol,
 ): boolean {
   return (
     nonEmpty(source.sourceId) &&
@@ -127,7 +131,9 @@ function hasValidSource(
     nonEmpty(source.jurisdiction) &&
     nonEmpty(source.population) &&
     nonEmpty(source.setting) &&
-    source.setting === expectedSetting &&
+    source.setting === protocol.setting &&
+    source.population === protocol.population &&
+    source.jurisdiction === protocol.jurisdiction &&
     source.licenseStatus === "verified" &&
     isIsoDate(source.publishedAt) &&
     isIsoDate(source.retrievedAt) &&
@@ -205,6 +211,8 @@ export function matchMedicationProtocol(
     !isIsoDate(context.asOfDate) ||
     !nonEmpty(context.indicationCode) ||
     !nonEmpty(context.setting) ||
+    !nonEmpty(context.population) ||
+    !nonEmpty(context.jurisdiction) ||
     !nonEmpty(context.medicineId) ||
     (context.ageDays != null && (!Number.isFinite(context.ageDays) || context.ageDays < 0))
   ) {
@@ -219,6 +227,8 @@ export function matchMedicationProtocol(
       protocol &&
       protocol.indicationCode === context.indicationCode &&
       protocol.setting === context.setting &&
+      protocol.population === context.population &&
+      protocol.jurisdiction === context.jurisdiction &&
       protocol.medicineId === context.medicineId,
   );
   if (candidates.length === 0) {
@@ -260,7 +270,7 @@ export function matchMedicationProtocol(
       !nonEmpty(protocol.id) ||
       !nonEmpty(protocol.version) ||
       !protocol.source ||
-      !hasValidSource(protocol.source, context.asOfDate, protocol.setting)
+      !hasValidSource(protocol.source, context.asOfDate, protocol)
     ) {
       return { status: "blocked", reason: "invalid_protocol_provenance" };
     }

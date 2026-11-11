@@ -27,3 +27,12 @@ recommendation, needs_data, no_match, blocked.
 
 ## Lifecycle
 draft → reviewed → approved → active → suspended/retired. Expired or unreviewed versions are never matchable.
+
+
+## Scope matching extension
+
+A protocol and encounter context must both carry explicit population and jurisdiction. The cited source's setting, population and jurisdiction must exactly match the protocol. Missing context blocks; a different explicit population or jurisdiction produces no match. The matcher does not infer these dimensions from age or free text.
+
+## Runtime input validation
+
+The arithmetic kernel accepts only positive safe-integer doses-per-day counts. It rejects null/malformed input, basis and rounding payloads without throwing. Interval-based schedules require a future explicit interval model.
