@@ -314,12 +314,18 @@ testRunner(
   "physical-pack verification is blocked while identity draft differs from persisted medicine",
   () => {
     assert.match(source, /const identityDraftChanged = Boolean\(/);
-    const verifyButton = source.match(
-      /<Button[\s\S]*?verifyPhysicalPack\.mutate\(s\(editingMedicine, "id"\)\)[\s\S]*?<\/Button>/,
+    const verifyActionIndex = source.indexOf(
+      'verifyPhysicalPack.mutate(s(editingMedicine, "id"))',
     );
-    assert.ok(verifyButton, "the physical-pack verification action must exist");
+    const verifyButtonStart = source.lastIndexOf("<Button", verifyActionIndex);
+    const verifyButtonEnd = source.indexOf("</Button>", verifyActionIndex) + "</Button>".length;
+    assert.ok(
+      verifyActionIndex >= 0 && verifyButtonStart >= 0 && verifyButtonEnd > verifyButtonStart,
+      "the physical-pack verification action must exist",
+    );
+    const verifyButton = source.slice(verifyButtonStart, verifyButtonEnd);
     assert.match(
-      verifyButton[0],
+      verifyButton,
       /disabled=\{[\s\S]*?identityDraftChanged[\s\S]*?verifyPhysicalPack\.isPending/,
       "verification must be disabled while the saved identity differs from the draft",
     );
