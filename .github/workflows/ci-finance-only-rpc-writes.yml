@@ -8,6 +8,10 @@ on:
       - 'db/tests/finance_only_rpc_writes_fixture.sql'
       - 'db/tests/finance_only_rpc_writes_integration.sql'
       - 'db/roshan_invoice_payment_money_precision.sql'
+      - 'db/roshan_phase58_single_sdg_currency_provenance.sql'
+      - 'db/roshan_post_expense_finite_amount.sql'
+      - 'db/tests/phase58_sdg_currency_provenance_fixture.sql'
+      - 'db/tests/phase58_sdg_currency_provenance_integration.sql'
       - 'db/tests/finance_payment_idempotency_concurrency.sh'
       - 'db/tests/finance_payment_idempotency_concurrency_setup.sql'
       - 'tests/finance-rpc-only-writes.test.ts'
@@ -49,6 +53,8 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/tests/finance_only_rpc_writes_fixture.sql \
             -f db/roshan_phase27_finance_rpc_only_writes.sql \
+            -f db/roshan_post_expense_finite_amount.sql \
+            -f db/roshan_phase58_single_sdg_currency_provenance.sql \
             -f db/tests/finance_only_rpc_writes_integration.sql
 
   payment-idempotency-concurrency:

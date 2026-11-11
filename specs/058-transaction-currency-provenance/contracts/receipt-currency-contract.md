@@ -22,16 +22,16 @@ The `currency_code` MUST be sourced from the persisted financial record, not fro
 
 ### Invoice creation
 
-- The authorized invoice RPC assigns the fixed code `SDG` internally and persists it with the invoice.
-- It persists `SDG` with the invoice.
+- The authorized invoice RPC obtains the effective clinic currency from the authoritative configuration inside the transaction.
+- It persists the currency with the invoice.
 - Invoice line items inherit the invoice currency; no client-supplied currency override is accepted.
 
 ### Payment posting
 
 - `post_invoice_payment` locks the invoice and reads its persisted currency.
-- The new payment stores `SDG` copied from the locked invoice.
-- The generated cashbox ledger row stores `SDG`.
-- A missing or non-SDG code aborts the entire transaction.
+- The new payment stores the exact invoice currency.
+- The generated cashbox ledger row stores the same currency.
+- A mismatch, missing currency, or invalid code aborts the entire transaction.
 - Idempotent retry returns the original payment and does not recalculate currency from mutable settings.
 
 ### Reversal
@@ -53,3 +53,12 @@ The `currency_code` MUST be sourced from the persisted financial record, not fro
 - Financial writes remain in approved SECURITY DEFINER RPCs with fixed empty `search_path`, explicit permission/actor/branch checks, and exact decimal validation.
 - Browser roles receive no direct INSERT/UPDATE/DELETE grants on financial tables.
 - Tests must prove cross-branch rejection, idempotency, ledger atomicity, reversal consistency, and no partial writes.
+
+
+## Superseding SDG-only invariant — 2026-11-09
+
+Roshan is permanently SDG-only. No configurable currency, multi-currency, FX, or cross-currency settlement is supported.
+
+New invoices, payments, cashbox transactions, expenses, supplier bills/payments, and pharmacy inventory batches receive SDG from database defaults. Explicit NULL/non-SDG new rows are rejected, and populated currency_code cannot be changed or cleared. Existing legacy NULL values remain NULL until a separately reviewed evidence-backed reconciliation assigns SDG. The application must never infer historical currency from mutable system_settings.
+
+Official receipt/reprint must use persisted payment/invoice/ledger currency and block when provenance is missing or contradictory. PR #211 is a source-only candidate; no hosted migration or historical backfill has been performed.

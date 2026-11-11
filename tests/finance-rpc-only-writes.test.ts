@@ -9,7 +9,10 @@ const finance = read("../src/routes/_authenticated/finance.tsx");
 const expenses = read("../src/routes/_authenticated/expenses.tsx");
 const insurance = read("../src/lib/insurance.ts");
 const migration = read("../db/roshan_phase27_finance_rpc_only_writes.sql");
+const currencyMigration = read("../db/roshan_phase58_single_sdg_currency_provenance.sql");
 const integration = read("../db/tests/finance_only_rpc_writes_integration.sql");
+const financeWorkflow = read("../.github/workflows/ci-finance-only-rpc-writes.yml");
+const securityWorkflow = read("../.github/workflows/ci-security-candidate-bundle.yml");
 
 test("finance UI routes financial writes through RPCs rather than direct table DML", () => {
   const directFinancialWrite =
@@ -34,7 +37,11 @@ test("finance UI routes financial writes through RPCs rather than direct table D
   assert.match(accounting, /rpc\(["']post_supplier_payment["']/);
   assert.match(expenses, /rpc\(["']post_expense["']/);
   assert.match(insurance, /rpc(?:<[^>]+>)?\(["']create_insurance_claim["']/);
-  assert.match(insurance, /rpc(?:<[^>]+>)?\(["']post_insurance_claim_payment["']/);
+  assert.doesNotMatch(
+    insurance,
+    /post_insurance_claim_payment|postInsuranceClaimPayment/,
+    "insurance claim cash posting is deferred until the SDG provenance workflow is approved",
+  );
   assert.match(insurance, /rpc(?:<[^>]+>)?\(["']update_insurance_claim_status["']/);
 });
 
@@ -62,6 +69,15 @@ test("finance migration preserves precision and RPC-only access", () => {
   assert.match(integration, /idempotent retry returned different ID/);
   assert.match(integration, /idempotency key accepted a different payload/);
   assert.match(integration, /fractional minor-unit payment amount was accepted/);
+  assert.match(financeWorkflow, /roshan_phase58_single_sdg_currency_provenance\.sql/);
+  assert.match(financeWorkflow, /roshan_post_expense_finite_amount\.sql/);
+  assert.match(securityWorkflow, /roshan_phase58_single_sdg_currency_provenance\.sql/);
+  assert.match(securityWorkflow, /roshan_post_expense_finite_amount\.sql/);
+  assert.match(integration, /payment against a legacy invoice with unknown currency was accepted/);
+  assert.match(integration, /new invoice did not persist SDG/);
+  assert.match(integration, /posted payment did not persist SDG/);
+  assert.match(integration, /post_expense did not persist SDG/);
+  assert.match(currencyMigration, /invoice currency provenance is missing or inconsistent/);
   // Insurance claim writes are covered by their own migration and integration suite.
 });
 
