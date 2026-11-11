@@ -308,3 +308,10 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Reconciliation uses the current mainline Phase 57/57B quantity/external-prescription guards, preserving fail-closed dispense behavior. The matching pharmacy-quantity helper is byte-identical to main.
 - A normal two-parent merge commit is being prepared; no force-push or history rewrite. Fresh exact-head CI is the next gate.
 - Remains Draft until exact-head CI, independent SQL/security review, 320–430px Android RTL/LTR acceptance and real pharmacist/prescriber UAT. No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion.
+ 
+## H+15 — Phase 61 mainline reconciliation and exact-head CI — 2026-11-11
+
+- Reconciled PR #229 with current main by normal merge commit; no force-push or history rewrite. The pharmacy route preserves both correction UI and Phase 57/57B fail-closed quantity/external-prescription behavior. CI workflow preserves the Phase 61 PG17 job and mainline Phase49/57/57B replay steps.
+- Exact reconciled head 064b4964b5c83257f6134cc6274c74b50b29134f completed **30 checks: 29 success and one intentional authenticated clinical-acceptance skip**. Typecheck, lint, build, security audits, Spec Kit, Phase 61 PG17 authorization/RLS/audit/concurrency/no-side-effects, prescription atomicity, insurance and mainline integrations passed.
+- PR remains Draft pending independent SQL/security review, 320–430px Android Arabic RTL/English LTR browser acceptance and real pharmacist/prescriber UAT.
+- No hosted QA/Production DDL/DML, migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion.

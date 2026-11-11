@@ -2896,3 +2896,10 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - Mainline Phase 57/57B fail-closed quantity and external/free-text prescription guards are preserved. The pharmacy UI must not restore the legacy quantity-one fallback.
 - The branch is being reconciled with current main using a normal merge commit, not rewritten history. Fresh exact-head CI is required after reconciliation.
 - Keep Draft pending exact-head CI, independent SQL/security review, 320–430px Android RTL/LTR browser acceptance, and real pharmacist/prescriber UAT. No hosted migration or production release is authorized by this update.
+ 
+## H+15 Phase 61 mainline reconciliation and exact-head validation — 2026-11-11
+
+- PR #229 branch head 064b4964b5c83257f6134cc6274c74b50b29134f is now 28 commits ahead and zero behind main after a normal two-parent merge; the three prior conflict paths were reconciled without rewriting history.
+- Exact-head validation completed **30 checks: 29 successful, one intentionally skipped** for canonical authenticated clinical acceptance. Typecheck, lint, build, dependency audits, CodeQL, Spec Kit, Phase 61 PostgreSQL 17 authorization/RLS/audit/concurrency/no-side-effects, prescription atomicity, insurance and mainline pharmacy integrations passed.
+- The pharmacist request, prescriber inbox and explicit cancel/reissue workflow remain Draft. Real Android RTL/LTR browser acceptance, independent SQL/security review and pharmacist/prescriber UAT remain open.
+- No hosted QA/Production migration, business-data write, Auth/Storage/role mutation, backup dispatch or deployment promotion occurred. The Phase 61 SQL is still a source candidate only.
