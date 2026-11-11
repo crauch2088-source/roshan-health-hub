@@ -54,3 +54,10 @@ A closed engineering workstream does not automatically mean the product is clini
 - Commit `528bc3caddef708111de1ffd92796750a992797c` corrected four of the five Prettier findings. Its exact-head CI run `43092737006` still failed on one remaining status-union formatting line in `protocol-matcher.ts`; typecheck and all completed security/PG17/integration jobs passed, while build was skipped after lint failure.
 - Insurance validation run `43092736912` passed its focused tests but failed the combined lint/build gate on the same single Prettier issue.
 - The remaining formatting correction is included in the next commit. Do not count this as fixed until exact-head lint/build and all required workflows finish successfully.
+
+
+### Second formatter correction — 2026-11-11
+
+- Exact-head run `43093172320` completed with 27 successful checks, one intentional authenticated clinical-acceptance skip, and one lint failure: Prettier requires the protocol status union's first line to begin on the line after the assignment. The separate insurance aggregate run failed on the same one-line formatting issue; its focused tests passed.
+- All other completed checks, including CodeQL and applicable PostgreSQL 17 integration workflows, passed. The remaining issue is formatting-only; no clinical or insurance behavior regression was reported.
+- The exact formatter layout is now corrected in the following commit. Final acceptance still requires a fresh exact-head CI and the insurance validation workflow.

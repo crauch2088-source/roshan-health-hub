@@ -2954,3 +2954,8 @@ The mandatory execution and reporting rules are recorded in `AGENTS.md` and the 
 ### Follow-up validation of the work-closure repair — 2026-11-11
 
 Commit `528bc3caddef708111de1ffd92796750a992797c` reduced the five initial Prettier findings to one remaining status-union formatting issue. Its exact-head CI run `43092737006` failed lint; typecheck and completed security/PG17/integration checks passed, with build skipped. The focused insurance validation tests passed, but its aggregate gate failed on that same lint issue. The remaining one-line formatting correction is now bundled with this evidence update; closure still depends on a new exact-head CI result.
+
+
+### Second formatter correction — 2026-11-11
+
+Exact-head run `43093172320` completed with 27 successful checks, one intentional authenticated clinical-acceptance skip, and one Prettier lint failure in the medication protocol status union. The insurance aggregate validation failed on the same formatting issue after its focused tests passed. All other completed checks, including CodeQL and applicable PG17 integrations, passed. The union formatting is corrected in the following commit; the branch remains unaccepted until exact-head CI and insurance validation pass.
