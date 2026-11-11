@@ -44,3 +44,10 @@ Rounding uses decimal coefficient/scale arithmetic so binary floating-point repr
 
 
 Configured rounding increments and safety ceilings must align with the kernel's 1e-10 mg output precision. The engine rejects finer precision instead of normalising a cap or increment into a different value. Safety-ceiling comparisons are strict; no epsilon overshoot is permitted.
+
+
+## Local guideline precedence and source classes
+
+For malaria in Sudan, a Federal MoH/NMCP statement surfaced in September 2026 reiterates the 2023 National Malaria Diagnosis and Treatment Protocol as the only approved national reference until an official update. WHO global malaria guidance updated 10 September 2026 is a comparison and surveillance source; it must not silently override the Sudan national protocol. A conflict blocks activation pending an explicit national update/adoption decision and GP/pharmacist review.
+
+Keep treatment guidelines distinct from formulary/product-registration records, medicine shortage notices and observational studies. Only a verified treatment guideline can support a regimen; product identity requires verified registration/label evidence; shortage notices only inform supply availability.

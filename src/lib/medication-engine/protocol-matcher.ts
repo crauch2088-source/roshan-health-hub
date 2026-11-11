@@ -104,7 +104,7 @@ function isIsoDate(value: unknown): value is string {
 }
 
 function isDoseBasis(value: unknown): value is DoseBasis {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const candidate = value as Record<string, unknown>;
   if (typeof candidate["dosesPerDay"] !== "number") return false;
   if (candidate["kind"] === "fixed") return typeof candidate["amountMg"] === "number";
@@ -118,27 +118,29 @@ function isDoseBasis(value: unknown): value is DoseBasis {
 }
 
 function hasValidSource(
-  source: MedicationProtocolSource,
+  source: unknown,
   asOfDate: string,
   protocol: MedicationProtocol,
-): boolean {
+): source is MedicationProtocolSource {
+  if (!source || typeof source !== "object" || Array.isArray(source)) return false;
+  const candidate = source as Record<string, unknown>;
   return (
-    nonEmpty(source.sourceId) &&
-    nonEmpty(source.issuer) &&
-    nonEmpty(source.title) &&
-    nonEmpty(source.edition) &&
-    nonEmpty(source.section) &&
-    nonEmpty(source.jurisdiction) &&
-    nonEmpty(source.population) &&
-    nonEmpty(source.setting) &&
-    source.setting === protocol.setting &&
-    source.population === protocol.population &&
-    source.jurisdiction === protocol.jurisdiction &&
-    source.licenseStatus === "verified" &&
-    isIsoDate(source.publishedAt) &&
-    isIsoDate(source.retrievedAt) &&
-    source.publishedAt <= asOfDate &&
-    source.retrievedAt <= asOfDate
+    nonEmpty(candidate["sourceId"]) &&
+    nonEmpty(candidate["issuer"]) &&
+    nonEmpty(candidate["title"]) &&
+    nonEmpty(candidate["edition"]) &&
+    nonEmpty(candidate["section"]) &&
+    nonEmpty(candidate["jurisdiction"]) &&
+    nonEmpty(candidate["population"]) &&
+    nonEmpty(candidate["setting"]) &&
+    candidate["setting"] === protocol.setting &&
+    candidate["population"] === protocol.population &&
+    candidate["jurisdiction"] === protocol.jurisdiction &&
+    candidate["licenseStatus"] === "verified" &&
+    isIsoDate(candidate["publishedAt"]) &&
+    isIsoDate(candidate["retrievedAt"]) &&
+    candidate["publishedAt"] <= asOfDate &&
+    candidate["retrievedAt"] <= asOfDate
   );
 }
 
@@ -258,24 +260,23 @@ export function matchMedicationProtocol(
     }
     const protocol = effective[0];
     if (!protocol) return { status: "blocked", reason: "invalid_protocol_provenance" };
-    const missing: Array<"age_days" | "weight_kg"> = ["age_days"];
-    if (
-      isDoseBasis(protocol.doseBasis) &&
-      isWeightBased(protocol.doseBasis) &&
-      context.weightKg == null
-    ) {
-      missing.push("weight_kg");
-    }
     if (
       !nonEmpty(protocol.id) ||
       !nonEmpty(protocol.version) ||
-      !protocol.source ||
+      !nonEmpty(protocol.route) ||
       !hasValidSource(protocol.source, context.asOfDate, protocol)
     ) {
       return { status: "blocked", reason: "invalid_protocol_provenance" };
     }
     if (!hasDualApproval(protocol.approvals, context.asOfDate)) {
       return { status: "blocked", reason: "missing_dual_approval" };
+    }
+    if (!isDoseBasis(protocol.doseBasis)) {
+      return { status: "blocked", reason: "invalid_protocol_rule" };
+    }
+    const missing: Array<"age_days" | "weight_kg"> = ["age_days"];
+    if (isWeightBased(protocol.doseBasis) && context.weightKg == null) {
+      missing.push("weight_kg");
     }
     return {
       status: "needs_data",
@@ -308,7 +309,7 @@ export function matchMedicationProtocol(
     !nonEmpty(protocol.version) ||
     !nonEmpty(protocol.route) ||
     !protocol.source ||
-    !hasValidSource(protocol.source, context.asOfDate)
+    !hasValidSource(protocol.source, context.asOfDate, protocol)
   ) {
     return { status: "blocked", reason: "invalid_protocol_provenance" };
   }

@@ -76,3 +76,12 @@
 - [x] Reject fractional doses-per-day; interval regimens require a separate representation.
 - [x] Fail closed on malformed runtime calculator inputs and malformed protocol collections.
 - [ ] Verify all added cases on exact-head CI and independent review.
+
+
+## Local evidence hierarchy update — 2026-11-11
+
+- [x] Record the Federal MoH/NMCP statement reiterating the Sudan 2023 national malaria protocol as the approved reference until official update.
+- [x] Record WHO 10 September 2026 malaria guideline as comparison/monitoring source, not an automatic override of national policy.
+- [ ] Obtain and verify the signed primary Sudan 2023 protocol PDF and exact sections for the first malaria cohort.
+- [ ] Verify current NMCP status directly with an official primary source before clinical activation.
+- [ ] Complete independent GP and pharmacist review and synthetic golden-case suite; no regimen is active.

@@ -88,3 +88,16 @@ The calculator now retains the full raw/capped decimal value until directional r
 - Removed epsilon allowances from dose/day ceiling enforcement. A calculated or rounded result may not exceed a configured ceiling by even a tiny tolerance.
 - The rounded flag is derived from the actual output-normalised value rather than a broad epsilon.
 - Added tests for sub-precision rounding increments and caps.
+
+
+## Sudan national malaria protocol evidence update — 2026-11-11
+
+A Federal MoH Sudan / National Malaria Control Program statement surfaced in September 2026 reiterates that the 2023 Sudan National Malaria Diagnosis and Treatment Protocol remains the only approved national reference until the Ministry announces an official update. It specifically warns against replacing Sudan-specific policy with recommendations from another country. This establishes the local evidence hierarchy for malaria: the 2023 national protocol remains the activation authority, while the WHO guideline updated 10 September 2026 is a comparison/monitoring source only unless the Federal MoH/NMCP publishes an update or explicit adoption decision.
+
+Source trail:
+- [Federal Ministry of Health Sudan official-channel statement](https://ae.linkedin.com/posts/federal-ministry-of-health-sudan_%D8%A8%D9%8A%D8%A7%D9%86-%D9%85%D9%87%D9%85-%D9%85%D9%86-%D8%A7%D9%84%D8%A8%D8%B1%D9%86%D8%A7%D9%85%D8%AC-%D8%A7%D9%84%D9%82%D9%88%D9%85%D9%8A-%D9%84%D9%85%D9%83%D8%A7%D9%81%D8%AD%D8%A9-%D8%A7%D9%84%D9%85%D9%84%D8%A7%D8%B1%D9%8A%D8%A7-activity-7507797911620136960--P1s)
+- [September 2026 report quoting the NMCP statement](https://sudannabaa.com/en/health/malaria-program-warns-against-external-prescriptions-says-2023-protocol-is-sudans-approved-reference/93037/)
+- [WHO malaria guideline, 10 September 2026](https://www.who.int/publications/i/item/guidelines-for-malaria)
+- [Peer-reviewed Sudan-adapted guideline article](https://doi.org/10.18502/sjms.v19i4.16912)
+
+The 2023 source remains a candidate for a future tightly scoped malaria cohort, not an activated rule. The signed primary protocol PDF, exact recommendation sections, current endorsement, licence, local applicability and clinical dual review must be verified first. No drug regimen or patient recommendation is introduced by this evidence update.

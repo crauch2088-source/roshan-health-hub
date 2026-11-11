@@ -12,8 +12,6 @@ const source = {
   jurisdiction: "test jurisdiction",
   population: "paediatric",
   setting: "outpatient",
-  population: "paediatric",
-  jurisdiction: "test jurisdiction",
   publishedAt: "2025-01-01",
   retrievedAt: "2026-01-01",
   licenseStatus: "verified" as const,
@@ -53,6 +51,8 @@ const context = {
   asOfDate: "2026-11-11",
   indicationCode: "J18.9",
   setting: "outpatient",
+  population: "paediatric",
+  jurisdiction: "test jurisdiction",
   medicineId: "synthetic-medicine-1",
   ageDays: 730,
   weightKg: 12,
@@ -311,5 +311,37 @@ test("requires explicit population and jurisdiction context", () => {
   assert.deepEqual(
     matchMedicationProtocol([protocol], { ...context, jurisdiction: "" }),
     { status: "blocked", reason: "invalid_context" },
+  );
+});
+
+
+test("does not return needs_data for a protocol with an invalid dose basis or missing route", () => {
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, doseBasis: { kind: "unknown" } as never }],
+      { ...context, ageDays: null },
+    ),
+    { status: "blocked", reason: "invalid_protocol_rule" },
+  );
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, route: "" }], { ...context, ageDays: null }),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+});
+
+test("blocks a malformed source object before either recommendation or needs_data", () => {
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, source: null as never }], context),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
+  );
+});
+
+test("does not allow an unverified or malformed source to pass the evidence gate", () => {
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, source: { ...source, licenseStatus: "unverified" } as never }],
+      context,
+    ),
+    { status: "blocked", reason: "invalid_protocol_provenance" },
   );
 });
