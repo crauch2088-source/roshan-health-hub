@@ -2885,7 +2885,10 @@ The cross-workstream review, exact candidate-head status, fresh read-only Produc
 - Retain the last documented estimate of **20–34 engineering hours** to a defensible Engineering RC until a fresh workstream-by-workstream re-weight is completed. Real staff/device acceptance remains a separate **1–3 week** process.
 - Next: reconcile PR #229 with current `main` without rewriting published history, run exact-head CI once on the reconciled tree, complete independent review, then obtain pharmacist/prescriber mobile RTL/LTR UAT. Separately resolve PR #216's mainline/Vercel status and complete migration source/effective-catalog reconciliation plus verified backup/restore before any Production rollout.
 
- 
+## Phase 49 quarantine contract — additional fail-closed regression coverage (2026-11-10)
+
+PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) strengthens only the disposable PG17 parameterized equivalent for the quarantined cleanup migration. It adds negative tests for invalid/duplicate/missing target identifiers, wrong-branch or duplicate reversal entries, and stock/ledger disagreement. The test helper now rejects ambiguous or wrong-branch matching adjustment rows before any synthetic soft-delete or stock mutation. The exact `20261102232819` rename remains isolated to the disposable database; the redacted `20261102232941` original is not executed or claimed as reconstructed. No hosted database was changed. Exact-head CI evidence is recorded in the PR and must pass before this test improvement is considered complete.
+
 ## Medication engine — owner-approved phased implementation (2026-11-11)
 
 **Decision:** Build the full medication intelligence and clinical decision-support capability as a first-class Roshan workstream in parallel with the core release. Do not make unvalidated clinical recommendations a prerequisite for opening the clinic.
