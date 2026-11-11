@@ -127,6 +127,9 @@ BEGIN
   IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 0 THEN
     RAISE EXCEPTION 'unassigned doctor can read another prescribers correction request';
   END IF;
+  IF (SELECT count(*) FROM public.prescription_item_correction_events) <> 0 THEN
+    RAISE EXCEPTION 'unassigned doctor can read another prescribers correction events';
+  END IF;
   v_denied := false;
   BEGIN
     PERFORM public.resolve_prescription_item_correction(
@@ -148,6 +151,9 @@ DECLARE v_denied boolean; v_request_id uuid := current_setting('phase61.primary_
 BEGIN
   IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 0 THEN
     RAISE EXCEPTION 'wrong-branch doctor can read another branch correction request';
+  END IF;
+  IF (SELECT count(*) FROM public.prescription_item_correction_events) <> 0 THEN
+    RAISE EXCEPTION 'wrong-branch doctor can read another branch correction events';
   END IF;
   v_denied := false;
   BEGIN
@@ -172,6 +178,7 @@ BEGIN
   BEGIN PERFORM public.request_prescription_item_correction('61800000-0000-0000-0000-000000000001','Wrong branch must not request this item.'); EXCEPTION WHEN OTHERS THEN v_denied := true; END;
   IF NOT v_denied THEN RAISE EXCEPTION 'wrong-branch pharmacist created a correction request'; END IF;
   IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 0 THEN RAISE EXCEPTION 'wrong-branch pharmacist can read correction requests'; END IF;
+  IF (SELECT count(*) FROM public.prescription_item_correction_events) <> 0 THEN RAISE EXCEPTION 'wrong-branch pharmacist can read correction events'; END IF;
 END;
 $phase61_wrong_branch$;
 
@@ -183,6 +190,7 @@ BEGIN
     RAISE EXCEPTION 'ordinary Admin unexpectedly received correction permissions';
   END IF;
   IF (SELECT count(*) FROM public.prescription_item_correction_requests) <> 0 THEN RAISE EXCEPTION 'ordinary Admin can read correction requests'; END IF;
+  IF (SELECT count(*) FROM public.prescription_item_correction_events) <> 0 THEN RAISE EXCEPTION 'ordinary Admin can read correction events'; END IF;
   v_denied := false;
   BEGIN PERFORM public.request_prescription_item_correction('61800000-0000-0000-0000-000000000002','Admin must not request correction.'); EXCEPTION WHEN OTHERS THEN v_denied := true; END;
   IF NOT v_denied THEN RAISE EXCEPTION 'ordinary Admin created a correction request'; END IF;
