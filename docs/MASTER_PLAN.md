@@ -2987,3 +2987,8 @@ The Ministry-hosted URL did not respond to retrieval in this research pass. A co
 ### Medication source freshness hard-stop — 2026-11-11
 
 The medication protocol matcher now requires every evidence source to carry an explicit `revalidateBy` date. A source is blocked when that date is missing, malformed, or earlier than the encounter's explicit `asOfDate`; publication must not post-date retrieval. This is a deterministic provenance gate, not a clinical approval or evidence of source currency beyond the declared revalidation date. Synthetic regression tests cover expired, missing and chronologically inconsistent provenance. No protocol is activated by this change.
+
+
+### Dose-basis validation before needs-data responses — 2026-11-11
+
+The matcher validates the full arithmetic rule through the same pure calculator before returning `needs_data` for missing age. This prevents malformed numeric rules (for example zero daily frequency or non-positive amounts) from being concealed behind an incomplete patient context. The calculator returns `needs_data` for a structurally valid weight-based rule with no weight and `calculated` for a valid fixed rule; only `invalid` blocks the protocol. A synthetic regression test covers zero frequency with age absent.

@@ -330,6 +330,14 @@ test("does not return needs_data for a protocol with an invalid dose basis or mi
     }),
     invalidRule,
   );
+  const invalidFrequencyProtocol = {
+    ...protocol,
+    doseBasis: { ...protocol.doseBasis, dosesPerDay: 0 },
+  };
+  assert.deepEqual(
+    matchMedicationProtocol([invalidFrequencyProtocol], { ...context, ageDays: null }),
+    invalidRule,
+  );
   assert.deepEqual(
     matchMedicationProtocol([{ ...protocol, route: "" }], { ...context, ageDays: null }),
     invalidProvenance,

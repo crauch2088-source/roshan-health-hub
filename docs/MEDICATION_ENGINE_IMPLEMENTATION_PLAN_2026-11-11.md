@@ -115,3 +115,8 @@ The Ministry-hosted URL did not respond to retrieval in this research pass. A co
 ## Source freshness hard-stop — 2026-11-11
 
 Every protocol source must include a mandatory `revalidateBy` ISO date. The matcher blocks sources when revalidation is overdue, missing or malformed, and rejects publication dates later than retrieval. This closes the prior gap where an old source with a verified licence could remain eligible indefinitely. The deadline must be assigned by a qualified reviewer based on the issuing authority's update cadence and clinical risk; it is not inferred automatically. Regression tests use synthetic dates only.
+
+
+### Validate arithmetic before reporting missing patient data — 2026-11-11
+
+The matcher delegates dose-basis validation to the deterministic calculator before it returns `needs_data` for missing age. This ensures malformed frequency, amounts, ceilings or basis kinds cannot be hidden by absent patient measurements. Valid weight-based rules may still return `needs_data` for missing weight; invalid rules always block.

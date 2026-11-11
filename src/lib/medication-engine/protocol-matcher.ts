@@ -107,16 +107,7 @@ function isIsoDate(value: unknown): value is string {
 
 function isDoseBasis(value: unknown): value is DoseBasis {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const candidate = value as Record<string, unknown>;
-  if (typeof candidate["dosesPerDay"] !== "number") return false;
-  if (candidate["kind"] === "fixed") return typeof candidate["amountMg"] === "number";
-  if (candidate["kind"] === "mg_per_kg_per_dose") {
-    return typeof candidate["amountMgPerKg"] === "number";
-  }
-  if (candidate["kind"] === "mg_per_kg_per_day") {
-    return typeof candidate["amountMgPerKgPerDay"] === "number";
-  }
-  return false;
+  return calculateDose({ basis: value as DoseBasis, weightKg: null }).status !== "invalid";
 }
 
 function hasValidSource(

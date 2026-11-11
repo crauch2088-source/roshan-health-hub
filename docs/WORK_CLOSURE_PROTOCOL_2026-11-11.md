@@ -82,3 +82,11 @@ A closed engineering workstream does not automatically mean the product is clini
 - Added synthetic regression cases for each condition.
 - This is a code-level evidence freshness guard only; it does not verify that the source itself is authentic/current, and it does not authorize clinical activation.
 - The PR head changed after the previous queued CI run; therefore that queued run cannot certify the new head. A fresh exact-head workflow set is required.
+
+
+### Needs-data validation closure — 2026-11-11
+
+- Code review found that the missing-age branch only shape-checked numeric fields and could return `needs_data` for an invalid numeric dose rule (e.g. zero doses/day).
+- Added a regression case for zero frequency with age missing.
+- Reused the pure calculator's full validation before the matcher may return `needs_data`; valid weight-based rules still report missing weight, invalid rules block.
+- No clinical regimen, database change or activation.
