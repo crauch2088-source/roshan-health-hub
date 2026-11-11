@@ -2,11 +2,7 @@ import { calculateDose } from "./dose-calculator.ts";
 import type { DoseBasis, DoseCalculationResult } from "./types.ts";
 
 export type MedicationProtocolStatus =
-  | "draft"
-  | "reviewed"
-  | "approved"
-  | "active"
-  | "suspended"
+  | "draft" | "reviewed" | "approved" | "active" | "suspended"
   | "retired";
 
 export type MedicationProtocolSource = {
@@ -136,10 +132,7 @@ function hasValidSource(source: MedicationProtocolSource, asOfDate: string): boo
   );
 }
 
-function hasDualApproval(
-  approvals: MedicationProtocolApproval[],
-  asOfDate: string,
-): boolean {
+function hasDualApproval(approvals: MedicationProtocolApproval[], asOfDate: string): boolean {
   if (!Array.isArray(approvals)) return false;
 
   // A dual-control approval must represent two different people. Treat malformed
@@ -208,15 +201,11 @@ export function matchMedicationProtocol(
     !nonEmpty(context.indicationCode) ||
     !nonEmpty(context.setting) ||
     !nonEmpty(context.medicineId) ||
-    (context.ageDays != null &&
-      (!Number.isFinite(context.ageDays) || context.ageDays < 0))
+    (context.ageDays != null && (!Number.isFinite(context.ageDays) || context.ageDays < 0))
   ) {
     return { status: "blocked", reason: "invalid_context" };
   }
-  if (
-    context.weightKg != null &&
-    (!Number.isFinite(context.weightKg) || context.weightKg <= 0)
-  ) {
+  if (context.weightKg != null && (!Number.isFinite(context.weightKg) || context.weightKg <= 0)) {
     return { status: "blocked", reason: "invalid_patient_data" };
   }
 
@@ -255,7 +244,11 @@ export function matchMedicationProtocol(
     const protocol = effective[0];
     if (!protocol) return { status: "blocked", reason: "invalid_protocol_provenance" };
     const missing: Array<"age_days" | "weight_kg"> = ["age_days"];
-    if (isDoseBasis(protocol.doseBasis) && isWeightBased(protocol.doseBasis) && context.weightKg == null) {
+    if (
+      isDoseBasis(protocol.doseBasis) &&
+      isWeightBased(protocol.doseBasis) &&
+      context.weightKg == null
+    ) {
       missing.push("weight_kg");
     }
     if (

@@ -2942,3 +2942,10 @@ Progress remains at the last canonical baseline until exact-head checks and inde
 - Dose kernel rejects missing weight for weight-based rules, invalid parameters, dose-ceiling violations, precision underflow and non-finite rounding overflow. Rounding is opt-in and source-defined.
 - This remains arithmetic infrastructure only. No drug/indication protocol, frequency inference, route, duration, concentration conversion, interaction/allergy/contraindication logic or AI-generated dose is active.
 - Keep Draft for independent clinical/software review. No clinical rule can be activated until current source provenance, GP+pharmacist dual approval, golden cases, synthetic role E2E and staff acceptance are completed.
+
+
+## Owner-approved work-closure agreement — 2026-11-11
+
+The mandatory execution and reporting rules are recorded in `AGENTS.md` and the dedicated `docs/WORK_CLOSURE_PROTOCOL_2026-11-11.md`. The operating change is binding: close a primary workstream against observable criteria; parallelize only independent work; verify the exact commit; trace failures to logs; keep engineering and operational readiness separate; protect Production and free-tier quotas.
+
+**Verified blocker at this documentation point:** PR #233 head `c288390cfe4a697bb42e5d6d0ead863dfd4ac597` failed lint with five Prettier errors in `src/lib/medication-engine/protocol-matcher.ts`. The separate Insurance claim UI validation run failed at the combined typecheck/lint/build gate for the same lint errors; its focused insurance tests passed. Typecheck, dependency security audits, role-guard tests and applicable PG17 integration jobs in the main CI run passed; build was skipped after lint failed. Vercel's free daily deployment cap is exhausted, so preview retries are stopped. A formatting-only correction is being bundled with this policy documentation; it does not activate any clinical rule or authorize hosted database changes.

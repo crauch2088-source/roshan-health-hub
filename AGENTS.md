@@ -65,3 +65,27 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Use installed general TDD/debugging/security/documentation skills when they add distinct value; avoid duplication and overlapping Roshan skills.
 - Simplicity/YAGNI must never weaken clinical safety, data fidelity, clinician confirmation, authentication, permissions, RLS, branch isolation, auditability, atomic finance/stock operations, or test coverage.
 - Skills do not authorize Production migrations, grants/RLS changes, Auth/Storage mutations, live business-data writes, deployment promotion, paid services, or clinical/staff acceptance.
+
+
+## Work-closure protocol — owner-approved 2026-11-11
+
+These rules govern every Roshan task. They override conversational momentum and informal progress claims.
+
+1. **Close work, do not accumulate phases.** Select one primary workstream with explicit acceptance criteria. Parallelize only genuinely independent tasks with non-overlapping files and contracts.
+2. **Definition of done.** A task is complete only when observable acceptance criteria are met, behavior changes have regression tests, required checks pass on the exact current commit, the diff is reviewed, and the documentation records evidence and remaining external gates.
+3. **Exact-head evidence.** CI on an ancestor commit never certifies a newer head. Record the exact SHA, workflow/run, passed/failed/skipped jobs, and intentional skip reasons. A Vercel status is not a substitute for CI or clinical acceptance.
+4. **Failure closure.** Retrieve failing job logs, identify the concrete cause, fix only that cause, and rerun affected checks plus required dependent gates. Never relabel a failed check as passed.
+5. **No false completion.** Code written, a PR opened, a migration authored, a passing test subset, or a preview does not itself complete a phase. Distinguish engineering readiness, database rollout, clinical review, staff/device acceptance, and production release.
+6. **No unsupported percentages or dates.** Recalculate progress from documented weighted acceptance gates. Keep Engineering RC and Operational Acceptance separate. If a defensible re-weight is unavailable, say so rather than recycling a historical percentage or inventing an ETA.
+7. **Protect production and quotas.** No production DDL/DML, migration, Auth/Storage/ACL/RLS mutation, deployment promotion, paid upgrade, or quota bypass without separate authorization. When the Vercel free daily limit is exhausted, stop preview retries and continue verifiable work that does not require deployment.
+8. **Atomic delivery.** Bundle source, tests and relevant documentation into one logical commit. Preserve published history, use expected-SHA ref updates, and squash-merge only after exact-head checks and review.
+9. **User reporting.** Report concrete artifacts, commit/PR links, actual test results, untouched areas and blockers. Do not substitute status narration for work.
+
+### Session baseline discovered 2026-11-11
+
+- PR #233 is open and Draft; inspected head: `c288390cfe4a697bb42e5d6d0ead863dfd4ac597`.
+- Exact-head CI run `43090861346` failed at lint due to five Prettier errors in `src/lib/medication-engine/protocol-matcher.ts`. Typecheck, security audits, role-guard tests and the other listed integration jobs passed; build was skipped after lint failure.
+- Insurance claim UI validation run `43090861400` passed its focused insurance tests but failed its combined typecheck/lint/build step because the same shared lint errors remained. This is not evidence of an insurance-behavior defect.
+- Vercel reported the free daily deployment cap (`api-deployments-free-per-day`). No retry or quota bypass is authorized.
+- No clinical protocol was activated and no hosted Supabase DDL/DML, production data, Auth, Storage, role or ACL mutation was performed during this inspection.
+- This baseline is superseded only by a new exact-head result after the formatting repair; the failed run remains historical evidence and must not be described as green.
