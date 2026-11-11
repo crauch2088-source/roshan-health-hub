@@ -309,3 +309,9 @@ testRunner("editing medicine identity invalidates any pending physical-pack conf
     "a pack confirmation must be cleared whenever identity fields change",
   );
 });
+
+testRunner("physical-pack verification is blocked while identity draft differs from persisted medicine", () => {
+  assert.match(source, /const identityDraftChanged = Boolean\(/);
+  assert.match(source, /disabled=\{[\s\S]*?identityDraftChanged[\s\S]*?verifyPhysicalPack\.isPending/);
+  assert.match(source, /setPackInspectionConfirmed\(false\)/);
+});
