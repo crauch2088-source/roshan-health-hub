@@ -107,13 +107,13 @@ function isIsoDate(value: unknown): value is string {
 function isDoseBasis(value: unknown): value is DoseBasis {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
-  if (typeof candidate.dosesPerDay !== "number") return false;
-  if (candidate.kind === "fixed") return typeof candidate.amountMg === "number";
-  if (candidate.kind === "mg_per_kg_per_dose") {
-    return typeof candidate.amountMgPerKg === "number";
+  if (typeof candidate["dosesPerDay"] !== "number") return false;
+  if (candidate["kind"] === "fixed") return typeof candidate["amountMg"] === "number";
+  if (candidate["kind"] === "mg_per_kg_per_dose") {
+    return typeof candidate["amountMgPerKg"] === "number";
   }
-  if (candidate.kind === "mg_per_kg_per_day") {
-    return typeof candidate.amountMgPerKgPerDay === "number";
+  if (candidate["kind"] === "mg_per_kg_per_day") {
+    return typeof candidate["amountMgPerKgPerDay"] === "number";
   }
   return false;
 }
@@ -253,6 +253,7 @@ export function matchMedicationProtocol(
       return { status: "blocked", reason: "ambiguous_active_protocols" };
     }
     const protocol = effective[0];
+    if (!protocol) return { status: "blocked", reason: "invalid_protocol_provenance" };
     const missing: Array<"age_days" | "weight_kg"> = ["age_days"];
     if (isDoseBasis(protocol.doseBasis) && isWeightBased(protocol.doseBasis) && context.weightKg == null) {
       missing.push("weight_kg");
@@ -293,6 +294,7 @@ export function matchMedicationProtocol(
   }
 
   const protocol = ageMatches[0];
+  if (!protocol) return { status: "blocked", reason: "invalid_protocol_provenance" };
   if (
     !nonEmpty(protocol.id) ||
     !nonEmpty(protocol.version) ||
@@ -309,7 +311,7 @@ export function matchMedicationProtocol(
     return { status: "blocked", reason: "invalid_protocol_rule" };
   }
 
-  const dose = calculateDose({ basis: protocol.doseBasis, weightKg: context.weightKg });
+  const dose = calculateDose({ basis: protocol.doseBasis, weightKg: context.weightKg ?? null });
   if (dose.status === "needs_data") {
     return {
       status: "needs_data",
