@@ -2987,3 +2987,13 @@ No hosted DDL/DML, migration application, ACL/Auth/Storage mutation, business-da
 - Added `docs/ENGINEERING_CORRECTED_EXECUTION_SPEC_2026-11-11.md` after source-level review of the existing pharmacy/inventory architecture. Do not create a parallel `medicine_batches` table or replace the existing idempotent receipt/FEFO dispense RPCs.
 - Confirmed inventory-statistics client aggregation and the 500-row client-filtered batch list as genuine candidates; both require branch and aggregate semantics before implementation.
 - Reframed Bankak uniqueness, pack attestation, clinical CDS, SECURITY DEFINER ACL review, keep-alive, backup/restore and operational acceptance as evidence-gated workstreams. No code, hosted DB, Auth/ACL/Storage, deployment, or business data was changed.
+
+
+## Independent review of Gemini Argon 4 completion blueprint — 2026-11-11
+
+- Added [`docs/GEMINI_ARGON4_INDEPENDENT_REVIEW_2026-11-11.md`](GEMINI_ARGON4_INDEPENDENT_REVIEW_2026-11-11.md) after a fresh read-only check of main, PRs, deployments, live Production/QA schema metadata, migration ledgers, Supabase Advisors and official platform documentation.
+- Disposition: partially accepted as a source of candidate improvements, not an execution script. Corrected stale claims about direct `addStock`, CI concurrency, PR #219/#225/#210, persisted receipt state, Bankak columns, and backup scheduling/Drive upload.
+- Retained the genuine work: server-side inventory aggregates, batch pagination, Bankak reference integrity after schema/policy design, PR #229/#211 integration, QA-first migration reconciliation, backup/restore proof and real staff/device acceptance.
+- Deferred the Phase 63 dosing engine in accordance with the explicit MVP simplification in PR #185. No clinical rules are approved or active.
+- Rejected the proposed 64%/15% baseline and 92–95% two-day forecast as unweighted/unverified. The last canonical 51% Engineering RC / 11% Operational Acceptance remains historical pending a fresh weighted gate review.
+- No code, migration, hosted database, Auth/ACL/Storage, business data, PR state or deployment was changed. This is a documentation-only review branch update.
