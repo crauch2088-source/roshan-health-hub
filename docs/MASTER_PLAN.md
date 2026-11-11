@@ -2768,62 +2768,9 @@ Current main: `5b1873bd48da2fe00f0e02d3e5ffb30a98eb93f0`. PR #204 merged externa
 **Next task:** complete the content/effective-catalog source reconciliation in the linked report, then synchronize PR #191 with current main and rerun its PG17 regression suite. Keep it Draft until isolated QA and synthetic pharmacist acceptance exist. No Production DDL/DML or external backup dispatch in this step.
 
 
-## Phase 58 — immutable SDG-only financial provenance (2026-11-09)
-
-**Owner decision confirmed:** Roshan is permanently SDG-only. There is no currency selector, currency switching, multi-currency operation, FX conversion, or cross-currency settlement. This supersedes the earlier Phase 58 question that left single- versus multi-currency unresolved.
-
-### Read-only schema and function inventory
-- Production and QA have matching monetary schema for the inspected tables. Currency-code columns are absent from invoices, payments, cashbox transactions, expenses, supplier bills/payments, and pharmacy inventory batches.
-- The approved first implementation scope is those seven posted financial source/ledger tables. Insurance claim tables are deferred for now per the owner's earlier scope decision. Master price catalogues remain SDG under the global invariant; invoice line items inherit the parent invoice currency.
-- Production and QA definitions match for invoice creation/payment, expense posting, supplier bill/payment posting, and ordinary ledger triggers. They differ for pharmacy dispense and cashbox reversal; invoice-payment reversal is present in QA only. No function replacement is included in Phase 58.
-- Existing write paths insert through authorized RPCs/triggers. The candidate schema default supplies SDG without changing their signatures; a private trigger rejects explicit NULL/non-SDG inserts and prevents a populated currency code from being mutated.
-
-### Candidate implementation
-- Draft branch: feat/phase58-single-sdg-provenance-20261109.
-- Adds nullable currency_code with default SDG for new records on invoices, payments, cashbox_transactions, expenses, supplier_bills, supplier_payments, and pharmacy_inventory.
-- Legacy rows remain NULL. No automatic backfill, historical relabelling, or setting-derived fallback is included. A future legacy reconciliation requires separate evidence and approval.
-- Disposable PostgreSQL 17 tests cover default SDG, explicit NULL rejection, foreign-currency rejection, immutability, and preservation of unknown legacy rows.
-- Candidate SQL and tests are source-only; no hosted QA/Production DDL/DML, RPC replacement, grant/RLS change, Auth/Storage mutation, or deployment promotion.
-
-### Remaining gates
-1. Exact-head PostgreSQL 17 integration and full CI.
-2. Independent SQL/security review of the migration and trigger boundary.
-3. Reconcile live migration/function source provenance before any hosted application.
-4. Decide and evidence the treatment of existing NULL-provenance rows before receipts/reprints are enabled.
-5. Separate owner approval for QA application, then separate approval for any Production migration.
-
-
-## Phase 58/59 verification update — 2026-11-09, candidate head `70becde517557cfb18c2718988fe0cf9f5c712a8`
-
-- The SDG guard now validates source relationships, not only the child row's default: a new payment must reference an invoice whose persisted currency is SDG; a supplier payment linked to a bill must match that bill; cashbox rows sourced from payments, expenses, supplier payments, or reversals must match their source row.
-- A payment against a legacy invoice with NULL currency is rejected before insertion. Legacy rows remain NULL; no setting-derived historical inference or backfill is introduced.
-- PostgreSQL 17 coverage now includes the actual `create_invoice_atomic` path (new invoice persists SDG), actual `post_invoice_payment` and `post_expense` finance RPC paths, legacy invoice rejection, idempotent payment retry, source-linked ledger currency checks, supplier-bill linkage, and reversal currency checks.
-- The security-candidate bundle's isolated finance matrix and combined-schema workflow now apply Phase 58 in the same psql session as their fixtures and assertions, preserving session-scoped test identity/permission settings.
-- Exact-head evidence on `70becde...`: Phase 58 PG17, Phase 59 PG17, atomic invoice integration, finance-only RPC integration, security-candidate bundle, insurance claim validation and CodeQL passed. Main CI remained in progress at the time this note was written.
-- PR #211 and dependent PR #181 remain Draft. No hosted migration, historical backfill, Production DDL/DML, role/grant/RLS/Auth/Storage change, or deployment promotion occurred.
-
-**Release gates remain unchanged:** independent SQL/security review, exact-head full CI, Production/QA migration and function-source reconciliation, evidence-backed legacy policy, separate QA/Production approvals, authenticated finance/pharmacist acceptance, and Android/A4 print acceptance.
-
-
-## Phase 58/59 exact-head closure — 2026-11-09
-
-**Candidate PR #211:** [Phase 58 immutable SDG provenance + Phase 59 receipt currency provenance](https://github.com/crauch2088-source/roshan-health-hub/pull/211)  
-**Verified head:** `995cfbd0e0bc1ee1af463ef474e028ada46cda2f`
-
-- A test-first regression exposed that a posted payment or supplier payment could be re-pointed to a legacy parent row with unknown (NULL) currency. The new PG17 test failed on the original implementation, then passed after the trigger was tightened.
-- The private SDG enforcement trigger now revalidates parent/source provenance when payment invoice, supplier bill, or cashbox source/reversal references change. It does not interfere with unrelated updates to historical NULL-provenance rows, and does not permit currency backfill or mutation.
-- Exact-head GitHub Actions passed: Phase 58 and Phase 59 PostgreSQL 17 integration; finance-only RPC write isolation; cashbox reversal concurrency; security candidate bundle; migration source parity; dependency audits; role guards; typecheck; lint; build; and CodeQL. CI run: [42629610078](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42629610078). PR workflow: [42629603090](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42629603090).
-- PR #211 has 29 successful checks and one intentionally skipped baseline/authenticated-acceptance gate; no failed or pending checks. PR #181 receipt UI branch also has 29 successful checks and one intentionally skipped gate, but remains dependent on PR #211 and must be rebased/revalidated after the database candidate is independently reviewed and merged.
-- PR #208 free GitHub-first automation routing, PR #209 pharmacy quantity guard, and PR #210 medicine identity editor are also exact-head green and have zero commits behind main. All five PRs remain Draft; none has been merged or deployed.
-
-**Scope/safety:** all database tests used disposable PostgreSQL 17 in GitHub Actions. No hosted QA/Production migration or write, historical currency backfill, RPC/grant/RLS/Auth/Storage mutation, or deployment promotion occurred.
-
-**Still blocking first safe release:** independent SQL/security review; Production/QA migration and function-source reconciliation; evidence-backed handling of historical NULL currency; separate QA and Production approvals; authenticated finance/pharmacy staff acceptance; and RTL/LTR browser, A4, and Android printer acceptance.
-
-
 ## Live release-gate recheck — 2026-11-10 (read-only)
 
-Main at the start of this checkpoint: `969074279a4cc7c06db1c320e311b72a5b7003ac`; it advanced during the run to `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69` through a documentation-only commit. This section supersedes older operational snapshots where they conflict; historical evidence above is retained.
+Main at the start of this checkpoint: `969074279a4cc7c06db1c320e311b72a5b7003ac`. This section supersedes older operational snapshots where they conflict; historical evidence above is retained.
 
 ### Live Production and QA database facts
 
@@ -2844,34 +2791,25 @@ A single batched read-only catalog/function check was run against Production (`j
 ### Active candidate review
 
 - PR #209 is the rebased Phase 57 pharmacy queue correction, head `5c07ad63b4c7b302175bc61b9737c34457678142`: 22 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft. Its UI refinements have not been applied to either hosted database; QA already has the earlier Phase 57 SQL guard.
-- PR #210 is the rebased medicine-catalogue identity editor, updated head `fb2810898e2bb28264234f7bedf8be9389b4b66a`. The stale physical-pack acknowledgement is corrected: edits to name, generic ingredient, brand, strength, dosage form, or custom dosage form now reset the acknowledgement through a pure state transition helper. Regression coverage exercises all six fields. Exact-head CI run [42771972448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42771972448): 18 successful jobs, 1 intentionally skipped authenticated clinical-acceptance job, 0 failures. Shared-catalogue role scope and non-durable audit attestation remain separate gates.
-- PR #211 is the additive SDG provenance / receipt-integrity candidate, head `36c7d404c4c32a79d63de093ddd1bba68a11607`: 40 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. Its hosted status remains candidate-only: the seven currency columns and v2 receipt RPC are absent from both QA and Production. It remains Draft pending independent SQL/security review, legacy NULL policy and environment-specific migration reconciliation.
+- PR #210 is the rebased medicine-catalogue identity editor, head `c72b449688b8ec276a19e42ae0d626b587baaa81`. Review found that the physical-pack acknowledgement remains checked after identity fields are edited. A regression correction is required: invalidate the acknowledgement on every identity-field edit or bind it to the exact normalized payload. Review note: [#6760979016](https://github.com/crauch2088-source/roshan-health-hub/pull/210#issuecomment-6760979016). Shared-catalogue role scope and non-durable audit attestation remain separate gates.
+- PR #211 is the additive SDG provenance / receipt-integrity candidate, head `36c7d404c4c32a79d63de093ddd1bba68a11607`: 29 successful checks, one intentionally skipped authenticated clinical-acceptance gate, zero failures. It remains Draft pending independent SQL/security review, legacy NULL policy and environment-specific migration reconciliation.
 - PR #181 receipt UI remains dependent on Phase 58/59; do not merge it independently or print legacy NULL/mismatched currency records. PR #179 still needs authenticated browser/mobile and physical printer acceptance.
 
 ### Execution and safety record
 
 This checkpoint used read-only Supabase operations and GitHub inspection. No hosted DDL/DML, migration application, patient/clinical/financial writes, Auth/Storage mutation, permission changes, production deployment or backup dispatch occurred. The failed attempt to merge Draft PR #207 made no repository change; it remains Draft and was not force-promoted to ready.
 
-**Next order:** complete independent review of PR #210 shared-catalogue role scope and durable audit-attestation design; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. The transient checkbox is not a durable audit attestation. Do not promote a candidate solely because disposable PG17 and CI checks are green.
+**Next order:** correct and retest PR #210's stale pack acknowledgement; complete independent review of #209 and #211; obtain synthetic authenticated QA pharmacist/finance acceptance; then reconcile Production/QA migration sources and execute the separately approved release gates. Do not promote a candidate solely because disposable PG17 and CI checks are green.
 
 
 ## Owner-approved accelerated execution — 2026-11-10
 
 The owner approved a 48-hour accelerated execution sprint. The binding execution rules, six parallel workstreams, dependency-aware schedule, P0/P1/P2 stop rules, evidence requirements, separate engineering/operational metrics, and end-of-sprint decision states are defined in [48H_ACCELERATED_EXECUTION_CHARTER.md](48H_ACCELERATED_EXECUTION_CHARTER.md) and ratified in the Spec Kit Constitution v1.1.0.
 
-**Sprint baseline:** `bed6ff4c87d582107bf62ee353be4eb35958481b`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
+**Sprint baseline:** `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69`. The 48-hour target is for an evidence-backed Engineering Release Candidate, not a guaranteed clinical launch. Production DDL/DML, migration application, Auth/Storage/permission changes, business-data writes, deployment promotion, and external backup dispatch remain separately gated and are not authorized by this charter. SDG remains the sole currency.
 
 **Initial execution rule:** establish a fresh deduplicated weighted task ledger and exact-head status before claiming a new completion percentage. Continue independent work while human/device/external dependencies are blocked; do not waive those gates.
 
-
-## Phase 58 review finding — fail closed on deferred insurance cashbox source (2026-11-10)
-
-On PR [#211](https://github.com/crauch2088-source/roshan-health-hub/pull/211), the independent review found that Phase 54 explicitly treats `insurance_claim_payment` as a payment-ledger source, while Phase 58 added currency provenance only to the seven owner-approved tables and deliberately deferred insurance claim/payment tables. The Phase 58 cashbox trigger previously handled payment, expense, supplier-payment and reversal sources but let this deferred source type pass without a persisted parent currency. The candidate now rejects new `insurance_claim_payment` cashbox rows with SQLSTATE `23514`; a PG17 integration regression asserts the rejection. This is a fail-closed deferral, not implementation of insurance functionality. No hosted database was changed. The exact-head CI result is pending.
-
-
-## Phase 58 exact-head verification completed — 2026-11-10
-
-PR #211 candidate head `6d2440381e78710fc5579598ff7684b1909884a8` completed its full validation set: CI [42775216135](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216135) passed 20 jobs with one intentional skip for authenticated clinical acceptance; Phase 58 and Phase 59 PostgreSQL 17 jobs both passed; insurance UI validation [42775216669](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216669), Spec Kit [42775216527](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216527), historical migration source checks [42775216129](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775216129), and PR validation [42775210843](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42775210843) passed. This verifies candidate code on disposable CI only; Phase 58/59 remain unapplied to QA and Production. The new `insurance_claim_payment` fail-closed guard is covered by the Phase 58 PostgreSQL 17 integration step. No hosted database or deployment was changed.
 
 ## 48-hour sprint baseline and H0 log — 2026-11-10
 
@@ -2915,3 +2853,46 @@ The public SECURITY DEFINER inventory was reviewed by exact function in both env
 ## Parallel engineering review — 2026-11-10
 
 The cross-workstream review, exact candidate-head status, fresh read-only Production/QA checks, newly fixed catalogue UX regression, updated blockers and next execution order are recorded in [48H_PARALLEL_REVIEW_2026-11-10.md](48H_PARALLEL_REVIEW_2026-11-10.md). This review supersedes no historical migration evidence; it confirms Production remains on the Phase57 NULL-to-one dispensing fallback while QA has the explicit quantity rejection. Phase58/59 currency provenance remains unapplied in both hosted environments. No hosted writes or release actions were performed.
+
+## Prescription UX, formulation and dose-entry safety review — 2026-11-10
+
+- Current-main baseline, exact PR/check evidence, read-only catalogue counts, TDD evidence and release boundaries are recorded in [PRESCRIPTION_UX_SAFETY_REVIEW_2026-11-10.md](PRESCRIPTION_UX_SAFETY_REVIEW_2026-11-10.md).
+- PR #179 remains Draft. Its current head `b9232e3daef6060762a11a4fba7db905f737c5f6` is 34 commits ahead / 0 behind current main. The picker now exposes generic/brand/strength/form details. Test-first RED was observed on commit `2f663920d37c2f211f20951c828e6fd187b0bce4`; exact-head CI [1905](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/42865136031) passed 279/279 tests, with the clinical-acceptance job intentionally skipped; exact-head Vercel status is successful. This is not visual/browser/A4/staff acceptance.
+- PR #179 also removes route auto-inference, requires explicit route/form, requires quantity, uses free-text dose with a unit cue, exposes custom fields, adds unknown-age/pediatric weight warnings, and preserves saved formulation/route/instructions in the pharmacy queue and persisted print model. It still does not validate product-specific route compatibility.
+- Live read-only aggregate counts: QA has 0 active non-deleted medicine rows; Production has 9, all with generic names but all 9 missing brand, strength and dosage form. Neither environment has the Phase 60 pack-verification table or a product-route mapping column. No product rows or patient/financial data were read.
+- PR #210 is the separate shared-catalogue identity/physical-pack attestation candidate; it is not applied to either hosted database and does not provide route mapping. PR #185 remains a stale Spec 056 draft and must be reconciled, not merged as-is. Phase 61 correction workflow PRs #221/#223/#224/#226 remain separate and were not modified.
+- No doses, frequency/duration protocols, route mappings or interactions were invented. Generic duration shortcuts remain non-prescriptive entry aids; no universal cap was added. Next: complete authorized visual/A4 review of #179, reconcile #210 independently, and require verified product labels plus GP/pharmacist review before route or regimen rules are activated.
+- No hosted schema/data/security change, clinical/financial record, production deployment, authenticated clinical E2E or staff UAT occurred in this review.
+
+## H+13 prescription-correction and pharmacy safety update — 2026-11-10
+
+- Phase 61 database candidate head `763985fafe52c83ca65b808ec67c50569ed35752` completed **30/30 exact-head checks successfully**, with the canonical authenticated clinical acceptance job intentionally skipped. PostgreSQL 17 tests now enforce a dedicated `prescriptions.create` authority instead of the broad `pharmacy.create`/`emr.create` permissions, and reject unpriced catalogue replacements in both correction paths without side effects. The workflow's UI and real prescriber/pharmacist acceptance remain open; Phase 61 is not release-complete.
+- A new mainline-based Phase 57 candidate branch, `fix/phase57-quantity-guard-mainline-20261110`, carries the byte-identical QA-applied Phase 57 migration source, the separate forward-only Phase 57B free-text/external-prescription guard, and pharmacy UI handling that never displays a missing quantity as one or permits dispensing blocked prescriptions. Its exact-head CI is pending.
+- Production still has the legacy `COALESCE(pi.quantity, 1)` dispense fallback; QA has the explicit NULL-quantity rejection. No hosted migration, role/permission change, business-data write, deployment promotion or backup dispatch was performed. Production remains blocked pending current backup/restore proof and separately approved migration rollout.
+- Detailed current catalog and migration evidence: [LIVE_EFFECTIVE_CATALOG_RECONCILIATION_2026-11-10.md](LIVE_EFFECTIVE_CATALOG_RECONCILIATION_2026-11-10.md), [LIVE_MIGRATION_CONSOLIDATED_SOURCE_MAP_2026-11-10.md](LIVE_MIGRATION_CONSOLIDATED_SOURCE_MAP_2026-11-10.md), and [PHASE57_PHARMACY_QUANTITY_GUARD_2026-11-04.md](PHASE57_PHARMACY_QUANTITY_GUARD_2026-11-04.md).
+
+## H+5 execution update — 2026-11-11: Phase 57 mainline closure and Phase 61 consolidation
+
+- **PR #228 merged to `main`** by squash at `1eb6b273f01e190f8862d54a23734983512784d9`. It restores the exact QA-applied Phase 57 source (10,954 bytes; MD5 `921970d4d86b32dccd430a0ea0ef8745`; original blob `9db6768999352c32081f69b5e665c3cc95452616`), adds the separate forward-only Phase 57B external/free-text blockers, and integrates fail-closed pharmacy quantity UX. Its exact-head GitHub Actions workflows passed; canonical authenticated clinical acceptance was intentionally skipped. **No hosted migration was applied.** QA remains at Phase 57; Production remains without Phase 57 and retains the legacy NULL-to-one fallback until separately approved migration/recovery gates are satisfied.
+- **PR #230 merged to `main`** at `bed4ef10ba282d052e7ecb8d90c05d14d8443dcb`, correcting the migration manifest's stale Phase 57 provenance reference from PR #209 to merged PR #228.
+- Phase 61's database and UI work is now consolidated in Draft PR #229, retargeted to `main`. It contains the RLS/audit/branch-bound correction workflow, dedicated `prescriptions.create` authorization, the bilingual pharmacist request and prescriber inbox, and explicit multi-item cancel-and-reissue entry. The prescriber must re-enter every replacement medicine and regimen field; no old regimen is copied or inferred. Exact-head CI/PG17 workflows passed before base retargeting. Current branch comparison is 27 commits ahead / 5 behind `main`; GitHub currently reports it non-mergeable, so **do not merge until the mainline changes are reconciled and the refreshed exact-head checks pass**. Android/browser RTL/LTR acceptance and real pharmacist/prescriber UAT remain open.
+- PR #226 remains Draft and is no longer an independent merge target while #229 carries its database layer. PR #216 remains open; its synthetic PostgreSQL tests and CI passed, but its Vercel preview status is blocked by the free build-rate limit and the branch needs current-main reconciliation. No quota bypass or paid upgrade was attempted.
+- No QA/Production DDL/DML, migration application, role/Auth/Storage change, clinical/financial business-data write, backup dispatch, or deployment promotion occurred during this update.
+
+### Progress accounting and next gates
+
+- The last canonical evidence-weighted score in this Master Plan is **51% Engineering RC** and **11% Operational Acceptance**. The previously stated conversational **59%** is not supported by the canonical repository record and is withdrawn pending a documented re-weight; do not use it as the project baseline.
+- Retain the last documented estimate of **20–34 engineering hours** to a defensible Engineering RC until a fresh workstream-by-workstream re-weight is completed. Real staff/device acceptance remains a separate **1–3 week** process.
+- Next: reconcile PR #229 with current `main` without rewriting published history, run exact-head CI once on the reconciled tree, complete independent review, then obtain pharmacist/prescriber mobile RTL/LTR UAT. Separately resolve PR #216's mainline/Vercel status and complete migration source/effective-catalog reconciliation plus verified backup/restore before any Production rollout.
+
+## Phase 49 quarantine contract — additional fail-closed regression coverage (2026-11-10)
+
+PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) strengthens only the disposable PG17 parameterized equivalent for the quarantined cleanup migration. It adds negative tests for invalid/duplicate/missing target identifiers, wrong-branch or duplicate reversal entries, and stock/ledger disagreement. The test helper now rejects ambiguous or wrong-branch matching adjustment rows before any synthetic soft-delete or stock mutation. The exact `20261102232819` rename remains isolated to the disposable database; the redacted `20261102232941` original is not executed or claimed as reconstructed. No hosted database was changed. Exact-head CI evidence is recorded in the PR and must pass before this test improvement is considered complete.
+ 
+## Phase 58/59 SDG-only provenance candidate — mainline reconciliation 2026-11-11
+
+- PR #211 remains the candidate for permanent SDG-only financial provenance and receipt verification. The owner policy is fixed SDG-only; no currency switching, FX, or multi-currency is in scope.
+- The candidate contains Phase 58 source/ledger provenance and Phase 59 fail-closed receipt verification, with disposable PostgreSQL 17 tests. The latest historical candidate head passed both Phase 58 and Phase 59 PG17 jobs; its general CI failure was formatting-only (migration SQL and tests), not a failed financial behavior assertion.
+- This branch is being reconciled with current main so it preserves Phase 49/57/57B pharmacy replay, Phase 61 CI additions, and current migration source manifest. A fresh exact-head full CI is required after reconciliation and formatting fixes.
+- No hosted QA/Production migration, currency-column DDL, legacy backfill, financial record write, RPC deployment or production release has occurred. Production remains on its current schema until separate backup/restore and owner rollout approval.
+- PR #181 persisted payment receipts depend on Phase 59 and must be rebased/revalidated after #211's candidate is independently reviewed and merged.

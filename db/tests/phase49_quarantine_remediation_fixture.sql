@@ -74,7 +74,7 @@ RETURNS void LANGUAGE plpgsql SET search_path TO ''
 AS $function$
 DECLARE
  v_patient_count bigint; v_unique_count bigint; v_branch_count bigint; v_null_branch_count bigint; v_branch_text text;
- v_branch uuid; v_stock integer; v_has_reversal boolean; r record; v_predicate text; v_sql text;
+ v_branch uuid; v_stock integer; v_has_reversal boolean; v_reversal_count bigint; v_reversal_branch_text text; r record; v_predicate text; v_sql text;
 BEGIN
  IF p_patient_ids IS NULL OR pg_catalog.cardinality(p_patient_ids)=0 OR p_medicine_id IS NULL OR p_reference_id IS NULL THEN
   RAISE EXCEPTION 'invalid_synthetic_cleanup_arguments' USING ERRCODE='22023';
@@ -93,12 +93,19 @@ BEGIN
  v_branch:=v_branch_text::uuid;
  SELECT m.stock_quantity INTO v_stock FROM public.medicines AS m WHERE m.id=p_medicine_id FOR UPDATE;
  IF NOT FOUND OR v_stock IS NULL THEN RAISE EXCEPTION 'synthetic_medicine_stock_not_found' USING ERRCODE='22023'; END IF;
- SELECT EXISTS(
-  SELECT 1 FROM public.stock_movements sm
-  WHERE sm.medicine_id=p_medicine_id AND sm.reference_id=p_reference_id
-   AND sm.reference_table='prescriptions' AND sm.movement_type='adjustment'
-   AND sm.quantity=1 AND sm.branch_id=v_branch
- ) INTO v_has_reversal;
+ SELECT pg_catalog.count(*),pg_catalog.min(sm.branch_id::text)
+ INTO v_reversal_count,v_reversal_branch_text
+ FROM public.stock_movements sm
+ WHERE sm.medicine_id=p_medicine_id AND sm.reference_id=p_reference_id
+  AND sm.reference_table='prescriptions' AND sm.movement_type='adjustment'
+  AND sm.quantity=1;
+ IF v_reversal_count>1 THEN
+  RAISE EXCEPTION 'synthetic_reversal_ledger_ambiguous' USING ERRCODE='23514';
+ END IF;
+ IF v_reversal_count=1 AND v_reversal_branch_text IS DISTINCT FROM v_branch::text THEN
+  RAISE EXCEPTION 'synthetic_reversal_branch_mismatch' USING ERRCODE='42501';
+ END IF;
+ v_has_reversal := v_reversal_count=1;
  IF v_stock=49 AND NOT v_has_reversal THEN
   UPDATE public.medicines SET stock_quantity=50,updated_at=pg_catalog.now() WHERE id=p_medicine_id;
   INSERT INTO public.stock_movements(medicine_id,batch_id,movement_type,quantity,reference_id,reference_table,notes,branch_id,created_by)
