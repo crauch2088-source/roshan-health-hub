@@ -224,6 +224,7 @@ BEGIN
     RAISE EXCEPTION 'Admin identity permission must not allow direct price or stock mutation';
   END IF;
 
+  v_denied := false;
   BEGIN
     PERFORM public.verify_medicine_physical_pack('63000000-0000-0000-0000-000000000001');
   EXCEPTION WHEN insufficient_privilege THEN

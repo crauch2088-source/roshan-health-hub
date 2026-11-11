@@ -24,6 +24,10 @@ const medicineRlsSql = readFileSync(
   ),
   "utf8",
 );
+const medicineRlsTestSql = readFileSync(
+  new URL("../db/tests/phase60_medicine_catalogue_authority_integration.sql", import.meta.url),
+  "utf8",
+);
 
 testRunner("inventory receiving uses the atomic guarded pharmacy RPC", () => {
   assert.doesNotMatch(
@@ -314,9 +318,7 @@ testRunner(
   "physical-pack verification is blocked while identity draft differs from persisted medicine",
   () => {
     assert.match(source, /const identityDraftChanged = Boolean\(/);
-    const verifyActionIndex = source.indexOf(
-      'verifyPhysicalPack.mutate(s(editingMedicine, "id"))',
-    );
+    const verifyActionIndex = source.indexOf('verifyPhysicalPack.mutate(s(editingMedicine, "id"))');
     const verifyButtonStart = source.lastIndexOf("<Button", verifyActionIndex);
     const verifyButtonEnd = source.indexOf("</Button>", verifyActionIndex) + "</Button>".length;
     assert.ok(
@@ -332,3 +334,14 @@ testRunner(
     assert.match(source, /setPackInspectionConfirmed\(false\)/);
   },
 );
+
+
+testRunner("Admin pack-verification denial assertion resets state after the price/stock denial", () => {
+  const adminRoleBlock =
+    medicineRlsTestSql.match(/DO \\$admin_role\\$([\\s\\S]*?)\\$admin_role\\$;/)?.[1] ?? "";
+  assert.match(
+    adminRoleBlock,
+    /IF NOT v_denied THEN\\s+RAISE EXCEPTION 'Admin identity permission must not allow direct price or stock mutation';\\s+END IF;\\s+v_denied := false;\\s+BEGIN\\s+PERFORM public\\.verify_medicine_physical_pack/,
+    "pack verification denial must start with a fresh false flag, not inherit the prior price/stock denial",
+  );
+});
