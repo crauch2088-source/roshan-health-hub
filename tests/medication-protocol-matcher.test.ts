@@ -236,3 +236,31 @@ test("ignores malformed approval entries without throwing or granting approval",
     },
   );
 });
+
+
+test("blocks a protocol whose cited source setting differs from the protocol setting", () => {
+  assert.deepEqual(
+    matchMedicationProtocol(
+      [{ ...protocol, source: { ...source, setting: "inpatient" } }],
+      context,
+    ),
+    {
+      status: "blocked",
+      reason: "invalid_protocol_provenance",
+    },
+  );
+});
+
+test("treats actor identifiers case-insensitively when enforcing distinct approvers", () => {
+  const sameActorDifferentCase = [
+    { role: "gp" as const, actorId: "Clinician-A", approvedAt: "2026-01-02" },
+    { role: "pharmacist" as const, actorId: "clinician-a", approvedAt: "2026-01-03" },
+  ];
+  assert.deepEqual(
+    matchMedicationProtocol([{ ...protocol, approvals: sameActorDifferentCase }], context),
+    {
+      status: "blocked",
+      reason: "missing_dual_approval",
+    },
+  );
+});
