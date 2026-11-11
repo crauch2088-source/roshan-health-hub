@@ -156,3 +156,22 @@ test("allows source-defined upward rounding when no safety ceiling is exceeded",
     assert.equal(result.rounded, true);
   }
 });
+
+test("rejects positive doses that collapse to zero at the kernel precision", () => {
+  assert.deepEqual(
+    calculateDose({
+      basis: { kind: "fixed", amountMg: 1e-12, dosesPerDay: 1 },
+    }),
+    { status: "invalid", reason: "calculation_out_of_range" },
+  );
+});
+
+test("rejects non-finite results from extreme source-defined rounding increments", () => {
+  assert.deepEqual(
+    calculateDose({
+      basis: { kind: "fixed", amountMg: 1, dosesPerDay: 1 },
+      rounding: { incrementMg: Number.MIN_VALUE, mode: "up" },
+    }),
+    { status: "invalid", reason: "calculation_out_of_range" },
+  );
+});
