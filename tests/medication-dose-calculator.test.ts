@@ -87,3 +87,16 @@ test("daily ceilings are not mistaken for per-dose ceilings", () => {
     assert.equal(result.dailyDoseMg, 100);
   }
 });
+
+test("allows source-defined upward rounding when no safety ceiling is exceeded", () => {
+  const result = calculateDose({
+    basis: { kind: "fixed", amountMg: 1.21, dosesPerDay: 1 },
+    rounding: { incrementMg: 0.1, mode: "up" },
+  });
+  assert.equal(result.status, "calculated");
+  if (result.status === "calculated") {
+    assert.equal(result.doseMg, 1.3);
+    assert.equal(result.dailyDoseMg, 1.3);
+    assert.equal(result.rounded, true);
+  }
+});
