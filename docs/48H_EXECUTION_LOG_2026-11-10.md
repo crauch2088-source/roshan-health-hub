@@ -292,3 +292,11 @@ The weighted Engineering RC estimate remains **49%**; operational acceptance rem
 - Removed the unconditional shell-level `PGOPTIONS=-c jit=true` override so only the URL builder controls the temporary-token JIT option; database-password fallback remains without the token-only option.
 - Added Python regression tests for credential mode and shell option isolation. Static source inspection passed, but a fresh validation-only Actions run has not yet executed these tests. No backup was dispatched.
 - This improves documentation and connection-mode correctness but does not change the previously reported backup/recovery acceptance score until the test suite and current-runner end-to-end rehearsal pass.
+
+### H+13 — Phase 61 database backend and Phase 57 mainline recovery — 2026-11-10
+
+- Phase 61 exact candidate head `763985fafe52c83ca65b808ec67c50569ed35752`: **30/30 checks passed**, zero failures; one canonical authenticated clinical-acceptance gate intentionally skipped. The PostgreSQL 17 correction workflow test passed after two genuine regressions were found and fixed: broad permission leakage into clinical prescription creation, and zero-price fallback for unpriced catalogue medicines in both replacement paths.
+- Phase 61 remains a database/backend candidate only. No front-end correction request/resolution flow, authenticated doctor/pharmacist E2E, or staff acceptance is claimed.
+- Phase 57 has been reconstructed on a fresh branch from current main to avoid the dirty/stale PR #209 base. The branch preserves the exact QA-applied Phase 57 source body and separates Phase 57B free-text/external-prescription guards. The pharmacy UI now blocks invalid/missing quantities and unlinked/external items without substituting quantity 1. Full exact-head CI is pending.
+- Production remains on the old dispense fallback; QA has Phase 57. No Supabase writes, migration replay, role changes, Production deployment, or backup dispatch occurred.
+- Weighted Engineering RC remains **49%** pending Phase 57 exact-head validation and independent review; operational acceptance remains **11%**. Estimated Engineering RC remaining remains **24–40 hours**, conditional on migration reconciliation and release-gate evidence.
