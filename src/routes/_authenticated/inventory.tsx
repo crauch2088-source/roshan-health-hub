@@ -329,11 +329,11 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
       : identityForm.dosage_form.trim();
   const identityDraftChanged = Boolean(
     editingMedicine &&
-      (identityForm.name.trim() !== s(editingMedicine, "name").trim() ||
-        identityForm.generic_name.trim() !== s(editingMedicine, "generic_name").trim() ||
-        identityForm.brand_name.trim() !== s(editingMedicine, "brand_name").trim() ||
-        identityForm.strength.trim() !== s(editingMedicine, "strength").trim() ||
-        draftDosageForm !== s(editingMedicine, "dosage_form").trim()),
+    (identityForm.name.trim() !== s(editingMedicine, "name").trim() ||
+      identityForm.generic_name.trim() !== s(editingMedicine, "generic_name").trim() ||
+      identityForm.brand_name.trim() !== s(editingMedicine, "brand_name").trim() ||
+      identityForm.strength.trim() !== s(editingMedicine, "strength").trim() ||
+      draftDosageForm !== s(editingMedicine, "dosage_form").trim()),
   );
 
   const rows = list.rows;
