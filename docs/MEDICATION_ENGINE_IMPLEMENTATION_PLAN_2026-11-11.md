@@ -101,3 +101,12 @@ Source trail:
 - [Peer-reviewed Sudan-adapted guideline article](https://doi.org/10.18502/sjms.v19i4.16912)
 
 The 2023 source remains a candidate for a future tightly scoped malaria cohort, not an activated rule. The signed primary protocol PDF, exact recommendation sections, current endorsement, licence, local applicability and clinical dual review must be verified first. No drug regimen or patient recommendation is introduced by this evidence update.
+
+
+#### Primary document location verified from the peer-reviewed article
+
+The Sudan Journal of Medical Sciences article's reference [6] identifies the official Federal Ministry of Health PDF URL as:
+
+https://fmoh.gov.sd/fmoh/fmoh/public/SudanMalariaCaseManagementProtocol2023.pdf
+
+The Ministry-hosted URL did not respond to retrieval in this research pass. A complete 2023 protocol copy was readable at a non-Ministry mirror; its cover identifies the Federal Ministry of Health and its foreword bears the names/titles of the Director General of PHC and the Undersecretary. The mirror is not treated as proof of file integrity or as the canonical source. The peer-reviewed article states that the official document is on the FMoH website and that the recommendations were formally adopted by the Ministry. Until the Ministry-hosted file is retrieved and its checksum recorded, store the official URL as canonical provenance and the mirror only as a provisional access copy. Do not activate dose tables from the mirror alone.

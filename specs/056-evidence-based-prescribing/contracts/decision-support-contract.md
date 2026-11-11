@@ -51,3 +51,12 @@ Configured rounding increments and safety ceilings must align with the kernel's 
 For malaria in Sudan, a Federal MoH/NMCP statement surfaced in September 2026 reiterates the 2023 National Malaria Diagnosis and Treatment Protocol as the only approved national reference until an official update. WHO global malaria guidance updated 10 September 2026 is a comparison and surveillance source; it must not silently override the Sudan national protocol. A conflict blocks activation pending an explicit national update/adoption decision and GP/pharmacist review.
 
 Keep treatment guidelines distinct from formulary/product-registration records, medicine shortage notices and observational studies. Only a verified treatment guideline can support a regimen; product identity requires verified registration/label evidence; shortage notices only inform supply availability.
+
+
+#### Primary document location verified from the peer-reviewed article
+
+The Sudan Journal of Medical Sciences article's reference [6] identifies the official Federal Ministry of Health PDF URL as:
+
+https://fmoh.gov.sd/fmoh/fmoh/public/SudanMalariaCaseManagementProtocol2023.pdf
+
+The Ministry-hosted URL did not respond to retrieval in this research pass. A complete 2023 protocol copy was readable at a non-Ministry mirror; its cover identifies the Federal Ministry of Health and its foreword bears the names/titles of the Director General of PHC and the Undersecretary. The mirror is not treated as proof of file integrity or as the canonical source. The peer-reviewed article states that the official document is on the FMoH website and that the recommendations were formally adopted by the Ministry. Until the Ministry-hosted file is retrieved and its checksum recorded, store the official URL as canonical provenance and the mirror only as a provisional access copy. Do not activate dose tables from the mirror alone.

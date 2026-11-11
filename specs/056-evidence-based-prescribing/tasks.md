@@ -85,3 +85,11 @@
 - [ ] Obtain and verify the signed primary Sudan 2023 protocol PDF and exact sections for the first malaria cohort.
 - [ ] Verify current NMCP status directly with an official primary source before clinical activation.
 - [ ] Complete independent GP and pharmacist review and synthetic golden-case suite; no regimen is active.
+
+
+### Primary-source retrieval tracking
+
+- [x] Capture the canonical FMoH-hosted 2023 Sudan Malaria Case Management Protocol URL from the peer-reviewed guideline article's reference list.
+- [ ] Retrieve the PDF from the FMoH host and record checksum, retrieval timestamp and document metadata.
+- [ ] Compare the retrieved official PDF byte-for-byte or page-by-page with any mirror copy before any extraction.
+- [ ] Do not encode dose tables from an unofficial mirror as a production protocol.
