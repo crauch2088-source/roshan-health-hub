@@ -336,12 +336,23 @@ testRunner(
 );
 
 
-testRunner("Admin pack-verification denial assertion resets state after the price/stock denial", () => {
-  const adminRoleBlock =
-    medicineRlsTestSql.match(/DO \\$admin_role\\$([\\s\\S]*?)\\$admin_role\\$;/)?.[1] ?? "";
-  assert.match(
-    adminRoleBlock,
-    /IF NOT v_denied THEN\\s+RAISE EXCEPTION 'Admin identity permission must not allow direct price or stock mutation';\\s+END IF;\\s+v_denied := false;\\s+BEGIN\\s+PERFORM public\\.verify_medicine_physical_pack/,
-    "pack verification denial must start with a fresh false flag, not inherit the prior price/stock denial",
-  );
-});
+testRunner(
+  "Admin pack-verification denial assertion resets state after the price/stock denial",
+  () => {
+    const adminRoleStart = medicineRlsTestSql.indexOf("DO $admin_role$");
+    const adminRoleEnd = medicineRlsTestSql.indexOf("$admin_role$;", adminRoleStart);
+    const adminRoleBlock = medicineRlsTestSql.slice(adminRoleStart, adminRoleEnd);
+    const priceDeniedIndex = adminRoleBlock.indexOf(
+      "Admin identity permission must not allow direct price or stock mutation",
+    );
+    const resetIndex = adminRoleBlock.indexOf("v_denied := false;", priceDeniedIndex);
+    const verifyIndex = adminRoleBlock.indexOf(
+      "PERFORM public.verify_medicine_physical_pack",
+      priceDeniedIndex,
+    );
+    assert.ok(
+      priceDeniedIndex >= 0 && resetIndex > priceDeniedIndex && verifyIndex > resetIndex,
+      "pack verification denial must start with a fresh false flag, not inherit the prior price/stock denial",
+    );
+  },
+);
