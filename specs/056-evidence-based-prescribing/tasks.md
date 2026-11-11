@@ -53,3 +53,17 @@
 - [ ] Exact-head CI, disposable PG17/RLS/branch tests for any schema, synthetic GP/pharmacist E2E.
 - [ ] Independent GP and pharmacist approval for every active protocol.
 - [ ] Staff acceptance, backup/restore and separate owner production authorization.
+
+
+## H+1 mainline integration and exact-head validation — 2026-11-11
+
+- [x] Reconcile PR #233 with current main after Phase58/59 finance integration; branch is zero commits behind main.
+- [x] Exact code head 60ea37e499f2733020cd32706d43e5c76fbeac20: 20 successful workflow jobs, one intentional authenticated clinical-acceptance skip, zero failures.
+- [x] Guard suite 292/292; medication calculator tests, TypeScript, lint, build, dependency/security audits, source parity and applicable PostgreSQL 17 integrations pass.
+- [ ] Independent clinical/software review of protocol lifecycle and arithmetic precision boundaries.
+- [ ] Approved source corpus and dual GP/pharmacist protocol governance.
+- [ ] Add structured allergy, active medication, pregnancy, renal/hepatic and patient context only after verified schema/clinical requirements.
+- [ ] Golden-case corpus and synthetic authenticated role E2E.
+- [ ] No active rule until GP+pharmacist sign-off and staff UAT.
+
+**No clinical activation:** no protocol content, dose suggestion, route/frequency/duration, concentration conversion, interaction or allergy engine is active. No hosted DB changes.

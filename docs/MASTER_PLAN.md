@@ -2914,3 +2914,12 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - No hosted Supabase DDL/DML, clinical data, production deployment, role/ACL/Storage change or PR merge occurred.
 
 Progress remains at the last canonical baseline until exact-head checks and independent review: Engineering RC 51%; Operational Acceptance 11%. This PR is not yet counted as merged completion.
+
+
+ 
+## H+1 Medication engine foundation after Phase 58/59 mainline merge — 2026-11-11
+
+- PR #233's mainline-reconciled code head 60ea37e499f2733020cd32706d43e5c76fbeac20 passed 20 successful workflow jobs and one intentional authenticated clinical-acceptance skip; zero failures. The full guard suite passed 292/292 tests, including medication arithmetic, Phase58/59 finance, TypeScript, lint, build, security audits, source parity and PostgreSQL 17 integrations.
+- Dose kernel rejects missing weight for weight-based rules, invalid parameters, dose-ceiling violations, precision underflow and non-finite rounding overflow. Rounding is opt-in and source-defined.
+- This remains arithmetic infrastructure only. No drug/indication protocol, frequency inference, route, duration, concentration conversion, interaction/allergy/contraindication logic or AI-generated dose is active.
+- Keep Draft for independent clinical/software review. No clinical rule can be activated until current source provenance, GP+pharmacist dual approval, golden cases, synthetic role E2E and staff acceptance are completed.

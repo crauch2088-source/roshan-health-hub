@@ -25,3 +25,8 @@ No verified source → no protocol. No verified product → no product route/con
 
 ## Current status
 Test contract is committed first in PR #233. Pure calculator implementation is now added on the same branch. No hosted database, patient data, clinical protocol, production deployment or role/ACL change has occurred.
+
+
+## Reconciled mainline status — 2026-11-11
+
+PR #233 is based on main after Phase58/59 finance integration. Exact code head 60ea37e499f2733020cd32706d43e5c76fbeac20 passed 20 successful jobs, one intentional authenticated clinical-acceptance skip, zero failures; 292/292 guard tests passed. This is an arithmetic foundation only and is not clinically approved or activated.
