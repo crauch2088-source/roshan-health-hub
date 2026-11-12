@@ -102,7 +102,7 @@ No task is complete because a PR exists, code compiles, a screenshot looks corre
 3. **One atomic delivery per logical task:** source, regression tests, migration/fixtures when applicable, and documentation are prepared together in one coherent commit. Use a single Git tree/commit and expected-SHA ref update; do not rewrite published history.
 4. **CI and quota discipline:** one CI run per completed coherent stage; fix actual failures and rerun only necessary validation. Documentation-, SQL-, migration-, and script-only changes must avoid frontend builds. No paid upgrades or quota bypasses.
 5. **Production is not a test environment:** no synthetic patient, clinical, pharmacy, lab, inventory, or financial transactions in Production.
-6. **Production changes require a separate gate:** this sprint charter does not authorize Production DDL/DML, migration application, permission changes, Auth/Storage changes, business-data mutation, deployment promotion, or backup dispatch. Each requires explicit owner approval after evidence-based preflight and recovery checks.
+6. **Production changes — standing owner delegation:** the owner explicitly authorizes the engineering agent (2026-11-12) to execute justified Production DDL/DML, forward-only migrations, narrowly scoped permission/RLS changes, Auth/Storage configuration, controlled deployment promotion, and necessary live operational-data corrections without per-change confirmation, when the applicable evidence-based preflight, exact-head tests, security review, audit/idempotency checks, and credible recovery path pass. This does not authorize synthetic Production testing, destructive/irreversible actions without verified recovery, clinical-policy decisions, fabricated clinical/staff acceptance, or paid services. If a mandatory gate fails, withhold that action and continue independent safe work.
 7. **No unsafe shortcuts:** never weaken RLS, branch isolation, authorization, auditability, atomicity, clinical confirmation, or financial integrity to meet the clock.
 8. **No false completion:** skipped, deferred, blocked, flaky, untested, and unavailable checks remain separately labeled. An intentional skip is not a pass.
 9. **No silent scope change:** SDG remains the only currency. Do not add multi-currency, new paid services, new agent runtimes, or speculative tooling in this sprint.
@@ -123,7 +123,7 @@ Never combine these into one percentage. Every update must state the evidence da
 - **Blocked RC:** a coherent candidate exists, but one or more mandatory gates are unavailable or unresolved. State exactly what is blocked and what evidence would unblock it.
 - **No-go:** a P0 defect, unsafe migration/data ambiguity, security failure, or inadequate recovery evidence prevents a responsible candidate.
 
-None of these labels automatically authorizes Production deployment or clinic launch.
+Production changes are covered by the standing owner delegation in Constitution section X, but only after all applicable release gates pass. None of these labels automatically authorizes clinic launch or substitutes for clinical/staff acceptance.
 
 ## 9. Ratification and change control
 
@@ -131,6 +131,6 @@ This charter is binding for the accelerated Roshan execution sprint once accepte
 
 Any relaxation of a stop rule requires an explicit owner decision, a written rationale, an impact analysis, and recorded acceptance. A schedule target alone is never sufficient justification.
 
-**Owner decision:** approved in conversation on 2026-11-10.  
+**Owner decision:** charter approved in conversation on 2026-11-10; standing delegated Production engineering authority explicitly granted in conversation on 2026-11-12 and recorded in Constitution section X.  
 **Baseline:** main `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69`.  
 **Currency:** SDG only.
