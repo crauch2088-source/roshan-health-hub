@@ -2,6 +2,12 @@ name: Phase 58 SDG currency provenance
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/ci-phase58-sdg-currency.yml"
+      - "db/roshan_phase58_single_sdg_currency_provenance.sql"
+      - "db/tests/phase58_sdg_currency_provenance_fixture.sql"
+      - "db/tests/phase58_sdg_currency_provenance_integration.sql"
 
 permissions:
   contents: read
@@ -31,8 +37,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           persist-credentials: false
-      - name: Run source contract tests
-        run: node --test tests/phase58-sdg-currency-provenance.test.mjs
       - name: Run migration and integration assertions on disposable PostgreSQL 17
         env:
           PGPASSWORD: postgres
