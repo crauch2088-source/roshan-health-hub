@@ -3068,3 +3068,12 @@ Weighted operational acceptance: **11.25% (reported as 11%)**. The limited QA cr
 
 **ETA:** approximately **20–35 focused engineering hours** to reach a defensible Engineering RC, conditional on no new critical defects and timely access to a fresh backup/restore run. Calendar time to operational release cannot be responsibly estimated until owner-managed backup credentials, real staff UAT, target Android/browser checks, physical printing, and Production rollout gates are completed.
 
+
+
+## Next-session execution plan — 2026-11-12
+
+- Canonical detailed runbook: [`docs/NEXT_SESSION_EXECUTION_PLAN_2026-11-12.md`](NEXT_SESSION_EXECUTION_PLAN_2026-11-12.md).
+- Priority 1 is to review backup-runner PR #8, run the manual encrypted Production backup with `confirm_production_backup=true`, verify the PostgreSQL 17 restore, and transfer the encrypted artifact to the canonical dated Google Drive folder. Secret names/presence were inspected read-only; values were not accessed. The latest prior workflow run was a false-confirmation no-op, not a backup.
+- Priority 2 is exact-source Phase 57/57B pharmacy migration provenance and disposable PostgreSQL 17 regression; Phase 55 private-helper ACL/trigger review proceeds separately. Production remains NO-GO until the backup/recovery, source, tests, ACL, and post-change gates pass.
+- QA live ledger is 26 rows/latest `20261112061251`; Production is 129/latest `20261102232941`. Phase 55/57/57B/58/59/61 remain QA-only at this checkpoint.
+- This planning/documentation work earns no implementation-completion credit. No live database, secrets, backup, artifact, or deployment was changed in this round.
