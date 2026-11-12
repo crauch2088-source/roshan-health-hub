@@ -31,12 +31,14 @@ test("Phase 59 PostgreSQL integration remains path-filtered and runs on PostgreS
 
 test("Phase 58 and 59 source-contract tests remain in the normal test guard", () => {
   assert.ok(
-    packageJson.scripts["test:guard"].includes("tests/phase58-sdg-currency-provenance.test.mjs"),
+    packageJson.scripts["test:guard"].includes(
+      "tests/phase58-sdg-currency-provenance.test.mjs",
+    ),
   );
   assert.ok(
-    packageJson.scripts["test:guard"].includes("tests/phase59-receipt-currency-provenance.test.mjs"),
+    packageJson.scripts["test:guard"].includes(
+      "tests/phase59-receipt-currency-provenance.test.mjs",
+    ),
   );
-  assert.ok(
-    packageJson.scripts["test:guard"].includes("tests/phase58-59-ci-routing.test.mjs"),
-  );
+  assert.ok(packageJson.scripts["test:guard"].includes("tests/phase58-59-ci-routing.test.mjs"));
 });
