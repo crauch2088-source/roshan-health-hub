@@ -2972,3 +2972,14 @@ Phase 61 QA verification is recorded in PR #229: correction tables have ENABLE+F
 **Release decision:** Production remains blocked for pharmacy migration rollout. No Production DDL/DML or deployment promotion occurred in this checkpoint.
 
 **Progress accounting:** the last canonical weighted baseline remains historical at 51% Engineering RC / 11% Operational Acceptance. This audit does not supply the complete weighted denominator needed to recalculate a defensible percentage or ETA; do not present those historical figures as freshly measured.
+
+## Fast follow-up — exact-head CI and live-ledger reconciliation (2026-11-12)
+
+- PR #234 documentation CI completed successfully on head `b4501661edc3165354d6cf846a0d3784ddfc5b7c`.
+- PR #210 formatting-only follow-up completed all five exact-head workflows successfully on `318ade4ff844fba8a20092baba0cd43aaa27c85c`; the PR remains Draft for independent SQL/security review and pack-attestation acceptance.
+- PR #211 Phase 58/59 exact-head workflow snapshot contains 12 successful workflows and zero failures. The PR is non-Draft but GitHub currently reports it non-mergeable against its stale base; do not merge or assume the current-main branch includes it. Its migration files remain candidates, and live QA/Production queries show zero `currency_code` columns on the seven target financial tables and zero `get_invoice_payment_receipt_status_v2` functions.
+- PR #216 Phase 49 quarantine test follow-up has four successful exact-head workflows, but is also non-mergeable against its stale base. Reconcile its parent history before merge.
+- The exact live migration query resolves the earlier Phase 57B ambiguity: QA has rows `20261104065852` (Phase 57), `20261111215510` (Phase 57B), and `20261111223309` (Phase 61); Production has none of these. Some main-branch documentation/manifest excerpts still describe Phase 57B as candidate-only or say it is not applied to QA. Those documents are stale and must be reconciled; the live migration ledger is authoritative for applied-version presence, while the effective function definition is authoritative for behavior.
+- Current live catalog fingerprint was rechecked: QA 58 tables / 866 columns / 235 constraints / 255 indexes / 212 policies / 74 triggers / 150 functions; Production 56 / 842 / 215 / 249 / 210 / 69 / 143.
+- PR #233's pure calculator/protocol matcher is intentionally isolated from production recommendations. Its own guardrails require a reviewed and active protocol, jurisdiction/population/setting match, source provenance and dual GP/pharmacist approval; synthetic test fixtures do not constitute clinical protocol approval.
+- No Production or QA schema/data changes occurred during this follow-up. No PR was merged.
