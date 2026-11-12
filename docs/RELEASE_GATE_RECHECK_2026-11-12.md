@@ -208,3 +208,23 @@ No Production or QA DDL/DML, privilege/Auth/Storage change, patient/financial wr
 - Secret-free exact-head run [43170543850](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43170543850) passed: ShellCheck/syntax, all 8 credential-preflight cases (including malformed recipient rejection and a generated valid age recipient), and the existing Python helper suite (22/22 tests).
 - This is code/test validation on a Draft PR, not a full backup. The current runner main SHA remains 464456a25335f60bc1721e2c6b194aed53b7382d; the new age-recipient validation has not yet been merged or exercised by a full backup on main. No secrets were read and no Supabase connection, dump, restore, artifact upload or Drive write occurred.
 - Next: independent review of PR #8; then owner-managed Actions credential setup and explicit authorization before a manual full backup/restore on the reviewed current runner main.
+
+## Scoped QA source-to-ledger verification — 2026-11-12 06:55 UTC
+
+The live QA ledger was compared to the tracked source SQL for Phases 55, 57, 57B, 58, 59 and 61. All six executable bodies match their recorded QA migration statements: Phase 55 matches after removing one terminal source newline; Phase 57, 58, 59 and 61 match raw; Phase 57B matches after removing only four leading comments, BEGIN/blank wrapper and trailing COMMIT/blank wrapper. The Phase 57B line diff contained no executable SQL changes. Exact versions, Git blob SHAs, byte lengths and MD5 values are in db/MIGRATIONS_MANIFEST.md.
+
+Phase 61 source is on Draft PR #229 (head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420), not main. This verifies only the six current QA forward phases; it does not resolve the 129-versus-26 historical ledger divergence or the three mismatched shared version IDs. Production still has none of these six phase versions.
+
+### Open PR state correction
+
+- PR #210 head a018d988182b949803d919149a958d2d23a21b18 remains Draft/non-mergeable against stale base 8c5b6a41780f60fc4dec864ca4c65980d77c765b. Its exact-head CI 43166072673 passed 21 jobs with one intentional clinical-acceptance skip; Phase 60 workflow 43166061024 passed 2/2. This supersedes the stale MASTER_PLAN note that exact-head CI was pending.
+- PR #181 remains Draft. Phase 58/59 are now applied in QA (20261112061219 and 20261112061251), but not Production; receipt UI promotion still depends on Production schema/RPC rollout and acceptance. The prior statement that the schema/RPC were absent in both hosted environments is stale.
+- PR #229 (head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420) and PR #233 (head f237623a42797a7345e0d6ecfba3dc081b3d9aa1) remain Draft and non-mergeable against base 8c5b6a41780f60fc4dec864ca4c65980d77c765b. Their historical exact-head checks do not establish current-main integration or operational acceptance.
+
+### PR #236 final evidence before this follow-up
+
+- Head 0c9dfd221c9dfedda8f78aa44373e08c63b30f94, based on main 52d975180e505c922dbe7a9b3260365bf59179b1.
+- CI 43170730789 passed 20 jobs; one intentional authenticated clinical-acceptance job was skipped; zero failures.
+- CodeQL 43170720794 passed both analyses.
+- Prescription atomicity 43170730799, insurance integrity 43170730816 and privileged-role guard 43170730898 passed.
+- PR remains Draft; no merge or deployment promotion.

@@ -311,3 +311,20 @@ Direct read-only ledger extraction supersedes earlier 24-row QA snapshots:
 - Never copy QA ledger rows into Production, insert migration records manually, or replay the historical ledger. Prepare only forward-only reviewed source and disposable PostgreSQL 17 tests; Production remains gated by current backup/restore, full source reconciliation and separate approval.
 
 No hosted database write occurred during this recheck.
+
+## QA forward-migration source-to-ledger body parity — 2026-11-12 06:55 UTC
+
+A read-only comparison of tracked SQL files with the actual QA schema_migrations statements confirms executable-body parity for all six currently applied forward phases below. Hashes are MD5 of the stored statement array joined with LF; source Git blob SHAs are separate identifiers.
+
+| Phase | QA version | Source location / Git blob | Stored bytes / MD5 | Comparison |
+|---|---|---|---|---|
+| 55 | 20261103155227 | main, 081d5e97169786e23cd1990cf9f6dbb1c49e4a1f | 2,304 / b1271f444b6b8254b9b50ca49c7b02d3 | Exact after trimming one terminal source newline |
+| 57 | 20261104065852 | main, 9db6768999352c32081f69b5e665c3cc95452616 | 10,954 / 921970d4d86b32dccd430a0ea0ef8745 | Exact raw-file match |
+| 57B | 20261111215510 | main, 57516e08de8e314f687c21f2f292199d3adff178 | 11,525 / bfd2df24224752a1488f2f05494f4211 | Exact after excluding six non-executable leading lines (four comments, BEGIN, blank) and two trailing lines (COMMIT, final blank); no executable SQL differences |
+| 58 | 20261112061219 | main, e4f47d0df22ec095207f8ea27ad7395aa26779f2 | 8,347 / df5eb42bac7f8a1addc443d6d825a9a1 | Exact raw-file match |
+| 59 | 20261112061251 | main, 49dbd1a686e17cbdc8341cb27675301f9cfbc5b3 | 4,365 / 3e356de0f959e9674e87198eb18b04a6 | Exact raw-file match |
+| 61 | 20261111223309 | Draft PR #229 head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420, blob 1abbb3b0238ffee44d851ff90d065165f925a605 | 38,534 / 6d4d05a084d14d7d354385b32e8e745e | Exact raw-file match |
+
+This is scoped source-to-ledger parity for these six QA forward migrations, not full cross-project migration-chain parity. Production remains at 129 rows/latest 20261102232941; QA has 26/latest 20261112061251. The three shared version collisions, 126 Production-only rows and 23 QA-only rows remain unresolved as a historical ledger reconciliation problem. Production has none of the six QA phase versions. Do not copy QA ledger rows or replay the QA chain into Production.
+
+No hosted database write occurred during this audit.
