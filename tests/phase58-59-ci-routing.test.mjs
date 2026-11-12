@@ -8,14 +8,26 @@ const phase58 = readFileSync(".github/workflows/ci-phase58-sdg-currency.yml", "u
 const phase59 = readFileSync(".github/workflows/ci-phase59-receipt-currency.yml", "utf8");
 
 test("documentation-only changes bypass the always-on full CI matrix", () => {
-  const triggers = ci.slice(0, ci.indexOf("\npermissions:"));
-  assert.match(triggers, /push:[\\s\\S]*paths-ignore:/);
-  assert.match(triggers, /pull_request:[\\s\\S]*paths-ignore:/);
-  for (const path of ['"*.md"', '"**/*.md"', '"docs/**"', '"specs/**"', '".specify/**"', '".agents/**"']) {
-    assert.ok(triggers.includes(path), `missing CI paths-ignore entry: ${path}`);
+  const triggers = ci.slice(0, ci.indexOf("\\npermissions:"));
+  const pushStart = triggers.indexOf("push:");
+  const pullStart = triggers.indexOf("pull_request:");
+  const pushSection = triggers.slice(pushStart, pullStart);
+  const pullSection = triggers.slice(pullStart);
+  assert.ok(pushSection.includes("paths-ignore:"));
+  assert.ok(pullSection.includes("paths-ignore:"));
+
+  const ignoredPaths = [
+    "*.md",
+    "**/*.md",
+    "docs/**",
+    "specs/**",
+    ".specify/**",
+    ".agents/**",
+  ];
+  for (const path of ignoredPaths) {
+    assert.ok(triggers.includes(`"${path}"`), `missing CI paths-ignore entry: ${path}`);
   }
 });
-
 test("Phase 58 and 59 PostgreSQL integration is not duplicated in the always-on CI workflow", () => {
   assert.doesNotMatch(ci, /^  phase58-sdg-currency-provenance:/m);
   assert.doesNotMatch(ci, /^  phase59-receipt-currency-provenance:/m);
