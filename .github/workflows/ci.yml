@@ -5,7 +5,21 @@ on:
     branches:
       - main
       - fix/tanstack-start-security
+    paths-ignore:
+      - "*.md"
+      - "**/*.md"
+      - "docs/**"
+      - "specs/**"
+      - ".specify/**"
+      - ".agents/**"
   pull_request:
+    paths-ignore:
+      - "*.md"
+      - "**/*.md"
+      - "docs/**"
+      - "specs/**"
+      - ".specify/**"
+      - ".agents/**"
   workflow_dispatch:
     inputs:
       run_clinical_e2e_acceptance:
