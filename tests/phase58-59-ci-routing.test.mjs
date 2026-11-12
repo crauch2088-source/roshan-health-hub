@@ -16,14 +16,7 @@ test("documentation-only changes bypass the always-on full CI matrix", () => {
   assert.ok(pushSection.includes("paths-ignore:"));
   assert.ok(pullSection.includes("paths-ignore:"));
 
-  const ignoredPaths = [
-    "*.md",
-    "**/*.md",
-    "docs/**",
-    "specs/**",
-    ".specify/**",
-    ".agents/**",
-  ];
+  const ignoredPaths = ["*.md", "**/*.md", "docs/**", "specs/**", ".specify/**", ".agents/**"];
   for (const path of ignoredPaths) {
     assert.ok(triggers.includes(`"${path}"`), `missing CI paths-ignore entry: ${path}`);
   }
@@ -51,11 +44,7 @@ test("Phase 59 PostgreSQL integration remains path-filtered and runs on PostgreS
 });
 
 test("Phase 58 and 59 source-contract tests remain in the normal test guard", () => {
-  assert.ok(
-    packageJson.scripts["test:guard"].includes(
-      "tests/phase58-sdg-currency-provenance.test.mjs",
-    ),
-  );
+  assert.ok(packageJson.scripts["test:guard"].includes("tests/phase58-sdg-currency-provenance.test.mjs"));
   assert.ok(
     packageJson.scripts["test:guard"].includes(
       "tests/phase59-receipt-currency-provenance.test.mjs",
