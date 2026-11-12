@@ -367,3 +367,13 @@ No backup dispatch, database write, deployment promotion, or secret read occurre
 - Draft PR #8 head cc400eca29400e37971bccbf4aaff9957986f53d validates AGE_RECIPIENT by invoking the installed age CLI against /dev/null before Supabase CLI setup/database access. Age is installed before preflight in both the manual workflow and secret-free CI.
 - Exact-head run [43170543850](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43170543850) passed eight preflight cases, ShellCheck/syntax and 22 Python helper tests.
 - This is not a backup. Runner main remains 464456a25335f60bc1721e2c6b194aed53b7382d; no full backup/restore has run on the new main workflow. PR #8 remains Draft pending independent review.
+
+
+## Backup-runner and Drive recheck — 2026-11-12 (run #23)
+
+- Current private runner main: `464456a25335f60bc1721e2c6b194aed53b7382d`.
+- Latest main run [43169973322](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43169973322) completed overall-success, but the credential-preflight step was skipped and the backup job was skipped. No artifact was created; do not count this as a backup or as proof that credentials are configured.
+- Runner PR #8 remains Draft. Its secret-free CI [43170543850](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43170543850) passed ShellCheck/syntax, eight credential-preflight cases and the existing 22-test Python helper suite. It did not connect to Supabase, dump, restore or upload.
+- The encrypted archive remains present: [Roshan-Production-Backup-2026-11-08.zip](https://drive.google.com/file/d/1_r9tfQc-ZufN_7Ys0f9LIpOA3CoaYDlv/view?usp=drivesdk), 305,317 bytes, MD5 `875a85ac23e8b7a671c371cca41f7732`. Its verified parent path is `Roshan Health Hub - Encrypted Backups / 2026-11-09`; the legacy `Roshan Health Hub Backups` folder is empty.
+- The last full backup plus isolated PostgreSQL 17 restore remains run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) on feature SHA `713ee4edf47429df9e02c475e5909e4c4f62a744`; both the local-restore and ciphertext-upload steps passed. This is prior-runner evidence, not current-main certification. The archive excludes Storage object bytes and Vault secrets.
+- Required owner-managed values remain `SUPABASE_ACCESS_TOKEN`, exactly one database credential (`SUPABASE_DB_ACCESS_TOKEN` or `SUPABASE_DB_PASSWORD`), and `AGE_RECIPIENT`. Values were not read. Do not dispatch a backup without the explicit release authorization and do not send secret values through ChatGPT.
