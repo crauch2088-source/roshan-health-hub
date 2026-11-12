@@ -16,11 +16,23 @@ test("receipt UI reads persisted payment and invoice fields only", () => {
   );
   assert.match(source, /received_user:users!payments_received_by_fkey/);
   assert.match(source, /get_invoice_payment_receipt_status_v2/);
-  assert.match(source, /currency_code, payment_method/);
-  assert.match(source, /net_amount, paid_amount, currency_code/);
+  assert.match(source, /payment_method, method/);
+  assert.match(source, /net_amount, paid_amount/);
   assert.match(source, /index \+= 200/);
   assert.doesNotMatch(source, /created_by.*cashier/i);
   assert.doesNotMatch(source, /payment_date.*receivedAt/i);
+});
+
+test("invoice and payment reads do not require Phase58-only currency columns before migration rollout", () => {
+  const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
+  const invoiceSelect = source.match(/from\("invoices"\)\s*\.select\(\s*"([^"]+)"/);
+  const paymentSelect = source.match(/from\("payments"\)\s*\.select\(\s*"([^"]+)"/);
+
+  assert.ok(invoiceSelect, "invoice select must remain present");
+  assert.ok(paymentSelect, "payment select must remain present");
+  assert.doesNotMatch(invoiceSelect[1], /\bcurrency_code\b/);
+  assert.doesNotMatch(paymentSelect[1], /\bcurrency_code\b/);
+  assert.match(source, /get_invoice_payment_receipt_status_v2/);
 });
 
 test("receipt UI does not disclose another cashier without users.read", () => {

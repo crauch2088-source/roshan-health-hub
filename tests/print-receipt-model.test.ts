@@ -70,6 +70,23 @@ test("receipt model preserves posted payment values and authoritative current in
   assert.equal(model.isReversed, false);
 });
 
+test("receipt model uses the Phase59 ledger as the authoritative currency source without direct Phase58 columns", () => {
+  const data = source();
+  delete data.payment.currency_code;
+  delete data.invoice.currency_code;
+
+  const model = buildInvoicePaymentReceiptModel(
+    data.payment,
+    data.invoice,
+    data.ledger,
+    "Recorded Cashier",
+  );
+
+  assert.ok(model);
+  assert.equal(model.complete, true);
+  assert.equal(model.currency, "SDG");
+});
+
 test("receipt model refuses payments without a matching posted cashbox ledger row", () => {
   const data = source();
   data.ledger.ledger_found = false;

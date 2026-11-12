@@ -56,9 +56,11 @@ function validTimestamp(value: string): boolean {
 }
 
 /**
- * Builds a read-only receipt model from one saved payment, its invoice,
- * and the Phase59 ledger-integrity and persisted-currency result. Incomplete
- * or contradictory records remain non-printable; no values are inferred.
+ * Builds a read-only receipt model from one saved payment and the authoritative
+ * Phase59 ledger-integrity/currency result. The RPC owns persisted currency
+ * provenance; direct invoice/payment reads deliberately avoid Phase58-only
+ * columns so the billing route remains usable before rollout.
+ * Incomplete or contradictory records remain non-printable; no values are inferred.
  */
 export function buildInvoicePaymentReceiptModel(
   payment: ReceiptRow,
@@ -76,8 +78,6 @@ export function buildInvoicePaymentReceiptModel(
   const patientName = text(patient, "full_name");
   const patientMrn = text(patient, "mrn");
   const cashierName = cashierNameValue.trim();
-  const paymentCurrency = text(payment, "currency_code");
-  const invoiceCurrency = text(invoice, "currency_code");
   const ledgerPaymentCurrency = text(ledger as ReceiptRow, "payment_currency_code");
   const ledgerInvoiceCurrency = text(ledger as ReceiptRow, "invoice_currency_code");
   const ledgerCurrency = text(ledger as ReceiptRow, "ledger_currency_code");
@@ -85,10 +85,8 @@ export function buildInvoicePaymentReceiptModel(
   const isReversed = ledger?.ledger_is_reversed === true;
   const currencyMatches =
     ledger?.currency_matches === true &&
-    paymentCurrency === "SDG" &&
-    invoiceCurrency === "SDG" &&
-    ledgerPaymentCurrency === paymentCurrency &&
-    ledgerInvoiceCurrency === invoiceCurrency &&
+    ledgerPaymentCurrency === "SDG" &&
+    ledgerInvoiceCurrency === "SDG" &&
     ledgerCurrency === "SDG" &&
     (isReversed ? reversalCurrency === "SDG" : !reversalCurrency);
   const currency = currencyMatches ? "SDG" : "";

@@ -87,7 +87,7 @@ function InvoicePageInner() {
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, currency_code, notes, branch_id, deleted_at, patients(id, full_name, mrn, phone, branch_id, deleted_at), partners(name)",
+        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, branch_id, deleted_at, patients(id, full_name, mrn, phone, branch_id, deleted_at), partners(name)",
       )
       .eq("id", invoiceId)
       .limit(1),
@@ -103,7 +103,7 @@ function InvoicePageInner() {
     supabase
       .from("payments")
       .select(
-        "id, invoice_id, amount, currency_code, payment_method, method, reference_no, reference, received_at, received_by, branch_id, deleted_at, created_at, received_user:users!payments_received_by_fkey(full_name, deleted_at, active)",
+        "id, invoice_id, amount, payment_method, method, reference_no, reference, received_at, received_by, branch_id, deleted_at, created_at, received_user:users!payments_received_by_fkey(full_name, deleted_at, active)",
       )
       .eq("invoice_id", invoiceId)
       .order("created_at", { ascending: false }),
