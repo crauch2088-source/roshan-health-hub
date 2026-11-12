@@ -357,15 +357,19 @@ BEGIN
 END;
 $phase60_evidence$;
 
-IF EXISTS (
-  SELECT 1 FROM public.medicine_pack_verifications
-  WHERE medicine_id IN (
-    '63000000-0000-0000-0000-000000000002',
-    '63000000-0000-0000-0000-000000000003'
-  )
-) THEN
-  RAISE EXCEPTION 'incomplete medicine identity must not create pack attestation evidence';
-END IF;
+DO $phase60_incomplete_evidence$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.medicine_pack_verifications
+    WHERE medicine_id IN (
+      '63000000-0000-0000-0000-000000000002',
+      '63000000-0000-0000-0000-000000000003'
+    )
+  ) THEN
+    RAISE EXCEPTION 'incomplete medicine identity must not create pack attestation evidence';
+  END IF;
+END;
+$phase60_incomplete_evidence$;
 
 DO $phase60_immutability$
 DECLARE
