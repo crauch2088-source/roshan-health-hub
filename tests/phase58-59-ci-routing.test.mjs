@@ -8,7 +8,7 @@ const phase58 = readFileSync(".github/workflows/ci-phase58-sdg-currency.yml", "u
 const phase59 = readFileSync(".github/workflows/ci-phase59-receipt-currency.yml", "utf8");
 
 test("documentation-only changes bypass the always-on full CI matrix", () => {
-  const triggers = ci.slice(0, ci.indexOf("\\npermissions:"));
+  const triggers = ci.slice(0, ci.indexOf("permissions:"));
   const pushStart = triggers.indexOf("push:");
   const pullStart = triggers.indexOf("pull_request:");
   const pushSection = triggers.slice(pushStart, pullStart);
