@@ -228,3 +228,9 @@ Phase 61 source is on Draft PR #229 (head 9c54ee0655acfafdbb1f3509f4de7ed10be6a4
 - CodeQL 43170720794 passed both analyses.
 - Prescription atomicity 43170730799, insurance integrity 43170730816 and privileged-role guard 43170730898 passed.
 - PR remains Draft; no merge or deployment promotion.
+
+## Additional Phase49–52 cross-project source mapping — 2026-11-12 06:56 UTC
+
+The source-to-ledger audit now also verifies the canonical Phase49, Phase50, Phase51 and Phase52 bodies in both Production and QA. All eight environment applications map to the tracked source files after only transaction-wrapper/comment normalization. QA Phase49/50 are raw exact; QA Phase51 excludes three explanatory header comments and a final blank line; QA Phase52 and Production Phase49–52 exclude only outer BEGIN/COMMIT wrappers. Exact versions, Git blobs, byte lengths and MD5 fingerprints are in db/MIGRATIONS_MANIFEST.md.
+
+This confirms executable-body parity for the named Phase49–52 rows and, together with the Phase55/57/57B/58/59/61 audit, the ten named forward-phase environment applications. It does not resolve full historical ledger parity: the three shared version collisions, 126 Production-only rows, 23 QA-only rows, the quarantined 20261102232819 row and redacted cleanup/reversal 20261102232941 remain. Do not replay or manually repair historical ledger entries.

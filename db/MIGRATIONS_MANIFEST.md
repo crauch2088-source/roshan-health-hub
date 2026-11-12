@@ -328,3 +328,30 @@ A read-only comparison of tracked SQL files with the actual QA schema_migrations
 This is scoped source-to-ledger parity for these six QA forward migrations, not full cross-project migration-chain parity. Production remains at 129 rows/latest 20261102232941; QA has 26/latest 20261112061251. The three shared version collisions, 126 Production-only rows and 23 QA-only rows remain unresolved as a historical ledger reconciliation problem. Production has none of the six QA phase versions. Do not copy QA ledger rows or replay the QA chain into Production.
 
 No hosted database write occurred during this audit.
+
+## Production/QA Phase49–52 source-body mapping — 2026-11-12 06:56 UTC
+
+A read-only comparison against the stored statements in both live ledgers confirms that the current tracked Phase49–52 SQL sources map to the canonical applied rows in both environments. The source blobs are shared; the environment migration versions differ.
+
+| Phase | Environment | Applied version | Source blob | Stored bytes / MD5 | Normalization |
+|---|---|---|---|---|---|
+| 49 | Production | 20261102232823 | cf3f67291601d7513d758570b8d46c35d6bc56f1 | 19,145 / 0e0ea85d6d1bea3ac575892fe9b7583e | Remove outer BEGIN/COMMIT |
+| 49 | QA | 20261102133658 | cf3f67291601d7513d758570b8d46c35d6bc56f1 | 19,155 / 55f65a3816d431ff42a5272c9e338658 | Raw exact |
+| 50 | Production | 20261102232849 | 031cca46782d5821f05d936ff7d35d9c19fef28c | 4,474 / 9cc937636c342d3b257e84eff0fe26af | Remove outer BEGIN/COMMIT |
+| 50 | QA | 20261102133734 | 031cca46782d5821f05d936ff7d35d9c19fef28c | 4,484 / cf5948d78786d6038fa93a74ecf22256 | Raw exact |
+| 51 | Production | 20261102232852 | fc124e36b1435c9e135ed2ec282581f585f93a26 | 788 / fc31b869c119988a8d96492840c33b6a | Remove outer BEGIN/COMMIT |
+| 51 | QA | 20261102122437 | fc124e36b1435c9e135ed2ec282581f585f93a26 | 552 / 4b848d12b776028dd67cc0e6ffebc452 | Remove three leading explanatory comments and final blank line |
+| 52 | Production | 20261102232855 | b86ccade80bc88e4a09d2e027389a1bd3782ad17 | 14,306 / 6743bc9f79fbf747275393109d769625 | Remove outer BEGIN/COMMIT |
+| 52 | QA | 20261102232905 | b86ccade80bc88e4a09d2e027389a1bd3782ad17 | 14,306 / 6743bc9f79fbf747275393109d769625 | Remove outer BEGIN/COMMIT |
+
+For Phase51 QA, the source body after removing only the three leading explanatory comments and the final blank line is byte-for-byte equal to the stored statements. For Production Phase49/50/51/52, removing the outer transaction wrapper yields byte-for-byte equality. These are non-executable wrapper/comment differences, not SQL-body drift.
+
+Combined with the QA Phase55/57/57B/58/59/61 comparison above, the ten named forward-phase environment applications are source-mapped. This remains a scoped forward-migration audit, not full historical ledger parity or schema parity.
+
+The historical ledger divergence remains:
+- Production 129 rows/latest 20261102232941; QA 26/latest 20261112061251.
+- Only 3 shared version IDs; all three collide with different names/bytes/MD5 (Production placeholder rows versus QA Phase51/49/50).
+- 126 Production-only rows and 23 QA-only rows.
+- Production 20261102232819 (223-byte quarantine/rename row) and 20261102232941 (3,285-byte cleanup/reversal row) remain separately mapped/quarantined artifacts, not canonical forward migration sources. Do not replay the redacted cleanup row.
+
+No hosted database write occurred.
