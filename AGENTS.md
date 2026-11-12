@@ -64,4 +64,4 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Use docs/ROSHAN_AGENT_SKILLS_SYSTEM.md for inventory, routing, upstream inspiration, and maintenance policy.
 - Use installed general TDD/debugging/security/documentation skills when they add distinct value; avoid duplication and overlapping Roshan skills.
 - Simplicity/YAGNI must never weaken clinical safety, data fidelity, clinician confirmation, authentication, permissions, RLS, branch isolation, auditability, atomic finance/stock operations, or test coverage.
-- Skills do not authorize Production migrations, grants/RLS changes, Auth/Storage mutations, live business-data writes, deployment promotion, paid services, or clinical/staff acceptance.
+- Skills do not independently grant or expand Production authority. Follow the standing owner authorization in `.specify/memory/constitution.md` and all release gates; skills never waive them. No paid services, clinical-policy decisions, or clinical/staff acceptance are delegated.
