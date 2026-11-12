@@ -3036,8 +3036,8 @@ Production and QA are not interchangeable migration histories. Their ledger coun
 
 - The private backup runner's credential-preflight validation has passing secret-free tests, but no successful fresh Production dump + encryption + current-runner isolated PostgreSQL 17 restore has been evidenced in this checkpoint. Prior encrypted archive/decryption/restore evidence is historical and database-only; Storage object bytes and Vault secrets are excluded.
 - Do not apply Phase 55/57/57B/58/59/61 to Production by replaying QA history or copying ledger rows. Production requires a reviewed forward-only package, current encrypted backup and isolated restore, exact-head disposable PostgreSQL 17 tests, source/effective-catalog preflight, post-apply verification, and the applicable human acceptance gates.
-- The current main head is `0f7c4eb75176a5dfce6d3a756aa02e8de8a4c214`. The earlier release-documentation PR #236 is six commits ahead and seven behind/diverged from current main; do not merge its stale base without reconciliation and exact-head checks.
-- No Production or QA DDL/DML, ACL/RLS/Auth/Storage change, patient/clinical/financial data write, backup dispatch, PR merge, or deployment promotion was performed by this audit.
+- The audit began from main `0f7c4eb75176a5dfce6d3a756aa02e8de8a4c214`; this documentation update was subsequently squash-merged as `a32fb219e25c1f4f407df2ff6a88a99e0f8ae8f1`. The earlier release-documentation PR #236 is six commits ahead and seven behind/diverged from the audit base; do not merge its stale base without reconciliation and exact-head checks.
+- No Production or QA DDL/DML, ACL/RLS/Auth/Storage change, patient/clinical/financial data write, backup dispatch, or deployment promotion was performed. PR #241 itself was squash-merged as a documentation-only record; no application code or hosted state changed.
 
 ### Evidence-weighted progress recalculation
 
