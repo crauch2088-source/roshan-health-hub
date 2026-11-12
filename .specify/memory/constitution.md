@@ -76,3 +76,21 @@ This delegation does not authorize paid services, quota bypasses, unsafe shortcu
 **Authorization record:** Explicit owner approval in conversation on 2026-11-12. This section supersedes older blanket statements that every Production engineering change requires a separate per-change conversational approval, but does not waive any technical, clinical, privacy, security, financial, recovery, or release gate.
 
 **Version**: 1.2.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-12
+
+
+## X. Standing Owner Delegation for Production Engineering
+
+On 2026-11-12, the owner explicitly delegated authority to the engineering agent to decide when a Production change is appropriate and execute justified changes without seeking separate confirmation for each change. The delegation includes controlled application deployments, forward-only database migrations, narrowly scoped grants/RLS and Auth/Storage changes, and necessary corrections to live operational data.
+
+This authority is conditional, not blanket permission to experiment:
+
+1. Verify the current canonical repository, branch, Production project, exact candidate commit, and relevant environment before acting.
+2. Complete risk-appropriate preflight: source/migration provenance, dependency and compatibility review, exact-head CI and disposable PostgreSQL 17 tests for database changes, least-privilege/security review, idempotency, audit behavior, and a credible recovery/rollback path.
+3. Use Production only for intended operational changes; never insert synthetic patients, visits, prescriptions, invoices, inventory, or financial transactions as tests.
+4. Prefer forward-only, additive, narrowly scoped changes. Preserve branch isolation, RLS, auditability, atomic stock/finance operations, immutable ledgers, clinical data fidelity, and privacy.
+5. Verify the actual post-change Production state with read-only checks and appropriate non-destructive smoke tests. Record exact commit, migration/deployment identifiers, evidence, and residual risks.
+6. Do not spend money, upgrade services, bypass quotas, or create paid infrastructure.
+7. Clinical policy, medication protocols, diagnoses, professional clinical acceptance, staff acceptance, residual-risk acceptance for an unsafe condition, and the decision to open the clinic remain with the owner. The delegation does not permit the agent to fabricate these approvals.
+8. If a mandatory safety, security, integrity, or recovery gate fails, withhold only the unsafe action, explain the concrete blocker, and continue unrelated safe work.
+
+The agent should exercise judgment: act when evidence and gates justify action; do not make a Production change merely because authority exists. This delegation supersedes earlier blanket wording that required separate per-change owner authorization, but does not supersede any stricter clinical, privacy, security, data-integrity, or recovery requirement.

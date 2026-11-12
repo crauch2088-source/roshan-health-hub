@@ -123,7 +123,7 @@ Never combine these into one percentage. Every update must state the evidence da
 - **Blocked RC:** a coherent candidate exists, but one or more mandatory gates are unavailable or unresolved. State exactly what is blocked and what evidence would unblock it.
 - **No-go:** a P0 defect, unsafe migration/data ambiguity, security failure, or inadequate recovery evidence prevents a responsible candidate.
 
-None of these labels automatically authorizes Production deployment or clinic launch.
+Production changes are covered by the standing owner delegation in Constitution section X, but only after all applicable release gates pass. None of these labels automatically authorizes clinic launch or substitutes for clinical/staff acceptance.
 
 ## 9. Ratification and change control
 
@@ -131,6 +131,6 @@ This charter is binding for the accelerated Roshan execution sprint once accepte
 
 Any relaxation of a stop rule requires an explicit owner decision, a written rationale, an impact analysis, and recorded acceptance. A schedule target alone is never sufficient justification.
 
-**Owner decision:** approved in conversation on 2026-11-10.  
+**Owner decision:** charter approved in conversation on 2026-11-10; standing delegated Production engineering authority explicitly granted in conversation on 2026-11-12 and recorded in Constitution section X.  
 **Baseline:** main `6f4e8c4c92c7fcd6612ea137063ca34d711bbd69`.  
 **Currency:** SDG only.
