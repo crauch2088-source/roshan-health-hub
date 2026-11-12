@@ -253,3 +253,24 @@ The historical entries above remain unchanged. Current environment ledgers and f
 As checked on 2026-11-03 after Phase55 QA application, Production records 129 migrations and QA records 21. These counts do not establish schema parity; see `docs/SCHEMA_PARITY_AUDIT_2026-11-03.md` for read-only catalog fingerprints and known function/ACL differences. Phase54/54B/54C/55 are applied only in QA. Production remains unchanged.
 
 **Production safety:** no production Phase54/54B/54C/55 DDL is authorized until an encrypted backup and isolated restore are verified. Do not replay the redacted production migration `20261102232941`.
+
+## Current live pharmacy migration reconciliation — 2026-11-12
+
+This read-back supersedes the earlier 2026-11-09/2026-11-03 QA ledger counts and Phase 57B candidate-only status above. Direct read-only queries of `supabase_migrations.schema_migrations` on 2026-11-12 show:
+
+| Environment | Version | Migration name | Stored statement bytes | Stored statement MD5 |
+|---|---|---|---:|---|
+| QA | `20261104065852` | `roshan_phase57_pharmacy_quantity_required_guard` | 10,954 | `921970d4d86b32dccd430a0ea0ef8745` |
+| QA | `20261111215510` | `roshan_phase57b_free_text_external_prescription_guard` | 11,525 | `bfd2df24224752a1488f2f05494f4211` |
+| QA | `20261111223309` | `roshan_phase61_prescription_item_correction_workflow` | 38,534 | `6d4d05a084d14d7d354385b32e8e745e` |
+| Production | — | None of the three versions above is recorded | — | — |
+
+The QA ledger now has 24 rows and its latest migration is Phase 61 (`20261111223309`). Production has 129 rows and latest version `20261102232941`. The live effective dispensing-function read-back confirms that QA has the Phase 57 quantity rejection plus Phase 57B free-text/external-prescription rejection; Production still contains the legacy `COALESCE(pi.quantity,1)` fallback and lacks both guards.
+
+Tracked source files:
+- Phase 57: `db/roshan_phase57_pharmacy_quantity_required_guard.sql`, Git blob `9db6768999352c32081f69b5e665c3cc95452616`.
+- Phase 57B: `db/roshan_phase57b_free_text_external_prescription_guard.sql`, Git blob `57516e08de8e314f687c21f2f292199d3adff178`.
+
+The Git blob SHA is not the stored-statement MD5. Preserve the migration SQL payload exactly; do not normalize, regenerate, or hand-edit either migration during Production promotion. Phase 57B is QA-applied, not candidate-only. Phase 61 is also QA-applied but is deliberately excluded from the Production pharmacy hotfix package because its UI/workflow acceptance is a separate release gate.
+
+No Production or QA writes were performed during this read-back.
