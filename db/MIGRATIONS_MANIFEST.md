@@ -290,3 +290,24 @@ QA-only current rows include Phase 55 \`20261103155227\`, Phase 57 \`20261104065
 The effective dispensing function independently confirms Production still contains the NULL-to-one fallback, while QA has Phase 57 NULL rejection and Phase 57B free-text/external-prescription rejection. Active NULL-quantity item counts are zero in both environments. Production Phase 55 helper ACLs remain default/PUBLIC-executable; QA is owner-only.
 
 Do not replay the QA history, insert or repair migration ledger rows manually, or apply Production DDL before verified current backup/restore, dependency-ordered forward-only source review, disposable PostgreSQL 17 tests and separate approval. See \`docs/RELEASE_GATE_RECHECK_2026-11-12.md\` for the exact live findings and current deployment/backup evidence.
+
+
+## Live QA/Production ledger update — 2026-11-12 06:34 UTC
+
+Direct read-only ledger extraction supersedes earlier 24-row QA snapshots:
+
+| Environment | Rows | Latest version |
+|---|---:|---|
+| Production | 129 | 20261102232941 |
+| QA | 26 | 20261112061251 |
+
+- Shared version numbers: 3; all three have different migration names, stored statement byte lengths and MD5 fingerprints.
+- Production-only: 126 rows. QA-only: 23 rows.
+- QA-only applied phases now include Phase55 20261103155227, Phase57 20261104065852, Phase57B 20261111215510, Phase61 20261111223309, Phase58 20261112061219 and Phase59 20261112061251. Production has none of these versions.
+- QA Phase58/59 are applied: seven public currency_code columns exist, and get_invoice_payment_receipt_status_v2(uuid[]) is present with authenticated EXECUTE and anon denied. Production has zero currency_code columns and no receipt-status RPC.
+- QA Phase61 correction RPCs exist and are authenticated-only; Production has no correction RPCs. Phase61 source remains on Draft PR #229, not main.
+- QA's effective dispensing RPC includes Phase57 NULL rejection and Phase57B unlinked/external-prescription guards. Production's authenticated dispensing RPC still contains the legacy COALESCE(pi.quantity,1) fallback. prescription_items.quantity remains nullable in both projects; do not describe Phase57 as a column NOT NULL constraint.
+- Production's private Phase55 helpers remain PUBLIC-effective EXECUTE for anon/authenticated/service_role; QA's helper ACLs are owner-only.
+- Never copy QA ledger rows into Production, insert migration records manually, or replay the historical ledger. Prepare only forward-only reviewed source and disposable PostgreSQL 17 tests; Production remains gated by current backup/restore, full source reconciliation and separate approval.
+
+No hosted database write occurred during this recheck.

@@ -3015,3 +3015,22 @@ Phase 61 QA verification is recorded in PR #229: correction tables have ENABLE+F
 - Next: owner configures the current runner's required CLI-auth token and exactly one DB credential; then an explicitly authorized manual backup and isolated restore. Meanwhile continue source/ledger reconciliation and disposable PostgreSQL 17 tests. No Production DDL/DML, backup dispatch, merge or deployment was performed in this checkpoint.
 
 Detailed evidence: \`docs/RELEASE_GATE_RECHECK_2026-11-12.md\`.
+
+
+## Live release-gate follow-up — 2026-11-12 06:34 UTC
+
+This supersedes the earlier 06:11 snapshot and any same-day statements that QA had 24 migrations or latest version 20261111223309.
+
+- Main remains 52d975180e505c922dbe7a9b3260365bf59179b1. Main CI 43167067722 completed with 20 successful jobs, one intentional authenticated clinical-acceptance skip, zero failures; finance isolation 43167067870 passed 2/2; CodeQL 43167067448 passed both analyses.
+- Open PRs: 11 (#236, #210, #229, #233, #181, #222, #179, #213, #157, #185, #112). Open Issues: #199, #217, #218.
+- Direct live migration ledgers: Production 129 rows/latest 20261102232941; QA 26/latest 20261112061251. Shared version IDs 3 (all name/length/MD5 mismatches), Production-only 126, QA-only 23. QA-only current migrations include Phase55 20261103155227, Phase57 20261104065852, Phase57B 20261111215510, Phase61 20261111223309, Phase58 20261112061219 and Phase59 20261112061251. Production has none of these.
+- Phase57/57B effective behavior: QA's authenticated dispensing path rejects NULL quantity, unlinked/free-text items and external prescriptions. Production's authenticated path still delegates to a function containing COALESCE(pi.quantity,1) and no such guards. The quantity column remains nullable in both projects. The legacy one-argument dispense RPC is not executable by authenticated/anon.
+- Phase55 helper ACLs remain divergent: Production's two private helpers are effectively executable by anon/authenticated/service_role; QA denies those roles. No ACL change was made.
+- Phase61 correction RPCs exist in QA only; Phase58/59 currency provenance columns and receipt-status RPC exist in QA only (7 currency_code columns and get_invoice_payment_receipt_status_v2(uuid[])); Production has zero currency_code columns and no receipt-status function.
+- Advisors: Production Security 5 groups/31, Performance 2/96, Health 0; QA Security 5/34, Performance 2/148, Health 0. Findings remain targeted review items; no blanket remediation was applied.
+- Vercel canonical alias remains READY on dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz, app SHA fb54651533ffd04b2f20387a976f88293110c513, aliasError null. Latest docs-only main deployment dpl_5t7C4Y7tNQRZXXS5ibjAcNS7nRYw is CANCELED.
+- Backup runner main is 464456a25335f60bc1721e2c6b194aed53b7382d. Latest main run #21 / 43164547237 failed at missing DB credential preflight on old SHA 7a3409ad84b4394014aeff36431a95a69813b90d. Run #22 / 43164851066 failed before CLI setup. Runner PR #8's latest secret-free preflight tests passed on run #2 / 43168592739; this is not a backup. No full backup has run on current runner main.
+- Existing encrypted Drive archive remains present (305,317 bytes, MD5 875a85ac23e8b7a671c371cca41f7732). Earlier full run #42535939237 on feature SHA 713ee4edf47429df9e02c475e5909e4c4f62a744 passed the isolated PostgreSQL 17 restore and ciphertext-upload steps; the GitHub artifact is no longer listed. The Drive archive is database-only.
+- Production remains NO-GO. Next: owner configures SUPABASE_ACCESS_TOKEN plus exactly one DB credential; only then, with explicit authorization, run the manual encrypted backup and restore on current runner main. Continue disposable PostgreSQL 17 rollout rehearsal and source/ledger reconciliation meanwhile. Clinical E2E remains deferred until the isolated free environment and synthetic doctor/pharmacist identities exist.
+
+Detailed evidence: docs/RELEASE_GATE_RECHECK_2026-11-12.md. No hosted schema/data/ACL/Auth/Storage mutation, external backup dispatch, PR merge or deployment promotion occurred.

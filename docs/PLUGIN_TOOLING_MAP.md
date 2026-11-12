@@ -348,3 +348,16 @@ Last reviewed: 2026-11-12 (live Supabase, Vercel, GitHub Actions, backup-runner 
 - The encrypted Drive archive from 2026-11-08 remains present: 305,317 bytes, MD5 \`875a85ac23e8b7a671c371cca41f7732\`. Prior full run #42535939237 passed an isolated PostgreSQL 17 restore on feature SHA \`713ee4edf47429df9e02c475e5909e4c4f62a744\`; this is older than current runner main. No fresh backup was dispatched.
 - Canonical Vercel alias \`roshan-health-hub.vercel.app\` still targets READY deployment \`dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz\` (app SHA \`fb54651533ffd04b2f20387a976f88293110c513\`, aliasError null). Latest docs-only main deployment attempt \`dpl_5t7C4Y7tNQRZXXS5ibjAcNS7nRYw\` was CANCELED.
 - Do not treat the old archive/restore evidence as a new current-runner backup. Storage object bytes and Vault secret values are not included. The next owner action is to configure the required CLI token plus exactly one database credential, then authorize a manual full backup/restore run. No credential values belong in ChatGPT or source control.
+
+
+## Live backup and release-gate follow-up — 2026-11-12 06:34 UTC
+
+- Google Drive read-only metadata revalidated the canonical hierarchy: Roshan Health Hub - Encrypted Backups → 2026-11-09 → Roshan-Production-Backup-2026-11-08.zip. The ciphertext remains present, not trashed, 305,317 bytes, Drive MD5 875a85ac23e8b7a671c371cca41f7732. This archive is database-only.
+- Backup-runner main is 464456a25335f60bc1721e2c6b194aed53b7382d. Latest main run #21 / 43164547237 failed at database-credential preflight on prior SHA 7a3409ad84b4394014aeff36431a95a69813b90d. Run #22 / 43164851066 failed at credential preflight before CLI setup. No full run exists on current runner main.
+- Runner PR #8 is Draft; its latest secret-free preflight test run #2 / 43168592739 passed on branch SHA 72b5a4773ac8a0fb4b26d2f7985fe98b97488d9. It does not connect to Supabase or create a backup.
+- The older full run #42535939237 on feature SHA 713ee4edf47429df9e02c475e5909e4c4f62a744 passed the local PostgreSQL 17 restore and encrypted-upload steps. The GitHub artifact is no longer listed; the Drive ciphertext remains. Do not represent that older run as a current-main backup.
+- Required private Actions configuration is SUPABASE_ACCESS_TOKEN plus exactly one of SUPABASE_DB_ACCESS_TOKEN or SUPABASE_DB_PASSWORD and AGE_RECIPIENT. No secret values were read. Owner setup and explicit dispatch authorization remain required.
+- Vercel canonical alias remains READY on dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz (app SHA fb54651533ffd04b2f20387a976f88293110c513); docs-only main attempt dpl_5t7C4Y7tNQRZXXS5ibjAcNS7nRYw was CANCELED.
+- Live Supabase ledger update: QA now has 26 rows/latest 20261112061251, including Phase58 20261112061219 and Phase59 20261112061251; Production remains 129/latest 20261102232941 and has neither. Current Security/Performance/Health counts are Production 31/96/0 and QA 34/148/0.
+
+No backup dispatch, database write, deployment promotion, or secret read occurred.

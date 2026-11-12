@@ -124,3 +124,79 @@ Both hosted projects currently report zero \`storage.objects\` rows and zero \`v
 
 **Next highest-value task:** the owner must configure the current runner's CLI-auth secret plus exactly one database-connection credential, then authorize one manual encrypted backup. Until that is complete, continue source/effective-function reconciliation and disposable PostgreSQL 17 validation; do not write to Production or dispatch an external backup automatically.
 
+
+
+## Follow-up live recheck — 2026-11-12 06:34 UTC
+
+This addendum supersedes the 06:11–06:17 UTC snapshot above where live values have advanced. All database queries were read-only; no backup dispatch, hosted write, merge, or deployment promotion occurred.
+
+### Repository and exact-head checks
+
+- Main remains 52d975180e505c922dbe7a9b3260365bf59179b1. There are 11 open PRs (#236, #210, #229, #233, #181, #222, #179, #213, #157, #185, #112) and 3 open Issues (#199, #217, #218).
+- Main CI [43167067722](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167067722) completed: 20 successful jobs, one intentional skip of the canonical PG17 baseline plus authenticated clinical-acceptance job, zero failures.
+- Finance-only RPC isolation [43167067870](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167067870) passed 2/2 jobs. Push-on-main / CodeQL [43167067448](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167067448) passed both JavaScript/TypeScript and Python analyses.
+- This PR's current head before this follow-up was 8a51e02dc6ffa0371dacb82a462d95c85325e77a. Its CI [43167950986](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167950986) completed with 20 successful jobs, one intentional clinical-acceptance skip, and zero failures; CodeQL [43167947240](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167947240) passed both analyses. Prescription atomicity [43167951120](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167951120), insurance integrity [43167950968](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167950968), and privileged-role guard [43167951089](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43167951089) all passed. The Vercel Preview Comments status is not a deployment.
+
+### Live migration ledgers and effective database contracts
+
+A fresh read-only row-by-row comparison by version, name, stored statement byte length and MD5 now shows:
+
+| Measure | Production | QA |
+|---|---:|---:|
+| Ledger rows | 129 | 26 |
+| Latest version | 20261102232941 | 20261112061251 |
+| PostgreSQL | 17.6.1.155 | 17.11.0.003 |
+
+- Shared version numbers: 3; all 3 have different names, byte lengths and MD5 fingerprints.
+- Production-only rows: 126. QA-only rows: 23.
+- QA-only current rows include Phase 55 20261103155227, Phase 57 20261104065852, Phase 57B 20261111215510, Phase 61 20261111223309, Phase 58 20261112061219 and Phase 59 20261112061251.
+- Production contains none of those six QA versions. Do not infer parity from version collisions or repair the ledgers manually.
+
+Effective pharmacy behavior was checked by reading function definitions and effective EXECUTE privileges:
+
+- The authenticated atomic entry point atomic_pharmacy_dispense(uuid,boolean,uuid) delegates to fn_dispense_prescription_with_invoice(uuid,boolean) in both projects; anon cannot execute either entry point.
+- QA's delegated function rejects NULL quantity, free-text/unlinked items and external prescriptions, and contains no NULL-to-one fallback.
+- Production's delegated function still contains COALESCE(pi.quantity,1) and lacks those three guards. Thus the deployed client wrapper is not enough to protect Production's database RPC path.
+- The legacy fn_dispense_prescription(uuid) still contains the old fallback in both projects, but authenticated and anon cannot execute it. The prescription_items.quantity column remains nullable in both databases; Phase 57 is an RPC-level guard, not a NOT NULL column constraint.
+
+Other phase-specific live checks:
+
+- Phase 55 helpers private.app_has_claim_branch(uuid) and private.sync_user_role_text(): Production has default/PUBLIC-effective EXECUTE (anon, authenticated and service_role all true); QA is owner-only (all three roles false).
+- QA Phase 61 functions request_prescription_item_correction(uuid,text) and resolve_prescription_item_correction(uuid,text,jsonb,text) exist, authenticated EXECUTE is true and anon EXECUTE is false. Production has neither function.
+- QA has 7 public currency_code columns and get_invoice_payment_receipt_status_v2(uuid[]) (authenticated EXECUTE, anon denied). Production has zero currency_code columns and no receipt-status functions. Phase 58/59 are therefore QA-applied, not Production-applied.
+
+### Current Supabase Advisors
+
+| Project | Security | Performance | Health |
+|---|---:|---:|---:|
+| Production | 5 groups / 31 findings | 2 groups / 96 findings | 0 |
+| QA | 5 groups / 34 findings | 2 groups / 148 findings | 0 |
+
+- Production: 2 RLS-enabled private tables without policies, 1 extension-in-public warning, 1 anon-callable SECURITY DEFINER warning, 26 authenticated-callable SECURITY DEFINER functions, leaked-password protection disabled; performance includes 2 unindexed foreign keys and 94 unused-index notices.
+- QA: 1 RLS-enabled private table without policies, 1 extension-in-public warning, 1 anon-callable SECURITY DEFINER warning, 30 authenticated-callable SECURITY DEFINER functions, leaked-password protection disabled; performance includes 7 unindexed foreign keys and 141 unused-index notices.
+- These findings require targeted review; no blanket grant revocation, index deletion, Auth setting change or extension move was performed.
+
+### Vercel
+
+- Latest main deployment attempt dpl_5t7C4Y7tNQRZXXS5ibjAcNS7nRYw for docs-only main SHA 52d975180e505c922dbe7a9b3260365bf59179b1 is CANCELED.
+- Canonical alias roshan-health-hub.vercel.app still targets READY deployment dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz, application SHA fb54651533ffd04b2f20387a976f88293110c513, aliasError null.
+- No application deployment or promotion occurred.
+
+### Backup runner and off-site restore evidence
+
+- Backup-runner main is 464456a25335f60bc1721e2c6b194aed53b7382d. Its latest main-branch run is still #21 / 43164547237, executed on the earlier runner SHA 7a3409ad84b4394014aeff36431a95a69813b90d. Validation passed; the backup job failed at preflight because both database credential options were empty. No database connection, dump, restore, artifact or Drive upload occurred.
+- Run #22 / 43164851066 on branch fix/backup-credential-preflight-20261112 failed in the credential preflight before Supabase CLI setup; the backup job was skipped.
+- Runner PR #8 remains Draft. Its latest secret-free preflight test run #2 / 43168592739 passed on test branch SHA 72b5a4773ac8a0fb4b26d2f7985fe98b97488d9. The earlier test run #1 / 43168433912 failed before the correction. These are validation tests, not a backup.
+- No backup workflow has run on current runner main 464456a. Current runner setup requires SUPABASE_ACCESS_TOKEN, exactly one of SUPABASE_DB_ACCESS_TOKEN or SUPABASE_DB_PASSWORD, and AGE_RECIPIENT. Secret values were not read; owner configuration remains the blocker.
+- Google Drive read-only metadata confirms the encrypted archive Roshan-Production-Backup-2026-11-08.zip remains present, not trashed, 305,317 bytes, MD5 875a85ac23e8b7a671c371cca41f7732, in dated folder 2026-11-09 under the canonical Roshan Health Hub - Encrypted Backups folder.
+- The earlier full backup run #42535939237 (runner feature SHA 713ee4edf47429df9e02c475e5909e4c4f62a744) has a successful backup job: its “Create and locally restore encrypted backup” and “Upload encrypted artifact only” steps both passed. This is evidence that an isolated PostgreSQL 17 restore actually passed on that feature revision. Its GitHub artifact is no longer listed; the encrypted Drive copy remains. This does not certify current runner main.
+- The archive is PostgreSQL-only and does not include Storage object bytes or Vault secret values.
+
+### Updated release disposition
+
+- Verified: main CI/CodeQL/finance checks; QA Phase 55/57/57B/61/58/59 applications; prior encrypted off-site database archive; prior isolated PostgreSQL 17 restore; canonical Vercel alias.
+- Blocked: Production Phase 55 ACL correction and Phase 57/57B/58/59/61 migrations; full source/ledger/effective-catalog reconciliation; full backup and restore on current runner main; independent SQL/security review; pharmacist/prescriber, staff, Android RTL/LTR, printer and device acceptance.
+- Authenticated clinical E2E remains explicitly deferred until an isolated free test environment and suitable synthetic doctor/pharmacist identities are available.
+- Next highest-value owner action: configure the current runner's required CLI-auth token and exactly one database credential in private GitHub Actions settings. Do not send secret values to ChatGPT. Only after that owner setup and explicit authorization should a manual encrypted backup be dispatched. Meanwhile, continue disposable PostgreSQL 17 forward-migration rehearsal and source-to-live-ledger reconciliation.
+
+No Production or QA DDL/DML, privilege/Auth/Storage change, patient/financial write, external backup dispatch, PR merge or deployment promotion occurred in this follow-up.
