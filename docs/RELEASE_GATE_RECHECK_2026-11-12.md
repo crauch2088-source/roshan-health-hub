@@ -200,3 +200,11 @@ Other phase-specific live checks:
 - Next highest-value owner action: configure the current runner's required CLI-auth token and exactly one database credential in private GitHub Actions settings. Do not send secret values to ChatGPT. Only after that owner setup and explicit authorization should a manual encrypted backup be dispatched. Meanwhile, continue disposable PostgreSQL 17 forward-migration rehearsal and source-to-live-ledger reconciliation.
 
 No Production or QA DDL/DML, privilege/Auth/Storage change, patient/financial write, external backup dispatch, PR merge or deployment promotion occurred in this follow-up.
+
+## Backup-runner preflight hardening follow-up — 2026-11-12 06:47 UTC
+
+- Backup-runner PR [#8](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/8) remains Draft on head cc400eca29400e37971bccbf4aaff9957986f53d, based on runner main 464456a25335f60bc1721e2c6b194aed53b7382d.
+- The follow-up validates the configured AGE_RECIPIENT with the age CLI before Supabase CLI setup or any database connection. The validator rejects an invalid age1 checksum/encoding instead of accepting a prefix-only regular expression; the manual workflow installs age before preflight.
+- Secret-free exact-head run [43170543850](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43170543850) passed: ShellCheck/syntax, all 8 credential-preflight cases (including malformed recipient rejection and a generated valid age recipient), and the existing Python helper suite (22/22 tests).
+- This is code/test validation on a Draft PR, not a full backup. The current runner main SHA remains 464456a25335f60bc1721e2c6b194aed53b7382d; the new age-recipient validation has not yet been merged or exercised by a full backup on main. No secrets were read and no Supabase connection, dump, restore, artifact upload or Drive write occurred.
+- Next: independent review of PR #8; then owner-managed Actions credential setup and explicit authorization before a manual full backup/restore on the reviewed current runner main.

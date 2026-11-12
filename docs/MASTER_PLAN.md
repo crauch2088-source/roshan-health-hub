@@ -3034,3 +3034,10 @@ This supersedes the earlier 06:11 snapshot and any same-day statements that QA h
 - Production remains NO-GO. Next: owner configures SUPABASE_ACCESS_TOKEN plus exactly one DB credential; only then, with explicit authorization, run the manual encrypted backup and restore on current runner main. Continue disposable PostgreSQL 17 rollout rehearsal and source/ledger reconciliation meanwhile. Clinical E2E remains deferred until the isolated free environment and synthetic doctor/pharmacist identities exist.
 
 Detailed evidence: docs/RELEASE_GATE_RECHECK_2026-11-12.md. No hosted schema/data/ACL/Auth/Storage mutation, external backup dispatch, PR merge or deployment promotion occurred.
+
+### Backup-runner age-recipient validation — 2026-11-12
+
+- Draft backup-runner PR #8 head cc400eca29400e37971bccbf4aaff9957986f53d adds actual age CLI validation of AGE_RECIPIENT before Supabase CLI setup or database access, and moves age installation before credential preflight.
+- Exact-head CI [43170543850](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43170543850) passed ShellCheck/syntax, eight credential-preflight cases (including malformed age recipient and a generated valid recipient), and 22/22 existing Python helper tests.
+- This remains Draft/unmerged. Runner main is still 464456a25335f60bc1721e2c6b194aed53b7382d; no full backup has run on that main. No secrets were read, no database connection/dump/restore or external upload occurred.
+- Next: independent review of PR #8, then owner-managed credential configuration and explicit authorization for one full encrypted backup/isolated restore on current runner main.

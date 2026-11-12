@@ -361,3 +361,9 @@ Last reviewed: 2026-11-12 (live Supabase, Vercel, GitHub Actions, backup-runner 
 - Live Supabase ledger update: QA now has 26 rows/latest 20261112061251, including Phase58 20261112061219 and Phase59 20261112061251; Production remains 129/latest 20261102232941 and has neither. Current Security/Performance/Health counts are Production 31/96/0 and QA 34/148/0.
 
 No backup dispatch, database write, deployment promotion, or secret read occurred.
+
+## Backup-runner age-recipient validation — 2026-11-12 06:47 UTC
+
+- Draft PR #8 head cc400eca29400e37971bccbf4aaff9957986f53d validates AGE_RECIPIENT by invoking the installed age CLI against /dev/null before Supabase CLI setup/database access. Age is installed before preflight in both the manual workflow and secret-free CI.
+- Exact-head run [43170543850](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43170543850) passed eight preflight cases, ShellCheck/syntax and 22 Python helper tests.
+- This is not a backup. Runner main remains 464456a25335f60bc1721e2c6b194aed53b7382d; no full backup/restore has run on the new main workflow. PR #8 remains Draft pending independent review.
