@@ -22,7 +22,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 
 # Roshan Health Hub — Plugin & Integration Operating Map
 
-Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted Drive metadata reverified).
+Last reviewed: 2026-11-12 (live Supabase, Vercel, GitHub Actions, backup-runner main and encrypted Drive metadata reverified).
 
 ## Project guardrails
 - Single source of truth is this repository and `docs/MASTER_PLAN.md`; never start a parallel app or let a prototype replace the production codebase.
@@ -338,3 +338,13 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 - Prior full run [42535939237](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/42535939237) passed PostgreSQL 17 isolated restore, critical count comparison, age encryption and ciphertext upload on a feature branch; the GitHub artifact has since expired/been removed. The Drive ciphertext remains. Owner-device checksum/decryption/archive readability passed on 2026-11-09.
 - Current runner main has not yet produced a full backup. A new run would write an external encrypted backup and is not triggered automatically; require owner authorization. The archive covers PostgreSQL only, not Storage object bytes or Vault secrets. Workflow is manual, not scheduled.
 
+
+
+## Backup runner and live release gate — 2026-11-12
+
+- Last reviewed: 2026-11-12 (live Supabase ledgers/advisors, Vercel canonical alias, backup-runner main and Drive archive rechecked).
+- Private backup-runner main: \`464456a25335f60bc1721e2c6b194aed53b7382d\`. PR #5 (DB credential preflight), #6 (required Supabase CLI token), and #7 (credential setup documentation) are merged. The workflow now requires \`SUPABASE_ACCESS_TOKEN\`, exactly one of \`SUPABASE_DB_ACCESS_TOKEN\` / \`SUPABASE_DB_PASSWORD\`, and \`AGE_RECIPIENT\`.
+- Latest main backup run #21 (\`43164547237\`) failed at DB-credential preflight on the prior runner SHA \`7a3409ad84b4394014aeff36431a95a69813b90d\`. Branch run #22 (\`43164851066\`) failed at the same DB-credential gate before CLI setup. No workflow has yet run on current runner main \`464456a\`; current CLI-token presence is unverified. Secret values were not read.
+- The encrypted Drive archive from 2026-11-08 remains present: 305,317 bytes, MD5 \`875a85ac23e8b7a671c371cca41f7732\`. Prior full run #42535939237 passed an isolated PostgreSQL 17 restore on feature SHA \`713ee4edf47429df9e02c475e5909e4c4f62a744\`; this is older than current runner main. No fresh backup was dispatched.
+- Canonical Vercel alias \`roshan-health-hub.vercel.app\` still targets READY deployment \`dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz\` (app SHA \`fb54651533ffd04b2f20387a976f88293110c513\`, aliasError null). Latest docs-only main deployment attempt \`dpl_5t7C4Y7tNQRZXXS5ibjAcNS7nRYw\` was CANCELED.
+- Do not treat the old archive/restore evidence as a new current-runner backup. Storage object bytes and Vault secret values are not included. The next owner action is to configure the required CLI token plus exactly one database credential, then authorize a manual full backup/restore run. No credential values belong in ChatGPT or source control.

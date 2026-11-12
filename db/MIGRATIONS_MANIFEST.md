@@ -274,3 +274,19 @@ Tracked source files:
 The Git blob SHA is not the stored-statement MD5. Preserve the migration SQL payload exactly; do not normalize, regenerate, or hand-edit either migration during Production promotion. Phase 57B is QA-applied, not candidate-only. Phase 61 is also QA-applied but is deliberately excluded from the Production pharmacy hotfix package because its UI/workflow acceptance is a separate release gate.
 
 No Production or QA writes were performed during this read-back.
+
+
+## Live cross-project ledger parity recheck — 2026-11-12
+
+A complete read-only comparison of every \`supabase_migrations.schema_migrations\` row by version, name, statement byte length and MD5 confirms that Production and QA ledgers are not interchangeable:
+
+- Production: 129 rows; latest \`20261102232941\`.
+- QA: 24 rows; latest \`20261111223309\`.
+- Shared version numbers: 3; Production-only: 126; QA-only: 21.
+- All three shared version numbers have different names and stored statement fingerprints. The Production rows at \`20261102122437\`, \`20261102133658\`, and \`20261102133734\` are 134-byte superseded placeholders; QA uses those same version numbers for Phase 51, Phase 49, and Phase 50 respectively. Do not infer parity from matching version strings.
+
+QA-only current rows include Phase 55 \`20261103155227\`, Phase 57 \`20261104065852\`, Phase 57B \`20261111215510\`, and Phase 61 \`20261111223309\`. Production contains none of those versions. QA's Phase 61 source is in Draft PR #229 (head \`9c54ee0655acfafdbb1f3509f4de7ed10be6a420\`), not main; its QA application does not authorize Production promotion.
+
+The effective dispensing function independently confirms Production still contains the NULL-to-one fallback, while QA has Phase 57 NULL rejection and Phase 57B free-text/external-prescription rejection. Active NULL-quantity item counts are zero in both environments. Production Phase 55 helper ACLs remain default/PUBLIC-executable; QA is owner-only.
+
+Do not replay the QA history, insert or repair migration ledger rows manually, or apply Production DDL before verified current backup/restore, dependency-ordered forward-only source review, disposable PostgreSQL 17 tests and separate approval. See \`docs/RELEASE_GATE_RECHECK_2026-11-12.md\` for the exact live findings and current deployment/backup evidence.
