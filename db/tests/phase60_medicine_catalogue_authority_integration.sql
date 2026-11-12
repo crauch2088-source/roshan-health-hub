@@ -244,6 +244,8 @@ $admin_role$;
 
 SELECT set_config('request.jwt.claim.sub', '62000000-0000-0000-0000-000000000002', false);
 DO $pharmacist_role$
+DECLARE
+  v_denied boolean := false;
 BEGIN
   IF NOT public.app_has_perm('pharmacy.catalogue_identity.update')
      OR NOT public.app_has_perm('pharmacy.pack.verify') THEN
