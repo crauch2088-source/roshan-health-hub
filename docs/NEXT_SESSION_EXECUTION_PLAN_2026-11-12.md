@@ -1,6 +1,6 @@
 # Roshan Health Hub — next-session execution plan
 **Prepared:** 2026-11-12  
-**Execution status:** Ready for the next user turn; no operational work in this planning round.  
+**Execution status:** Partially executed on 2026-11-12. Fresh backup, restore rehearsal, artifact verification/Drive transfer, exact source checks and disposable PG17 tests completed; Production release remains NO-GO.  
 **Canonical starting point:** `crauch2088-source/roshan-health-hub` `main@07c3b691fd4fe92058594814b6e76744b7f4ec92`  
 **Related private runner:** `crauch2088-source/roshan-health-hub-backup-runner` `main@464456a25335f60bc1721e2c6b194aed53b7382d`
 
@@ -326,3 +326,39 @@ Return a compact but evidence-rich report containing:
 ---
 
 **Planning checkpoint only:** no Production/QA DDL or DML, no secrets or variables changed, no backup dispatched, no artifact transferred, no application deployment promoted, and no PR merged during preparation of this plan.
+
+
+## 13. Execution checkpoint — 2026-11-12
+
+### Completed
+
+- [x] Re-read canonical main, runner head, live ledgers and current PR/CI state.
+- [x] Merged application documentation PR #243 as main commit `5159d469b34b794bb68b2fbe245552cd509188a6`; main CI [#43183563642](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43183563642) passed.
+- [x] Reviewed and merged backup-runner PR #8; runner main is `eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8`; exact-head CI [#43183801681](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183801681) passed.
+- [x] Dispatched manual Production backup with `confirm_production_backup=true`; run [#43183851731](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183851731) succeeded, including preflight, local PostgreSQL 17 restore rehearsal and encrypted-only artifact creation.
+- [x] Verified ZIP SHA-256 against GitHub digest, verified internal ciphertext SHA-256 against `SHA256SUMS`, and confirmed ZIP contains only encrypted archive plus checksum manifest.
+- [x] Uploaded encrypted ZIP to the canonical dated Drive folder; read-back confirms exact file size, parent folder, MD5 and non-trashed state.
+- [x] Deleted `SUPABASE_DB_PASSWORD` after the one-time backup and verified it is absent from Actions secrets.
+- [x] Re-read Production and QA function definitions/ACLs and Storage/Vault counts; no database writes performed.
+- [x] Confirmed exact QA stored payload hashes for Phase 55, 57 and 57B.
+- [x] Main CI passed the Phase 57/57B PostgreSQL 17 pharmacy integration; dedicated Phase 55 PostgreSQL 17 workflow [#43184305893](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43184305893) passed.
+
+### Remaining — do not bypass
+
+1. Owner-side decryption of the retained encrypted artifact with the offline private age identity; never upload or paste that identity.
+2. Independent second-person review/sign-off of the Production Phase 55 and Phase 57/57B payloads. The PR #8 review was a self-review only.
+3. Explicit Production release window/approval and immediate exact-head live preflight.
+4. Confirm the supported forward-only migration application route preserves version/name/source provenance without QA ledger copying or manual ledger edits.
+5. If and only if all gates pass, apply Phase 55 separately from the two-migration pharmacy hotfix; apply Phase 57 then Phase 57B in order, with read-only verification after each.
+6. Recalculate all readiness only after verified post-apply results; real staff, Android, RTL/LTR and physical printer acceptance remain separate owner gates.
+
+### Current live stop facts
+
+- Production: PostgreSQL 17.6, 129 migrations, latest `20261102232941`; Phase 55/57/57B absent.
+- QA: PostgreSQL 17.11, 26 migrations, latest `20261112061251`; Phase 55/57/57B present.
+- Production dispensing function still has the NULL-to-one fallback; QA has all three guards.
+- Production private claim-branch and role-sync helpers remain PUBLIC-effective; QA ACLs are owner-only.
+- Storage: 3 buckets and 0 objects in each environment; Vault secrets: 0 in each environment.
+- No Production or QA DDL/DML/ACL/RLS/Auth/Storage/business-data writes were made. The only secret mutation was deletion of the one-time GitHub Actions `SUPABASE_DB_PASSWORD` secret.
+
+Full backup and source evidence: [`docs/BACKUP_EVIDENCE_2026-11-12.md`](BACKUP_EVIDENCE_2026-11-12.md).
