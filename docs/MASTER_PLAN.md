@@ -3077,3 +3077,35 @@ Weighted operational acceptance: **11.25% (reported as 11%)**. The limited QA cr
 - Priority 2 is exact-source Phase 57/57B pharmacy migration provenance and disposable PostgreSQL 17 regression; Phase 55 private-helper ACL/trigger review proceeds separately. Production remains NO-GO until the backup/recovery, source, tests, ACL, and post-change gates pass.
 - QA live ledger is 26 rows/latest `20261112061251`; Production is 129/latest `20261102232941`. Phase 55/57/57B/58/59/61 remain QA-only at this checkpoint.
 - This planning/documentation work earns no implementation-completion credit. No live database, secrets, backup, artifact, or deployment was changed in this round.
+
+
+## Execution checkpoint — 2026-11-12 (supersedes earlier same-day backup blockers)
+
+This section supersedes the earlier 2026-11-12 notes that said no fresh backup had been produced or that the owner still needed to add `SUPABASE_DB_PASSWORD`.
+
+- Application main: `5159d469b34b794bb68b2fbe245552cd509188a6`; PR #243 merged; main CI [#43183563642](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43183563642) passed.
+- Backup-runner PR #8 merged; runner main: `eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8`; runner CI [#43183801681](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183801681) passed.
+- Fresh manual encrypted Production backup [#43183851731](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183851731) succeeded. Credential preflight ran and passed; backup job's local PostgreSQL 17 restore rehearsal, critical table-count comparisons, encrypted-only artifact upload and safe summary all passed.
+- Artifact [`roshan-production-backup-43183851731.zip`](https://drive.google.com/file/d/1HQxRWPIkYLeFQ0DNR-8wSEULLYCWMM4o/view) is retained in the canonical private Drive folder. Size 305,284 bytes; GitHub SHA-256 `54b799545d1cb6eaccd16cf3964a3b6a5421c292c457504b967f5bcf5b488dd9`; local digest and Drive size/MD5 read-back match. Its contents are only the age-encrypted database archive and checksum manifest.
+- One-time GitHub Actions secret `SUPABASE_DB_PASSWORD` was deleted and verified absent. Do not ask for or expose any secret values.
+- Exact QA statement payload parity was confirmed for Phase 55, Phase 57 and Phase 57B. Main CI [#43183563642](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43183563642) passed the Phase 57/57B PostgreSQL 17 pharmacy integration job; dedicated Phase 55 PG17 workflow [#43184305893](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43184305893) passed.
+- Production remains unchanged and unsafe at the dispensing boundary: the live function still contains `COALESCE(pi.quantity,1)`; private Phase 55 helpers remain PUBLIC-effective. QA has all three guards and owner-only private helper ACLs.
+- Storage buckets: 3 in both environments; Storage objects: 0; Vault secrets: 0. Platform settings, API/JWT keys, Edge Function secrets, custom-domain settings, Storage object bytes and private age identity are not included in the database backup.
+- Owner-side decryption, independent second-person migration review, explicit Production release window, and migration-history-preserving forward application mechanism remain open. **No Production or QA DDL/DML/ACL/RLS/Auth/Storage changes were made.**
+
+### Updated evidence-weighted progress
+
+| Engineering RC workstream | Weight | Previous | Current | Reason |
+|---|---:|---:|---:|---|
+| A. Orchestration, scope, evidence | 10% | 95% | 95% | No change |
+| B. Pharmacy + medicine catalogue | 20% | 75% | 75% | No Production feature activation or staff acceptance |
+| C. SDG finance + receipts | 20% | 70% | 70% | No change |
+| D. Migration provenance + security | 25% | 40% | 50% | Exact QA payload parity for Phases 55/57/57B and passing PG17 tests; Production gaps remain |
+| E. Mobile, bilingual UX, printing | 10% | 35% | 35% | No change |
+| F. QA, recovery, release decision | 15% | 30% | 50% | Fresh encrypted backup, local PG17 restore rehearsal, independent ciphertext checks and off-site Drive copy; owner decryption/platform recovery remains |
+
+Weighted Engineering RC: **62.0%** (previously 56.5%). Operational acceptance: **15.0%** (previously 11.25%), reflecting backup/recovery moving from 50% to 75%; real staff, Android/printing and Production release acceptance remain 0%. These are conservative evidence-weighted estimates, not Production readiness claims.
+
+Estimated remaining focused engineering effort to a defensible Engineering RC: **17–30 hours**, conditional on the owner-side decryption check, independent review, and no new critical defect. Calendar time to operational release remains unestimable until staff UAT and physical acceptance occur.
+
+Detailed evidence: [`docs/BACKUP_EVIDENCE_2026-11-12.md`](BACKUP_EVIDENCE_2026-11-12.md).
