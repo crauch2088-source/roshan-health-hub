@@ -153,6 +153,8 @@ export async function rpc<T>(name: string, args?: Record<string, unknown>): Prom
   return data as T;
 }
 
+export const ROSHAN_CURRENCY = "SDG" as const;
+
 /** System settings as a flat map. */
 export function useSettings() {
   const query = useRows<Row[]>(["system_settings"], () =>
@@ -168,7 +170,7 @@ export function useSettings() {
     return map;
   }, [query.data]);
 
-  return { ...query, settings, currency: settings["currency"] || "SDG" };
+  return { ...query, settings, currency: ROSHAN_CURRENCY };
 }
 
 export function csvExport(rows: Row[], filename: string) {
