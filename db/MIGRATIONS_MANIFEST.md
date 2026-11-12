@@ -274,3 +274,84 @@ Tracked source files:
 The Git blob SHA is not the stored-statement MD5. Preserve the migration SQL payload exactly; do not normalize, regenerate, or hand-edit either migration during Production promotion. Phase 57B is QA-applied, not candidate-only. Phase 61 is also QA-applied but is deliberately excluded from the Production pharmacy hotfix package because its UI/workflow acceptance is a separate release gate.
 
 No Production or QA writes were performed during this read-back.
+
+
+## Live cross-project ledger parity recheck — 2026-11-12
+
+A complete read-only comparison of every \`supabase_migrations.schema_migrations\` row by version, name, statement byte length and MD5 confirms that Production and QA ledgers are not interchangeable:
+
+- Production: 129 rows; latest \`20261102232941\`.
+- QA: 24 rows; latest \`20261111223309\`.
+- Shared version numbers: 3; Production-only: 126; QA-only: 21.
+- All three shared version numbers have different names and stored statement fingerprints. The Production rows at \`20261102122437\`, \`20261102133658\`, and \`20261102133734\` are 134-byte superseded placeholders; QA uses those same version numbers for Phase 51, Phase 49, and Phase 50 respectively. Do not infer parity from matching version strings.
+
+QA-only current rows include Phase 55 \`20261103155227\`, Phase 57 \`20261104065852\`, Phase 57B \`20261111215510\`, and Phase 61 \`20261111223309\`. Production contains none of those versions. QA's Phase 61 source is in Draft PR #229 (head \`9c54ee0655acfafdbb1f3509f4de7ed10be6a420\`), not main; its QA application does not authorize Production promotion.
+
+The effective dispensing function independently confirms Production still contains the NULL-to-one fallback, while QA has Phase 57 NULL rejection and Phase 57B free-text/external-prescription rejection. Active NULL-quantity item counts are zero in both environments. Production Phase 55 helper ACLs remain default/PUBLIC-executable; QA is owner-only.
+
+Do not replay the QA history, insert or repair migration ledger rows manually, or apply Production DDL before verified current backup/restore, dependency-ordered forward-only source review, disposable PostgreSQL 17 tests and separate approval. See \`docs/RELEASE_GATE_RECHECK_2026-11-12.md\` for the exact live findings and current deployment/backup evidence.
+
+
+## Live QA/Production ledger update — 2026-11-12 06:34 UTC
+
+Direct read-only ledger extraction supersedes earlier 24-row QA snapshots:
+
+| Environment | Rows | Latest version |
+|---|---:|---|
+| Production | 129 | 20261102232941 |
+| QA | 26 | 20261112061251 |
+
+- Shared version numbers: 3; all three have different migration names, stored statement byte lengths and MD5 fingerprints.
+- Production-only: 126 rows. QA-only: 23 rows.
+- QA-only applied phases now include Phase55 20261103155227, Phase57 20261104065852, Phase57B 20261111215510, Phase61 20261111223309, Phase58 20261112061219 and Phase59 20261112061251. Production has none of these versions.
+- QA Phase58/59 are applied: seven public currency_code columns exist, and get_invoice_payment_receipt_status_v2(uuid[]) is present with authenticated EXECUTE and anon denied. Production has zero currency_code columns and no receipt-status RPC.
+- QA Phase61 correction RPCs exist and are authenticated-only; Production has no correction RPCs. Phase61 source remains on Draft PR #229, not main.
+- QA's effective dispensing RPC includes Phase57 NULL rejection and Phase57B unlinked/external-prescription guards. Production's authenticated dispensing RPC still contains the legacy COALESCE(pi.quantity,1) fallback. prescription_items.quantity remains nullable in both projects; do not describe Phase57 as a column NOT NULL constraint.
+- Production's private Phase55 helpers remain PUBLIC-effective EXECUTE for anon/authenticated/service_role; QA's helper ACLs are owner-only.
+- Never copy QA ledger rows into Production, insert migration records manually, or replay the historical ledger. Prepare only forward-only reviewed source and disposable PostgreSQL 17 tests; Production remains gated by current backup/restore, full source reconciliation and separate approval.
+
+No hosted database write occurred during this recheck.
+
+## QA forward-migration source-to-ledger body parity — 2026-11-12 06:55 UTC
+
+A read-only comparison of tracked SQL files with the actual QA schema_migrations statements confirms executable-body parity for all six currently applied forward phases below. Hashes are MD5 of the stored statement array joined with LF; source Git blob SHAs are separate identifiers.
+
+| Phase | QA version | Source location / Git blob | Stored bytes / MD5 | Comparison |
+|---|---|---|---|---|
+| 55 | 20261103155227 | main, 081d5e97169786e23cd1990cf9f6dbb1c49e4a1f | 2,304 / b1271f444b6b8254b9b50ca49c7b02d3 | Exact after trimming one terminal source newline |
+| 57 | 20261104065852 | main, 9db6768999352c32081f69b5e665c3cc95452616 | 10,954 / 921970d4d86b32dccd430a0ea0ef8745 | Exact raw-file match |
+| 57B | 20261111215510 | main, 57516e08de8e314f687c21f2f292199d3adff178 | 11,525 / bfd2df24224752a1488f2f05494f4211 | Exact after excluding six non-executable leading lines (four comments, BEGIN, blank) and two trailing lines (COMMIT, final blank); no executable SQL differences |
+| 58 | 20261112061219 | main, e4f47d0df22ec095207f8ea27ad7395aa26779f2 | 8,347 / df5eb42bac7f8a1addc443d6d825a9a1 | Exact raw-file match |
+| 59 | 20261112061251 | main, 49dbd1a686e17cbdc8341cb27675301f9cfbc5b3 | 4,365 / 3e356de0f959e9674e87198eb18b04a6 | Exact raw-file match |
+| 61 | 20261111223309 | Draft PR #229 head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420, blob 1abbb3b0238ffee44d851ff90d065165f925a605 | 38,534 / 6d4d05a084d14d7d354385b32e8e745e | Exact raw-file match |
+
+This is scoped source-to-ledger parity for these six QA forward migrations, not full cross-project migration-chain parity. Production remains at 129 rows/latest 20261102232941; QA has 26/latest 20261112061251. The three shared version collisions, 126 Production-only rows and 23 QA-only rows remain unresolved as a historical ledger reconciliation problem. Production has none of the six QA phase versions. Do not copy QA ledger rows or replay the QA chain into Production.
+
+No hosted database write occurred during this audit.
+
+## Production/QA Phase49–52 source-body mapping — 2026-11-12 06:56 UTC
+
+A read-only comparison against the stored statements in both live ledgers confirms that the current tracked Phase49–52 SQL sources map to the canonical applied rows in both environments. The source blobs are shared; the environment migration versions differ.
+
+| Phase | Environment | Applied version | Source blob | Stored bytes / MD5 | Normalization |
+|---|---|---|---|---|---|
+| 49 | Production | 20261102232823 | cf3f67291601d7513d758570b8d46c35d6bc56f1 | 19,145 / 0e0ea85d6d1bea3ac575892fe9b7583e | Remove outer BEGIN/COMMIT |
+| 49 | QA | 20261102133658 | cf3f67291601d7513d758570b8d46c35d6bc56f1 | 19,155 / 55f65a3816d431ff42a5272c9e338658 | Raw exact |
+| 50 | Production | 20261102232849 | 031cca46782d5821f05d936ff7d35d9c19fef28c | 4,474 / 9cc937636c342d3b257e84eff0fe26af | Remove outer BEGIN/COMMIT |
+| 50 | QA | 20261102133734 | 031cca46782d5821f05d936ff7d35d9c19fef28c | 4,484 / cf5948d78786d6038fa93a74ecf22256 | Raw exact |
+| 51 | Production | 20261102232852 | fc124e36b1435c9e135ed2ec282581f585f93a26 | 788 / fc31b869c119988a8d96492840c33b6a | Remove outer BEGIN/COMMIT |
+| 51 | QA | 20261102122437 | fc124e36b1435c9e135ed2ec282581f585f93a26 | 552 / 4b848d12b776028dd67cc0e6ffebc452 | Remove three leading explanatory comments and final blank line |
+| 52 | Production | 20261102232855 | b86ccade80bc88e4a09d2e027389a1bd3782ad17 | 14,306 / 6743bc9f79fbf747275393109d769625 | Remove outer BEGIN/COMMIT |
+| 52 | QA | 20261102232905 | b86ccade80bc88e4a09d2e027389a1bd3782ad17 | 14,306 / 6743bc9f79fbf747275393109d769625 | Remove outer BEGIN/COMMIT |
+
+For Phase51 QA, the source body after removing only the three leading explanatory comments and the final blank line is byte-for-byte equal to the stored statements. For Production Phase49/50/51/52, removing the outer transaction wrapper yields byte-for-byte equality. These are non-executable wrapper/comment differences, not SQL-body drift.
+
+Combined with the QA Phase55/57/57B/58/59/61 comparison above, the ten named forward-phase environment applications are source-mapped. This remains a scoped forward-migration audit, not full historical ledger parity or schema parity.
+
+The historical ledger divergence remains:
+- Production 129 rows/latest 20261102232941; QA 26/latest 20261112061251.
+- Only 3 shared version IDs; all three collide with different names/bytes/MD5 (Production placeholder rows versus QA Phase51/49/50).
+- 126 Production-only rows and 23 QA-only rows.
+- Production 20261102232819 (223-byte quarantine/rename row) and 20261102232941 (3,285-byte cleanup/reversal row) remain separately mapped/quarantined artifacts, not canonical forward migration sources. Do not replay the redacted cleanup row.
+
+No hosted database write occurred.
