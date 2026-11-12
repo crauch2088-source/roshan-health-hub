@@ -186,6 +186,15 @@ BEGIN
     RAISE EXCEPTION 'medicine_not_found' USING ERRCODE = 'P0002';
   END IF;
 
+  -- Enforce the identity-completeness contract at the trusted RPC boundary;
+  -- client-side form validation is not an authorization or integrity control.
+  IF NULLIF(btrim(v_snapshot->>'generic_name'), '') IS NULL
+     OR NULLIF(btrim(v_snapshot->>'strength'), '') IS NULL
+     OR NULLIF(btrim(v_snapshot->>'dosage_form'), '') IS NULL THEN
+    RAISE EXCEPTION 'medicine_identity_incomplete_for_pack_verification'
+      USING ERRCODE = '22023';
+  END IF;
+
   v_sha256 := encode(extensions.digest(convert_to(v_snapshot::text, 'UTF8'), 'sha256'), 'hex');
 
   INSERT INTO public.medicine_pack_verifications
