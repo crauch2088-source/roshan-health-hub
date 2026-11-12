@@ -193,6 +193,14 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Existing catalogue rows may have nullable strength/dosage_form. A pharmacist
+-- must not be able to create a pack attestation until the saved identity is complete.
+INSERT INTO public.medicines (id, generic_name, brand_name, strength, dosage_form, name)
+VALUES
+  ('63000000-0000-0000-0000-000000000002', 'Synthetic missing strength', NULL, NULL, 'tablet', 'Synthetic missing strength'),
+  ('63000000-0000-0000-0000-000000000003', 'Synthetic missing dosage form', NULL, '500 mg', NULL, 'Synthetic missing dosage form')
+ON CONFLICT (id) DO NOTHING;
+
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '62000000-0000-0000-0000-000000000001', false);
 
@@ -242,6 +250,26 @@ BEGIN
     RAISE EXCEPTION 'Pharmacist must have both catalogue-edit and pack-verification permissions';
   END IF;
   PERFORM public.verify_medicine_physical_pack('63000000-0000-0000-0000-000000000001');
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.verify_medicine_physical_pack('63000000-0000-0000-0000-000000000002');
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pack verification must reject a medicine with missing strength';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.verify_medicine_physical_pack('63000000-0000-0000-0000-000000000003');
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pack verification must reject a medicine with missing dosage form';
+  END IF;
 END;
 $pharmacist_role$;
 
@@ -326,6 +354,16 @@ BEGIN
   END IF;
 END;
 $phase60_evidence$;
+
+IF EXISTS (
+  SELECT 1 FROM public.medicine_pack_verifications
+  WHERE medicine_id IN (
+    '63000000-0000-0000-0000-000000000002',
+    '63000000-0000-0000-0000-000000000003'
+  )
+) THEN
+  RAISE EXCEPTION 'incomplete medicine identity must not create pack attestation evidence';
+END IF;
 
 DO $phase60_immutability$
 DECLARE
