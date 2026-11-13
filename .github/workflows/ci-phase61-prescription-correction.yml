@@ -1,0 +1,70 @@
+name: Phase 61 prescription correction workflow
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ci-phase61-prescription-correction.yml"
+      - "db/roshan_phase61_prescription_item_correction_workflow.sql"
+      - "db/tests/phase61_prescription_correction_fixture.sql"
+      - "db/tests/phase61_prescription_correction_integration.sql"
+      - "db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql"
+      - "db/roshan_phase46_uat_schema_compatibility.sql"
+      - "tests/phase61-prescription-correction-contract.test.mjs"
+      - "tests/phase61-prescription-correction-ui.test.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase61-prescription-correction-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-17:
+    name: Prescription correction roles, RLS, audit and no-side-effects (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Replay canonical baseline and clinical parent guards
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
+            -f db/roshan_phase46_uat_schema_compatibility.sql
+      - name: Seed synthetic roles, branches, users and prescriptions
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_fixture.sql
+      - name: Apply Phase 61 and run PostgreSQL 17 behavior assertions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/roshan_phase61_prescription_item_correction_workflow.sql \
+            -f db/tests/phase61_prescription_correction_integration.sql
+      - name: Prove concurrent correction resolution is serialized
+        env:
+          PGPASSWORD: postgres
+        run: bash db/tests/phase61_prescription_correction_concurrency.sh
+      - name: Run Phase 61 source-contract tests
+        run: node --test tests/phase61-prescription-correction-contract.test.mjs tests/phase61-prescription-correction-ui.test.mjs

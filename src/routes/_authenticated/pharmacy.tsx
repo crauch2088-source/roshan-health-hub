@@ -17,6 +17,7 @@ import {
   Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
+import { PharmacyCorrectionRequest } from "@/components/prescription-correction";
 import {
   Select,
   SelectContent,
@@ -307,6 +308,36 @@ function PharmacyPageInner() {
                         ? "تحتوي الوصفة على دواء غير مرتبط بدليل الأدوية. يجب ربطه بدواء نشط قبل الصرف."
                         : "This prescription contains a medicine not linked to the active catalogue. Link it before dispensing."}
                     </p>
+                  ) : null}
+                  {can("pharmacy.correction.request") &&
+                  s(p, "status") === "pending" &&
+                  !hasExternalPrescription &&
+                  items.some((item) => !s(item, "medicine_id")) ? (
+                    <div className="mb-3 space-y-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                      <p className="text-sm font-medium">
+                        {lang === "ar"
+                          ? "يمكنك طلب توضيح الطبيب للبنود غير المرتبطة."
+                          : "You can ask the responsible prescriber to clarify unlinked items."}
+                      </p>
+                      {items
+                        .filter((item) => !s(item, "medicine_id"))
+                        .map((item) => (
+                          <div
+                            key={s(item, "id")}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-2"
+                          >
+                            <span className="min-w-0 text-sm">
+                              {s(item, "medication_name") ||
+                                (lang === "ar" ? "دواء غير محدد" : "Unspecified medicine")}
+                            </span>
+                            <PharmacyCorrectionRequest
+                              itemId={s(item, "id")}
+                              itemLabel={s(item, "medication_name")}
+                              lang={lang}
+                            />
+                          </div>
+                        ))}
+                    </div>
                   ) : null}
                   <ul className="divide-y rounded-md border md:hidden">
                     {items.map((i) => {
