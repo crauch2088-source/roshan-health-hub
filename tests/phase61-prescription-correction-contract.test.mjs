@@ -6,10 +6,7 @@ const migration = readFileSync(
   "db/roshan_phase61_prescription_item_correction_workflow.sql",
   "utf8",
 );
-const roleBoundaryMigration = readFileSync(
-  "db/roshan_phase61b_clinical_role_boundary.sql",
-  "utf8",
-);
+const roleBoundaryMigration = readFileSync("db/roshan_phase61b_clinical_role_boundary.sql", "utf8");
 const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
@@ -151,11 +148,20 @@ test("Phase 61 integration proves the migration itself grants prescription autho
 
 
 test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin", () => {
-  assert.match(roleBoundaryMigration, /ALTER FUNCTION public\.request_prescription_item_correction/);
+  assert.match(
+    roleBoundaryMigration,
+    /ALTER FUNCTION public\.request_prescription_item_correction/,
+  );
   assert.match(roleBoundaryMigration, /request_prescription_item_correction_unchecked/);
   assert.match(roleBoundaryMigration, /resolve_prescription_item_correction_unchecked/);
   assert.match(roleBoundaryMigration, /create_prescription_atomic_unchecked/);
   assert.match(roleBoundaryMigration, /app_has_role_permission/);
-  assert.match(roleBoundaryMigration, /GRANT EXECUTE ON FUNCTION public\.create_prescription_atomic/);
-  assert.match(roleBoundaryMigration, /REVOKE ALL ON FUNCTION private\.create_prescription_atomic_unchecked/);
+  assert.match(
+    roleBoundaryMigration,
+    /GRANT EXECUTE ON FUNCTION public\.create_prescription_atomic/,
+  );
+  assert.match(
+    roleBoundaryMigration,
+    /REVOKE ALL ON FUNCTION private\.create_prescription_atomic_unchecked/,
+  );
 });

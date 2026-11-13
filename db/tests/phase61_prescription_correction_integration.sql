@@ -459,6 +459,28 @@ BEGIN
       NULL,
       '[{"medication_name":"Ambiguous prescription type","quantity":1}]'::jsonb
     );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist bypassed the clinical authoring role gate';
+  END IF;
+END;
+$phase61_pharmacist_prescription_scope$;
+RESET ROLE;
+
+-- An authorized doctor reaches payload validation and must provide an explicit prescription type.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002',false);
+DO $phase61_doctor_explicit_type$
+DECLARE v_denied boolean := false;
+BEGIN
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61500000-0000-0000-0000-000000000001',
+      NULL,
+      '[{"medication_name":"Ambiguous prescription type","quantity":1}]'::jsonb
+    );
   EXCEPTION WHEN SQLSTATE '22023' THEN
     v_denied := true;
   END;
@@ -466,7 +488,7 @@ BEGIN
     RAISE EXCEPTION 'prescription authoring accepted an implicit external/internal type';
   END IF;
 END;
-$phase61_pharmacist_prescription_scope$;
+$phase61_doctor_explicit_type$;
 RESET ROLE;
 
 -- Admin has broad EMR and pharmacy permissions in the live role matrix, but not clinical prescribing authority.

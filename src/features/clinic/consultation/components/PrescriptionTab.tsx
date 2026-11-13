@@ -28,9 +28,12 @@ import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constant
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
   const { can, user } = useAuth();
-  const isClinicalPrescriber = ["doctor", "legacy_gp", "legacy_specialist", "legacy_dentist"].includes(
-    user?.role_code ?? "",
-  );
+  const isClinicalPrescriber = [
+    "doctor",
+    "legacy_gp",
+    "legacy_specialist",
+    "legacy_dentist",
+  ].includes(user?.role_code ?? "");
   const canCreatePrescription = can("prescriptions.create") && isClinicalPrescriber;
   const visitQ = useRows<Row[]>(
     ["clinic-visit", visitId],
