@@ -9,6 +9,8 @@ const correctionUi = readFileSync("src/components/prescription-correction.tsx", 
 test("pharmacist can request correction only for a specific unlinked prescription item", () => {
   assert.match(pharmacy, /pharmacy\.correction\.request/);
   assert.match(pharmacy, /canRequestCorrection/);
+  assert.match(pharmacy, /canDispense/);
+  assert.match(pharmacy, /isPharmacist/);
   assert.match(pharmacy, /user\?\.role_code/);
   assert.match(pharmacy, /PharmacyCorrectionRequest/);
   assert.match(correctionUi, /request_prescription_item_correction/);

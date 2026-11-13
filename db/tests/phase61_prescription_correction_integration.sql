@@ -724,3 +724,86 @@ BEGIN
   END IF;
 END;
 $phase61_no_side_effects$;
+
+
+-- Dispensing is a pharmacist-only write operation even when Admin/Super Admin hold broad permissions.
+DO $phase61b_dispense_acl$
+BEGIN
+  IF has_function_privilege('authenticated','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('service_role','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE') THEN
+    RAISE EXCEPTION 'unchecked pharmacy dispense RPC is directly executable';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('anon','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('service_role','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE') THEN
+    RAISE EXCEPTION 'public pharmacy dispense wrapper grants are incorrect';
+  END IF;
+  IF has_function_privilege('authenticated','public.fn_dispense_prescription(uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','public.fn_dispense_prescription(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'legacy non-invoice dispense RPC remains executable';
+  END IF;
+END;
+$phase61b_dispense_acl$;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000005',false);
+DO $phase61b_admin_cannot_dispense$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'admin fixture must have broad pharmacy and billing permissions';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      'ffffffff-ffff-ffff-ffff-ffffffffffff',false
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Admin bypassed the pharmacist-only dispense role gate'; END IF;
+END;
+$phase61b_admin_cannot_dispense$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006',false);
+DO $phase61b_super_admin_cannot_dispense$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'Super Admin fixture must demonstrate global permission bypass';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      'ffffffff-ffff-ffff-ffff-ffffffffffff',false
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Super Admin bypassed the pharmacist-only dispense role gate'; END IF;
+END;
+$phase61b_super_admin_cannot_dispense$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61b_pharmacist_can_reach_dispense$
+DECLARE v_expected boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      'ffffffff-ffff-ffff-ffff-ffffffffffff',false
+    );
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM = 'prescription_not_pending' THEN
+      v_expected := true;
+    ELSE
+      RAISE;
+    END IF;
+  END;
+  IF NOT v_expected THEN
+    RAISE EXCEPTION 'pharmacist did not pass the role gate to the existing dispense workflow';
+  END IF;
+END;
+$phase61b_pharmacist_can_reach_dispense$;
+RESET ROLE;

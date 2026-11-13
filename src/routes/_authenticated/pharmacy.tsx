@@ -77,9 +77,9 @@ function PharmacyPageInner() {
   // medicines and stock_movements already keys off pharmacy.create/update,
   // so the UI now checks the same codes instead of two dangling ones.
   const { can, user } = useAuth();
-  const canRequestCorrection =
-    can("pharmacy.correction.request") &&
-    ["pharmacist", "legacy_pharmacist"].includes(user?.role_code ?? "");
+  const isPharmacist = ["pharmacist", "legacy_pharmacist"].includes(user?.role_code ?? "");
+  const canDispense = can("pharmacy.update") && isPharmacist;
+  const canRequestCorrection = can("pharmacy.correction.request") && isPharmacist;
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
@@ -111,7 +111,7 @@ function PharmacyPageInner() {
     requestId: string;
   }>(
     async ({ prescriptionId, separateInvoice, requestId }) => {
-      if (!can("pharmacy.update")) throw new Error("Not authorized");
+      if (!canDispense) throw new Error("Not authorized");
       const result = await dispensePrescriptionFefo(prescriptionId, separateInvoice, requestId);
       setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
       setDispenseRequestIds((current) => {
@@ -230,7 +230,7 @@ function PharmacyPageInner() {
                     </div>
                     <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                       <StatusBadge status={s(p, "status")} />
-                      {can("pharmacy.update") && s(p, "status") === "pending" ? (
+                      {canDispense && s(p, "status") === "pending" ? (
                         <>
                           {can("billing.create") ? (
                             <Button

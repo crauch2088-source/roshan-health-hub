@@ -73,6 +73,14 @@ BEGIN
     EXECUTE 'ALTER FUNCTION public.create_prescription_atomic(uuid, boolean, jsonb) SET SCHEMA private';
     EXECUTE 'ALTER FUNCTION private.create_prescription_atomic(uuid, boolean, jsonb) RENAME TO create_prescription_atomic_unchecked';
   END IF;
+
+  IF to_regprocedure('private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)') IS NULL THEN
+    IF to_regprocedure('public.fn_dispense_prescription_with_invoice(uuid,boolean)') IS NULL THEN
+      RAISE EXCEPTION 'Pharmacy dispense RPC is missing; refusing an incomplete role-boundary upgrade';
+    END IF;
+    EXECUTE 'ALTER FUNCTION public.fn_dispense_prescription_with_invoice(uuid, boolean) SET SCHEMA private';
+    EXECUTE 'ALTER FUNCTION private.fn_dispense_prescription_with_invoice(uuid, boolean) RENAME TO fn_dispense_prescription_with_invoice_unchecked';
+  END IF;
 END;
 $phase61b_move$;
 
@@ -81,6 +89,10 @@ REVOKE ALL ON FUNCTION private.request_prescription_item_correction_unchecked(uu
 REVOKE ALL ON FUNCTION private.resolve_prescription_item_correction_unchecked(uuid, text, jsonb, text)
   FROM PUBLIC, anon, authenticated, service_role, authenticator;
 REVOKE ALL ON FUNCTION private.create_prescription_atomic_unchecked(uuid, boolean, jsonb)
+  FROM PUBLIC, anon, authenticated, service_role, authenticator;
+REVOKE ALL ON FUNCTION private.fn_dispense_prescription_with_invoice_unchecked(uuid, boolean)
+  FROM PUBLIC, anon, authenticated, service_role, authenticator;
+REVOKE ALL ON FUNCTION public.fn_dispense_prescription(uuid)
   FROM PUBLIC, anon, authenticated, service_role, authenticator;
 
 CREATE OR REPLACE FUNCTION public.request_prescription_item_correction(
@@ -184,6 +196,52 @@ $function$;
 REVOKE ALL ON FUNCTION public.create_prescription_atomic(uuid, boolean, jsonb)
   FROM PUBLIC, anon, service_role, authenticator;
 GRANT EXECUTE ON FUNCTION public.create_prescription_atomic(uuid, boolean, jsonb)
+  TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.fn_dispense_prescription_with_invoice(
+  p_prescription_id uuid,
+  p_separate_invoice boolean
+)
+RETURNS TABLE (
+  item_id uuid,
+  medicine_id uuid,
+  medicine_name text,
+  batch_id uuid,
+  batch_number text,
+  expiry_date date,
+  quantity_dispensed numeric,
+  batch_quantity_remaining numeric,
+  source text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+BEGIN
+  IF NOT private.app_has_role_permission(
+    ARRAY['pharmacist','legacy_pharmacist'],
+    'pharmacy.update'
+  ) OR NOT private.app_has_role_permission(
+    ARRAY['pharmacist','legacy_pharmacist'],
+    'billing.create'
+  ) THEN
+    RAISE EXCEPTION 'pharmacy_dispense_permission_denied'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT *
+  FROM private.fn_dispense_prescription_with_invoice_unchecked(
+    p_prescription_id,
+    p_separate_invoice
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.fn_dispense_prescription_with_invoice(uuid, boolean)
+  FROM PUBLIC, anon, service_role, authenticator;
+GRANT EXECUTE ON FUNCTION public.fn_dispense_prescription_with_invoice(uuid, boolean)
   TO authenticated;
 
 COMMIT;
