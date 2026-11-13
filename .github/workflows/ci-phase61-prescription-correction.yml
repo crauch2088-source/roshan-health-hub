@@ -18,7 +18,6 @@ on:
       - "db/roshan_phase50_clinical_visit_bill_completion.sql"
       - "db/tests/phase49_50_critical_path_assertions.sql"
       - "db/roshan_phase46_uat_schema_compatibility.sql"
-      - "db/roshan_phase49_atomic_pharmacy_dispense.sql"
       - "tests/phase61-prescription-correction-contract.test.mjs"
       - "tests/phase61-prescription-correction-ui.test.mjs"
   workflow_dispatch:
