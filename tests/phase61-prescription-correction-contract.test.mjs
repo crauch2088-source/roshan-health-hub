@@ -43,6 +43,7 @@ test("Phase 61 RPCs enforce lock order, snapshot validation and explicit actions
   assert.match(migration, /reject/);
   assert.match(migration, /create_prescription_atomic/);
   assert.match(migration, /app_can_resolve_prescription_item_correction/);
+  assert.match(migration, /app_has_role_permission/);
   assert.match(migration, /catalog_medicine_price_invalid/);
   const resolver = migration.slice(
     migration.indexOf("CREATE OR REPLACE FUNCTION public.resolve_prescription_item_correction"),
@@ -65,7 +66,7 @@ test("Phase 61 integration covers authorization, no-side-effects and state trans
     "partial correction silently removed or linked another unrequested item",
     "request rejection",
     "cancel-and-reissue",
-    "Super Admin explicit bypass",
+    "Super Admin cannot inherit clinical write authority",
     "correction workflow changed inventory, stock movement or financial tables",
   ];
 

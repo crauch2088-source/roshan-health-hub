@@ -188,8 +188,11 @@ function isCompleteReplacementOrder(items: CorrectionOrderItemForm[]): boolean {
 }
 
 export function PrescriberCorrectionInbox({ lang }: { lang: Language }) {
-  const { can } = useAuth();
-  const allowed = can("prescriptions.correction.resolve");
+  const { can, user } = useAuth();
+  const isClinicalPrescriber = ["doctor", "legacy_gp", "legacy_specialist", "legacy_dentist"].includes(
+    user?.role_code ?? "",
+  );
+  const allowed = can("prescriptions.correction.resolve") && isClinicalPrescriber;
   const [selected, setSelected] = useState<Row | null>(null);
   const [action, setAction] = useState<"replace_item" | "reject" | "cancel_and_reissue">(
     "replace_item",
@@ -198,7 +201,7 @@ export function PrescriberCorrectionInbox({ lang }: { lang: Language }) {
   const [replacementOrderItems, setReplacementOrderItems] = useState<CorrectionOrderItemForm[]>([
     emptyCorrectionOrderItem(),
   ]);
-  const canCreatePrescription = can("prescriptions.create");
+  const canCreatePrescription = can("prescriptions.create") && isClinicalPrescriber;
 
   const requests = useRows<Row[]>(
     ["prescription-corrections"],

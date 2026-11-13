@@ -22,7 +22,7 @@ BEGIN
     SELECT 1 FROM public.role_permissions rp
     JOIN public.roles r ON r.id=rp.role_id
     JOIN public.permissions p ON p.id=rp.permission_id
-    WHERE r.code IN ('admin','pharmacist') AND p.code='prescriptions.create'
+    WHERE r.code IN ('admin','super_admin','pharmacist') AND p.code='prescriptions.create'
   ) THEN
     RAISE EXCEPTION 'Admin or pharmacist unexpectedly received prescription-authoring permission';
   END IF;
@@ -620,17 +620,68 @@ UPDATE public.medicines
 SET selling_price = 12.50
 WHERE id = '61600000-0000-0000-0000-000000000001';
 
--- Super Admin explicit bypass is retained for a cross-branch remediation.
+-- Super Admin keeps administrative read access but must not inherit clinical write authority.
+-- A real pharmacist in branch B creates the request; Super Admin in branch A must not resolve it.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000004',false);
+SELECT set_config(
+  'phase61.super_admin_request_id',
+  public.request_prescription_item_correction(
+    '61800000-0000-0000-0000-000000000011',
+    'Synthetic pharmacist request for a second-branch prescriber review.'
+  )::text,
+  false
+);
+RESET ROLE;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006',false);
-DO $phase61_super_admin$
-DECLARE v_request uuid; v_result record;
+DO $phase61_super_admin_no_clinical$
+DECLARE
+  v_denied boolean := false;
+  v_request_id uuid := current_setting('phase61.super_admin_request_id')::uuid;
 BEGIN
-  v_request := public.request_prescription_item_correction('61800000-0000-0000-0000-000000000011','Super Admin remediation request for a second branch.');
-  SELECT * INTO v_result FROM public.resolve_prescription_item_correction(v_request,'reject',NULL,'Super Admin recorded the exception for manual prescriber follow-up.');
-  IF v_result.status IS DISTINCT FROM 'rejected' THEN RAISE EXCEPTION 'Super Admin explicit bypass failed'; END IF;
+  IF NOT public.is_super_admin() OR NOT public.app_has_perm('prescriptions.create') THEN
+    RAISE EXCEPTION 'fixture no longer demonstrates the global Super Admin permission bypass';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['doctor','legacy_gp','legacy_specialist','legacy_dentist'], 'prescriptions.create')
+     OR private.app_has_role_permission(ARRAY['doctor','legacy_gp','legacy_specialist','legacy_dentist'], 'prescriptions.correction.resolve')
+     OR private.app_has_role_permission(ARRAY['pharmacist','legacy_pharmacist'], 'pharmacy.correction.request') THEN
+    RAISE EXCEPTION 'Super Admin unexpectedly satisfies an explicit clinical or pharmacy role permission';
+  END IF;
+
+  BEGIN
+    PERFORM public.request_prescription_item_correction(
+      '61800000-0000-0000-0000-000000000011',
+      'Super Admin must not create a pharmacist correction request.'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Super Admin created a pharmacist correction request'; END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.resolve_prescription_item_correction(
+      v_request_id,'reject',NULL,'Super Admin must not resolve a clinical correction.'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Super Admin resolved a clinical correction request'; END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.create_prescription_atomic(
+      '61500000-0000-0000-0000-000000000002',
+      false,
+      '[{"medicine_id":"61600000-0000-0000-0000-000000000001","medication_name":"Amoxicillin 500 mg","quantity":1}]'::jsonb
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Super Admin created a clinical prescription'; END IF;
 END;
-$phase61_super_admin$;
+$phase61_super_admin_no_clinical$;
 RESET ROLE;
 
 -- Final: correction operations must not create stock, invoice, payment or cashbox side effects.

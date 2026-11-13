@@ -8,6 +8,8 @@ const correctionUi = readFileSync("src/components/prescription-correction.tsx", 
 
 test("pharmacist can request correction only for a specific unlinked prescription item", () => {
   assert.match(pharmacy, /pharmacy\.correction\.request/);
+  assert.match(pharmacy, /canRequestCorrection/);
+  assert.match(pharmacy, /user\?\.role_code/);
   assert.match(pharmacy, /PharmacyCorrectionRequest/);
   assert.match(correctionUi, /request_prescription_item_correction/);
   assert.match(correctionUi, /prescription_item_id/);
@@ -29,6 +31,7 @@ test("pharmacy correction request UI is bilingual and does not dispense or bill"
 test("responsible prescriber inbox is permission-gated and reads only pending RLS-scoped requests", () => {
   assert.match(clinic, /PrescriberCorrectionInbox/);
   assert.match(correctionUi, /prescriptions\.correction\.resolve/);
+  assert.match(correctionUi, /isClinicalPrescriber/);
   assert.match(correctionUi, /prescription_item_correction_requests/);
   assert.match(correctionUi, /eq\("status", "pending"\)/);
   assert.match(correctionUi, /resolve_prescription_item_correction/);
@@ -111,6 +114,8 @@ test("existing prescription composer requires the dedicated prescriber permissio
     "utf8",
   );
   assert.match(prescriptionTab, /useAuth/);
+  assert.match(prescriptionTab, /user\?\.role_code/);
+  assert.match(prescriptionTab, /isClinicalPrescriber/);
   assert.match(prescriptionTab, /can\("prescriptions\.create"\)/);
   assert.match(prescriptionTab, /Only authorized prescribers can create prescriptions/);
   assert.match(prescriptionTab, /فقط مقدمو الرعاية المخولون يمكنهم إصدار الوصفات/);

@@ -76,7 +76,10 @@ function PharmacyPageInner() {
   // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,
   // medicines and stock_movements already keys off pharmacy.create/update,
   // so the UI now checks the same codes instead of two dangling ones.
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const canRequestCorrection =
+    can("pharmacy.correction.request") &&
+    ["pharmacist", "legacy_pharmacist"].includes(user?.role_code ?? "");
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
@@ -309,7 +312,7 @@ function PharmacyPageInner() {
                         : "This prescription contains a medicine not linked to the active catalogue. Link it before dispensing."}
                     </p>
                   ) : null}
-                  {can("pharmacy.correction.request") &&
+                  {canRequestCorrection &&
                   s(p, "status") === "pending" &&
                   !hasExternalPrescription &&
                   items.some((item) => !s(item, "medicine_id")) ? (
