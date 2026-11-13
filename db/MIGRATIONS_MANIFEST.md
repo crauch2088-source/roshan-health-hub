@@ -274,3 +274,35 @@ Tracked source files:
 The Git blob SHA is not the stored-statement MD5. Preserve the migration SQL payload exactly; do not normalize, regenerate, or hand-edit either migration during Production promotion. Phase 57B is QA-applied, not candidate-only. Phase 61 is also QA-applied but is deliberately excluded from the Production pharmacy hotfix package because its UI/workflow acceptance is a separate release gate.
 
 No Production or QA writes were performed during this read-back.
+
+
+## Live migration ledger and source delta — 2026-11-13
+
+This read-back supersedes the 2026-11-12 row count and the earlier Phase 57B candidate-only wording above. It is metadata/catalog evidence only; no hosted DDL/DML, migration repair or ledger write occurred.
+
+| Environment | PostgreSQL | Ledger rows | Latest version | Latest migration |
+|---|---|---:|---|---|
+| Production | 17.6 | 129 | 20261102232941 | roshan_synthetic_patient_cleanup_and_stock_ledger_reversal |
+| QA | 17.11 | 26 | 20261112061251 | roshan_phase59_receipt_currency_provenance |
+
+The ledgers share only three version IDs; all three have different names and statement fingerprints. Production has 126 version IDs not present in QA; QA has 23 not present in Production. Do not repair this with manual INSERTs, copied ledger rows, blind replay, or timestamp reassignment.
+
+Current QA-only forward phases:
+- Phase 55: 20261103155227 — private helper ACL reconciliation.
+- Phase 57: 20261104065852 — required quantity guard.
+- Phase 57B: 20261111215510 — free-text and external prescription rejection.
+- Phase 61: 20261111223309 — pharmacist-to-prescriber correction workflow.
+- Phase 58: 20261112061219 — persisted SDG currency provenance.
+- Phase 59: 20261112061251 — persisted receipt currency provenance.
+
+None of these versions is recorded in Production. Production still has the four superseded 134-byte Phase 49–52 placeholders; its later reconciled Phase 49–52 rows remain separate historical records. QA's four-row forward delta since the 2026-11-10 source-map snapshot is documented in docs/LIVE_MIGRATION_QA_DELTA_2026-11-13.json.
+
+Source evidence:
+- Phase 57B source is on main at Git blob 57516e08de8e314f687c21f2f292199d3adff178; the 11,525-byte QA stored payload matches the extracted function-DDL payload (MD5 bfd2df24224752a1488f2f05494f4211), excluding migration comments and transaction wrapper.
+- Phase 58 source is on main at blob e4f47d0df22ec095207f8ea27ad7395aa26779f2; QA stores 8,347 bytes, MD5 df5eb42bac7f8a1addc443d6d825a9a1.
+- Phase 59 source is on main at blob 49dbd1a686e17cbdc8341cb27675301f9cfbc5b3; QA stores 4,365 bytes, MD5 3e356de0f959e9674e87198eb18b04a6.
+- Phase 61 source blob 1abbb3b0238ffee44d851ff90d065165f925a605 exists only on Draft PR #229 branch feat/prescription-correction-ui-20261110 (head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420), not on main. QA stores 38,534 bytes, MD5 6d4d05a084d14d7d354385b32e8e745e. The six deployed function bodies were previously verified against the branch source; a full migration-statement hash comparison was not independently established in this read-back.
+- Production has no Phase 55/57/57B/58/59/61 ledger row. Production's Phase 57 dispensing function still has three NULL-to-one fallbacks; QA has zero and enforces quantity, free-text and external-prescription rejection.
+
+The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do not edit it retroactively; use the dated 2026-11-13 QA delta and this addendum for current row counts. The 94-row APPLIED_MIGRATION_INVENTORY remains historical and is not the live ledger.
+

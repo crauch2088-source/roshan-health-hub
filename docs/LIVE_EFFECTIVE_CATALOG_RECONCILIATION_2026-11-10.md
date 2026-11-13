@@ -74,3 +74,32 @@ The following ACL text differences are ordering-only and have the same effective
 ## Safety boundary
 
 This was a read-only catalog comparison. No Production or QA migration, DDL/DML, role/permission/Auth/Storage change, business-data write, deployment, or backup operation was performed. All candidate PRs remain Draft. This report does not authorize Production rollout.
+
+
+## Live effective-catalog fingerprint addendum — 2026-11-13
+
+This read-only snapshot supersedes the earlier statement that public table/view, column, constraint, index, RLS, policy, trigger and table-grant structures were aligned. QA now contains later Phase 57B, 61, 58 and 59 changes not present in Production.
+
+| Catalog measure | Production | QA |
+|---|---:|---:|
+| Public tables | 56 | 58 |
+| Private tables | 4 | 2 |
+| Public views | 5 | 5 |
+| Public columns | 842 | 873 |
+| Private columns | 24 | 13 |
+| Constraints | 222 | 245 |
+| Indexes | 254 | 258 |
+| Invalid/not-ready indexes | 0 | 0 |
+| RLS-enabled tables | 58 | 59 |
+| FORCE RLS tables | 44 | 46 |
+| Policies | 210 | 212 |
+| Non-internal triggers | 69 | 81 |
+| Functions/procedures in public+private | 143 | 152 |
+
+Sorted catalog-signature MD5 fingerprints (not cryptographic attestations):
+- Production: relations 0e7a128574df12d979119314cbaee29f; columns 05222881c031e893f6ee66c93eedded2; constraints 6460d66c7a1f44d453b3bd16382ccf74; indexes 31e454cbac135bac8c3a958328231df5; policies c24f45b21f0daa7a0464656fc558c743; triggers 6d92a4512685cabf709bcb5dfef33f32; functions f87c1b04e6948736a12d441f5fbb3a3e.
+- QA: relations 994b73e4f039ac096ddbc3b9ea6bea70; columns 5098ccc2f93d97a7bb174bc0f812a4cb; constraints 0a094faf30b9d076ad15fa0282cc0add; indexes 4f1bc281ffac59e27e9190410ce2051e; policies 9f86591f04d2b8eac378fd64f84c3e86; triggers e81a3ab545077d6b805d7dc0cbe97a74; functions e7f9e23ac8518a041ed304661da1d5b9.
+
+The QA-only Phase 61 correction workflow adds two public tables and related policies, triggers, constraints and functions. Phase 58/59 add persisted-currency schema/RPCs. Production's two additional private tables include quarantined legacy/remediation artifacts; do not copy or drop them merely to equalize counts. These aggregate fingerprints identify drift but do not provide a semantic per-object diff. The next reconciliation must compare exact object signatures and distinguish intended QA-only forward features from unintended drift.
+
+No business rows were read; the only data query outside catalogs counted active NULL-quantity prescription items (zero in both environments). No hosted writes were performed.
