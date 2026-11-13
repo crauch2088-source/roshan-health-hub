@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 import {
   buildMedicineSearchFilter,
   createEmptyPrescriptionDraft,
@@ -26,24 +27,32 @@ import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constant
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
-  const visitQ = useRows<Row[]>(["clinic-visit", visitId], () =>
-    supabase
-      .from("visits")
-      .select("id,patient_id,doctor_id,patients(id,full_name,date_of_birth)")
-      .eq("id", visitId)
-      .limit(1),
+  const { can } = useAuth();
+  const canCreatePrescription = can("prescriptions.create");
+  const visitQ = useRows<Row[]>(
+    ["clinic-visit", visitId],
+    () =>
+      supabase
+        .from("visits")
+        .select("id,patient_id,doctor_id,patients(id,full_name,date_of_birth)")
+        .eq("id", visitId)
+        .limit(1),
+    { enabled: canCreatePrescription },
   );
   const patientRow = rel((visitQ.data ?? [])[0], "patients");
   const patient = s(patientRow, "id");
   const patientAge = calcAge(s(patientRow, "date_of_birth"));
-  const vitalsQ = useRows<Row[]>(["clinic-vitals-weight", visitId], () =>
-    supabase
-      .from("vitals")
-      .select("weight,created_at")
-      .eq("visit_id", visitId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1),
+  const vitalsQ = useRows<Row[]>(
+    ["clinic-vitals-weight", visitId],
+    () =>
+      supabase
+        .from("vitals")
+        .select("weight,created_at")
+        .eq("visit_id", visitId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1),
+    { enabled: canCreatePrescription },
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
   const isPediatric = patientAge != null && patientAge < 18;
@@ -66,7 +75,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       if (medicineFilter) query = query.or(medicineFilter);
       return query;
     },
-    { enabled: Boolean(medicineFilter) },
+    { enabled: canCreatePrescription && Boolean(medicineFilter) },
   );
   const [form, setForm] = useState<PrescriptionDraft>(createEmptyPrescriptionDraft);
   const [items, setItems] = useState<PrescriptionDraft[]>([]);
@@ -147,6 +156,20 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       },
     },
   );
+
+  if (!canCreatePrescription) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <p role="note" className="text-sm text-muted-foreground">
+            {lang === "ar"
+              ? "فقط مقدمو الرعاية المخولون يمكنهم إصدار الوصفات."
+              : "Only authorized prescribers can create prescriptions."}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

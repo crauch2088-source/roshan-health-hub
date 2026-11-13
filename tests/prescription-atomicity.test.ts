@@ -116,7 +116,7 @@ test("short medicine search terms do not query a broad catalog", () => {
 test("prescription catalog query uses only the sanitized server-side filter", () => {
   assert.match(ui, /buildMedicineSearchFilter\(debouncedSearch\)/);
   assert.match(ui, /query\.or\(medicineFilter\)/);
-  assert.match(ui, /enabled: Boolean\(medicineFilter\)/);
+  assert.match(ui, /enabled: canCreatePrescription && Boolean\(medicineFilter\)/);
 });
 
 test("unknown catalog dosage forms do not masquerade as a supported form", () => {
