@@ -98,7 +98,7 @@ test("Phase 61 denies unassigned and wrong-branch doctors", () => {
 
 test("Phase 61 keeps clinical prescription authoring out of pharmacy.create", () => {
   assert.match(migration, /p_is_external IS NULL/);
-  assert.match(migration, /private\\.app_has_role_permission/);
+  assert.match(migration, /private\.app_has_role_permission/);
   assert.doesNotMatch(
     migration,
     /public\.app_has_perm\('pharmacy\.create'\) OR public\.app_has_perm\('emr\.create'\)/,
