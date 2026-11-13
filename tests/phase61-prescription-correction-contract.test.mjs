@@ -146,7 +146,6 @@ test("Phase 61 integration proves the migration itself grants prescription autho
   );
 });
 
-
 test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin", () => {
   assert.match(
     roleBoundaryMigration,
