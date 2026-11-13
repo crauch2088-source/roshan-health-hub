@@ -869,3 +869,17 @@ BEGIN
 END;
 $phase61c_pharmacist_reaches_atomic_validation$;
 RESET ROLE;
+
+DO $phase61c_atomic_dispense_acl$
+BEGIN
+  IF has_function_privilege('authenticated','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'unchecked atomic pharmacy dispense RPC is directly executable';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('anon','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'public atomic pharmacy dispense wrapper grants are incorrect';
+  END IF;
+END;
+$phase61c_atomic_dispense_acl$;

@@ -7,6 +7,7 @@ const migration = readFileSync(
   "utf8",
 );
 const roleBoundaryMigration = readFileSync("db/roshan_phase61b_clinical_role_boundary.sql", "utf8");
+const atomicDispenseRoleBoundaryMigration = readFileSync("db/roshan_phase61c_atomic_dispense_role_boundary.sql", "utf8");
 const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
@@ -165,5 +166,29 @@ test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin",
   assert.match(
     roleBoundaryMigration,
     /REVOKE ALL ON FUNCTION private\.create_prescription_atomic_unchecked/,
+  );
+});
+
+
+test("Phase 61C gates the active atomic pharmacy dispense RPC by pharmacist role", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /ALTER FUNCTION public\.atomic_pharmacy_dispense/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /atomic_pharmacy_dispense_unchecked/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /pharmacy_dispense_permission_denied/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /GRANT EXECUTE ON FUNCTION public\.atomic_pharmacy_dispense/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /REVOKE ALL ON FUNCTION private\.atomic_pharmacy_dispense_unchecked/,
   );
 });
