@@ -306,3 +306,15 @@ Source evidence:
 
 The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do not edit it retroactively; use the dated 2026-11-13 QA delta and this addendum for current row counts. The 94-row APPLIED_MIGRATION_INVENTORY remains historical and is not the live ledger.
 
+
+
+## Phase 61B — explicit clinical role boundary (2026-11-14)
+
+| Environment | Version | Migration name | Status |
+|---|---|---|---|
+| QA candidate | `20261114120000` | `roshan_phase61b_clinical_role_boundary` | Prepared in PR #249; not yet applied |
+| Production | — | Not authorized | Untouched |
+
+Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing or pharmacist correction authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
+
+The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.

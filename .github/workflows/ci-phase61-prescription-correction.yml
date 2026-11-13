@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/ci-phase61-prescription-correction.yml"
       - "db/roshan_phase61_prescription_item_correction_workflow.sql"
+      - "db/roshan_phase61b_clinical_role_boundary.sql"
       - "db/tests/phase61_prescription_correction_fixture.sql"
       - "db/tests/phase61_prescription_correction_integration.sql"
       - "db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql"
@@ -61,6 +62,7 @@ jobs:
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/roshan_phase61_prescription_item_correction_workflow.sql \
+            -f db/roshan_phase61b_clinical_role_boundary.sql \
             -f db/tests/phase61_prescription_correction_integration.sql
       - name: Prove concurrent correction resolution is serialized
         env:
