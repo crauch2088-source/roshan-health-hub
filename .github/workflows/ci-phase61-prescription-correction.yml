@@ -15,7 +15,6 @@ on:
       - "db/roshan_phase48_storage_entity_branch_binding.sql"
       - "db/roshan_phase49_atomic_pharmacy_dispense.sql"
       - "db/roshan_phase50_clinical_visit_bill_completion.sql"
-      - "db/tests/phase48_storage_entity_branch_binding_assertions.sql"
       - "db/tests/phase49_50_critical_path_assertions.sql"
       - "db/roshan_phase46_uat_schema_compatibility.sql"
       - "db/roshan_phase49_atomic_pharmacy_dispense.sql"
@@ -53,7 +52,7 @@ jobs:
           persist-credentials: false
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Replay canonical baseline and clinical parent guards
+      - name: Replay canonical baseline, Phase 49-50 prerequisites and clinical parent guards
         env:
           PGPASSWORD: postgres
         run: |
@@ -67,7 +66,6 @@ jobs:
             -f db/roshan_phase48_storage_entity_branch_binding.sql \
             -f db/roshan_phase49_atomic_pharmacy_dispense.sql \
             -f db/roshan_phase50_clinical_visit_bill_completion.sql \
-            -f db/tests/phase48_storage_entity_branch_binding_assertions.sql \
             -f db/tests/phase49_50_critical_path_assertions.sql
       - name: Seed synthetic roles, branches, users and prescriptions
         env:
