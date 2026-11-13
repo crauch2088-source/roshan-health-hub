@@ -820,7 +820,7 @@ BEGIN
   END IF;
   BEGIN
     PERFORM * FROM public.atomic_pharmacy_dispense(
-      NULL,false,'ffffffff-ffff-ffff-ffff-fffffffffff1'
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff1'
     );
   EXCEPTION WHEN SQLSTATE '42501' THEN
     v_denied := true;
@@ -839,7 +839,7 @@ DECLARE v_denied boolean := false;
 BEGIN
   BEGIN
     PERFORM * FROM public.atomic_pharmacy_dispense(
-      NULL,false,'ffffffff-ffff-ffff-ffff-fffffffffff2'
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff2'
     );
   EXCEPTION WHEN SQLSTATE '42501' THEN
     v_denied := true;
@@ -858,7 +858,7 @@ DECLARE v_invalid boolean := false;
 BEGIN
   BEGIN
     PERFORM * FROM public.atomic_pharmacy_dispense(
-      NULL,false,'ffffffff-ffff-ffff-ffff-fffffffffff3'
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff3'
     );
   EXCEPTION WHEN SQLSTATE '22023' THEN
     v_invalid := true;
