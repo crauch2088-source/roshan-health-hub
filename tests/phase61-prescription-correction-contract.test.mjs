@@ -156,10 +156,7 @@ test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin",
   assert.match(roleBoundaryMigration, /create_prescription_atomic_unchecked/);
   assert.match(roleBoundaryMigration, /fn_dispense_prescription_with_invoice_unchecked/);
   assert.match(roleBoundaryMigration, /pharmacy_dispense_permission_denied/);
-  assert.match(
-    roleBoundaryMigration,
-    /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription/,
-  );
+  assert.match(roleBoundaryMigration, /REVOKE ALL ON FUNCTION public\.fn_dispense_prescription/);
   assert.match(roleBoundaryMigration, /app_has_role_permission/);
   assert.match(
     roleBoundaryMigration,
