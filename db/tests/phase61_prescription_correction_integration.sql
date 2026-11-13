@@ -807,3 +807,65 @@ BEGIN
 END;
 $phase61b_pharmacist_can_reach_dispense$;
 RESET ROLE;
+
+
+-- The idempotent atomic RPC must reject non-pharmacists before payload validation or idempotency work.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000005',false);
+DO $phase61c_admin_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'admin fixture must retain broad pharmacy and billing permission bits';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL,false,'ffffffff-ffff-ffff-ffff-fffffffffff1'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Admin reached atomic pharmacy dispense without pharmacist role';
+  END IF;
+END;
+$phase61c_admin_atomic_dispense_denied$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006',false);
+DO $phase61c_super_admin_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL,false,'ffffffff-ffff-ffff-ffff-fffffffffff2'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Super Admin reached atomic pharmacy dispense without pharmacist role';
+  END IF;
+END;
+$phase61c_super_admin_atomic_dispense_denied$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_reaches_atomic_validation$
+DECLARE v_invalid boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL,false,'ffffffff-ffff-ffff-ffff-fffffffffff3'
+    );
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_invalid := true;
+  END;
+  IF NOT v_invalid THEN
+    RAISE EXCEPTION 'Pharmacist did not pass role gate to atomic dispense input validation';
+  END IF;
+END;
+$phase61c_pharmacist_reaches_atomic_validation$;
+RESET ROLE;
