@@ -642,7 +642,7 @@ UPDATE public.medicines
 SET selling_price = 12.50
 WHERE id = '61600000-0000-0000-0000-000000000001';
 
--- Super Admin keeps administrative read access but must not inherit clinical write authority.
+-- Super Admin cannot inherit clinical write authority; administrative read access remains separate.
 -- A real pharmacist in branch B creates the request; Super Admin in branch A must not resolve it.
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000004',false);
