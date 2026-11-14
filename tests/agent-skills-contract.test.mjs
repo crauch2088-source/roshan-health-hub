@@ -113,10 +113,7 @@ test("agent operating references exist and route to one canonical source of trut
     "docs/VERIFICATION_MATRIX.md",
   ];
   for (const path of required) {
-    assert.ok(
-      existsSync(join(root, path)),
-      "missing operating reference: " + path,
-    );
+    assert.ok(existsSync(join(root, path)), "missing operating reference: " + path);
   }
   const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
   const start = readFileSync(join(root, "docs/AGENT_START_HERE.md"), "utf8");
