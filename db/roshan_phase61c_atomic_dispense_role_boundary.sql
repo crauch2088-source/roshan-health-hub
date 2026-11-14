@@ -1,4 +1,7 @@
 -- Phase 61C: enforce pharmacist role at the active idempotent dispense RPC entry point.
+-- The legacy_pharmacist role is intentionally excluded: it has no current assignments
+-- and lacks the dedicated pharmacy.update and billing.create permission pair. Retire it
+-- from this clinical transaction boundary rather than broadening its historical grants.
 -- Phase 61B already guards the nested invoice-linked dispense RPC. This migration
 -- prevents Admin/Super Admin from entering the atomic workflow via broad permissions.
 BEGIN;
@@ -48,10 +51,10 @@ SET search_path TO ''
 AS $function$
 BEGIN
   IF NOT private.app_has_role_permission(
-    ARRAY['pharmacist','legacy_pharmacist'],
+    ARRAY['pharmacist'],
     'pharmacy.update'
   ) OR NOT private.app_has_role_permission(
-    ARRAY['pharmacist','legacy_pharmacist'],
+    ARRAY['pharmacist'],
     'billing.create'
   ) THEN
     RAISE EXCEPTION 'pharmacy_dispense_permission_denied'

@@ -969,6 +969,7 @@ $phase61c_atomic_dispense_acl$;
 DO $phase61c_security_definer_hardening$
 DECLARE
   v_wrapper record;
+  v_wrapper_source text;
   v_unchecked record;
   v_helper record;
 BEGIN
@@ -979,6 +980,15 @@ BEGIN
   IF v_wrapper.prosecdef IS DISTINCT FROM true
      OR NOT (COALESCE(v_wrapper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
     RAISE EXCEPTION 'public atomic pharmacy dispense wrapper must be SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosrc INTO v_wrapper_source
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.atomic_pharmacy_dispense(uuid,boolean,uuid)');
+  IF v_wrapper_source IS NULL
+     OR position('legacy_pharmacist' IN v_wrapper_source) > 0
+     OR position('ARRAY[''pharmacist'']' IN v_wrapper_source) = 0 THEN
+    RAISE EXCEPTION 'atomic dispense wrapper must allow only the canonical pharmacist role; legacy roles must fail closed';
   END IF;
 
   SELECT p.prosecdef, p.proconfig
