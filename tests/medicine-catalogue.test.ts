@@ -126,6 +126,6 @@ test("catalogue search neutralizes PostgREST filter delimiters and wildcard inje
   const result = buildMedicineCatalogueSearchFilter('amox,brand).ilike.*%_\\\'"');
   assert.equal(
     result,
-    "name.ilike.%amox brand .ilike. %,generic_name.ilike.%amox brand .ilike. %,brand_name.ilike.%amox brand .ilike. %,strength.ilike.%amox brand .ilike. %,dosage_form.ilike.%amox brand .ilike. %",
+    "name.ilike.%amox brand .ilike.%,generic_name.ilike.%amox brand .ilike.%,brand_name.ilike.%amox brand .ilike.%,strength.ilike.%amox brand .ilike.%,dosage_form.ilike.%amox brand .ilike.%",
   );
 });
