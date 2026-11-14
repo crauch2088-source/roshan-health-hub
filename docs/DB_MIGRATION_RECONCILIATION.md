@@ -1,3 +1,23 @@
+# Database migration reconciliation — current status and historical evidence
+
+**Refreshed:** 2026-11-14. This document contains a chronological evidence log. Its older dated snapshots are not current state unless explicitly revalidated.
+
+## Current checkpoint
+
+- Production project: jewzonxplxhogqrnhosl; last recorded ledger: 129 entries, latest version 20261102232941.
+- QA project: hopfohcnrtbiqjkgeukz; last recorded ledger: 27 entries, latest version 20261113232719.
+- Re-read both live ledgers and the repository migration manifest immediately before assigning or applying any migration. Do not rely on older 93/109/112-entry snapshots below.
+- Phase 61B is recorded as QA-applied; Phase 61C is a tested source candidate only. Confirm the current live ledger and exact migration source before any application.
+- Preserve the migration ledger. Never edit it to manufacture parity, replay a migration blindly, or assume a successful isolated fixture proves full historical bootstrap.
+- The owner-authorized synthetic-data reset and schema-rebuild scope is recorded in .specify/memory/constitution.md. It does not authorize Production test transactions or bypass exact-target, recovery, security, and release gates.
+- The existing historical identity-link migration contains intentionally redacted environment-specific identity material. Keep those values private; do not restore them to source or prompts.
+
+## How to use this record
+
+Treat each dated section below as evidence for the date and scope stated. Later evidence supersedes earlier evidence only for the same environment/object. Text-normalized source parity is not semantic equivalence; a baseline replay is not proof of platform recovery; schema counts are not authorization proof. Record exact project ref, ledger version, candidate SHA, and verification method for every new reconciliation.
+
+---
+
 ## Clinical E2E and canonical PG17 baseline — PR #79, CI green
 
 - Work branch: `feat/clinical-e2e-and-pg17-baseline`, based on `main`; no production Supabase writes or migrations were performed.

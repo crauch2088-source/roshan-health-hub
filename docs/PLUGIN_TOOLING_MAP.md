@@ -1,16 +1,32 @@
-# Execution policy — quota-safe, atomic delivery
+# Roshan Health Hub — Plugin & Integration Operating Map
 
-These rules govern every Roshan Health Hub task and override older conflicting workflow notes.
+Last refreshed: 2026-11-14. Current connection and live service status must be checked before each write; this map is routing guidance, not proof that an integration is currently authorized or available.
 
-1. **One atomic commit per logical task.** Prepare the complete implementation, tests, and documentation together; create one Git tree, one commit, then advance the branch ref with an expected-SHA lease. Never split a single task into repeated test/fix/docs commits.
-2. **One CI run per completed stage.** Finish the coherent change bundle before pushing and triggering CI. If CI fails, fix the actual failure and rerun only the necessary validation; do not create redundant commits merely to iterate on formatting or documentation.
-3. **Protect free Vercel quota.** Documentation-, SQL-, migration-, and script-only commits must skip frontend builds. Always squash-merge PRs. Never bypass quota limits, deploy unnecessarily, or upgrade paid services.
-4. **Batch read-only Supabase diagnostics.** Combine catalog, migration-ledger, policy, and role checks into one read-only CTE/JSON query wherever practical. Do not run repeated equivalent diagnostics; never use production as a synthetic test database.
-5. **Closed phases stay closed.** Do not re-verify or reopen Phases 29–33 unless relevant code or migration content changes, or new evidence identifies a concrete regression.
-6. **Consolidate database changes.** Prefer one comprehensive migration per logical phase. Use an Expand/Contract pair only when compatibility or deployment sequencing demonstrably requires it. Keep baseline fixtures and CI assertions aligned; never apply candidate migrations to production without an explicit release gate.
-7. **Resolve conflicts without rewriting published history.** Preserve newer main safety fixes, merge main into the existing feature branch with a normal fast-forwardable merge commit, then squash-merge. Never force-push or amend published commits.
+## Current project anchors
 
----
+- Repository: crauch2088-source/roshan-health-hub; main baseline last verified as a9040601702972bdf144fc96b9658eebd5a6d31a.
+- Active PR: #250 Draft, branch fix/phase61c-atomic-dispense-role-boundary-20261114; recheck head and reviews before acting.
+- Production Supabase: jewzonxplxhogqrnhosl; QA: hopfohcnrtbiqjkgeukz. Last recorded ledgers: 129 and 27 respectively; always refresh before migration work.
+- Production Vercel: roshan-health-hub, canonical alias roshan-health-hub.vercel.app; last recorded READY deployment is on main SHA a904060....
+- Existing rows in both environments are synthetic/test data. Existing-row reset/schema-rebuild authority is documented in Constitution Section X. Do not create synthetic clinical/business test transactions in Production.
+- The encrypted database backup is PostgreSQL-only; latest metadata check did not include decryption, and latest full restore evidence is not on the current backup-runner head. Do not overstate backup coverage.
+- No paid services, quota bypass, extra Vercel projects, or production test data.
+
+## Routing rules
+
+1. GitHub: inspect live main/branch/PR/issues and exact-head CI; use one atomic commit per logical task and expected-SHA ref updates.
+2. Supabase: read target identity, ledger, schema, policies, grants and dependencies before writes. Test in disposable PostgreSQL 17/QA. Production operations follow Constitution Section X.
+3. Vercel: verify project, branch, environment, current deployment and quota before release. Never force an unnecessary build or bypass the free-tier limit.
+4. Browser automation: use only for a defined acceptance scenario, safe account and scoped workflow; distinguish read-only smoke tests from transaction-producing tests.
+5. Clinical research: use current authoritative guidelines and preserve source/version/date/population; clinical policy still requires clinician approval.
+6. Figma/Product Design/Graphify: optional aids, never separate sources of truth or runtime dependencies.
+7. Gmail/Drive/Calendar/other external integrations: invoke only for a concrete task and authorized recipient/data scope; never transmit patient data or secrets.
+
+## Staleness rule
+
+Older dated integration snapshots and incident notes below are retained as history. They do not establish current connection state, migration counts, monitor state, deployment readiness, backup validity, or permissions. Refresh the live service before relying on any dated value.
+
+
 
 ## Execution note — 2026-10-18: Vercel deployment quota
 
