@@ -349,3 +349,13 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 - The retained encrypted artifact is in the canonical private Drive folder Roshan Health Hub - Encrypted Backups / 2026-11-12. File roshan-production-backup-43183851731.zip is present, not trashed, 305,284 bytes, MD5 22271054f6c10b1baf1d23ac4bdac24e. The private age identity remains owner-controlled and was not accessed; owner-side decryption of this latest artifact is still unverified.
 - The backup runner is manual-only. A validator or synthetic-key verifier test is not a new Production backup. Do not dispatch another external backup write without the explicit owner release gate.
 - Google Drive is an active integration; the Drive copy was verified by file metadata and parent folder, not downloaded or decrypted in ChatGPT. Do not store the private age identity in Drive, GitHub, source control or prompts.
+
+
+## Live integration recheck — 2026-11-14 (06:30 UTC)
+
+- GitHub: main a9040601702972bdf144fc96b9658eebd5a6d31a; current PR #250 code head 99b8b0689c6413b6d227fc035930136ad98516fc, Draft, mergeable, 10 ahead / 0 behind. Exact-head CI, Phase 61 PG17, insurance UI/integrity, prescription atomicity, privileged-role guard, CodeQL and Vercel status all passed. CI includes one intentional authenticated clinical-acceptance skip.
+- Supabase: direct read-only SQL is working for Production jewzonxplxhogqrnhosl and QA hopfohcnrtbiqjkgeukz; projects are ACTIVE_HEALTHY on PostgreSQL 17.6 and 17.11. The list-migrations helper intermittently failed project-organization resolution, so ledger evidence was read directly from supabase_migrations.schema_migrations. No hosted DDL/DML was run.
+- Vercel project roshan-health-hub is deployed READY at dpl_G9jScsLW3jDXFePVZLQgedwMMKRH on main SHA a9040601702972bdf144fc96b9658eebd5a6d31a; canonical alias and two project aliases are present, aliasError is null.
+- Google Drive connection is active. The encrypted PostgreSQL archive from runner run #43183851731 is present in the dated 2026-11-12 folder, 305,284 bytes, MD5 22271054f6c10b1baf1d23ac4bdac24e. Only metadata was read; the archive was not downloaded or decrypted. The private age identity remains owner-controlled.
+- Backup-runner main f171732b61fe0460c61a36aa63b861065f9ea9d1: latest main CI #43190851147 is validator-only. Latest full backup/restore #43183851731 is on parent SHA eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8; its isolated PG17 restore and encrypted upload passed. No backup dispatch or external write was performed.
+- Next tool-supported task: independent review of Phase 61C, followed by an approved QA-only application/read-back. No Production migration, ACL change, merge, or deployment promotion is authorized.
