@@ -941,3 +941,68 @@ BEGIN
   END IF;
 END;
 $phase61c_rejected_admin_no_idempotency$;
+
+-- A canonical pharmacist must complete the active atomic wrapper, not merely reach validation.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_atomic_dispense_success$
+DECLARE
+  v_first jsonb;
+  v_retry jsonb;
+BEGIN
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_first
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000013',
+      false,
+      'ffffffff-ffff-ffff-ffff-fffffffffff4'
+    ) AS r;
+
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_retry
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000013',
+      false,
+      'ffffffff-ffff-ffff-ffff-fffffffffff4'
+    ) AS r;
+
+  IF v_first IS NULL OR pg_catalog.jsonb_array_length(v_first) <> 1 THEN
+    RAISE EXCEPTION 'canonical pharmacist could not complete one-item atomic dispense';
+  END IF;
+  IF v_first IS DISTINCT FROM v_retry THEN
+    RAISE EXCEPTION 'idempotent retry changed the successful atomic dispense result';
+  END IF;
+  IF v_first->0->>'quantity_dispensed' IS DISTINCT FROM '2'
+     OR v_first->0->>'batch_number' IS DISTINCT FROM 'PHASE61C-VALID' THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned an unexpected batch or quantity';
+  END IF;
+END;
+$phase61c_pharmacist_atomic_dispense_success$;
+RESET ROLE;
+
+DO $phase61c_pharmacist_atomic_dispense_effects$
+BEGIN
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 8 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not decrement the selected batch exactly once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000013'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not create exactly one stock movement';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+      WHERE item_type='pharmacy'
+        AND item_id='61600000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not create exactly one pharmacy invoice line';
+  END IF;
+  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
+      WHERE request_id='ffffffff-ffff-ffff-ffff-fffffffffff4'
+        AND result_payload IS NOT NULL) <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not persist one idempotency result';
+  END IF;
+END;
+$phase61c_pharmacist_atomic_dispense_effects$;
+

@@ -3203,3 +3203,13 @@ Production remains **NO-GO**. Source/CI evidence for Phase 61C is strong, but it
 Next task: obtain independent SQL/security review of PR #250; then, only after the documented QA gate is approved, apply Phase 61C to QA and verify effective function ACLs/behavior by read-back. Do not apply Production changes. After this security boundary, reconcile the diverged Draft PR #229 with main using a normal two-parent merge and preserve its bilingual mobile workflow; do not merge or claim staff acceptance.
 
 The last evidence-weighted progress baseline remains 62% Engineering RC / 15% Operational Acceptance; this run does not justify a percentage increase. The historical 17–30 engineering-hour estimate is not a launch ETA.
+
+## Phase 61C positive-path regression — 2026-11-14
+
+- PR #250 was re-read at head `18fdd82ed8896926c097c7450b7c7f8e6cf3c374` (13 commits ahead / 0 behind main). GitHub reports no submitted reviews and no inline review threads; independent SQL/security review is still outstanding.
+- The existing Phase 61C tests proved Admin/Super Admin rejection, ACL/search_path boundaries, and that a pharmacist reaches input validation. The older Phase 49/50 positive dispense scenario runs before Phase 61C and uses a synthetic role code outside the Phase 61B canonical pharmacist allow-list. It therefore did not prove that the new public wrapper delegates a valid pharmacist dispense successfully.
+- Added a deterministic synthetic pharmacist fixture and post-Phase-61C integration regression: one linked prescription, one valid unexpired batch, successful call through `public.atomic_pharmacy_dispense`, identical idempotent retry, exactly one stock movement, one pharmacy invoice line, one persisted idempotency result, and the expected remaining batch quantity.
+- Added a source-contract assertion that keeps this positive-path regression present. This is disposable PostgreSQL 17 CI only; it is not hosted QA/Production application or operational acceptance.
+- No hosted DDL/DML, ACL/RLS/Auth/Storage change, real clinical/financial write, backup dispatch, PR merge, or deployment promotion occurred. PR #250 remains Draft.
+- Next: run the exact-head Phase 61 PostgreSQL 17 and CI workflows; then obtain independent second-person SQL/security review before any QA-only Phase 61C application. Production remains untouched.
+

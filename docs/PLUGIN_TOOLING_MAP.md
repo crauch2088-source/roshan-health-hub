@@ -359,3 +359,9 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 - Google Drive connection is active. The encrypted PostgreSQL archive from runner run #43183851731 is present in the dated 2026-11-12 folder, 305,284 bytes, MD5 22271054f6c10b1baf1d23ac4bdac24e. Only metadata was read; the archive was not downloaded or decrypted. The private age identity remains owner-controlled.
 - Backup-runner main f171732b61fe0460c61a36aa63b861065f9ea9d1: latest main CI #43190851147 is validator-only. Latest full backup/restore #43183851731 is on parent SHA eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8; its isolated PG17 restore and encrypted upload passed. No backup dispatch or external write was performed.
 - Next tool-supported task: independent review of Phase 61C, followed by an approved QA-only application/read-back. No Production migration, ACL change, merge, or deployment promotion is authorized.
+
+## Phase 61C positive-path test coverage — 2026-11-14
+
+- PR #250 adds a canonical pharmacist success-path regression after the Phase 61C wrapper is installed. The test verifies valid dispense, idempotent replay, stock decrement, one stock movement, one pharmacy invoice line, and a persisted idempotency result.
+- The existing negative role/ACL/no-side-effect assertions remain. All behavior runs only in disposable PostgreSQL 17 CI; hosted QA application remains gated by independent SQL/security review. Do not apply Production changes.
+

@@ -80,3 +80,11 @@ Vercel Production deployment dpl_G9jScsLW3jDXFePVZLQgedwMMKRH is READY on main S
 **Next:** independent SQL/security review of PR #250; only then consider an approved QA-only Phase 61C application and read-back. Keep Draft, do not merge, do not touch Production. Afterwards reconcile diverged PR #229 (40 ahead / 18 behind, not mergeable) using a normal two-parent merge and preserve its bilingual workflow.
 
 Last evidence-weighted progress baseline: **62% Engineering RC / 15% Operational Acceptance**; no increase claimed. No defensible launch ETA while these gates remain open.
+
+## Follow-up — Phase 61C positive-path regression (2026-11-14)
+
+- Independent source review of PR #250 at pre-change head `18fdd82ed8896926c097c7450b7c7f8e6cf3c374` found a coverage gap, not a confirmed runtime defect: the suite proved non-pharmacist rejection and pharmacist access to invalid-input validation, but did not execute a successful dispense through the new outer wrapper. The existing Phase 49/50 positive path runs before Phase 61C and uses a non-canonical synthetic role code.
+- Added a post-Phase-61C synthetic canonical-pharmacist success case with a valid linked prescription and unexpired batch. It asserts successful wrapper delegation, exact idempotent replay, a single stock movement, a single pharmacy invoice line, one persisted idempotency result, and remaining batch quantity.
+- The test/fixture/source-contract update is on PR #250 only. Exact commit and resulting check IDs will be recorded after GitHub completes the run.
+- No hosted QA/Production migration, DDL/DML, ACL change, external backup write, merge, or deployment promotion occurred. Independent second-person SQL/security review is still required before a QA-only application.
+

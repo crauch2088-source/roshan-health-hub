@@ -208,3 +208,11 @@ test("Phase 61C denies authenticator execution and leaves no idempotency row aft
   assert.ok(integration.includes("phase61c_security_definer_hardening"));
   assert.ok(workflow.includes("Reapply Phase 61C to verify forward-migration idempotence"));
 });
+
+test("Phase 61C preserves successful pharmacist dispense and idempotent replay", () => {
+  assert.ok(fixture.includes("PHASE61C-VALID"));
+  assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_success"));
+  assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_effects"));
+  assert.ok(integration.includes("idempotent retry changed the successful atomic dispense result"));
+});
+

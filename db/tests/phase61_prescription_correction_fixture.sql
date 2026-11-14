@@ -167,3 +167,62 @@ WHERE id = '61800000-0000-0000-0000-000000000013';
 UPDATE public.prescriptions
 SET dispensed_at = clock_timestamp(), dispensed_by = '61300000-0000-0000-0000-000000000002'
 WHERE id = '61700000-0000-0000-0000-000000000004';
+
+-- Phase 61C positive-path fixture: a linked prescription and one valid FEFO batch.
+INSERT INTO public.pharmacy_inventory (
+  id, medicine_id, batch_number, expiry_date, quantity, quantity_received,
+  quantity_remaining, branch_id
+) VALUES (
+  '61900000-0000-0000-0000-000000000001',
+  '61600000-0000-0000-0000-000000000001',
+  'PHASE61C-VALID',
+  CURRENT_DATE + 90,
+  10,
+  10,
+  10,
+  '61100000-0000-0000-0000-000000000001'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prescriptions (
+  id, patient_id, visit_id, prescribed_by, doctor_id, prescription_type,
+  is_external, status, created_by, updated_by
+) VALUES (
+  '61700000-0000-0000-0000-000000000013',
+  '61400000-0000-0000-0000-000000000001',
+  '61500000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  'internal',
+  false,
+  'pending',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prescription_items (
+  id, prescription_id, medicine_id, medication_name, dose, dosage,
+  frequency, duration, quantity, instructions, dosage_form, route,
+  unit_price, created_by, updated_by, is_dispensed, dispensed_quantity
+) VALUES (
+  '61800000-0000-0000-0000-000000000015',
+  '61700000-0000-0000-0000-000000000013',
+  '61600000-0000-0000-0000-000000000001',
+  'Amoxicillin 500 mg',
+  '500 mg',
+  '500 mg',
+  'BID',
+  '1 day',
+  2,
+  'After food',
+  'capsule',
+  'oral',
+  12.50,
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  false,
+  0
+)
+ON CONFLICT (id) DO NOTHING;
+
