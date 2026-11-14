@@ -837,6 +837,9 @@ SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006'
 DO $phase61c_super_admin_atomic_dispense_denied$
 DECLARE v_denied boolean := false;
 BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'Super Admin fixture must demonstrate global permission bypass';
+  END IF;
   BEGIN
     PERFORM * FROM public.atomic_pharmacy_dispense(
       NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff2'
