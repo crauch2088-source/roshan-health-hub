@@ -11,15 +11,15 @@
 | Main baseline | `a9040601702972bdf144fc96b9658eebd5a6d31a` |
 | Active branch | `fix/phase61c-atomic-dispense-role-boundary-20261114` |
 | Active PR | [#250 — atomic pharmacy dispense pharmacist-role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) |
-| PR head | `f526bf378192c5d1ff7b68d849235e74b80d7d5c` |
-| Branch comparison | 37 commits ahead, 0 behind `main` |
+| PR head | `b90a05bda40d1dda68360768abf36a205a40a96e` |
+| Branch comparison | 39 commits ahead, 0 behind `main` |
 | PR state | Open, Draft |
 | Latest READY Production deployment | `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH` on main SHA `a9040601702972bdf144fc96b9658eebd5a6d31a`; canonical alias `roshan-health-hub.vercel.app`; `aliasError=null` |
 | Independent review | 0 submitted reviews; 0 inline review threads |
 
 ## Exact-head verification
 
-SQL/application code checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`. Latest docs-only head: `f526bf378192c5d1ff7b68d849235e74b80d7d5c`.
+SQL/application code checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`. Latest docs-only head: `b90a05bda40d1dda68360768abf36a205a40a96e`.
 
 | Workflow / check | Result |
 |---|---|
@@ -77,7 +77,7 @@ The only public function callers found for `private.app_has_claim_branch(uuid)` 
 | [PR #181 — payment receipts](https://github.com/crauch2088-source/roshan-health-hub/pull/181) | 37 ahead / 18 behind | 29 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; Phase 58/59 hosted contract absent; do not deploy UI |
 | [PR #210 — catalogue identity/pack attestation](https://github.com/crauch2088-source/roshan-health-hub/pull/210) | 74 ahead / 18 behind | 25 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; attestation is not physical-pack verification or a dispensing hard-stop |
 | [PR #251 — TIT UX comparison](https://github.com/crauch2088-source/roshan-health-hub/pull/251) | Based on current main at creation | Documentation-only | Draft; no runtime changes |
-| [PR #252 — Feature 056 specification consolidation](https://github.com/crauch2088-source/roshan-health-hub/pull/252) | 2 ahead / 0 behind | Spec Kit validation passed; Python CodeQL passed; JavaScript/TypeScript CodeQL still running at snapshot | Draft; documentation-only; no clinical activation |
+| [PR #252 — Feature 056 specification consolidation](https://github.com/crauch2088-source/roshan-health-hub/pull/252) | 2 ahead / 0 behind | Spec Kit validation and both CodeQL language scans passed; no runtime changes | Draft; documentation-only; no clinical activation |
 
 The remaining older feature branches (#181 and #210) are divergent from current main. Their historical green CI is not current-main validation. Reconcile with normal two-parent merges, resolve overlapping source/spec/manifest files, then rerun exact-head CI. Do not force-push or merge stale branches. PR #185 was also closed as superseded by the consolidated #252 documentation package.
 
