@@ -2916,15 +2916,258 @@ PR [#216](https://github.com/crauch2088-source/roshan-health-hub/pull/216) stren
 - The deployed application includes the intentionally deferred/disabled insurance claim-payment UI. The new financial schema is not active; do not enable receipt-v2 frontend paths until Phase 58/59 are separately rehearsed and applied under approved release gates.
 - No financial records, patient/clinical records, roles, Auth, Storage or database schema were changed by this deployment. Encrypted backup/restore and QA migration rehearsal remain mandatory before any hosted schema change.
 
-## H+1 Phase 60 exact-head validation and scope boundary — 2026-11-11
+## Parallel execution audit — 2026-11-12 (live evidence, 10 workstreams)
 
-- Reconciled PR #210 with current main; branch is 57 commits ahead and zero behind. Exact code head 3eb6e4e4ebd25ef8b8ebb7bdfddd3d8b0412f5ee passed 28 checks (27 success, one intentional authenticated clinical-acceptance skip, zero failures), including Phase 60 PostgreSQL 17, typecheck, lint, build, security audits, source parity, pharmacy/clinical integrations and Spec Kit.
-- Phase 60 identity updates are limited to the existing name/generic/brand/strength/dosage-form fields and explicit role permission. Pack verification is currently an append-only human attestation event with saved identity snapshot/hash only.
-- It is not photo/barcode/lot/expiry evidence, not branch-scoped, and not a dispensing prerequisite. Do not infer package conversion or activate medication-engine rules from this event. Stronger evidence or dispensing hard-stop requires a separate pharmacist/owner decision.
-- PR remains Draft for independent SQL/security review and physical-pack workflow acceptance. No hosted migration, catalogue backfill, inventory write, role mapping change or production deployment occurred.
- 
-## H+2 Phase 60 validation after Phase 58/59 mainline merge — 2026-11-11
+**Scope:** read-only Production/QA inspection plus exact-head GitHub/CI review of ten open workstreams. The only source change in this checkpoint is the one-line Prettier correction committed to PR #210; no hosted database, business data, Auth/Storage, deployment, backup dispatch, or merge was performed.
 
-- PR #210's mainline-reconciled code head 230fb8ebcc8ac6c820f82dd8714b8050f0c30251 passed 28 checks: 27 success, one intentional authenticated clinical-acceptance skip, zero failures. This run includes Phase 58/59 currency and receipt PG17 suites plus Phase 60 PG17, migration source parity, typecheck, lint, build and security checks.
-- Phase 60 remains an audit-only identity/pack-attestation slice. It does not prove pack contents by image/barcode/lot/expiry, is not branch-scoped, and is not a dispense prerequisite.
-- PR remains Draft pending independent SQL/security review and pharmacist physical-pack workflow acceptance. No QA/Production migration, catalogue backfill, inventory mutation or role change occurred.
+### A. Live database state — verified 2026-11-12
+
+| Check | QA | Production |
+|---|---:|---:|
+| Migration ledger rows | 24 | 129 |
+| Latest migration | `20261111223309_roshan_phase61_prescription_item_correction_workflow` | `20261102232941_roshan_synthetic_patient_cleanup_and_stock_ledger_reversal` |
+| Phase 57 quantity guard | Applied (`20261104065852`) | Not applied |
+| Phase 57B free-text/external guard | Applied (`20261111215510`) | Not applied |
+| Phase 61 correction workflow | Applied (`20261111223309`) | Not applied |
+
+The current live function definition was checked independently in both projects. Production `fn_dispense_prescription_with_invoice(uuid,boolean)` still contains `COALESCE(pi.quantity,1)`, with no explicit NULL-quantity or external-prescription guard. QA has no quantity fallback and has explicit NULL, free-text and external-prescription rejection. This is a confirmed medication-safety release blocker, not a hypothetical test finding.
+
+Phase 61 QA verification is recorded in PR #229: correction tables have ENABLE+FORCE RLS; authenticated direct access is SELECT-only; anon cannot read; authenticator has no direct write privileges; dedicated pharmacist request / doctor resolution permissions exist. The PR reports a QA-only synthetic pharmacist/doctor request-and-reject smoke with audit events and unchanged inventory/finance counts, followed by rollback and zero residual synthetic rows. Production remains untouched.
+
+**Migration policy:** do not replay the full historical QA ledger into Production or hand-edit either ledger. Build a forward-only, dependency-ordered Production package for Phase 57 then 57B only after the exact source/effective-function review, current encrypted backup, isolated restore rehearsal, and separate release approval. Phase 61 remains a separate later deployment because its UI and correction functions must be released together after real staff acceptance.
+
+### B. Ten active workstreams reviewed
+
+| Workstream | Current evidence | Decision / next gate |
+|---|---|---|
+| PR #229 — pharmacist-to-prescriber correction | Draft; current head `9c54ee0655acfafdbb1f3509f4de7ed10be6a420`; 7 associated workflows completed successfully. QA Phase 61 rollout recorded. | Keep Draft. Independent SQL/security review plus Android 320–430px RTL/LTR pharmacist and prescriber UAT. |
+| PR #233 — medication calculation foundation | Draft; head `f237623a42797a7345e0d6ecfba3dc081b3d9aa1`; 8 associated workflows successful. | Keep arithmetic-only. No drug recommendation, clinical dose, route, frequency or duration rules are approved or active. |
+| PR #210 — catalogue identity / pack attestation | Draft; original head failed lint only because of one redundant blank line in `tests/inventory-receive-rpc.test.ts`. The Phase 60 PostgreSQL 17 job and other completed integration jobs passed. | Removed that single blank line in commit `318ade4ff844fba8a20092baba0cd43aaa27c85c`; exact-head CI is pending. No behavior or SQL changed. |
+| PR #181 — payment receipts | Draft; associated CI/integration workflows successful; Vercel preview reports free daily build-rate limit. | Do not merge independently: Phase 58/59 receipt schema/RPC are not present in either hosted environment. Reconcile with the finance dependency first; no quota retry. |
+| PR #222 — H+3 evidence checkpoint | Draft; 2 commits ahead / 10 behind main; no associated workflow run returned. | Reconcile against current main or close as superseded; do not merge stale evidence. |
+| PR #179 — saved-prescription printing | Draft; associated CI successful; 39 commits ahead / 9 behind main; GitHub reports non-mergeable. | Reconcile and rerun exact-head checks; actual A4/thermal printer acceptance remains external. |
+| PR #213 — backup destination documentation | Draft; CI successful; 1 commit ahead / 14 behind main; non-mergeable. | Reconcile documentation only. A prior encrypted database archive and owner-side decryption/readability evidence exist, but a new full backup using the current checksum helper is unverified. Storage bytes and Vault secrets are outside the archive; no recurring schedule exists. |
+| PR #157 — major dependency updates | Open, non-Draft; 1 commit ahead / 19 behind main. Historical CI succeeded on its branch head. | Do not merge stale dependency changes without current-main rebase, lockfile/security review and exact-head CI. |
+| PR #185 — evidence-based prescribing specification | Draft; Spec Kit and CI workflows succeeded on its head; 7 ahead / 32 behind main; non-mergeable. | Reconcile with PR #233 and current clinical scope. No protocol activation; medicine-specific evidence and clinician/pharmacist approval remain mandatory. |
+| PR #112 — UX modernization plan | Open; 2 ahead / 123 behind main; CI succeeded on its old branch head. | Treat as superseded planning material; carry forward only still-valid acceptance criteria into the current UX plan. |
+
+### C. Security and release observations
+
+- Supabase Security Advisor still reports private pharmacy idempotency tables with RLS but no policies, `pg_trgm` in `public`, anon-callable SECURITY DEFINER `setup_required()`, and multiple authenticated-callable SECURITY DEFINER RPCs. These are triage findings, not proof that every RPC is exploitable; continue function-by-function review and do not bulk-revoke intended application RPCs.
+- The Phase 61 correction tables did not produce a new missing-policy finding after QA rollout.
+- QA's Phase 57B and Phase 61 migration rows make the earlier 22-row QA ledger reports stale; use the current 24-row live result.
+- The encrypted archive evidence is useful but does not yet satisfy the current release gate: rerun the full backup with the current runner/checksum helper, verify ciphertext and manifest, complete an isolated PostgreSQL 17 restore, and explicitly account for Storage/Vault scope.
+- PR/CI success and Vercel status do not establish authenticated clinic acceptance, correct live migration parity, printer behavior, or staff readiness.
+
+### D. Execution order from this checkpoint
+
+1. Close PR #210's exact-head CI after the formatting-only correction; review the complete Phase 60 ACL/attestation semantics before any merge.
+2. Prepare and test the forward-only Phase 57 + 57B Production migration package in disposable PostgreSQL 17, including no-side-effect assertions for NULL quantity, free-text items, external prescriptions, branch mismatch, insufficient/expired stock and invoice rollback.
+3. Re-run the current encrypted Production backup and isolated restore; preserve the explicit Storage/Vault recovery gap.
+4. Reconcile current source, QA/Production ledgers, and effective function definitions without changing hosted ledgers.
+5. Reconcile PR #229 and #233 with each other and current main; retain Phase 61 Draft status until independent review and real prescriber/pharmacist acceptance.
+6. Resolve the Phase 58/59 dependency before PR #181; rebase PR #179, #213, #222, #157 and #185 only where their scope remains current.
+7. Complete authenticated Android/browser workflows in Arabic RTL and English LTR, then physical printing and clinic staff acceptance.
+
+**Release decision:** Production remains blocked for pharmacy migration rollout. No Production DDL/DML or deployment promotion occurred in this checkpoint.
+
+**Progress accounting:** the last canonical weighted baseline remains historical at 51% Engineering RC / 11% Operational Acceptance. This audit does not supply the complete weighted denominator needed to recalculate a defensible percentage or ETA; do not present those historical figures as freshly measured.
+
+## Fast follow-up — exact-head CI and live-ledger reconciliation (2026-11-12)
+
+- PR #234 documentation CI completed successfully on head `b4501661edc3165354d6cf846a0d3784ddfc5b7c`.
+- PR #210 formatting-only follow-up completed all five exact-head workflows successfully on `318ade4ff844fba8a20092baba0cd43aaa27c85c`; the PR remains Draft for independent SQL/security review and pack-attestation acceptance.
+- PR #211 Phase 58/59 was merged on 2026-11-11 at merge commit `fb54651533ffd04b2f20387a976f88293110c513`; its exact-head snapshot contains 12 successful workflows and zero failures. The app deployment reached READY, but live QA/Production queries still show zero `currency_code` columns on the seven target financial tables and zero `get_invoice_payment_receipt_status_v2` functions. Thus the application-code merge/deployment did not apply the candidate database migrations; Phase 58/59 remain hosted-schema release gates.
+- PR #216 Phase 49 quarantine test follow-up was merged on 2026-11-11; its exact-head snapshot contains four successful workflows and zero failures. The prior `mergeable=false` reading was a closed/merged PR state, not an outstanding merge conflict.
+- The exact live migration query resolves the earlier Phase 57B ambiguity: QA has rows `20261104065852` (Phase 57), `20261111215510` (Phase 57B), and `20261111223309` (Phase 61); Production has none of these. Some main-branch documentation/manifest excerpts still describe Phase 57B as candidate-only or say it is not applied to QA. Those documents are stale and must be reconciled; the live migration ledger is authoritative for applied-version presence, while the effective function definition is authoritative for behavior.
+- Current live catalog fingerprint was rechecked: QA 58 tables / 866 columns / 235 constraints / 255 indexes / 212 policies / 74 triggers / 150 functions; Production 56 / 842 / 215 / 249 / 210 / 69 / 143.
+- PR #233's pure calculator/protocol matcher is intentionally isolated from production recommendations. Its own guardrails require a reviewed and active protocol, jurisdiction/population/setting match, source provenance and dual GP/pharmacist approval; synthetic test fixtures do not constitute clinical protocol approval.
+- No Production or QA schema/data changes occurred during this follow-up. No PR was merged.
+
+## Backup runner execution checkpoint — 2026-11-12
+
+- Manual encrypted Production backup workflow run [#21](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43164547237) was dispatched from the backup-runner `main` branch with explicit confirmation. Its validation job passed; the backup job stopped at credential configuration because both `SUPABASE_DB_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` were empty. No Production database connection, dump, restore, encrypted artifact, or Drive upload occurred.
+- Backup-runner PR [#5](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/5) was squash-merged as `e7c8c6718d5d7acc7f46a17a2c99c0b222caafcf`. It adds an early fail-closed check for exactly one DB credential and the age recipient. Branch-only run [#22](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43164851066) exercised the identical workflow blob: the expected missing-secret error occurred, the backup job was skipped, and logs confirm CLI setup and Production connection were not reached.
+- Backup-runner PR [#4](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/4) was squash-merged as `fd6157affc0e1e203e5f770f4790015b31c4a057`; it adds the canonical encrypted Drive destination link and dated child-folder instruction to the private runner README.
+- Remaining backup gate: the owner must add exactly one credential as a GitHub Actions repository secret (`SUPABASE_DB_PASSWORD` is the documented fallback when temporary-token access is unavailable). Never paste the secret into ChatGPT or a GitHub issue. Then rerun the manual backup and verify the encrypted artifact plus isolated PostgreSQL 17 restore before considering Production migrations.
+- No Production/QA schema, business data, Auth, Storage, or secrets were modified in this checkpoint.
+
+## Backup runner auth preflight correction — 2026-11-12
+
+- The first backup preflight test ([run #22](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43164851066)) exposed a second independent requirement after the DB-credential guard: Supabase CLI authentication also requires the SUPABASE_ACCESS_TOKEN Actions secret. The failure occurred before CLI setup and before any Production connection.
+- Backup-runner PR [#6](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/6) was squash-merged as `2bf3018a09edf53508521a1428bf9f7f2417feb1`. The workflow now requires SUPABASE_ACCESS_TOKEN, passes it into both jobs, requires exactly one of SUPABASE_DB_ACCESS_TOKEN / SUPABASE_DB_PASSWORD, and checks AGE_RECIPIENT before backup execution.
+- Backup-runner PR [#7](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/pull/7) was squash-merged as `464456a25335f60bc1721e2c6b194aed53b7382d`. The private runner README now explains the separate CLI-auth and database-connection secrets, including that the same PAT may be stored under both names for temporary database access.
+- **Current owner action:** configure SUPABASE_ACCESS_TOKEN plus exactly one database credential secret (SUPABASE_DB_ACCESS_TOKEN for temporary-token access, or SUPABASE_DB_PASSWORD fallback), and the public age recipient as repository variable AGE_RECIPIENT. Never put secret values in ChatGPT or source control.
+- A fresh encrypted Production backup and isolated PostgreSQL 17 restore are still not complete. No Production or QA schema/data changes occurred; no credentials were created or changed by these PRs. The Production pharmacy migration remains NO-GO.
+
+
+## Current readiness re-audit — 2026-11-12 (direct read-only verification)
+
+This checkpoint supersedes older 2026-11-12 ledger snapshots where the live values below differ. It is an audit and evidence-weighting update only; audit work itself earns no implementation-completion credit.
+
+### Direct hosted database verification
+
+| Measure | Production | QA |
+|---|---:|---:|
+| PostgreSQL | 17.6 | 17.11 |
+| Migration rows | 129 | 26 |
+| Latest migration | `20261102232941` | `20261112061251` |
+| Public tables | 56 | 58 |
+| Public columns | 842 | 873 |
+| Public RLS policies | 210 | 212 |
+| Public functions | 96 | 101 |
+
+Read-only effective-function inspection of `public.fn_dispense_prescription_with_invoice(uuid,boolean)` confirms:
+- Production still has the `COALESCE(pi.quantity,1)` fallback; no explicit NULL-quantity, free-text-item, or external-prescription guard is present.
+- QA has the explicit NULL-quantity guard, rejects free-text items and external prescriptions, and has no quantity-to-one fallback.
+- Active pending prescription items with NULL quantity: zero in both environments. This does not make the Production fallback safe; it remains a latent unsafe behavior if such a row is introduced.
+
+Production and QA are not interchangeable migration histories. Their ledger counts/latest versions and effective function ACLs differ. The two private Phase 55 helpers `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` have default/PUBLIC-effective EXECUTE in Production (including effective anon/authenticated execution) but owner-only ACLs in QA. No ACL or schema changes were made during this audit.
+
+### Applied/candidate boundaries
+
+- QA has Phase 55, Phase 57, Phase 57B, Phase 58, Phase 59 and Phase 61 applied; Production has none of these phase versions.
+- QA Phase 58/59 includes the seven financial `currency_code` columns and `get_invoice_payment_receipt_status_v2(uuid[])`; Production still lacks both.
+- Phase 61 is QA-only. Its correction workflow has a QA synthetic pharmacist/doctor request-and-reject smoke with audit events and no inventory/finance side effects, followed by rollback. The UI/feature PR remains Draft pending independent review and real pharmacist/prescriber Android acceptance.
+- Phase 60 medicine identity/pack attestation and the arithmetic-only medication engine remain Draft candidates; neither is approved clinical protocol activation.
+- The 10 named forward-phase source mappings documented in the release-gate workstream are useful scoped evidence, not complete historical ledger parity. Three shared version IDs collide with different names/fingerprints; Production-only and QA-only historical rows remain.
+
+### Backup, release and deployment gates
+
+- The private backup runner's credential-preflight validation has passing secret-free tests, but no successful fresh Production dump + encryption + current-runner isolated PostgreSQL 17 restore has been evidenced in this checkpoint. Prior encrypted archive/decryption/restore evidence is historical and database-only; Storage object bytes and Vault secrets are excluded.
+- Do not apply Phase 55/57/57B/58/59/61 to Production by replaying QA history or copying ledger rows. Production requires a reviewed forward-only package, current encrypted backup and isolated restore, exact-head disposable PostgreSQL 17 tests, source/effective-catalog preflight, post-apply verification, and the applicable human acceptance gates.
+- The audit began from main `0f7c4eb75176a5dfce6d3a756aa02e8de8a4c214`; this documentation update was subsequently squash-merged as `a32fb219e25c1f4f407df2ff6a88a99e0f8ae8f1`. The earlier release-documentation PR #236 is six commits ahead and seven behind/diverged from the audit base; do not merge its stale base without reconciliation and exact-head checks.
+- No Production or QA DDL/DML, ACL/RLS/Auth/Storage change, patient/clinical/financial data write, backup dispatch, or deployment promotion was performed. PR #241 itself was squash-merged as a documentation-only record; no application code or hosted state changed.
+
+### Evidence-weighted progress recalculation
+
+Use the existing six-workstream Engineering RC denominator and weights from the H0/H+1 ledger. These are conservative, judgment-based completion estimates against current evidence, not a raw checkbox count:
+
+| Workstream | Weight | Current estimate | Basis |
+|---|---:|---:|---|
+| A. Orchestration, scope, evidence | 10% | 95% | Constitution/AGENTS delegation aligned on main; current live and PR evidence reconciled |
+| B. Pharmacy + medicine catalogue | 20% | 75% | Phase 57/57B QA guards and Phase 61 QA workflow/smoke exist; Phase 60 candidate tests pass; independent review and real pharmacist/prescriber acceptance remain |
+| C. SDG finance + receipts | 20% | 70% | Phase 58/59 applied and verified in QA; Production schema/RPC and finance/receipt acceptance remain |
+| D. Migration provenance + security | 25% | 40% | Ten named forward phases source-mapped; historical ledger divergence and Production Phase 55 ACL gap remain |
+| E. Mobile, bilingual UX, printing | 10% | 35% | Bilingual UI/automated contracts and print candidates exist; Android/browser, physical printer and staff acceptance remain |
+| F. QA, recovery, release decision | 15% | 30% | Prior encrypted archive/decrypt/restore evidence and passing backup-runner validator tests; current-runner full backup/restore and authenticated UAT remain |
+
+Weighted Engineering RC: **56.5% (reported as 57%)**, calculated as `sum(weight × workstream estimate)`. This is not a claim that 57% of every planned feature is implemented or that Production is ready.
+
+Separate operational-acceptance estimate:
+
+| Gate | Weight | Current estimate |
+|---|---:|---:|
+| Authenticated role/branch QA acceptance | 25% | 15% |
+| Real staff workflow UAT | 25% | 0% |
+| Android/browser/RTL/LTR and physical printing | 20% | 0% |
+| Backup and recovery | 15% | 50% |
+| Production migration/release authorization | 15% | 0% |
+
+Weighted operational acceptance: **11.25% (reported as 11%)**. The limited QA credit reflects only the synthetic pharmacist/doctor correction smoke, not complete authenticated clinic acceptance.
+
+**ETA:** approximately **20–35 focused engineering hours** to reach a defensible Engineering RC, conditional on no new critical defects and timely access to a fresh backup/restore run. Calendar time to operational release cannot be responsibly estimated until owner-managed backup credentials, real staff UAT, target Android/browser checks, physical printing, and Production rollout gates are completed.
+
+
+
+## Next-session execution plan — 2026-11-12
+
+- Canonical detailed runbook: [`docs/NEXT_SESSION_EXECUTION_PLAN_2026-11-12.md`](NEXT_SESSION_EXECUTION_PLAN_2026-11-12.md).
+- Priority 1 is to review backup-runner PR #8, run the manual encrypted Production backup with `confirm_production_backup=true`, verify the PostgreSQL 17 restore, and transfer the encrypted artifact to the canonical dated Google Drive folder. Secret names/presence were inspected read-only; values were not accessed. The latest prior workflow run was a false-confirmation no-op, not a backup.
+- Priority 2 is exact-source Phase 57/57B pharmacy migration provenance and disposable PostgreSQL 17 regression; Phase 55 private-helper ACL/trigger review proceeds separately. Production remains NO-GO until the backup/recovery, source, tests, ACL, and post-change gates pass.
+- QA live ledger is 26 rows/latest `20261112061251`; Production is 129/latest `20261102232941`. Phase 55/57/57B/58/59/61 remain QA-only at this checkpoint.
+- This planning/documentation work earns no implementation-completion credit. No live database, secrets, backup, artifact, or deployment was changed in this round.
+
+
+## Execution checkpoint — 2026-11-12 (supersedes earlier same-day backup blockers)
+
+This section supersedes the earlier 2026-11-12 notes that said no fresh backup had been produced or that the owner still needed to add `SUPABASE_DB_PASSWORD`.
+
+- Application main: `5159d469b34b794bb68b2fbe245552cd509188a6`; PR #243 merged; main CI [#43183563642](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43183563642) passed.
+- Backup-runner PR #8 merged; runner main: `eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8`; runner CI [#43183801681](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183801681) passed.
+- Fresh manual encrypted Production backup [#43183851731](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183851731) succeeded. Credential preflight ran and passed; backup job's local PostgreSQL 17 restore rehearsal, critical table-count comparisons, encrypted-only artifact upload and safe summary all passed.
+- Artifact [`roshan-production-backup-43183851731.zip`](https://drive.google.com/file/d/1HQxRWPIkYLeFQ0DNR-8wSEULLYCWMM4o/view) is retained in the canonical private Drive folder. Size 305,284 bytes; GitHub SHA-256 `54b799545d1cb6eaccd16cf3964a3b6a5421c292c457504b967f5bcf5b488dd9`; local digest and Drive size/MD5 read-back match. Its contents are only the age-encrypted database archive and checksum manifest.
+- One-time GitHub Actions secret `SUPABASE_DB_PASSWORD` was deleted and verified absent. Do not ask for or expose any secret values.
+- Exact QA statement payload parity was confirmed for Phase 55, Phase 57 and Phase 57B. Main CI [#43183563642](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43183563642) passed the Phase 57/57B PostgreSQL 17 pharmacy integration job; dedicated Phase 55 PG17 workflow [#43184305893](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43184305893) passed.
+- Production remains unchanged and unsafe at the dispensing boundary: the live function still contains `COALESCE(pi.quantity,1)`; private Phase 55 helpers remain PUBLIC-effective. QA has all three guards and owner-only private helper ACLs.
+- Storage buckets: 3 in both environments; Storage objects: 0; Vault secrets: 0. Platform settings, API/JWT keys, Edge Function secrets, custom-domain settings, Storage object bytes and private age identity are not included in the database backup.
+- Owner-side decryption, independent second-person migration review, explicit Production release window, and migration-history-preserving forward application mechanism remain open. **No Production or QA DDL/DML/ACL/RLS/Auth/Storage changes were made.**
+
+### Updated evidence-weighted progress
+
+| Engineering RC workstream | Weight | Previous | Current | Reason |
+|---|---:|---:|---:|---|
+| A. Orchestration, scope, evidence | 10% | 95% | 95% | No change |
+| B. Pharmacy + medicine catalogue | 20% | 75% | 75% | No Production feature activation or staff acceptance |
+| C. SDG finance + receipts | 20% | 70% | 70% | No change |
+| D. Migration provenance + security | 25% | 40% | 50% | Exact QA payload parity for Phases 55/57/57B and passing PG17 tests; Production gaps remain |
+| E. Mobile, bilingual UX, printing | 10% | 35% | 35% | No change |
+| F. QA, recovery, release decision | 15% | 30% | 50% | Fresh encrypted backup, local PG17 restore rehearsal, independent ciphertext checks and off-site Drive copy; owner decryption/platform recovery remains |
+
+Weighted Engineering RC: **62.0%** (previously 56.5%). Operational acceptance: **15.0%** (previously 11.25%), reflecting backup/recovery moving from 50% to 75%; real staff, Android/printing and Production release acceptance remain 0%. These are conservative evidence-weighted estimates, not Production readiness claims.
+
+Estimated remaining focused engineering effort to a defensible Engineering RC: **17–30 hours**, conditional on the owner-side decryption check, independent review, and no new critical defect. Calendar time to operational release remains unestimable until staff UAT and physical acceptance occur.
+
+Detailed evidence: [`docs/BACKUP_EVIDENCE_2026-11-12.md`](BACKUP_EVIDENCE_2026-11-12.md).
+
+## Execution checkpoint — 2026-11-12: SECURITY DEFINER triage and receipt compatibility
+
+- Read-only Production/QA catalog and advisor triage is recorded in [SECURITY_DEFINER_TRIAGE_2026-11-12.md](SECURITY_DEFINER_TRIAGE_2026-11-12.md).
+- Public SECURITY DEFINER inventory: Production 53 total / 26 authenticated-callable / 1 anon-callable; QA 58 / 30 / 1. Every authenticated-callable public SECURITY DEFINER function has a fixed empty `search_path`. The three functions without a direct `app_has_perm` call are individually accounted for: a wrapper delegating to the guarded visit-completion RPC, an `auth.uid()`-scoped self-profile RPC, and the intentional boolean `setup_required()` bootstrap check.
+- The concrete common-function ACL drift is `public.post_insurance_claim_payment(uuid,numeric,text,text)`: authenticated EXECUTE remains in Production but is revoked in QA. Phase 58's tracked conditional revoke is the intended forward path; insurance settlement remains deferred.
+- The two Phase 55 private helper ACL gaps remain Production-only: `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` are PUBLIC-effective in Production but owner-only in QA. Phase 55's exact QA payload and PostgreSQL 17 regression passed.
+- Private dispensing-idempotency tables have RLS enabled, no policies, and no anon/authenticated/service_role SELECT grants. Treat the advisor's no-policy INFO finding as intentional isolation; do not add policies or drop the legacy table without dependency review.
+- PR #181 receipt compatibility correction is validated on branch head `906bf308957f61754a494447b8921c97b6bb10f9`: direct invoice/payment selects no longer require Phase 58-only `currency_code` columns before rollout; the receipt model trusts only the Phase 59 persisted-currency RPC and fails closed. Exact-head CI run [#43188509182](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43188509182) and insurance UI validation [#43188509253](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43188509253) succeeded; Vercel status was success. PR #181 remains Draft and is not merged/deployed.
+- **No Production or QA DDL/DML/ACL/RLS/Auth/Storage changes were made.** The retained encrypted backup has passed runner-side PostgreSQL 17 restore rehearsal and integrity checks, but owner-side offline decryption and independent second-person migration review remain open. Production remains NO-GO until those gates pass.
+- Progress remains **62% Engineering RC / 15% operational acceptance**. The unmerged PR branch and documentation-only security triage do not add completion credit.
+
+
+## Live release-gate checkpoint — 2026-11-13
+
+Read-only reconciliation against the current GitHub main ref, hosted Supabase ledgers/catalogs, Supabase advisors, Vercel deployment/alias, backup-runner Actions and the canonical private Drive artifact. No hosted DDL/DML, ACL/RLS/Auth/Storage changes, business-data writes, backup dispatch, PR merge or deployment promotion occurred.
+
+### Repository and checks
+
+- Main SHA: c04864f82c0aadc113860964b7b03f6b1ad145d1.
+- Open PRs: 7 (#236, #233, #229, #210, #185, #181, #179); all are Draft and GitHub reports mergeable=false. Open Issues: #199, #217, #218.
+- Main CI run [43196963014](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43196963014): 18 jobs successful, 0 failed, and the authenticated clinical-acceptance job intentionally skipped. The skip is not acceptance.
+- Main CodeQL run [43196962915](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43196962915): Python and JavaScript/TypeScript analyses succeeded. Finance integration [43196963021](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43196963021) and clinical-child RPC integration [43196963257](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43196963257) succeeded.
+- The combined GitHub status for main still reports Vercel=FAILURE with the Hobby build-rate-limit target. This is not a failed production deployment: the canonical Production deployment below remains READY. Do not retry builds, bypass quotas or upgrade plans for documentation-only work.
+- PR #229 current head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420 is 40 commits ahead / 15 behind main and non-mergeable. Its current Phase 61, CI, prescription, insurance, privileged-role, Spec Kit and insurance-UI workflows returned success; there are no submitted PR reviews or inline review threads. The Phase 61 SQL source remains on this Draft branch, not main.
+
+### Live migration ledger and dispensing guard
+
+- Production: PostgreSQL 17.6, 129 migration rows, latest 20261102232941. QA: PostgreSQL 17.11, 26 rows, latest 20261112061251.
+- Only 3 version IDs are shared; all 3 have different migration names and stored-statement fingerprints. Production-only rows: 126. QA-only rows: 23. This is not migration-ledger or source parity.
+- QA-only forward rows added after the 2026-11-10 source-map snapshot are Phase 57B (20261111215510), Phase 61 (20261111223309), Phase 58 (20261112061219) and Phase 59 (20261112061251). The dated delta is recorded in docs/LIVE_MIGRATION_QA_DELTA_2026-11-13.json.
+- Phase 55 is QA-applied as 20261103155227; Phase 57 as 20261104065852; Phase 57B as 20261111215510; Phase 61 as 20261111223309; Phase 58 as 20261112061219; Phase 59 as 20261112061251. None of these versions is recorded in Production.
+- Phase 57/57B read-back: Production quantity remains nullable, has 0 active non-deleted NULL-quantity prescription items, retains 3 NULL-to-one fallbacks, and has none of the quantity/free-text/external-prescription guards. QA quantity remains nullable, has 0 active NULL-quantity items, has 0 fallbacks, and all three guards are present. The UI fail-closed guard does not replace the missing Production database guard.
+- Phase 55 read-back: Production private.app_has_claim_branch(uuid) and private.sync_user_role_text() have NULL proacl and PUBLIC-effective EXECUTE for anon/authenticated/service_role. QA has owner-only ACLs and denies those roles. Do not hand-edit grants or apply the Phase 55 migration before the documented recovery and independent-review gates.
+
+### Effective catalog and advisors
+
+- Read-only public/private catalog fingerprints differ across relations, columns, constraints, indexes, policies, triggers and functions. Counts: Production 56 public tables / 4 private tables / 5 views / 842 public columns / 24 private columns / 222 constraints / 254 indexes / 210 policies / 69 triggers / 143 functions / 58 RLS tables / 44 forced-RLS tables. QA: 58 public tables / 2 private tables / 5 views / 873 public columns / 13 private columns / 245 constraints / 258 indexes / 212 policies / 81 triggers / 152 functions / 59 RLS tables / 46 forced-RLS tables. All observed indexes were valid and ready. See the 2026-11-13 addendum in LIVE_EFFECTIVE_CATALOG_RECONCILIATION_2026-11-10.md.
+- Supabase advisors observed 2026-11-13 06:57 UTC: Production Security 5 groups / 31 findings (29 WARN, 2 INFO), Performance 2 / 96 (2 unindexed-FK, 94 unused-index INFO), Health 0. QA Security 5 / 34 (33 WARN, 1 INFO), Performance 2 / 147 (7 unindexed-FK, 140 unused-index INFO), Health 0. No blanket grant revocation, policy creation, extension movement or index deletion is justified.
+
+### Deployment and recovery
+
+- Canonical Vercel Production deployment dpl_GNX1VuGgArr8CsMPZn2KB9Hz4eQz is READY on application SHA fb54651533ffd04b2f20387a976f88293110c513. Alias roshan-health-hub.vercel.app is present, verified, and aliasError=null. Main is 16 commits ahead of this deployment, but the delta contains no src/ files; package.json dependency sections are unchanged (only the test:guard script changed). No application deployment was needed for this documentation/CI delta.
+- Backup-runner main is f171732b61fe0460c61a36aa63b861065f9ea9d1. Latest runner-main CI [43190851147](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43190851147) passed its validator and offline Android-verifier tests.
+- Latest full backup/restore run [43183851731](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183851731) ran on parent runner SHA eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8. Both validate and backup jobs succeeded; “Create and locally restore encrypted backup” and “Upload encrypted artifact only” passed. The one-commit delta to current runner main changes only README.md and the offline Android verifier script/tests; the backup workflow itself is unchanged.
+- GitHub artifact 13927247998 was 305,284 bytes with digest sha256:54b799545d1cb6eaccd16cf3964a3b6a5421c292c457504b967f5bcf5b488dd9 and had not expired at the 06:56 UTC check. The encrypted Drive copy roshan-production-backup-43183851731.zip (file 1HQxRWPIkYLeFQ0DNR-8wSEULLYCWMM4o) is present, not trashed, 305,284 bytes, Drive MD5 22271054f6c10b1baf1d23ac4bdac24e, in dated folder 1fUr9TW1zCcedDZqskWW3eWXNF2m6EVmK. The runner-side PostgreSQL 17 restore rehearsal passed. Owner-side decryption of this latest artifact remains unverified; the private age identity was not accessed.
+- The archive is a database backup, not a complete Supabase control-plane, Storage-object-byte or secrets backup. The runner remains manual-only.
+
+### Release decision and next task
+
+Production remains NO-GO. Backup artifact and isolated restore evidence now exist, but owner-side decryption, independent second-person review, exact source/ledger/effective-catalog reconciliation, Production Phase 55/57/57B/58/59 rollout, required-check resolution and operational clinical/pharmacy acceptance remain open. Phase 61's previously documented transactionally rolled-back synthetic request/reject smoke is not broad clinical E2E or staff acceptance. Keep clinical E2E deferred until the free isolated environment and synthetic doctor/pharmacist identities are available.
+
+Next highest-value repository task: reconcile Draft PR #229 with current main using a normal two-parent merge commit, resolve only the actual overlapping files, preserve Phase 57/57B fail-closed pharmacy behavior and Phase 61 permission/no-side-effect contracts, then run one exact-head CI/PG17 pass. Keep it Draft for independent SQL/security review and mobile pharmacist/prescriber acceptance. Do not merge the PR or apply Production changes.
+
+Progress remains at the last evidence-weighted canonical baseline: 62% Engineering RC / 15% Operational Acceptance. This read-only audit and documentation update do not earn implementation-completion credit. The prior 17–30 engineering-hour estimate is historical, not a new schedule.
+
+## Phase 60 — catalogue identity and physical-pack attestation (2026-11-14)
+
+- PR #210 contains a candidate identity editor, dedicated identity/pack permissions, column-level UPDATE restrictions, and an append-only human pack-attestation record with an identity snapshot and SHA-256 fingerprint.
+- The attestation is not photographic, barcode, lot/expiry, manufacturer-label or independent physical verification; it is not branch-scoped and is not a dispensing hard-stop. Do not infer a route or formulation from `unit`, display name or an unverified catalogue field.
+- Historical exact-head validation at `230fb8ebcc8ac6c820f82dd8714b8050f0c30251` passed 28 checks on 2026-11-11. Later identity-completeness/unsaved-draft hardening commits have not yet been covered by a fresh exact-head CI run following current-main reconciliation.
+- No QA/Production migration, catalogue backfill, stock/price mutation or role change is authorized by this candidate. Keep Draft pending exact-head PG17 validation, independent SQL/security review, physical-pack workflow acceptance and migration-ledger reconciliation.

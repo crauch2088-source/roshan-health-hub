@@ -53,7 +53,7 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - ChatGPT operates directly on the connected GitHub repository to inspect, author, commit, and review project artifacts. The none integration intentionally installs no agent commands; no local agent setup or owner-operated terminal workflow is required.
 - Every accepted requirement must map to observable verification: focused regression tests, security/authorization checks, disposable PostgreSQL 17 tests where relevant, and exact-head CI evidence. Never mark a task complete merely because its document exists.
 - Never transmit real patient, clinical, financial, identity, credential, or production-export data to any model or external service. Use synthetic fixtures only.
-- A Spec Kit task never authorizes production SQL/migration, Auth/Storage mutation, deployment, or live clinical/financial data changes. Preserve separately documented owner authorization and release gates.
+- The standing owner authorization in `.specify/memory/constitution.md` permits the engineering agent to execute qualifying Production migrations, deployments, narrowly scoped grants/RLS, Auth/Storage changes, and necessary operational-data corrections without per-change confirmation, when all documented preflight, exact-head validation, least-privilege, recovery, audit, and post-change gates pass. This is a standing delegation, not permission to experiment or bypass safeguards. Never use Production for synthetic tests. Destructive/irreversible business-data changes, clinical-policy decisions, unresolved critical risks, uncertain target/scope/cost/recovery, and clinical/staff acceptance remain owner-gated.
 - Keep work quota-aware: avoid redundant CI runs, do not add production dependencies for development tooling, and keep each logical change in one atomic commit.
 
 
@@ -64,4 +64,4 @@ These rules govern every Roshan Health Hub task and override older conflicting w
 - Use docs/ROSHAN_AGENT_SKILLS_SYSTEM.md for inventory, routing, upstream inspiration, and maintenance policy.
 - Use installed general TDD/debugging/security/documentation skills when they add distinct value; avoid duplication and overlapping Roshan skills.
 - Simplicity/YAGNI must never weaken clinical safety, data fidelity, clinician confirmation, authentication, permissions, RLS, branch isolation, auditability, atomic finance/stock operations, or test coverage.
-- Skills do not authorize Production migrations, grants/RLS changes, Auth/Storage mutations, live business-data writes, deployment promotion, paid services, or clinical/staff acceptance.
+- Skills do not independently grant or expand Production authority. Follow the standing owner authorization in `.specify/memory/constitution.md` and all release gates; skills never waive them. No paid services, clinical-policy decisions, or clinical/staff acceptance are delegated.

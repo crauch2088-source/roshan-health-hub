@@ -1,0 +1,236 @@
+{
+  "report_type": "live_qa_migration_delta",
+  "captured_at_utc": "2026-11-13T06:57:27Z",
+  "application_main_sha": "c04864f82c0aadc113860964b7b03f6b1ad145d1",
+  "projects": {
+    "production": {
+      "project_ref": "jewzonxplxhogqrnhosl",
+      "postgres_version": "17.6",
+      "ledger_rows": 129,
+      "latest": {
+        "version": "20261102232941",
+        "name": "roshan_synthetic_patient_cleanup_and_stock_ledger_reversal"
+      },
+      "phase55": false,
+      "phase57": false,
+      "phase57b": false,
+      "phase58": false,
+      "phase59": false,
+      "phase61": false
+    },
+    "qa": {
+      "project_ref": "hopfohcnrtbiqjkgeukz",
+      "postgres_version": "17.11",
+      "ledger_rows": 26,
+      "latest": {
+        "version": "20261112061251",
+        "name": "roshan_phase59_receipt_currency_provenance"
+      },
+      "rows": [
+        {
+          "version": "20261111215510",
+          "name": "roshan_phase57b_free_text_external_prescription_guard",
+          "stored_statement_bytes": 11525,
+          "stored_statement_md5": "bfd2df24224752a1488f2f05494f4211",
+          "source_file": "db/roshan_phase57b_free_text_external_prescription_guard.sql",
+          "source_blob": "57516e08de8e314f687c21f2f292199d3adff178",
+          "evidence": "Exact 11,525-byte extracted function-DDL payload match; comments and transaction wrapper are outside the stored payload."
+        },
+        {
+          "version": "20261111223309",
+          "name": "roshan_phase61_prescription_item_correction_workflow",
+          "stored_statement_bytes": 38534,
+          "stored_statement_md5": "6d4d05a084d14d7d354385b32e8e745e",
+          "source_file": "db/roshan_phase61_prescription_item_correction_workflow.sql",
+          "source_blob": "1abbb3b0238ffee44d851ff90d065165f925a605",
+          "source_branch": "feat/prescription-correction-ui-20261110",
+          "source_branch_head": "9c54ee0655acfafdbb1f3509f4de7ed10be6a420",
+          "mainline_source": false,
+          "evidence": "Source exists only on Draft PR #229 branch, not main. Six deployed function bodies were previously compared with source; full migration statement-body equality was not independently verified in this run."
+        },
+        {
+          "version": "20261112061219",
+          "name": "roshan_phase58_single_sdg_currency_provenance",
+          "stored_statement_bytes": 8347,
+          "stored_statement_md5": "df5eb42bac7f8a1addc443d6d825a9a1",
+          "source_file": "db/roshan_phase58_single_sdg_currency_provenance.sql",
+          "source_blob": "e4f47d0df22ec095207f8ea27ad7395aa26779f2",
+          "evidence": "Source body/stored QA payload equality is recorded in SECURITY_DEFINER_TRIAGE_2026-11-12; Production has no row."
+        },
+        {
+          "version": "20261112061251",
+          "name": "roshan_phase59_receipt_currency_provenance",
+          "stored_statement_bytes": 4365,
+          "stored_statement_md5": "3e356de0f959e9674e87198eb18b04a6",
+          "source_file": "db/roshan_phase59_receipt_currency_provenance.sql",
+          "source_blob": "49dbd1a686e17cbdc8341cb27675301f9cfbc5b3",
+          "evidence": "Source body/stored QA payload equality is recorded in SECURITY_DEFINER_TRIAGE_2026-11-12; Production has no row."
+        }
+      ]
+    }
+  },
+  "ledger_comparison": {
+    "shared_version_ids": 3,
+    "production_only_versions": 126,
+    "qa_only_versions": 23,
+    "all_shared_ids_name_mismatch": true,
+    "all_shared_ids_statement_fingerprint_mismatch": true,
+    "collisions": [
+      {
+        "version": "20261102122437",
+        "production_name": "superseded_placeholder_phase49_atomic_pharmacy_dispense",
+        "qa_name": "roshan_phase51_public_setup_required_anon",
+        "production_bytes": 134,
+        "production_md5": "86c9fe3553b0537bce754baecb76bcd8",
+        "qa_bytes": 552,
+        "qa_md5": "4b848d12b776028dd67cc0e6ffebc452"
+      },
+      {
+        "version": "20261102133658",
+        "production_name": "superseded_placeholder_phase50_clinical_visit_bill_completion",
+        "qa_name": "roshan_phase49_atomic_pharmacy_dispense",
+        "production_bytes": 134,
+        "production_md5": "86c9fe3553b0537bce754baecb76bcd8",
+        "qa_bytes": 19155,
+        "qa_md5": "55f65a3816d431ff42a5272c9e338658"
+      },
+      {
+        "version": "20261102133734",
+        "production_name": "superseded_placeholder_phase51_public_setup_required_anon",
+        "qa_name": "roshan_phase50_clinical_visit_bill_completion",
+        "production_bytes": 134,
+        "production_md5": "86c9fe3553b0537bce754baecb76bcd8",
+        "qa_bytes": 4484,
+        "qa_md5": "cf5948d78786d6038fa93a74ecf22256"
+      }
+    ]
+  },
+  "dispensing_guard": {
+    "production": {
+      "quantity_nullable": true,
+      "active_null_quantity_items": 0,
+      "null_to_one_fallbacks": 3,
+      "quantity_guard": false,
+      "free_text_guard": false,
+      "external_prescription_guard": false,
+      "phase57_versions": []
+    },
+    "qa": {
+      "quantity_nullable": true,
+      "active_null_quantity_items": 0,
+      "null_to_one_fallbacks": 0,
+      "quantity_guard": true,
+      "free_text_guard": true,
+      "external_prescription_guard": true,
+      "phase57_versions": [
+        "20261104065852",
+        "20261111215510"
+      ]
+    }
+  },
+  "phase55_private_helper_acl": {
+    "production": {
+      "functions": [
+        "private.app_has_claim_branch(uuid)",
+        "private.sync_user_role_text()"
+      ],
+      "proacl": null,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "service_role_execute": true
+    },
+    "qa": {
+      "functions": [
+        "private.app_has_claim_branch(uuid)",
+        "private.sync_user_role_text()"
+      ],
+      "proacl": [
+        "postgres=X/postgres"
+      ],
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "service_role_execute": false
+    }
+  },
+  "effective_catalog": {
+    "production": {
+      "public_tables": 56,
+      "private_tables": 4,
+      "public_views": 5,
+      "public_columns": 842,
+      "private_columns": 24,
+      "constraints": 222,
+      "indexes": 254,
+      "invalid_indexes": 0,
+      "rls_tables": 58,
+      "forced_rls_tables": 44,
+      "policies": 210,
+      "triggers": 69,
+      "functions": 143,
+      "hashes": {
+        "relations": "0e7a128574df12d979119314cbaee29f",
+        "columns": "05222881c031e893f6ee66c93eedded2",
+        "constraints": "6460d66c7a1f44d453b3bd16382ccf74",
+        "indexes": "31e454cbac135bac8c3a958328231df5",
+        "policies": "c24f45b21f0daa7a0464656fc558c743",
+        "triggers": "6d92a4512685cabf709bcb5dfef33f32",
+        "functions": "f87c1b04e6948736a12d441f5fbb3a3e"
+      }
+    },
+    "qa": {
+      "public_tables": 58,
+      "private_tables": 2,
+      "public_views": 5,
+      "public_columns": 873,
+      "private_columns": 13,
+      "constraints": 245,
+      "indexes": 258,
+      "invalid_indexes": 0,
+      "rls_tables": 59,
+      "forced_rls_tables": 46,
+      "policies": 212,
+      "triggers": 81,
+      "functions": 152,
+      "hashes": {
+        "relations": "994b73e4f039ac096ddbc3b9ea6bea70",
+        "columns": "5098ccc2f93d97a7bb174bc0f812a4cb",
+        "constraints": "0a094faf30b9d076ad15fa0282cc0add",
+        "indexes": "4f1bc281ffac59e27e9190410ce2051e",
+        "policies": "9f86591f04d2b8eac378fd64f84c3e86",
+        "triggers": "e81a3ab545077d6b805d7dc0cbe97a74",
+        "functions": "e7f9e23ac8518a041ed304661da1d5b9"
+      }
+    }
+  },
+  "advisors": {
+    "production": {
+      "security_groups": 5,
+      "security_findings": 31,
+      "security_warn": 29,
+      "security_info": 2,
+      "performance_groups": 2,
+      "performance_findings": 96,
+      "unindexed_foreign_keys": 2,
+      "unused_indexes": 94,
+      "health_findings": 0
+    },
+    "qa": {
+      "security_groups": 5,
+      "security_findings": 34,
+      "security_warn": 33,
+      "security_info": 1,
+      "performance_groups": 2,
+      "performance_findings": 147,
+      "unindexed_foreign_keys": 7,
+      "unused_indexes": 140,
+      "health_findings": 0
+    }
+  },
+  "limitations": [
+    "The ledger comparison is not a canonical migration-chain replay or semantic parity proof.",
+    "The 2026-11-10 consolidated source map is a historical 129/22 snapshot; this delta records the four later QA rows without rewriting that history.",
+    "Phase 61 source is not on main; QA function-body checks do not prove full migration-statement parity.",
+    "Catalog fingerprints are sorted MD5 summaries of catalog signatures, not cryptographic attestations or a semantic diff.",
+    "No patient/financial row contents were queried; only migration metadata, catalog definitions, advisor output and aggregate NULL-quantity count were read."
+  ]
+}

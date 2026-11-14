@@ -254,13 +254,77 @@ As checked on 2026-11-03 after Phase55 QA application, Production records 129 mi
 
 **Production safety:** no production Phase54/54B/54C/55 DDL is authorized until an encrypted backup and isolated restore are verified. Do not replay the redacted production migration `20261102232941`.
 
-## Phase 60 candidate — medicine catalogue authority and physical-pack attestation (2026-11-10)
+## Current live pharmacy migration reconciliation — 2026-11-12
+
+This read-back supersedes the earlier 2026-11-09/2026-11-03 QA ledger counts and Phase 57B candidate-only status above. Direct read-only queries of `supabase_migrations.schema_migrations` on 2026-11-12 show:
+
+| Environment | Version | Migration name | Stored statement bytes | Stored statement MD5 |
+|---|---|---|---:|---|
+| QA | `20261104065852` | `roshan_phase57_pharmacy_quantity_required_guard` | 10,954 | `921970d4d86b32dccd430a0ea0ef8745` |
+| QA | `20261111215510` | `roshan_phase57b_free_text_external_prescription_guard` | 11,525 | `bfd2df24224752a1488f2f05494f4211` |
+| QA | `20261111223309` | `roshan_phase61_prescription_item_correction_workflow` | 38,534 | `6d4d05a084d14d7d354385b32e8e745e` |
+| Production | — | None of the three versions above is recorded | — | — |
+
+The QA ledger now has 24 rows and its latest migration is Phase 61 (`20261111223309`). Production has 129 rows and latest version `20261102232941`. The live effective dispensing-function read-back confirms that QA has the Phase 57 quantity rejection plus Phase 57B free-text/external-prescription rejection; Production still contains the legacy `COALESCE(pi.quantity,1)` fallback and lacks both guards.
+
+Tracked source files:
+- Phase 57: `db/roshan_phase57_pharmacy_quantity_required_guard.sql`, Git blob `9db6768999352c32081f69b5e665c3cc95452616`.
+- Phase 57B: `db/roshan_phase57b_free_text_external_prescription_guard.sql`, Git blob `57516e08de8e314f687c21f2f292199d3adff178`.
+
+The Git blob SHA is not the stored-statement MD5. Preserve the migration SQL payload exactly; do not normalize, regenerate, or hand-edit either migration during Production promotion. Phase 57B is QA-applied, not candidate-only. Phase 61 is also QA-applied but is deliberately excluded from the Production pharmacy hotfix package because its UI/workflow acceptance is a separate release gate.
+
+No Production or QA writes were performed during this read-back.
+
+
+## Live migration ledger and source delta — 2026-11-13
+
+This read-back supersedes the 2026-11-12 row count and the earlier Phase 57B candidate-only wording above. It is metadata/catalog evidence only; no hosted DDL/DML, migration repair or ledger write occurred.
+
+| Environment | PostgreSQL | Ledger rows | Latest version | Latest migration |
+|---|---|---:|---|---|
+| Production | 17.6 | 129 | 20261102232941 | roshan_synthetic_patient_cleanup_and_stock_ledger_reversal |
+| QA | 17.11 | 26 | 20261112061251 | roshan_phase59_receipt_currency_provenance |
+
+The ledgers share only three version IDs; all three have different names and statement fingerprints. Production has 126 version IDs not present in QA; QA has 23 not present in Production. Do not repair this with manual INSERTs, copied ledger rows, blind replay, or timestamp reassignment.
+
+Current QA-only forward phases:
+- Phase 55: 20261103155227 — private helper ACL reconciliation.
+- Phase 57: 20261104065852 — required quantity guard.
+- Phase 57B: 20261111215510 — free-text and external prescription rejection.
+- Phase 61: 20261111223309 — pharmacist-to-prescriber correction workflow.
+- Phase 58: 20261112061219 — persisted SDG currency provenance.
+- Phase 59: 20261112061251 — persisted receipt currency provenance.
+
+None of these versions is recorded in Production. Production still has the four superseded 134-byte Phase 49–52 placeholders; its later reconciled Phase 49–52 rows remain separate historical records. QA's four-row forward delta since the 2026-11-10 source-map snapshot is documented in docs/LIVE_MIGRATION_QA_DELTA_2026-11-13.json.
+
+Source evidence:
+- Phase 57B source is on main at Git blob 57516e08de8e314f687c21f2f292199d3adff178; the 11,525-byte QA stored payload matches the extracted function-DDL payload (MD5 bfd2df24224752a1488f2f05494f4211), excluding migration comments and transaction wrapper.
+- Phase 58 source is on main at blob e4f47d0df22ec095207f8ea27ad7395aa26779f2; QA stores 8,347 bytes, MD5 df5eb42bac7f8a1addc443d6d825a9a1.
+- Phase 59 source is on main at blob 49dbd1a686e17cbdc8341cb27675301f9cfbc5b3; QA stores 4,365 bytes, MD5 3e356de0f959e9674e87198eb18b04a6.
+- Phase 61 source blob 1abbb3b0238ffee44d851ff90d065165f925a605 exists only on Draft PR #229 branch feat/prescription-correction-ui-20261110 (head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420), not on main. QA stores 38,534 bytes, MD5 6d4d05a084d14d7d354385b32e8e745e. The six deployed function bodies were previously verified against the branch source; a full migration-statement hash comparison was not independently established in this read-back.
+- Production has no Phase 55/57/57B/58/59/61 ledger row. Production's Phase 57 dispensing function still has three NULL-to-one fallbacks; QA has zero and enforces quantity, free-text and external-prescription rejection.
+
+The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do not edit it retroactively; use the dated 2026-11-13 QA delta and this addendum for current row counts. The 94-row APPLIED_MIGRATION_INVENTORY remains historical and is not the live ledger.
+
+
+
+## Phase 61B — explicit clinical role boundary (2026-11-14)
+
+| Environment | Version | Migration name | Status |
+|---|---|---|---|
+| QA candidate | `20261114120000` | `roshan_phase61b_clinical_role_boundary` | Prepared in PR #249; not yet applied |
+| Production | — | Not authorized | Untouched |
+
+Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction, or pharmacy dispensing authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
+
+The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.
+
+## Phase 60 candidate — medicine catalogue authority and physical-pack attestation (2026-11-14 mainline reconciliation)
 
 - Source: `db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql`.
-- PostgreSQL 17 assertions: `db/tests/phase60_medicine_catalogue_authority_integration.sql`; dedicated CI job replays the disposable v112 baseline, seeds synthetic roles, and exercises permission boundaries and append-only evidence.
-- Identity edits are restricted to `admin`, `pharmacist`, and the explicit Super Admin bypass through `pharmacy.catalogue_identity.update`; direct `medicines_update` RLS no longer accepts broad `pharmacy.update`.
-- Physical-pack verification is restricted to `pharmacist` and the explicit Super Admin bypass through `pharmacy.pack.verify`. The RPC writes an immutable actor/time/identity-snapshot/SHA-256 event and an audit-log entry.
-- The attestation table is RLS-forced, SELECT-only for authenticated users, has direct writes revoked including service_role, and rejects UPDATE/DELETE/TRUNCATE.
-- Authenticated UPDATE on `public.medicines` is restricted at the column-grant boundary to `name`, `generic_name`, `brand_name`, `strength`, and `dosage_form`; direct writes to prices, stock, batch/expiry, lifecycle and audit columns are denied. Stock/dispense RPCs retain their SECURITY DEFINER + `pharmacy.update` contract.
-- PostgreSQL 17 assertions verify table-level UPDATE is absent, only the five identity columns remain writable, and Admin identity permission cannot mutate selling price or stock directly.
-- Candidate only: not applied to QA or Production. Migration history is not reconciled; do not apply or hand-edit migration ledgers.
+- PostgreSQL 17 assertions: `db/tests/phase60_medicine_catalogue_authority_integration.sql`; the dedicated CI job replays the disposable v112 baseline, seeds synthetic roles, and exercises permission boundaries and append-only evidence.
+- Identity edits use `pharmacy.catalogue_identity.update`; pack attestation uses pharmacist-only `pharmacy.pack.verify` and records actor/time/identity snapshot/SHA-256 plus audit evidence.
+- Direct medicine UPDATE is restricted to the five identity columns. The attestation record is RLS-forced, read-only to authenticated users, has direct writes revoked, and rejects UPDATE/DELETE/TRUNCATE.
+- This is a human attestation of a saved identity snapshot only: it is not image/barcode/lot/expiry verification, not branch-scoped, and not a dispensing hard-stop. It must not be used to infer route, concentration, or product identity from inventory labels.
+- The prior Phase 60 code head `230fb8ebcc8ac6c820f82dd8714b8050f0c30251` passed 28 checks on 2026-11-11. Subsequent identity-completeness and unsaved-draft hardening commits are newer and have not yet received a fresh exact-head CI run after this reconciliation.
+- Candidate only: not applied to QA or Production. Migration history is not reconciled; do not apply or hand-edit migration ledgers. Keep PR #210 Draft pending exact-head PostgreSQL 17 validation, independent SQL/security review, and pharmacist workflow acceptance.

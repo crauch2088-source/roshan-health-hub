@@ -17,6 +17,7 @@ import {
   Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
+import { PharmacyCorrectionRequest } from "@/components/prescription-correction";
 import {
   Select,
   SelectContent,
@@ -75,7 +76,10 @@ function PharmacyPageInner() {
   // Phase 3 write-up) — the actual DB-level RLS on pharmacy_inventory,
   // medicines and stock_movements already keys off pharmacy.create/update,
   // so the UI now checks the same codes instead of two dangling ones.
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const isPharmacist = ["pharmacist", "legacy_pharmacist"].includes(user?.role_code ?? "");
+  const canDispense = can("pharmacy.update") && isPharmacist;
+  const canRequestCorrection = can("pharmacy.correction.request") && isPharmacist;
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");
@@ -107,7 +111,7 @@ function PharmacyPageInner() {
     requestId: string;
   }>(
     async ({ prescriptionId, separateInvoice, requestId }) => {
-      if (!can("pharmacy.update")) throw new Error("Not authorized");
+      if (!canDispense) throw new Error("Not authorized");
       const result = await dispensePrescriptionFefo(prescriptionId, separateInvoice, requestId);
       setDispenseDetail((prev) => ({ ...prev, [prescriptionId]: result }));
       setDispenseRequestIds((current) => {
@@ -226,7 +230,7 @@ function PharmacyPageInner() {
                     </div>
                     <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                       <StatusBadge status={s(p, "status")} />
-                      {can("pharmacy.update") && s(p, "status") === "pending" ? (
+                      {canDispense && s(p, "status") === "pending" ? (
                         <>
                           {can("billing.create") ? (
                             <Button
@@ -307,6 +311,36 @@ function PharmacyPageInner() {
                         ? "تحتوي الوصفة على دواء غير مرتبط بدليل الأدوية. يجب ربطه بدواء نشط قبل الصرف."
                         : "This prescription contains a medicine not linked to the active catalogue. Link it before dispensing."}
                     </p>
+                  ) : null}
+                  {canRequestCorrection &&
+                  s(p, "status") === "pending" &&
+                  !hasExternalPrescription &&
+                  items.some((item) => !s(item, "medicine_id")) ? (
+                    <div className="mb-3 space-y-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                      <p className="text-sm font-medium">
+                        {lang === "ar"
+                          ? "يمكنك طلب توضيح الطبيب للبنود غير المرتبطة."
+                          : "You can ask the responsible prescriber to clarify unlinked items."}
+                      </p>
+                      {items
+                        .filter((item) => !s(item, "medicine_id"))
+                        .map((item) => (
+                          <div
+                            key={s(item, "id")}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-2"
+                          >
+                            <span className="min-w-0 text-sm">
+                              {s(item, "medication_name") ||
+                                (lang === "ar" ? "دواء غير محدد" : "Unspecified medicine")}
+                            </span>
+                            <PharmacyCorrectionRequest
+                              itemId={s(item, "id")}
+                              itemLabel={s(item, "medication_name")}
+                              lang={lang}
+                            />
+                          </div>
+                        ))}
+                    </div>
                   ) : null}
                   <ul className="divide-y rounded-md border md:hidden">
                     {items.map((i) => {

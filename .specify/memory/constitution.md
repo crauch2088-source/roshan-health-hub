@@ -12,7 +12,7 @@ Protect patient, staff, financial, and operational data. Enforce least privilege
 Preserve immutable financial and stock ledgers, atomic business operations, idempotency, exact amount precision, branch attribution, and auditable state transitions. Browser clients must not bypass approved RPC/write boundaries or perform protected direct table writes.
 
 ### IV. Migration and Production Safety
-Treat migrations as ordered, reviewed, non-replayable production changes unless proven otherwise. Verify source provenance, dependencies, rollback/recovery, and disposable PostgreSQL 17 behavior before release. Never apply candidate SQL, change production privileges, mutate Auth/Storage, deploy, or alter live business data without explicit owner authorization and documented release gates. Unverified backup/restore or migration provenance remains a blocker.
+Treat migrations as ordered, reviewed, non-replayable production changes unless proven otherwise. Verify source provenance, dependencies, rollback/recovery, and disposable PostgreSQL 17 behavior before release. Production changes may be executed under the standing delegated authorization in Section X when every applicable release gate passes. Unverified backup/restore or migration provenance remains a blocker.
 
 ### V. Evidence-Based, Test-First Engineering
 For behavior changes, define observable acceptance criteria, add regression coverage, and verify the exact candidate commit. Use focused tests, TypeScript/lint/build checks, disposable PostgreSQL 17 integration tests, and security/authorization tests as applicable. Report tests only as passed when actually executed; distinguish deferred, skipped, blocked, and untested work.
@@ -32,13 +32,47 @@ Prefer free and already-connected capabilities. Do not add paid services, produc
 - Technical plans must be based on current repository architecture and verified database contracts, not a greenfield redesign or stale summaries.
 - Tasks must map to requirements and verification evidence. A checked task without evidence is not complete.
 - Security, privacy, clinical correctness, branch isolation, and financial consistency are release constraints, not optional polish.
-- Spec Kit artifacts do not authorize production changes or supersede owner-approved release gates.
+- Spec Kit artifacts do not independently authorize production changes or supersede this Constitution's standing delegated authorization and its release gates.
 
 ## Governance
 
 This Constitution is the durable engineering baseline for Roshan Health Hub. docs/MASTER_PLAN.md remains the execution source of truth. Amendments require a documented reason, explicit owner-approved decision, and review of affected specifications, tests, and operating guidance. If a requirement conflicts with clinical safety, patient privacy, or production protection, stop and resolve it before implementation.
 
 ## IX. Accelerated Execution Without Safety Erosion
-Time-boxed delivery is an optimization constraint, never a clinical or security exception. Parallelize independent work, sequence dependent work explicitly, and measure completion from a deduplicated evidence-backed ledger. A Release Candidate is distinct from operational acceptance and Production authorization. A skipped test is not a pass; a merged change is not clinical validation; a successful deployment is not staff acceptance. The owner retains authority over clinical policy, residual-risk acceptance, Production changes, and launch. The binding execution procedure is documented in [docs/48H_ACCELERATED_EXECUTION_CHARTER.md](../../docs/48H_ACCELERATED_EXECUTION_CHARTER.md).
+Time-boxed delivery is an optimization constraint, never a clinical or security exception. Parallelize independent work, sequence dependent work explicitly, and measure completion from a deduplicated evidence-backed ledger. A Release Candidate is distinct from operational acceptance and Production authorization. A skipped test is not a pass; a merged change is not clinical validation; a successful deployment is not staff acceptance. The owner retains authority over clinical policy, residual-risk acceptance outside the delegated envelope, and operational launch. Production engineering execution is delegated under Section X. The binding execution procedure is documented in [docs/48H_ACCELERATED_EXECUTION_CHARTER.md](../../docs/48H_ACCELERATED_EXECUTION_CHARTER.md).
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-10
+## X. Standing Delegated Production Authorization
+
+The owner explicitly grants the engineering agent standing authority, effective 2026-11-12, to make and release production changes for Roshan Health Hub when the agent independently determines that the change is timely, necessary, evidence-supported, and within the safeguards below. This is an ongoing authorization; a separate conversational approval is not required for each qualifying routine production change.
+
+### Authorized within the delegated envelope
+- Apply reviewed, forward-only production database migrations and compatible application changes after exact-candidate CI, disposable PostgreSQL 17 validation, migration provenance/reconciliation, dependency checks, and a documented recovery/rollback strategy pass.
+- Execute narrowly scoped production configuration, grants, RLS/policy, RPC, Edge Function, and Storage changes when the intended access model is proven, least privilege is preserved, and pre/post-change verification is available.
+- Deploy or promote the canonical production application after exact-commit checks pass, target project/branch/environment are reverified, and deployment/rollback paths are understood.
+- Perform routine, non-destructive operational maintenance and read-only diagnostics that are necessary to verify a release.
+- Use synthetic data only in QA/disposable environments. Production must never be used for synthetic clinical, patient, pharmacy, laboratory, inventory, or financial testing.
+
+### Mandatory preflight and execution rules
+1. Verify the live repository head, target Supabase/Vercel project identifiers, current migration ledger, relevant schema/security state, and exact candidate commit immediately before action.
+2. Review the complete diff and affected dependencies. Never rely on stale summaries, old approvals, or a green CI run from a different commit.
+3. Require applicable focused regression tests, disposable PostgreSQL 17 tests, security/authorization/branch-isolation checks, and exact-head CI. A skipped or unavailable mandatory check is not a pass.
+4. For database changes, preserve forward-only migration history, inspect grants/RLS/function security semantics, run relevant advisors, and capture read-only before/after evidence. Do not edit migration ledger history to force parity.
+5. Prefer additive, reversible, idempotent changes. Record the recovery path and objective stop conditions before execution. If safe rollback is impossible, require a proven forward-recovery plan.
+6. Batch related work into one atomic Git change and avoid redundant CI/deploy runs. Respect all free-tier quotas; never purchase, upgrade, bypass a quota, or create a paid resource.
+7. Verify the actual production result after the change using read-only checks and safe health/smoke checks that do not create or alter live clinical/financial records. Report the exact commit, migration/deployment identifiers, checks run, and any residual risk.
+
+### Actions still requiring a fresh, specific owner decision
+- Deleting, truncating, anonymizing, bulk-editing, or otherwise irreversibly altering patient, clinical, staff, inventory, audit, or financial records; deleting user accounts or revoking access in a way that could lock out the clinic.
+- Changing clinical protocols, diagnosis logic, medication choices/doses/frequencies, decision-support recommendations, or other medical policy. The agent may implement only a clinician-approved specification; it must not invent or clinically approve such policy.
+- Accepting a known unresolved critical/high security risk, disabling or weakening RLS/authentication/audit controls, exposing secrets, or relaxing branch isolation.
+- Any action whose target, scope, data impact, cost, or recovery path cannot be established with high confidence.
+- Declaring clinical/staff operational acceptance or authorizing the clinic's real-world launch.
+
+### Stop conditions
+Stop before the affected production action if evidence conflicts, the live target is ambiguous, migration history is unreconciled, a required test is unavailable/failing, recovery is unverified, the change risks data loss or patient harm, or the actual cost could exceed zero. Continue independent non-production work where safe, and report the blocker precisely.
+
+This delegation does not authorize paid services, quota bypasses, unsafe shortcuts, or the use of production as a test environment. It does not transfer clinical judgment or real-world launch authority from the owner.
+
+**Authorization record:** Explicit owner approval in conversation on 2026-11-12. This section supersedes older blanket statements that every Production engineering change requires a separate per-change conversational approval, but does not waive any technical, clinical, privacy, security, financial, recovery, or release gate.
+
+**Version**: 1.2.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-12
