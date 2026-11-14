@@ -972,9 +972,13 @@ BEGIN
   IF v_first IS DISTINCT FROM v_retry THEN
     RAISE EXCEPTION 'idempotent retry changed the successful atomic dispense result';
   END IF;
-  IF v_first->0->>'quantity_dispensed' IS DISTINCT FROM '2'
-     OR v_first->0->>'batch_number' IS DISTINCT FROM 'PHASE61C-VALID' THEN
-    RAISE EXCEPTION 'atomic dispense wrapper returned an unexpected batch or quantity';
+  IF COALESCE((v_first->0->>'quantity_dispensed')::numeric, -1) <> 2 THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned unexpected quantity: %',
+      v_first->0->>'quantity_dispensed';
+  END IF;
+  IF v_first->0->>'batch_number' IS DISTINCT FROM 'PHASE61C-VALID' THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned unexpected batch: %',
+      v_first->0->>'batch_number';
   END IF;
 END;
 $phase61c_pharmacist_atomic_dispense_success$;
