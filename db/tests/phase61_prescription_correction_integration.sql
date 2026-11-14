@@ -890,6 +890,42 @@ BEGIN
 END;
 $phase61c_atomic_dispense_acl$;
 
+-- SECURITY DEFINER boundaries must retain an empty search_path after the move/wrap.
+DO $phase61c_security_definer_hardening$
+DECLARE
+  v_wrapper record;
+  v_unchecked record;
+  v_helper record;
+BEGIN
+  SELECT p.prosecdef, p.proconfig
+    INTO v_wrapper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.atomic_pharmacy_dispense(uuid,boolean,uuid)');
+  IF v_wrapper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_wrapper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'public atomic pharmacy dispense wrapper must be SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_unchecked
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)');
+  IF v_unchecked.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_unchecked.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'private unchecked atomic pharmacy dispense must preserve SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_helper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('private.app_has_role_permission(text[],text)');
+  IF v_helper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_helper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'Phase 61B role helper must be SECURITY DEFINER with empty search_path';
+  END IF;
+END;
+$phase61c_security_definer_hardening$;
+
 -- Rejected Admin/Super Admin calls must stop before the idempotency ledger is touched.
 DO $phase61c_rejected_admin_no_idempotency$
 BEGIN

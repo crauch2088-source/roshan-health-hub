@@ -201,5 +201,10 @@ test("Phase 61C denies authenticator execution and leaves no idempotency row aft
   assert.ok(integration.includes("has_function_privilege('authenticator'"));
   assert.ok(integration.includes("phase61c_rejected_admin_no_idempotency"));
   assert.ok(integration.includes("Super Admin fixture must demonstrate global permission bypass"));
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /Phase 61B role permission helper is missing; apply Phase 61B before Phase 61C/,
+  );
+  assert.ok(integration.includes("phase61c_security_definer_hardening"));
   assert.ok(workflow.includes("Reapply Phase 61C to verify forward-migration idempotence"));
 });

@@ -3,6 +3,14 @@
 -- prevents Admin/Super Admin from entering the atomic workflow via broad permissions.
 BEGIN;
 
+DO $phase61c_prerequisites$
+BEGIN
+  IF to_regprocedure('private.app_has_role_permission(text[],text)') IS NULL THEN
+    RAISE EXCEPTION 'Phase 61B role permission helper is missing; apply Phase 61B before Phase 61C';
+  END IF;
+END;
+$phase61c_prerequisites$;
+
 DO $phase61c_move$
 BEGIN
   IF to_regprocedure('private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)') IS NULL THEN
