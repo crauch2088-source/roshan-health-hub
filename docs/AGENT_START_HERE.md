@@ -1,41 +1,37 @@
 # Agent start here — Roshan Health Hub
 
-Use this page to orient quickly. Do not begin by reading the entire historical execution log.
+Use this as the only entry point. Do not begin by reading the historical execution archive or the entire database/tooling history.
 
 ## Read in this order
 
-1. .specify/memory/constitution.md — durable safety rules, clinical boundaries, production delegation, and the owner-approved reset of existing synthetic/test data.
-2. docs/MASTER_PLAN.md — current verified status, active priorities, release gates, and the historical execution roadmap.
-3. AGENTS.md — mandatory execution and verification behavior.
-4. The relevant feature spec, migration manifest, source, tests, and specialist reference only after the live task is identified.
-5. docs/PLUGIN_TOOLING_MAP.md — available integrations and safe routing; refresh live connection state before use.
-6. docs/DB_MIGRATION_RECONCILIATION.md — migration evidence; its dated records must not be mistaken for current ledger state.
+1. `.specify/memory/constitution.md` — read the full file for release, security, clinical, data, or production work; otherwise consult applicable principles and authority sections.
+2. `docs/PROJECT_STATE.md` — current snapshot of main, active PR, exact-head checks, open gates, and freshness limits. Refresh mutable facts from live systems.
+3. `docs/MASTER_PLAN.md` — concise roadmap, current blockers, and release sequence.
+4. `AGENTS.md` and `docs/AGENT_EXECUTION_PROTOCOL.md` — mandatory execution and handoff rules.
+5. `docs/TASK_REGISTRY.md` — find canonical GitHub Issues/PRs; never duplicate their backlog.
+6. `docs/VERIFICATION_MATRIX.md` — select focused and integrated evidence for the task.
+7. The relevant GitHub Issue/PR, feature spec, source, schema/migration, callers, tests, and only the necessary specialist skill.
+8. `docs/PLUGIN_TOOLING_MAP.md` only when an external integration is needed. Refresh connection state before use.
 
-## First five minutes of every work session
+## First five minutes of every session
 
-- Read the current status block at the top of docs/MASTER_PLAN.md.
-- Fetch live main SHA, active branch/PR head, PR reviews, exact-head CI and open issues. Historical notes are not live state.
-- Identify the exact task and its acceptance evidence. Inspect the relevant code, schema, migration, callers and tests.
-- Verify the intended environment/project identifiers before any external write.
-- If a task is blocked, continue independent safe work rather than repeating failed attempts.
+- Fetch live `main` SHA, active branch/PR head/state, branch comparison, changed files, reviews, review threads, exact-head CI, Vercel status when relevant, and open GitHub Issues/PRs.
+- Compare live values with `docs/PROJECT_STATE.md`; correct stale facts rather than repeating them.
+- Select one canonical task and identify acceptance evidence, dependencies, allowed paths, environment, and authority.
+- Inspect relevant source, callers, database contracts, migrations, and tests before planning.
+- Verify exact target project/ref and recovery path before any external write.
+- If a task is blocked, continue independent safe work rather than repeatedly retrying the same dependency.
 
 ## Non-negotiable facts
 
-- Existing rows in both QA and Production are synthetic/test data. The owner explicitly authorized resetting those existing rows and rebuilding affected schema objects under Constitution Section X. Never ask for that authorization again.
-- That authority does not permit creating new synthetic patient, clinical, pharmacy, laboratory, inventory or financial transactions in Production.
-- Preserve Supabase project identity, Auth access/recovery, credentials/secrets, environment bindings, deployment configuration and essential platform settings during data/schema reset work.
-- Production engineering authority is delegated only within Constitution Section X and its preflight, recovery, exact-head validation, security, zero-cost and post-change safeguards.
-- Clinical protocols, diagnoses, medication choices/doses/frequencies and decision-support policy require clinician approval.
-- Green CI, merge, deployment and code review are not clinical/staff acceptance or launch approval.
-- Report engineering release-candidate completion separately from operational readiness. Use evidence-backed, deduplicated progress only.
+- Existing rows in both QA and Production are synthetic/test data. The owner explicitly authorized resetting those existing rows and rebuilding affected schema objects under Constitution Section X. Do not ask for this authorization again.
+- This authority does not permit creating new synthetic patient, clinical, pharmacy, laboratory, inventory, or financial transactions in Production.
+- Preserve Supabase project identity, Auth access/recovery, credentials/secrets, environment bindings, deployment configuration, integrations, and essential platform settings.
+- Production engineering authority is delegated only within Constitution Section X and its preflight, recovery, exact-head validation, security, zero-cost, and post-change safeguards.
+- Clinical protocols, diagnoses, medication choices/doses/frequencies, and decision-support policy require clinician approval.
+- Green CI, merge, deployment, and code review are not clinical/staff acceptance or launch approval.
+- Report engineering release-candidate completion separately from real-world operational readiness.
 
-## Completion reporting
+## Historical references
 
-For each work batch, state:
-- exact branch/commit/PR and changed files;
-- what was implemented versus merely inspected;
-- tests/checks actually run, with passed/failed/skipped/blocked distinctions;
-- whether any QA/Production write occurred and exact target;
-- remaining release blockers and residual risks;
-- current engineering completion %, operational readiness %, and a defensible remaining-time estimate. Recalculate rather than copying stale estimates.
-
+`docs/archive/MASTER_PLAN_HISTORY.md`, `docs/archive/PLUGIN_TOOLING_HISTORY.md`, and dated release reports are historical records. Open them only when a specific past decision, migration provenance, or incident must be traced.

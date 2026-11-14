@@ -14,6 +14,15 @@ on:
       - 'docs/AGENT_TOOLING_RESEARCH_2026-11-04.md'
       - 'tests/agent-skills-contract.test.mjs'
       - 'AGENTS.md'
+      - 'docs/AGENT_START_HERE.md'
+      - 'docs/PROJECT_STATE.md'
+      - 'docs/TASK_REGISTRY.md'
+      - 'docs/AGENT_TASK_CONTRACT_TEMPLATE.md'
+      - 'docs/AGENT_EXECUTION_PROTOCOL.md'
+      - 'docs/VERIFICATION_MATRIX.md'
+      - 'docs/MASTER_PLAN.md'
+      - 'docs/PLUGIN_TOOLING_MAP.md'
+      - 'docs/archive/PLUGIN_TOOLING_HISTORY.md'
       - '.github/workflows/spec-kit-validation.yml'
   pull_request:
     paths:
