@@ -112,3 +112,45 @@ The following are **not established by the advertisement**: offline conflict res
 - No TIT source repository, demo credentials, or inspectable vendor technical documentation were identified.
 - No live clinical workflow was run and no patient/financial data was created or changed.
 - The report does not certify clinical readiness, offline capability, or production release readiness.
+
+
+## Public production smoke — follow-up continuation, 2026-11-14
+
+### Deployment identity
+
+Vercel production deployment lookup returned the latest READY production deployment:
+- Deployment: `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH`
+- URL: `roshan-health-5sz95objk-roshan45.vercel.app`
+- Branch: `main`
+- Git SHA: `a9040601702972bdf144fc96b9658eebd5a6d31a`
+- State: `READY`
+
+The deployed source SHA matches the reviewed `main` baseline. The documentation-only PR #251 is not included in production.
+
+### Read-only public page fetch
+
+A public fetch of `/auth` at 390×844 viewport metadata returned:
+- HTML document language `ar`, direction `rtl`, and responsive viewport metadata.
+- Staff sign-in title, clinic logo, email and password fields, submit button, password-reset control, and English language toggle.
+- Public registration closed notice.
+- Skip-to-content link targeting `#auth-card`.
+- Email/password autocomplete tokens `username` and `current-password`; password minimum length 6.
+- No public registration link on the sign-in page.
+
+The page fetch included a screenshot request, but the scraper returned `screenshot.data: null`; therefore **no screenshot was actually captured** and no visual pass is claimed. A single 390×844 viewport was requested; 360/430 widths, English LTR, keyboard interaction, touch target sizing, overflow, and live browser console remain NOT TESTED. Static HTML alone cannot prove interactive language switching or reset behavior.
+
+A read-only fetch of `/setup` returned Arabic setup metadata and a transient server-rendered `جارٍ التحميل…` state. This is not enough to determine the hydrated client state or whether setup is complete; the prior matrix's historical completed-setup smoke is not revalidated by this fetch. Do not submit or interact with the setup form.
+
+The root route returned the clinic title and a transient loading message; redirect behavior was not confirmed in this pass.
+
+### Tooling limitation
+
+An attempted authenticated-capable browser automation run was not started: the TinyFish wallet balance was `-$0.07`. No wallet top-up was made, in keeping with the project's no-paid-services constraint. This is an external tooling/budget limitation, not an application failure.
+
+### Updated findings
+
+1. Production currently serves the reviewed `main` SHA `a904060` in a READY Vercel deployment.
+2. Public auth-page HTML has useful baseline accessibility/metadata features, but this is not a browser visual or interactive acceptance pass.
+3. The setup route needs a permitted hydrated-state check in an isolated QA session; do not infer setup status from the server-rendered loading placeholder.
+4. No production writes, sign-ins, account creation, patient/financial transactions, or configuration changes were performed.
+5. Keep PR #251 as Draft and Issue #95 open until authenticated visual and role acceptance evidence is collected.
