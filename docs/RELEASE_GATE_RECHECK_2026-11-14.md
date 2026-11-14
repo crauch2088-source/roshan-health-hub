@@ -13,7 +13,7 @@ Main is healthy and the Phase 61C candidate now passes its exact-head CI and Pos
 - Main CI [43527161767](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161767): 18 success, 1 intentional clinical-acceptance skip, 0 failures.
 - Main Push [43527160629](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527160629), Spec Kit [43527161693](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161693), Finance isolation [43527161727](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161727): success.
 - Open PRs: 9. Open issues: #199, #217, #218.
-- PR #250: [fix/security: gate atomic pharmacy dispense by pharmacist role](https://github.com/crauch2088-source/roshan-health-hub/pull/250), Draft, mergeable, 10 commits ahead / 0 behind main. Current head **99b8b0689c6413b6d227fc035930136ad98516fc**.
+- PR #250: [fix/security: gate atomic pharmacy dispense by pharmacist role](https://github.com/crauch2088-source/roshan-health-hub/pull/250), Draft, mergeable, 10 commits ahead / 0 behind main. Tested code head **99b8b0689c6413b6d227fc035930136ad98516fc**; documentation-only follow-up commit **71df5bdff456a94e5c696e15f3a3a0c2349b4673** is layered after it.
 
 ### PR #250 exact-head checks
 
