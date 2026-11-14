@@ -18,7 +18,7 @@ If sources conflict, prefer newer verified live evidence and the latest explicit
 ## Mandatory execution behavior
 
 - Refresh main SHA, active branch/PR head, reviews, exact-head CI, and open Issues/PRs at session start. Recheck target identity before every external write.
-- Use the Task Registry to find canonical GitHub work; do not create duplicate Markdown backlogs.
+- Use `docs/TASK_REGISTRY.md` to find canonical GitHub work; do not create duplicate Markdown backlogs.
 - Use `docs/AGENT_TASK_CONTRACT_TEMPLATE.md` for non-trivial tasks and `docs/VERIFICATION_MATRIX.md` to choose evidence.
 - Inspect relevant implementation, schema, migrations, callers, tests, and dependencies before planning a change.
 - For behavior changes, use test-first development: add a regression test, implement the smallest complete fix, then verify focused and integrated behavior.
