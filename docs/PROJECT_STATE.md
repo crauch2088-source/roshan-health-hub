@@ -1,7 +1,7 @@
 # Roshan Health Hub — Live Project State
 
 **Purpose:** compact, evidence-backed session snapshot. This file is a cache, not authority over live GitHub, Supabase, or Vercel state.
-**Snapshot date:** 2026-11-14 (refreshed after the 83ed9a9 exact-head and live Phase 61 read-only checks). **Refresh before relying on any mutable value or performing a write.**
+**Snapshot date:** 2026-11-14 (refreshed after code-head checks, live Phase 55/61 read-only checks, and governance correction). **Refresh before relying on any mutable value or performing a write.**
 
 ## Repository and active change
 
@@ -11,14 +11,14 @@
 | Main baseline | `a9040601702972bdf144fc96b9658eebd5a6d31a` |
 | Active branch | `fix/phase61c-atomic-dispense-role-boundary-20261114` |
 | Active PR | [#250 — atomic pharmacy dispense pharmacist-role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) |
-| PR head | `83ed9a9d82b3a1ee78ccadcc70db86139b182983` |
-| Branch comparison | 34 commits ahead, 0 behind `main` |
+| PR head | `faa55bf59acf48d80387477d82c84e71f337e626` |
+| Branch comparison | 36 commits ahead, 0 behind `main` |
 | PR state | Open, Draft |
 | Independent review | 0 submitted reviews; 0 inline review threads |
 
 ## Exact-head verification
 
-Commit checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
+SQL/application code checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`. Latest docs-only head: `faa55bf59acf48d80387477d82c84e71f337e626`.
 
 | Workflow / check | Result |
 |---|---|
@@ -27,7 +27,7 @@ Commit checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
 
 **Important exclusions:** authenticated clinical acceptance remains intentionally skipped/deferred. Green CI does not constitute independent SQL/security review, hosted QA acceptance, clinical acceptance, staff UAT, or a Vercel preview. Do not merge PR #250 or apply Phase 61C to hosted environments solely because CI is green.
 
-## Hosted environments — fresh read-only Phase 61 snapshot
+## Hosted environments — fresh read-only Phase 55 and Phase 61 snapshot
 
 | Check | QA (`hopfohcnrtbiqjkgeukz`, PostgreSQL 17.11) | Production (`jewzonxplxhogqrnhosl`, PostgreSQL 17.6) |
 |---|---|---|
@@ -42,11 +42,22 @@ Commit checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
 
 This was a read-only SQL check. No DDL, DML, ACL, RLS, Auth, Storage, backup, or deployment changes were made. Full migration-ledger counts and broader catalog fingerprints were not refreshed in this check; do not infer parity from this Phase 61-specific snapshot. Phase 61C remains a candidate only and requires independent SQL/security review before QA application. Production remains untouched.
 
+### Phase 55 ACL reconciliation
+
+| Check | QA | Production |
+|---|---|---|
+| Phase 55 migration | Present: `20261103155227` | Absent |
+| `private.app_has_claim_branch(uuid)` EXECUTE to anon/authenticated/service_role/authenticator | Denied | Allowed via NULL proacl / default PUBLIC grant |
+| `private.sync_user_role_text()` EXECUTE to anon/authenticated/service_role/authenticator | Denied | Allowed via NULL proacl / default PUBLIC grant |
+| `private.phase36_guard_clinical_visit_links()` EXECUTE to those roles | Denied | Denied |
+
+The only public function callers found for `private.app_has_claim_branch(uuid)` are `post_insurance_claim_payment(uuid,numeric,text,text)` and `update_insurance_claim_status(uuid,text,numeric,text)`; both are SECURITY DEFINER with fixed empty `search_path` in both environments. `private.sync_user_role_text()` is trigger-only on `public.users`. Phase 36 guard triggers remain attached to the five expected clinical child tables. See [Issue #218](https://github.com/crauch2088-source/roshan-health-hub/issues/218) for the fresh evidence note. No hosted changes were made.
+
 ## Backup and recovery
 
-- Backup evidence was not revalidated during this PR #250 continuation. Treat prior encrypted archive metadata and restore rehearsal as stale for release decisions until runner head, artifact checksum, owner-side decryptability, and a current PostgreSQL 17 restore rehearsal are checked.
+- Backup runner main is `f171732b61fe0460c61a36aa63b861065f9ea9d1`; runner CI [43190851147](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43190851147) passed. Latest successful encrypted Production backup plus runner-side PostgreSQL 17 restore remains [43183851731](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183851731) on older runner SHA `eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8`. No new backup was dispatched; `SUPABASE_DB_PASSWORD` had been deleted after the earlier run. The retained Drive ciphertext has not yet passed owner-side Android/Termux decryption.
 - The backup is database-only. Do not describe it as a complete system backup; Storage bytes and Vault secrets are outside its scope.
-- Refresh runner head, artifact checksum, decryptability, restore rehearsal, and exclusions before release.
+- The runner now provides an offline Android/Termux verifier. Owner-side decryption remains a manual release gate; a fresh backup is blocked on owner-side credential setup. The archive remains database-only; Storage object bytes and Vault secrets are outside its scope.
 
 ## Data classification and change authority
 
@@ -55,6 +66,18 @@ This was a read-only SQL check. No DDL, DML, ACL, RLS, Auth, Storage, backup, or
 - Do not create new synthetic patient, clinical, pharmacy, laboratory, inventory, or financial transactions in Production.
 - Preserve Supabase project identity, Auth recovery, credentials/secrets, environment bindings, deployments, integrations, and essential platform settings.
 - Clinical policy changes and real-world clinical/staff acceptance remain separately governed.
+
+## Parallel feature-branch status — read-only review
+
+| Workstream | Current branch vs main | Exact-head checks | Disposition |
+|---|---:|---|---|
+| [PR #250 — Phase 61C dispense role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) | 36 ahead / 0 behind | SQL/application head `83ed9a9`: 31 pass, 1 intentional clinical-acceptance skip, 0 fail; docs-only head `faa55bf`: checks still running at snapshot | Draft; no independent review; hosted Phase 61C not applied |
+| [PR #233 — medication engine](https://github.com/crauch2088-source/roshan-health-hub/pull/233) | 43 ahead / 18 behind | 29 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; arithmetic/protocol matching only; reconcile before merge |
+| [PR #181 — payment receipts](https://github.com/crauch2088-source/roshan-health-hub/pull/181) | 37 ahead / 18 behind | 29 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; Phase 58/59 hosted contract absent; do not deploy UI |
+| [PR #210 — catalogue identity/pack attestation](https://github.com/crauch2088-source/roshan-health-hub/pull/210) | 74 ahead / 18 behind | 25 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; attestation is not physical-pack verification or a dispensing hard-stop |
+| [PR #251 — TIT UX comparison](https://github.com/crauch2088-source/roshan-health-hub/pull/251) | Based on current main at creation | Documentation-only | Draft; no runtime changes |
+
+The three older feature branches are divergent from current main. Their historical green CI is not current-main validation. Reconcile with normal two-parent merges, resolve overlapping source/spec/manifest files, then rerun exact-head CI. Do not force-push or merge stale branches.
 
 ## Next verified work sequence
 
