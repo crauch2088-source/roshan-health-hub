@@ -711,7 +711,7 @@ jobs:
           psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
             -f db/tests/phase49_quarantine_remediation_assertions.sql
 
-sql-medicine-catalogue-authority:
+  sql-medicine-catalogue-authority:
     name: Shared medicine catalogue authority and pack attestation (PostgreSQL 17)
     runs-on: ubuntu-latest
     timeout-minutes: 5
