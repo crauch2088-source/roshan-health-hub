@@ -854,6 +854,81 @@ END;
 $phase61c_super_admin_atomic_dispense_denied$;
 RESET ROLE;
 
+
+-- A pharmacist role is not sufficient if either required permission bit is missing.
+-- These temporary permission removals run only in the disposable PostgreSQL 17 fixture.
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'pharmacist'
+  AND p.code = 'billing.create';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_missing_billing_permission_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'fixture must isolate the missing billing.create permission';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff5'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist reached atomic dispense without billing.create';
+  END IF;
+END;
+$phase61c_pharmacist_missing_billing_permission_denied$;
+RESET ROLE;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+JOIN public.permissions p ON p.code = 'billing.create'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'pharmacist'
+  AND p.code = 'pharmacy.update';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_missing_pharmacy_permission_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'fixture must isolate the missing pharmacy.update permission';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff6'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist reached atomic dispense without pharmacy.update';
+  END IF;
+END;
+$phase61c_pharmacist_missing_pharmacy_permission_denied$;
+RESET ROLE;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+JOIN public.permissions p ON p.code = 'pharmacy.update'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
 DO $phase61c_pharmacist_reaches_atomic_validation$
@@ -934,7 +1009,9 @@ BEGIN
     FROM private.pharmacy_dispense_idempotency
     WHERE request_id IN (
       'ffffffff-ffff-ffff-ffff-fffffffffff1'::uuid,
-      'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid
+      'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff5'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff6'::uuid
     )
   ) THEN
     RAISE EXCEPTION 'a rejected non-pharmacist created an idempotency row';

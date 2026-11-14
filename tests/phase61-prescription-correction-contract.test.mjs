@@ -209,6 +209,13 @@ test("Phase 61C denies authenticator execution and leaves no idempotency row aft
   assert.ok(workflow.includes("Reapply Phase 61C to verify forward-migration idempotence"));
 });
 
+test("Phase 61C requires both pharmacy and billing permissions for a pharmacist", () => {
+  assert.ok(integration.includes("phase61c_pharmacist_missing_billing_permission_denied"));
+  assert.ok(integration.includes("phase61c_pharmacist_missing_pharmacy_permission_denied"));
+  assert.ok(integration.includes("pharmacist reached atomic dispense without billing.create"));
+  assert.ok(integration.includes("pharmacist reached atomic dispense without pharmacy.update"));
+});
+
 test("Phase 61C preserves successful pharmacist dispense and idempotent replay", () => {
   assert.ok(fixture.includes("PHASE61C-VALID"));
   assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_success"));
