@@ -215,4 +215,3 @@ test("Phase 61C preserves successful pharmacist dispense and idempotent replay",
   assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_effects"));
   assert.ok(integration.includes("idempotent retry changed the successful atomic dispense result"));
 });
-
