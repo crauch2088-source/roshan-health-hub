@@ -365,3 +365,10 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 - PR #250 adds a canonical pharmacist success-path regression after the Phase 61C wrapper is installed. The test verifies valid dispense, idempotent replay, stock decrement, one stock movement, one pharmacy invoice line, and a persisted idempotency result.
 - The existing negative role/ACL/no-side-effect assertions remain. All behavior runs only in disposable PostgreSQL 17 CI; hosted QA application remains gated by independent SQL/security review. Do not apply Production changes.
 
+## Phase 61C positive-path verification — 2026-11-14
+
+- PR #250 exact head `2fac5c1aed5a30469832829fd510c51da3f12faa`; focused PostgreSQL 17 workflow [43568850218](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568850218) passed.
+- New post-wrapper test proves a canonical pharmacist can complete atomic dispense, replay the same idempotency key without duplicate writes, and preserve stock, invoice and idempotency invariants. Source-contract/UI tests passed 24/24.
+- First attempt [43568728075](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568728075) exposed an overly strict text comparison in the test; corrected to numeric comparison. No runtime SQL change was required.
+- PR remains Draft with no independent reviews. No hosted QA/Production migration was applied; QA application remains gated by independent SQL/security review.
+

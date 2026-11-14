@@ -85,6 +85,16 @@ Last evidence-weighted progress baseline: **62% Engineering RC / 15% Operational
 
 - Independent source review of PR #250 at pre-change head `18fdd82ed8896926c097c7450b7c7f8e6cf3c374` found a coverage gap, not a confirmed runtime defect: the suite proved non-pharmacist rejection and pharmacist access to invalid-input validation, but did not execute a successful dispense through the new outer wrapper. The existing Phase 49/50 positive path runs before Phase 61C and uses a non-canonical synthetic role code.
 - Added a post-Phase-61C synthetic canonical-pharmacist success case with a valid linked prescription and unexpired batch. It asserts successful wrapper delegation, exact idempotent replay, a single stock movement, a single pharmacy invoice line, one persisted idempotency result, and remaining batch quantity.
-- The test/fixture/source-contract update is on PR #250 only. Exact commit and resulting check IDs will be recorded after GitHub completes the run.
+- The test/fixture/source-contract update is on PR #250 only. Commits `ee254b02d0869d65ceccd97e9e3496adadbbec81` and `2fac5c1aed5a30469832829fd510c51da3f12faa` carry the regression; exact-head focused PostgreSQL 17 run [43568850218](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568850218) passed. The first run [43568728075](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568728075) failed on a strict numeric-string test assertion, corrected in `2fac5c1`.
 - No hosted QA/Production migration, DDL/DML, ACL change, external backup write, merge, or deployment promotion occurred. Independent second-person SQL/security review is still required before a QA-only application.
+
+
+
+### Exact-head test result — 2026-11-14 06:58 UTC
+
+- PR #250 head: `2fac5c1aed5a30469832829fd510c51da3f12faa` (15 ahead / 0 behind main), Draft, mergeable, zero submitted reviews and zero inline review threads.
+- Focused Phase 61 PostgreSQL 17 workflow [43568850218](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568850218) passed. It applied Phase 61/61B/61C in disposable PostgreSQL 17, reapplied Phase 61C, passed the new canonical-pharmacist success/idempotent-replay assertions, the role/RLS/audit/no-side-effects suite, concurrent correction serialization, and 24/24 Node source-contract/UI tests.
+- Initial run [43568728075](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568728075) failed on a strict text comparison of a JSON numeric value; commit `2fac5c1` changed the assertion to a numeric comparison and the rerun passed. This was a test assertion correction, not a production SQL change.
+- The PR Vercel context is success for its preview; Production remains on deployment `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH`, READY on main SHA `a9040601702972bdf144fc96b9658eebd5a6d31a`, with canonical alias present and `aliasError=null`.
+- No hosted QA/Production DDL/DML, ACL changes, real records, backup writes, merge or deployment promotion occurred. Independent second-person SQL/security review remains required before QA-only application.
 
