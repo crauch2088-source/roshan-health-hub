@@ -872,14 +872,33 @@ RESET ROLE;
 
 DO $phase61c_atomic_dispense_acl$
 BEGIN
-  IF has_function_privilege('authenticated','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
-     OR has_function_privilege('service_role','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE') THEN
-    RAISE EXCEPTION 'unchecked atomic pharmacy dispense RPC is directly executable';
+  IF has_function_privilege('anon','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'unchecked atomic pharmacy dispense RPC is directly executable by an API role';
   END IF;
   IF NOT has_function_privilege('authenticated','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
      OR has_function_privilege('anon','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
-     OR has_function_privilege('service_role','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
+     OR has_function_privilege('service_role','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
     RAISE EXCEPTION 'public atomic pharmacy dispense wrapper grants are incorrect';
   END IF;
 END;
 $phase61c_atomic_dispense_acl$;
+
+-- Rejected Admin/Super Admin calls must stop before the idempotency ledger is touched.
+DO $phase61c_rejected_admin_no_idempotency$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM private.pharmacy_dispense_idempotency
+    WHERE request_id IN (
+      'ffffffff-ffff-ffff-ffff-fffffffffff1'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid
+    )
+  ) THEN
+    RAISE EXCEPTION 'a rejected non-pharmacist created an idempotency row';
+  END IF;
+END;
+$phase61c_rejected_admin_no_idempotency$;

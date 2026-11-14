@@ -188,3 +188,18 @@ test("Phase 61C gates the active atomic pharmacy dispense RPC by pharmacist role
     /REVOKE ALL ON FUNCTION private\.atomic_pharmacy_dispense_unchecked/,
   );
 });
+
+
+test("Phase 61C denies authenticator execution and leaves no idempotency row after rejected roles", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /FROM PUBLIC, anon, authenticated, service_role, authenticator/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /FROM PUBLIC, anon, service_role, authenticator/,
+  );
+  assert.ok(integration.includes("has_function_privilege('authenticator'"));
+  assert.ok(integration.includes("phase61c_rejected_admin_no_idempotency"));
+  assert.ok(workflow.includes("Reapply Phase 61C to verify forward-migration idempotence"));
+});

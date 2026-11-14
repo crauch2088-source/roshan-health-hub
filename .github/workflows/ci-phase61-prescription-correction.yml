@@ -71,15 +71,22 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_fixture.sql
-      - name: Apply Phase 61 and run PostgreSQL 17 behavior assertions
+      - name: Apply Phase 61, 61B and 61C before PostgreSQL 17 assertions
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/roshan_phase61_prescription_item_correction_workflow.sql \
             -f db/roshan_phase61b_clinical_role_boundary.sql \
-            -f db/roshan_phase61c_atomic_dispense_role_boundary.sql \
-            -f db/tests/phase61_prescription_correction_integration.sql
+            -f db/roshan_phase61c_atomic_dispense_role_boundary.sql
+      - name: Reapply Phase 61C to verify forward-migration idempotence
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/roshan_phase61c_atomic_dispense_role_boundary.sql
+      - name: Run PostgreSQL 17 role, RLS, audit and no-side-effects assertions
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_integration.sql
       - name: Prove concurrent correction resolution is serialized
         env:
           PGPASSWORD: postgres
