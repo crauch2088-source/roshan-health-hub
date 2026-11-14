@@ -153,4 +153,4 @@ An attempted authenticated-capable browser automation run was not started: the T
 2. Public auth-page HTML has useful baseline accessibility/metadata features, but this is not a browser visual or interactive acceptance pass.
 3. The setup route needs a permitted hydrated-state check in an isolated QA session; do not infer setup status from the server-rendered loading placeholder.
 4. No production writes, sign-ins, account creation, patient/financial transactions, or configuration changes were performed.
-5. Keep PR #251 as Draft and Issue #95 open until authenticated visual and role acceptance evidence is collected.
+5. Keep Issue #95 open until authenticated visual and role acceptance evidence is collected; this documentation audit does not satisfy or replace that acceptance.
