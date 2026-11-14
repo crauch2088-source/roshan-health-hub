@@ -189,7 +189,6 @@ test("Phase 61C gates the active atomic pharmacy dispense RPC by pharmacist role
   );
 });
 
-
 test("Phase 61C denies authenticator execution and leaves no idempotency row after rejected roles", () => {
   assert.match(
     atomicDispenseRoleBoundaryMigration,
