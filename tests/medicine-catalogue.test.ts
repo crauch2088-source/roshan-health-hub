@@ -84,14 +84,25 @@ test("identity-only update cannot carry stock, unit, price, expiry or reorder fi
     strength: "500 mg",
     dosage_form: "capsule",
   });
-  for (const forbidden of ["unit", "cost_price", "selling_price", "stock_quantity", "expiry_date", "reorder_level"]) {
+  for (const forbidden of [
+    "unit",
+    "cost_price",
+    "selling_price",
+    "stock_quantity",
+    "expiry_date",
+    "reorder_level",
+  ]) {
     assert.equal(forbidden in result.data, false);
   }
 });
 
 test("custom dosage form is mandatory only when Other is selected", () => {
   assert.deepEqual(
-    buildMedicineCatalogueIdentityUpdate({ ...draft, dosage_form: "other", custom_dosage_form: "" }),
+    buildMedicineCatalogueIdentityUpdate({
+      ...draft,
+      dosage_form: "other",
+      custom_dosage_form: "",
+    }),
     { error: "missing-custom-dosage-form" },
   );
   const result = buildMedicineCatalogueIdentityUpdate({
@@ -123,7 +134,7 @@ test("catalogue search returns null for too-short input and searches identity fi
 });
 
 test("catalogue search neutralizes PostgREST filter delimiters and wildcard injection", () => {
-  const result = buildMedicineCatalogueSearchFilter('amox,brand).ilike.*%_\\\'"');
+  const result = buildMedicineCatalogueSearchFilter("amox,brand).ilike.*%_\\\\'\"");
   assert.equal(
     result,
     "name.ilike.%amox brand .ilike.%,generic_name.ilike.%amox brand .ilike.%,brand_name.ilike.%amox brand .ilike.%,strength.ilike.%amox brand .ilike.%,dosage_form.ilike.%amox brand .ilike.%",
