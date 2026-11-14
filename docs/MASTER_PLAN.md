@@ -10,7 +10,7 @@
 - Live comparison at that checkpoint: 34 commits ahead, 0 behind `main`.
 - Exact-head CI on `83ed9a9d82b3a1ee78ccadcc70db86139b182983` completed with 31 successful checks, 1 intentional authenticated clinical-acceptance skip, and 0 failures ([run 43577740702](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43577740702)). The Vercel status is marked success because the build was canceled by the Ignored Build Step; no preview deployment was produced. There are 0 independent reviews and 0 inline review threads. Authenticated clinical acceptance remains skipped/deferred.
 - Production and QA migration counts in the prior snapshot are historical checkpoints only. Re-read live ledgers and target refs before any migration.
-- Existing QA/Production rows are synthetic/test data. Owner-approved reset/rebuild authority is in Constitution Section X; never create new synthetic clinical/business transactions in Production.
+- Existing QA/Production rows are classified by the owner as synthetic/test data. This classification is not destructive-reset authorization; see Constitution Section X. Never create new synthetic clinical/business transactions in Production.
 - Backup evidence is incomplete as a current release proof: latest archive metadata check did not include decryption in that session, and latest restore evidence predates the current runner head.
 - Last separately stated estimates (2026-11-12) were 62% engineering RC and 15% operational readiness; these are historical, not current percentages.
 

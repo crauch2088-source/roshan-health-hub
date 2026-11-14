@@ -26,7 +26,7 @@ If sources conflict, prefer newer verified live evidence and the latest explicit
 - Run focused validation first, then one exact-head CI run after the complete change is ready. Rerun only checks needed after a real correction.
 - Report `PASS`, `FAIL`, `SKIP`, `BLOCKED`, `NOT_RUN`, and `STALE` separately. Never call a skipped check a pass.
 - Use disposable PostgreSQL 17 for migration replay and integration tests. Use QA for controlled synthetic acceptance. Never create synthetic patient/clinical/pharmacy/lab/inventory/financial test transactions in Production.
-- Production engineering changes follow Constitution Section X, including preflight, recovery, exact-head, security, zero-cost, and post-change gates. Existing synthetic/test-row reset authority is durable; do not ask the owner to repeat it.
+- Production engineering changes follow Constitution Section X, including preflight, recovery, exact-head, security, zero-cost, and post-change gates. The existing QA/Production data classification as synthetic/test is durable; do not ask the owner to repeat that fact. It does not authorize destructive resets or reseeding.
 - Preserve migration history and provenance. Never edit the ledger to manufacture parity, weaken RLS/auth/audit/branch isolation, or expose secrets or real patient data.
 - Protect free-tier limits: no paid services, quota bypasses, unnecessary builds/deployments, duplicate integrations, or forced retries.
 - Do not force-push, amend published commits, or rewrite synced history. Use expected-SHA ref updates.

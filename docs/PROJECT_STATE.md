@@ -48,10 +48,11 @@ This was a read-only SQL check. No DDL, DML, ACL, RLS, Auth, Storage, backup, or
 - The backup is database-only. Do not describe it as a complete system backup; Storage bytes and Vault secrets are outside its scope.
 - Refresh runner head, artifact checksum, decryptability, restore rehearsal, and exclusions before release.
 
-## Data classification and standing authority
+## Data classification and change authority
 
-- The owner confirmed that all rows currently present in QA and Production are synthetic/test data and authorized reset/rebuild of those existing rows under Constitution Section X.
-- This does **not** authorize creating new synthetic patient, clinical, pharmacy, laboratory, inventory, or financial transactions in Production.
+- The owner confirmed that all rows currently present in QA and Production are synthetic/test data; no real patient records have been trialed or entered. This classification is durable and need not be reconfirmed.
+- This fact does **not** authorize deleting, truncating, resetting, replacing, or reseeding those rows, nor destructive schema rebuilds. Such operations require a specific scoped owner decision and recovery plan.
+- Do not create new synthetic patient, clinical, pharmacy, laboratory, inventory, or financial transactions in Production.
 - Preserve Supabase project identity, Auth recovery, credentials/secrets, environment bindings, deployments, integrations, and essential platform settings.
 - Clinical policy changes and real-world clinical/staff acceptance remain separately governed.
 
