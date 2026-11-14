@@ -6,21 +6,23 @@
 ## Current execution snapshot
 
 - Main baseline: `a9040601702972bdf144fc96b9658eebd5a6d31a`.
-- Active PR: [#250](https://github.com/crauch2088-source/roshan-health-hub/pull/250), Draft, branch `fix/phase61c-atomic-dispense-role-boundary-20261114`, last verified head `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
-- Live comparison at that checkpoint: 34 commits ahead, 0 behind `main`.
+- Active PR: [#250](https://github.com/crauch2088-source/roshan-health-hub/pull/250), Draft, branch `fix/phase61c-atomic-dispense-role-boundary-20261114`, latest docs-only head `d912ae9a8da17dc34c301545fe57d6dafb6a8311`; tested SQL/application code head `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
+- Live comparison at that checkpoint: 40 commits ahead, 0 behind `main`.
 - Exact-head CI on `83ed9a9d82b3a1ee78ccadcc70db86139b182983` completed with 31 successful checks, 1 intentional authenticated clinical-acceptance skip, and 0 failures ([run 43577740702](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43577740702)). The Vercel status is marked success because the build was canceled by the Ignored Build Step; no preview deployment was produced. There are 0 independent reviews and 0 inline review threads. Authenticated clinical acceptance remains skipped/deferred.
+- PR #249 merged the Phase 61 correction workflow and deterministic medication-engine foundation to main (`a9040601702972bdf144fc96b9658eebd5a6d31a`). PRs #233 and #185 were closed as superseded; the Feature 056 specification package is preserved in [PR #252](https://github.com/crauch2088-source/roshan-health-hub/pull/252), based on current main, with all Spec Kit and CodeQL checks passing.
+- Fresh read-only Phase 55 check: QA has migration `20261103155227` and denies direct application-role EXECUTE on the two private helpers; Production lacks Phase 55 and still exposes `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` through default PUBLIC EXECUTE. See Issue #218. No hosted changes were made.
 - Production and QA migration counts in the prior snapshot are historical checkpoints only. Re-read live ledgers and target refs before any migration.
 - Existing QA/Production rows are classified by the owner as synthetic/test data. This classification is not destructive-reset authorization; see Constitution Section X. Never create new synthetic clinical/business transactions in Production.
-- Backup evidence is incomplete as a current release proof: latest archive metadata check did not include decryption in that session, and latest restore evidence predates the current runner head.
+- Backup runner main is `f171732b61fe0460c61a36aa63b861065f9ea9d1`; CI run `43190851147` passes. The latest full encrypted Production backup/PG17 restore is run `43183851731` on older runner SHA `eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8`. Owner-side Android/Termux decryption remains unverified; no new backup was dispatched because the required DB password secret had been deleted. See Issue #199.
 - Last separately stated estimates (2026-11-12) were 62% engineering RC and 15% operational readiness; these are historical, not current percentages.
 
 ## Execution order
 
 1. **PR #250 independent review:** review complete SQL diff and role/permission semantics; verify canonical and legacy pharmacist behavior, RLS/grants, branch scope, idempotency, audit, inventory, and billing invariants. Do not merge or apply Phase 61C to hosted QA/Production until review and QA gate pass.
-2. **Migration provenance and security reconciliation:** reconcile source, manifest, Production/QA ledgers, baseline/replay evidence, and ACL differences. Never edit ledger history to manufacture parity.
-3. **Release blockers:** refresh encrypted backup/decryption/restore evidence; complete role × operation × branch tests; resolve outstanding high-risk security/data-integrity Issues, including #218.
-4. **Core workflows:** complete the 22 authenticated application screens and end-to-end module workflows using source-backed acceptance criteria. Prioritize reception, GP, lab, pharmacy, and finance.
-5. **Operational acceptance:** authenticated QA acceptance, real staff UAT, clinician/pharmacist/finance validation, 320–430 px mobile layouts, Arabic RTL/English LTR, physical printing, and controlled release decision.
+2. **Phase 55/61 release sequence:** complete Issue #218 source/ledger/catalogue reconciliation and independent review; apply only forward-only ACL remediation in QA first, then separately authorize Production. Phase 61C remains a candidate only. Never edit ledger history to manufacture parity.
+3. **Backup and recovery:** owner completes local encrypted artifact verification via Android/Termux; owner re-establishes required backup credentials; generate a current encrypted backup and PostgreSQL 17 restore rehearsal; document Storage/Vault exclusions.
+4. **Catalogue and finance:** reconcile PR #210 (74 ahead / 18 behind main) and PR #181 (37 ahead / 18 behind main) using normal two-parent merges; do not merge either stale branch before exact-head tests and hosted migration prerequisites.
+5. **Operational acceptance:** authenticated QA acceptance, real staff UAT, clinician/pharmacist/finance validation, 320–430 px mobile layouts, Arabic RTL/English LTR, physical printing, and controlled release decision. The medication engine remains a non-clinical foundation until verified local source corpus, product identity, structured patient context and independent GP/pharmacist approval exist.
 
 ## Completion and release semantics
 
@@ -42,5 +44,6 @@
 | Durable safety/owner authority | `.specify/memory/constitution.md` |
 | Agent startup | `docs/AGENT_START_HERE.md` and `AGENTS.md` |
 | Historical execution narrative | `docs/archive/MASTER_PLAN_HISTORY.md` |
+| Medication engine specification and evidence governance | [PR #252](https://github.com/crauch2088-source/roshan-health-hub/pull/252), pending review |
 
 Historical phase checklists and old status snapshots have been moved to `docs/archive/MASTER_PLAN_HISTORY.md`. They are evidence, not current status.
