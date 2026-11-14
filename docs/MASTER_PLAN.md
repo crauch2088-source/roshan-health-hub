@@ -6,9 +6,9 @@
 ## Current execution snapshot
 
 - Main baseline: `a9040601702972bdf144fc96b9658eebd5a6d31a`.
-- Active PR: [#250](https://github.com/crauch2088-source/roshan-health-hub/pull/250), Draft, branch `fix/phase61c-atomic-dispense-role-boundary-20261114`, last verified head `2ced297b6942408354445fc24792304f4c4a68f5`.
-- Live comparison at that checkpoint: 27 commits ahead, 0 behind `main` (the former 24-ahead figure was stale).
-- Exact-head workflows and Vercel status were successful on that checkpoint; 0 independent reviews and 0 inline review threads. Authenticated clinical acceptance remains skipped/deferred.
+- Active PR: [#250](https://github.com/crauch2088-source/roshan-health-hub/pull/250), Draft, branch `fix/phase61c-atomic-dispense-role-boundary-20261114`, last verified head `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
+- Live comparison at that checkpoint: 34 commits ahead, 0 behind `main`.
+- Exact-head CI on `83ed9a9d82b3a1ee78ccadcc70db86139b182983` completed with 31 successful checks, 1 intentional authenticated clinical-acceptance skip, and 0 failures ([run 43577740702](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43577740702)). The Vercel status is marked success because the build was canceled by the Ignored Build Step; no preview deployment was produced. There are 0 independent reviews and 0 inline review threads. Authenticated clinical acceptance remains skipped/deferred.
 - Production and QA migration counts in the prior snapshot are historical checkpoints only. Re-read live ledgers and target refs before any migration.
 - Existing QA/Production rows are synthetic/test data. Owner-approved reset/rebuild authority is in Constitution Section X; never create new synthetic clinical/business transactions in Production.
 - Backup evidence is incomplete as a current release proof: latest archive metadata check did not include decryption in that session, and latest restore evidence predates the current runner head.

@@ -1,7 +1,7 @@
 # Roshan Health Hub — Live Project State
 
 **Purpose:** compact, evidence-backed session snapshot. This file is a cache, not authority over live GitHub, Supabase, or Vercel state.
-**Snapshot date:** 2026-11-14. **Refresh before relying on any mutable value or performing a write.**
+**Snapshot date:** 2026-11-14 (refreshed after the 83ed9a9 exact-head and live Phase 61 read-only checks). **Refresh before relying on any mutable value or performing a write.**
 
 ## Repository and active change
 
@@ -11,43 +11,40 @@
 | Main baseline | `a9040601702972bdf144fc96b9658eebd5a6d31a` |
 | Active branch | `fix/phase61c-atomic-dispense-role-boundary-20261114` |
 | Active PR | [#250 — atomic pharmacy dispense pharmacist-role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) |
-| PR head | `2ced297b6942408354445fc24792304f4c4a68f5` |
-| Branch comparison | 27 commits ahead, 0 behind `main` |
+| PR head | `83ed9a9d82b3a1ee78ccadcc70db86139b182983` |
+| Branch comparison | 34 commits ahead, 0 behind `main` |
 | PR state | Open, Draft |
 | Independent review | 0 submitted reviews; 0 inline review threads |
 
-**Correction:** the previous `MASTER_PLAN.md` snapshot said 24 commits ahead. The live comparison returned 27 ahead / 0 behind; this snapshot supersedes that stale count.
-
 ## Exact-head verification
 
-Commit checked: `2ced297b6942408354445fc24792304f4c4a68f5`.
+Commit checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`.
 
 | Workflow / check | Result |
 |---|---|
-| CI | PASS — run [43575210104](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210104) |
-| Spec Kit validation | PASS — run [43575210116](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210116) |
-| Insurance claim integrity integration | PASS — run [43575210150](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210150) |
-| Prescription atomicity integration | PASS — run [43575210096](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210096) |
-| Privileged role guard integration | PASS — run [43575210109](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210109) |
-| Phase 61 prescription correction workflow | PASS — run [43575210167](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210167) |
-| Insurance claim UI validation | PASS — run [43575210152](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43575210152) |
-| Vercel commit status | PASS — status URL points to the existing Roshan project |
+| Complete CI check suite | PASS — 31 successful checks, 1 intentional authenticated clinical-acceptance skip, 0 failures; [run 43577740702](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43577740702) |
+| Vercel status | SUCCESS status, but deployment was canceled by the Ignored Build Step; no preview deployment was produced |
 
-**Important exclusions:** authenticated clinical acceptance remains intentionally skipped/deferred. These workflow results do not constitute independent SQL/security review, hosted QA acceptance, clinical acceptance, or staff UAT. Do not merge PR #250 or apply Phase 61C to hosted environments solely because CI is green.
+**Important exclusions:** authenticated clinical acceptance remains intentionally skipped/deferred. Green CI does not constitute independent SQL/security review, hosted QA acceptance, clinical acceptance, staff UAT, or a Vercel preview. Do not merge PR #250 or apply Phase 61C to hosted environments solely because CI is green.
 
-## Hosted environments — stale checkpoints only
+## Hosted environments — fresh read-only Phase 61 snapshot
 
-| Environment | Project ref | Last recorded ledger checkpoint |
+| Check | QA (`hopfohcnrtbiqjkgeukz`, PostgreSQL 17.11) | Production (`jewzonxplxhogqrnhosl`, PostgreSQL 17.6) |
 |---|---|---|
-| Production | `jewzonxplxhogqrnhosl` | 129 entries; latest recorded `20261102232941` |
-| QA | `hopfohcnrtbiqjkgeukz` | 27 entries; latest recorded `20261113232719` |
+| Phase 61 migration | Present: `20261111223309` | Absent |
+| Phase 61B migration | Present: `20261113232719` | Absent |
+| Phase 61C migration | Absent | Absent |
+| `private.app_has_role_permission(text[],text)` | Present | Absent |
+| `public.atomic_pharmacy_dispense(uuid,boolean,uuid)` | Present | Present |
+| `private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)` | Absent | Absent |
+| Active `pharmacist` users | 1 | 1 |
+| Active `legacy_pharmacist` users | 0 | 0 |
 
-These are historical values copied from the last repository status record, **not a fresh database read in this snapshot**. Query the live project identity, migration ledger, schema, grants, RLS, and dependencies before any migration or database write.
+This was a read-only SQL check. No DDL, DML, ACL, RLS, Auth, Storage, backup, or deployment changes were made. Full migration-ledger counts and broader catalog fingerprints were not refreshed in this check; do not infer parity from this Phase 61-specific snapshot. Phase 61C remains a candidate only and requires independent SQL/security review before QA application. Production remains untouched.
 
 ## Backup and recovery
 
-- Encrypted PostgreSQL archive metadata was checked on 2026-11-14.
-- That session did not download/decrypt the archive; the latest recorded restore rehearsal is older than the current backup-runner head.
+- Backup evidence was not revalidated during this PR #250 continuation. Treat prior encrypted archive metadata and restore rehearsal as stale for release decisions until runner head, artifact checksum, owner-side decryptability, and a current PostgreSQL 17 restore rehearsal are checked.
 - The backup is database-only. Do not describe it as a complete system backup; Storage bytes and Vault secrets are outside its scope.
 - Refresh runner head, artifact checksum, decryptability, restore rehearsal, and exclusions before release.
 
