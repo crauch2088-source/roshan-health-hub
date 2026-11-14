@@ -11,14 +11,14 @@
 | Main baseline | `a9040601702972bdf144fc96b9658eebd5a6d31a` |
 | Active branch | `fix/phase61c-atomic-dispense-role-boundary-20261114` |
 | Active PR | [#250 — atomic pharmacy dispense pharmacist-role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) |
-| PR head | `faa55bf59acf48d80387477d82c84e71f337e626` |
-| Branch comparison | 36 commits ahead, 0 behind `main` |
+| PR head | `f526bf378192c5d1ff7b68d849235e74b80d7d5c` |
+| Branch comparison | 37 commits ahead, 0 behind `main` |
 | PR state | Open, Draft |
 | Independent review | 0 submitted reviews; 0 inline review threads |
 
 ## Exact-head verification
 
-SQL/application code checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`. Latest docs-only head: `faa55bf59acf48d80387477d82c84e71f337e626`.
+SQL/application code checked: `83ed9a9d82b3a1ee78ccadcc70db86139b182983`. Latest docs-only head: `f526bf378192c5d1ff7b68d849235e74b80d7d5c`.
 
 | Workflow / check | Result |
 |---|---|
@@ -71,7 +71,7 @@ The only public function callers found for `private.app_has_claim_branch(uuid)` 
 
 | Workstream | Current branch vs main | Exact-head checks | Disposition |
 |---|---:|---|---|
-| [PR #250 — Phase 61C dispense role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) | 36 ahead / 0 behind | SQL/application head `83ed9a9`: 31 pass, 1 intentional clinical-acceptance skip, 0 fail; docs-only head `faa55bf`: checks still running at snapshot | Draft; no independent review; hosted Phase 61C not applied |
+| [PR #250 — Phase 61C dispense role boundary](https://github.com/crauch2088-source/roshan-health-hub/pull/250) | 36 ahead / 0 behind | SQL/application head `83ed9a9`: 31 pass, 1 intentional clinical-acceptance skip, 0 fail; docs-only head `f526bf`: no checks triggered for the docs-only commit | Draft; no independent review; hosted Phase 61C not applied |
 | [PR #233 — medication engine](https://github.com/crauch2088-source/roshan-health-hub/pull/233) | 43 ahead / 18 behind | 29 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; arithmetic/protocol matching only; reconcile before merge |
 | [PR #181 — payment receipts](https://github.com/crauch2088-source/roshan-health-hub/pull/181) | 37 ahead / 18 behind | 29 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; Phase 58/59 hosted contract absent; do not deploy UI |
 | [PR #210 — catalogue identity/pack attestation](https://github.com/crauch2088-source/roshan-health-hub/pull/210) | 74 ahead / 18 behind | 25 pass, 1 intentional clinical-acceptance skip, 0 fail | Draft; attestation is not physical-pack verification or a dispensing hard-stop |
