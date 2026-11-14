@@ -42,7 +42,7 @@ Append-only audit stream.
 | occurred_at | timestamptz | Server-generated |
 | payload | jsonb | Before/after snapshots, resolution reason, corrected item/order references |
 
-The event table is immutable to application roles and protected by UPDATE/DELETE/TRUNCATE rejection triggers. The request and event rows are readable only by same-branch pharmacists with `pharmacy.read`, the responsible doctor with `prescriptions.correction.resolve`, and Super Admin through the existing bypass.
+The event table is immutable to application roles and protected by UPDATE/DELETE/TRUNCATE rejection triggers. The request and event rows are readable only by same-branch pharmacists with `pharmacy.correction.request`, the responsible doctor with `prescriptions.correction.resolve`, and Super Admin through the existing bypass.
 
 ## State Machine
 

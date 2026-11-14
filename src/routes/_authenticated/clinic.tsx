@@ -19,6 +19,7 @@ import {
   Toolbar,
 } from "@/components/kit";
 import { Button } from "@/components/ui/button";
+import { PrescriberCorrectionInbox } from "@/components/prescription-correction";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -160,6 +161,8 @@ function ClinicPageInner() {
 
   return (
     <div className="space-y-4">
+      <PrescriberCorrectionInbox lang={lang} />
+
       <PageHeader title={lang === "ar" ? "العيادة" : "Clinic"} subtitle={formatDate(date)}>
         <Input
           type="date"

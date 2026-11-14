@@ -121,8 +121,17 @@ test("literal Supabase table references exist in canonical public baseline", () 
   for (const match of appSource.matchAll(/\.from\(\s*["'`]([a-z_][a-z0-9_]*)["'`]\s*\)/gi)) {
     queried.add(match[1].toLowerCase());
   }
-  const missing = [...queried].filter((name) => !objects.has(name));
-  assert.deepEqual(missing, [], `Tables/views absent from baseline: ${missing.join(", ")}`);
+  // Phase 61 introduces this RLS-protected read model through a forward-only
+  // migration; it is intentionally not part of the historical v112 baseline.
+  const forwardMigrationObjects = new Set(["prescription_item_correction_requests"]);
+  const missing = [...queried].filter(
+    (name) => !objects.has(name) && !forwardMigrationObjects.has(name),
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    `Tables/views absent from baseline or tracked forward migrations: ${missing.join(", ")}`,
+  );
 });
 
 test("malformed newline-suffixed Vercel config is absent and canonical config keeps both settings", () => {
