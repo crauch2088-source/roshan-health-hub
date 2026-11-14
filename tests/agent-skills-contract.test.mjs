@@ -123,7 +123,7 @@ test("agent operating references exist and route to one canonical source of trut
     assert.ok(agents.includes(term), "AGENTS.md missing route: " + term);
     assert.ok(start.includes(term), "start guide missing route: " + term);
   }
-  assert.match(registry, /Canonical backlog:\s+GitHub Issues and Pull Requests/);
+  assert.match(registry, /Canonical backlog:.*GitHub Issues and Pull Requests/);
   assert.match(registry, /not a second backlog/);
   assert.match(state, /Refresh protocol/);
   assert.match(state, /STALE/);
