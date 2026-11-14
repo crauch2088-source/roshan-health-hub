@@ -61,8 +61,28 @@ The owner explicitly grants the engineering agent standing authority, effective 
 6. Batch related work into one atomic Git change and avoid redundant CI/deploy runs. Respect all free-tier quotas; never purchase, upgrade, bypass a quota, or create a paid resource.
 7. Verify the actual production result after the change using read-only checks and safe health/smoke checks that do not create or alter live clinical/financial records. Report the exact commit, migration/deployment identifiers, checks run, and any residual risk.
 
+### Owner-approved synthetic-data reset and schema rebuild authority (2026-11-14)
+
+The owner explicitly confirms that **all data currently present in both Roshan Supabase environments (QA and Production) is synthetic/test data**. No real patient records have been trialed or entered, and the current records carry no real clinical, financial, inventory, or other business obligations. This is a durable project fact and standing authorization; the owner must not be asked to repeat it in later sessions.
+
+Within that scope, the engineering agent is authorized to perform the following without a separate per-operation conversational approval when technically necessary for implementation, migration reconciliation, testing infrastructure, or recovery:
+
+- Delete, truncate, reset, replace, or reseed existing synthetic/test rows in QA and Production.
+- Rebuild or recreate affected application tables, indexes, constraints, functions, triggers, policies, and other database objects; apply/reapply corrective migrations where the migration history and recovery plan support it.
+- Reset synthetic fixtures and test-only workflow state to establish a known-good baseline.
+
+**Boundaries that remain mandatory:**
+
+1. This authorization does not permit creating new synthetic patient, clinical, pharmacy, laboratory, inventory, or financial transactions in Production as a testing strategy. Use disposable PostgreSQL or QA for test execution; Production resets are for removing existing test residue or necessary, validated schema repair.
+2. Preserve the Supabase projects themselves, project identity, credentials/secrets, Auth access and owner/admin recovery path, environment bindings, deployment configuration, integrations, and essential platform settings. Do not delete or rotate these as a side effect of a data reset.
+3. Before a destructive Production reset or schema rebuild, verify the exact project/ref, inventory the target objects and dependencies, capture a recoverable backup or equivalent export where available, define the recovery/forward-repair path, and confirm that the target scope contains only the synthetic data described above. If any real or legally/operationally binding data is discovered or the scope is uncertain, stop and ask.
+4. Prefer narrow, repeatable, documented operations over a full database reset. Preserve migration history; never edit the migration ledger to manufacture parity. Capture read-only before/after evidence and verify application health, permissions, RLS, branch isolation, and critical schema invariants.
+5. This authorization does not waive clinical-policy approval, independent security review where required, exact-head validation, zero-cost constraints, or the real staff/clinical acceptance gate.
+
+**Authorization record:** Explicit owner approval in conversation on 2026-11-14. This standing authorization supplements Section X and is an explicit exception for the currently existing synthetic/test dataset only. It does not expand authority over any future real patient or business records.
+
 ### Actions still requiring a fresh, specific owner decision
-- Deleting, truncating, anonymizing, bulk-editing, or otherwise irreversibly altering patient, clinical, staff, inventory, audit, or financial records; deleting user accounts or revoking access in a way that could lock out the clinic.
+- Deleting, truncating, anonymizing, bulk-editing, or otherwise irreversibly altering real or potentially real patient, clinical, staff, inventory, audit, or financial records; the existing synthetic/test data explicitly covered by the owner authorization above is excluded. Deleting user accounts or revoking access in a way that could lock out the clinic remains owner-gated.
 - Changing clinical protocols, diagnosis logic, medication choices/doses/frequencies, decision-support recommendations, or other medical policy. The agent may implement only a clinician-approved specification; it must not invent or clinically approve such policy.
 - Accepting a known unresolved critical/high security risk, disabling or weakening RLS/authentication/audit controls, exposing secrets, or relaxing branch isolation.
 - Any action whose target, scope, data impact, cost, or recovery path cannot be established with high confidence.
@@ -75,4 +95,4 @@ This delegation does not authorize paid services, quota bypasses, unsafe shortcu
 
 **Authorization record:** Explicit owner approval in conversation on 2026-11-12. This section supersedes older blanket statements that every Production engineering change requires a separate per-change conversational approval, but does not waive any technical, clinical, privacy, security, financial, recovery, or release gate.
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-12
+**Version**: 1.3.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-14

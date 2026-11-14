@@ -807,3 +807,293 @@ BEGIN
 END;
 $phase61b_pharmacist_can_reach_dispense$;
 RESET ROLE;
+
+
+-- The idempotent atomic RPC must reject non-pharmacists before payload validation or idempotency work.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000005',false);
+DO $phase61c_admin_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'admin fixture must retain broad pharmacy and billing permission bits';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff1'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Admin reached atomic pharmacy dispense without pharmacist role';
+  END IF;
+END;
+$phase61c_admin_atomic_dispense_denied$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006',false);
+DO $phase61c_super_admin_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'Super Admin fixture must demonstrate global permission bypass';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff2'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Super Admin reached atomic pharmacy dispense without pharmacist role';
+  END IF;
+END;
+$phase61c_super_admin_atomic_dispense_denied$;
+RESET ROLE;
+
+
+-- A pharmacist role is not sufficient if either required permission bit is missing.
+-- These temporary permission removals run only in the disposable PostgreSQL 17 fixture.
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'pharmacist'
+  AND p.code = 'billing.create';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_missing_billing_permission_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'fixture must isolate the missing billing.create permission';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff5'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist reached atomic dispense without billing.create';
+  END IF;
+END;
+$phase61c_pharmacist_missing_billing_permission_denied$;
+RESET ROLE;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+JOIN public.permissions p ON p.code = 'billing.create'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'pharmacist'
+  AND p.code = 'pharmacy.update';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_missing_pharmacy_permission_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'fixture must isolate the missing pharmacy.update permission';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff6'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist reached atomic dispense without pharmacy.update';
+  END IF;
+END;
+$phase61c_pharmacist_missing_pharmacy_permission_denied$;
+RESET ROLE;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+JOIN public.permissions p ON p.code = 'pharmacy.update'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_reaches_atomic_validation$
+DECLARE v_invalid boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff3'
+    );
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_invalid := true;
+  END;
+  IF NOT v_invalid THEN
+    RAISE EXCEPTION 'Pharmacist did not pass role gate to atomic dispense input validation';
+  END IF;
+END;
+$phase61c_pharmacist_reaches_atomic_validation$;
+RESET ROLE;
+
+DO $phase61c_atomic_dispense_acl$
+BEGIN
+  IF has_function_privilege('anon','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'unchecked atomic pharmacy dispense RPC is directly executable by an API role';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('anon','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'public atomic pharmacy dispense wrapper grants are incorrect';
+  END IF;
+END;
+$phase61c_atomic_dispense_acl$;
+
+-- SECURITY DEFINER boundaries must retain an empty search_path after the move/wrap.
+DO $phase61c_security_definer_hardening$
+DECLARE
+  v_wrapper record;
+  v_wrapper_source text;
+  v_unchecked record;
+  v_helper record;
+BEGIN
+  SELECT p.prosecdef, p.proconfig
+    INTO v_wrapper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.atomic_pharmacy_dispense(uuid,boolean,uuid)');
+  IF v_wrapper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_wrapper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'public atomic pharmacy dispense wrapper must be SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosrc INTO v_wrapper_source
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.atomic_pharmacy_dispense(uuid,boolean,uuid)');
+  IF v_wrapper_source IS NULL
+     OR position('legacy_pharmacist' IN v_wrapper_source) > 0
+     OR position('ARRAY[''pharmacist'']' IN v_wrapper_source) = 0 THEN
+    RAISE EXCEPTION 'atomic dispense wrapper must allow only the canonical pharmacist role; legacy roles must fail closed';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_unchecked
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)');
+  IF v_unchecked.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_unchecked.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'private unchecked atomic pharmacy dispense must preserve SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_helper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('private.app_has_role_permission(text[],text)');
+  IF v_helper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_helper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'Phase 61B role helper must be SECURITY DEFINER with empty search_path';
+  END IF;
+END;
+$phase61c_security_definer_hardening$;
+
+-- Rejected Admin/Super Admin calls must stop before the idempotency ledger is touched.
+DO $phase61c_rejected_admin_no_idempotency$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM private.pharmacy_dispense_idempotency
+    WHERE request_id IN (
+      'ffffffff-ffff-ffff-ffff-fffffffffff1'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff5'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff6'::uuid
+    )
+  ) THEN
+    RAISE EXCEPTION 'a rejected non-pharmacist created an idempotency row';
+  END IF;
+END;
+$phase61c_rejected_admin_no_idempotency$;
+
+-- A canonical pharmacist must complete the active atomic wrapper, not merely reach validation.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_atomic_dispense_success$
+DECLARE
+  v_first jsonb;
+  v_retry jsonb;
+BEGIN
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_first
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000013',
+      false,
+      'ffffffff-ffff-ffff-ffff-fffffffffff4'
+    ) AS r;
+
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_retry
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000013',
+      false,
+      'ffffffff-ffff-ffff-ffff-fffffffffff4'
+    ) AS r;
+
+  IF v_first IS NULL OR pg_catalog.jsonb_array_length(v_first) <> 1 THEN
+    RAISE EXCEPTION 'canonical pharmacist could not complete one-item atomic dispense';
+  END IF;
+  IF v_first IS DISTINCT FROM v_retry THEN
+    RAISE EXCEPTION 'idempotent retry changed the successful atomic dispense result';
+  END IF;
+  IF COALESCE((v_first->0->>'quantity_dispensed')::numeric, -1) <> 2 THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned unexpected quantity: %',
+      v_first->0->>'quantity_dispensed';
+  END IF;
+  IF v_first->0->>'batch_number' IS DISTINCT FROM 'PHASE61C-VALID' THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned unexpected batch: %',
+      v_first->0->>'batch_number';
+  END IF;
+END;
+$phase61c_pharmacist_atomic_dispense_success$;
+RESET ROLE;
+
+DO $phase61c_pharmacist_atomic_dispense_effects$
+BEGIN
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 8 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not decrement the selected batch exactly once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000013'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not create exactly one stock movement';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+      WHERE item_type='pharmacy'
+        AND item_id='61600000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not create exactly one pharmacy invoice line';
+  END IF;
+  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
+      WHERE request_id='ffffffff-ffff-ffff-ffff-fffffffffff4'
+        AND result_payload IS NOT NULL) <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not persist one idempotency result';
+  END IF;
+END;
+$phase61c_pharmacist_atomic_dispense_effects$;
+

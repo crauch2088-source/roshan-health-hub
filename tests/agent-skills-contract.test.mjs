@@ -103,3 +103,38 @@ test("system documentation records inspirations and authority boundaries", () =>
   assert.match(docs, /No frontend dependency/);
   assert.match(docs, /AGENT_TOOLING_RESEARCH_2026-11-04\.md/);
 });
+
+test("agent operating references exist and route to one canonical source of truth", () => {
+  const required = [
+    "docs/PROJECT_STATE.md",
+    "docs/TASK_REGISTRY.md",
+    "docs/AGENT_TASK_CONTRACT_TEMPLATE.md",
+    "docs/AGENT_EXECUTION_PROTOCOL.md",
+    "docs/VERIFICATION_MATRIX.md",
+  ];
+  for (const path of required) {
+    assert.ok(existsSync(join(root, path)), "missing operating reference: " + path);
+  }
+  const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
+  const start = readFileSync(join(root, "docs/AGENT_START_HERE.md"), "utf8");
+  const protocol = readFileSync(join(root, "docs/AGENT_EXECUTION_PROTOCOL.md"), "utf8");
+  const registry = readFileSync(join(root, "docs/TASK_REGISTRY.md"), "utf8");
+  const state = readFileSync(join(root, "docs/PROJECT_STATE.md"), "utf8");
+  const matrix = readFileSync(join(root, "docs/VERIFICATION_MATRIX.md"), "utf8");
+  for (const term of [
+    "docs/PROJECT_STATE.md",
+    "docs/AGENT_EXECUTION_PROTOCOL.md",
+    "docs/TASK_REGISTRY.md",
+  ]) {
+    assert.ok(agents.includes(term), "AGENTS.md missing route: " + term);
+    assert.ok(start.includes(term), "start guide missing route: " + term);
+  }
+  assert.match(registry, /Canonical backlog:.*GitHub Issues and Pull Requests/);
+  assert.match(registry, /not a second backlog/);
+  assert.match(state, /Refresh protocol/);
+  assert.match(state, /STALE/);
+  assert.match(protocol, /independent reviewer/);
+  assert.match(protocol, /never create synthetic.*Production/i);
+  assert.match(matrix, /SKIP/);
+  assert.match(matrix, /clinical acceptance/i);
+});

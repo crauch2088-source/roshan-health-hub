@@ -7,6 +7,10 @@ const migration = readFileSync(
   "utf8",
 );
 const roleBoundaryMigration = readFileSync("db/roshan_phase61b_clinical_role_boundary.sql", "utf8");
+const atomicDispenseRoleBoundaryMigration = readFileSync(
+  "db/roshan_phase61c_atomic_dispense_role_boundary.sql",
+  "utf8",
+);
 const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
@@ -166,4 +170,55 @@ test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin",
     roleBoundaryMigration,
     /REVOKE ALL ON FUNCTION private\.create_prescription_atomic_unchecked/,
   );
+});
+
+test("Phase 61C gates the active atomic pharmacy dispense RPC by pharmacist role", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /ALTER FUNCTION public\.atomic_pharmacy_dispense/,
+  );
+  assert.match(atomicDispenseRoleBoundaryMigration, /atomic_pharmacy_dispense_unchecked/);
+  assert.match(atomicDispenseRoleBoundaryMigration, /pharmacy_dispense_permission_denied/);
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /GRANT EXECUTE ON FUNCTION public\.atomic_pharmacy_dispense/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /REVOKE ALL ON FUNCTION private\.atomic_pharmacy_dispense_unchecked/,
+  );
+});
+
+test("Phase 61C denies authenticator execution and leaves no idempotency row after rejected roles", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /FROM PUBLIC, anon, authenticated, service_role, authenticator/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /FROM PUBLIC, anon, service_role, authenticator/,
+  );
+  assert.ok(integration.includes("has_function_privilege('authenticator'"));
+  assert.ok(integration.includes("phase61c_rejected_admin_no_idempotency"));
+  assert.ok(integration.includes("Super Admin fixture must demonstrate global permission bypass"));
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /Phase 61B role permission helper is missing; apply Phase 61B before Phase 61C/,
+  );
+  assert.ok(integration.includes("phase61c_security_definer_hardening"));
+  assert.ok(workflow.includes("Reapply Phase 61C to verify forward-migration idempotence"));
+});
+
+test("Phase 61C requires both pharmacy and billing permissions for a pharmacist", () => {
+  assert.ok(integration.includes("phase61c_pharmacist_missing_billing_permission_denied"));
+  assert.ok(integration.includes("phase61c_pharmacist_missing_pharmacy_permission_denied"));
+  assert.ok(integration.includes("pharmacist reached atomic dispense without billing.create"));
+  assert.ok(integration.includes("pharmacist reached atomic dispense without pharmacy.update"));
+});
+
+test("Phase 61C preserves successful pharmacist dispense and idempotent replay", () => {
+  assert.ok(fixture.includes("PHASE61C-VALID"));
+  assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_success"));
+  assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_effects"));
+  assert.ok(integration.includes("idempotent retry changed the successful atomic dispense result"));
 });
