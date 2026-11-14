@@ -3221,3 +3221,49 @@ The last evidence-weighted progress baseline remains 62% Engineering RC / 15% Op
 - The new positive path calls `public.atomic_pharmacy_dispense` as the canonical synthetic pharmacist, retries with the same idempotency key, and verifies identical output, expected batch/quantity, one stock movement, one pharmacy invoice line, one stored idempotency result, and the remaining batch quantity.
 - PR #250 remains Draft and mergeable; GitHub shows zero submitted reviews and zero inline review threads. Its Vercel status is a preview status only. This run did not apply the migration to hosted QA/Production, merge the PR, or promote a deployment.
 - Next: obtain independent second-person SQL/security review of PR #250. Only after that review and the documented QA gate, consider QA-only Phase 61C application plus effective ACL/behavior read-back. Production remains untouched and NO-GO.
+
+
+## Execution checkpoint — 2026-11-14 07:22 UTC (Phase 61C permission regression)
+
+- Application main is `a9040601702972bdf144fc96b9658eebd5a6d31a`; PR #249 merged at that commit. Main CI [43527161767](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161767) passed 18 jobs with one intentional authenticated clinical-acceptance skip and zero failures. Push, Spec Kit and finance isolation runs [43527160629](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527160629), [43527161693](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161693), [43527161727](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161727) succeeded.
+- Open PRs: 9. Open Issues: #199, #217 and #218. PR #250 remains Draft, mergeable, with no submitted reviews or inline review threads.
+- Added a focused Phase 61C regression to PR #250 commit `d7a72886797c197dc06d8161cd06070f82691a3e`: a canonical pharmacist is denied before payload validation when either `billing.create` or `pharmacy.update` is absent. Both synthetic permission removals are restored in the disposable fixture; rejected request IDs are also checked for absence from the idempotency table. The Node source-contract suite now asserts both cases.
+- Exact-head PR CI [43570730013](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570730013): 18 success, one intentional clinical-acceptance skip, zero failures. Phase 61 PostgreSQL 17 [43570729978](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570729978) passed; its source-contract/UI suite reports 25/25 passing. Insurance UI [43570729933](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570729933), insurance integrity [43570729917](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570729917), prescription atomicity [43570730047](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570730047), privileged-role guard [43570730571](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570730571), and the PR Vercel preview status all succeeded.
+- This is regression coverage only; the Phase 61C migration body is unchanged. No hosted QA/Production DDL, DML, ACL, RLS, Auth, Storage or business-data write occurred. PR #250 remains Draft and unmerged.
+
+### Fresh Supabase read-back — 2026-11-14 07:19 UTC
+
+- Production `jewzonxplxhogqrnhosl`: PostgreSQL 17.6.1.155, 129 migration rows, latest `20261102232941`.
+- QA `hopfohcnrtbiqjkgeukz`: PostgreSQL 17.11.0.003, 27 rows, latest `20261113232719 roshan_phase61b_clinical_role_boundary`.
+- Only 3 version IDs are shared; all three have different names and statement MD5s. Production-only versions: 126; QA-only: 24. Do not repair with manual ledger inserts, blind replay or timestamp reassignment.
+- QA Phase 61B is applied as `20261113232719` (8,844 bytes; MD5 `9f5095e70fa9cc6ed7e7fe83f7766312`). Phase 61C remains PR #250 only; it is not applied to QA or Production.
+- Phase 57/57B remain QA-applied only. `prescription_items.quantity` is nullable in both databases; the current read-only count found zero NULL values in either. Production's authenticated invoice-linked dispense function still has three `COALESCE(pi.quantity,1)` fallbacks. QA's private unchecked invoice-linked function has zero such fallbacks and the public wrapper contains the Phase 57B role/guard boundary.
+- The active `public.atomic_pharmacy_dispense(uuid,boolean,uuid)` remains SECURITY DEFINER and executable by authenticated in both hosted projects, with no explicit `app_has_role_permission` check. Phase 61C is the candidate outer-RPC fix.
+- Phase 55 private helper ACL drift remains: Production `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` have NULL `proacl` and effective EXECUTE for anon/authenticated/service_role; QA grants are owner-only and those API roles are denied.
+
+### Current catalog and advisors
+
+| Measure | Production | QA |
+|---|---:|---:|
+| Public / private tables | 56 / 4 | 58 / 2 |
+| Public / private columns | 842 / 24 | 873 / 13 |
+| Views | 5 | 5 |
+| Constraints | 222 | 245 |
+| Indexes / invalid indexes | 254 / 0 | 258 / 0 |
+| Policies | 210 | 212 |
+| Triggers | 69 | 81 |
+| Functions | 143 | 157 |
+| RLS / forced-RLS tables | 58 / 44 | 59 / 46 |
+
+Supabase advisors at 07:19 UTC: Production Security 31, Performance 95 (2 unindexed FKs + 93 unused-index INFO), Health 0. QA Security 34, Performance 147 (7 unindexed FKs + 140 unused-index INFO), Health 0. No blanket grant revocation, policy creation, extension movement or index deletion was performed.
+
+### Deployment and recovery
+
+- Vercel Production deployment `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH` is READY on main SHA `a9040601702972bdf144fc96b9658eebd5a6d31a`; its aliases include `roshan-health-hub.vercel.app` and `aliasError=null`. The PR #250 preview status is success. No deployment promotion or alias mutation occurred.
+- Backup-runner main remains `f171732b61fe0460c61a36aa63b861065f9ea9d1`. Main CI [43190851147](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43190851147) is validation-only. Latest manual run [43190680531](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43190680531) skipped Production credential preflight and skipped the backup job; it created no artifact and is not a backup.
+- Last full encrypted backup/restore [43183851731](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43183851731) ran on prior runner SHA `eb7d8ae8e22be1a4147d35cabe0acb0e77f0ecd8`; validate and backup jobs passed, including isolated PostgreSQL 17 restore, age encryption and encrypted-only upload.
+- Off-site Drive archive [roshan-production-backup-43183851731.zip](https://drive.google.com/file/d/1HQxRWPIkYLeFQ0DNR-8wSEULLYCWMM4o/view?usp=drivesdk) remains present and not trashed in dated folder `2026-11-12`; 305,284 bytes, MD5 `22271054f6c10b1baf1d23ac4bdac24e`. GitHub artifact metadata now returns no retained artifact. Owner-side decryption of this latest Drive copy remains unverified; the private age identity was not accessed. No new backup write occurred.
+
+**Release decision: Production NO-GO.** Passed: main CI (with intentional clinical skip), PR #250 exact-head CI/PG17 and preview, QA Phase 55/57/57B/61/61B applications, current READY Production deployment/alias, off-site encrypted database archive and prior runner-side isolated restore. Open: migration/source/catalog parity, Production Phase 55/57/57B/58/59/61B gaps, Phase 61C QA application, independent SQL/security review, owner-side decryption, and staff/pharmacist/prescriber/mobile/printing acceptance.
+
+Next concrete task: obtain an independent second-person SQL/security review of PR #250. Only after review and the documented QA gate, consider QA-only Phase 61C application and read-back. If the reviewer is unavailable, continue object-level migration-source/catalog reconciliation without hosted writes. Keep clinical E2E explicitly deferred until a free isolated environment and suitable synthetic doctor/pharmacist identities are available. Last evidence-weighted baseline remains 62% Engineering RC / 15% Operational Acceptance; this regression adds coverage, not a feature-completion percentage.

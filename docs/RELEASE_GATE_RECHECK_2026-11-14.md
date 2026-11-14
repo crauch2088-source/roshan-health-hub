@@ -98,3 +98,39 @@ Last evidence-weighted progress baseline: **62% Engineering RC / 15% Operational
 - The PR Vercel context is success for its preview; Production remains on deployment `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH`, READY on main SHA `a9040601702972bdf144fc96b9658eebd5a6d31a`, with canonical alias present and `aliasError=null`.
 - No hosted QA/Production DDL/DML, ACL changes, real records, backup writes, merge or deployment promotion occurred. Independent second-person SQL/security review remains required before QA-only application.
 
+
+
+## Follow-up — permission-negative Phase 61C regression and 07:22 UTC recheck
+
+### Repository and tests
+
+- Main SHA: `a9040601702972bdf144fc96b9658eebd5a6d31a`; PR #249 merged. Main CI [43527161767](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43527161767): 18 success, one intentional clinical-acceptance skip, zero failures.
+- PR #250 is Draft/mergeable at `d7a72886797c197dc06d8161cd06070f82691a3e`, with zero submitted reviews and zero inline review threads.
+- New regression commit `d7a72886797c197dc06d8161cd06070f82691a3e` adds two disposable-PG17 denial cases: a pharmacist missing `billing.create`, and a pharmacist missing `pharmacy.update`. Each call must fail with SQLSTATE `42501` before invalid-payload validation; the test restores the permission and verifies neither rejected request creates an idempotency row.
+- Exact-head CI [43570730013](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570730013): 18 success, one intentional clinical-acceptance skip, zero failures. Phase 61 PG17 [43570729978](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570729978) passed, including migration reapply/idempotence, role/ACL/no-side-effect assertions, concurrent correction serialization and 25/25 Node source-contract/UI tests. Insurance UI #43570729933, insurance integrity #43570729917, prescription atomicity #43570730047, privileged-role guard #43570730571 and PR Vercel preview status succeeded.
+- No application migration code changed in this test-only commit. Phase 61C remains unapplied to hosted QA/Production; PR remains Draft.
+
+### Current hosted gates
+
+| Gate | Current verified state |
+|---|---|
+| Production migration ledger | 129 rows; latest `20261102232941` |
+| QA migration ledger | 27 rows; latest `20261113232719` (Phase 61B) |
+| Ledger version parity | 3 shared IDs, all with different names/statement MD5s; 126 Production-only and 24 QA-only |
+| Phase 57/57B | QA applied; Production absent; quantity remains nullable in both |
+| Phase 57 behavior | Production invoice-linked RPC retains 3 NULL-to-one fallbacks; QA private unchecked implementation has 0 |
+| Phase 55 ACL | Production private helpers PUBLIC-effective; QA owner-only |
+| Phase 61B | QA applied as `20261113232719`; Production absent |
+| Phase 61C | PR #250 candidate only; not hosted-applied |
+| Supabase advisors | Production 31 security / 95 performance / 0 health; QA 34 / 147 / 0 |
+| Vercel Production | `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH` READY on main SHA; canonical alias present |
+| Backup-runner main | `f171732b61fe0460c61a36aa63b861065f9ea9d1`; latest CI validator-only |
+| Latest manual backup attempt | #43190680531; preflight and backup skipped, no artifact |
+| Last complete backup/restore | #43183851731 on earlier runner SHA; isolated PostgreSQL 17 restore and encrypted upload passed |
+| Off-site encrypted artifact | Drive copy present, 305,284 bytes, MD5 `22271054f6c10b1baf1d23ac4bdac24e`; owner-side decryption unverified |
+
+Current public/private catalog counts differ: Production 56/4 tables, 842/24 columns, 222 constraints, 254 indexes, 210 policies, 69 triggers, 143 functions, 58/44 RLS/forced-RLS tables; QA 58/2 tables, 873/13 columns, 245 constraints, 258 indexes, 212 policies, 81 triggers, 157 functions, 59/46 RLS/forced-RLS tables. All observed indexes are valid/ready. These counts do not establish semantic parity.
+
+**Production remains NO-GO.** The encrypted backup and runner-side restore gate has prior positive evidence, but no new full backup was produced on current runner main and owner-side decryption remains unverified. Full migration/catalog parity, Production security/pharmacy guards, independent SQL review, and clinical/pharmacy operational acceptance remain open. Clinical E2E stays deferred until a free isolated environment and suitable synthetic doctor/pharmacist identities are available.
+
+Next: independent second-person SQL/security review of PR #250; then, only after the documented QA gate, consider QA-only Phase 61C application/read-back. If review is unavailable, continue object-level source-to-ledger/catalog reconciliation with read-only tools.

@@ -372,3 +372,13 @@ Last reviewed: 2026-11-11 (live Supabase, Vercel, GitHub Actions and encrypted D
 - First attempt [43568728075](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43568728075) exposed an overly strict text comparison in the test; corrected to numeric comparison. No runtime SQL change was required.
 - PR remains Draft with no independent reviews. No hosted QA/Production migration was applied; QA application remains gated by independent SQL/security review.
 
+
+
+## Live integration recheck — 2026-11-14 07:22 UTC
+
+- **GitHub:** current main `a9040601702972bdf144fc96b9658eebd5a6d31a`; PR #249 merged. PR #250 is Draft and mergeable at `d7a72886797c197dc06d8161cd06070f82691a3e`. Exact-head CI [43570730013](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570730013) passed 18 jobs with one intentional clinical-acceptance skip; Phase 61 PG17 [43570729978](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43570729978) passed with 25/25 source-contract/UI tests. No independent review is recorded.
+- **Supabase:** read-only migration ledger, SQL catalog and advisor access verified for Production `jewzonxplxhogqrnhosl` and QA `hopfohcnrtbiqjkgeukz`. Production 129 migrations/latest `20261102232941`; QA 27/latest `20261113232719`. Phase 61B is QA-applied; Phase 61C is only a tested PR candidate. No migration/SQL write tool was invoked.
+- **Vercel:** Production deployment `dpl_G9jScsLW3jDXFePVZLQgedwMMKRH` READY on main SHA `a904060...`; canonical alias present, `aliasError=null`. PR #250 preview status succeeded. Only read operations were used; no build/deploy/promote/alias change was requested.
+- **Google Drive:** the active Drive integration found and read metadata for the encrypted archive and its dated parent folder. File `roshan-production-backup-43183851731.zip` is present, not trashed, 305,284 bytes, MD5 `22271054f6c10b1baf1d23ac4bdac24e`, in `2026-11-12`. File bytes were not downloaded or decrypted.
+- **Backup runner:** main `f171732b61fe0460c61a36aa63b861065f9ea9d1`; main CI #43190851147 is validator-only. Latest manual run #43190680531 skipped preflight and backup. Full restore/backup evidence remains run #43183851731 on the prior runner SHA, not a new current-main backup.
+- **Safety boundary:** no secrets or private age identity were accessed; no production/QA database writes, backup dispatch, patient/financial records, PR merge, deployment promotion, paid service or quota bypass occurred. Clinical E2E remains deferred as specified.
