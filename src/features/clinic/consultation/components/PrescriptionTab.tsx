@@ -49,13 +49,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     () =>
       supabase
         .from("visits")
-        .select("id,patient_id,doctor_id,patients(id,full_name,date_of_birth)")
+        .select("id,patient_id,doctor_id,branch_id,patients(id,full_name,date_of_birth)")
         .eq("id", visitId)
         .limit(1),
     { enabled: canCreatePrescription },
   );
   const patientRow = rel((visitQ.data ?? [])[0], "patients");
   const patient = s(patientRow, "id");
+  const visitBranch = s((visitQ.data ?? [])[0], "branch_id");
   const patientAge = calcAge(s(patientRow, "date_of_birth"));
   const vitalsQ = useRows<Row[]>(
     ["clinic-vitals-weight", visitId],
@@ -76,17 +77,18 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
       supabase
         .from("prescriptions")
         .select(
-          "id,created_at,status,is_external,notes,patients(full_name,mrn,deleted_at),users(full_name),prescription_items(id,medication_name,dose,route,frequency,duration,quantity,dosage_form,instructions,deleted_at)",
+          "id,branch_id,created_at,status,is_external,notes,patients(full_name,mrn,branch_id,deleted_at),users(full_name),prescription_items(id,medication_name,dose,route,frequency,duration,quantity,dosage_form,instructions,deleted_at)",
         )
         .eq("id", lastSavedPrescriptionId ?? "")
         .eq("visit_id", visitId)
         .eq("patient_id", patient)
+        .eq("branch_id", visitBranch)
         .is("deleted_at", null)
         .limit(1),
-    { enabled: Boolean(lastSavedPrescriptionId) },
+    { enabled: Boolean(lastSavedPrescriptionId && visitBranch) },
   );
   const savedPrescription = (savedPrescriptionQ.data ?? [])[0] as Row | undefined;
-  const prescriptionPrintModel = buildPrescriptionPrintModel(savedPrescription);
+  const prescriptionPrintModel = buildPrescriptionPrintModel(savedPrescription, visitBranch);
   const isPediatric = patientAge != null && patientAge < 18;
   const pediatricWeightMissing =
     isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
@@ -500,6 +502,24 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Save prescription"}
           </Button>
         </div>
+        {lastSavedPrescriptionId && !visitBranch && !visitQ.isLoading ? (
+          <p className="text-xs text-destructive" role="alert">
+            {lang === "ar"
+              ? "تعذر التحقق من الفرع المرتبط بالزيارة؛ الطباعة الرسمية متوقفة."
+              : "The visit branch could not be verified; official printing is blocked."}
+          </p>
+        ) : null}
+        {lastSavedPrescriptionId &&
+        visitBranch &&
+        !savedPrescriptionQ.isLoading &&
+        !savedPrescriptionQ.error &&
+        !savedPrescription ? (
+          <p className="text-xs text-destructive" role="alert">
+            {lang === "ar"
+              ? "تعذر العثور على الوصفة المحفوظة ضمن الزيارة والفرع الحاليين."
+              : "The saved prescription could not be verified within this visit and branch."}
+          </p>
+        ) : null}
         {lastSavedPrescriptionId && savedPrescriptionQ.isLoading ? (
           <p className="text-xs text-muted-foreground">
             {lang === "ar" ? "جارٍ تجهيز النسخة المحفوظة..." : "Preparing the saved prescription copy..."}
