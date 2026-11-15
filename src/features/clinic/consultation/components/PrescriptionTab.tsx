@@ -522,7 +522,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         ) : null}
         {lastSavedPrescriptionId && savedPrescriptionQ.isLoading ? (
           <p className="text-xs text-muted-foreground">
-            {lang === "ar" ? "جارٍ تجهيز النسخة المحفوظة..." : "Preparing the saved prescription copy..."}
+            {lang === "ar"
+              ? "جارٍ تجهيز النسخة المحفوظة..."
+              : "Preparing the saved prescription copy..."}
           </p>
         ) : null}
         {savedPrescriptionQ.error ? (
@@ -563,13 +565,15 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                     settings["center_name_ar"] ||
                     (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
                 </h1>
-                {(settings["address"] || settings["phone"]) ? (
+                {settings["address"] || settings["phone"] ? (
                   <p className="text-sm">
                     {[settings["address"], settings["phone"]].filter(Boolean).join(" · ")}
                   </p>
                 ) : null}
                 <h2 className="pt-3 text-lg font-semibold">
-                  {lang === "ar" ? "نسخة من الوصفة الطبية المحفوظة" : "Saved prescription order copy"}
+                  {lang === "ar"
+                    ? "نسخة من الوصفة الطبية المحفوظة"
+                    : "Saved prescription order copy"}
                 </h2>
               </header>
               <section className="grid grid-cols-2 gap-2 text-sm">
@@ -610,10 +614,16 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                     <tr className="border-b">
                       <th className="p-2 text-start">{lang === "ar" ? "الدواء" : "Medicine"}</th>
                       <th className="p-2 text-start">{lang === "ar" ? "الشكل" : "Form"}</th>
-                      <th className="p-2 text-start">{lang === "ar" ? "الجرعة / الطريق" : "Dose / Route"}</th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "الجرعة / الطريق" : "Dose / Route"}
+                      </th>
                       <th className="p-2 text-start">{lang === "ar" ? "التكرار" : "Frequency"}</th>
-                      <th className="p-2 text-start">{lang === "ar" ? "المدة / الكمية" : "Duration / Qty"}</th>
-                      <th className="p-2 text-start">{lang === "ar" ? "التعليمات" : "Instructions"}</th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "المدة / الكمية" : "Duration / Qty"}
+                      </th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "التعليمات" : "Instructions"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -628,9 +638,13 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                         <td className="p-2">{item.frequency}</td>
                         <td className="p-2">
                           <span className="block">{item.duration}</span>
-                          <span className="block" dir="ltr">{item.quantity}</span>
+                          <span className="block" dir="ltr">
+                            {item.quantity}
+                          </span>
                         </td>
-                        <td className="p-2 break-words whitespace-pre-wrap">{item.instructions || "—"}</td>
+                        <td className="p-2 break-words whitespace-pre-wrap">
+                          {item.instructions || "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
