@@ -30,9 +30,11 @@ test("live snapshot is main-only and rejects other refs before network access", 
   await assert.rejects(
     createLiveStateSnapshot({
       env: { ...baseEnv, SNAPSHOT_REF: "refs/heads/feature/untrusted" },
-      fetchImpl: async () => { called = true; },
+      fetchImpl: async () => {
+        called = true;
+      },
     }),
-    /restricted to refs\/heads\/main/,
+    /restricted to refs\\/heads\\/main/,
   );
   assert.equal(called, false);
 });
@@ -40,31 +42,35 @@ test("live snapshot is main-only and rejects other refs before network access", 
 test("snapshot fetches only open PR metadata and recent workflow-run metadata", async () => {
   const { fetchImpl, calls } = mockFetch({
     pulls: {
-      body: [{
-        number: 254,
-        title: "Context snapshot",
-        body: "UNTRUSTED_BODY_MUST_NOT_BE_INCLUDED",
-        draft: true,
-        updated_at: "2026-11-15T20:00:00Z",
-        head: { ref: "chore/context", sha: "b".repeat(40) },
-        base: { ref: "main" },
-        html_url: "https://github.com/example/roshan/pull/254",
-      }],
+      body: [
+        {
+          number: 254,
+          title: "Context snapshot",
+          body: "UNTRUSTED_BODY_MUST_NOT_BE_INCLUDED",
+          draft: true,
+          updated_at: "2026-11-15T20:00:00Z",
+          head: { ref: "chore/context", sha: "b".repeat(40) },
+          base: { ref: "main" },
+          html_url: "https://github.com/example/roshan/pull/254",
+        },
+      ],
     },
     runs: {
       body: {
-        workflow_runs: [{
-          id: 123,
-          name: "CI",
-          event: "push",
-          status: "completed",
-          conclusion: "success",
-          head_branch: "main",
-          head_sha: "a".repeat(40),
-          created_at: "2026-11-15T20:00:00Z",
-          html_url: "https://github.com/example/roshan/actions/runs/123",
-          logs_url: "UNTRUSTED_LOGS_MUST_NOT_BE_INCLUDED",
-        }],
+        workflow_runs: [
+          {
+            id: 123,
+            name: "CI",
+            event: "push",
+            status: "completed",
+            conclusion: "success",
+            head_branch: "main",
+            head_sha: "a".repeat(40),
+            created_at: "2026-11-15T20:00:00Z",
+            html_url: "https://github.com/example/roshan/actions/runs/123",
+            logs_url: "UNTRUSTED_LOGS_MUST_NOT_BE_INCLUDED",
+          },
+        ],
       },
     },
   });
@@ -84,7 +90,10 @@ test("snapshot fetches only open PR metadata and recent workflow-run metadata", 
   assert.equal(calls.length, 2);
   for (const call of calls) {
     assert.equal(call.options.method, "GET");
-    assert.equal(call.options.headers.Authorization, "Bearer synthetic-token-never-real");
+    assert.equal(
+      call.options.headers.Authorization,
+      "Bearer synthetic-token-never-real",
+    );
     assert.equal(call.options.headers["X-GitHub-Api-Version"], "2022-11-28");
   }
   assert.deepEqual(snapshot.data_scope, {
@@ -98,28 +107,33 @@ test("snapshot fetches only open PR metadata and recent workflow-run metadata", 
 
 test("snapshot rejects malformed repository and commit identifiers", async () => {
   await assert.rejects(
-    createLiveStateSnapshot({ env: { ...baseEnv, GITHUB_REPOSITORY: "https://evil.invalid/x" } }),
+    createLiveStateSnapshot({
+      env: { ...baseEnv, GITHUB_REPOSITORY: "https://evil.invalid/x" },
+    }),
     /Invalid GITHUB_REPOSITORY/,
   );
   await assert.rejects(
-    createLiveStateSnapshot({ env: { ...baseEnv, SNAPSHOT_SHA: "not-a-sha" } }),
+    createLiveStateSnapshot({
+      env: { ...baseEnv, SNAPSHOT_SHA: "not-a-sha" },
+    }),
     /Invalid SNAPSHOT_SHA/,
   );
 });
 
 test("API failures fail closed without copying response bodies into logs", async () => {
   const { fetchImpl } = mockFetch({
-    pulls: { ok: false, status: 403, body: { message: "PRIVATE_ERROR_BODY" } },
+    pulls: {
+      ok: false,
+      status: 403,
+      body: { message: "PRIVATE_ERROR_BODY" },
+    },
     runs: { body: { workflow_runs: [] } },
   });
-  await assert.rejects(
-    createLiveStateSnapshot({ env: baseEnv, fetchImpl }),
-    (error) => {
-      assert.match(error.message, /403/);
-      assert.equal(error.message.includes("PRIVATE_ERROR_BODY"), false);
-      return true;
-    },
-  );
+  await assert.rejects(createLiveStateSnapshot({ env: baseEnv, fetchImpl }), (error) => {
+    assert.match(error.message, /403/);
+    assert.equal(error.message.includes("PRIVATE_ERROR_BODY"), false);
+    return true;
+  });
 });
 
 test("the live-state snapshot remains read-only and free of database access", async () => {
@@ -137,6 +151,6 @@ test("workflow_dispatch and workflow_run cannot create a snapshot from a non-mai
   const workflow = await readFile(".github/workflows/repomix-snapshot.yml", "utf8");
   assert.match(
     workflow,
-    /if: github\.ref == 'refs\/heads\/main' && \(github\.event_name != 'workflow_run' \|\| github\.event\.workflow_run\.head_branch == 'main'\)/,
+    /if: github\\.ref == 'refs\\/heads\\/main' && \\(github\\.event_name != 'workflow_run' \\|\\| github\\.event\\.workflow_run\\.head_branch == 'main'\\)/,
   );
 });
