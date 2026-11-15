@@ -110,6 +110,14 @@ No Phase 63 validator migration/RPC or dedicated Phase 63 source integration was
 
 Do not add automated dosing merely to satisfy a checklist. Any future decision-support engine requires a separately approved clinical source, formulation/route/strength identity, weight/age/renal/allergy constraints, dose ceilings, explicit prescriber override, and clinical validation.
 
+### F-06 — QA nested dispense wrapper retains a legacy-role alias
+
+**Severity: MEDIUM — no current QA permission path demonstrated; latent role-boundary weakness.**
+
+The live QA `public.fn_dispense_prescription_with_invoice(uuid, boolean)` wrapper uses the allowlist `['pharmacist','legacy_pharmacist']` and requires both `pharmacy.update` and `billing.create`. The current live `legacy_pharmacist` permission set contains only `pharmacy.edit`, `pharmacy.view`, and `reports.view`; it lacks both required permissions, so the role is denied today. PR #250's integration test models that exact permission matrix and confirms denial on both the atomic and nested RPCs.
+
+However, the PR test itself comments that the Phase 61B legacy alias remains an independent-review item. If those two permissions were ever granted to `legacy_pharmacist`, the nested RPC's allowlist would permit it even though Phase 61C's outer atomic wrapper is canonical-`pharmacist` only. If the intended policy is strictly canonical pharmacist, remove the legacy alias in a separate forward-only correction or add a durable database guard preventing that role from acquiring the required permission pair. This is a latent future-configuration risk, not a currently demonstrated QA bypass.
+
 ## 4. PR-by-PR reconciliation
 
 | PR / issue | Current evidence | Reconciliation |
