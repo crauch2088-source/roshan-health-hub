@@ -92,7 +92,14 @@ BEGIN
      OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'DELETE')
      OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'TRUNCATE')
      OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'REFERENCES')
-     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'TRIGGER') THEN
+     OR has_table_privilege('service_role', 'public.medicine_pack_verifications', 'TRIGGER')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'SELECT')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'INSERT')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'UPDATE')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'DELETE')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'TRUNCATE')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'REFERENCES')
+     OR has_table_privilege('authenticator', 'public.medicine_pack_verifications', 'TRIGGER') THEN
     RAISE EXCEPTION 'authenticated/service_role must not have direct write privileges on pack attestations';
   END IF;
 
@@ -110,6 +117,7 @@ BEGIN
 
   IF has_function_privilege('anon', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE')
      OR has_function_privilege('service_role', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE')
+     OR has_function_privilege('authenticator', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE')
      OR NOT has_function_privilege('authenticated', 'public.verify_medicine_physical_pack(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'verification RPC EXECUTE grants are incorrect';
   END IF;
@@ -120,10 +128,17 @@ BEGIN
   IF v_config IS NULL OR NOT ('search_path=""' = ANY(v_config)) THEN
     RAISE EXCEPTION 'pack attestation audit trigger must use an empty search_path';
   END IF;
+  IF has_function_privilege('anon', 'private.audit_medicine_pack_verification_insert()', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'private.audit_medicine_pack_verification_insert()', 'EXECUTE')
+     OR has_function_privilege('service_role', 'private.audit_medicine_pack_verification_insert()', 'EXECUTE')
+     OR has_function_privilege('authenticator', 'private.audit_medicine_pack_verification_insert()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'pack attestation audit trigger must not be directly executable by API roles';
+  END IF;
 
   IF has_function_privilege('anon', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE')
      OR has_function_privilege('authenticated', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE')
-     OR has_function_privilege('service_role', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE') THEN
+     OR has_function_privilege('service_role', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE')
+     OR has_function_privilege('authenticator', 'private.reject_medicine_pack_verification_mutation()', 'EXECUTE') THEN
     RAISE EXCEPTION 'trigger-only append-only guard must not be directly executable by application/service roles';
   END IF;
 
