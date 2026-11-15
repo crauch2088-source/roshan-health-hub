@@ -162,3 +162,21 @@ Priority order for the next engineering pass:
 
 **Decision:** Roshan remains **NOT READY for real-world clinical use** until the critical stock-authority, pharmacist-only dispensing, Production ACL, migration/backup, and human acceptance gates are closed with exact evidence. Gemini's numerical overall score (23/100) is its own scoring output; this reconciliation does not validate that number or adopt it as a measured project percentage.
 
+
+
+## 8. Post-audit follow-up correction — 2026-11-15
+
+The initial F-01 statement that authenticated direct `medicines.stock_quantity` updates remain possible is corrected by a later catalog/trigger inspection:
+
+- Both Production and QA have an enabled `BEFORE INSERT OR UPDATE OF stock_quantity` trigger named `trg_guard_medicine_stock_aggregate`, invoking `private.guard_medicine_stock_aggregate()`. The function uses an empty fixed search path and rejects authenticated direct non-zero stock inserts and stock-quantity changes with `medicine_stock_is_rpc_managed`.
+- A rollback-only synthetic QA transaction confirmed that both Pharmacist and Admin stock-quantity updates are rejected by this trigger. The same transaction confirmed that direct `medicines.selling_price` updates still succeed for those roles under the broad table UPDATE grant and `medicines_update` RLS policy. The transaction was rolled back; follow-up SELECTs confirmed zero synthetic Auth users, app users or medicine rows remain.
+- A read-only Production catalog query confirmed the same enabled stock trigger, broad `selling_price` UPDATE privilege/policy, and `pharmacy.update` plus `billing.create` role grants for Admin, Super Admin, legacy Admin and Pharmacist. No Production DML was attempted.
+- Therefore the precise Phase 60 exposure is broad direct catalogue-field mutation (including price), **not** an unguarded direct stock-quantity update. PR #210's column-level UPDATE restriction remains a valid candidate boundary; its PG17 test should continue to prove that only the five approved identity columns remain directly writable.
+
+A second rollback-only synthetic QA JWT test confirmed the current outer `atomic_pharmacy_dispense` path allows Admin and Super Admin to reach its argument guard, while the Phase 61B nested invoice-linked RPC rejects them; the canonical Pharmacist reaches the nested implementation's deliberate NULL-argument guard. No dispense or financial/inventory side effect occurred. The four synthetic users were rolled back and verified absent. This supports the need for PR #250 Phase 61C.
+
+The fresh Production backup dispatch `43764265014` stopped at preflight because `SUPABASE_DB_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` are both missing from the backup-runner repository. No database dump began. The prior encrypted artifact remains in Drive but is dated 2026-11-12; owner-side decryption remains unverified.
+
+The new Phase 63 candidate on PR #255 adds a database trigger and UI/client completeness guard; exact code-head CI passed 345/345 unit/guard tests and the dedicated PostgreSQL 17 Phase 63 integration job. It remains unmerged and unapplied to hosted QA/Production. This follow-up is an AI-assisted evidence correction, not independent human security sign-off or clinical acceptance.
+
+No hosted Production DDL/DML, migration, ACL change, deployment, merge or business-data write was performed during this follow-up.
