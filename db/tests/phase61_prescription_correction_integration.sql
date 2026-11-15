@@ -1422,8 +1422,19 @@ BEGIN
   END IF;
   IF (SELECT count(*) FROM public.invoices
       WHERE visit_id='61500000-0000-0000-0000-000000000001'
-        AND deleted_at IS NULL) <> 2 THEN
-    RAISE EXCEPTION 'separate-invoice path did not preserve one primary and create one secondary invoice';
+        AND is_primary IS TRUE
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not preserve exactly one primary invoice';
+  END IF;
+  IF (SELECT count(*) FROM public.invoices AS i
+      JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+      WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+        AND i.is_primary IS FALSE
+        AND i.deleted_at IS NULL
+        AND ii.item_type='pharmacy'
+        AND ii.item_id='61600000-0000-0000-0000-000000000001'
+        AND ii.deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not preserve exactly one secondary invoice for the dispensed medicine';
   END IF;
   IF (SELECT count(*) FROM public.invoice_items
       WHERE invoice_id=v_invoice_id
