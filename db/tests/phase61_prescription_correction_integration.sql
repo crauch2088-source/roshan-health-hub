@@ -1362,21 +1362,32 @@ BEGIN
 
   -- The public dispense RPC returns stock/item details, not an invoice id.
   -- Verify the persisted secondary invoice by its visit and primary flag instead.
-  SELECT id INTO v_invoice_id
-  FROM public.invoices
-  WHERE visit_id='61500000-0000-0000-0000-000000000001'
-    AND is_primary IS FALSE
-    AND deleted_at IS NULL
-  ORDER BY created_at DESC
+  -- Identify the secondary invoice by the exact pharmacy line produced by this
+  -- dispense, not by assuming this visit has no unrelated secondary invoices.
+  SELECT i.id INTO v_invoice_id
+  FROM public.invoices AS i
+  JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+  WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+    AND i.is_primary IS FALSE
+    AND i.deleted_at IS NULL
+    AND ii.item_type='pharmacy'
+    AND ii.item_id='61600000-0000-0000-0000-000000000001'
+    AND ii.deleted_at IS NULL
+  ORDER BY i.created_at DESC
   LIMIT 1;
 
   IF v_invoice_id IS NULL OR (
-    SELECT count(*) FROM public.invoices
-    WHERE visit_id='61500000-0000-0000-0000-000000000001'
-      AND is_primary IS FALSE
-      AND deleted_at IS NULL
+    SELECT count(DISTINCT i.id)
+    FROM public.invoices AS i
+    JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+    WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+      AND i.is_primary IS FALSE
+      AND i.deleted_at IS NULL
+      AND ii.item_type='pharmacy'
+      AND ii.item_id='61600000-0000-0000-0000-000000000001'
+      AND ii.deleted_at IS NULL
   ) <> 1 THEN
-    RAISE EXCEPTION 'explicit separate-invoice path did not create exactly one secondary invoice';
+    RAISE EXCEPTION 'explicit separate-invoice path did not create exactly one secondary invoice for the dispensed medicine';
   END IF;
 
   BEGIN
