@@ -1323,18 +1323,14 @@ END;
 $phase61c_failed_primary_choice_has_no_side_effects$;
 
 -- Explicit separate_invoice=true creates a secondary invoice; same-choice replay
--- is idempotent, while replaying the same request id with false is a conflict.
+-- is idempotent. Authenticated role tests the RPC only; owner-level assertions below
+-- inspect invoice rows because pharmacist RLS does not grant billing.read.
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
-DO $phase61c_separate_invoice_true_path_and_choice_replay$
+DO $phase61c_separate_invoice_true_path$
 DECLARE
   v_first jsonb;
   v_retry jsonb;
-  v_invoice_id uuid;
-  v_matching_secondary_count integer;
-  v_matching_pharmacy_count integer;
-  v_conflict_message text;
-  v_conflict boolean := false;
 BEGIN
   SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
     INTO v_first
@@ -1361,11 +1357,15 @@ BEGIN
   IF COALESCE((v_first->0->>'quantity_dispensed')::numeric,-1) <> 1 THEN
     RAISE EXCEPTION 'separate-invoice path returned an unexpected dispensed quantity';
   END IF;
+END;
+$phase61c_separate_invoice_true_path$;
+RESET ROLE;
 
-  -- The public dispense RPC returns stock/item details, not an invoice id.
-  -- Verify the persisted secondary invoice by its visit and primary flag instead.
-  -- Identify the secondary invoice by the exact pharmacy line produced by this
-  -- dispense, not by assuming this visit has no unrelated secondary invoices.
+-- Inspect persisted invoice/stock effects with the fixture owner, outside pharmacist RLS.
+DO $phase61c_separate_invoice_true_path_effects$
+DECLARE
+  v_invoice_id uuid;
+BEGIN
   SELECT i.id INTO v_invoice_id
   FROM public.invoices AS i
   JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
@@ -1375,31 +1375,63 @@ BEGIN
     AND ii.item_type='pharmacy'
     AND ii.item_id='61600000-0000-0000-0000-000000000001'
     AND ii.deleted_at IS NULL
-  ORDER BY i.created_at DESC
+  ORDER BY i.created_at DESC, i.id DESC
   LIMIT 1;
 
-  SELECT count(DISTINCT i.id), count(*)
-    INTO v_matching_secondary_count, v_matching_pharmacy_count
-  FROM public.invoices AS i
-  JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
-  WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
-    AND i.is_primary IS FALSE
-    AND i.deleted_at IS NULL
-    AND ii.item_type='pharmacy'
-    AND ii.item_id='61600000-0000-0000-0000-000000000001'
-    AND ii.deleted_at IS NULL;
-
-  IF v_invoice_id IS NULL OR v_matching_secondary_count <> 1 THEN
-    RAISE EXCEPTION
-      'secondary invoice evidence mismatch: selected_id=%, matching_secondary_invoices=%, matching_pharmacy_lines=%, all_visit_invoices=%, primary_invoices=%, secondary_invoices=%',
-      v_invoice_id,
-      v_matching_secondary_count,
-      v_matching_pharmacy_count,
-      (SELECT count(*) FROM public.invoices WHERE visit_id='61500000-0000-0000-0000-000000000001' AND deleted_at IS NULL),
-      (SELECT count(*) FROM public.invoices WHERE visit_id='61500000-0000-0000-0000-000000000001' AND is_primary IS TRUE AND deleted_at IS NULL),
-      (SELECT count(*) FROM public.invoices WHERE visit_id='61500000-0000-0000-0000-000000000001' AND is_primary IS FALSE AND deleted_at IS NULL);
+  IF v_invoice_id IS NULL OR (
+    SELECT count(DISTINCT i.id)
+    FROM public.invoices AS i
+    JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+    WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+      AND i.is_primary IS FALSE
+      AND i.deleted_at IS NULL
+      AND ii.item_type='pharmacy'
+      AND ii.item_id='61600000-0000-0000-0000-000000000001'
+      AND ii.deleted_at IS NULL
+  ) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not create exactly one secondary invoice for the dispensed medicine';
   END IF;
+  IF (SELECT count(*) FROM public.invoices
+      WHERE visit_id='61500000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 2
+     OR (SELECT count(*) FROM public.invoices
+         WHERE visit_id='61500000-0000-0000-0000-000000000001'
+           AND is_primary IS TRUE AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not preserve one primary and create one secondary invoice';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+      WHERE invoice_id=v_invoice_id
+        AND item_type='pharmacy'
+        AND item_id='61600000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'secondary invoice is missing its pharmacy line';
+  END IF;
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 7 THEN
+    RAISE EXCEPTION 'separate-invoice replay altered stock more than once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000014'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not create exactly one stock movement';
+  END IF;
+  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
+      WHERE request_id='ffffffff-ffff-ffff-ffff-ffffffffffe2'
+        AND request_payload->>'separate_invoice'='true'
+        AND result_payload IS NOT NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice idempotency result was not persisted exactly once';
+  END IF;
+END;
+$phase61c_separate_invoice_true_path_effects$;
 
+-- Reusing the request id with a changed invoice choice must be rejected without writes.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_changed_invoice_choice_replay$
+DECLARE
+  v_conflict_message text;
+BEGIN
   BEGIN
     PERFORM 1
     FROM public.atomic_pharmacy_dispense(
@@ -1409,56 +1441,32 @@ BEGIN
     );
   EXCEPTION WHEN OTHERS THEN
     GET STACKED DIAGNOSTICS v_conflict_message = MESSAGE_TEXT;
-    IF v_conflict_message = 'pharmacy_dispense_idempotency_conflict' THEN
-      v_conflict := true;
-    ELSE
-      RAISE;
-    END IF;
   END;
-
-  IF NOT v_conflict THEN
-    RAISE EXCEPTION 'idempotent replay with a changed separate-invoice choice was not rejected';
+  IF v_conflict_message IS DISTINCT FROM 'pharmacy_dispense_idempotency_conflict' THEN
+    RAISE EXCEPTION 'idempotent replay with a changed separate-invoice choice was not rejected: %',
+      COALESCE(v_conflict_message,'no error');
   END IF;
+END;
+$phase61c_changed_invoice_choice_replay$;
+RESET ROLE;
 
+DO $phase61c_changed_choice_no_side_effects$
+BEGIN
   IF (SELECT quantity_remaining FROM public.pharmacy_inventory
       WHERE id='61900000-0000-0000-0000-000000000001') <> 7 THEN
-    RAISE EXCEPTION 'separate-invoice replay or changed-choice conflict altered stock more than once';
+    RAISE EXCEPTION 'changed-choice replay altered stock more than once';
   END IF;
   IF (SELECT count(*) FROM public.stock_movements
       WHERE reference_id='61700000-0000-0000-0000-000000000014'
         AND reference_table='prescriptions'
         AND movement_type='dispense') <> 1 THEN
-    RAISE EXCEPTION 'separate-invoice path did not create exactly one stock movement';
+    RAISE EXCEPTION 'changed-choice replay created an extra stock movement';
   END IF;
   IF (SELECT count(*) FROM public.invoices
       WHERE visit_id='61500000-0000-0000-0000-000000000001'
-        AND is_primary IS TRUE
-        AND deleted_at IS NULL) <> 1 THEN
-    RAISE EXCEPTION 'separate-invoice path did not preserve exactly one primary invoice';
-  END IF;
-  IF (SELECT count(*) FROM public.invoices AS i
-      JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
-      WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
-        AND i.is_primary IS FALSE
-        AND i.deleted_at IS NULL
-        AND ii.item_type='pharmacy'
-        AND ii.item_id='61600000-0000-0000-0000-000000000001'
-        AND ii.deleted_at IS NULL) <> 1 THEN
-    RAISE EXCEPTION 'separate-invoice path did not preserve exactly one secondary invoice for the dispensed medicine';
-  END IF;
-  IF (SELECT count(*) FROM public.invoice_items
-      WHERE invoice_id=v_invoice_id
-        AND item_type='pharmacy'
-        AND item_id='61600000-0000-0000-0000-000000000001'
-        AND deleted_at IS NULL) <> 1 THEN
-    RAISE EXCEPTION 'secondary invoice is missing its pharmacy line';
-  END IF;
-  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
-      WHERE request_id='ffffffff-ffff-ffff-ffff-ffffffffffe2'
-        AND request_payload->>'separate_invoice'='true'
-        AND result_payload IS NOT NULL) <> 1 THEN
-    RAISE EXCEPTION 'separate-invoice idempotency result was not persisted exactly once';
+        AND deleted_at IS NULL) <> 2 THEN
+    RAISE EXCEPTION 'changed-choice replay created an extra invoice';
   END IF;
 END;
-$phase61c_separate_invoice_true_path_and_choice_replay$;
-RESET ROLE;
+$phase61c_changed_choice_no_side_effects$;
+
