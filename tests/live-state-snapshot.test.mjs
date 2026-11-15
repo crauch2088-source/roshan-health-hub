@@ -90,10 +90,7 @@ test("snapshot fetches only open PR metadata and recent workflow-run metadata", 
   assert.equal(calls.length, 2);
   for (const call of calls) {
     assert.equal(call.options.method, "GET");
-    assert.equal(
-      call.options.headers.Authorization,
-      "Bearer synthetic-token-never-real",
-    );
+    assert.equal(call.options.headers.Authorization, "Bearer synthetic-token-never-real");
     assert.equal(call.options.headers["X-GitHub-Api-Version"], "2022-11-28");
   }
   assert.deepEqual(snapshot.data_scope, {

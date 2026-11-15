@@ -50,10 +50,10 @@ export async function createLiveStateSnapshot({
     "X-GitHub-Api-Version": API_VERSION,
   };
   const request = async (path) => {
-    const response = await fetchImpl(
-      `https://api.github.com/repos/${repository}/${path}`,
-      { method: "GET", headers },
-    );
+    const response = await fetchImpl(`https://api.github.com/repos/${repository}/${path}`, {
+      method: "GET",
+      headers,
+    });
     if (!response.ok) {
       throw new Error(`GitHub API request failed (${response.status}) for ${path.split("?")[0]}`);
     }
