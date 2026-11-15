@@ -112,7 +112,7 @@ CREATE POLICY medicine_pack_verifications_select ON public.medicine_pack_verific
 FOR SELECT TO authenticated
 USING ((SELECT public.app_has_perm('pharmacy.read')));
 
-REVOKE ALL ON TABLE public.medicine_pack_verifications FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON TABLE public.medicine_pack_verifications FROM PUBLIC, anon, authenticated, service_role, authenticator;
 GRANT SELECT ON TABLE public.medicine_pack_verifications TO authenticated;
 
 CREATE OR REPLACE FUNCTION private.reject_medicine_pack_verification_mutation()
@@ -123,7 +123,7 @@ BEGIN
     USING ERRCODE = '55000';
 END;
 $function$;
-REVOKE ALL ON FUNCTION private.reject_medicine_pack_verification_mutation() FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION private.reject_medicine_pack_verification_mutation() FROM PUBLIC, anon, authenticated, service_role, authenticator;
 
 DROP TRIGGER IF EXISTS medicine_pack_verifications_no_update_delete ON public.medicine_pack_verifications;
 CREATE TRIGGER medicine_pack_verifications_no_update_delete
@@ -150,7 +150,7 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION private.audit_medicine_pack_verification_insert() FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION private.audit_medicine_pack_verification_insert() FROM PUBLIC, anon, authenticated, service_role, authenticator;
 
 DROP TRIGGER IF EXISTS trg_audit_medicine_pack_verifications ON public.medicine_pack_verifications;
 CREATE TRIGGER trg_audit_medicine_pack_verifications
@@ -206,7 +206,7 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.verify_medicine_physical_pack(uuid) FROM PUBLIC, anon, service_role;
+REVOKE ALL ON FUNCTION public.verify_medicine_physical_pack(uuid) FROM PUBLIC, anon, service_role, authenticator;
 GRANT EXECUTE ON FUNCTION public.verify_medicine_physical_pack(uuid) TO authenticated;
 
 COMMIT;
