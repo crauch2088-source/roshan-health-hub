@@ -154,15 +154,15 @@ test("Phase 61 integration proves the migration itself grants prescription autho
 test("Phase 61C closes the direct invoice-linked dispense alias bypass", () => {
   assert.match(
     atomicDispenseRoleBoundaryMigration,
-    /CREATE OR REPLACE FUNCTION public\\.fn_dispense_prescription_with_invoice/,
+    /CREATE OR REPLACE FUNCTION public\.fn_dispense_prescription_with_invoice/,
   );
   assert.match(
     atomicDispenseRoleBoundaryMigration,
-    /ARRAY\\['pharmacist'\\]/,
+    /ARRAY\['pharmacist'\]/,
   );
   assert.doesNotMatch(
     atomicDispenseRoleBoundaryMigration,
-    /ARRAY\\['pharmacist','legacy_pharmacist'\\]/,
+    /ARRAY\['pharmacist','legacy_pharmacist'\]/,
   );
   assert.ok(
     integration.includes("legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC"),
