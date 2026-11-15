@@ -7,7 +7,6 @@ const migration = readFileSync(
   "utf8",
 );
 const roleBoundaryMigration = readFileSync("db/roshan_phase61b_clinical_role_boundary.sql", "utf8");
-const atomicDispenseRoleBoundaryMigration = readFileSync("db/roshan_phase61c_atomic_dispense_role_boundary.sql", "utf8");
 const atomicDispenseRoleBoundaryMigration = readFileSync(
   "db/roshan_phase61c_atomic_dispense_role_boundary.sql",
   "utf8",
