@@ -1,0 +1,60 @@
+name: Repository context snapshot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "db/**"
+      - "tests/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "AGENTS.md"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "vite.config.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repomix-snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pack:
+    name: Build a secret-conscious repository context artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout trusted repository revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+
+      - name: Pack repository with pinned Repomix
+        run: |
+          npx --yes --package=repomix@1.19.0 -- repomix \
+            --output repomix-output.xml \
+            --style xml \
+            --compress \
+            --parsable-style \
+            --ignore "**/.env*,**/*.age,**/*.zip,**/*.dump,**/*.backup,**/node_modules/**,**/dist/**,**/coverage/**,**/playwright-report/**,**/test-results/**,**/.vercel/**,**/.git/**,**/graphify-out/**,**/repomix-output.*"
+
+      - name: Upload context snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: roshan-repomix-context-${{ github.sha }}
+          path: repomix-output.xml
+          if-no-files-found: error
+          retention-days: 14
