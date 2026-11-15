@@ -7,7 +7,8 @@ const completePrescription = () => ({
   created_at: "2026-11-03T10:00:00Z",
   status: "pending",
   is_external: false,
-  patients: { full_name: "Synthetic Patient", mrn: "MRN-001" },
+  branch_id: "branch-1",
+  patients: { full_name: "Synthetic Patient", mrn: "MRN-001", branch_id: "branch-1" },
   users: { full_name: "Dr Synthetic" },
   prescription_items: [
     {
@@ -26,7 +27,7 @@ const completePrescription = () => ({
 });
 
 test("prescription print model preserves saved patient, author, and medication values", () => {
-  const model = buildPrescriptionPrintModel(completePrescription());
+  const model = buildPrescriptionPrintModel(completePrescription(), "branch-1");
   assert.ok(model);
   assert.equal(model.complete, true);
   assert.equal(model.patientName, "Synthetic Patient");
@@ -44,7 +45,7 @@ test("incomplete saved medication fields block official printing without inferre
   record.prescription_items[0].route = "";
   record.prescription_items[0].dosage_form = "";
   record.prescription_items[0].quantity = 0;
-  const model = buildPrescriptionPrintModel(record);
+  const model = buildPrescriptionPrintModel(record, "branch-1");
   assert.ok(model);
   assert.equal(model.complete, false);
   assert.equal(model.items[0].dose, "");
@@ -60,7 +61,7 @@ test("incomplete saved medication fields block official printing without inferre
 test("soft-deleted prescription items are excluded from the printable copy", () => {
   const record = completePrescription();
   record.prescription_items[0].deleted_at = "2026-11-03T11:00:00Z";
-  const model = buildPrescriptionPrintModel(record);
+  const model = buildPrescriptionPrintModel(record, "branch-1");
   assert.ok(model);
   assert.equal(model.items.length, 0);
   assert.equal(model.complete, false);
@@ -71,17 +72,31 @@ test("missing patient or prescriber identity blocks official printing", () => {
   const record = completePrescription();
   record.patients = null;
   record.users = null;
-  const model = buildPrescriptionPrintModel(record);
+  const model = buildPrescriptionPrintModel(record, "branch-1");
   assert.ok(model);
   assert.equal(model.complete, false);
   assert.ok(model.missingFields.includes("patient"));
   assert.ok(model.missingFields.includes("prescriber"));
 });
 
+test("prescription print model blocks missing or cross-branch source context", () => {
+  const record = completePrescription();
+  record.branch_id = "branch-2";
+  const model = buildPrescriptionPrintModel(record, "branch-1");
+  assert.ok(model);
+  assert.equal(model.complete, false);
+  assert.ok(model.missingFields.includes("branch binding"));
+
+  const missingContext = buildPrescriptionPrintModel(completePrescription());
+  assert.ok(missingContext);
+  assert.equal(missingContext.complete, false);
+  assert.ok(missingContext.missingFields.includes("branch binding"));
+});
+
 test("soft-deleted patient identity blocks official prescription printing", () => {
   const record = completePrescription();
   Object.assign(record.patients, { deleted_at: "2026-11-03T11:00:00Z" });
-  const model = buildPrescriptionPrintModel(record);
+  const model = buildPrescriptionPrintModel(record, "branch-1");
   assert.ok(model);
   assert.equal(model.complete, false);
   assert.ok(model.missingFields.includes("patient record"));
