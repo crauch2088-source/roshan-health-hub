@@ -155,16 +155,15 @@ test("Phase 61C closes the direct invoice-linked dispense alias bypass", () => {
     atomicDispenseRoleBoundaryMigration,
     /CREATE OR REPLACE FUNCTION public\.fn_dispense_prescription_with_invoice/,
   );
-  assert.match(
-    atomicDispenseRoleBoundaryMigration,
-    /ARRAY\['pharmacist'\]/,
-  );
+  assert.match(atomicDispenseRoleBoundaryMigration, /ARRAY\['pharmacist'\]/);
   assert.doesNotMatch(
     atomicDispenseRoleBoundaryMigration,
     /ARRAY\['pharmacist','legacy_pharmacist'\]/,
   );
   assert.ok(
-    integration.includes("legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC"),
+    integration.includes(
+      "legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC",
+    ),
   );
   assert.ok(
     integration.includes("legacy pharmacist fixture must demonstrate both broad permission bits"),
