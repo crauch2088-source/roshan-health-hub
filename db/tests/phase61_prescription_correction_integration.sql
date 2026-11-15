@@ -855,6 +855,51 @@ $phase61c_super_admin_atomic_dispense_denied$;
 RESET ROLE;
 
 
+-- The live legacy_pharmacist role has only pharmacy.edit/view and reports.view.
+-- A synthetic active fixture actor proves that a future assignment still cannot dispense.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000008',false);
+DO $phase61c_legacy_pharmacist_atomic_dispense_denied$
+DECLARE
+  v_denied boolean := false;
+  v_permissions text[];
+BEGIN
+  SELECT array_agg(p.code ORDER BY p.code)
+    INTO v_permissions
+  FROM public.role_permissions rp
+  JOIN public.roles r ON r.id = rp.role_id
+  JOIN public.permissions p ON p.id = rp.permission_id
+  WHERE r.code = 'legacy_pharmacist';
+
+  IF v_permissions IS DISTINCT FROM ARRAY['pharmacy.edit','pharmacy.view','reports.view']::text[] THEN
+    RAISE EXCEPTION 'legacy pharmacist fixture must preserve only the live compatibility permissions: %', v_permissions;
+  END IF;
+  IF NOT public.app_has_perm('pharmacy.edit')
+     OR NOT public.app_has_perm('pharmacy.view')
+     OR NOT public.app_has_perm('reports.view') THEN
+    RAISE EXCEPTION 'legacy pharmacist compatibility permissions are not visible to the synthetic fixture actor';
+  END IF;
+  IF public.app_has_perm('pharmacy.update') OR public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'legacy pharmacist unexpectedly received atomic dispensing permissions';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
+    RAISE EXCEPTION 'legacy pharmacist was treated as the canonical pharmacist role';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff7'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist reached atomic dispense despite the fail-closed canonical role boundary';
+  END IF;
+END;
+$phase61c_legacy_pharmacist_atomic_dispense_denied$;
+RESET ROLE;
+
 -- A pharmacist role is not sufficient if either required permission bit is missing.
 -- These temporary permission removals run only in the disposable PostgreSQL 17 fixture.
 DELETE FROM public.role_permissions rp
@@ -1021,7 +1066,8 @@ BEGIN
       'ffffffff-ffff-ffff-ffff-fffffffffff1'::uuid,
       'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid,
       'ffffffff-ffff-ffff-ffff-fffffffffff5'::uuid,
-      'ffffffff-ffff-ffff-ffff-fffffffffff6'::uuid
+      'ffffffff-ffff-ffff-ffff-fffffffffff6'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff7'::uuid
     )
   ) THEN
     RAISE EXCEPTION 'a rejected non-pharmacist created an idempotency row';

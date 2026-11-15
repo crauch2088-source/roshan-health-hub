@@ -9,7 +9,8 @@ INSERT INTO public.roles (id, name, code) VALUES
  ('61000000-0000-0000-0000-000000000001', 'Admin', 'admin'),
  ('61000000-0000-0000-0000-000000000002', 'Pharmacist', 'pharmacist'),
  ('61000000-0000-0000-0000-000000000003', 'Doctor', 'doctor'),
- ('61000000-0000-0000-0000-000000000004', 'Super Admin', 'super_admin')
+ ('61000000-0000-0000-0000-000000000004', 'Super Admin', 'super_admin'),
+ ('61000000-0000-0000-0000-000000000005', 'Legacy Pharmacist', 'legacy_pharmacist')
 ON CONFLICT (code) DO NOTHING;
 
 -- Canonical production doctors already hold emr.create; seed that baseline permission
@@ -67,6 +68,21 @@ JOIN public.permissions AS p ON p.code IN ('pharmacy.update', 'billing.create')
 WHERE r.code IN ('admin', 'super_admin', 'pharmacist')
 ON CONFLICT DO NOTHING;
 
+-- Reproduce the live legacy_pharmacist matrix exactly. The synthetic active user below
+-- exists only in this disposable PostgreSQL fixture to prove future assignments fail closed.
+INSERT INTO public.permissions (code, name, module, action) VALUES
+  ('pharmacy.edit', 'Edit pharmacy', 'pharmacy', 'edit'),
+  ('pharmacy.view', 'View pharmacy', 'pharmacy', 'view'),
+  ('reports.view', 'View reports', 'reports', 'view')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles AS r
+JOIN public.permissions AS p ON p.code IN ('pharmacy.edit', 'pharmacy.view', 'reports.view')
+WHERE r.code = 'legacy_pharmacist'
+ON CONFLICT DO NOTHING;
+
 INSERT INTO public.branches (id, branch_code, branch_name, name, code, active, is_active) VALUES
  ('61100000-0000-0000-0000-000000000001', 'TST-A', 'Correction Test A', 'Correction Test A', 'TST-A', true, true),
  ('61100000-0000-0000-0000-000000000002', 'TST-B', 'Correction Test B', 'Correction Test B', 'TST-B', true, true)
@@ -79,7 +95,8 @@ INSERT INTO auth.users (id) VALUES
  ('61200000-0000-0000-0000-000000000004'),
  ('61200000-0000-0000-0000-000000000005'),
  ('61200000-0000-0000-0000-000000000006'),
- ('61200000-0000-0000-0000-000000000007')
+ ('61200000-0000-0000-0000-000000000007'),
+ ('61200000-0000-0000-0000-000000000008')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.users (id, auth_user_id, role_id, full_name, branch_id, active) VALUES
@@ -89,7 +106,8 @@ INSERT INTO public.users (id, auth_user_id, role_id, full_name, branch_id, activ
  ('61300000-0000-0000-0000-000000000004','61200000-0000-0000-0000-000000000004',(SELECT id FROM public.roles WHERE code='pharmacist'),'Correction Pharmacist B','61100000-0000-0000-0000-000000000002',true),
  ('61300000-0000-0000-0000-000000000005','61200000-0000-0000-0000-000000000005',(SELECT id FROM public.roles WHERE code='admin'),'Correction Admin A','61100000-0000-0000-0000-000000000001',true),
  ('61300000-0000-0000-0000-000000000006','61200000-0000-0000-0000-000000000006',(SELECT id FROM public.roles WHERE code='super_admin'),'Correction Super Admin','61100000-0000-0000-0000-000000000001',true),
- ('61300000-0000-0000-0000-000000000007','61200000-0000-0000-0000-000000000007',(SELECT id FROM public.roles WHERE code='doctor'),'Wrong Branch Doctor B','61100000-0000-0000-0000-000000000002',true)
+ ('61300000-0000-0000-0000-000000000007','61200000-0000-0000-0000-000000000007',(SELECT id FROM public.roles WHERE code='doctor'),'Wrong Branch Doctor B','61100000-0000-0000-0000-000000000002',true),
+ ('61300000-0000-0000-0000-000000000008','61200000-0000-0000-0000-000000000008',(SELECT id FROM public.roles WHERE code='legacy_pharmacist'),'Synthetic Legacy Pharmacist','61100000-0000-0000-0000-000000000001',true)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.patients (id, branch_id, full_name, gender, active) VALUES
