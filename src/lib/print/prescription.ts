@@ -81,6 +81,10 @@ export function buildPrescriptionPrintModel(
     }));
 
   const missingFields: string[] = [];
+  const printableStatuses = new Set(["pending", "dispensed"]);
+  if (!printableStatuses.has(text(row["status"]).trim().toLowerCase())) {
+    missingFields.push("prescription status");
+  }
   if (!text(patient["full_name"]).trim()) missingFields.push("patient");
   if (text(patient["deleted_at"])) missingFields.push("patient record");
   if (

@@ -101,3 +101,48 @@ test("soft-deleted patient identity blocks official prescription printing", () =
   assert.equal(model.complete, false);
   assert.ok(model.missingFields.includes("patient record"));
 });
+
+
+test("only pending and dispensed saved prescription statuses are printable", () => {
+  for (const status of ["pending", "dispensed"]) {
+    const record = completePrescription();
+    record.status = status;
+    const model = buildPrescriptionPrintModel(record, "branch-1");
+    assert.ok(model);
+    assert.equal(model.complete, true);
+    assert.equal(model.status, status);
+  }
+});
+
+test("cancelled, draft, correction-requested, missing and unknown statuses block printing", () => {
+  const invalidStatuses: Array<string | null> = [
+    "cancelled",
+    "draft",
+    "correction_requested",
+    null,
+    "future_status",
+  ];
+
+  for (const status of invalidStatuses) {
+    const record = completePrescription();
+    if (status === null) {
+      delete (record as { status?: string }).status;
+    } else {
+      record.status = status;
+    }
+
+    const model = buildPrescriptionPrintModel(record, "branch-1");
+    assert.ok(model);
+    assert.equal(model.complete, false, `status ${String(status)} must not be printable`);
+    assert.ok(model.missingFields.includes("prescription status"));
+  }
+});
+
+test("external prescriptions remain printable copies when their saved status is pending", () => {
+  const record = completePrescription();
+  record.is_external = true;
+  const model = buildPrescriptionPrintModel(record, "branch-1");
+  assert.ok(model);
+  assert.equal(model.complete, true);
+  assert.equal(model.isExternal, true);
+});
