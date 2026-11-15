@@ -34,7 +34,7 @@ test("live snapshot is main-only and rejects other refs before network access", 
         called = true;
       },
     }),
-    /restricted to refs\\/heads\\/main/,
+    /restricted to refs\/heads\/main/,
   );
   assert.equal(called, false);
 });
@@ -151,6 +151,6 @@ test("workflow_dispatch and workflow_run cannot create a snapshot from a non-mai
   const workflow = await readFile(".github/workflows/repomix-snapshot.yml", "utf8");
   assert.match(
     workflow,
-    /if: github\\.ref == 'refs\\/heads\\/main' && \\(github\\.event_name != 'workflow_run' \\|\\| github\\.event\\.workflow_run\\.head_branch == 'main'\\)/,
+    /if: github\.ref == 'refs\/heads\/main' && \(github\.event_name != 'workflow_run' \|\| github\.event\.workflow_run\.head_branch == 'main'\)/,
   );
 });
