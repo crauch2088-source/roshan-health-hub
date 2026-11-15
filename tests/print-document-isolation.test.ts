@@ -50,6 +50,30 @@ test("print-only certificate content is hidden on screen and displayed only for 
   );
 });
 
+test("prescription print action reads only the selected persisted order and blocks incomplete copies", () => {
+  const source = read("src/features/clinic/consultation/components/PrescriptionTab.tsx");
+  assert.match(source, /buildPrescriptionPrintModel\\(savedPrescription\\)/);
+  assert.match(source, /lastSavedPrescriptionId/);
+  assert.match(source, /\\.eq\\("visit_id", visitId\\)/);
+  assert.match(source, /\\.eq\\("patient_id", patient\\)/);
+  assert.match(source, /prescriptionPrintModel\\?\\.complete/);
+  assert.match(source, /targetId="prescription-print-document"/);
+  assert.match(source, /savedPrescriptionQ\\.error/);
+  assert.doesNotMatch(source, /window\\.print\\(\\)/);
+});
+
+test("scoped prescription printing isolates one print-document-root target", () => {
+  const kit = read("src/components/kit.tsx");
+  const css = read("src/styles.css");
+  assert.match(kit, /targetId\\?: string/);
+  assert.match(kit, /print-target-active/);
+  assert.match(css, /body\\.print-scope-active \\.print-document-root\\.print-target-active/);
+  assert.match(
+    css,
+    /body\\.print-scope-active \\.print-document-root\\.print-target-active,\\s*body\\.print-scope-active \\.print-document-root\\.print-target-active \\*/,
+  );
+});
+
 test("clinical document print stylesheet explicitly requests A4 paper", () => {
   const css = read("src/styles.css");
   const pageRule = css.match(/@page\s*\{([^}]*)\}/s);
