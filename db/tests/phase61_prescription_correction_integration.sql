@@ -857,11 +857,10 @@ RESET ROLE;
 
 -- The live legacy_pharmacist role has only pharmacy.edit/view and reports.view.
 -- A synthetic active fixture actor proves that a future assignment still cannot dispense.
-SET ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000008',false);
-DO $phase61c_legacy_pharmacist_atomic_dispense_denied$
+-- Verify the exact legacy permission matrix as the database owner; application RLS
+-- intentionally prevents direct role_permissions catalog reads by authenticated users.
+DO $phase61c_legacy_fixture_permission_matrix$
 DECLARE
-  v_denied boolean := false;
   v_permissions text[];
 BEGIN
   SELECT array_agg(p.code ORDER BY p.code)
@@ -874,6 +873,14 @@ BEGIN
   IF v_permissions IS DISTINCT FROM ARRAY['pharmacy.edit','pharmacy.view','reports.view']::text[] THEN
     RAISE EXCEPTION 'legacy pharmacist fixture must preserve only the live compatibility permissions: %', v_permissions;
   END IF;
+END;
+$phase61c_legacy_fixture_permission_matrix$;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000008',false);
+DO $phase61c_legacy_pharmacist_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
   IF NOT public.app_has_perm('pharmacy.edit')
      OR NOT public.app_has_perm('pharmacy.view')
      OR NOT public.app_has_perm('reports.view') THEN
