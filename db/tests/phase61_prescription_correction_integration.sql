@@ -922,6 +922,60 @@ END;
 $phase61c_legacy_pharmacist_atomic_dispense_denied$;
 RESET ROLE;
 
+-- A legacy pharmacist must not regain the direct dispense path even if broad
+-- permission bits are accidentally reintroduced. The canonical role is decisive.
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+CROSS JOIN public.permissions p
+WHERE r.code = 'legacy_pharmacist'
+  AND p.code IN ('pharmacy.update', 'billing.create')
+ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000008',false);
+DO $phase61c_legacy_pharmacist_broad_permissions_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update')
+     OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'legacy pharmacist fixture must demonstrate both broad permission bits';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
+    RAISE EXCEPTION 'legacy pharmacist unexpectedly satisfies the canonical pharmacist role check';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(NULL::uuid,false);
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff9'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist bypassed canonical role boundary through atomic dispense RPC';
+  END IF;
+END;
+$phase61c_legacy_pharmacist_broad_permissions_denied$;
+RESET ROLE;
+
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'legacy_pharmacist'
+  AND p.code IN ('pharmacy.update', 'billing.create');
+
 -- A pharmacist role is not sufficient if either required permission bit is missing.
 -- These temporary permission removals run only in the disposable PostgreSQL 17 fixture.
 DELETE FROM public.role_permissions rp
@@ -1029,6 +1083,16 @@ BEGIN
      OR has_function_privilege('authenticator','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
     RAISE EXCEPTION 'public atomic pharmacy dispense wrapper grants are incorrect';
   END IF;
+  IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('anon','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('service_role','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('authenticator','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('anon','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('authenticated','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('service_role','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('authenticator','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE') THEN
+    RAISE EXCEPTION 'invoice-linked dispense wrapper or unchecked implementation grants are incorrect';
+  END IF;
 END;
 $phase61c_atomic_dispense_acl$;
 
@@ -1039,6 +1103,8 @@ DECLARE
   v_wrapper_source text;
   v_unchecked record;
   v_helper record;
+  v_nested_wrapper record;
+  v_nested_wrapper_source text;
 BEGIN
   SELECT p.prosecdef, p.proconfig
     INTO v_wrapper
@@ -1068,6 +1134,24 @@ BEGIN
   END IF;
 
   SELECT p.prosecdef, p.proconfig
+    INTO v_nested_wrapper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.fn_dispense_prescription_with_invoice(uuid,boolean)');
+  IF v_nested_wrapper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_nested_wrapper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'public invoice-linked dispense wrapper must be SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosrc INTO v_nested_wrapper_source
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.fn_dispense_prescription_with_invoice(uuid,boolean)');
+  IF v_nested_wrapper_source IS NULL
+     OR position('legacy_pharmacist' IN v_nested_wrapper_source) > 0
+     OR position('ARRAY[''pharmacist'']' IN v_nested_wrapper_source) = 0 THEN
+    RAISE EXCEPTION 'invoice-linked dispense wrapper must allow only the canonical pharmacist role';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
     INTO v_helper
     FROM pg_proc p
    WHERE p.oid = to_regprocedure('private.app_has_role_permission(text[],text)');
@@ -1089,7 +1173,8 @@ BEGIN
       'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid,
       'ffffffff-ffff-ffff-ffff-fffffffffff5'::uuid,
       'ffffffff-ffff-ffff-ffff-fffffffffff6'::uuid,
-      'ffffffff-ffff-ffff-ffff-fffffffffff7'::uuid
+      'ffffffff-ffff-ffff-ffff-fffffffffff7'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff9'::uuid
     )
   ) THEN
     RAISE EXCEPTION 'a rejected non-pharmacist created an idempotency row';
