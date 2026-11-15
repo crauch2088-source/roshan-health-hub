@@ -241,8 +241,10 @@ test("Phase 61C covers both invoice choices and rejects changed-choice idempoten
   assert.ok(integration.includes("phase61c_primary_finalized_requires_separate_choice"));
   assert.ok(integration.includes("phase61c_separate_invoice_true_path"));
   assert.ok(integration.includes("pharmacy_dispense_idempotency_conflict"));
-  assert.ok(integration.includes("same-choice separate-invoice retry changed the result") &&
-    integration.includes("phase61c_changed_invoice_choice_replay"));
+  assert.ok(
+    integration.includes("same-choice separate-invoice retry changed the result") &&
+      integration.includes("phase61c_changed_invoice_choice_replay"),
+  );
 });
 
 test("Phase 61C preserves successful pharmacist dispense and idempotent replay", () => {
