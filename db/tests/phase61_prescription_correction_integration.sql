@@ -1360,15 +1360,23 @@ BEGIN
     RAISE EXCEPTION 'separate-invoice path returned an unexpected dispensed quantity';
   END IF;
 
-  v_invoice_id := (v_first->0->>'invoice_id')::uuid;
-  IF v_invoice_id IS NULL OR NOT EXISTS (
-    SELECT 1 FROM public.invoices
-    WHERE id=v_invoice_id
-      AND visit_id='61500000-0000-0000-0000-000000000001'
+  -- The public dispense RPC returns stock/item details, not an invoice id.
+  -- Verify the persisted secondary invoice by its visit and primary flag instead.
+  SELECT id INTO v_invoice_id
+  FROM public.invoices
+  WHERE visit_id='61500000-0000-0000-0000-000000000001'
+    AND is_primary IS FALSE
+    AND deleted_at IS NULL
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF v_invoice_id IS NULL OR (
+    SELECT count(*) FROM public.invoices
+    WHERE visit_id='61500000-0000-0000-0000-000000000001'
       AND is_primary IS FALSE
       AND deleted_at IS NULL
-  ) THEN
-    RAISE EXCEPTION 'explicit separate-invoice path did not create a secondary invoice';
+  ) <> 1 THEN
+    RAISE EXCEPTION 'explicit separate-invoice path did not create exactly one secondary invoice';
   END IF;
 
   BEGIN
