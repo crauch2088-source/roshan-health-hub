@@ -1,0 +1,140 @@
+BEGIN;
+
+DO $phase63_assertions$
+DECLARE
+  v_id uuid;
+  v_rejected boolean;
+  v_value text;
+BEGIN
+  -- New writes are accepted when all clinical fields are explicit. The
+  -- legacy dosage field is normalized to dose for consistent printing.
+  INSERT INTO public.prescription_items (
+    id,prescription_id,medication_name,dose,dosage,frequency,duration,
+    quantity,dosage_form,route
+  ) VALUES (
+    '63000000-0000-0000-0000-000000000001',
+    '63000000-0000-0000-0000-000000000101',
+    'Synthetic medicine',NULL,'500 mg','twice daily','5 days',
+    10,'tablet','oral'
+  );
+  SELECT dose INTO v_value FROM public.prescription_items
+  WHERE id='63000000-0000-0000-0000-000000000001';
+  IF v_value IS DISTINCT FROM '500 mg' THEN
+    RAISE EXCEPTION 'legacy dosage was not normalized into dose';
+  END IF;
+
+  INSERT INTO public.prescription_items (
+    id,prescription_id,medication_name,dose,dosage,frequency,duration,
+    quantity,dosage_form,route
+  ) VALUES (
+    '63000000-0000-0000-0000-000000000002',
+    '63000000-0000-0000-0000-000000000101',
+    'Synthetic medicine','5 mL',NULL,'three times daily','3 days',
+    9,'oral solution','oral'
+  );
+  SELECT dosage INTO v_value FROM public.prescription_items
+  WHERE id='63000000-0000-0000-0000-000000000002';
+  IF v_value IS DISTINCT FROM '5 mL' THEN
+    RAISE EXCEPTION 'dose was not normalized into legacy dosage';
+  END IF;
+
+  -- Every required clinical field fails closed when missing.
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000011','63000000-0000-0000-0000-000000000101','','500 mg','500 mg','daily','5 days',5,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'missing medication name was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000012','63000000-0000-0000-0000-000000000101','Synthetic medicine','','','daily','5 days',5,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'missing dose was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000013','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','','5 days',5,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'missing frequency was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000014','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','',5,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'missing duration was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000015','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','5 days',5,'','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'missing dosage form was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000016','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','5 days',5,'tablet','');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'missing route was accepted'; END IF;
+
+  -- Quantities must be positive whole values within the RPC integer range.
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000021','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','5 days',NULL,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'NULL quantity was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000022','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','5 days',0,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'zero quantity was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000023','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','5 days',1.5,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'fractional quantity was accepted'; END IF;
+
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items(id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,dosage_form,route)
+    VALUES('63000000-0000-0000-0000-000000000024','63000000-0000-0000-0000-000000000101','Synthetic medicine','500 mg','500 mg','daily','5 days',2147483648,'tablet','oral');
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'out-of-range quantity was accepted'; END IF;
+
+  -- Legacy soft-deleted rows remain untouched; ordinary non-clinical updates
+  -- do not revalidate them.
+  INSERT INTO public.prescription_items(id,prescription_id,medication_name,quantity,deleted_at)
+  VALUES('63000000-0000-0000-0000-000000000031','63000000-0000-0000-0000-000000000101',NULL,NULL,now());
+  UPDATE public.prescription_items SET instructions='legacy archived row' WHERE id='63000000-0000-0000-0000-000000000031';
+
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items SET route='' WHERE id='63000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN RAISE EXCEPTION 'clinical-field update to blank route was accepted'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgrelid='public.prescription_items'::regclass
+      AND tgname='trg_prescription_item_completeness_guard'
+      AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'Phase 63 trigger is not attached to public.prescription_items';
+  END IF;
+
+  IF has_function_privilege('authenticated','private.validate_prescription_item_completeness()','EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated role can directly execute the private trigger function';
+  END IF;
+END;
+$phase63_assertions$;
+
+ROLLBACK;
