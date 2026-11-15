@@ -120,3 +120,7 @@ Next highest-value task is an independent second-person SQL/security review of P
 Clinical end-to-end acceptance remains deferred until a free isolated test environment and suitable synthetic doctor/pharmacist identities exist. No Production or QA DDL/DML/ACL/RLS/Auth/Storage writes, no real clinical/financial records, no backup dispatch, no merge and no deployment promotion occurred in this recheck.
 
 Last evidence-weighted baseline: 62% Engineering RC / 15% Operational Acceptance; unchanged by this audit. Conditional Engineering RC estimate: 20–35 focused hours. No guaranteed calendar release ETA.
+## Documentation-contract validation
+
+- The initial evidence commit fd46c6e8d95931d519de77df55a15b99b317e80b triggered Spec Kit validation [43688576295](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43688576295). The workflow failed at the repository agent-skills contract because the refreshed PROJECT_STATE.md omitted the required Refresh protocol and STALE markers; the remaining repository/Spec Kit baseline checks passed.
+- The follow-up documentation commit restores the explicit refresh contract and keeps the project-state cache warning. This was a documentation-contract failure, not a SQL, application or clinical test failure. The corrected exact-head workflow result is tracked on PR #250.

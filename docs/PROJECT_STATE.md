@@ -2,6 +2,10 @@
 
 Snapshot: 2026-11-15 06:55 UTC. This is a cache, not authority over live GitHub, Supabase or Vercel. Refresh the underlying service before every write.
 
+## Refresh protocol
+
+Before any write, re-fetch current main/PR refs and reviews, exact-head workflow runs, Production and QA migration ledgers/catalog/advisors, the Vercel Production deployment and alias, and backup-runner jobs/artifact/restore evidence. Cached values become STALE when they have not been verified in the current run. A validation-only or skipped workflow is never evidence of a completed backup or acceptance gate.
+
 ## GitHub and CI
 
 - Repository: crauch2088-source/roshan-health-hub
