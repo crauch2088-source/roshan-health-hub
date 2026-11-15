@@ -52,7 +52,8 @@ test("print-only certificate content is hidden on screen and displayed only for 
 
 test("prescription print action reads only the selected persisted order and blocks incomplete copies", () => {
   const source = read("src/features/clinic/consultation/components/PrescriptionTab.tsx");
-  assert.match(source, /buildPrescriptionPrintModel\(savedPrescription\)/);
+  assert.match(source, /buildPrescriptionPrintModel\(savedPrescription, visitBranch\)/);
+  assert.match(source, /\.eq\("branch_id", visitBranch\)/);
   assert.match(source, /lastSavedPrescriptionId/);
   assert.match(source, /\.eq\("visit_id", visitId\)/);
   assert.match(source, /\.eq\("patient_id", patient\)/);
