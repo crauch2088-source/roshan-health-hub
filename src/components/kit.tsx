@@ -423,13 +423,7 @@ export function ExportButtons({ rows, filename }: { rows: Row[]; filename: strin
   );
 }
 
-export function PrintButton({
-  scoped = false,
-  targetId,
-}: {
-  scoped?: boolean;
-  targetId?: string;
-}) {
+export function PrintButton({ scoped = false, targetId }: { scoped?: boolean; targetId?: string }) {
   const { t } = useLang();
   const print = () => {
     if (!scoped && !targetId) {
