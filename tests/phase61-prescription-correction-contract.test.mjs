@@ -7,6 +7,7 @@ const migration = readFileSync(
   "utf8",
 );
 const roleBoundaryMigration = readFileSync("db/roshan_phase61b_clinical_role_boundary.sql", "utf8");
+const atomicDispenseRoleBoundaryMigration = readFileSync("db/roshan_phase61c_atomic_dispense_role_boundary.sql", "utf8");
 const atomicDispenseRoleBoundaryMigration = readFileSync(
   "db/roshan_phase61c_atomic_dispense_role_boundary.sql",
   "utf8",
@@ -147,6 +148,27 @@ test("Phase 61 integration proves the migration itself grants prescription autho
   );
   assert.ok(
     integration.includes("doctor is missing the dedicated prescription-authoring permission"),
+  );
+});
+
+test("Phase 61C closes the direct invoice-linked dispense alias bypass", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /CREATE OR REPLACE FUNCTION public\\.fn_dispense_prescription_with_invoice/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /ARRAY\\['pharmacist'\\]/,
+  );
+  assert.doesNotMatch(
+    atomicDispenseRoleBoundaryMigration,
+    /ARRAY\\['pharmacist','legacy_pharmacist'\\]/,
+  );
+  assert.ok(
+    integration.includes("legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC"),
+  );
+  assert.ok(
+    integration.includes("legacy pharmacist fixture must demonstrate both broad permission bits"),
   );
 });
 
