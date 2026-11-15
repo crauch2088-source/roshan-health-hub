@@ -7,7 +7,9 @@ import {
   createEmptyPrescriptionDraft,
   createPrescriptionDraftForMedicine,
   editPrescriptionName,
+  validatePrescriptionDrafts,
 } from "../src/lib/prescription-draft.ts";
+import { parseDispenseQuantity } from "../src/lib/pharmacy-quantity.ts";
 
 const sql = readFileSync(
   new URL("../db/roshan_phase7_atomic_prescription.sql", import.meta.url),
@@ -64,10 +66,10 @@ test("new medicine selection starts with a clean regimen", () => {
       dose: "",
       frequency: "",
       duration: "",
-      quantity: "1",
+      quantity: "",
       instructions: "",
       dosage_form: "capsule",
-      route: "oral",
+      route: "",
     },
   );
 });
@@ -79,7 +81,7 @@ test("adding an item can reset every regimen field for the next medicine", () =>
     dose: "",
     frequency: "",
     duration: "",
-    quantity: "1",
+    quantity: "",
     instructions: "",
     dosage_form: "",
     route: "",
@@ -99,11 +101,11 @@ test("prescription medicine lookup is debounced, sanitized, and server-side", ()
 test("medicine search removes SQL LIKE wildcards and PostgREST filter grammar", () => {
   assert.equal(
     buildMedicineSearchFilter("amox%_cillin"),
-    "name.ilike.%amox cillin%,generic_name.ilike.%amox cillin%,brand_name.ilike.%amox cillin%,strength.ilike.%amox cillin%",
+    "name.ilike.%amox cillin%,generic_name.ilike.%amox cillin%,brand_name.ilike.%amox cillin%,strength.ilike.%amox cillin%,dosage_form.ilike.%amox cillin%",
   );
   assert.equal(
     buildMedicineSearchFilter("amox),status.eq.active,(brand"),
-    "name.ilike.%amox status.eq.active brand%,generic_name.ilike.%amox status.eq.active brand%,brand_name.ilike.%amox status.eq.active brand%,strength.ilike.%amox status.eq.active brand%",
+    "name.ilike.%amox status.eq.active brand%,generic_name.ilike.%amox status.eq.active brand%,brand_name.ilike.%amox status.eq.active brand%,strength.ilike.%amox status.eq.active brand%,dosage_form.ilike.%amox status.eq.active brand%",
   );
 });
 
@@ -132,12 +134,38 @@ test("unknown catalog dosage forms do not masquerade as a supported form", () =>
       dose: "",
       frequency: "",
       duration: "",
-      quantity: "1",
+      quantity: "",
       instructions: "",
       dosage_form: "",
       route: "",
     },
   );
+});
+
+test("prescription completeness requires explicit dosage form and route", () => {
+  const draft = {
+    ...createEmptyPrescriptionDraft(),
+    name: "Amoxicillin",
+    dose: "500 mg",
+    frequency: "twice daily",
+    duration: "5 days",
+    quantity: "10",
+  };
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-dosage-form");
+  draft.dosage_form = "capsule";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-route");
+  draft.route = "oral";
+  assert.equal(validatePrescriptionDrafts([draft]), null);
+});
+
+test("dispense quantity parser rejects scientific notation and non-whole quantities", () => {
+  assert.equal(parseDispenseQuantity("2"), 2);
+  assert.equal(parseDispenseQuantity("2.0"), 2);
+  assert.equal(parseDispenseQuantity(3), 3);
+  for (const value of ["", "0", "-1", "+2", "1e3", "2.5", "Infinity", "NaN"]) {
+    assert.equal(parseDispenseQuantity(value), null, `${value} must be rejected`);
+  }
+  assert.equal(parseDispenseQuantity("2147483648"), null);
 });
 
 test("successful prescription save clears the draft to prevent accidental duplicate submission", () => {

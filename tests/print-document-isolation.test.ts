@@ -15,12 +15,20 @@ test("certificate print action selects and prints exactly one persisted certific
   assert.doesNotMatch(source, /onClick=\{\(\) => window\.print\(\)\}/);
   assert.match(source, /afterprint/);
   assert.match(source, /print-only/);
+  assert.match(source, /certificateBranchId\(selected\)/);
+  assert.match(source, /deleted_at/);
+  assert.match(source, /print-target-scope-active/);
+  assert.match(source, /id="medical-certificate-print-document"/);
+  assert.match(source, /!certificateBranchId\(c\)/);
 });
 
 test("invoice print boundary excludes all non-document controls and uses canonical center settings", () => {
   const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
   assert.match(source, /print-document-root/);
-  assert.match(source, /<PrintButton scoped \/>/);
+  assert.match(source, /targetId="invoice-print-document"/);
+  assert.match(source, /canPrintInvoice/);
+  assert.match(source, /invoicePatientBranchMismatch/);
+  assert.match(source, /branch_id, deleted_at, patients\(id, full_name, mrn, phone, branch_id, deleted_at\)/);
   assert.match(source, /className="no-print space-y-4"/);
   assert.match(source, /settings\["center_name"\]/);
   assert.match(source, /settings\["center_name_ar"\]/);
@@ -41,6 +49,7 @@ test("print-only certificate content is hidden on screen and displayed only for 
   const kit = read("src/components/kit.tsx");
   assert.match(kit, /scoped\?: boolean/);
   assert.match(kit, /print-scope-active/);
+  assert.match(css, /body\.print-target-scope-active \.print-document-root\.print-target-active/);
   assert.match(css, /\.print-only\s*\{[^}]*display:\s*none/s);
   assert.match(css, /@media print[\s\S]*?\.print-only\s*\{[^}]*display:\s*block/s);
   assert.match(css, /body\.print-scope-active \*\s*\{[^}]*visibility:\s*hidden/s);

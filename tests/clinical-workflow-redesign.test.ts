@@ -7,6 +7,7 @@ import {
 } from "../src/lib/prescription-draft.ts";
 import { labWorkflowStage } from "../src/lib/lab-workflow.ts";
 import { shouldBlockUnsavedClinicalNoteNavigation } from "../src/lib/clinical-navigation-guard.ts";
+import { calcAge } from "../src/lib/medical.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -20,10 +21,22 @@ test("prescription completeness guard rejects empty and incomplete regimens", ()
   draft.frequency = "twice daily";
   assert.equal(validatePrescriptionDrafts([draft]), "missing-duration");
   draft.duration = "5 days";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-dosage-form");
+  draft.dosage_form = "tablet";
+  assert.equal(validatePrescriptionDrafts([draft]), "missing-route");
+  draft.route = "oral";
   draft.quantity = "0";
   assert.equal(validatePrescriptionDrafts([draft]), "invalid-quantity");
   draft.quantity = "10";
   assert.equal(validatePrescriptionDrafts([draft]), null);
+});
+
+test("date-only age calculation rejects invalid calendar dates and future dates", () => {
+  assert.equal(calcAge("2024-02-30"), null);
+  assert.equal(calcAge("not-a-date"), null);
+  assert.equal(calcAge(""), null);
+  assert.equal(calcAge(`${new Date().getFullYear() + 1}-01-01`), null);
+  assert.equal(calcAge("2000-01-01"), new Date().getFullYear() - 2000);
 });
 
 test("consultation tabs expose accessible tab semantics, bilingual labels and arrow navigation", () => {
@@ -96,6 +109,11 @@ test("prescription UI states that doses are clinician-entered and validates comp
   assert.match(ui, /does not auto-prescribe doses/);
   assert.match(ui, /validatePrescriptionDrafts\(items\)/);
   assert.match(ui, /missing-duration/);
+  assert.match(ui, /missing-dosage-form/);
+  assert.match(ui, /missing-route/);
+  assert.match(ui, /ageVerificationNeeded/);
+  assert.match(ui, /Custom administration route/);
+  assert.match(ui, /does not validate them against the selected product/);
 });
 
 test("shell and navigation use the refreshed Roshan surface and mobile-safe layout", () => {
