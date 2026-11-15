@@ -1331,6 +1331,8 @@ DECLARE
   v_first jsonb;
   v_retry jsonb;
   v_invoice_id uuid;
+  v_matching_secondary_count integer;
+  v_matching_pharmacy_count integer;
   v_conflict_message text;
   v_conflict boolean := false;
 BEGIN
@@ -1376,18 +1378,26 @@ BEGIN
   ORDER BY i.created_at DESC
   LIMIT 1;
 
-  IF v_invoice_id IS NULL OR (
-    SELECT count(DISTINCT i.id)
-    FROM public.invoices AS i
-    JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
-    WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
-      AND i.is_primary IS FALSE
-      AND i.deleted_at IS NULL
-      AND ii.item_type='pharmacy'
-      AND ii.item_id='61600000-0000-0000-0000-000000000001'
-      AND ii.deleted_at IS NULL
-  ) <> 1 THEN
-    RAISE EXCEPTION 'explicit separate-invoice path did not create exactly one secondary invoice for the dispensed medicine';
+  SELECT count(DISTINCT i.id), count(*)
+    INTO v_matching_secondary_count, v_matching_pharmacy_count
+  FROM public.invoices AS i
+  JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+  WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+    AND i.is_primary IS FALSE
+    AND i.deleted_at IS NULL
+    AND ii.item_type='pharmacy'
+    AND ii.item_id='61600000-0000-0000-0000-000000000001'
+    AND ii.deleted_at IS NULL;
+
+  IF v_invoice_id IS NULL OR v_matching_secondary_count <> 1 THEN
+    RAISE EXCEPTION
+      'secondary invoice evidence mismatch: selected_id=%, matching_secondary_invoices=%, matching_pharmacy_lines=%, all_visit_invoices=%, primary_invoices=%, secondary_invoices=%',
+      v_invoice_id,
+      v_matching_secondary_count,
+      v_matching_pharmacy_count,
+      (SELECT count(*) FROM public.invoices WHERE visit_id='61500000-0000-0000-0000-000000000001' AND deleted_at IS NULL),
+      (SELECT count(*) FROM public.invoices WHERE visit_id='61500000-0000-0000-0000-000000000001' AND is_primary IS TRUE AND deleted_at IS NULL),
+      (SELECT count(*) FROM public.invoices WHERE visit_id='61500000-0000-0000-0000-000000000001' AND is_primary IS FALSE AND deleted_at IS NULL);
   END IF;
 
   BEGIN
