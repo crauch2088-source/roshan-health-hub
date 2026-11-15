@@ -74,7 +74,7 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000004031',true);
 
 DO $pharmacy$
-DECLARE v_first jsonb; v_retry jsonb; v_new_key_rejected boolean:=false; v_expired_rejected boolean:=false;
+DECLARE v_first jsonb; v_retry jsonb; v_new_key_rejected boolean:=false; v_expired_rejected boolean:=false; v_changed_invoice_choice_rejected boolean:=false;
 BEGIN
  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id) INTO v_first
  FROM public.atomic_pharmacy_dispense('00000000-0000-0000-0000-000000004101',false,'00000000-0000-0000-0000-000000004121') r;
@@ -82,6 +82,12 @@ BEGIN
  FROM public.atomic_pharmacy_dispense('00000000-0000-0000-0000-000000004101',false,'00000000-0000-0000-0000-000000004121') r;
  IF v_first IS DISTINCT FROM v_retry OR pg_catalog.jsonb_array_length(v_first)<>2 THEN
    RAISE EXCEPTION 'idempotent retry did not replay the exact two FEFO batch movements';
+ END IF;
+ BEGIN
+   PERFORM * FROM public.atomic_pharmacy_dispense('00000000-0000-0000-0000-000000004101',true,'00000000-0000-0000-0000-000000004121');
+ EXCEPTION WHEN SQLSTATE '22023' THEN v_changed_invoice_choice_rejected:=true; END;
+ IF NOT v_changed_invoice_choice_rejected THEN
+   RAISE EXCEPTION 'idempotent replay accepted a changed separate-invoice choice for the same request key';
  END IF;
  IF (SELECT quantity_remaining FROM public.pharmacy_inventory WHERE id='00000000-0000-0000-0000-000000004091')<>0
  OR (SELECT quantity_remaining FROM public.pharmacy_inventory WHERE id='00000000-0000-0000-0000-000000004092')<>0
