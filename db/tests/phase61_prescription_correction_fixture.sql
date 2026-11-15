@@ -244,3 +244,45 @@ INSERT INTO public.prescription_items (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Phase 61C separate-invoice positive path: same visit, a second pending prescription.
+INSERT INTO public.prescriptions (
+  id, patient_id, visit_id, prescribed_by, doctor_id, prescription_type,
+  is_external, status, created_by, updated_by
+) VALUES (
+  '61700000-0000-0000-0000-000000000014',
+  '61400000-0000-0000-0000-000000000001',
+  '61500000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  'internal',
+  false,
+  'pending',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prescription_items (
+  id, prescription_id, medicine_id, medication_name, dose, dosage,
+  frequency, duration, quantity, instructions, dosage_form, route,
+  unit_price, created_by, updated_by, is_dispensed, dispensed_quantity
+) VALUES (
+  '61800000-0000-0000-0000-000000000016',
+  '61700000-0000-0000-0000-000000000014',
+  '61600000-0000-0000-0000-000000000001',
+  'Amoxicillin 500 mg',
+  '500 mg',
+  '500 mg',
+  'BID',
+  '1 day',
+  1,
+  'After food',
+  'capsule',
+  'oral',
+  12.50,
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  false,
+  0
+)
+ON CONFLICT (id) DO NOTHING;

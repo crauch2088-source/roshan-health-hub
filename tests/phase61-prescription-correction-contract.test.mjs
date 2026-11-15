@@ -236,6 +236,14 @@ test("Phase 61C requires both pharmacy and billing permissions for a pharmacist"
   assert.ok(integration.includes("pharmacist reached atomic dispense without pharmacy.update"));
 });
 
+test("Phase 61C covers both invoice choices and rejects changed-choice idempotency replay", () => {
+  assert.ok(fixture.includes("'61700000-0000-0000-0000-000000000014'"));
+  assert.ok(integration.includes("phase61c_primary_finalized_requires_separate_choice"));
+  assert.ok(integration.includes("phase61c_separate_invoice_true_path_and_choice_replay"));
+  assert.ok(integration.includes("pharmacy_dispense_idempotency_conflict"));
+  assert.ok(integration.includes("same-choice separate-invoice retry changed the result"));
+});
+
 test("Phase 61C preserves successful pharmacist dispense and idempotent replay", () => {
   assert.ok(fixture.includes("PHASE61C-VALID"));
   assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_success"));

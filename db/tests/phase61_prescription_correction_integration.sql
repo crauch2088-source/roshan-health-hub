@@ -1250,3 +1250,175 @@ BEGIN
 END;
 $phase61c_pharmacist_atomic_dispense_effects$;
 
+
+-- A finalized primary invoice requires the explicit separate-invoice path.
+DO $phase61c_finalize_primary_invoice$
+DECLARE
+  v_invoice_id uuid;
+BEGIN
+  SELECT id INTO v_invoice_id
+  FROM public.invoices
+  WHERE visit_id='61500000-0000-0000-0000-000000000001'
+    AND is_primary IS TRUE
+    AND deleted_at IS NULL;
+
+  IF v_invoice_id IS NULL THEN
+    RAISE EXCEPTION 'primary invoice from the first successful dispense was not found';
+  END IF;
+
+  UPDATE public.invoices
+  SET status='paid',
+      payment_status='paid',
+      paid_amount=net_amount
+  WHERE id=v_invoice_id;
+END;
+$phase61c_finalize_primary_invoice$;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_primary_finalized_requires_separate_choice$
+DECLARE
+  v_message text;
+BEGIN
+  BEGIN
+    PERFORM 1
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      false,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe1'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+  END;
+
+  IF v_message IS DISTINCT FROM 'invoice is finalized; choose a separate invoice' THEN
+    RAISE EXCEPTION 'finalized primary invoice did not require explicit separate invoice choice: %',
+      COALESCE(v_message,'no error');
+  END IF;
+END;
+$phase61c_primary_finalized_requires_separate_choice$;
+RESET ROLE;
+
+DO $phase61c_failed_primary_choice_has_no_side_effects$
+BEGIN
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 8 THEN
+    RAISE EXCEPTION 'rejected non-separate invoice choice changed stock';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.stock_movements
+    WHERE reference_id='61700000-0000-0000-0000-000000000014'
+      AND reference_table='prescriptions'
+      AND movement_type='dispense'
+  ) THEN
+    RAISE EXCEPTION 'rejected non-separate invoice choice created a stock movement';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM private.pharmacy_dispense_idempotency
+    WHERE request_id='ffffffff-ffff-ffff-ffff-ffffffffffe1'
+  ) THEN
+    RAISE EXCEPTION 'failed invoice append attempt persisted an idempotency row';
+  END IF;
+END;
+$phase61c_failed_primary_choice_has_no_side_effects$;
+
+-- Explicit separate_invoice=true creates a secondary invoice; same-choice replay
+-- is idempotent, while replaying the same request id with false is a conflict.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_separate_invoice_true_path_and_choice_replay$
+DECLARE
+  v_first jsonb;
+  v_retry jsonb;
+  v_invoice_id uuid;
+  v_conflict_message text;
+  v_conflict boolean := false;
+BEGIN
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_first
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      true,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe2'
+    ) AS r;
+
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_retry
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      true,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe2'
+    ) AS r;
+
+  IF v_first IS NULL OR pg_catalog.jsonb_array_length(v_first) <> 1 THEN
+    RAISE EXCEPTION 'explicit separate-invoice path did not complete one-item dispense';
+  END IF;
+  IF v_first IS DISTINCT FROM v_retry THEN
+    RAISE EXCEPTION 'same-choice separate-invoice retry changed the result';
+  END IF;
+  IF COALESCE((v_first->0->>'quantity_dispensed')::numeric,-1) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path returned an unexpected dispensed quantity';
+  END IF;
+
+  v_invoice_id := (v_first->0->>'invoice_id')::uuid;
+  IF v_invoice_id IS NULL OR NOT EXISTS (
+    SELECT 1 FROM public.invoices
+    WHERE id=v_invoice_id
+      AND visit_id='61500000-0000-0000-0000-000000000001'
+      AND is_primary IS FALSE
+      AND deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'explicit separate-invoice path did not create a secondary invoice';
+  END IF;
+
+  BEGIN
+    PERFORM 1
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      false,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe2'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_conflict_message = MESSAGE_TEXT;
+    IF v_conflict_message = 'pharmacy_dispense_idempotency_conflict' THEN
+      v_conflict := true;
+    ELSE
+      RAISE;
+    END IF;
+  END;
+
+  IF NOT v_conflict THEN
+    RAISE EXCEPTION 'idempotent replay with a changed separate-invoice choice was not rejected';
+  END IF;
+
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 7 THEN
+    RAISE EXCEPTION 'separate-invoice replay or changed-choice conflict altered stock more than once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000014'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not create exactly one stock movement';
+  END IF;
+  IF (SELECT count(*) FROM public.invoices
+      WHERE visit_id='61500000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 2 THEN
+    RAISE EXCEPTION 'separate-invoice path did not preserve one primary and create one secondary invoice';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+      WHERE invoice_id=v_invoice_id
+        AND item_type='pharmacy'
+        AND item_id='61600000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'secondary invoice is missing its pharmacy line';
+  END IF;
+  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
+      WHERE request_id='ffffffff-ffff-ffff-ffff-ffffffffffe2'
+        AND request_payload->>'separate_invoice'='true'
+        AND result_payload IS NOT NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice idempotency result was not persisted exactly once';
+  END IF;
+END;
+$phase61c_separate_invoice_true_path_and_choice_replay$;
+RESET ROLE;
