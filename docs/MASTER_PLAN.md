@@ -3164,3 +3164,13 @@ Production remains NO-GO. Backup artifact and isolated restore evidence now exis
 Next highest-value repository task: reconcile Draft PR #229 with current main using a normal two-parent merge commit, resolve only the actual overlapping files, preserve Phase 57/57B fail-closed pharmacy behavior and Phase 61 permission/no-side-effect contracts, then run one exact-head CI/PG17 pass. Keep it Draft for independent SQL/security review and mobile pharmacist/prescriber acceptance. Do not merge the PR or apply Production changes.
 
 Progress remains at the last evidence-weighted canonical baseline: 62% Engineering RC / 15% Operational Acceptance. This read-only audit and documentation update do not earn implementation-completion credit. The prior 17–30 engineering-hour estimate is historical, not a new schedule.
+
+
+## Execution round addendum — 2026-11-15
+
+The ten-task execution round is recorded in [EXECUTION_ROUND_2026-11-15.md](EXECUTION_ROUND_2026-11-15.md). Candidate PRs #250, #210, #181 and #255 have exact-head green CI evidence, but remain Draft pending independent review and human/operational acceptance. Rollback-only QA smoke confirmed the current Phase 61C dispense-role gap and the Phase 60 direct catalogue-price update exposure; no synthetic rows remain. Phase 55/57/57B/58/59 are QA-only and must not be represented as Production-applied. Phase 63 is a disposable-PG17-tested candidate only. Pediatric weight-based server enforcement remains incomplete pending explicit dose-basis metadata and a reviewed audited-exception policy. The new encrypted Production backup attempt failed credential preflight because neither `SUPABASE_DB_ACCESS_TOKEN` nor `SUPABASE_DB_PASSWORD` was configured; no new artifact was created.
+
+**Progress remains 62% Engineering RC / 15% Operational Acceptance. Production remains NO-GO.** No Production write, hosted migration, merge or deployment promotion occurred in this round.
+
+
+Latest PR #255 code-bearing head is `86134c0df686830db194fa7f29686a90f89f11ca`; its latest documentation-only follow-up head is `3cf8a3e3b626222ca401f6258a0104ec14af9f60`. All 8 workflows passed on the latest head and CI reports 346/346 guard tests passed. See the execution-round evidence report for the exact gates and remaining blockers.
