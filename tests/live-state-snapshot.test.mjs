@@ -131,3 +131,12 @@ test("the live-state snapshot remains read-only and free of database access", as
   assert.equal(snapshot.data_scope.hosted_database_accessed, false);
   assert.equal(snapshot.data_scope.secrets_or_artifacts_downloaded, false);
 });
+
+test("workflow_dispatch and workflow_run cannot create a snapshot from a non-main ref", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const workflow = await readFile(".github/workflows/repomix-snapshot.yml", "utf8");
+  assert.match(
+    workflow,
+    /if: github\.ref == 'refs\/heads\/main' && \(github\.event_name != 'workflow_run' \|\| github\.event\.workflow_run\.head_branch == 'main'\)/,
+  );
+});
