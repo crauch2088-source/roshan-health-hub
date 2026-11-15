@@ -18,29 +18,46 @@ on:
       - "package-lock.json"
       - "tsconfig*.json"
       - "vite.config.*"
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
+  pull-requests: read
+  actions: read
 
 concurrency:
-  group: repomix-snapshot-${{ github.ref }}
+  group: repomix-snapshot-main
   cancel-in-progress: true
 
 jobs:
   pack:
-    name: Build a secret-conscious repository context artifact
+    name: Build a secret-conscious repository and live-state context artifact
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout trusted repository revision
+      - name: Checkout the trusted main revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
 
       - name: Set up Node.js 22
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
+
+      - name: Build sanitized live GitHub state snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          SNAPSHOT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SNAPSHOT_REF: refs/heads/main
+        run: node scripts/build-live-state-snapshot.mjs "${RUNNER_TEMP}/roshan-live-state.json"
 
       - name: Pack repository with pinned Repomix
         run: |
@@ -51,10 +68,12 @@ jobs:
             --parsable-style \
             --ignore "**/.env*,**/*.age,**/*.zip,**/*.dump,**/*.backup,**/node_modules/**,**/dist/**,**/coverage/**,**/playwright-report/**,**/test-results/**,**/.vercel/**,**/.git/**,**/graphify-out/**,**/repomix-output.*"
 
-      - name: Upload context snapshot
+      - name: Upload repository and live-state context
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: roshan-repomix-context-${{ github.sha }}
-          path: repomix-output.xml
+          name: roshan-engineering-context-${{ github.event.workflow_run.head_sha || github.sha }}
+          path: |
+            repomix-output.xml
+            ${{ runner.temp }}/roshan-live-state.json
           if-no-files-found: error
           retention-days: 14
