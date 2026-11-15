@@ -91,7 +91,8 @@ export function buildPrescriptionPrintModel(
     !rowBranch ||
     !expectedBranch ||
     rowBranch !== expectedBranch ||
-    (patientBranch && patientBranch !== expectedBranch)
+    !patientBranch ||
+    patientBranch !== expectedBranch
   ) {
     missingFields.push("branch binding");
   }

@@ -93,6 +93,15 @@ test("prescription print model blocks missing or cross-branch source context", (
   assert.ok(missingContext.missingFields.includes("branch binding"));
 });
 
+test("missing patient branch binding blocks official prescription printing", () => {
+  const record = completePrescription();
+  record.patients.branch_id = null as unknown as string;
+  const model = buildPrescriptionPrintModel(record, "branch-1");
+  assert.ok(model);
+  assert.equal(model.complete, false);
+  assert.ok(model.missingFields.includes("branch binding"));
+});
+
 test("soft-deleted patient identity blocks official prescription printing", () => {
   const record = completePrescription();
   Object.assign(record.patients, { deleted_at: "2026-11-03T11:00:00Z" });
