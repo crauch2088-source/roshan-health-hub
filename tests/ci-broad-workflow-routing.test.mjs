@@ -32,6 +32,15 @@ const contracts = [
       "tests/privileged-role-guard-sql.test.ts",
     ],
   },
+  {
+    workflow: ".github/workflows/ci-insurance-claim-validation.yml",
+    required: [
+      "src/lib/insurance-validation.ts",
+      "tests/insurance-claim-validation.test.ts",
+      "package.json",
+      "package-lock.json",
+    ],
+  },
 ];
 
 for (const contract of contracts) {
