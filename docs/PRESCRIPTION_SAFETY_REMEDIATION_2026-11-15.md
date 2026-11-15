@@ -2,7 +2,7 @@
 
 **Status:** Draft candidate in PR #255  
 **Current main base:** `fe8d770f1bd666d00b1bf1b3385f21e109e50872`  
-**Code-bearing candidate commit:** `d9f483612150989f3bf8d187c6cfdc2eda991f65`
+**Latest code-bearing candidate commit:** `86134c0df686830db194fa7f29686a90f89f11ca`
 
 ## 1. Why PR #179 was not merged wholesale
 
@@ -41,19 +41,20 @@ A dedicated PostgreSQL 17 fixture and regression test cover valid writes, missin
 ## 4. Printing changes
 
 - Saved prescription printing builds from one persisted prescription and its saved items, not an unsaved composer draft.
-- Official prescription print is blocked when required saved identity/clinical fields are missing, branch context mismatches, or the persisted status is not exactly `pending` or `dispensed`.
+- Official prescription print is blocked when required saved identity/clinical fields are missing, the prescription or patient branch is missing/mismatched against the visit branch, or the persisted status is not exactly `pending` or `dispensed`.
 - Invoice printing is target-scoped and blocked for soft-deleted invoice/patient records or a known invoice/patient branch mismatch.
 - Certificate printing is target-scoped and blocked for soft-deleted patients or a known certificate/visit/patient branch mismatch.
 - Printed documents are copies, not digital signatures or proof of dispensing.
 
 ## 5. Exact-head verification
 
-Candidate code commit `d9f483612150989f3bf8d187c6cfdc2eda991f65`:
-- 7/7 PR-triggered workflows succeeded;
+Candidate code head `86134c0df686830db194fa7f29686a90f89f11ca`:
+- 8/8 PR-triggered workflows succeeded;
 - 345/345 main unit/guard tests passed;
 - TypeScript, lint, production build and blocking dependency audits passed;
 - dedicated Phase 63 PostgreSQL 17 guard integration passed;
-- prescription atomicity, privileged-role guard, clinical child-RPC, finance-only RPC, insurance integrity/UI workflows passed; and
+- prescription atomicity, privileged-role guard, clinical child-RPC, finance-only RPC, insurance integrity/UI workflows passed;
+- a null patient-branch regression test was added after the source review found that nullable `patients.branch_id` could otherwise pass the print-model guard; and
 - Vercel status passed.
 
 The canonical PG17 baseline replay/authenticated clinical-acceptance job remained intentionally skipped by its workflow gate. No authenticated browser E2E, Android print preview, physical A4 printer test or staff acceptance is claimed.

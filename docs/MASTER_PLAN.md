@@ -3168,7 +3168,7 @@ Progress remains at the last evidence-weighted canonical baseline: 62% Engineeri
 
 ## 2026-11-15 execution-round checkpoint — selective rebase, Phase 63, and live-catalog corrections
 
-**Evidence-bearing code candidate:** Draft PR #255, code commit `d9f483612150989f3bf8d187c6cfdc2eda991f65`. This is a selective rebase of the still-valid PR #179 prescription/print work onto current main; PR #179 itself remains unmerged and must not be merged wholesale.
+**Evidence-bearing code candidate:** Draft PR #255, latest code head `86134c0df686830db194fa7f29686a90f89f11ca`. This is a selective rebase of the still-valid PR #179 prescription/print work onto current main; PR #179 itself remains unmerged and must not be merged wholesale.
 
 - PR #255 now includes saved-row prescription printing, target-scoped invoice/certificate printing, explicit dosage form/route/quantity/frequency/duration entry, custom clinical fields, strict date-only DOB validation, a non-blocking age/weight warning, strict positive-whole quantity parsing, and a Phase 63 server-side prescription-item completeness trigger. It does not infer route, dose, frequency, duration or quantity and does not add automated dosing.
 - Exact code-head verification on `d9f4836`: 7/7 PR workflows passed; main CI reported 345/345 guard tests, TypeScript, lint, production build and blocking dependency audits passed; the dedicated Phase 63 PostgreSQL 17 migration/trigger test passed; Vercel status passed. Canonical PG17 baseline/authenticated browser acceptance remains intentionally skipped by its workflow gate. No hosted migration was applied.
