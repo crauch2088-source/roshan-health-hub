@@ -164,11 +164,7 @@ function CertificatesPageInner() {
 
   const handlePrintCertificate = (certificateId: string) => {
     const selected = rows.find((row) => s(row, "id") === certificateId);
-    if (
-      !selected ||
-      s(rel(selected, "patients"), "deleted_at") ||
-      !certificateBranchId(selected)
-    ) {
+    if (!selected || s(rel(selected, "patients"), "deleted_at") || !certificateBranchId(selected)) {
       return;
     }
 

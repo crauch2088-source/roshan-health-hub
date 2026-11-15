@@ -28,7 +28,10 @@ test("invoice print boundary excludes all non-document controls and uses canonic
   assert.match(source, /targetId="invoice-print-document"/);
   assert.match(source, /canPrintInvoice/);
   assert.match(source, /invoicePatientBranchMismatch/);
-  assert.match(source, /branch_id, deleted_at, patients\(id, full_name, mrn, phone, branch_id, deleted_at\)/);
+  assert.match(
+    source,
+    /branch_id, deleted_at, patients\(id, full_name, mrn, phone, branch_id, deleted_at\)/,
+  );
   assert.match(source, /className="no-print space-y-4"/);
   assert.match(source, /settings\["center_name"\]/);
   assert.match(source, /settings\["center_name_ar"\]/);
