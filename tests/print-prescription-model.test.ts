@@ -102,7 +102,6 @@ test("soft-deleted patient identity blocks official prescription printing", () =
   assert.ok(model.missingFields.includes("patient record"));
 });
 
-
 test("only pending and dispensed saved prescription statuses are printable", () => {
   for (const status of ["pending", "dispensed"]) {
     const record = completePrescription();
