@@ -903,6 +903,21 @@ BEGIN
   IF NOT v_denied THEN
     RAISE EXCEPTION 'legacy pharmacist reached atomic dispense despite the fail-closed canonical role boundary';
   END IF;
+
+  -- Phase 61B retains a legacy role alias on the nested invoice-linked RPC, but the
+  -- live legacy permission matrix must still deny that path without pharmacy.update
+  -- and billing.create. The alias decision remains an independent-review item.
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      'ffffffff-ffff-ffff-ffff-fffffffffff8',false
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist reached invoice-linked dispensing with only the live compatibility permissions';
+  END IF;
 END;
 $phase61c_legacy_pharmacist_atomic_dispense_denied$;
 RESET ROLE;
