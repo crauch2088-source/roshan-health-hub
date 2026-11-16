@@ -163,10 +163,10 @@ SKIP / NOT RUN are not counted as PASS.
 | `docs/parallel-reports/round-01/window-07.md` | New isolated review report | To be filled after commit creation |
 
 - Branch: `docs/window-07-dependency-review-round-01-20261116`
-- Commit(s): Created specifically for this report.
+- Commit(s): Dedicated report-only commit(s); exact final SHA supplied in the delivery message.
 - PR: Separate docs-only PR; review-only task, so PR #157 is not modified.
 - Report file path: `docs/parallel-reports/round-01/window-07.md`
-- Report commit SHA: To be filled after commit creation.
+- Report commit SHA: Recorded in GitHub commit history; exact final SHA supplied in the delivery message.
 - Was the report committed with the implementation or through a separate docs-only PR? **Separate docs-only PR.**
 
 ## 8. Safety and actions not performed
