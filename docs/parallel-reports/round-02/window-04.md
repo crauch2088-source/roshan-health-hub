@@ -162,7 +162,7 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 
 - Branch: `fix/window-04-payment-idempotency-20261116`
 - PR: [#280](https://github.com/crauch2088-source/roshan-health-hub/pull/280), open and Draft.
-- Current head at this addendum: `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
+- Final verified head at this addendum: `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
 - Base: current main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`.
 - GitHub compare: **2 commits ahead / 0 behind** current main; merge base is the exact main SHA above.
 - PR #181 remains open Draft and was not modified. Its prior candidate branch is not the integration target for this fix.
@@ -178,7 +178,7 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
    - Clears the key only after the payment RPC succeeds.
 2. Updated `src/routes/_authenticated/billing_.$invoiceId.tsx` to pass `_idempotency_key` to `post_invoice_payment` and clear the matching key in the success callback only.
 3. Added `tests/payment-idempotency.test.ts` for same-request retry reuse, changed-request key rotation, success cleanup, and absence of plaintext payment fields in storage keys.
-4. Extended `tests/print-receipt-ui.test.ts` to assert the payment UI obtains, submits and success-clears the key.
+4. Extended `tests/print-receipt-ui.test.ts` to assert the payment UI obtains, submits and success-clears the key, and keeps the amount/method/reference controls disabled while the mutation is pending.
 5. Extended `db/tests/finance_payment_idempotency_concurrency.sh` to simulate a lost response after commit, retry the same RPC request and assert the same payment UUID is returned; reusing the key with a changed amount must fail; only one payment row may exist.
 6. Added the new unit test to the existing `test:guard` script in `package.json`.
 
@@ -191,7 +191,9 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 - The pending-state hardening and its UI assertion were committed in `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
 - Disposable PostgreSQL 17 invoice-payment idempotency concurrency: **PASS** on the current head, [job 133269455737](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858673581/job/133269455737).
 - PostgreSQL 17 finance RPC-only writes: **PASS** on the current head, [job 133269456155](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858673581/job/133269456155).
-- Exact-head PR #280 currently has 31 check runs: 26 completed, 5 pending, and no failed checks at the time of this report update. The main Install/audit/typecheck/lint/build job is still running; no full-CI pass is claimed yet.
+- Exact-head PR #280 final status: **31/31 check runs completed; 30 success, 1 intentionally skipped, 0 failures, 0 pending**. The skipped check is the deferred canonical baseline replay/authenticated clinical acceptance workflow; it is not counted as a pass.
+- Main Install/audit/typecheck/lint/build: **PASS**, including role guard tests, typecheck, lint and production build.
+- PostgreSQL 17 invoice-payment idempotency concurrency and finance RPC-only write isolation: **PASS** on the final exact head.
 - The prior exact-head #181 concurrency pass remains historical evidence; the new expanded retry/mismatch assertions were executed on PR #280's disposable PostgreSQL 17 workflow.
 
 ### Reassessment and remaining gates
@@ -200,4 +202,17 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 - The stale-base condition on PR #181 is mitigated for this implementation candidate: PR #280 is based directly on current main. PR #181 remains Draft and should not be merged independently over the new candidate.
 - No hosted QA/Production writes, migrations, payment rows, ledger rows, deployment promotion, approval, or merge were performed.
 - Remaining release blockers include full exact-head CI completion, independent finance/security review, QA authenticated cashier/role acceptance, Phase 58/59 Production migration rollout under the release gates, and physical Android/RTL/LTR/A4/thermal-printer acceptance.
-- Next action: wait for all exact-head PR #280 checks to complete; fix any failures before requesting independent review. Keep #280 Draft and #181 Draft until the review and operational gates are satisfied.
+- Next action: request independent finance/security review of PR #280, then proceed to authenticated QA cashier/role acceptance and separate release-gate verification. Keep #280 Draft and #181 Draft until those gates are satisfied.
+
+
+### Final exact-head verification update — 2026-11-16
+
+- Final PR #280 head: `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
+- PR #280: open, Draft, mergeable according to GitHub; 16 changed files; based on `main` `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; comparison is 3 commits ahead / 0 behind.
+- Exact-head check runs: **31 total; 30 success, 1 skipped, 0 failed, 0 pending**. The skipped canonical PG17 baseline replay/authenticated clinical acceptance is deferred by workflow configuration and is not counted as a pass.
+- The full Install/audit/typecheck/lint/build job passed, including role guard tests, typecheck, lint and production build.
+- PostgreSQL 17 invoice-payment idempotency concurrency and finance RPC-only write-isolation workflows passed on the final head.
+- The TDD RED commit and the initial formatting-only lint failure are retained in history; the formatting correction is included in the final green head.
+- Report file update commit: `f145171a2abf761859db7e857dc0c2d0b1cacc98` (the final report metadata commit is recorded in the next delivery verification).
+- PR #181 remains open Draft and untouched. PR #280 is the mainline-based successor candidate. Neither was approved or merged.
+- No QA/Production writes, migrations, deployment promotions, real financial records, or patient data were used.
