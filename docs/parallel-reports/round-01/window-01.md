@@ -13,9 +13,9 @@
 
 ## 2. Executive verdict
 
-- Status: **CHANGES REQUIRED**
+- Status: **HOLD — focused code correction verified; full clinical/operational acceptance remains open**
 - What is actually complete: The initial soft-delete bypass was reproduced with a PostgreSQL 17 regression test. A candidate SQL correction now rejects clinical-field mutation in the same UPDATE that soft-deletes an active prescription item, while allowing an unchanged active item to be archived and preserving already-soft-deleted historical rows.
-- What remains incomplete: Exact-head CI after the correction is pending at report time; independent clinical/security review, authenticated QA acceptance, and physical printing remain open.
+- What remains incomplete: independent clinical/security approval, authenticated QA role/branch acceptance, Arabic RTL/English LTR browser checks, Android/A4/thermal printer acceptance, and staff UAT remain open.
 - Work type: implementation and regression verification on a Draft PR branch; not merged or deployed.
 
 ## 3. Repository state verified
@@ -23,10 +23,10 @@
 | Item | Exact value | Evidence / link | Status |
 |---|---|---|---|
 | Main SHA | `79d81f08f6567f5145f7143e3bf5afdd6e93bf59` | [main](https://github.com/crauch2088-source/roshan-health-hub/commits/main) | verified |
-| Task branch/head SHA | `3da44e6e7d1759467eaf5f59ad1fd920fcd8ba58` | [branch commit](https://github.com/crauch2088-source/roshan-health-hub/commit/3da44e6e7d1759467eaf5f59ad1fd920fcd8ba58) | verified |
+| Implementation head SHA | `8312c92273d50d6eb9d8e700a2eebf89192bcf68` | [code commit](https://github.com/crauch2088-source/roshan-health-hub/commit/8312c92273d50d6eb9d8e700a2eebf89192bcf68) | verified |
 | PR state | #258 open, Draft; base is current main | [PR #258](https://github.com/crauch2088-source/roshan-health-hub/pull/258) | verified |
 | RED regression run | CI run #43853551408, Phase 63 job #133251967715 failed before SQL fix | [run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853551408) | verified |
-| Post-fix exact-head CI | Commit `3da44e6`; run was not yet visible at report capture | [PR #258](https://github.com/crauch2088-source/roshan-health-hub/pull/258) | not rechecked |
+| Post-fix exact-head CI | Commit `8312c922`; CI run #43853928921 and Phase63 PG17 job #133253285611 passed; other required jobs in that run passed | [run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853928921) | verified |
 | Hosted migration state | No QA/Production migration performed in this session | N/A | verified |
 
 ## 4. Work actually performed
@@ -47,8 +47,8 @@
 
 ### F-01 — Active prescription clinical fields could be mutated during soft deletion
 
-- Severity: **High**
-- Status: **Verified on candidate branch; correction awaiting exact-head CI**
+- Severity: **High (original defect); resolved in candidate branch**
+- Status: **Corrected and verified by exact-head PostgreSQL 17 CI**
 - Affected file/function/SQL object: `db/roshan_phase63_prescription_item_completeness_guard.sql`, `private.validate_prescription_item_completeness()`
 - Evidence and exact source/commit: Original guard returned early for every `NEW.deleted_at IS NOT NULL`; regression test commit `654126d09a53712504a28fb751374dc95ff60ceb`.
 - Reproduction or test: PostgreSQL 17 Phase 63 job #133251967715 failed on the regression before the fix, proving the guard accepted an active-row UPDATE that set `deleted_at` and blanked both dose fields.
@@ -62,8 +62,8 @@
 | Test / workflow | Exact command or run ID | Result | Notes |
 |---|---|---|---|
 | Phase 63 PostgreSQL 17 RED reproduction | CI run #43853551408, job #133251967715 | **FAIL — expected RED** | Fails before trigger correction; confirms regression test catches the bypass. |
-| Phase 63 PostgreSQL 17 after fix | Expected from commit `3da44e6e7d1759467eaf5f59ad1fd920fcd8ba58` | **NOT RUN / not yet visible** | Must verify the exact post-fix head; do not infer success. |
-| Full exact-head CI | PR #258 head `3da44e6e7d1759467eaf5f59ad1fd920fcd8ba58` | **NOT RUN / pending** | Other workflows are not a substitute for the dedicated Phase 63 job. |
+| Phase 63 PostgreSQL 17 after fix | Commit `8312c922`; run #43853928921, job #133253285611 | **PASS** | Exact implementation head; regression and guard passed. |
+| Full exact-head CI | Commit `8312c922`; run #43853928921 | **PASS for returned required jobs** | Includes typecheck/lint/build, security and PG integration workflows. Canonical baseline/authenticated clinical acceptance job #133253287590 was intentionally skipped; it is not a pass. |
 | Physical Android/A4/thermal print acceptance | Not performed | **NOT RUN** | Operational gate. |
 
 Never count the intentional canonical-baseline/authenticated clinical acceptance skip as a pass.
@@ -102,7 +102,7 @@ Never count the intentional canonical-baseline/authenticated clinical acceptance
 
 ## 10. Next action
 
-Window 01 / coordinator: verify the dedicated Phase 63 PostgreSQL 17 job and all required exact-head CI checks on the latest PR #258 commit; if any fail, diagnose and fix before requesting independent review.
+Window 01 / coordinator: obtain independent clinical/security review and complete authenticated QA, branch-isolation, mobile, bilingual and physical printer acceptance. Keep PR #258 Draft until these gates are satisfied.
 
 ## 11. Session closeout
 
@@ -144,3 +144,12 @@ Window 01 / coordinator: verify the dedicated Phase 63 PostgreSQL 17 job and all
 - Read-only GitHub/source/CI inspection only.
 - No application source, SQL, migration, QA/Production database, deployment, merge, issue closure, or credential changes were made by this re-review.
 - This addendum updates the existing Window 01 Round 01 report; it does not replace another window's report or a prior round.
+
+
+### Evidence correction — 2026-11-16
+
+- Latest code-bearing head: `8312c92273d50d6eb9d8e700a2eebf89192bcf68`.
+- Report-only branch commit observed after the code head: `2e4a8d30d9fc67c596300ac6aa27c6a83a35263b`.
+- CI run #43853928921 completed successfully. The dedicated Phase 63 PostgreSQL 17 job `133253285611` passed. The canonical baseline/authenticated clinical acceptance job `133253287590` was intentionally skipped and is not counted as acceptance.
+- The prior inline review thread for F-01 (`4584207030`) was resolved after verifying the exact-head correction and regression.
+- PR #258 remains open and Draft; no merge, deployment, QA/Production migration, or physical print acceptance occurred.
