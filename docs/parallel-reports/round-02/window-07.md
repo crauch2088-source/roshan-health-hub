@@ -106,13 +106,13 @@ SKIP, NOT RUN, and BLOCKED are not counted as PASS.
 
 | Path | Change | Commit SHA |
 |---|---|---|
-| `docs/parallel-reports/round-02/window-07.md` | New isolated round-02 verification report | To be filled after commit creation |
+| `docs/parallel-reports/round-02/window-07.md` | New isolated round-02 verification report | `f80716b737600338920bf3ff80838938d739f05c` (creation commit) |
 
 - Branch: `docs/window-07-dependency-review-round-02-20261116`
-- Commit(s): Dedicated report-only commit; exact SHA supplied in delivery message.
+- Commit(s): `f80716b737600338920bf3ff80838938d739f05c` (report creation); finalization commit recorded in the PR head.
 - PR: Separate docs-only PR; review-only task.
 - Report file path: `docs/parallel-reports/round-02/window-07.md`
-- Report commit SHA: To be filled after commit creation.
+- Report commit SHA: `f80716b737600338920bf3ff80838938d739f05c` (initial report commit; subsequent commit finalizes delivery metadata).
 - Was the report committed with the implementation or through a separate docs-only PR? **Separate docs-only PR.**
 - No package/source/configuration files were changed.
 
