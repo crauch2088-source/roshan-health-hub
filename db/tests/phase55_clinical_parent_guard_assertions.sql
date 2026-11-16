@@ -69,6 +69,34 @@ BEGIN
     RAISE EXCEPTION 'Phase55 clinical guard must remain SECURITY DEFINER with an empty search_path';
   END IF;
 END $phase55_assertions$;
+
+-- Reproduce the authenticated RLS call sites from the live insurance schema.
+-- The helper is replaced with a deterministic true stub only inside this
+-- disposable test transaction; CREATE OR REPLACE preserves the Phase55 ACL.
+CREATE OR REPLACE FUNCTION private.app_has_claim_branch(_claim_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$ SELECT true $function$;
+
+CREATE TABLE public.phase55_test_insurance_claim_items (claim_id uuid NOT NULL);
+CREATE TABLE public.phase55_test_insurance_claim_payments (claim_id uuid NOT NULL);
+INSERT INTO public.phase55_test_insurance_claim_items VALUES
+  ('00000000-0000-0000-0000-000000009201');
+INSERT INTO public.phase55_test_insurance_claim_payments VALUES
+  ('00000000-0000-0000-0000-000000009202');
+ALTER TABLE public.phase55_test_insurance_claim_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.phase55_test_insurance_claim_payments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY phase55_claim_items_select ON public.phase55_test_insurance_claim_items
+  FOR SELECT TO authenticated USING ((SELECT private.app_has_claim_branch(claim_id)));
+CREATE POLICY phase55_claim_items_insert ON public.phase55_test_insurance_claim_items
+  FOR INSERT TO authenticated WITH CHECK ((SELECT private.app_has_claim_branch(claim_id)));
+CREATE POLICY phase55_claim_payments_select ON public.phase55_test_insurance_claim_payments
+  FOR SELECT TO authenticated USING ((SELECT private.app_has_claim_branch(claim_id)));
+CREATE POLICY phase55_claim_payments_insert ON public.phase55_test_insurance_claim_payments
+  FOR INSERT TO authenticated WITH CHECK ((SELECT private.app_has_claim_branch(claim_id)));
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT SELECT, INSERT ON public.phase55_test_insurance_claim_items,
+  public.phase55_test_insurance_claim_payments TO authenticated;
+
 -- A SECURITY DEFINER caller must still be able to use the private claim helper
 -- after direct application-role EXECUTE is revoked.
 CREATE OR REPLACE FUNCTION public.phase55_test_claim_helper_definer(_claim_id uuid)
@@ -85,10 +113,29 @@ VALUES ('00000000-0000-0000-0000-000000009198', NULL, 'before');
 GRANT SELECT, UPDATE ON public.users TO authenticated;
 SET LOCAL ROLE authenticated;
 DO $claim_helper_caller$
+DECLARE
+  v_visible bigint;
 BEGIN
-  IF public.phase55_test_claim_helper_definer('00000000-0000-0000-0000-000000009199') IS DISTINCT FROM false THEN
+  IF public.phase55_test_claim_helper_definer('00000000-0000-0000-0000-000000009199') IS DISTINCT FROM true THEN
     RAISE EXCEPTION 'SECURITY DEFINER caller did not preserve private claim helper behavior';
   END IF;
+
+  -- These four operations model insurance_claim_items and
+  -- insurance_claim_payments SELECT/INSERT policies. They must work even
+  -- though authenticated cannot invoke the private helper directly.
+  SELECT count(*) INTO v_visible FROM public.phase55_test_insurance_claim_items;
+  IF v_visible <> 1 THEN
+    RAISE EXCEPTION 'insurance_claim_items SELECT RLS policy stopped working';
+  END IF;
+  INSERT INTO public.phase55_test_insurance_claim_items
+    VALUES ('00000000-0000-0000-0000-000000009203');
+
+  SELECT count(*) INTO v_visible FROM public.phase55_test_insurance_claim_payments;
+  IF v_visible <> 1 THEN
+    RAISE EXCEPTION 'insurance_claim_payments SELECT RLS policy stopped working';
+  END IF;
+  INSERT INTO public.phase55_test_insurance_claim_payments
+    VALUES ('00000000-0000-0000-0000-000000009204');
 END
 $claim_helper_caller$;
 -- Direct clinical-child DML remains intentionally unavailable to authenticated.
