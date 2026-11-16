@@ -7,7 +7,7 @@
 - Round: 01
 - Requested baseline SHA: `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`
 - Current main SHA checked: `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`
-- Current task branch / PR: `feat/217-pharmacist-correction-backend-20261116` / Draft PR pending
+- Current task branch / PR: `feat/217-pharmacist-correction-backend-20261116` / [Draft PR #269](https://github.com/crauch2088-source/roshan-health-hub/pull/269)
 - Scope: strengthen PostgreSQL 17 negative assertions for stock/financial side effects and prove Phase 57/57B dispensing blockers remain independent
 - Explicit exclusions: no correction RPC redesign, no dispensing/billing behavior change, no shared workflow/package/manifest/MASTER_PLAN/AGENTS changes, no hosted migrations, no QA/Production writes, no edits to other windows' reports
 
@@ -15,7 +15,7 @@
 
 - Status: **PASS WITH FINDINGS**
 - What is actually complete: Phase 61 correction backend already exists on the requested main baseline. This change strengthens its dedicated PostgreSQL 17 integration suite with full-row value snapshots and explicit Phase 57/57B guard tests.
-- What remains incomplete: exact-head PostgreSQL 17 CI must run; this report does not claim a test pass before that run.
+- What remains incomplete: independent second-person security review and authenticated pharmacist/prescriber UAT remain release gates. Exact-head CI for the code commit passed.
 - Work type: verification and test-hardening of existing mainline behavior; no duplicate backend implementation.
 
 ## 3. Repository state verified
@@ -30,7 +30,7 @@
 | Issue #217 | Open | [Issue](https://github.com/crauch2088-source/roshan-health-hub/issues/217) | verified |
 | PR #249 | Closed, merged; merge commit `a9040601702972bdf144fc96b9658eebd5a6d31a` is an ancestor of requested main SHA | [PR #249](https://github.com/crauch2088-source/roshan-health-hub/pull/249) | verified |
 | Dedicated PG17 workflow | `ci-phase61-prescription-correction.yml` | [workflow](https://github.com/crauch2088-source/roshan-health-hub/blob/79d81f08f6567f5145f7143e3bf5afdd6e93bf59/.github/workflows/ci-phase61-prescription-correction.yml) | verified |
-| Exact-head CI for this change | Pending | This PR | not run |
+| Exact-head CI for code commit `45a869e707ec7a2511c6081f789c5c1528141fa4` | [CI run 43851404890](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404890) | success (18 passed, 1 intentionally skipped) | Exact head; canonical PG17/authenticated clinical acceptance job intentionally skipped |
 
 ## 4. Work actually performed
 
@@ -76,22 +76,25 @@
 | Test / workflow | Exact command or run ID | Result | Notes |
 |---|---|---|---|
 | Source/fixture/workflow inspection | GitHub read-only inspection at `79d81f08f6567f5145f7143e3bf5afdd6e93bf59` | PASS | Source contracts and prior workflow sequence verified |
-| PostgreSQL 17 integration | `ci-phase61-prescription-correction.yml` on this PR head | NOT RUN | Must run after Draft PR creation |
+| Initial red run | [Run 43851196678](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851196678) | FAIL (expected test feedback) | PG17 behavior and concurrency passed; 20/21 Node source contracts because a static assertion expected the previous diagnostic wording. Diagnostic was aligned in follow-up commit `45a869e`; rerun passed 21/21. |
+| Other PR workflows | [Insurance 43851404935](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404935), [Prescription atomicity 43851404981](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404981), [Privileged role 43851404949](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404949) | PASS | All three exact-head runs succeeded |
+| Vercel | [status](https://vercel.com/roshan45/roshan-health-hub/6ZPd1S6Kzpf5ShqmBf1hcovtPF4T) | PASS | Platform status success; deployment itself was ignored by docs/SQL-only build policy |
+| PostgreSQL 17 Phase 61/57/57B integration, concurrency and source contract | [Run 43851404866](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404866) | PASS | Exact code head `45a869e`; migration replay, fixture, behavior assertions, two-session concurrency, and Node source contracts 21/21 passed |
 | Hosted QA/Production | None | NOT RUN | Explicitly out of scope |
 
 ## 7. Changed files and delivery
 
 | Path | Change | Commit SHA |
 |---|---|---|
-| `db/tests/phase61_prescription_correction_integration.sql` | Full-row snapshots, sentinel rows, phase57/57B negative assertions and disposition checkpoints | Pending |
-| `.github/workflows/ci-phase61-prescription-correction.yml` | Replay Phase 57/57B before Phase 61/61B in disposable PG17; path-filter additions | Pending |
-| `docs/parallel-reports/round-01/window-09.md` | Isolated Window 09 report | Pending |
+| `db/tests/phase61_prescription_correction_integration.sql` | Full-row snapshots, sentinel rows, phase57/57B negative assertions and disposition checkpoints | `618e69e396ab89a16cb66dfe59ca235320870837` + `45a869e707ec7a2511c6081f789c5c1528141fa4` |
+| `.github/workflows/ci-phase61-prescription-correction.yml` | Replay Phase 57/57B before Phase 61/61B in disposable PG17; path-filter additions | `618e69e396ab89a16cb66dfe59ca235320870837` |
+| `docs/parallel-reports/round-01/window-09.md` | Isolated Window 09 report; final CI evidence refresh in this PR | `618e69e396ab89a16cb66dfe59ca235320870837` (initial report) |
 
 - Branch: `feat/217-pharmacist-correction-backend-20261116`
-- Commit(s): pending
-- PR: pending Draft PR creation
+- Commits: `618e69e396ab89a16cb66dfe59ca235320870837` (test + workflow + initial report); `45a869e707ec7a2511c6081f789c5c1528141fa4` (static contract compatibility fix); final report evidence refresh is a docs-only follow-up in PR #269.
+- PR: [#269 — Draft](https://github.com/crauch2088-source/roshan-health-hub/pull/269)
 - Report file path: `docs/parallel-reports/round-01/window-09.md`
-- Report commit SHA: pending
+- Report commit SHA: the report was introduced in `618e69e396ab89a16cb66dfe59ca235320870837`; final evidence refresh is the latest docs-only commit in PR #269.
 - Report delivery: same task branch/PR
 
 ## 8. Safety and actions not performed
@@ -112,11 +115,11 @@
 
 ## 10. Next action
 
-Open the Draft PR and inspect the exact-head PostgreSQL 17 workflow result; correct only demonstrated fixture/assertion failures and rerun the focused workflow if necessary.
+Keep PR #269 Draft for independent second-person review and authenticated pharmacist/prescriber UAT; do not merge or close Issue #217 until the release/acceptance gates are met.
 
 ## 11. Session closeout
 
 - Work completed in this session: continuation protocol adopted; source/history reconciled; test-hardening changes and isolated report prepared.
-- Work not completed: exact-head PostgreSQL 17 execution and PR creation.
-- Exact current state at close: feature branch exists from `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; no commit has yet been pushed.
-- Recommended continuation when the owner says **"أكمل"**: re-fetch the branch head and PR/CI state, then address only the first outstanding CI or review finding.
+- Work not completed: independent second-person security review, authenticated pharmacist/prescriber acceptance, and any hosted QA/Production migration/release gates.
+- Exact current state at close: code head `45a869e707ec7a2511c6081f789c5c1528141fa4` passed exact-head CI; PR #269 remains Draft; this report is being updated in the same PR.
+- Recommended continuation when the owner says **"أكمل"**: re-fetch PR #269 head/review state and continue with independent review findings or human UAT gates; do not repeat completed PG17 tests unless source changes.
