@@ -148,6 +148,39 @@ BEGIN
   EXCEPTION WHEN check_violation THEN v_rejected := true; END;
   IF NOT v_rejected THEN RAISE EXCEPTION 'out-of-range quantity was accepted'; END IF;
 
+  -- An active row may be archived without changing its clinical payload,
+  -- but the same UPDATE must not mutate prescription details while deleting it.
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items
+    SET deleted_at=now(), dose='', dosage=''
+    WHERE id='63000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'active prescription clinical fields were mutable during soft deletion';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+    WHERE id='63000000-0000-0000-0000-000000000001'
+      AND deleted_at IS NULL
+      AND dose='500 mg' AND dosage='500 mg'
+      AND frequency='twice daily' AND duration='5 days'
+      AND quantity=10 AND dosage_form='tablet' AND route='oral'
+  ) THEN
+    RAISE EXCEPTION 'rejected soft-delete mutation changed the active prescription payload';
+  END IF;
+
+  -- Soft deletion without clinical-field mutation remains allowed.
+  UPDATE public.prescription_items SET deleted_at=now()
+  WHERE id='63000000-0000-0000-0000-000000000001';
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+    WHERE id='63000000-0000-0000-0000-000000000001'
+      AND deleted_at IS NOT NULL AND dose='500 mg' AND dosage='500 mg'
+  ) THEN
+    RAISE EXCEPTION 'soft deletion without clinical mutation was not preserved';
+  END IF;
+
   -- Legacy soft-deleted rows remain untouched; ordinary non-clinical updates
   -- do not revalidate them.
   INSERT INTO public.prescription_items(id,prescription_id,medication_name,quantity,deleted_at)
