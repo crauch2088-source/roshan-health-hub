@@ -180,8 +180,8 @@ No SKIP, NOT RUN or BLOCKED item is counted as a pass.
 - Task code branch: `feat/phase53-payment-receipts-qa-20261103` (not modified)
 - Task PR: [#181](https://github.com/crauch2088-source/roshan-health-hub/pull/181) (not modified)
 - Report file path: `docs/parallel-reports/round-01/window-04.md`
-- Report commit SHA: To be filled after commit.
-- Report PR: To be filled after PR creation.
+- Report creation commit SHA: `5bbb9d4e2fe5d9bff874443bea81b459b459cc1b`.
+- Report PR: [#267](https://github.com/crauch2088-source/roshan-health-hub/pull/267).
 - Delivery method: Separate docs-only PR because the task was review-only and the original PR must not be modified by this review window.
 
 ## 8. Safety and actions not performed
