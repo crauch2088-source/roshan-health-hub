@@ -213,6 +213,6 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 - The full Install/audit/typecheck/lint/build job passed, including role guard tests, typecheck, lint and production build.
 - PostgreSQL 17 invoice-payment idempotency concurrency and finance RPC-only write-isolation workflows passed on the final head.
 - The TDD RED commit and the initial formatting-only lint failure are retained in history; the formatting correction is included in the final green head.
-- Report file update commit: `f145171a2abf761859db7e857dc0c2d0b1cacc98` (the final report metadata commit is recorded in the next delivery verification).
+- Intermediate report update commit: `f145171a2abf761859db7e857dc0c2d0b1cacc98`.
 - PR #181 remains open Draft and untouched. PR #280 is the mainline-based successor candidate. Neither was approved or merged.
 - No QA/Production writes, migrations, deployment promotions, real financial records, or patient data were used.
