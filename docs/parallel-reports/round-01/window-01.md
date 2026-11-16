@@ -110,3 +110,37 @@ Window 01 / coordinator: verify the dedicated Phase 63 PostgreSQL 17 job and all
 - Work not completed: exact-head post-fix CI confirmation, independent review, hosted migration, physical print and staff acceptance.
 - Exact current state at close: PR #258 remains Draft and unmerged; code is source-only.
 - Recommended continuation when the owner says **"أكمل"**: check the live PR head and exact Phase 63 job first; do not repeat the RED reproduction if the fix has already passed.
+
+
+---
+
+## Independent review continuation — 2026-11-16 (Window 01)
+
+### Recheck against current PR head
+
+- Rechecked PR #258 after the earlier review. It remains **OPEN / DRAFT**, based on main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`, with current head `8312c92273d50d6eb9d8e700a2eebf89192bcf68`.
+- The previously reported active-to-soft-deleted clinical mutation gap is **corrected in the current candidate source**. The trigger compares the protected clinical payload between OLD and NEW on the active-to-deleted transition and raises SQLSTATE `23514` if any protected field changes.
+- The PostgreSQL 17 integration test now checks rejection of a combined `deleted_at` + blank `dose`/`dosage` update, verifies the original active payload remains unchanged, allows a normal soft delete without clinical mutation, and preserves an already-soft-deleted incomplete historical row.
+- Review comment `4584207030` / review submission `5918007011` remains present as an **unresolved, non-outdated review thread** at the time of recheck. The code correction is present, but the thread has not been formally resolved.
+
+### Exact-head CI evidence
+
+- Commit: `8312c92273d50d6eb9d8e700a2eebf89192bcf68`.
+- Workflow runs returned for the exact commit: CI run [#43853928921](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853928921), prescription atomicity [#43853929194](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853929194), finance RPC-only writes [#43853929314](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853929314), Phase 48 Storage [#43853929036](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853929036), privileged role guard [#43853929124](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853929124), clinical child RPC writes [#43853929250](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853929250), insurance claim integrity [#43853929248](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853929248), and insurance UI validation [#43853928979](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43853928979). All returned runs completed successfully.
+- Within CI run #43853928921, the dedicated **Phase 63 prescription item completeness guard (PostgreSQL 17)** job `133253285611` passed. The same run's typecheck, lint, dependency audits, build, and listed PostgreSQL integration jobs passed.
+- The **Canonical PG17 baseline replay and authenticated clinical acceptance** job `133253287590` was intentionally **SKIPPED**. It is not a pass and does not establish authenticated clinical acceptance.
+- These results supersede the earlier report statement that post-fix exact-head CI was pending.
+
+### Updated review verdict
+
+- **The prior High-severity soft-delete finding is corrected in the current PR head and its dedicated PostgreSQL 17 regression is green.**
+- No new P0/P1 defect was established by this focused re-review.
+- **Medium / owner decision:** the print model carries the patient's MRN but does not require it for a complete official print copy; patient full name is required. Whether MRN or another stable secondary identifier is mandatory must be decided by the clinic's document/identity policy, not inferred by this reviewer. This is not treated as a merge blocker absent that policy.
+- The PR remains Draft. CI does not replace independent clinical/security approval, authenticated role/branch QA, Arabic RTL and mobile browser acceptance, or physical A4/thermal printer verification.
+- **Recommendation: HOLD / keep Draft pending formal review-thread disposition, independent clinical/security approval, and operational acceptance.** The specific soft-delete correction itself is verified at source and in the exact-head PostgreSQL 17 job.
+
+### Actions in this re-review
+
+- Read-only GitHub/source/CI inspection only.
+- No application source, SQL, migration, QA/Production database, deployment, merge, issue closure, or credential changes were made by this re-review.
+- This addendum updates the existing Window 01 Round 01 report; it does not replace another window's report or a prior round.
