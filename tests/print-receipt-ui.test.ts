@@ -81,3 +81,11 @@ test("historical payment receipts use Roshan's fixed SDG currency, not mutable d
   assert.doesNotMatch(source, /buildInvoicePaymentReceiptModel.*ROSHAN_CURRENCY/);
   assert.doesNotMatch(source, /buildInvoicePaymentReceiptModel.*cashierName, currency/);
 });
+
+test("payment submission passes a stable request-bound idempotency key and clears it only after success", () => {
+  const source = read("src/routes/_authenticated/billing_.$invoiceId.tsx");
+  assert.match(source, /getInvoicePaymentIdempotencyKey\(paymentRequest\)/);
+  assert.match(source, /_idempotency_key: idempotencyKey/);
+  assert.match(source, /clearInvoicePaymentIdempotencyKey\(completedRequest\)/);
+  assert.match(source, /onDone: \(\) => \{[\s\S]*clearInvoicePaymentIdempotencyKey/);
+});

@@ -39,6 +39,10 @@ import { useLang } from "@/lib/i18n";
 import { formatDate, formatDateTime, money } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 import { buildInvoicePaymentReceiptModel } from "@/lib/print/receipt";
+import {
+  clearInvoicePaymentIdempotencyKey,
+  getInvoicePaymentIdempotencyKey,
+} from "@/lib/finance/payment-idempotency";
 
 export const Route = createFileRoute("/_authenticated/billing_/$invoiceId")({
   head: () => ({
@@ -146,11 +150,20 @@ function InvoicePageInner() {
         throw new Error(t("invalid_amount") || "مبلغ غير صالح");
       }
 
+      const paymentRequest = {
+        invoiceId,
+        amount: value,
+        method,
+        reference: reference.trim() || null,
+      };
+      const idempotencyKey = await getInvoicePaymentIdempotencyKey(paymentRequest);
+
       await rpc("post_invoice_payment", {
         _invoice_id: invoiceId,
         _amount: value,
         _method: method,
         _reference: reference.trim() || null,
+        _idempotency_key: idempotencyKey,
       });
 
       return null;
@@ -166,6 +179,13 @@ function InvoicePageInner() {
       ],
       successMessage: t("saved"),
       onDone: () => {
+        const completedRequest = {
+          invoiceId,
+          amount: Number(amount),
+          method,
+          reference: reference.trim() || null,
+        };
+        clearInvoicePaymentIdempotencyKey(completedRequest);
         setAmount("");
         setReference("");
       },
