@@ -192,3 +192,94 @@ Important implementation observations:
 - Work not completed: No candidate code/test fix, no duplicate policy implementation, no historical-output execution, no pack conversion implementation, no independent security approval or pharmacist acceptance.
 - Exact current state at close: Main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; PR #210 candidate head `f041ac9fa0e3cb4114346984e3d1393ad972e18f`; PR remains a Draft candidate with material findings.
 - Recommended continuation when the owner says **"أكمل"**: Recheck main and PR #210 head, review threads and CI; resume with the post-stock identity-change safety design and regression tests. Do not repeat the completed read-only review or overwrite this Round 01 report.
+
+
+---
+
+## Continuation addendum — 2026-11-16 (current-head recheck)
+
+This addendum supersedes only the stale candidate-head/CI statements above; the original review findings and historical record are preserved.
+
+### Current repository and PR state
+
+- **Main:** 79d81f08f6567f5145f7143e3bf5afdd6e93bf59, rechecked from the live main ref.
+- **PR #210:** Open, Draft, GitHub reports mergeable; base f8c8b2d1767643561599764405b4cdbfd4db2c79; current head e53216a826474e3ae865ab9faeeab99926e0614f.
+- **Comparison:** current main → candidate is **81 commits ahead / 5 behind**, with merge base f8c8b2d1767643561599764405b4cdbfd4db2c79. The candidate remains diverged from current main.
+- **PR #210 review state:** one owner-authored COMMENTED review, zero inline review threads. This is not independent SQL/security approval.
+- **Role-policy clarification:** the PR's latest execution note explicitly records the Super Admin pack-attestation bypass as owner-approved and reflected in UI/PG17 assertions. Treat this as an intentional exception, not an unresolved exploit finding; do not describe verification as pharmacist-exclusive.
+- **Round 01 report:** PR [#263](https://github.com/crauch2088-source/roshan-health-hub/pull/263) remains open Draft; this addendum is appended to the same Window 03 file. No other window's report was edited.
+
+### Exact-head validation correction
+
+The current PR #210 head is now e53216a...; therefore workflow run [43761411536](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43761411536), which was predecessor evidence when Round 01 was first written, is **now exact-current-head evidence**.
+
+- All 7 PR-triggered workflows completed successfully on e53216a...; the main CI run reports 19 successful jobs and one intentional skip, with zero failures.
+- The dedicated **Shared medicine catalogue authority and pack attestation (PostgreSQL 17)** job passed: it replayed the disposable v112 baseline, applied Phase 60 only in the CI database, and passed role/RLS/append-only assertions.
+- The canonical PG17 baseline replay/authenticated clinical acceptance job was intentionally skipped. This is not authenticated browser or pharmacist acceptance.
+- The Vercel status on this commit is success; no deployment promotion is claimed.
+- This corrects the time-relative statement in §5/§6 above: the run was not exact-head evidence for f041ac9... at that earlier checkpoint, but it is exact-head evidence now because the PR head advanced to e53216a....
+
+### Additional verified findings
+
+#### F-07 — Historical prescription views prefer mutable catalogue names over the saved prescription snapshot
+
+- Severity: **High**
+- Status: **Verified — current mainline display behavior; the Phase 60 edit makes the consequence directly reachable**
+- Affected paths:
+  - db/roshan_phase7_atomic_prescription.sql
+  - src/routes/_authenticated/patients_.$patientId.tsx
+  - src/routes/_authenticated/pharmacy.tsx
+- Evidence:
+  - The current prescription RPC reads the selected medicine's name and persists it in prescription_items.medication_name at prescription creation time.
+  - The patient history query selects prescription_items(id, dosage, medicines(name)), omits medication_name, and renders the related live medicines.name.
+  - The pharmacy query selects both medication_name and medicines(name), but its display expression prefers medicines.name and only falls back to the saved medication_name.
+- Impact: after a catalogue display-name correction, historical patient prescription history and pharmacy prescription views can show the new catalogue name instead of the name saved with the original prescription. This is a display-integrity defect; it does not prove that the stored prescription row itself was mutated.
+- Recommended correction: treat prescription_items.medication_name as the historical display snapshot for an already-issued prescription. Select and render that snapshot first in historical views; expose current catalogue identity separately only where operationally needed.
+- Required regression: create a synthetic linked prescription with a saved medication-name snapshot, change the catalogue medicines.name, and assert that patient history, pharmacy history, and any reprint continue to show the saved prescription name. Also test a null/legacy snapshot fallback explicitly.
+- Dependency: Window 01 owns prescription printing; Window 03 owns catalogue identity semantics. Coordinate rather than editing Window 01 files from this window.
+
+#### F-08 — Candidate identity mutation is not blocked after stock, batches, or prescription history exist
+
+- Severity: **High**
+- Status: **Verified — candidate-only**
+- Affected paths: db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql; src/routes/_authenticated/inventory.tsx.
+- Evidence:
+  - Phase 60 grants direct UPDATE on name, generic_name, brand_name, strength, and dosage_form, but adds no trigger/RPC guard based on stock_quantity, pharmacy_inventory, stock_movements, prescription_items, or invoice history.
+  - The candidate UI mutation performs .update(result.data).eq("id", vars.id).is("deleted_at", null) after a permission check; it does not inspect stock, batches, or linked history.
+- Impact: a correction that changes strength, dosage form, or generic identity can redefine the medicine row referenced by existing batches and prescriptions without changing their foreign keys. Existing operational rows and historical displays may then appear to refer to a different product.
+- Recommended correction: distinguish a harmless display-label correction from a substantive product-identity change. Once stock or clinical/financial history exists, block substantive identity mutation and require a new medicine identity with an explicit supersession/retirement relationship. Do not alter old stock, batches, prescriptions, or invoices.
+- Required regression: test a zero-history medicine, a medicine with on-hand stock, a medicine with historical batches but zero current stock, a medicine linked to prescription items, and a medicine linked to invoice/dispense history. Only the explicitly allowed correction class should remain editable.
+- Dependency: Window 03 / pharmacy product governance. The implementation is outside this review-only task's authorization.
+
+#### F-09 — No duplicate-product guard or canonical identity key
+
+- Severity: **High**
+- Status: **Verified — candidate-only**
+- Affected paths: src/lib/medicine-catalogue.ts; db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql; tests/medicine-catalogue.test.ts.
+- Evidence: the candidate helper trims the generic name, strength, brand and dosage form and builds a display name. It performs no duplicate lookup or canonical-key construction. Phase 60 adds no database uniqueness constraint or race-safe duplicate guard. The tests cover required fields, output shape and search-filter escaping, but not duplicate identity.
+- Impact: equivalent products can be created as separate catalogue rows, splitting stock, batches, prices, FEFO selection and dispense choice. A naïve key of generic + strength + dosage form would itself be unsafe because salt/composition, route, concentration, release characteristics, manufacturer and brand can distinguish products.
+- Recommended correction: define a canonical product-identity policy first, then enforce the agreed duplicate semantics atomically at the database boundary. Do not add a simplistic unique constraint.
+- Required regression: normalization equivalence tests, legitimate distinct-product tests (including salt/release/manufacturer differences), and concurrent duplicate-create tests in disposable PostgreSQL 17.
+- Dependency: owner/pharmacy governance decision on canonical identity dimensions.
+
+#### F-10 — Pack-to-unit conversion remains unmodelled
+
+- Severity: **Medium**
+- Status: **Verified — candidate limitation**
+- Affected paths: public.medicines.unit; inventory receive flow; Phase 60 candidate schema.
+- Evidence: unit remains free text; no pack SKU, pack quantity, base stock unit, dispensing unit, conversion ratio or conversion-history model is added. The attestation event does not provide conversion evidence.
+- Impact: a carton/strip/tablet relationship cannot be represented safely or converted deterministically for receiving, stock, dispensing and cost calculations.
+- Recommended correction: keep commercial pack identity and pack-to-base-unit conversion in a separate specification/workstream. Require explicit units and exact positive integer/decimal conversion semantics as clinically and commercially appropriate; never infer from display names or free-text unit.
+- Required regression: one-to-many pack conversion, invalid/zero ratios, fractional stock constraints, historical conversion changes, and purchase/dispense reconciliation.
+- Dependency: separate product/pack specification and pharmacy owner decision.
+
+### Updated verdict and scope boundary
+
+- PR #210 remains **CHANGES REQUIRED / Keep Draft**.
+- Exact-head CI is now green on the current candidate, including the Phase 60 PostgreSQL 17 integration. This does not resolve F-07 through F-10 or replace independent review and pharmacist acceptance.
+- The original Window 03 task is review-only. No implementation branch or code change was authorized in this continuation. The post-stock guard and historical snapshot correction should be delivered only under a separately authorized implementation task, with Window 01 owning its printing surface.
+- No local tests were executed by this reviewer; CI results above are GitHub workflow evidence. No hosted database query/write or migration was performed.
+
+### Updated next action
+
+**Window 03 / owner-coordinator:** authorize a separate implementation task for (1) snapshot-first historical prescription display and (2) a database-enforced prohibition on substantive identity changes after stock or linked history exists. Agree canonical duplicate identity dimensions before adding any uniqueness policy. Keep pack conversion separate. Until those changes and independent SQL/security review are complete, retain **CHANGES REQUIRED** for PR #210.
