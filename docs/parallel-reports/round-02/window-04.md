@@ -162,7 +162,7 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 
 - Branch: `fix/window-04-payment-idempotency-20261116`
 - PR: [#280](https://github.com/crauch2088-source/roshan-health-hub/pull/280), open and Draft.
-- Current head at this addendum: `7b91edc8e8b8d392be5b9fb0939056493691145d`.
+- Current head at this addendum: `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
 - Base: current main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`.
 - GitHub compare: **2 commits ahead / 0 behind** current main; merge base is the exact main SHA above.
 - PR #181 remains open Draft and was not modified. Its prior candidate branch is not the integration target for this fix.
@@ -186,10 +186,12 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 
 - RED commit: `4416c0bbb85ae9d702da1aab1f37c2ececd1a97c` added the regression test and test command before the implementation module existed.
 - RED exact-head workflow: [run 43857866440](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43857866440); the `Role guard unit tests` step failed at the intended pre-implementation state. The dependent typecheck/build steps were skipped. This establishes a failing pre-fix state; it is not counted as a passing run.
-- GREEN candidate commit: `7b91edc8e8b8d392be5b9fb0939056493691145d`.
-- Disposable PostgreSQL 17 invoice-payment idempotency concurrency: **PASS**, [job 133267895334](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858214905/job/133267895334).
-- PostgreSQL 17 finance RPC-only writes: **PASS**, [job 133267895967](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858214905/job/133267895967).
-- At the time of this addendum, the exact-head aggregate CI remained in progress; no final full-CI pass is claimed yet. Typecheck and role-guard unit tests had completed successfully; lint/build were still running.
+- GREEN implementation commit: `7b91edc8e8b8d392be5b9fb0939056493691145d`.
+- The first GREEN CI attempt exposed two Prettier-only lint errors in the new test file; both were corrected in `8815d0f1c5f52c7868de69ce65be0b42ae810d24`.
+- The pending-state hardening and its UI assertion were committed in `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
+- Disposable PostgreSQL 17 invoice-payment idempotency concurrency: **PASS** on the current head, [job 133269455737](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858673581/job/133269455737).
+- PostgreSQL 17 finance RPC-only writes: **PASS** on the current head, [job 133269456155](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858673581/job/133269456155).
+- Exact-head PR #280 currently has 31 check runs: 26 completed, 5 pending, and no failed checks at the time of this report update. The main Install/audit/typecheck/lint/build job is still running; no full-CI pass is claimed yet.
 - The prior exact-head #181 concurrency pass remains historical evidence; the new expanded retry/mismatch assertions were executed on PR #280's disposable PostgreSQL 17 workflow.
 
 ### Reassessment and remaining gates
