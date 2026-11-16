@@ -36,7 +36,7 @@ The candidate migration `db/roshan_phase63_prescription_item_completeness_guard.
 
 It skips soft-deleted rows so historical incomplete records can be preserved or archived. It does not calculate or infer clinical values. Because the trigger runs at the table boundary, it also protects writes performed by the SECURITY DEFINER prescription RPC, not only the React form. Direct EXECUTE on the trigger function is revoked from API roles.
 
-A dedicated PostgreSQL 17 fixture and regression test cover valid writes, missing fields, invalid quantities, legacy dose/dosage normalization, soft-deleted rows, and trigger-function ACL.
+A dedicated PostgreSQL 17 fixture and regression test cover valid writes, missing fields, invalid quantities, legacy dose/dosage normalization, rejection of conflicting non-empty `dose`/`dosage` values on both INSERT and UPDATE, soft-deleted rows, and trigger-function ACL. Conflicting values fail closed rather than silently choosing one representation.
 
 ## 4. Printing changes
 

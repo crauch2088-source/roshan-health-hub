@@ -38,6 +38,44 @@ BEGIN
     RAISE EXCEPTION 'dose was not normalized into legacy dosage';
   END IF;
 
+  -- Conflicting non-empty current/legacy dose fields must fail closed.
+  v_rejected := false;
+  BEGIN
+    INSERT INTO public.prescription_items (
+      id,prescription_id,medication_name,dose,dosage,frequency,duration,
+      quantity,dosage_form,route
+    ) VALUES (
+      '63000000-0000-0000-0000-000000000003',
+      '63000000-0000-0000-0000-000000000101',
+      'Synthetic medicine','500 mg','250 mg','twice daily','5 days',
+      10,'tablet','oral'
+    );
+  EXCEPTION WHEN check_violation THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'conflicting dose and legacy dosage values were accepted';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.prescription_items
+             WHERE id='63000000-0000-0000-0000-000000000003') THEN
+    RAISE EXCEPTION 'conflicting dose insert left a persisted row';
+  END IF;
+
+  -- The same invariant applies when an existing prescription item is edited.
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items SET dosage='250 mg'
+    WHERE id='63000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN check_violation THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'conflicting dose update was accepted';
+  END IF;
+  SELECT dosage INTO v_value FROM public.prescription_items
+  WHERE id='63000000-0000-0000-0000-000000000001';
+  IF v_value IS DISTINCT FROM '500 mg' THEN
+    RAISE EXCEPTION 'rejected dose update changed the persisted legacy value';
+  END IF;
+
   -- Every required clinical field fails closed when missing.
   v_rejected := false;
   BEGIN

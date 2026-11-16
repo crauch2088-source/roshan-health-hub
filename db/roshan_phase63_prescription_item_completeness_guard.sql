@@ -37,6 +37,13 @@ BEGIN
     NEW.dosage := v_dose;
   END IF;
 
+  -- The legacy and current fields represent the same prescribed dose. Do not
+  -- let conflicting values produce different displays across old/new clients.
+  IF btrim(NEW.dose) IS DISTINCT FROM btrim(NEW.dosage) THEN
+    RAISE EXCEPTION 'prescription item dose and legacy dosage must match'
+      USING ERRCODE = '23514';
+  END IF;
+
   IF NULLIF(btrim(COALESCE(NEW.frequency, '')), '') IS NULL THEN
     RAISE EXCEPTION 'prescription item frequency is required'
       USING ERRCODE = '23514';
