@@ -116,7 +116,7 @@
 - Previous report commits: `4b9405fab3c9517d12d96aaae0f2a5c2d8e4f0ce`, `e5096c87216f2f65a1a9599d7574586ed89e9542`, `45f8e7232ef3d4be70ac222076034868574b5c2d`, `ae6bd44a8ec28a1a719e378830c463e3f5bfda6a`
 - PR: [#269 — retain Draft](https://github.com/crauch2088-source/roshan-health-hub/pull/269)
 - Report file path: `docs/parallel-reports/round-03/window-09.md`
-- Report commit SHA: to be recorded after report commit.
+- Initial report commit SHA: \`c3a5df58ba30c891622aa6870b009f4603db17bb\`; a subsequent docs-only metadata refresh records the final branch state.
 - Report delivery: same task branch and existing PR #269; no duplicate PR.
 - No code change was appropriate: the requested test-hardening code is already present and green; the only remaining gates require independent human review and clinical staff acceptance. Adding another code or test change without a verified defect would create unnecessary churn and CI.
 
