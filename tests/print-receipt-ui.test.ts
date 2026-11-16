@@ -88,4 +88,5 @@ test("payment submission passes a stable request-bound idempotency key and clear
   assert.match(source, /_idempotency_key: idempotencyKey/);
   assert.match(source, /clearInvoicePaymentIdempotencyKey\(completedRequest\)/);
   assert.match(source, /onDone: \(\) => \{[\s\S]*clearInvoicePaymentIdempotencyKey/);
+  assert.match(source, /disabled=\{pay\.isPending\}/);
 });

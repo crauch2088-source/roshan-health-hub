@@ -394,6 +394,7 @@ function InvoicePageInner() {
 
                 <Field label={t("amount")}>
                   <Input
+                    disabled={pay.isPending}
                     type="number"
                     dir="ltr"
                     min={0}
@@ -403,7 +404,7 @@ function InvoicePageInner() {
                 </Field>
 
                 <Field label={t("payment_method")}>
-                  <Select value={method} onValueChange={setMethod}>
+                  <Select disabled={pay.isPending} value={method} onValueChange={setMethod}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -425,6 +426,7 @@ function InvoicePageInner() {
                 {(method === "bankak" || method === "mobile" || method === "bank") && (
                   <Field label={t("reference") || "Transaction reference"}>
                     <Input
+                      disabled={pay.isPending}
                       dir="ltr"
                       value={reference}
                       onChange={(event) => setReference(event.target.value)}
