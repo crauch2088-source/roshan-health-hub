@@ -37,8 +37,16 @@ test("creates a distinct key when payment details change", async () => {
   let generated = 0;
   const createKey = () => `attempt-${++generated}`;
   const original = await getInvoicePaymentIdempotencyKey(request, storage, createKey);
-  const changedAmount = await getInvoicePaymentIdempotencyKey({ ...request, amount: 126 }, storage, createKey);
-  const changedReference = await getInvoicePaymentIdempotencyKey({ ...request, reference: "BANKAK-REF-7782" }, storage, createKey);
+  const changedAmount = await getInvoicePaymentIdempotencyKey(
+    { ...request, amount: 126 },
+    storage,
+    createKey,
+  );
+  const changedReference = await getInvoicePaymentIdempotencyKey(
+    { ...request, reference: "BANKAK-REF-7782" },
+    storage,
+    createKey,
+  );
   assert.notEqual(changedAmount, original);
   assert.notEqual(changedReference, original);
   assert.notEqual(changedReference, changedAmount);
