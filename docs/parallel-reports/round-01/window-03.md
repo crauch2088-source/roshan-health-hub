@@ -283,3 +283,52 @@ The current PR #210 head is now e53216a...; therefore workflow run [43761411536]
 ### Updated next action
 
 **Window 03 / owner-coordinator:** authorize a separate implementation task for (1) snapshot-first historical prescription display and (2) a database-enforced prohibition on substantive identity changes after stock or linked history exists. Agree canonical duplicate identity dimensions before adding any uniqueness policy. Keep pack conversion separate. Until those changes and independent SQL/security review are complete, retain **CHANGES REQUIRED** for PR #210.
+
+---
+
+## Continuation addendum 2 — 2026-11-16 (protocol and call-site verification)
+
+### Continuation protocol and template actually read
+
+- Read docs/PARALLEL_ENGINEERING_CONTINUATION.md from the open Draft PR #261 branch docs/parallel-engineering-continuation-20261116, head ca0a5822f5af1c9c091ef293eb7ee10eeb856d74.
+- Read docs/parallel-reports/TEMPLATE.md from that same branch. Both files return 404 on current main because PR #261 has not been merged. The protocol is followed here as the owner explicitly directed, but it must not be described as already merged into main.
+- PR #261 is open Draft. The protocol's key rule is that each window's original scope remains unchanged and no continuation implicitly authorizes scope expansion.
+- Window 03 original task explicitly excludes implementation changes to PR #210. Therefore this continuation remains review/verification and report-only. The prior question offering implementation was not an authorization to disregard that exclusion; the owner's "أكمل" resumes the assigned task within its original boundary.
+- The existing report file follows the 11 required template sections. This addendum preserves the original Round 01 record and does not edit another window's file.
+
+### Current exact evidence rechecked
+
+- Main remains 79d81f08f6567f5145f7143e3bf5afdd6e93bf59.
+- PR #210 remains open Draft, current head e53216a826474e3ae865ab9faeeab99926e0614f, base SHA f8c8b2d1767643561599764405b4cdbfd4db2c79; compare main→candidate remains 81 ahead / 5 behind.
+- Exact-head run 43761411536 has **20 jobs: 19 PASS, 1 intentional SKIP, 0 FAIL**. The dedicated Phase 60 PostgreSQL 17 job passed. Six other PR-triggered workflows also completed successfully; the separate canonical PG17 baseline/authenticated clinical acceptance job is the one skipped. Do not call the skipped job a pass.
+- Review state remains one owner-authored COMMENTED review and zero inline threads; no independent SQL/security approval is present.
+- PR #263 remains open Draft and mergeable. Its current head is c6a4eed11cb8f364e4699bad868c631fde02ce84; compare against main is 5 commits ahead / 0 behind, with exactly one changed file: this window's report.
+
+### F-07 refinement — patient history also drops free-text prescription names
+
+The historical display defect is broader than a renamed catalogue item:
+
+- db/roshan_phase7_atomic_prescription.sql stores the prescribed name in prescription_items.medication_name when creating a catalogue-linked prescription.
+- Current main's patient-history query in src/routes/_authenticated/patients_.$patientId.tsx selects prescription_items(id, dosage, medicines(name)) and does not select medication_name.
+- The patient-history renderer maps only medicines.name; it never falls back to the saved medication_name.
+- Consequently, a catalogue-linked historical prescription can display the current joined medicine name rather than the saved name, and a free-text/external prescription item with no linked medicine_id can display as blank/“—” even though its saved medication_name exists.
+- The pharmacy view is not identical: its query selects medication_name, but its linked-medicine display paths prefer medicines.name and fall back to the saved name.
+- This is a static source verification; no browser E2E or synthetic DB regression was executed in this review.
+
+Required regression should cover both cases: (a) a linked prescription where medicines.name changes after prescription creation, and (b) a free-text prescription item with medicine_id IS NULL. Patient history must show the immutable medication_name snapshot in both cases. Pharmacy history should use the same snapshot-first rule for already-issued prescriptions.
+
+### F-08 refinement — existing stock guard is real, but does not protect identity fields
+
+- Main already has private.guard_medicine_stock_aggregate() in db/roshan_phase49_atomic_pharmacy_dispense.sql.
+- Its trigger is BEFORE INSERT OR UPDATE OF stock_quantity ON public.medicines; it rejects authenticated direct changes to stock_quantity. It does not fire for name, generic_name, brand_name, strength, or dosage_form.
+- Phase 60's column-level ACL correctly prevents the identity editor from directly changing price or stock. That protection should be retained.
+- The remaining F-08 finding is narrower and still valid: the candidate permits edits to the five identity columns on any active medicine row, without checking whether batches, stock movements, prescription items, dispenses or invoices already reference that medicine.
+- No claim is made that Phase 60 bypasses the existing stock-quantity trigger. The concern is semantic re-identification of the medicine row, not direct mutation of stock aggregates.
+
+### Additional scope/decision note
+
+The protocol's Round 01 handoff suggests duplicate identity policy and regression work, but the original Window 03 request is explicitly review-only. The current continuation therefore records precise evidence and required tests without modifying the candidate, creating an implementation branch, or changing source/tests. A separate explicit implementation task is required to lift that exclusion.
+
+### Updated next action
+
+**Window 03 / owner:** retain PR #210 as Draft / CHANGES REQUIRED; request an independently authored SQL/security review and ask the owner to authorize a separate implementation scope if fixes are desired. Within the current review-only task, no further source mutation is permitted. The next verification deliverable is the owner's decision on the canonical medicine identity dimensions and whether historical prescription snapshots are the authoritative display source.
