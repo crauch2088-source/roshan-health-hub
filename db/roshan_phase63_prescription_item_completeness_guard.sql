@@ -16,11 +16,11 @@ BEGIN
   IF NEW.deleted_at IS NOT NULL THEN
     IF TG_OP = 'UPDATE' AND OLD.deleted_at IS NULL THEN
       IF ROW(
-        NEW.medication_name, NEW.dose, NEW.dosage, NEW.frequency,
-        NEW.duration, NEW.quantity, NEW.dosage_form, NEW.route
+        NEW.medication_name, NEW.dose, NEW.dosage, NEW.instructions,
+        NEW.frequency, NEW.duration, NEW.quantity, NEW.dosage_form, NEW.route
       ) IS DISTINCT FROM ROW(
-        OLD.medication_name, OLD.dose, OLD.dosage, OLD.frequency,
-        OLD.duration, OLD.quantity, OLD.dosage_form, OLD.route
+        OLD.medication_name, OLD.dose, OLD.dosage, OLD.instructions,
+        OLD.frequency, OLD.duration, OLD.quantity, OLD.dosage_form, OLD.route
       ) THEN
         RAISE EXCEPTION 'prescription item clinical fields cannot change during soft deletion'
           USING ERRCODE = '23514';
@@ -95,14 +95,14 @@ REVOKE ALL ON FUNCTION private.validate_prescription_item_completeness()
   FROM PUBLIC, anon, authenticated, service_role, authenticator;
 
 COMMENT ON FUNCTION private.validate_prescription_item_completeness() IS
-  'Phase 63: server-side completeness guard for new/edited prescription items. It does not infer dose, frequency, duration, form, route, or quantity; historical soft-deleted rows are preserved, and clinical fields cannot change during soft deletion.';
+  'Phase 63: server-side completeness guard for new/edited prescription items. It does not infer dose, frequency, duration, form, route, or quantity; historical soft-deleted rows are preserved, and clinical fields and patient-facing instructions cannot change during soft deletion.';
 
 DROP TRIGGER IF EXISTS trg_prescription_item_completeness_guard
   ON public.prescription_items;
 
 CREATE TRIGGER trg_prescription_item_completeness_guard
 BEFORE INSERT OR UPDATE OF
-  medication_name, dose, dosage, frequency, duration, quantity,
+  medication_name, dose, dosage, instructions, frequency, duration, quantity,
   dosage_form, route, deleted_at
 ON public.prescription_items
 FOR EACH ROW

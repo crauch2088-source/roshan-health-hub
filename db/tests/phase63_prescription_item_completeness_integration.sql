@@ -148,6 +148,29 @@ BEGIN
   EXCEPTION WHEN check_violation THEN v_rejected := true; END;
   IF NOT v_rejected THEN RAISE EXCEPTION 'out-of-range quantity was accepted'; END IF;
 
+  -- Patient-facing instructions are part of the persisted prescription payload.
+  -- They must not be rewritten in the same UPDATE that archives the active item.
+  UPDATE public.prescription_items
+  SET instructions='Take with food'
+  WHERE id='63000000-0000-0000-0000-000000000001';
+
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items
+    SET deleted_at=now(), instructions='Stop taking this medicine'
+    WHERE id='63000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN check_violation THEN v_rejected := true; END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'patient-facing instructions were mutable during soft deletion';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+    WHERE id='63000000-0000-0000-0000-000000000001'
+      AND deleted_at IS NULL AND instructions='Take with food'
+  ) THEN
+    RAISE EXCEPTION 'rejected instructions mutation changed the active prescription payload';
+  END IF;
+
   -- An active row may be archived without changing its clinical payload,
   -- but the same UPDATE must not mutate prescription details while deleting it.
   v_rejected := false;
