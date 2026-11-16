@@ -111,3 +111,17 @@ No pass is claimed for these new runs yet. The local focused RED/GREEN test is n
 - **Base SHA:** `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`
 - **Target implementation PR:** [#256](https://github.com/crauch2088-source/roshan-health-hub/pull/256)
 - **Previous reports:** Round 01 and Round 02 remain separate and unchanged.
+
+
+## 9. CI status refresh after initial publication
+
+A subsequent status refresh on the same latest PR head `067c2afd15126e633d28dd345e3d5e75c42d43d5` confirmed:
+- Prescription atomicity integration — **success** (run 985).
+- Privileged role guard integration — **success** (run 988).
+- Insurance claim integrity integration — **success** (run 989).
+- Insurance claim UI validation — **success** (run 861), including dependency installation, focused insurance tests, typecheck, lint, and production build.
+- Clinical child RPC-only writes — **success** (run 485).
+- Finance-only RPC write isolation — **success** (run 696).
+- Main CI run 2236 remained in progress at this refresh; several PostgreSQL 17 jobs and the install/audit/typecheck/lint/build job had not yet completed.
+
+Thus, all four workflows directly touched by the routing remediation have completed successfully on the latest PR head. The main CI remains an independent required broad gate and must finish before approval/merge. No merge was performed.
