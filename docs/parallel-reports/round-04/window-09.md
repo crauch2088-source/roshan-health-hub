@@ -23,7 +23,7 @@
 | Item | Exact value | Evidence / link | Status (verified / not rechecked) |
 |---|---|---|---|
 | Main SHA | `79d81f08f6567f5145f7143e3bf5afdd6e93bf59` | [main comparison](https://github.com/crauch2088-source/roshan-health-hub/compare/main...feat/217-pharmacist-correction-backend-20261116) | verified; same as requested baseline |
-| Task branch/head SHA | `8ea73ec12533e25a572ee23b4b670fbbfea5aaf9`; 8 ahead / 0 behind; 5 changed paths | [branch comparison](https://github.com/crauch2088-source/roshan-health-hub/compare/main...feat/217-pharmacist-correction-backend-20261116) | verified |
+| Task branch/head SHA | `6b7b571979e757a9b3c5f82e9c7034f2c34bc65e`; 10 ahead / 0 behind; 6 changed paths including this round's report | [branch comparison](https://github.com/crauch2088-source/roshan-health-hub/compare/main...feat/217-pharmacist-correction-backend-20261116) | verified |
 | PR #269 / Issue #217 | PR open, Draft, mergeable; Issue open | [PR #269](https://github.com/crauch2088-source/roshan-health-hub/pull/269) · [Issue #217](https://github.com/crauch2088-source/roshan-health-hub/issues/217) | verified |
 | PR #269 review | One COMMENTED review; author `crauch2088-source`; zero inline review threads | [PR #269 reviews](https://github.com/crauch2088-source/roshan-health-hub/pull/269) | verified; does not satisfy independent review |
 | Exact-head CI | Code-bearing head `45a869e707ec7a2511c6081f789c5c1528141fa4`; PG17 run 43851404866 and CI run 43851404890 succeeded; 18 CI jobs succeeded, one intentional clinical acceptance skip | [PG17 run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404866) · [CI run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851404890) | verified for code-bearing head; not a pass for clinical acceptance |
@@ -100,10 +100,10 @@
 
 - Branch: `feat/217-pharmacist-correction-backend-20261116`
 - Existing code commits: `618e69e396ab89a16cb66dfe59ca235320870837`, `45a869e707ec7a2511c6081f789c5c1528141fa4`
-- Current pre-report branch head: `8ea73ec12533e25a572ee23b4b670fbbfea5aaf9`
+- Pre-report branch head: `8ea73ec12533e25a572ee23b4b670fbbfea5aaf9`; final report head: `6b7b571979e757a9b3c5f82e9c7034f2c34bc65e`
 - PR: [#269 — retain Draft](https://github.com/crauch2088-source/roshan-health-hub/pull/269)
 - Report file path: `docs/parallel-reports/round-04/window-09.md`
-- Report creation commit SHA: `8f35ab70b6eb0429560ca8b7d5f1132cd8cff5dd` (this report's initial creation). The final metadata-refresh commit is the current branch head recorded in the PR/branch history.
+- Report creation commit SHA: `8f35ab70b6eb0429560ca8b7d5f1132cd8cff5dd`; final metadata-refresh/report commit SHA: `6b7b571979e757a9b3c5f82e9c7034f2c34bc65e`.
 - Delivery: same task branch and existing PR #269; no duplicate PR.
 - No code change was appropriate because the code-bearing commit remains green, the current delta is documentation-only, and all remaining release gates require independent human review or clinical staff acceptance. Additional code churn would not resolve those gates.
 
@@ -132,5 +132,5 @@ Repository owner: obtain a qualified second-person review of the Phase 61/61B se
 
 - Work completed in this session: continuation protocol/template re-read; current main/branch/PR/Issue/review/CI state rechecked; issue history reviewed for new acceptance evidence; Round 04 report prepared.
 - Work not completed: independent second-person review, authenticated staff UAT, live QA/Production verification, merge, deployment or release approval.
-- Exact current state at close before report commit: main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; task branch `8ea73ec12533e25a572ee23b4b670fbbfea5aaf9` (8 ahead / 0 behind); PR #269 open/Draft; Issue #217 open; tested code head `45a869e` has successful PG17 and related CI runs.
+- Exact current state at close before report commit: main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; task branch `6b7b571979e757a9b3c5f82e9c7034f2c34bc65e` (10 ahead / 0 behind, including this report); PR #269 open/Draft; Issue #217 open; tested code head `45a869e` has successful PG17 and related CI runs.
 - Recommended continuation when the owner says **"أكمل"**: recheck current main/branch/PR/Issue/reviews and any new independent-review or UAT evidence; if none exists, preserve the hold and do not manufacture code work.
