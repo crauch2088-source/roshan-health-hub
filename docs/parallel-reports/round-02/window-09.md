@@ -23,8 +23,8 @@
 | Item | Exact value | Evidence / link | Status |
 |---|---|---|---|
 | Main SHA | `79d81f08f6567f5145f7143e3bf5afdd6e93bf59` | [main baseline](https://github.com/crauch2088-source/roshan-health-hub/commit/79d81f08f6567f5145f7143e3bf5afdd6e93bf59) | verified; unchanged from requested baseline |
-| Task branch/head | `feat/217-pharmacist-correction-backend-20261116` at `4b9405fab3c9517d12d96aaae0f2a5c2d8e4f0ce` | [head commit](https://github.com/crauch2088-source/roshan-health-hub/commit/4b9405fab3c9517d12d96aaae0f2a5c2d8e4f0ce) | verified by branch comparison |
-| Branch delta | 3 commits ahead, 0 behind main; exactly the three Round 01 files | [compare main to task branch](https://github.com/crauch2088-source/roshan-health-hub/compare/main...feat/217-pharmacist-correction-backend-20261116) | verified |
+| Task branch/head | Pre-report code/test head `4b9405fab3c9517d12d96aaae0f2a5c2d8e4f0ce`; final report head `45f8e7232ef3d4be70ac222076034868574b5c2d` | [final report commit](https://github.com/crauch2088-source/roshan-health-hub/commit/45f8e7232ef3d4be70ac222076034868574b5c2d) | verified by branch comparison and report fetch |
+| Branch delta | At the initial Round 02 recheck: 3 commits ahead / 0 behind and the three Round 01 files. After publishing this report: 5 commits ahead / 0 behind; four files total (two test/workflow changes and the Round 01 + Round 02 reports). | [compare main to task branch](https://github.com/crauch2088-source/roshan-health-hub/compare/main...feat/217-pharmacist-correction-backend-20261116) | verified |
 | PR #269 | Open; previously established Draft state retained; no merge evidence | [PR #269](https://github.com/crauch2088-source/roshan-health-hub/pull/269) | open verified; Draft retained |
 | Issue #217 | Open | [Issue #217](https://github.com/crauch2088-source/roshan-health-hub/issues/217) | verified |
 | Phase 61/57/57B workflow | Run `43851778022` | [workflow run](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43851778022) | PASS |
@@ -120,5 +120,5 @@ Repository owner: arrange a qualified second-person review of PR #269's exact he
 
 - Work completed in this session: current branch/main/issue/PR/CI rechecked; Phase 61/61B and Phase 57/57B source boundary inspected read-only; independent-review authorship discrepancy identified; Round 02 report prepared.
 - Work not completed: independent reviewer approval, authenticated staff UAT, mobile RTL/LTR acceptance, hosted migration/release work.
-- Exact current state at close: main remains `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; task branch head before this report is `4b9405fab3c9517d12d96aaae0f2a5c2d8e4f0ce`; PR #269 and Issue #217 remain open; latest Phase 61/57/57B and repository CI runs passed.
+- Exact current state at close: main remains `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; final task branch head is `45f8e7232ef3d4be70ac222076034868574b5c2d`; PR #269 and Issue #217 remain open; latest code-bearing Phase 61/57/57B and repository CI runs passed. The final commit only updates this report; no new CI run was expected or triggered.
 - Recommended continuation when the owner says **"أكمل"**: recheck the new report commit, PR #269 and review/UAT evidence; do not rerun green code CI unless code changes.
