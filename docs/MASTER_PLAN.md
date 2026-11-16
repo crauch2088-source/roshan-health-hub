@@ -3191,3 +3191,14 @@ Progress remains at the last evidence-weighted canonical baseline: 62% Engineeri
 - Added PostgreSQL 17 regressions for conflicting INSERT and UPDATE, including assertions that rejected writes leave no inserted row and preserve the prior persisted value. Updated `docs/PRESCRIPTION_SAFETY_REMEDIATION_2026-11-15.md`.
 - Implementation is confined to Draft PR #258 branch `feat/phase53-prescription-print-rebased-20261116`; no QA/Production migration, merge, or deployment is authorized. Exact commit and CI evidence will be appended after the exact-head run completes.
 - Next task: obtain independent clinical/security review of PR #258 and preserve authenticated mobile/A4 print acceptance as a separate operational gate.
+
+
+## Live release-gate recheck — 2026-11-16
+
+- Current main: `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`. Full read-only evidence is in [`docs/RELEASE_GATE_RECHECK_2026-11-16.md`](RELEASE_GATE_RECHECK_2026-11-16.md).
+- PR #258 remains Draft on current main. Behavior/test commit `a25680c01ef42f147704cde71daeabb1d226d58b` rejects conflicting non-empty prescription `dose`/`dosage` twins on INSERT and UPDATE with SQLSTATE `23514`. Exact-head CI [#43818933478](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43818933478) passed (20 jobs: 19 success, one intentional clinical/baseline skip); Phase 63 PostgreSQL 17 job `133137266910` passed; CodeQL [#43818926213](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43818926213) passed. No QA/Production migration was applied.
+- Live QA/Production ledgers remain 27/129 rows with 3 colliding version IDs, 24 QA-only and 126 Production-only. QA has Phase 57/57B/58/59/61B; Production does not. Production still has three NULL-to-one quantity fallbacks; both projects still expose `public.atomic_pharmacy_dispense` to authenticated/authenticator. Phase 61C remains Draft PR #250 and has no independent review.
+- Backup runner main `f171732b61fe0460c61a36aa63b861065f9ea9d1`: latest manual run #43764265014 failed at credential preflight and produced no artifact. Prior full run #43183851731 passed isolated PostgreSQL 17 restore/encryption/upload; the off-site Drive ciphertext remains present, but owner-side decryption of that latest archive is unverified.
+- Main remains unprotected. Because CI ignores docs/spec paths and Spec Kit covers only selected paths, do not require the current `CI` context globally until an always-running path-aware aggregate PR gate exists. Issue #253 remains open.
+- **Next:** obtain independent review for PR #250/#258; build the path-aware merge gate; obtain backup credentials for a separately authorized fresh backup/decryption rehearsal. Keep clinical E2E deferred until an isolated free environment and synthetic doctor/pharmacist identities exist.
+- Readiness unchanged: **62% Engineering RC / 15% Operational Acceptance**. Production remains **NO-GO**.

@@ -1,8 +1,8 @@
 # Prescription safety and print reconciliation — 2026-11-15
 
-**Status:** Draft candidate in PR #255  
-**Current main base:** `fe8d770f1bd666d00b1bf1b3385f21e109e50872`  
-**Latest code-bearing candidate commit:** `86134c0df686830db194fa7f29686a90f89f11ca`
+**Status:** Draft candidate rebased onto current main in PR #258; source only, not applied to hosted databases.  
+**Current main base:** `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`  
+**Latest code/test commit:** `a25680c01ef42f147704cde71daeabb1d226d58b` (parent `b97a6f8dc609973e3a02b715bb2eceb4962de05e`; PR #258)
 
 ## 1. Why PR #179 was not merged wholesale
 
@@ -27,7 +27,7 @@ PR #255 is the replacement candidate for the selectively ported functionality. P
 
 The candidate migration `db/roshan_phase63_prescription_item_completeness_guard.sql` adds a private trigger to `public.prescription_items` before inserts and updates to clinical instruction fields. It requires:
 - medication name;
-- dose (accepting the legacy `dosage` twin and normalizing the blank twin);
+- dose (accepting the legacy `dosage` twin and normalizing the blank twin; if both are non-empty, their trimmed values must match or the write is rejected with SQLSTATE `23514`);
 - frequency;
 - duration;
 - dosage form;
@@ -48,21 +48,28 @@ A dedicated PostgreSQL 17 fixture and regression test cover valid writes, missin
 
 ## 5. Exact-head verification
 
-Candidate code head `86134c0df686830db194fa7f29686a90f89f11ca`:
-- 8/8 PR-triggered workflows succeeded;
-- 345/345 main unit/guard tests passed;
-- TypeScript, lint, production build and blocking dependency audits passed;
-- dedicated Phase 63 PostgreSQL 17 guard integration passed;
-- prescription atomicity, privileged-role guard, clinical child-RPC, finance-only RPC, insurance integrity/UI workflows passed;
-- a null patient-branch regression test was added after the source review found that nullable `patients.branch_id` could otherwise pass the print-model guard; and
-- Vercel status passed.
+The current rebased candidate is PR [#258](https://github.com/crauch2088-source/roshan-health-hub/pull/258), based on main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`. The behavior/test commit is `a25680c01ef42f147704cde71daeabb1d226d58b`.
 
-The canonical PG17 baseline replay/authenticated clinical-acceptance job remained intentionally skipped by its workflow gate. No authenticated browser E2E, Android print preview, physical A4 printer test or staff acceptance is claimed.
+- Exact-head CI run [#43818933478](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43818933478): completed successfully; 20 jobs, 19 successful and the canonical baseline/authenticated clinical acceptance job intentionally skipped; zero failures.
+- The dedicated **Phase 63 prescription item completeness guard (PostgreSQL 17)** job `133137266910` passed, including the new conflicting INSERT/UPDATE regression assertions.
+- The same run passed blocking dependency audits, role-guard tests, TypeScript, lint and production build.
+- Exact-head check summary: 32 checks, 31 success and one intentional skip; CodeQL run [#43818926213](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43818926213) passed JavaScript/TypeScript and Python; Vercel Preview Comments passed.
+- The one skipped check is **Canonical PG17 baseline replay and authenticated clinical acceptance**. It remains deferred and is not counted as a pass.
+- PR #258 remains Draft. No independent clinical/security review, authenticated QA/mobile print acceptance, physical A4 printer test or staff acceptance is claimed.
+
+The earlier PR #255 head `86134c0df686830db194fa7f29686a90f89f11ca` is historical; use PR #258 and the exact code commit above for current review.
 
 ## 6. Release boundary
 
-- Phase 63 remains a source candidate in PR #255; it is not applied to hosted QA or Production.
+- Phase 63 remains a source candidate in Draft PR #258; it is not applied to hosted QA or Production.
 - No production migration, merge, deployment promotion, patient/clinical/financial data write or stock mutation was performed.
 - This is application/database completeness validation, not a clinical protocol approval.
 - Any automated dosing engine requires a separate clinician-approved source and validation of age, weight, indication, formulation, route, strength, maximum dose, renal/allergy constraints and explicit prescriber override.
 - Operational release still requires authenticated synthetic role/branch E2E, Arabic RTL/English LTR browser review, mobile print preview, physical A4 printer verification and clinic staff acceptance.
+
+
+## 7. Follow-up review finding — legacy dose twin consistency (2026-11-16)
+
+- A current-main review found that the initial Phase 63 trigger copied a missing dose/dosage twin but accepted conflicting non-empty values. The trigger now rejects mismatches after trimming on INSERT and UPDATE; the PostgreSQL 17 integration test asserts rejection and verifies no persisted side effect.
+- This is a data-consistency guard only. It does not select a dose, convert units, recommend treatment, or activate a medication protocol.
+- Next: independent clinical/security review of PR #258, followed by a separately approved isolated-QA gate. Do not apply Phase 63 to QA/Production before review and documented acceptance.
