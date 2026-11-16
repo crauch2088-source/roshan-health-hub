@@ -318,3 +318,61 @@ Coordinator recheck against the currently open GitHub pull requests. **These are
 3. The coordinator must review every report against current source, exact PR heads, CI, and environment evidence before any PR is merged.
 4. No report PR is a release approval. Keep the Production decision **NO-GO** while the Phase 55 RLS/ACL defect, Phase 63 soft-delete bypass, Phase 61C deployment/security gates, backup verification, and required pharmacist/staff acceptance remain unresolved.
 
+
+
+---
+
+## 5. Long-running autonomous role mandates — effective 2026-11-16
+
+The ten windows are now **standing engineering owners**, not short-task reviewers. The Round 01/02/03/04 notes are historical evidence and handoffs; they do not reduce the mandate below. Each owner continues its domain across rounds until the domain's durable exit criteria are met. A round report is a checkpoint, not the deliverable.
+
+### Shared authority and operating rules
+
+Within its assigned domain, each window is authorized to:
+- Inspect the whole repository and relevant PR/issue history; create or update its own feature branch, tests, SQL fixtures, source, workflow files and documentation.
+- Implement fixes rather than repeatedly recommend them; run focused tests and exact-head CI; diagnose failures; fix and rerun only the affected validation.
+- Open/update successor PRs when an existing branch is stale or structurally unsafe, while preserving provenance and explicitly marking superseded candidates.
+- Coordinate dependencies with other windows through precise PR/issue comments and the shared protocol. Do not wait for owner approval for routine repository edits within the assigned domain.
+- Make ordinary branch/PR metadata changes, request reviews, and publish evidence. Never represent a report-only change as product implementation.
+
+The authority is **broad inside the repository domain**, not permission to bypass safeguards. No window may: expose or copy secrets; use real patient/financial records in tests or external tools; weaken RLS/ACL to make tests pass; rewrite published history; merge its own work as its own independent approval; mark skipped checks as passed; apply hosted Production migrations or write Production business data; promote a deployment; or claim human/device acceptance that did not occur. QA mutations are limited to explicitly approved, rollback-only synthetic verification after source/ledger and recovery gates are established. Any irreversible, clinically consequential, financial, or production action remains gated by exact evidence and the documented release process.
+
+**Delivery standard:** Every meaningful code change includes its regression test and relevant documentation in one logical change. Each owner maintains its own branch and report files. Shared files (MASTER_PLAN.md, AGENTS.md, migration manifest, package manifests, shared workflows, baseline fixtures) are changed only through a coordinated consolidated PR, not competing window commits. Preserve prior reports and add a new round file; do not create report-only PRs when there is substantive implementation that belongs in the same PR.
+
+### Standing roles and exit criteria
+
+#### Window 01 — Clinical workflow, prescription safety and patient-facing documents
+Own the end-to-end clinical authoring and documentation path: consultation → diagnosis → prescription → review/correction → saved record → print/reprint. Maintain completeness, immutable historical prescription content, correct patient/visit/branch binding, status allowlists, Arabic RTL/English LTR output, mobile usability, A4/thermal layout, and safe failure states. Coordinate with Window 03 for medicine identity and Window 09 for correction workflows. Never infer a dose, route, frequency, duration, or pediatric regimen from incomplete data. Exit only after source/PG17 regressions, authenticated role/branch QA, clinical review, and physical output/UAT evidence are recorded.
+
+#### Window 02 — Pharmacy dispensing authorization and transaction security
+Own the pharmacy transaction boundary from UI through public RPC, private implementation, RLS/ACL, stock, FEFO, invoice, payment and audit. Prove least privilege for every role, denied-call no-side-effects, concurrency, idempotency, last-stock races, branch isolation, cancellation and retry behavior. Maintain a forward-only migration chain and replayable PG17 integration suite. Coordinate with Window 10 for shared ACL/RLS architecture and Window 04 for financial ledger invariants. Exit only when all public entry points and nested helpers are proven safe, dependencies reconcile, exact-head CI passes, and authorized QA pharmacist acceptance is documented.
+
+#### Window 03 — Medicine catalogue, identity and medication knowledge integrity
+Own medicine identity and catalogue data quality: ingredient/salt and combinations, brand, strength, dosage form, route, concentration, manufacturer, release type, commercial pack, base dispensing unit and conversion. Prevent duplicate or ambiguous identities, preserve historical prescription/stock meaning when catalogue data changes, and make physical-pack attestation accurately distinguish human review from barcode/manufacturer verification. Build normalization, uniqueness, conversion and history-preservation tests. Coordinate with Window 01 for prescribing UX and Window 02 for dispense/stock semantics. Never fabricate a product identity or dose standard.
+
+#### Window 04 — Finance, billing, receipts and cashbox integrity
+Own the complete financial lifecycle: invoice creation, payment collection, retry/idempotency, receipt issue/reprint, currency provenance, reversals, cashbox ledger, actor attribution, audit and reconciliation. Ensure every money movement is atomic, traceable, branch-bound, currency-consistent and protected from duplicate retries or direct-table writes. Maintain PG17 concurrency and failure-recovery tests. Coordinate with Window 08 on rollout/recovery and Window 02 on pharmacy invoices. Exit only after independent financial/security review, QA cashier role tests and actual receipt/print acceptance.
+
+#### Window 05 — CI/CD, test routing and engineering throughput
+Own CI reliability and cost efficiency: workflow path dependencies, event semantics, required checks, package/runtime configuration, PostgreSQL test orchestration, flaky-test elimination and quota-aware validation. Derive workflow triggers from actual consumed files; ensure skipped workflows cannot silently leave required checks pending; maintain a small number of authoritative broad gates plus focused integration gates. Benchmark the effect of changes on feedback time and Vercel/GitHub quota. Coordinate shared workflow changes with Windows 06 and 08. Exit only when routing contracts are tested against real workflow semantics and branch protection enforces the intended checks.
+
+#### Window 06 — Repository, CI supply-chain and automation security
+Own threat modeling for GitHub Actions, tokens, workflow_run trust boundaries, repository snapshots, artifacts, third-party actions, dependency pinning, secret scanning, prompt-injection containment and artifact access. Implement secure workflows and adversarial tests; do not stop at a review report when a safe fix is feasible. Keep untrusted repository content separated from write-capable credentials and trusted workflow code. Coordinate with Window 05 on CI architecture and Window 08 on release automation. Exit only when threat paths are closed by code and tested against fork/PR/untrusted-event scenarios.
+
+#### Window 07 — Runtime, dependency and platform compatibility
+Own dependency health and runtime compatibility across Node, TypeScript, Vite, React, TanStack, Supabase clients, browser targets and Vercel. Evaluate upgrades as integrated sets, keep lockfiles reproducible, remove vulnerable or incompatible packages when safe, and validate actual preview/runtime behavior rather than version-range assumptions. Maintain accessibility and visual checks for UI-impacting upgrades. Coordinate with Windows 05 and 06 for CI and supply-chain effects. Exit only when supported runtime, install, typecheck, lint, build, preview and critical UI behavior are verified on exact heads.
+
+#### Window 08 — Release engineering, environment provenance and recovery
+Own the release train: mainline reconciliation, migration-ledger parity, schema/function/ACL drift, backup and isolated restore, encryption/decryption verification, branch protection, release checklist and go/no-go evidence. Maintain a dependency graph for every forward migration and prevent blind replay or copying QA migration history into Production. Automate read-only diagnostics and safe rehearsal wherever possible. Coordinate all windows but do not edit their feature code without agreement. Exit only when recovery is proven for the current backup, environments are reconciled, required checks are enforced, and each operational acceptance gate has an owner and evidence.
+
+#### Window 09 — Clinical correction workflows and cross-system invariants
+Own correction/reissue workflows that cross prescriber, pharmacist, laboratory and reception roles. Preserve immutable before/after snapshots, actor/time/reason provenance, responsible-clinician authorization, branch boundaries, concurrency serialization and no-side-effect guarantees across stock, invoices, payments and audit. Expand tests from row-count checks to full persisted-state comparisons with synthetic sentinels. Coordinate with Windows 01, 02 and 04. Exit only when retries, rejection, cancellation, replacement, concurrency and cross-system invariants pass PG17 and authenticated staff UAT.
+
+#### Window 10 — Authorization architecture, RLS/ACL and database privilege integrity
+Own the database authorization model across grants, policies, private helpers, SECURITY DEFINER wrappers, search_path, role synchronization and branch enforcement. Maintain a complete role × operation × table/RPC matrix; prove both positive and negative access paths under real authenticated JWT context. Where policies need private logic, design narrow wrappers with fixed empty search_path and minimal grants; never expose private helpers directly to API roles. Coordinate with Window 02 for pharmacy and Window 06 for automation/service identities. Exit only when the privilege graph is least-privilege, all dependent policies remain executable, and adversarial PG17 tests prove same-branch, cross-branch, inactive-user, null-identity and unauthorized-role outcomes.
+
+### Long-running progress contract
+
+At each continuation, do not ask for a new short task. Read the latest mainline, all domain PRs, reports and test evidence; select the highest-impact unfinished item in the standing role; implement the next coherent slice; test; update the same implementation PR or a justified successor; then append a new isolated round report. Continue until the role's exit criteria are met. If blocked by another domain, make all independent progress possible and publish a specific dependency with the exact file, RPC, migration or test contract needed. Never spend an entire round repeating a previous report.
+
+The coordinator's job is to keep these ten workstreams moving, resolve overlaps, consolidate shared-file changes, independently challenge high-risk findings, and report verified engineering and operational readiness separately.
