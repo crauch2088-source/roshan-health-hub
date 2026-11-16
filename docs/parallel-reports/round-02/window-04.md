@@ -65,17 +65,17 @@
 - Required regression test: UI-to-PostgreSQL lost-response retry returns the same payment UUID and exactly one cashbox entry; altered payload with the same key is rejected; concurrent same-key requests create one payment.
 - Dependency / owner: Finance implementation owner; explicit authorization to change this review-only window's scope; disposable PostgreSQL 17.
 
-### F-02 — Permission gate mismatch remains
+### F-02 — Permission gate mismatch (withdrawn; prior false positive)
 
-- Severity: **Medium**
-- Status: **Verified — current PR head**
+- Severity: **No defect established**
+- Status: **Withdrawn after full route-boundary reinspection**
 - Affected file/function/SQL object: `src/routes/_authenticated/billing_.$invoiceId.tsx`; `get_invoice_payment_receipt_status_v2(uuid[])` in `db/roshan_phase59_receipt_currency_provenance.sql`.
-- Evidence and exact source/commit: UI enables the query with `can("payments.read")`; SQL checks both `payments.read` and `billing.read`.
-- Reproduction or test: Current source comparison; authenticated role matrix not run.
-- Impact: A user with payment-read but without billing-read can enter a fail-closed receipt status error path.
-- Recommended correction: Align the UI gate and intended least-privilege role matrix; preserve server-side authorization.
-- Required regression test: Reception/Admin/accounting/custom-role allow/deny matrix, including cross-branch denial.
-- Dependency / owner: Security and permissions owner.
+- Evidence and exact source/commit: The invoice route wraps `InvoicePageInner` in `<PermissionGate perm="billing.read">`; the receipt-status query is additionally enabled only when `can("payments.read")` is true. The effective UI gate therefore requires both permissions, matching the RPC's server-side requirement for both `payments.read` and `billing.read`.
+- Reproduction or test: Source-boundary reinspection; no authenticated role matrix was run.
+- Impact: The earlier claim that a payments-read-only user could reach the RPC without billing-read was incorrect because the parent route gate prevents that path.
+- Recommended correction: No code change is indicated by this finding. Preserve both server-side checks and the route-level billing gate.
+- Required regression test: Retain a role-matrix test if route or query permission gates are later changed; verify both permissions are required and cross-branch denial remains.
+- Dependency / owner: None for the current implementation; permissions owner if the route contract changes.
 
 ### F-03 — Current-main integration is not ready
 
@@ -152,3 +152,50 @@ No SKIPPED or NOT RUN item is counted as a pass. The workflow evidence is from t
 - Work not completed: No implementation, local test execution, authenticated role test, physical print acceptance, or live QA/Production schema check.
 - Exact current state at close: main `79d81f08...`; PR #181 open Draft at `a49e261b...`, 38 ahead / 5 behind current main, 30 checks passed and one skipped; PR #267 open at `3d8eaed...`, four checks passed.
 - Recommended continuation when the owner says **"أكمل"**: If implementation scope is explicitly authorized, follow the Next action above; otherwise continue read-only review and preserve the scope boundary.
+
+
+## 12. Implementation continuation addendum — 2026-11-16
+
+The owner subsequently authorized the specific scope expansion proposed in chat: implement the UI idempotency-key propagation, prove retry behavior in disposable PostgreSQL 17, and reconcile the feature candidate onto current `main`. This addendum records work after the original review-only snapshot; it does not rewrite the historical findings or authorize deployment/merge.
+
+### Current implementation candidate
+
+- Branch: `fix/window-04-payment-idempotency-20261116`
+- PR: [#280](https://github.com/crauch2088-source/roshan-health-hub/pull/280), open and Draft.
+- Current head at this addendum: `7b91edc8e8b8d392be5b9fb0939056493691145d`.
+- Base: current main `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`.
+- GitHub compare: **2 commits ahead / 0 behind** current main; merge base is the exact main SHA above.
+- PR #181 remains open Draft and was not modified. Its prior candidate branch is not the integration target for this fix.
+- The feature files from #181 were transplanted as a patch onto a new branch based on current main; no history rewrite or force push was used.
+
+### Implemented changes
+
+1. Added `src/lib/finance/payment-idempotency.ts`.
+   - Creates an opaque SHA-256 fingerprint from invoice ID, amount, method and normalized reference.
+   - Stores only the fingerprint-derived key name and UUID value in tab-scoped `sessionStorage`; raw amount/reference are not persisted.
+   - Reuses the same key for the same request after network retries and route reloads.
+   - Generates a different key when payment details change.
+   - Clears the key only after the payment RPC succeeds.
+2. Updated `src/routes/_authenticated/billing_.$invoiceId.tsx` to pass `_idempotency_key` to `post_invoice_payment` and clear the matching key in the success callback only.
+3. Added `tests/payment-idempotency.test.ts` for same-request retry reuse, changed-request key rotation, success cleanup, and absence of plaintext payment fields in storage keys.
+4. Extended `tests/print-receipt-ui.test.ts` to assert the payment UI obtains, submits and success-clears the key.
+5. Extended `db/tests/finance_payment_idempotency_concurrency.sh` to simulate a lost response after commit, retry the same RPC request and assert the same payment UUID is returned; reusing the key with a changed amount must fail; only one payment row may exist.
+6. Added the new unit test to the existing `test:guard` script in `package.json`.
+
+### Test-first evidence
+
+- RED commit: `4416c0bbb85ae9d702da1aab1f37c2ececd1a97c` added the regression test and test command before the implementation module existed.
+- RED exact-head workflow: [run 43857866440](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43857866440); the `Role guard unit tests` step failed at the intended pre-implementation state. The dependent typecheck/build steps were skipped. This establishes a failing pre-fix state; it is not counted as a passing run.
+- GREEN candidate commit: `7b91edc8e8b8d392be5b9fb0939056493691145d`.
+- Disposable PostgreSQL 17 invoice-payment idempotency concurrency: **PASS**, [job 133267895334](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858214905/job/133267895334).
+- PostgreSQL 17 finance RPC-only writes: **PASS**, [job 133267895967](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43858214905/job/133267895967).
+- At the time of this addendum, the exact-head aggregate CI remained in progress; no final full-CI pass is claimed yet. Typecheck and role-guard unit tests had completed successfully; lint/build were still running.
+- The prior exact-head #181 concurrency pass remains historical evidence; the new expanded retry/mismatch assertions were executed on PR #280's disposable PostgreSQL 17 workflow.
+
+### Reassessment and remaining gates
+
+- The previous F-02 permission mismatch is withdrawn: route-level `billing.read` plus query-level `payments.read` matches the RPC's dual permission check.
+- The stale-base condition on PR #181 is mitigated for this implementation candidate: PR #280 is based directly on current main. PR #181 remains Draft and should not be merged independently over the new candidate.
+- No hosted QA/Production writes, migrations, payment rows, ledger rows, deployment promotion, approval, or merge were performed.
+- Remaining release blockers include full exact-head CI completion, independent finance/security review, QA authenticated cashier/role acceptance, Phase 58/59 Production migration rollout under the release gates, and physical Android/RTL/LTR/A4/thermal-printer acceptance.
+- Next action: wait for all exact-head PR #280 checks to complete; fix any failures before requesting independent review. Keep #280 Draft and #181 Draft until the review and operational gates are satisfied.
