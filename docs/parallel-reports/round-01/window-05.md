@@ -170,5 +170,5 @@ It does **not** derive actual consumed files from workflow shell commands, TypeS
 - **Round:** 01
 - **Report path:** `docs/parallel-reports/round-01/window-05.md`
 - **Report branch:** `docs/window-05-ci-routing-review-round-01`
-- **Report commit:** To be populated after publication.
-- **Documentation PR:** To be populated after creation.
+- **Initial report commit:** `d6e88a3f2811e9dd5878e85da773029de57d2fb8`.
+- **Documentation PR:** [#265](https://github.com/crauch2088-source/roshan-health-hub/pull/265).
