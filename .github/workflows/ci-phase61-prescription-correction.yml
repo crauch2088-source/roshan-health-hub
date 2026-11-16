@@ -10,6 +10,8 @@ on:
       - "db/tests/phase61_prescription_correction_integration.sql"
       - "db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql"
       - "db/roshan_phase46_uat_schema_compatibility.sql"
+      - "db/roshan_phase57_pharmacy_quantity_required_guard.sql"
+      - "db/roshan_phase57b_free_text_external_prescription_guard.sql"
       - "tests/phase61-prescription-correction-contract.test.mjs"
       - "tests/phase61-prescription-correction-ui.test.mjs"
   workflow_dispatch:
@@ -51,12 +53,14 @@ jobs:
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
             -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
-            -f db/roshan_phase46_uat_schema_compatibility.sql
+            -f db/roshan_phase46_uat_schema_compatibility.sql \
+            -f db/roshan_phase57_pharmacy_quantity_required_guard.sql \
+            -f db/roshan_phase57b_free_text_external_prescription_guard.sql
       - name: Seed synthetic roles, branches, users and prescriptions
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_fixture.sql
-      - name: Apply Phase 61 and run PostgreSQL 17 behavior assertions
+      - name: Apply Phase 57/57B dispense guards, then Phase 61 and run PostgreSQL 17 behavior assertions
         env:
           PGPASSWORD: postgres
         run: |
