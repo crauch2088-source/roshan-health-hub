@@ -208,7 +208,7 @@ The owner subsequently authorized the specific scope expansion proposed in chat:
 ### Final exact-head verification update — 2026-11-16
 
 - Final PR #280 head: `1c7aff22417897660c0ddc69914ca827d9ddebb6`.
-- PR #280: open, Draft, mergeable according to GitHub; 16 changed files; based on `main` `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; comparison is 3 commits ahead / 0 behind.
+- PR #280: open, Draft, mergeable according to GitHub; 16 changed files; based on `main` `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`; comparison is 4 commits ahead / 0 behind.
 - Exact-head check runs: **31 total; 30 success, 1 skipped, 0 failed, 0 pending**. The skipped canonical PG17 baseline replay/authenticated clinical acceptance is deferred by workflow configuration and is not counted as a pass.
 - The full Install/audit/typecheck/lint/build job passed, including role guard tests, typecheck, lint and production build.
 - PostgreSQL 17 invoice-payment idempotency concurrency and finance RPC-only write-isolation workflows passed on the final head.
