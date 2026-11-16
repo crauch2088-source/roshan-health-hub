@@ -111,13 +111,14 @@ No SKIPPED or NOT RUN item is counted as a pass. The workflow evidence is from t
 
 | Path | Change | Commit SHA |
 |---|---|---|
-| `docs/parallel-reports/round-02/window-04.md` | Current-state revalidation report only | To be filled in delivery follow-up |
+| `docs/parallel-reports/round-02/window-04.md` | Current-state revalidation report only | `6fc56800f0334a2f98ec127b7f1d64b787105dc0` (initial report commit) |
 
 - Branch: `docs/window-04-financial-receipt-review-round-02`
 - Task branch: `feat/phase53-payment-receipts-qa-20261103` (not modified)
 - Task PR: [#181](https://github.com/crauch2088-source/roshan-health-hub/pull/181) (not modified)
 - Prior report PR: [#267](https://github.com/crauch2088-source/roshan-health-hub/pull/267) (not modified)
 - Report file path: `docs/parallel-reports/round-02/window-04.md`
+- Initial report commit: `6fc56800f0334a2f98ec127b7f1d64b787105dc0`.
 - Delivery: Separate docs-only PR because this round remained review-only and the original task scope prohibited implementation.
 
 ## 8. Safety and actions not performed
