@@ -332,3 +332,34 @@ The protocol's Round 01 handoff suggests duplicate identity policy and regressio
 ### Updated next action
 
 **Window 03 / owner:** retain PR #210 as Draft / CHANGES REQUIRED; request an independently authored SQL/security review and ask the owner to authorize a separate implementation scope if fixes are desired. Within the current review-only task, no further source mutation is permitted. The next verification deliverable is the owner's decision on the canonical medicine identity dimensions and whether historical prescription snapshots are the authoritative display source.
+
+---
+
+## Continuation addendum 3 — 2026-11-16 (latest PR discussion and operational evidence)
+
+### Latest repository state
+
+- PR #210 remains open Draft, head e53216a826474e3ae865ab9faeeab99926e0614f, base main SHA f8c8b2d1767643561599764405b4cdbfd4db2c79, GitHub mergeable=true. The branch is still 81 commits ahead / 5 behind current main. Mergeable=true is GitHub's mergeability calculation, not an approval to merge.
+- PR #263 remains open Draft, head 51207783355d48076c062f43e26317eb88b3e9ce, now GitHub mergeable=true. It is 6 commits ahead / 0 behind main and contains exactly one file, the Window 03 report. The previous mergeable=false response was transient; latest response is true.
+- PR #263's Vercel check is success. It is documentation-only; this is not an application deployment or production promotion.
+- PR #261 (continuation protocol) remains open Draft and unmerged. The protocol and template remain available on its branch, not on main.
+
+### Newly recorded operational evidence from PR #210 discussion
+
+- A read-only Production catalogue query reported 9 medicine rows, with all 9 missing at least one of brand_name, strength, or dosage_form. QA reported 0 medicine rows at the time of that check.
+- This demonstrates an operational data-completeness problem relevant to the identity editor, but it does not establish any physical product's actual formulation, route, concentration, manufacturer, or pack size.
+- No backfill or catalogue correction is authorized by that evidence. Do not infer missing medicine attributes from names, stock units, or common formulations.
+- The PR discussion also records a prior rollback-only QA smoke in which direct authenticated updates to medicines.selling_price were permitted for pharmacist and Admin under the broad pharmacy.update policy; the synthetic transaction was rolled back and no synthetic records remained. The same discussion reports that the stock_quantity trigger rejected direct stock changes. Phase 60's column-level UPDATE restriction addresses the demonstrated broad price-field exposure while preserving the existing stock guard.
+- These are statements in the PR discussion/owner execution notes, not independently reproduced by this reviewer in the current continuation. Label them as reported evidence, not as fresh tests run in this session.
+
+### Review independence and attestation wording
+
+- PR #210's visible discussion contains owner-authored implementation notes and self-described independent-review findings, but the GitHub review state still has one owner-authored COMMENTED review and zero inline threads. No separately attributable second-person SQL/security approval has been verified.
+- The pack attestation remains an immutable actor/time/identity snapshot of the saved database identity. It is not proof that the physical package was correctly identified; the owner discussion itself says the current Production catalogue has incomplete identity fields and that missing attributes must not be guessed.
+- Keep the release gate explicit: actual pharmacist inspection/acceptance of physical packs in authenticated QA is still required. Do not substitute passing CI or a successful Vercel preview for that acceptance.
+
+### Updated disposition
+
+- **PR #210:** retain Draft / CHANGES REQUIRED pending independently attributable SQL/security review, source/ledger reconciliation, and authenticated pharmacist acceptance. The reported 9/9 incomplete Production catalogue rows should be handled as a controlled, source-verified catalogue remediation task; no bulk inference or write was performed.
+- **PR #263:** documentation PR remains safe to review as a one-file report change. Do not merge it automatically; owner controls merge authorization.
+- No implementation files, tests, hosted database, permissions, catalogue rows, deployments, or role mappings were changed in this continuation.
