@@ -13,6 +13,8 @@ const contracts = [
       "db/tests/insurance_coverage_validity.sql",
       "db/tests/roshan_insurance_claim_amount_integrity_test.sql",
     ],
+    pushBranch: "fix/insurance-claim-amount-integrity",
+    workflowDispatch: false,
   },
   {
     workflow: ".github/workflows/ci-prescription-atomicity.yml",
@@ -21,7 +23,12 @@ const contracts = [
       "db/tests/prescription_rpc_fixture.sql",
       "db/tests/prescription_rpc_integration.sql",
       "tests/prescription-atomicity.test.ts",
+      "src/lib/prescription-draft.ts",
+      "src/features/clinic/consultation/components/PrescriptionTab.tsx",
+      "package.json",
     ],
+    pushBranch: "fix/prescription-atomicity",
+    workflowDispatch: false,
   },
   {
     workflow: ".github/workflows/ci-privileged-role-guard.yml",
@@ -30,7 +37,10 @@ const contracts = [
       "db/tests/privileged_role_guard_fixture.sql",
       "db/tests/privileged_role_guard_integration.sql",
       "tests/privileged-role-guard-sql.test.ts",
+      "package.json",
     ],
+    pushBranch: "test/privileged-role-guard-integration",
+    workflowDispatch: false,
   },
   {
     workflow: ".github/workflows/ci-insurance-claim-validation.yml",
@@ -40,26 +50,49 @@ const contracts = [
       "package.json",
       "package-lock.json",
     ],
+    pushBranch: "fix/insurance-claim-invoice-link",
+    workflowDispatch: true,
   },
 ];
 
 for (const contract of contracts) {
-  test(`${contract.workflow} runs only for its own regression inputs`, () => {
+  test(contract.workflow + " routes every consumed input and preserves event semantics", () => {
     const workflow = readFileSync(contract.workflow, "utf8");
     const pullRequestStart = workflow.indexOf("  pull_request:");
-    const pushStart = workflow.indexOf("\n  push:", pullRequestStart);
     assert.notEqual(pullRequestStart, -1, "pull_request trigger must exist");
-    assert.notEqual(pushStart, -1, "branch-specific push trigger must remain");
-    const pullRequest = workflow.slice(pullRequestStart, pushStart);
-
+    const nextEvent = workflow.slice(pullRequestStart + 1).search(/\n  [a-z_]+:/);
+    assert.notEqual(nextEvent, -1, "next top-level event must exist");
+    const pullRequest = workflow.slice(pullRequestStart, pullRequestStart + 1 + nextEvent);
     assert.match(pullRequest, /paths:/);
     for (const path of contract.required) {
-      assert.ok(pullRequest.includes(path), `missing scoped path: ${path}`);
+      assert.ok(pullRequest.includes(path), "missing scoped path: " + path);
     }
-    assert.ok(
-      pullRequest.includes(contract.workflow),
-      "workflow changes must validate their own routing",
-    );
+    assert.ok(pullRequest.includes(contract.workflow), "workflow must trigger its own validation");
     assert.doesNotMatch(pullRequest, /['"](?:db|tests)\/\*\*['"]/);
+
+    const expectedPush = "  push:\n    branches:\n      - '" + contract.pushBranch + "'";
+    assert.ok(workflow.includes(expectedPush), "push branch changed: " + contract.pushBranch);
+    assert.equal(
+      workflow.includes("  workflow_dispatch:"),
+      contract.workflowDispatch,
+      "workflow_dispatch behavior changed",
+    );
   });
 }
+
+test("Node TypeScript test workflows are triggered when package module metadata changes", () => {
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+  assert.equal(packageJson.type, "module");
+  for (const path of [
+    ".github/workflows/ci-prescription-atomicity.yml",
+    ".github/workflows/ci-privileged-role-guard.yml",
+  ]) {
+    const workflow = readFileSync(path, "utf8");
+    const pullRequestStart = workflow.indexOf("  pull_request:");
+    const pushStart = workflow.indexOf("\n  push:", pullRequestStart);
+    assert.ok(
+      workflow.slice(pullRequestStart, pushStart).includes("package.json"),
+      path + " must rerun when package.json changes",
+    );
+  }
+});
