@@ -103,7 +103,7 @@
 - Current pre-report branch head: `8ea73ec12533e25a572ee23b4b670fbbfea5aaf9`
 - PR: [#269 — retain Draft](https://github.com/crauch2088-source/roshan-health-hub/pull/269)
 - Report file path: `docs/parallel-reports/round-04/window-09.md`
-- Report commit SHA: recorded by the report creation commit; a follow-up metadata refresh may update this line if needed.
+- Report creation commit SHA: `8f35ab70b6eb0429560ca8b7d5f1132cd8cff5dd` (this report's initial creation). The final metadata-refresh commit is the current branch head recorded in the PR/branch history.
 - Delivery: same task branch and existing PR #269; no duplicate PR.
 - No code change was appropriate because the code-bearing commit remains green, the current delta is documentation-only, and all remaining release gates require independent human review or clinical staff acceptance. Additional code churn would not resolve those gates.
 
