@@ -152,13 +152,13 @@ Important implementation observations:
 
 | Path | Change | Commit SHA |
 |---|---|---|
-| `docs/parallel-reports/round-01/window-03.md` | This isolated review report; no application code changed | To be filled after report commit |
+| `docs/parallel-reports/round-01/window-03.md` | This isolated review report; no application code changed | `de495bd1ad3fa5ab6fdf95bdfaf626bbbeb7eca9` |
 
 - Branch: `docs/window-03-round-01-report-20261116`
-- Commit(s): 5451ed33f3f1979be3c32b4206c729f6e2ff20d7
-- PR: Documentation-only report PR; to be filled after creation.
+- Commit(s): `5451ed33f3f1979be3c32b4206c729f6e2ff20d7` (initial report creation), `de495bd1ad3fa5ab6fdf95bdfaf626bbbeb7eca9` (metadata update)
+- PR: [#263 — Window 03 Round 01 medicine catalogue report](https://github.com/crauch2088-source/roshan-health-hub/pull/263)
 - Report file path: `docs/parallel-reports/round-01/window-03.md`
-- Report commit SHA: 5451ed33f3f1979be3c32b4206c729f6e2ff20d7
+- Report commit SHA: `de495bd1ad3fa5ab6fdf95bdfaf626bbbeb7eca9` (latest report commit)
 - Was the report committed with the implementation or through a separate docs-only PR? **Separate docs-only PR**, because the original task is review-only and PR #210 was not modified.
 
 ## 8. Safety and actions not performed
