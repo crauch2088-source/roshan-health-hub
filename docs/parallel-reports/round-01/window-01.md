@@ -153,3 +153,28 @@ Window 01 / coordinator: obtain independent clinical/security review and complet
 - CI run #43853928921 completed successfully. The dedicated Phase 63 PostgreSQL 17 job `133253285611` passed. The canonical baseline/authenticated clinical acceptance job `133253287590` was intentionally skipped and is not counted as acceptance.
 - The prior inline review thread for F-01 (`4584207030`) was resolved after verifying the exact-head correction and regression.
 - PR #258 remains open and Draft; no merge, deployment, QA/Production migration, or physical print acceptance occurred.
+
+
+---
+
+## Coordinator implementation addendum — 2026-11-16
+
+### F-02 — Patient-facing prescription instructions were mutable during soft deletion
+
+- Severity: **High**
+- Status: **Corrected on candidate branch; exact-head PG17 regression passed**
+- Evidence: Window 08 Round 04 identified that Phase 63's active-to-soft-deleted row comparison and trigger UPDATE OF list omitted the persisted patient-facing `instructions` field.
+- Implementation commit: `5465916ae3731ac1259070bf0ca672320075de58`.
+- Changed files:
+  - `db/roshan_phase63_prescription_item_completeness_guard.sql`: include `instructions` in OLD/NEW immutable payload comparison and trigger UPDATE OF list.
+  - `db/tests/phase63_prescription_item_completeness_integration.sql`: assert that changing instructions in the same UPDATE as deleted_at raises check_violation and leaves the active row and original instructions unchanged.
+- Exact-head CI: run [43865245313](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43865245313); dedicated Phase 63 PostgreSQL 17 job **PASS**. Install/audit/typecheck/lint/build and all other returned jobs **PASS**. Canonical baseline/authenticated clinical acceptance **SKIPPED intentionally**; not counted as acceptance.
+- No QA/Production migration, hosted ACL change, business-data write, merge, or deployment occurred.
+
+### Current disposition
+
+PR #258 remains Draft/HOLD. The focused Phase 63 invariants now protect medication identity, dose fields, frequency, duration, quantity, dosage form, route and patient-facing instructions during active-to-soft-deleted transition. Independent clinical/security review, authenticated role/branch QA, Arabic RTL/English LTR browser checks, Android/A4/thermal print acceptance and staff UAT remain open.
+
+### Next sustained work
+
+Continue ownership of the complete clinical authoring → prescription → correction → saved-record → print/reprint workflow under Section 5, Window 01 of the continuation protocol. Prioritize authenticated QA and real output acceptance after exact-head review; do not create another report-only round while implementation or validation work remains.
