@@ -112,10 +112,10 @@ NOT RUN is not counted as PASS.
 
 | Path | Change | Commit |
 |---|---|---|
-| `docs/parallel-reports/round-03/window-07.md` | New isolated round-03 review report | To be finalized |
+| `docs/parallel-reports/round-03/window-07.md` | New isolated round-03 review report | `b2fa1fcb83fc34124cdd72d48045764dba156501` (creation commit) |
 
 - Branch: `docs/window-07-dependency-review-round-03-20261116`
-- Delivery: Separate documentation-only PR because this task is review-only.
+- Delivery: Separate documentation-only PR because this task is review-only; PR number and final head SHA are supplied with the delivery confirmation.
 - No application, package, lockfile, or workflow files changed.
 
 ## 8. Safety and actions not performed
