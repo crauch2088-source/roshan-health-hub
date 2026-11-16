@@ -290,3 +290,31 @@ Use the template at `docs/parallel-reports/TEMPLATE.md`. At minimum every report
 ### Add this instruction to every window's one-time bootstrap
 
 > **Report delivery is mandatory:** publish your work in your own isolated file under `docs/parallel-reports/round-01/window-XX.md` (replace XX with your window number). Use `docs/parallel-reports/TEMPLATE.md`. Do not edit another window's report or write the combined report. Commit the report with your task PR, or create a separate docs-only report PR if your window is review-only. Include the exact report path and commit/PR link in your chat response. For each later round, create a new round-NN file and preserve all previous reports.
+
+
+---
+
+## 7. Round 01 report delivery audit — 2026-11-16
+
+Coordinator recheck against the currently open GitHub pull requests. **These are candidate artifacts on PR branches, not files merged into `main`.** A PR existing does not mean its report is accepted.
+
+| Window | Report delivery evidence | Status |
+|---|---|---|
+| 01 | PR #258 contains the prescription implementation and supporting docs, but its changed-file list has no `docs/parallel-reports/round-01/window-01.md`. | **MISSING** — publish the isolated report; do not substitute implementation docs. |
+| 02 | PR #262 adds `docs/parallel-reports/round-01/window-02-phase-61c-security-review.md`. | **PATH NON-COMPLIANT** — preserve the existing file and add/correct the canonical `window-02.md` path using the template. |
+| 03 | PR #263 adds `docs/parallel-reports/round-01/window-03.md`. | **DELIVERED ON PR** — review pending. |
+| 04 | PR #267 adds `docs/parallel-reports/round-01/window-04.md`. | **DELIVERED ON PR** — review pending. |
+| 05 | PR #265 adds `docs/parallel-reports/round-01/window-05.md`. | **DELIVERED ON PR** — review pending. |
+| 06 | PR #264 adds `docs/parallel-reports/round-01/window-06.md`. | **DELIVERED ON PR** — review pending. |
+| 07 | PR #268 adds `docs/parallel-reports/round-01/window-07.md`. | **DELIVERED ON PR** — review pending. |
+| 08 | PR #266 adds `docs/parallel-reports/round-01/window-08.md`. | **DELIVERED ON PR** — review pending. |
+| 09 | PR #269 adds `docs/parallel-reports/round-01/window-09.md` alongside its test-hardening change. | **DELIVERED ON PR** — independent review comment recorded; PR remains Draft pending human UAT. |
+| 10 | PR #260 currently changes only `db/tests/phase55_clinical_parent_guard_assertions.sql`; no isolated report is present in its changed-file list. | **MISSING** — publish the isolated report; keep the failing regression visible and do not weaken the ACL to make it green. |
+
+### Coordinator next actions
+
+1. Windows 01 and 10 must publish their missing reports to their exact reserved paths.
+2. Window 02 must add the canonical `window-02.md` report path without deleting its already-published detailed file.
+3. The coordinator must review every report against current source, exact PR heads, CI, and environment evidence before any PR is merged.
+4. No report PR is a release approval. Keep the Production decision **NO-GO** while the Phase 55 RLS/ACL defect, Phase 63 soft-delete bypass, Phase 61C deployment/security gates, backup verification, and required pharmacist/staff acceptance remain unresolved.
+
