@@ -170,17 +170,6 @@ BEGIN
     RAISE EXCEPTION 'rejected soft-delete mutation changed the active prescription payload';
   END IF;
 
-  -- Soft deletion without clinical-field mutation remains allowed.
-  UPDATE public.prescription_items SET deleted_at=now()
-  WHERE id='63000000-0000-0000-0000-000000000001';
-  IF NOT EXISTS (
-    SELECT 1 FROM public.prescription_items
-    WHERE id='63000000-0000-0000-0000-000000000001'
-      AND deleted_at IS NOT NULL AND dose='500 mg' AND dosage='500 mg'
-  ) THEN
-    RAISE EXCEPTION 'soft deletion without clinical mutation was not preserved';
-  END IF;
-
   -- Legacy soft-deleted rows remain untouched; ordinary non-clinical updates
   -- do not revalidate them.
   INSERT INTO public.prescription_items(id,prescription_id,medication_name,quantity,deleted_at)
@@ -192,6 +181,18 @@ BEGIN
     UPDATE public.prescription_items SET route='' WHERE id='63000000-0000-0000-0000-000000000001';
   EXCEPTION WHEN check_violation THEN v_rejected := true; END;
   IF NOT v_rejected THEN RAISE EXCEPTION 'clinical-field update to blank route was accepted'; END IF;
+
+  -- Soft deletion without clinical-field mutation remains allowed.
+  UPDATE public.prescription_items SET deleted_at=now()
+  WHERE id='63000000-0000-0000-0000-000000000001';
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+    WHERE id='63000000-0000-0000-0000-000000000001'
+      AND deleted_at IS NOT NULL AND dose='500 mg' AND dosage='500 mg'
+  ) THEN
+    RAISE EXCEPTION 'soft deletion without clinical mutation was not preserved';
+  END IF;
+
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_trigger
