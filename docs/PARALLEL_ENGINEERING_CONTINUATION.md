@@ -245,3 +245,48 @@ At the end of every ten-window round, append a new dated subsection using this s
 - **No-change declaration:** explicitly list any environment, migration, ACL, deployment, or business-data actions not performed.
 
 **Round closeout is not a merge/release authorization.** The owner/coordinator must reconcile conflicting reports and current mainline evidence before authorizing the next action.
+
+
+## 6. Mandatory isolated report delivery — one file per window
+
+**Every window must publish its report as a separate Markdown file in the repository.** A report written only in chat is not a delivered round artifact. Do not put ten windows' reports into one shared file, and do not edit another window's report.
+
+### Round 01 report destinations
+
+Each window owns exactly one path:
+
+| Window | Required report file |
+|---|---|
+| 01 | `docs/parallel-reports/round-01/window-01.md` |
+| 02 | `docs/parallel-reports/round-01/window-02.md` |
+| 03 | `docs/parallel-reports/round-01/window-03.md` |
+| 04 | `docs/parallel-reports/round-01/window-04.md` |
+| 05 | `docs/parallel-reports/round-01/window-05.md` |
+| 06 | `docs/parallel-reports/round-01/window-06.md` |
+| 07 | `docs/parallel-reports/round-01/window-07.md` |
+| 08 | `docs/parallel-reports/round-01/window-08.md` |
+| 09 | `docs/parallel-reports/round-01/window-09.md` |
+| 10 | `docs/parallel-reports/round-01/window-10.md` |
+
+For later rounds, use the same convention: `docs/parallel-reports/round-NN/window-NN.md`, where the final number is the window number (01–10). Never overwrite a prior round's report. Create a new round directory/file.
+
+### Report delivery rules
+
+1. At the end of each meaningful work session, update **only your own report file** with incremental evidence. At the end of the round, ensure it is a complete final report.
+2. Commit the report on the same task branch/PR as the work it documents where possible. For review-only windows, use a dedicated docs-only report branch/PR if there is no safe existing task branch. Do not push report commits to `main` directly.
+3. Keep report changes isolated: one window's report file per commit is preferred; never combine another window's report or modify the shared continuation protocol without coordinator approval.
+4. Report source facts with exact repository paths, commit SHAs, PR/Issue numbers, workflow run IDs/links, and test commands/results. Mark every item **verified**, **reported but not rechecked**, **not run**, or **blocked**.
+5. Include findings with severity, reproduction/evidence, impact, proposed fix, test required, and owner/dependency. Separate defects in current main, candidate-branch defects, and environment-only risks.
+6. State explicitly whether code/tests were changed, whether a branch/commit/PR was created, and whether any hosted QA/Production, migration, ACL, deployment, or business data was touched. Default is no hosted changes.
+7. Do not paste credentials, tokens, private patient information, real clinical records, or financial identifiers into reports. Synthetic test data only.
+8. A report file is evidence and handoff, not approval. Do not mark a PR approved, an issue closed, a migration applied, or a release gate passed unless the corresponding action/evidence exists.
+9. In the chat response, provide the report file path and GitHub link, the exact commit/PR containing it, a short summary, and the next action. If the file could not be committed, say so plainly and provide the complete report in chat without pretending repository delivery occurred.
+10. The coordinator reviews the ten isolated files, resolves contradictions against current mainline/source evidence, and then writes the consolidated round closeout in §5 or a separate coordinator-owned round summary. Individual windows must not edit that summary.
+
+### Required report structure
+
+Use the template at `docs/parallel-reports/TEMPLATE.md`. At minimum every report must contain: window identity and original task; round/baseline; scope and exclusions; current verified repository state; work actually performed; findings ranked by severity; tests with exact pass/fail/skip/not-run status; changed files and exact commit/PR; risks/dependencies; actions explicitly not performed; verdict; and one concrete next action.
+
+### Add this instruction to every window's one-time bootstrap
+
+> **Report delivery is mandatory:** publish your work in your own isolated file under `docs/parallel-reports/round-01/window-XX.md` (replace XX with your window number). Use `docs/parallel-reports/TEMPLATE.md`. Do not edit another window's report or write the combined report. Commit the report with your task PR, or create a separate docs-only report PR if your window is review-only. Include the exact report path and commit/PR link in your chat response. For each later round, create a new round-NN file and preserve all previous reports.
