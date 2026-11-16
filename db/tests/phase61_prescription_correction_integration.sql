@@ -182,7 +182,7 @@ BEGIN
     COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.cashbox_transactions AS t), '[]'::jsonb)
   INTO v_after;
   IF v_after IS DISTINCT FROM v_before THEN
-    RAISE EXCEPTION 'correction workflow mutated persisted stock or financial rows'
+    RAISE EXCEPTION 'correction workflow changed inventory, stock movement or financial tables'
       USING DETAIL = format('before=%s; after=%s', to_jsonb(v_before), to_jsonb(v_after));
   END IF;
 END;
