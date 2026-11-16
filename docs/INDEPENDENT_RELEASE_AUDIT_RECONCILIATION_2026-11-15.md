@@ -163,8 +163,61 @@ Priority order for the next engineering pass:
 **Decision:** Roshan remains **NOT READY for real-world clinical use** until the critical stock-authority, pharmacist-only dispensing, Production ACL, migration/backup, and human acceptance gates are closed with exact evidence. Gemini's numerical overall score (23/100) is its own scoring output; this reconciliation does not validate that number or adopt it as a measured project percentage.
 
 
+## 8. Execution-round evidence update — 2026-11-15 (late session)
 
-## 8. Post-audit follow-up correction — 2026-11-15
+This section records new execution evidence gathered after the independent reconciliation above. It does not supersede the human-review, hosted migration, backup, or operational-acceptance gates.
+
+### Exact-head candidate status
+
+| Candidate | Exact head | PR-triggered workflows | Verified outcome | Remaining gate |
+|---|---|---:|---|---|
+| #250 Phase 61C pharmacist-only atomic dispense | `c43c0258eb80760191b1b523128ddcb2c7537344` | 11 | 10 success; one intentional canonical-PG17/authenticated-clinical-acceptance skip; zero failures/pending. CI [43766968433](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43766968433) and Phase 61/61B/61C PG17 [43766968360](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/43766968360) passed. | Independent second-person SQL/security review; hosted QA migration and authenticated branch/role acceptance. Not merged or applied. |
+| #210 medicine catalogue identity / column-update boundary | `e53216a826474e3ae865ab9faeeab99926e0614f` | 7 | All 7 completed successfully, including CI, typecheck/lint/build and PostgreSQL role/finance/clinical integration. | Independent review; prove the exact identity-column grant behavior under authenticated sessions; not merged or applied. |
+| #181 saved invoice-payment receipt | `a49e261b0661239c1e0a18f5734453010499f71c` | 8 | All 8 completed successfully. | Production still lacks Phase 58/59 currency columns and receipt-integrity RPC; financial review, QA cashier/branch E2E, Android/A4/thermal-printer acceptance. |
+| #255 saved-prescription print mainline replacement | `3cf8a3e3b626222ca401f6258a0104ec14af9f60` | 8 | All 8 completed successfully, including CI, typecheck/lint/build and PostgreSQL integration. | Independent clinical/security review, authenticated QA E2E, Android print preview and physical printer acceptance. PR #179 remains untouched and diverged/non-mergeable. |
+
+All four candidates remain Draft. No PR was merged and no deployment was promoted.
+
+### QA-only synthetic authorization and stock smoke
+
+- A rollback-only authenticated QA transaction used synthetic doctor, pharmacist, Admin and Super Admin identities to probe the current RPC role gates. The legacy invoice-linked dispense RPC denied doctor/Admin/Super Admin and allowed the pharmacist to reach the argument-validation guard. The current `atomic_pharmacy_dispense` denied doctor but allowed Admin and Super Admin to reach the NULL-argument guard. No dispense occurred and no idempotency, stock, invoice, payment, or prescription mutation was made. The transaction was rolled back; follow-up reads confirmed no synthetic Auth/application users remained.
+- A second rollback-only QA transaction used synthetic pharmacist/Admin identities and a synthetic medicine row. The existing database trigger rejected direct `stock_quantity` updates for both roles with `medicine_stock_is_rpc_managed`; direct `selling_price` updates were still permitted for both. The transaction was rolled back; follow-up reads confirmed zero synthetic Auth users, application users, and medicine rows remained. This distinguishes the existing stock trigger from the broader table-update/price exposure addressed by PR #210.
+- These were database role-gate and DML smoke tests, not end-to-end clinic workflows and not a replacement for authenticated browser sessions.
+
+### Phase 55 helper ACL dependency finding
+
+A fresh read-only catalog comparison of Production and QA established:
+
+- Production `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` retain default function ACLs (effective PUBLIC EXECUTE); QA has explicit owner-only ACLs for both.
+- The `private` schema itself has USAGE for `authenticated` only in both environments; anon, service_role and authenticator lack schema USAGE.
+- `private.app_has_claim_branch(uuid)` is referenced directly by four RLS policies on `insurance_claim_items` and `insurance_claim_payments` (SELECT and INSERT checks). Therefore a blanket revoke of authenticated EXECUTE is unsafe unless those policies are first moved behind an authenticated-callable, branch-safe wrapper or equivalent contract. QA's owner-only function ACL must not be assumed healthy until an authenticated session exercises those policies against representative rows.
+- `private.sync_user_role_text()` is attached as the enabled `trg_sync_user_role_text` trigger on `public.users`; it is not a policy helper. Its API-role EXECUTE grants can be considered separately, but a disposable PG17 test must prove the trigger still synchronizes role text after ACL tightening.
+- No Phase 55 migration was applied during this round. Issue #218 remains open pending call-site review, RLS regression tests, source/migration reconciliation, encrypted backup/restore, and independent review.
+
+### Migration and backup gate
+
+- The latest read-only ledgers remain materially divergent: Production latest `20261102232941`; QA latest `20261113232719`. QA has Phases 57, 57B, 58, 59 and 61B; Production does not. Phase 61C is a Draft candidate and is not applied to either hosted project.
+- A fresh manual encrypted Production backup was attempted through backup-runner workflow [43764265014](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43764265014). Preflight failed because neither `SUPABASE_DB_ACCESS_TOKEN` nor `SUPABASE_DB_PASSWORD` is configured as an Actions secret; the backup job was skipped. No new backup artifact or restore rehearsal was produced. Do not paste either secret into chat; configure exactly one in the backup-runner repository's Actions secrets, then rerun the approved workflow.
+- Consequently no Production migration, ACL change, grant, RLS change, or schema rollout was attempted. Phase 57/57B/58/59/61/61B catch-up remains blocked by the backup/recovery and migration-reconciliation gates.
+
+### Clinical validator scope correction
+
+- No Phase 63 migration/RPC/source artifact was located in the reviewed main repository. The current main prescription path uses completeness validation; it does not implement a verified Phase 63 server-side validator.
+- Missing pediatric weight currently produces a warning, not a hard save block. Do not invent a clinical hard-stop, dose rule, or automatic dosing behavior to satisfy an uncorroborated Phase label. Any pediatric weight-required workflow must be specified and approved by the clinical owner, then enforced consistently in both UI and authoritative server path with regression coverage.
+- No medication dose automation was added.
+
+### Round outcome and safety boundary
+
+- Completed as candidate engineering with exact-head green evidence: #210, #181, #255, and #250 (with one intentional skip).
+- Completed as QA-only read-only/rollback smoke: dispense role gates and medicine direct-update behavior. Full authenticated E2E remains outstanding.
+- Blocked by missing backup-runner secret: fresh encrypted backup and isolated restore rehearsal.
+- Deferred for security design/review: Phase 55 helper ACL reconciliation, because policy call-sites require an explicit authenticated execution path.
+- Deferred for clinical governance: any Phase 63 or pediatric hard-stop implementation, because no authoritative source/spec was established.
+- No hosted Production/QA DDL/DML, no real or synthetic patient/clinical/financial transaction, no merge, no deployment promotion, no paid service, and no quota bypass occurred in this late execution round.
+
+**Readiness scores are unchanged:** Engineering Release Candidate 62%; Operational Acceptance 15%. Candidate branches and passing CI do not count as mainline release or clinic acceptance.
+
+## 9. Post-audit follow-up correction — 2026-11-15
 
 The initial F-01 statement that authenticated direct `medicines.stock_quantity` updates remain possible is corrected by a later catalog/trigger inspection:
 
