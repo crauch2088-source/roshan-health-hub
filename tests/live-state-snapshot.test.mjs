@@ -151,3 +151,29 @@ test("workflow_dispatch and workflow_run cannot create a snapshot from a non-mai
     /if: github\.ref == 'refs\/heads\/main' && \(github\.event_name != 'workflow_run' \|\| github\.event\.workflow_run\.head_branch == 'main'\)/,
   );
 });
+
+test("Repomix excludes private keys, local credentials, cloud auth and Terraform state", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const workflow = await readFile(".github/workflows/repomix-snapshot.yml", "utf8");
+  const ignoreLine = workflow.split("\n").find((line) => line.includes("--ignore"));
+  assert.ok(ignoreLine, "Repomix must use an explicit ignore list");
+  for (const pattern of [
+    "**/*.pem",
+    "**/*.key",
+    "**/*.p12",
+    "**/*.pfx",
+    "**/.npmrc",
+    "**/.netrc",
+    "**/.ssh/**",
+    "**/.aws/**",
+    "**/.azure/**",
+    "**/.config/gcloud/**",
+    "**/supabase/.temp/**",
+    "**/terraform.tfstate*",
+    "**/*service-account*.json",
+    "**/*firebase-adminsdk*.json",
+    "**/credentials*",
+  ]) {
+    assert.ok(ignoreLine.includes(pattern), `Repomix ignore list is missing ${pattern}`);
+  }
+});

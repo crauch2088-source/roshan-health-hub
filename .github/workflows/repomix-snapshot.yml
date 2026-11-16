@@ -66,7 +66,7 @@ jobs:
             --style xml \
             --compress \
             --parsable-style \
-            --ignore "**/.env*,**/*.age,**/*.zip,**/*.dump,**/*.backup,**/node_modules/**,**/dist/**,**/coverage/**,**/playwright-report/**,**/test-results/**,**/.vercel/**,**/.git/**,**/graphify-out/**,**/repomix-output.*"
+            --ignore "**/.env*,**/*.age,**/*.zip,**/*.dump,**/*.backup,**/*.pem,**/*.key,**/*.p12,**/*.pfx,**/*.jks,**/*.keystore,**/.npmrc,**/.netrc,**/.git-credentials,**/.ssh/**,**/.aws/**,**/.azure/**,**/.config/gcloud/**,**/supabase/.temp/**,**/terraform.tfstate*,**/*.tfstate*,**/*service-account*.json,**/*firebase-adminsdk*.json,**/credentials*,**/id_rsa*,**/id_ed25519*,**/node_modules/**,**/dist/**,**/coverage/**,**/playwright-report/**,**/test-results/**,**/.vercel/**,**/.git/**,**/graphify-out/**,**/repomix-output.*"
 
       - name: Upload repository and live-state context
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
