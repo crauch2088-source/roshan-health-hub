@@ -155,10 +155,10 @@ Important implementation observations:
 | `docs/parallel-reports/round-01/window-03.md` | This isolated review report; no application code changed | To be filled after report commit |
 
 - Branch: `docs/window-03-round-01-report-20261116`
-- Commit(s): To be filled after report commit.
+- Commit(s): 5451ed33f3f1979be3c32b4206c729f6e2ff20d7
 - PR: Documentation-only report PR; to be filled after creation.
 - Report file path: `docs/parallel-reports/round-01/window-03.md`
-- Report commit SHA: To be filled after report commit.
+- Report commit SHA: 5451ed33f3f1979be3c32b4206c729f6e2ff20d7
 - Was the report committed with the implementation or through a separate docs-only PR? **Separate docs-only PR**, because the original task is review-only and PR #210 was not modified.
 
 ## 8. Safety and actions not performed
