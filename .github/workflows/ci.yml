@@ -342,6 +342,35 @@ jobs:
             -f db/tests/pharmacy_dispense_invoice_integration.sql \
             -f db/tests/legacy_dispense_revocation_integration.sql
 
+  sql-phase63-prescription-item-completeness:
+    name: Phase 63 prescription item completeness guard (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Execute Phase 63 prescription item completeness tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/phase63_prescription_item_completeness_fixture.sql \
+            -f db/roshan_phase63_prescription_item_completeness_guard.sql \
+            -f db/tests/phase63_prescription_item_completeness_integration.sql
+
   sql-visit-form-options:
     name: Permission-safe visit form options RPC
     runs-on: ubuntu-latest

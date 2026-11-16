@@ -321,3 +321,19 @@
     inset-inline-start: 0 !important;
   }
 }
+
+@media print {
+  body.print-target-scope-active .print-document-root,
+  body.print-target-scope-active .print-document-root * {
+    visibility: hidden !important;
+  }
+  body.print-target-scope-active .print-document-root.print-target-active,
+  body.print-target-scope-active .print-document-root.print-target-active * {
+    visibility: visible !important;
+  }
+  body.print-target-scope-active .print-document-root.print-target-active {
+    position: absolute !important;
+    inset-block-start: 0 !important;
+    inset-inline-start: 0 !important;
+  }
+}

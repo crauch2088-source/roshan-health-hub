@@ -83,7 +83,7 @@ function InvoicePageInner() {
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, patients(id, full_name, mrn, phone), partners(name)",
+        "id, invoice_number, invoice_date, status, total_amount, discount_amount, net_amount, paid_amount, notes, branch_id, deleted_at, patients(id, full_name, mrn, phone, branch_id, deleted_at), partners(name)",
       )
       .eq("id", invoiceId)
       .limit(1),
@@ -153,6 +153,13 @@ function InvoicePageInner() {
   }
 
   const patient = rel(invoice, "patients");
+  const invoiceBranchId = s(invoice, "branch_id");
+  const patientBranchId = s(patient, "branch_id");
+  const invoicePatientBranchMismatch = Boolean(
+    invoiceBranchId && patientBranchId && invoiceBranchId !== patientBranchId,
+  );
+  const canPrintInvoice =
+    !s(invoice, "deleted_at") && !s(patient, "deleted_at") && !invoicePatientBranchMismatch;
   const items = (itemsQ.data ?? []) as Row[];
 
   const balance = n(invoice, "net_amount") - n(invoice, "paid_amount");
@@ -168,7 +175,7 @@ function InvoicePageInner() {
         >
           <StatusBadge status={s(invoice, "status")} />
 
-          <PrintButton scoped />
+          {canPrintInvoice && <PrintButton scoped targetId="invoice-print-document" />}
 
           <Button asChild variant="outline" size="sm">
             <Link to="/billing">
@@ -184,7 +191,7 @@ function InvoicePageInner() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="print-area print-document-root lg:col-span-2">
+        <Card id="invoice-print-document" className="print-area print-document-root lg:col-span-2">
           <CardContent className="p-4">
             <div className="mb-4 border-b pb-3">
               <p className="text-lg font-semibold text-primary">
