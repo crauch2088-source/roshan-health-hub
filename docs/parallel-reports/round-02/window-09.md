@@ -86,13 +86,13 @@
 
 | Path | Change | Commit SHA |
 |---|---|---|
-| `docs/parallel-reports/round-02/window-09.md` | This round's continuation, CI, review-gate and UAT status report | To be recorded by this report commit |
+| `docs/parallel-reports/round-02/window-09.md` | This round's continuation, CI, review-gate and UAT status report | `e5096c87216f2f65a1a9599d7574586ed89e9542` (initial report commit) |
 
 - Branch: `feat/217-pharmacist-correction-backend-20261116`
 - Prior task commits: `618e69e396ab89a16cb66dfe59ca235320870837`, `45a869e707ec7a2511c6081f789c5c1528141fa4`, `4b9405fab3c9517d12d96aaae0f2a5c2d8e4f0ce`
 - PR: [#269 — keep Draft](https://github.com/crauch2088-source/roshan-health-hub/pull/269)
 - Report file path: `docs/parallel-reports/round-02/window-09.md`
-- Report commit SHA: to be recorded after the report is committed.
+- Initial report commit SHA: `e5096c87216f2f65a1a9599d7574586ed89e9542`; the final metadata refresh is a subsequent docs-only commit in this PR.
 - Report delivery: same task branch/PR; no duplicate PR created.
 
 ## 8. Safety and actions not performed
