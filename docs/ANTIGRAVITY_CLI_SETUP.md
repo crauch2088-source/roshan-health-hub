@@ -70,10 +70,11 @@ cd path\to\roshan-health-hub
 agy
 ~~~
 
-The CLI automatically discovers root AGENTS.md and the workspace rules under .agents/rules/. Skills are stored under .agents/skills/<skill-name>/SKILL.md and are the current reusable-task mechanism; the older workflow system is deprecated. The reusable agent skills under .agents/skills/ define:
+The CLI automatically discovers root AGENTS.md and the workspace rules under .agents/rules/. Roshan already has reusable skills under .agents/skills/: roshan-engineering-orchestrator, roshan-qa, roshan-security, roshan-release, roshan-clinical-safety, roshan-database, and roshan-pharmacy-laboratory. Use these existing skills rather than creating duplicate copies. The older workflow system is deprecated. The reusable agent skills under .agents/skills/ define:
 
-- roshan-independent-review — evidence-based, read-only independent review.
-- roshan-guarded-implementation — test-first implementation on an explicitly assigned feature branch, ending in a Draft PR (never merge).
+- roshan-engineering-orchestrator — routes the task to the smallest relevant existing Roshan skills.
+- roshan-qa and roshan-security — independent test, role-boundary, and security verification.
+- roshan-release — exact-head CI, PR, deployment, and release-gate checks.
 
 The root AGENTS.md, docs/MASTER_PLAN.md, docs/DB_MIGRATION_RECONCILIATION.md, and docs/PLUGIN_TOOLING_MAP.md remain authoritative. These Antigravity instructions supplement rather than replace them.
 
