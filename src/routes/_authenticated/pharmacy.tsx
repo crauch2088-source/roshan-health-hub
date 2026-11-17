@@ -426,7 +426,9 @@ function PharmacyPageInner() {
                                   </p>
                                   {s(i, "instructions") ? (
                                     <p className="whitespace-pre-wrap break-words text-xs font-normal text-muted-foreground">
-                                      {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
+                                      {lang === "ar"
+                                        ? "تعليمات المريض: "
+                                        : "Patient instructions: "}
                                       {s(i, "instructions")}
                                     </p>
                                   ) : null}
