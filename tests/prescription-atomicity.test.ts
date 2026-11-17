@@ -163,20 +163,13 @@ test("prescription completeness requires explicit dosage form and route", () => 
   assert.equal(validatePrescriptionDrafts([draft]), null);
 });
 
-
 test("prescription age context uses the clinic-local encounter date, not the current date", () => {
-  assert.equal(
-    getPrescriptionAgeAtEncounter("2008-11-17", "2026-11-16T22:00:00.000Z")?.years,
-    18,
-  );
-  assert.equal(
-    getPrescriptionAgeAtEncounter("2008-11-17", "2026-11-16T21:59:59.000Z")?.years,
-    17,
-  );
-  assert.deepEqual(
-    getPrescriptionAgeAtEncounter("2026-11-01", "2026-11-16T22:00:00.000Z"),
-    { years: 0, days: 16 },
-  );
+  assert.equal(getPrescriptionAgeAtEncounter("2008-11-17", "2026-11-16T22:00:00.000Z")?.years, 18);
+  assert.equal(getPrescriptionAgeAtEncounter("2008-11-17", "2026-11-16T21:59:59.000Z")?.years, 17);
+  assert.deepEqual(getPrescriptionAgeAtEncounter("2026-11-01", "2026-11-16T22:00:00.000Z"), {
+    years: 0,
+    days: 16,
+  });
 });
 
 test("prescription age context fails closed for missing, malformed, future or invalid dates", () => {
