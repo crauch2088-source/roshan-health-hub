@@ -283,7 +283,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           <div
             className="grid gap-3 rounded-xl border bg-muted/20 p-3 sm:grid-cols-2"
             role="group"
-            aria-label={lang === "ar" ? "سياق العمر والوزن عند الزيارة" : "Age and weight context at this visit"}
+            aria-label={
+              lang === "ar"
+                ? "سياق العمر والوزن عند الزيارة"
+                : "Age and weight context at this visit"
+            }
           >
             <div>
               <p className="text-xs text-muted-foreground">
@@ -601,8 +605,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               }
               placeholder={
                 lang === "ar"
-                  ? "تعليمات للمريض (اختيارية)"
-                  : "Patient instructions (optional)"
+                  ? "تعليمات للمريض (اختيارية)" : "Patient instructions (optional)"
               }
             />
             <p role="note" className="text-xs text-muted-foreground">
