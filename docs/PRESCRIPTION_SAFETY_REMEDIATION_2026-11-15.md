@@ -87,3 +87,43 @@ The earlier PR #255 head `86134c0df686830db194fa7f29686a90f89f11ca` is historica
 - No schema migration, hosted database write, production deployment or real patient/financial data access was performed.
 
 Exact-head tests and CI evidence will be recorded in the Window 01 Round 02 report after the completed change is verified.
+
+
+## 9. Window 01 Round 02 — exact-head verification and residual gates (2026-11-17)
+
+**Verified code head:** `895c482db3bf7dc14aa8d9b357076e5a50ba7896`  
+**Main base:** `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`  
+**Comparison:** 19 commits ahead / 0 behind. PR #258 remains Draft.
+
+### Prescription UX and clinical boundary rechecked
+
+- Encounter age uses the visit date in `Africa/Khartoum`, not the device's current date. Missing, malformed, future or inconsistent dates produce an unverified-age cue. Day-level age is retained below one year.
+- The composer displays only the weight linked to the current visit, including loading, unavailable and query-error states. It does not fall back to a patient-master or older-visit weight.
+- Pediatric missing-weight handling is deliberately advisory, not a universal save block: the current composer has no structured dose-basis field and cannot distinguish a fixed-dose order from a weight-based order. A blanket block would therefore reject clinically legitimate fixed-dose orders. The UI explicitly tells the prescriber to verify measured current weight before weight-based dosing and to check applicable per-dose/daily ceilings. Any future hard stop must be driven by a structured, audited dose basis and enforced server-side.
+- Dose remains clinician-entered free text with a unit cue; no dose presets, dose calculator, diagnosis-based template, or pediatric regimen was introduced in this composer.
+- Dosage form and route are explicit fields. Selecting a catalogue item does not infer route. The UI warns that catalogue formulation is not independent proof of product identity/strength and that generic route choices are not checked against the selected product; the exact physical pack and manufacturer label must be verified.
+- Frequency and duration shortcuts are labelled as data-entry aids, not recommendations. Custom entry remains available. No universal duration cap was added because acute, chronic, tapering, prophylactic and single-dose courses do not share a safe global maximum.
+- Patient instructions are a multiline optional field and are shown in the unsaved summary, pharmacy queue and saved print model. The queue displays the persisted value; it does not generate or rewrite instructions.
+- Phase 63 is a completeness/integrity guard only. It requires explicit clinical fields and a positive whole quantity; it does not recommend or calculate a regimen.
+- The arithmetic-only calculator and deterministic matcher remain separate from the composer. The kernel does not choose a medicine, indication, route, frequency, duration, concentration or protocol. No protocol is active.
+
+### TDD and exact-head verification
+
+The latest exact code head is `895c482db3bf7dc14aa8d9b357076e5a50ba7896`.
+
+- Prescription atomicity workflow [#44149288200](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288200): **PASS** — focused regression test and PostgreSQL integration.
+- Phase 63 PostgreSQL 17 job [#134272837767](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288280): **PASS**.
+- Insurance UI validation [#44149288191](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288191): **PASS** — focused regression, TypeScript, lint and production build. This also confirms the follow-up Prettier-only corrections.
+- Insurance integrity [#44149288243](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288243), privileged-role guard [#44149288071](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288071), Phase 48 Storage [#44149288265](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288265), finance-only RPC isolation [#44149288323](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288323), and clinical child-RPC-only writes [#44149288338](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288338): **PASS**.
+- Main CI [#44149288280](https://github.com/crauch2088-source/roshan-health-hub/actions/runs/44149288280): **BLOCKED at the production dependency audit only**. `npm audit --omit=dev --audit-level=moderate` reports 11 high-severity `picomatch` findings (GHSA-fc5q-39xc-vjpf) through the TanStack/Vite dependency chain. The main CI's later typecheck/lint/build steps were skipped after this blocking audit; the separate Insurance UI workflow above ran and passed all three. This PR does not change dependency versions or the lockfile; its `package.json` change only registers the print-model regression test. Do not force a breaking dependency upgrade in this clinical PR; resolve the audit in the dependency workstream.
+- Exact-head Vercel Preview status: **success**.
+- Canonical baseline replay/authenticated clinical acceptance remains intentionally skipped. No authenticated prescriber/pharmacist E2E, staff UAT, mobile visual review or physical A4/thermal printer acceptance is claimed.
+
+### Release and next-step boundary
+
+- PR #258 remains Draft. Its source/test checks and preview do not authorize merge, QA/Production migration, deployment promotion or real clinical use.
+- Keep the medicine-catalogue identity/physical-pack work (PR #210) separate from clinical route approval. Its catalogue fields do not create a verified route-compatibility matrix.
+- Before any drug-specific template or decision-support activation: retrieve the applicable current primary Federal/Gezira protocol; verify issuer, edition, approval, jurisdiction, population, setting, relevant sections and redistribution rights; verify the exact product/strength/formulation; create source-linked golden cases; and obtain independent GP and pharmacist approval.
+- Keep dose, frequency and duration clinician-entered until those source, product and governance gates are met. No universal duration cap, dose table, interaction rule or pediatric regimen is authorized by this review.
+- Next engineering step: resolve the independent dependency-audit blocker separately, then complete independent review of the Phase 63 trigger and the prescription/print candidate. Next acceptance step: authorized Arabic RTL / English LTR mobile review, saved-print preview and physical printer checks, followed by isolated synthetic GP/pharmacist acceptance. No production write is part of that step.
+- No QA/Production DDL/DML, migration application, permission/Auth/Storage change, patient/clinical/financial record creation, stock mutation or production deployment was performed in this run.
