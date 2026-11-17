@@ -604,8 +604,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                   : "Additional patient instructions (optional)"
               }
               placeholder={
-                lang === "ar"
-                  ? "تعليمات للمريض (اختيارية)" : "Patient instructions (optional)"
+                lang === "ar" ? "تعليمات للمريض (اختيارية)" : "Patient instructions (optional)"
               }
             />
             <p role="note" className="text-xs text-muted-foreground">
