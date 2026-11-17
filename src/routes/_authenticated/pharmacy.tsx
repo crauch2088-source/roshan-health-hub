@@ -371,7 +371,9 @@ function PharmacyPageInner() {
                             </p>
                             {s(i, "instructions") ? (
                               <p className="text-xs whitespace-pre-wrap break-words text-muted-foreground">
-                                {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
+                                {lang === "ar"
+                                        ? "تعليمات المريض: "
+                                        : "Patient instructions: "}
                                 {s(i, "instructions")}
                               </p>
                             ) : null}
@@ -417,7 +419,11 @@ function PharmacyPageInner() {
                             <TableRow key={s(i, "id")}>
                               <TableCell className="font-medium">
                                 <div className="space-y-1">
-                                  <p>{s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}</p>
+                                  <p>
+                                    {s(rel(i, "medicines"), "name") ||
+                                      s(i, "medication_name") ||
+                                      "—"}
+                                  </p>
                                   {s(i, "instructions") ? (
                                     <p className="whitespace-pre-wrap break-words text-xs font-normal text-muted-foreground">
                                       {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
