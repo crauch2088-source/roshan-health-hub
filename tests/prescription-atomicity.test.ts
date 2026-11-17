@@ -207,6 +207,8 @@ test("generic form, frequency and duration choices are labelled as non-authorita
 
 test("patient instructions and complete prescription details remain visible before saving and in print", () => {
   assert.match(ui, /Additional patient instructions \(optional\)/);
+  assert.match(ui, /Textarea/);
+  assert.match(ui, /shown on the printed prescription and pharmacy queue/);
   assert.match(ui, /i\.dosage_form/);
   assert.match(ui, /i\.route/);
   assert.match(ui, /i\.instructions/);

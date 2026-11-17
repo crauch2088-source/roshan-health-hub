@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { PrintButton } from "@/components/kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -588,20 +589,28 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Route options are generic; the system does not validate them against the selected product. Verify the exact product label before choosing a route."}
             </p>
           </div>
-          <Input
-            value={form.instructions}
-            onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-            aria-label={
-              lang === "ar"
-                ? "تعليمات المريض الإضافية (اختياري)"
-                : "Additional patient instructions (optional)"
-            }
-            placeholder={
-              lang === "ar"
-                ? "تعليمات للمريض (اختيارية)"
-                : "Patient instructions (optional)"
-            }
-          />
+          <div className="space-y-2">
+            <Textarea
+              rows={2}
+              value={form.instructions}
+              onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+              aria-label={
+                lang === "ar"
+                  ? "تعليمات المريض الإضافية (اختياري)"
+                  : "Additional patient instructions (optional)"
+              }
+              placeholder={
+                lang === "ar"
+                  ? "تعليمات للمريض (اختيارية)"
+                  : "Patient instructions (optional)"
+              }
+            />
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "تُحفظ هذه التعليمات مع بند الدواء وتظهر في النسخة المطبوعة وطابور الصيدلية."
+                : "These instructions are saved with the medication item and shown on the printed prescription and pharmacy queue."}
+            </p>
+          </div>
         </div>
         <Button
           variant="outline"
