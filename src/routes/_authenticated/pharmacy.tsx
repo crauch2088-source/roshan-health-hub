@@ -94,7 +94,7 @@ function PharmacyPageInner() {
       let q = supabase
         .from("prescriptions")
         .select(
-          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, medication_name, dosage, frequency, duration, medicine_id, deleted_at, medicines(name, selling_price, stock_quantity))",
+          "id, branch_id, status, created_at, is_external, patients(full_name, mrn), users(full_name), prescription_items(id, quantity, medication_name, dose, dosage, frequency, duration, dosage_form, route, instructions, medicine_id, deleted_at, medicines(name, selling_price, stock_quantity))",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -359,10 +359,22 @@ function PharmacyPageInner() {
                               {s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                              {[
+                                s(i, "dosage_form"),
+                                s(i, "route"),
+                                s(i, "dose") || s(i, "dosage"),
+                                s(i, "frequency"),
+                                s(i, "duration"),
+                              ]
                                 .filter(Boolean)
                                 .join(" · ") || "—"}
                             </p>
+                            {s(i, "instructions") ? (
+                              <p className="text-xs whitespace-pre-wrap break-words text-muted-foreground">
+                                {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
+                                {s(i, "instructions")}
+                              </p>
+                            ) : null}
                             <p className="text-xs text-muted-foreground">
                               {t("quantity")}{" "}
                               <span dir="ltr">
@@ -404,10 +416,24 @@ function PharmacyPageInner() {
                           return (
                             <TableRow key={s(i, "id")}>
                               <TableCell className="font-medium">
-                                {s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}
+                                <div className="space-y-1">
+                                  <p>{s(rel(i, "medicines"), "name") || s(i, "medication_name") || "—"}</p>
+                                  {s(i, "instructions") ? (
+                                    <p className="whitespace-pre-wrap break-words text-xs font-normal text-muted-foreground">
+                                      {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
+                                      {s(i, "instructions")}
+                                    </p>
+                                  ) : null}
+                                </div>
                               </TableCell>
                               <TableCell>
-                                {[s(i, "dosage"), s(i, "frequency"), s(i, "duration")]
+                                {[
+                                  s(i, "dosage_form"),
+                                  s(i, "route"),
+                                  s(i, "dose") || s(i, "dosage"),
+                                  s(i, "frequency"),
+                                  s(i, "duration"),
+                                ]
                                   .filter(Boolean)
                                   .join(" · ") || "—"}
                               </TableCell>

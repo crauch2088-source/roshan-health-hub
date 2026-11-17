@@ -23,7 +23,8 @@ import {
 import { n, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
-import { calcAge, formatDateTime } from "@/lib/medical";
+import { formatDateTime } from "@/lib/medical";
+import { getPrescriptionAgeAtEncounter } from "@/lib/prescription-context";
 import { buildPrescriptionPrintModel } from "@/lib/print/prescription";
 import { DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
@@ -49,7 +50,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     () =>
       supabase
         .from("visits")
-        .select("id,patient_id,doctor_id,branch_id,patients(id,full_name,date_of_birth)")
+        .select("id,patient_id,doctor_id,branch_id,visit_date,patients(id,full_name,date_of_birth)")
         .eq("id", visitId)
         .limit(1),
     { enabled: canCreatePrescription },
@@ -57,7 +58,17 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const patientRow = rel((visitQ.data ?? [])[0], "patients");
   const patient = s(patientRow, "id");
   const visitBranch = s((visitQ.data ?? [])[0], "branch_id");
-  const patientAge = calcAge(s(patientRow, "date_of_birth"));
+  const visitDate = s((visitQ.data ?? [])[0], "visit_date");
+  const patientAge = getPrescriptionAgeAtEncounter(s(patientRow, "date_of_birth"), visitDate);
+  const patientAgeLabel = patientAge
+    ? patientAge.years > 0
+      ? lang === "ar"
+        ? `${patientAge.years} سنة`
+        : `${patientAge.years} years`
+      : lang === "ar"
+        ? `${patientAge.days} يومًا (أقل من سنة)`
+        : `${patientAge.days} days (<1 year)`
+    : null;
   const ageVerificationNeeded =
     Boolean(patient) && patientAge == null && !visitQ.isLoading && !visitQ.error;
   const vitalsQ = useRows<Row[]>(
@@ -73,6 +84,20 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     { enabled: canCreatePrescription },
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
+  const hasVisitWeight = Number.isFinite(patientWeight) && patientWeight > 0;
+  const visitWeightLabel = vitalsQ.isLoading
+    ? lang === "ar"
+      ? "جارٍ التحقق..."
+      : "Checking..."
+    : vitalsQ.error
+      ? lang === "ar"
+        ? "تعذّر التحقق"
+        : "Could not verify"
+      : hasVisitWeight
+        ? `${patientWeight.toLocaleString(lang === "ar" ? "ar" : "en", { maximumFractionDigits: 1 })} kg`
+        : lang === "ar"
+          ? "غير مسجّل لهذه الزيارة"
+          : "Not recorded for this visit";
   const savedPrescriptionQ = useRows<Row[]>(
     ["prescription-print", visitId, lastSavedPrescriptionId],
     () =>
@@ -91,9 +116,9 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   );
   const savedPrescription = (savedPrescriptionQ.data ?? [])[0] as Row | undefined;
   const prescriptionPrintModel = buildPrescriptionPrintModel(savedPrescription, visitBranch);
-  const isPediatric = patientAge != null && patientAge < 18;
+  const isPediatric = patientAge != null && patientAge.years < 18;
   const pediatricWeightMissing =
-    isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
+    isPediatric && !vitalsQ.isLoading && !vitalsQ.error && !hasVisitWeight;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -249,8 +274,35 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
           >
             {lang === "ar"
-              ? "تعذّر التحقق من عمر المريض من تاريخ الميلاد المسجّل. تحقّق من تاريخ الميلاد والاحتياطات المرتبطة بالعمر قبل اعتماد الوصفة. وإذا كان المريض قد يكون طفلًا، فتحقّق من تسجيل وزن حالي مرتبط بهذه الزيارة قبل اعتماد أي جرعة تعتمد على الوزن."
-              : "Patient age could not be verified from the recorded date of birth. Confirm the date of birth and age-specific precautions. If the patient may be a child, verify a current visit-linked weight before any weight-based dosing."}
+              ? "تعذّر التحقق من عمر المريض عند الزيارة من تاريخ الميلاد وتاريخ الزيارة. تحقّق من العمر الدقيق والاحتياطات المرتبطة به. وإذا كان المريض قد يكون طفلًا، فتحقّق من الوزن المسجّل لهذه الزيارة قبل أي جرعة تعتمد على الوزن."
+              : "Patient age at this encounter could not be verified from the recorded date of birth and visit date. Confirm the exact age and age-specific precautions. If the patient may be a child, verify the weight recorded for this visit before any weight-based dosing."}
+          </div>
+        ) : null}
+        {isPediatric || ageVerificationNeeded ? (
+          <div
+            className="grid gap-3 rounded-xl border bg-muted/20 p-3 sm:grid-cols-2"
+            role="group"
+            aria-label={lang === "ar" ? "سياق العمر والوزن عند الزيارة" : "Age and weight context at this visit"}
+          >
+            <div>
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar" ? "العمر عند الزيارة" : "Age at visit"}
+              </p>
+              <p className="text-sm font-medium">
+                {patientAgeLabel ?? (lang === "ar" ? "غير متحقق" : "Unverified")}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar" ? "الوزن المسجّل لهذه الزيارة" : "Weight recorded for this visit"}
+              </p>
+              <p className="text-sm font-medium">{visitWeightLabel}</p>
+              {vitalsQ.error ? (
+                <Button variant="outline" size="sm" onClick={() => void vitalsQ.refetch()}>
+                  {lang === "ar" ? "إعادة التحقق من الوزن" : "Retry weight"}
+                </Button>
+              ) : null}
+            </div>
           </div>
         ) : null}
         {isPediatric ? (
@@ -260,20 +312,19 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           >
             {vitalsQ.error
               ? lang === "ar"
-                ? "تعذّر التحقق من الوزن المسجل. راجع ملف المريض يدويًا قبل اعتماد أي جرعة تعتمد على الوزن."
-                : "Could not verify the recorded weight. Check the patient chart manually before approving any weight-based dose."
-              : pediatricWeightMissing
+                ? "تعذّر التحقق من الوزن المسجّل لهذه الزيارة. راجع السجل الحالي يدويًا قبل أي جرعة تعتمد على الوزن."
+                : "Could not verify the recorded weight for this visit. Check the current visit record manually before any weight-based dosing."
+              : vitalsQ.isLoading
                 ? lang === "ar"
-                  ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
-                  : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
-                : lang === "ar"
-                  ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
-                  : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
-            {vitalsQ.error ? (
-              <Button variant="outline" size="sm" onClick={() => void vitalsQ.refetch()}>
-                {lang === "ar" ? "إعادة المحاولة" : "Retry weight"}
-              </Button>
-            ) : null}
+                  ? "جارٍ التحقق من الوزن المسجّل لهذه الزيارة؛ لا تعتمد على جرعة محسوبة حسب الوزن قبل التحقق منه."
+                  : "Checking the weight recorded for this visit; do not rely on a weight-based dose until it is verified."
+                : pediatricWeightMissing
+                  ? lang === "ar"
+                    ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من وزن مقاس قبل أي جرعة تعتمد على الوزن، وراجع أي حدود قصوى تنطبق على الجرعة الواحدة أو اليوم."
+                    : "Pediatric safety: no current visit weight is recorded for this visit. Verify a measured weight before any weight-based dose and check any applicable per-dose and daily maximums."
+                  : lang === "ar"
+                    ? "تنبيه للأطفال: تحقّق يدويًا من الوزن المسجّل لهذه الزيارة وأساس الجرعة وأي حد أقصى ينطبق على الجرعة الواحدة أو اليوم. لا يحسب النظام جرعات الأطفال تلقائيًا."
+                    : "Pediatric safety: manually verify the recorded visit weight, dose basis and any applicable per-dose or daily maximum. The system does not calculate pediatric doses."}
           </div>
         ) : null}
         <div
@@ -418,6 +469,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 placeholder={lang === "ar" ? "أدخل الشكل الدوائي" : "Enter dosage form"}
               />
             ) : null}
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "بيانات الشكل الدوائي في الكتالوج لا تتحقق بصورة مستقلة من هوية المنتج أو قوته؛ طابقها مع العبوة وملصق الشركة قبل الاعتماد عليها."
+                : "Catalogue form data does not independently verify the product identity or strength. Confirm the exact formulation against the physical pack and manufacturer label."}
+            </p>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
@@ -452,6 +508,11 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 placeholder={lang === "ar" ? "أدخل التكرار والتوقيت" : "Enter frequency and timing"}
               />
             ) : null}
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "اختصارات التكرار لتسهيل الإدخال فقط وليست توصيات علاجية؛ تحقّق من الجرعة والفاصل والتوقيت وفق الاستطباب والمستحضر والإرشادات المعتمدة."
+                : "Frequency shortcuts are for data entry only, not treatment recommendations. Verify the regimen, interval and timing for the indication, product and applicable guidance."}
+            </p>
           </div>
           <div className="space-y-2">
             <Select
@@ -530,7 +591,16 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           <Input
             value={form.instructions}
             onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-            placeholder={lang === "ar" ? "تعليمات إضافية" : "Instructions"}
+            aria-label={
+              lang === "ar"
+                ? "تعليمات المريض الإضافية (اختياري)"
+                : "Additional patient instructions (optional)"
+            }
+            placeholder={
+              lang === "ar"
+                ? "تعليمات للمريض (اختيارية)"
+                : "Patient instructions (optional)"
+            }
           />
         </div>
         <Button
@@ -556,10 +626,26 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               <tbody>
                 {items.map((i, index) => (
                   <tr key={`${i.medicine_id}-${index}`} className="border-b last:border-0">
-                    <td className="p-2">{i.name}</td>
+                    <td className="p-2">
+                      <div className="font-medium">{i.name}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {[i.dosage_form, i.route].filter(Boolean).join(" · ") || "—"}
+                      </p>
+                      {i.instructions ? (
+                        <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                          {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
+                          {i.instructions}
+                        </p>
+                      ) : null}
+                    </td>
                     <td className="p-2">{i.dose || "—"}</td>
                     <td className="p-2">{i.frequency || "—"}</td>
-                    <td className="p-2">{i.duration || "—"}</td>
+                    <td className="p-2">
+                      <span className="block">{i.duration || "—"}</span>
+                      <span className="block text-xs text-muted-foreground" dir="ltr">
+                        {lang === "ar" ? "الكمية" : "Qty"} {i.quantity}
+                      </span>
+                    </td>
                     <td className="p-2 text-end">
                       <Button
                         variant="ghost"
