@@ -1,3 +1,8 @@
+---
+name: roshan-guarded-implementation
+description: Test-first implementation for Roshan Health Hub on an explicitly authorized feature branch, with strict production, database, and release boundaries.
+---
+
 # Roshan guarded implementation
 
 Use only when the owner explicitly assigns Antigravity an implementation task.

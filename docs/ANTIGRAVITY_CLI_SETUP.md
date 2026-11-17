@@ -70,14 +70,18 @@ cd path\to\roshan-health-hub
 agy
 ~~~
 
-The CLI automatically discovers root AGENTS.md and the workspace rules under .agents/rules/. The reusable prompts under .agents/workflows/ define:
+The CLI automatically discovers root AGENTS.md and the workspace rules under .agents/rules/. Skills are stored under .agents/skills/<skill-name>/SKILL.md and are the current reusable-task mechanism; the older workflow system is deprecated. The reusable agent skills under .agents/skills/ define:
 
 - roshan-independent-review — evidence-based, read-only independent review.
 - roshan-guarded-implementation — test-first implementation on an explicitly assigned feature branch, ending in a Draft PR (never merge).
 
 The root AGENTS.md, docs/MASTER_PLAN.md, docs/DB_MIGRATION_RECONCILIATION.md, and docs/PLUGIN_TOOLING_MAP.md remain authoritative. These Antigravity instructions supplement rather than replace them.
 
-## 6. Roshan safety and collaboration contract
+## 6. Use Antigravity's multi-agent features
+
+Google AI Pro includes Antigravity's multi-agent commands subject to current usage limits. For a first parallel task, use /swarm with separately owned read-only review scopes and one verifier. Use /teamwork for a multi-day campaign after agreeing on a scope and milestones. Use /run-workflow when the same review needs to be repeated across a known list of files or PRs. These commands coordinate agents; they do not grant permission to touch hosted Production/QA systems or merge/deploy.
+
+## 7. Roshan safety and collaboration contract
 
 - Start as a reviewer/verifier, not an autonomous production operator.
 - Inspect current branches and PRs before choosing a task; avoid overlapping active agents.
@@ -88,11 +92,11 @@ The root AGENTS.md, docs/MASTER_PLAN.md, docs/DB_MIGRATION_RECONCILIATION.md, an
 - Report exact SHAs, evidence classes, test commands/results, blockers, and unverified acceptance gates.
 - Preserve the existing quota-safe policy: one atomic commit and one CI run per completed stage; documentation-only work must not trigger frontend deployment.
 
-## 7. Device note
+## 8. Device note
 
 The CLI must run on a supported desktop OS with the repository checked out locally; it does not install directly inside the Android ChatGPT app. On a low-memory laptop, start with small read-only review tasks and avoid indexing multiple worktrees simultaneously. If the machine becomes unresponsive, stop the CLI rather than disabling sandbox or permission checks. A cloud development environment can be considered later, but it must be explicitly selected and its access/cost reviewed first.
 
-## 8. Acceptance checklist
+## 9. Acceptance checklist
 
 - [ ] Official agy installer completed on the owner's machine.
 - [ ] agy --version returns a version.

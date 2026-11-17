@@ -1,6 +1,11 @@
+---
+name: roshan-independent-review
+description: Evidence-based, read-only independent review of Roshan Health Hub PRs, clinical and pharmacy workflows, database security, migrations, and release readiness.
+---
+
 # Roshan independent review
 
-Use this workflow when asked to review a PR, feature, migration, security boundary, or release claim.
+Use this skill when reviewing a PR, feature, migration, security boundary, or release claim.
 
 1. Read root AGENTS.md and the relevant current master-plan/tooling/reconciliation sections.
 2. Re-fetch current main, the exact PR head, changed files, review threads, and exact-head CI. Do not trust stale report summaries.
