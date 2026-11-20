@@ -131,7 +131,7 @@ DECLARE
   v_branch_id uuid;
   v_now timestamptz;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'pharmacy_handover_permission_denied' USING ERRCODE = '42501';
   END IF;
 
@@ -195,7 +195,7 @@ DECLARE
   v_refund_due numeric(12,2) := 0;
   v_pay_state text;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'pharmacy_cancel_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_idempotency_key IS NULL THEN
@@ -359,7 +359,7 @@ DECLARE
   v_refund_due numeric(12,2) := 0;
   v_pay_state text;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'pharmacy_return_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_idempotency_key IS NULL THEN
@@ -506,7 +506,7 @@ DECLARE
   v_q record;
   v_batch record;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'quarantine_disposition_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_disposition NOT IN ('approved_restock', 'destroyed_writeoff', 'returned_to_supplier') THEN
