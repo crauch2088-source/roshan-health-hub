@@ -10,8 +10,10 @@ import {
 } from "@/lib/prescription-draft";
 import { sanitizeTerm, useDebounced } from "@/lib/search";
 import { Button } from "@/components/ui/button";
+import { PrintButton } from "@/components/kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -19,14 +21,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { n, s, useRows, useSave, type Row } from "@/lib/db";
+import { n, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
-import { calcAge } from "@/lib/medical";
-import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
+import { formatDateTime } from "@/lib/medical";
+import { getPrescriptionAgeAtEncounter } from "@/lib/prescription-context";
+import { buildPrescriptionPrintModel } from "@/lib/print/prescription";
+import { DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
+  const { settings } = useSettings();
+  const [lastSavedPrescription, setLastSavedPrescription] = useState<{
+    visitId: string;
+    id: string;
+  } | null>(null);
+  const lastSavedPrescriptionId =
+    lastSavedPrescription?.visitId === visitId ? lastSavedPrescription.id : null;
   const { can, user } = useAuth();
   const isClinicalPrescriber = [
     "doctor",
@@ -40,14 +51,27 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     () =>
       supabase
         .from("visits")
-        .select("id,patient_id,doctor_id,patients(id,full_name,date_of_birth)")
+        .select("id,patient_id,doctor_id,branch_id,visit_date,patients(id,full_name,date_of_birth)")
         .eq("id", visitId)
         .limit(1),
     { enabled: canCreatePrescription },
   );
   const patientRow = rel((visitQ.data ?? [])[0], "patients");
   const patient = s(patientRow, "id");
-  const patientAge = calcAge(s(patientRow, "date_of_birth"));
+  const visitBranch = s((visitQ.data ?? [])[0], "branch_id");
+  const visitDate = s((visitQ.data ?? [])[0], "visit_date");
+  const patientAge = getPrescriptionAgeAtEncounter(s(patientRow, "date_of_birth"), visitDate);
+  const patientAgeLabel = patientAge
+    ? patientAge.years > 0
+      ? lang === "ar"
+        ? `${patientAge.years} سنة`
+        : `${patientAge.years} years`
+      : lang === "ar"
+        ? `${patientAge.days} يومًا (أقل من سنة)`
+        : `${patientAge.days} days (<1 year)`
+    : null;
+  const ageVerificationNeeded =
+    Boolean(patient) && patientAge == null && !visitQ.isLoading && !visitQ.error;
   const vitalsQ = useRows<Row[]>(
     ["clinic-vitals-weight", visitId],
     () =>
@@ -61,9 +85,41 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     { enabled: canCreatePrescription },
   );
   const patientWeight = n((vitalsQ.data ?? [])[0], "weight");
-  const isPediatric = patientAge != null && patientAge < 18;
+  const hasVisitWeight = Number.isFinite(patientWeight) && patientWeight > 0;
+  const visitWeightLabel = vitalsQ.isLoading
+    ? lang === "ar"
+      ? "جارٍ التحقق..."
+      : "Checking..."
+    : vitalsQ.error
+      ? lang === "ar"
+        ? "تعذّر التحقق"
+        : "Could not verify"
+      : hasVisitWeight
+        ? `${patientWeight.toLocaleString(lang === "ar" ? "ar" : "en", { maximumFractionDigits: 1 })} kg`
+        : lang === "ar"
+          ? "غير مسجّل لهذه الزيارة"
+          : "Not recorded for this visit";
+  const savedPrescriptionQ = useRows<Row[]>(
+    ["prescription-print", visitId, lastSavedPrescriptionId],
+    () =>
+      supabase
+        .from("prescriptions")
+        .select(
+          "id,branch_id,created_at,status,is_external,notes,patients(full_name,mrn,branch_id,deleted_at),users(full_name),prescription_items(id,medication_name,dose,route,frequency,duration,quantity,dosage_form,instructions,deleted_at)",
+        )
+        .eq("id", lastSavedPrescriptionId ?? "")
+        .eq("visit_id", visitId)
+        .eq("patient_id", patient)
+        .eq("branch_id", visitBranch)
+        .is("deleted_at", null)
+        .limit(1),
+    { enabled: Boolean(lastSavedPrescriptionId && visitBranch) },
+  );
+  const savedPrescription = (savedPrescriptionQ.data ?? [])[0] as Row | undefined;
+  const prescriptionPrintModel = buildPrescriptionPrintModel(savedPrescription, visitBranch);
+  const isPediatric = patientAge != null && patientAge.years < 18;
   const pediatricWeightMissing =
-    isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
+    isPediatric && !vitalsQ.isLoading && !vitalsQ.error && !hasVisitWeight;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -86,6 +142,10 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const [form, setForm] = useState<PrescriptionDraft>(createEmptyPrescriptionDraft);
   const [items, setItems] = useState<PrescriptionDraft[]>([]);
   const [external, setExternal] = useState(false);
+  const isKnownDosageForm = DOSAGE_FORMS.some((option) => option.value === form.dosage_form);
+  const isKnownFrequency = FREQUENCIES.some((option) => option.value === form.frequency);
+  const isKnownDuration = DURATIONS.some((option) => option.value === form.duration);
+  const isKnownRoute = ROUTES.some((option) => option.value === form.route);
   const medicines = (medsQ.data ?? []) as Row[];
   const filtered = medicines;
   const chooseMedicine = (id: string) => {
@@ -101,7 +161,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
     setSearch(next.name);
   };
   const add = () => {
-    if (!form.name.trim() && !form.medicine_id) return;
+    if (validatePrescriptionDrafts([form])) return;
     setItems((current) => [...current, { ...form }]);
     setForm(createEmptyPrescriptionDraft());
     setSearch("");
@@ -122,6 +182,14 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               : "Complete the frequency for every medicine",
           "missing-duration":
             lang === "ar" ? "أكمل مدة العلاج لكل دواء" : "Complete the duration for every medicine",
+          "missing-dosage-form":
+            lang === "ar"
+              ? "حدّد الشكل الدوائي لكل دواء"
+              : "Specify a dosage form for every medicine",
+          "missing-route":
+            lang === "ar"
+              ? "حدّد طريق الإعطاء لكل دواء"
+              : "Specify an administration route for every medicine",
           "invalid-quantity":
             lang === "ar"
               ? "يجب أن تكون كمية كل دواء عددًا صحيحًا موجبًا"
@@ -140,13 +208,21 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
         dosage_form: item.dosage_form,
         route: item.route,
       }));
-      const { error } = await supabase.rpc("create_prescription_atomic", {
+      const { data: prescriptionId, error } = await supabase.rpc("create_prescription_atomic", {
         p_visit_id: visitId,
         p_is_external: external,
         p_items: payload,
       });
       if (error) throw new Error(error.message);
-      return null;
+      if (typeof prescriptionId !== "string" || !prescriptionId) {
+        throw new Error(
+          lang === "ar"
+            ? "تم حفظ الوصفة لكن تعذر تحديد النسخة المحفوظة للطباعة"
+            : "The prescription was saved, but its saved record could not be identified for printing",
+        );
+      }
+      setLastSavedPrescription({ visitId, id: prescriptionId });
+      return prescriptionId;
     },
     {
       invalidate: [
@@ -193,6 +269,47 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             </Button>
           </div>
         ) : null}
+        {ageVerificationNeeded ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm leading-relaxed"
+          >
+            {lang === "ar"
+              ? "تعذّر التحقق من عمر المريض عند الزيارة من تاريخ الميلاد وتاريخ الزيارة. تحقّق من العمر الدقيق والاحتياطات المرتبطة به. وإذا كان المريض قد يكون طفلًا، فتحقّق من الوزن المسجّل لهذه الزيارة قبل أي جرعة تعتمد على الوزن."
+              : "Patient age at this encounter could not be verified from the recorded date of birth and visit date. Confirm the exact age and age-specific precautions. If the patient may be a child, verify the weight recorded for this visit before any weight-based dosing."}
+          </div>
+        ) : null}
+        {isPediatric || ageVerificationNeeded ? (
+          <div
+            className="grid gap-3 rounded-xl border bg-muted/20 p-3 sm:grid-cols-2"
+            role="group"
+            aria-label={
+              lang === "ar"
+                ? "سياق العمر والوزن عند الزيارة"
+                : "Age and weight context at this visit"
+            }
+          >
+            <div>
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar" ? "العمر عند الزيارة" : "Age at visit"}
+              </p>
+              <p className="text-sm font-medium">
+                {patientAgeLabel ?? (lang === "ar" ? "غير متحقق" : "Unverified")}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar" ? "الوزن المسجّل لهذه الزيارة" : "Weight recorded for this visit"}
+              </p>
+              <p className="text-sm font-medium">{visitWeightLabel}</p>
+              {vitalsQ.error ? (
+                <Button variant="outline" size="sm" onClick={() => void vitalsQ.refetch()}>
+                  {lang === "ar" ? "إعادة التحقق من الوزن" : "Retry weight"}
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
         {isPediatric ? (
           <div
             role="alert"
@@ -200,20 +317,19 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
           >
             {vitalsQ.error
               ? lang === "ar"
-                ? "تعذّر التحقق من الوزن المسجل. راجع ملف المريض يدويًا قبل اعتماد أي جرعة تعتمد على الوزن."
-                : "Could not verify the recorded weight. Check the patient chart manually before approving any weight-based dose."
-              : pediatricWeightMissing
+                ? "تعذّر التحقق من الوزن المسجّل لهذه الزيارة. راجع السجل الحالي يدويًا قبل أي جرعة تعتمد على الوزن."
+                : "Could not verify the recorded weight for this visit. Check the current visit record manually before any weight-based dosing."
+              : vitalsQ.isLoading
                 ? lang === "ar"
-                  ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من الوزن والجرعات المعتمدة حسب الوزن والحد الأقصى اليومي قبل الحفظ."
-                  : "Pediatric safety: no current visit weight is recorded. Verify weight-based dosing and maximum daily dose before saving."
-                : lang === "ar"
-                  ? "تنبيه للأطفال: تحقّق يدويًا من الجرعة حسب الوزن والحد الأقصى اليومي. لا يحسب النظام جرعات الأطفال تلقائيًا."
-                  : "Pediatric safety: manually verify weight-based dosing and the maximum daily dose. The system does not calculate pediatric doses."}
-            {vitalsQ.error ? (
-              <Button variant="outline" size="sm" onClick={() => void vitalsQ.refetch()}>
-                {lang === "ar" ? "إعادة المحاولة" : "Retry weight"}
-              </Button>
-            ) : null}
+                  ? "جارٍ التحقق من الوزن المسجّل لهذه الزيارة؛ لا تعتمد على جرعة محسوبة حسب الوزن قبل التحقق منه."
+                  : "Checking the weight recorded for this visit; do not rely on a weight-based dose until it is verified."
+                : pediatricWeightMissing
+                  ? lang === "ar"
+                    ? "تنبيه للأطفال: لم يُسجّل وزن حالي لهذه الزيارة. تحقّق من وزن مقاس قبل أي جرعة تعتمد على الوزن، وراجع أي حدود قصوى تنطبق على الجرعة الواحدة أو اليوم."
+                    : "Pediatric safety: no current visit weight is recorded for this visit. Verify a measured weight before any weight-based dose and check any applicable per-dose and daily maximums."
+                  : lang === "ar"
+                    ? "تنبيه للأطفال: تحقّق يدويًا من الوزن المسجّل لهذه الزيارة وأساس الجرعة وأي حد أقصى ينطبق على الجرعة الواحدة أو اليوم. لا يحسب النظام جرعات الأطفال تلقائيًا."
+                    : "Pediatric safety: manually verify the recorded visit weight, dose basis and any applicable per-dose or daily maximum. The system does not calculate pediatric doses."}
           </div>
         ) : null}
         <div
@@ -240,8 +356,8 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
               lang === "ar"
-                ? "ابحث باسم الدواء أو المادة أو القوة"
-                : "Search medicine, generic or strength"
+                ? "ابحث باسم الدواء أو العلامة أو المادة أو القوة أو الشكل"
+                : "Search name, brand, generic, strength or form"
             }
           />
           {search.trim().length === 1 && (
@@ -291,11 +407,29 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                   className="flex w-full items-center justify-between rounded-md px-3 py-2 text-start text-sm hover:bg-muted"
                   onClick={() => chooseMedicine(s(m, "id"))}
                 >
-                  <span>
+                  <span className="flex min-w-0 flex-col">
                     <span className="font-medium">{s(m, "name") || s(m, "generic_name")}</span>
-                    {s(m, "strength") && (
-                      <span className="ms-2 text-xs text-muted-foreground">{s(m, "strength")}</span>
-                    )}
+                    {[
+                      s(m, "generic_name"),
+                      s(m, "brand_name"),
+                      s(m, "strength"),
+                      s(m, "dosage_form"),
+                    ]
+                      .filter((value) => value && value !== s(m, "name"))
+                      .filter((value, index, values) => values.indexOf(value) === index)
+                      .join(" · ") ? (
+                      <span className="text-xs text-muted-foreground">
+                        {[
+                          s(m, "generic_name"),
+                          s(m, "brand_name"),
+                          s(m, "strength"),
+                          s(m, "dosage_form"),
+                        ]
+                          .filter((value) => value && value !== s(m, "name"))
+                          .filter((value, index, values) => values.indexOf(value) === index)
+                          .join(" · ")}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {s(m, "stock_quantity") || "0"}
@@ -313,106 +447,179 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               setSearch("");
             }}
             placeholder={lang === "ar" ? "اسم الدواء" : "Medication name"}
+            aria-label={lang === "ar" ? "اسم الدواء" : "Medication name"}
           />
-          <Select
-            value={form.dosage_form || "custom"}
-            onValueChange={(v) => setForm({ ...form, dosage_form: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "الشكل الدوائي" : "Dosage form"} />
-            </SelectTrigger>
-            <SelectContent>
-              {DOSAGE_FORMS.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "إدخال يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Select
+              value={isKnownDosageForm ? form.dosage_form : "custom"}
+              onValueChange={(v) => setForm({ ...form, dosage_form: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger aria-required="true">
+                <SelectValue placeholder={lang === "ar" ? "الشكل الدوائي" : "Dosage form"} />
+              </SelectTrigger>
+              <SelectContent>
+                {DOSAGE_FORMS.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "إدخال يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownDosageForm ? (
+              <Input
+                value={form.dosage_form}
+                onChange={(e) => setForm({ ...form, dosage_form: e.target.value })}
+                aria-label={lang === "ar" ? "الشكل الدوائي المخصص" : "Custom dosage form"}
+                placeholder={lang === "ar" ? "أدخل الشكل الدوائي" : "Enter dosage form"}
+              />
+            ) : null}
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "بيانات الشكل الدوائي في الكتالوج لا تتحقق بصورة مستقلة من هوية المنتج أو قوته؛ طابقها مع العبوة وملصق الشركة قبل الاعتماد عليها."
+                : "Catalogue form data does not independently verify the product identity or strength. Confirm the exact formulation against the physical pack and manufacturer label."}
+            </p>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
-          <Select
-            value={form.dose || "custom"}
-            onValueChange={(v) => setForm({ ...form, dose: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "الجرعة" : "Dose"} />
-            </SelectTrigger>
-            <SelectContent>
-              {DOSES.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={form.frequency || "custom"}
-            onValueChange={(v) => setForm({ ...form, frequency: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "التكرار" : "Frequency"} />
-            </SelectTrigger>
-            <SelectContent>
-              {FREQUENCIES.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={form.duration || "custom"}
-            onValueChange={(v) => setForm({ ...form, duration: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "المدة" : "Duration"} />
-            </SelectTrigger>
-            <SelectContent>
-              {DURATIONS.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            value={form.dose}
+            onChange={(e) => setForm({ ...form, dose: e.target.value })}
+            aria-label={lang === "ar" ? "الجرعة والوحدة" : "Dose and unit"}
+            placeholder={lang === "ar" ? "الجرعة مع الوحدة" : "Dose including unit"}
+          />
+          <div className="space-y-2">
+            <Select
+              value={isKnownFrequency ? form.frequency : "custom"}
+              onValueChange={(v) => setForm({ ...form, frequency: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger aria-required="true">
+                <SelectValue placeholder={lang === "ar" ? "التكرار" : "Frequency"} />
+              </SelectTrigger>
+              <SelectContent>
+                {FREQUENCIES.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownFrequency ? (
+              <Input
+                value={form.frequency}
+                onChange={(e) => setForm({ ...form, frequency: e.target.value })}
+                aria-label={lang === "ar" ? "تكرار مخصص" : "Custom frequency"}
+                placeholder={lang === "ar" ? "أدخل التكرار والتوقيت" : "Enter frequency and timing"}
+              />
+            ) : null}
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "اختصارات التكرار لتسهيل الإدخال فقط وليست توصيات علاجية؛ تحقّق من الجرعة والفاصل والتوقيت وفق الاستطباب والمستحضر والإرشادات المعتمدة."
+                : "Frequency shortcuts are for data entry only, not treatment recommendations. Verify the regimen, interval and timing for the indication, product and applicable guidance."}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Select
+              value={isKnownDuration ? form.duration : "custom"}
+              onValueChange={(v) => setForm({ ...form, duration: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger aria-required="true">
+                <SelectValue placeholder={lang === "ar" ? "المدة" : "Duration"} />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATIONS.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "خيارات المدة لتسهيل الإدخال فقط وليست توصيات علاجية؛ حدّد المدة وفق الاستطباب والإرشادات المعتمدة وحالة المريض."
+                : "Duration shortcuts are for data entry only, not treatment recommendations. Choose duration for the indication, applicable guidance and patient context."}
+            </p>
+            {!isKnownDuration ? (
+              <Input
+                value={form.duration}
+                onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                aria-label={lang === "ar" ? "مدة مخصصة" : "Custom duration"}
+                placeholder={lang === "ar" ? "أدخل المدة ووحدتها" : "Enter duration and unit"}
+              />
+            ) : null}
+          </div>
           <Input
             dir="ltr"
             type="number"
             min="1"
             value={form.quantity}
             onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-            placeholder={lang === "ar" ? "الكمية" : "Qty"}
+            required
+            aria-label={lang === "ar" ? "الكمية المطلوبة" : "Required quantity"}
+            placeholder={lang === "ar" ? "الكمية المطلوبة" : "Required quantity"}
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Select
-            value={form.route || "custom"}
-            onValueChange={(v) => setForm({ ...form, route: v === "custom" ? "" : v })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={lang === "ar" ? "طريق الإعطاء" : "Route"} />
-            </SelectTrigger>
-            <SelectContent>
-              {ROUTES.map((x) => (
-                <SelectItem key={x.value} value={x.value}>
-                  {lang === "ar" ? x.labelAr : x.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input
-            value={form.instructions}
-            onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-            placeholder={lang === "ar" ? "تعليمات إضافية" : "Instructions"}
-          />
+          <div className="space-y-2">
+            <Select
+              value={isKnownRoute ? form.route : "custom"}
+              onValueChange={(v) => setForm({ ...form, route: v === "custom" ? "" : v })}
+            >
+              <SelectTrigger aria-required="true">
+                <SelectValue placeholder={lang === "ar" ? "طريق الإعطاء" : "Route"} />
+              </SelectTrigger>
+              <SelectContent>
+                {ROUTES.map((x) => (
+                  <SelectItem key={x.value} value={x.value}>
+                    {lang === "ar" ? x.labelAr : x.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">{lang === "ar" ? "يدوي" : "Custom"}</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isKnownRoute ? (
+              <Input
+                value={form.route}
+                onChange={(e) => setForm({ ...form, route: e.target.value })}
+                aria-label={lang === "ar" ? "طريق إعطاء مخصص" : "Custom administration route"}
+                placeholder={lang === "ar" ? "أدخل طريق الإعطاء" : "Enter administration route"}
+              />
+            ) : null}
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "خيارات طريق الإعطاء عامة ولا يتحقق النظام من توافقها مع المنتج المحدد؛ تحقّق من ملصق المستحضر قبل الاختيار."
+                : "Route options are generic; the system does not validate them against the selected product. Verify the exact product label before choosing a route."}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Textarea
+              rows={2}
+              value={form.instructions}
+              onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+              aria-label={
+                lang === "ar"
+                  ? "تعليمات المريض الإضافية (اختياري)"
+                  : "Additional patient instructions (optional)"
+              }
+              placeholder={
+                lang === "ar" ? "تعليمات للمريض (اختيارية)" : "Patient instructions (optional)"
+              }
+            />
+            <p role="note" className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "تُحفظ هذه التعليمات مع بند الدواء وتظهر في النسخة المطبوعة وطابور الصيدلية."
+                : "These instructions are saved with the medication item and shown on the printed prescription and pharmacy queue."}
+            </p>
+          </div>
         </div>
-        <Button variant="outline" type="button" onClick={add}>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={Boolean(validatePrescriptionDrafts([form]))}
+          onClick={add}
+        >
           + {lang === "ar" ? "إضافة للروشتة" : "Add to prescription"}
         </Button>
         {items.length > 0 && (
@@ -430,10 +637,26 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
               <tbody>
                 {items.map((i, index) => (
                   <tr key={`${i.medicine_id}-${index}`} className="border-b last:border-0">
-                    <td className="p-2">{i.name}</td>
+                    <td className="p-2">
+                      <div className="font-medium">{i.name}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {[i.dosage_form, i.route].filter(Boolean).join(" · ") || "—"}
+                      </p>
+                      {i.instructions ? (
+                        <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                          {lang === "ar" ? "تعليمات المريض: " : "Patient instructions: "}
+                          {i.instructions}
+                        </p>
+                      ) : null}
+                    </td>
                     <td className="p-2">{i.dose || "—"}</td>
                     <td className="p-2">{i.frequency || "—"}</td>
-                    <td className="p-2">{i.duration || "—"}</td>
+                    <td className="p-2">
+                      <span className="block">{i.duration || "—"}</span>
+                      <span className="block text-xs text-muted-foreground" dir="ltr">
+                        {lang === "ar" ? "الكمية" : "Qty"} {i.quantity}
+                      </span>
+                    </td>
                     <td className="p-2 text-end">
                       <Button
                         variant="ghost"
@@ -449,9 +672,12 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             </table>
           </div>
         )}
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          {prescriptionPrintModel?.complete ? (
+            <PrintButton scoped targetId="prescription-print-document" />
+          ) : null}
           <Button
-            disabled={save.isPending || !items.length}
+            disabled={save.isPending || !items.length || Boolean(validatePrescriptionDrafts(items))}
             onClick={() => save.mutate(undefined as never)}
           >
             {save.isPending
@@ -463,6 +689,171 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
                 : "Save prescription"}
           </Button>
         </div>
+        {lastSavedPrescriptionId && !visitBranch && !visitQ.isLoading ? (
+          <p className="text-xs text-destructive" role="alert">
+            {lang === "ar"
+              ? "تعذر التحقق من الفرع المرتبط بالزيارة؛ الطباعة الرسمية متوقفة."
+              : "The visit branch could not be verified; official printing is blocked."}
+          </p>
+        ) : null}
+        {lastSavedPrescriptionId &&
+        visitBranch &&
+        !savedPrescriptionQ.isLoading &&
+        !savedPrescriptionQ.error &&
+        !savedPrescription ? (
+          <p className="text-xs text-destructive" role="alert">
+            {lang === "ar"
+              ? "تعذر العثور على الوصفة المحفوظة ضمن الزيارة والفرع الحاليين."
+              : "The saved prescription could not be verified within this visit and branch."}
+          </p>
+        ) : null}
+        {lastSavedPrescriptionId && savedPrescriptionQ.isLoading ? (
+          <p className="text-xs text-muted-foreground">
+            {lang === "ar"
+              ? "جارٍ تجهيز النسخة المحفوظة..."
+              : "Preparing the saved prescription copy..."}
+          </p>
+        ) : null}
+        {savedPrescriptionQ.error ? (
+          <div className="flex flex-wrap items-center gap-2 text-sm text-destructive" role="alert">
+            <span>
+              {lang === "ar"
+                ? "تعذر تحميل الوصفة المحفوظة للطباعة."
+                : "Could not load the saved prescription for printing."}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void savedPrescriptionQ.refetch()}
+            >
+              {lang === "ar" ? "إعادة المحاولة" : "Retry"}
+            </Button>
+          </div>
+        ) : null}
+        {prescriptionPrintModel && !prescriptionPrintModel.complete ? (
+          <p className="text-xs text-destructive" role="alert">
+            {lang === "ar"
+              ? "الطباعة الرسمية متوقفة حتى تكتمل بيانات الوصفة المحفوظة وهوية المريض والطبيب."
+              : "Official printing is blocked until the saved prescription, patient identity, and prescriber details are complete."}
+          </p>
+        ) : null}
+        {prescriptionPrintModel?.complete ? (
+          <div className="print-only">
+            <article
+              id="prescription-print-document"
+              className="print-document-root mx-auto max-w-4xl space-y-5"
+              dir={lang === "ar" ? "rtl" : "ltr"}
+            >
+              <header className="space-y-2 border-b pb-4 text-center">
+                <h1 className="text-xl font-bold">
+                  {(lang === "ar" ? settings["center_name_ar"] : settings["center_name"]) ||
+                    settings["center_name"] ||
+                    settings["center_name_ar"] ||
+                    (lang === "ar" ? "مركز روشان الطبي" : "ROSHAN Medical Center")}
+                </h1>
+                {settings["address"] || settings["phone"] ? (
+                  <p className="text-sm">
+                    {[settings["address"], settings["phone"]].filter(Boolean).join(" · ")}
+                  </p>
+                ) : null}
+                <h2 className="pt-3 text-lg font-semibold">
+                  {lang === "ar"
+                    ? "نسخة من الوصفة الطبية المحفوظة"
+                    : "Saved prescription order copy"}
+                </h2>
+              </header>
+              <section className="grid grid-cols-2 gap-2 text-sm">
+                <p>
+                  <strong>{lang === "ar" ? "المريض:" : "Patient:"}</strong>{" "}
+                  {prescriptionPrintModel.patientName}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "الرقم الطبي:" : "MRN:"}</strong>{" "}
+                  <span dir="ltr">{prescriptionPrintModel.patientMrn || "—"}</span>
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "الطبيب:" : "Prescriber:"}</strong>{" "}
+                  {prescriptionPrintModel.prescriberName}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "التاريخ:" : "Date:"}</strong>{" "}
+                  <span dir="ltr">{formatDateTime(prescriptionPrintModel.createdAt)}</span>
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "الحالة:" : "Status:"}</strong>{" "}
+                  {prescriptionPrintModel.status || "—"}
+                </p>
+                <p>
+                  <strong>{lang === "ar" ? "النوع:" : "Type:"}</strong>{" "}
+                  {prescriptionPrintModel.isExternal
+                    ? lang === "ar"
+                      ? "خارجية"
+                      : "External"
+                    : lang === "ar"
+                      ? "داخلية"
+                      : "Internal"}
+                </p>
+              </section>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="p-2 text-start">{lang === "ar" ? "الدواء" : "Medicine"}</th>
+                      <th className="p-2 text-start">{lang === "ar" ? "الشكل" : "Form"}</th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "الجرعة / الطريق" : "Dose / Route"}
+                      </th>
+                      <th className="p-2 text-start">{lang === "ar" ? "التكرار" : "Frequency"}</th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "المدة / الكمية" : "Duration / Qty"}
+                      </th>
+                      <th className="p-2 text-start">
+                        {lang === "ar" ? "التعليمات" : "Instructions"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prescriptionPrintModel.items.map((item) => (
+                      <tr key={item.id} className="border-b align-top">
+                        <td className="p-2 break-words">{item.medicationName}</td>
+                        <td className="p-2">{item.dosageForm}</td>
+                        <td className="p-2">
+                          <span className="block">{item.dose}</span>
+                          <span className="block text-muted-foreground">{item.route}</span>
+                        </td>
+                        <td className="p-2">{item.frequency}</td>
+                        <td className="p-2">
+                          <span className="block">{item.duration}</span>
+                          <span className="block" dir="ltr">
+                            {item.quantity}
+                          </span>
+                        </td>
+                        <td className="p-2 break-words whitespace-pre-wrap">
+                          {item.instructions || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {prescriptionPrintModel.notes ? (
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  <strong>{lang === "ar" ? "ملاحظات:" : "Notes:"}</strong>{" "}
+                  {prescriptionPrintModel.notes}
+                </p>
+              ) : null}
+              <p className="border-t pt-3 text-xs">
+                {lang === "ar"
+                  ? "نسخة مطبوعة من الطلب المحفوظ؛ لا تمثل توقيعاً رقمياً."
+                  : "Printed copy of the saved order; this is not a digital signature."}
+              </p>
+              {settings["invoice_footer"] ? (
+                <footer className="text-xs">{settings["invoice_footer"]}</footer>
+              ) : null}
+            </article>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

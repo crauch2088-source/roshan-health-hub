@@ -5,7 +5,10 @@
  */
 export function parseDispenseQuantity(value: unknown): number | null {
   if (typeof value !== "number" && typeof value !== "string") return null;
-  if (typeof value === "string" && value.trim() === "") return null;
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (!/^\d+(?:\.0+)?$/.test(normalized)) return null;
+  }
 
   const quantity = Number(value);
   if (

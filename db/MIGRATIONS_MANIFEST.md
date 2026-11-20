@@ -318,3 +318,12 @@ The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do 
 Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction, or pharmacy dispensing authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
 
 The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.
+
+
+## Candidate Phase 63 — prescription item completeness guard (2026-11-15)
+
+| Source file | Intended effect | Verification | Hosted status |
+|---|---|---|---|
+| `db/roshan_phase63_prescription_item_completeness_guard.sql` | Adds a private BEFORE INSERT/UPDATE trigger requiring medication name, dose, frequency, duration, dosage form, route and a positive whole quantity within the RPC integer range. It normalizes a missing legacy `dose`/`dosage` twin, skips soft-deleted rows, and does not infer any clinical regimen. | Dedicated PostgreSQL 17 fixture and regression suite: `db/tests/phase63_prescription_item_completeness_fixture.sql` and `db/tests/phase63_prescription_item_completeness_integration.sql`; exact PR #255 code-head job passed. | Source candidate only in Draft PR #255. Not applied to QA or Production; no migration ledger row expected yet. |
+
+Do not promote Phase 63 independently of the PR #255 UI/save-path changes, independent clinical/security review, and the established QA/Production migration/backup gates.
