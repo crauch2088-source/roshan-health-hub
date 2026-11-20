@@ -14,10 +14,10 @@ BEGIN
   -- but keep clinical payload immutable whenever the old or new row is archived.
   IF TG_OP = 'UPDATE' AND (OLD.deleted_at IS NOT NULL OR NEW.deleted_at IS NOT NULL) THEN
     IF ROW(
-      NEW.prescription_id, NEW.medicine_id, NEW.medication_name, NEW.dose, NEW.dosage,
+      NEW.prescription_id, NEW.medicine_id, NEW.medication_name, NEW.dose, NEW.dosage, NEW.instructions,
       NEW.frequency, NEW.duration, NEW.quantity, NEW.dosage_form, NEW.route
     ) IS DISTINCT FROM ROW(
-      OLD.prescription_id, OLD.medicine_id, OLD.medication_name, OLD.dose, OLD.dosage,
+      OLD.prescription_id, OLD.medicine_id, OLD.medication_name, OLD.dose, OLD.dosage, OLD.instructions,
       OLD.frequency, OLD.duration, OLD.quantity, OLD.dosage_form, OLD.route
     ) THEN
       RAISE EXCEPTION 'prescription item clinical fields are immutable when archived or restored'
