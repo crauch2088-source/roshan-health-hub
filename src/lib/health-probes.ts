@@ -18,7 +18,7 @@ function readProcessEnv(): HealthProbeEnv {
   return {
     supabaseUrl: env["VITE_SUPABASE_URL"] ?? env["SUPABASE_URL"],
     supabaseAnonKey:
-     env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+      env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
       env["VITE_SUPABASE_ANON_KEY"] ??
       env["SUPABASE_ANON_KEY"],
     commitSha: env["VERCEL_GIT_COMMIT_SHA"] ?? env["GITHUB_SHA"] ?? "unknown",
