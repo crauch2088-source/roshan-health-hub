@@ -101,7 +101,7 @@ test("buildReadinessResponse handles unconfigured, failing, and healthy probes w
   const unconfiguredBody = (await unconfigured.json()) as {
     status: string;
     checks: { supabase: string };
-   ;
+  } ;
   assert.equal(unconfiguredBody.status, "not_ready");
   assert.equal(unconfiguredBody.checks.supabase, "unconfigured");
 
