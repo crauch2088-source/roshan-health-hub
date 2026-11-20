@@ -225,6 +225,18 @@ BEGIN
     IF SQLSTATE <> '42501' OR SQLERRM NOT LIKE '%branch_access_denied%' THEN RAISE; END IF;
   END;
 
+  -- Quarantined post-handover returns are physical stock, not saleable batch stock.
+  -- They must not inflate the saleable-stock reconciliation result.
+  INSERT INTO public.stock_movements (
+    medicine_id, batch_id, movement_type, quantity, reference_id,
+    reference_table, notes, branch_id, created_by
+  ) VALUES (
+    v_med_id, v_batch_1, 'return_quarantine', 2,
+    '90000000-0000-0000-0000-000000000099', 'pharmacy_returns',
+    'Synthetic quarantined return; excluded from saleable ledger net',
+    v_branch_1, v_user_b1
+  );
+
   -- 12. Reconcile medicine stock ledger as Branch 1 user
   PERFORM set_config('test.user_id', v_user_b1::text, true);
   SELECT * INTO v_rec FROM public.reconcile_medicine_stock_ledger(v_med_id, v_branch_1);
