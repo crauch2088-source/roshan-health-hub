@@ -219,6 +219,35 @@ BEGIN
     RAISE EXCEPTION 'rejected historical payload mutation changed the archived row';
   END IF;
 
+  -- Restoring a deleted row must not be used to rewrite its historical clinical payload.
+  INSERT INTO public.prescription_items(
+    id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,
+    dosage_form,route,instructions,deleted_at
+  ) VALUES (
+    '63000000-0000-0000-0000-000000000032',
+    '63000000-0000-0000-0000-000000000101',
+    'Archived complete medicine','500 mg','1 tablet','twice daily','5 days',10,
+    'tablet','oral','Take with food',now()
+  );
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items
+       SET deleted_at=NULL, medication_name='Mutated during restore'
+     WHERE id='63000000-0000-0000-0000-000000000032';
+  EXCEPTION WHEN check_violation THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'restoring a soft-deleted row allowed clinical payload mutation';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+     WHERE id='63000000-0000-0000-0000-000000000032'
+       AND deleted_at IS NOT NULL
+       AND medication_name='Archived complete medicine'
+  ) THEN
+    RAISE EXCEPTION 'rejected restore mutation changed the historical prescription payload';
+  END IF;
+
   v_rejected := false;
   BEGIN
     UPDATE public.prescription_items SET route='' WHERE id='63000000-0000-0000-0000-000000000001';
