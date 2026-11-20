@@ -108,12 +108,12 @@ BEGIN
     (v_rx_handover, v_pat_4, v_vis_4, 'dispensed', v_pharm_a, clock_timestamp()),
     (v_rx_exp,      v_pat_5, v_vis_5, 'dispensed', v_pharm_a, clock_timestamp());
 
-  INSERT INTO public.prescription_items (prescription_id, medicine_id, medication_name, quantity, dispensed_quantity, unit_price, is_dispensed) VALUES
-    (v_rx_unpaid,   v_med_1, 'Amoxicillin 500mg', 4, 4, 25.00, true),
-    (v_rx_partial,  v_med_1, 'Amoxicillin 500mg', 4, 4, 25.00, true),
-    (v_rx_paid,     v_med_1, 'Amoxicillin 500mg', 4, 4, 25.00, true),
-    (v_rx_handover, v_med_1, 'Amoxicillin 500mg', 6, 6, 25.00, true),
-    (v_rx_exp,      v_med_1, 'Amoxicillin 500mg', 2, 2, 25.00, true);
+  INSERT INTO public.prescription_items (id, prescription_id, medicine_id, medication_name, quantity, dispensed_quantity, unit_price, is_dispensed) VALUES
+    (gen_random_uuid(), v_rx_unpaid,   v_med_1, 'Amoxicillin 500mg', 4, 4, 25.00, true),
+    (gen_random_uuid(), v_rx_partial,  v_med_1, 'Amoxicillin 500mg', 4, 4, 25.00, true),
+    (gen_random_uuid(), v_rx_paid,     v_med_1, 'Amoxicillin 500mg', 4, 4, 25.00, true),
+    (gen_random_uuid(), v_rx_handover, v_med_1, 'Amoxicillin 500mg', 6, 6, 25.00, true),
+    (gen_random_uuid(), v_rx_exp,      v_med_1, 'Amoxicillin 500mg', 2, 2, 25.00, true);
 
   INSERT INTO public.stock_movements (medicine_id, batch_id, movement_type, quantity, reference_id, reference_table, branch_id, created_by) VALUES
     (v_med_1, v_batch_valid,   'dispense', -4, v_rx_unpaid,   'prescriptions', v_branch_a, v_pharm_a),
