@@ -84,6 +84,8 @@ test("snapshot fetches only open PR metadata and recent workflow-run metadata", 
   assert.equal(snapshot.generated_at, "2026-11-15T21:00:00.000Z");
   assert.equal(snapshot.commit_sha, baseEnv.SNAPSHOT_SHA);
   assert.equal(snapshot.open_pull_requests[0].number, 254);
+  assert.equal(Object.hasOwn(snapshot.open_pull_requests[0], "title"), false);
+  assert.equal(Object.hasOwn(snapshot.open_pull_requests[0], "head_ref"), false);
   assert.equal(snapshot.recent_workflow_runs[0].conclusion, "success");
   assert.equal(JSON.stringify(snapshot).includes("UNTRUSTED"), false);
   assert.equal(JSON.stringify(snapshot).includes("synthetic-token"), false);
@@ -150,6 +152,8 @@ test("workflow_dispatch and workflow_run cannot create a snapshot from a non-mai
     workflow,
     /if: github\.ref == 'refs\/heads\/main' && \(github\.event_name != 'workflow_run' \|\| github\.event\.workflow_run\.head_branch == 'main'\)/,
   );
+  assert.match(workflow, /github\\.event\\.workflow_run\\.event == 'push'/);
+  assert.match(workflow, /github\\.event\\.workflow_run\\.head_repository\\.full_name == github\\.repository/);
 });
 
 test("Repomix excludes private keys, local credentials, cloud auth and Terraform state", async () => {
