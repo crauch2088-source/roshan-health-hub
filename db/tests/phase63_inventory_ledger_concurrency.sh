@@ -165,15 +165,11 @@ price_match=$(psql -Atc "
 [ "$price_match" = "t" ] || { echo "FAIL (e): selling_price does not match latest history row"; exit 1; }
 
 # Final reconciliation check
-reconcile_res=$(psql -Atq <<SQL
+reconcile_res=$(psql -Atq <<SQL | tail -n 1
 BEGIN;
-DO \$\$
-BEGIN
-  PERFORM set_config('test.user_id', '${USER_1}', true);
-  PERFORM set_config('test.super_admin', 'false', true);
-  PERFORM set_config('test.perms', 'pharmacy.read,pharmacy.update', true);
-END
-\$\$;
+SELECT set_config('test.user_id', '${USER_1}', true);
+SELECT set_config('test.super_admin', 'false', true);
+SELECT set_config('test.perms', 'pharmacy.read,pharmacy.update', true);
 SELECT is_balanced || '|' || batch_sum || '|' || ledger_net
 FROM public.reconcile_medicine_stock_ledger('${MED_ID}', '${BRANCH_1}');
 COMMIT;
