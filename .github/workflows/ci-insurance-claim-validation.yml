@@ -4,8 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'src/**'
-      - 'tests/**'
+      - 'src/lib/insurance-validation.ts'
+      - 'tests/insurance-claim-validation.test.ts'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/ci-insurance-claim-validation.yml'
   push:
     branches:

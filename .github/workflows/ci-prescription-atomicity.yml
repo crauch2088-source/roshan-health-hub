@@ -3,9 +3,14 @@ name: Prescription atomicity integration
 on:
   pull_request:
     paths:
-      - 'db/**'
-      - 'tests/**'
-      - '.github/workflows/ci-fix/prescription-atomicity.yml'
+      - 'db/roshan_phase7_atomic_prescription.sql'
+      - 'db/tests/prescription_rpc_fixture.sql'
+      - 'db/tests/prescription_rpc_integration.sql'
+      - 'tests/prescription-atomicity.test.ts'
+      - 'src/lib/prescription-draft.ts'
+      - 'src/features/clinic/consultation/components/PrescriptionTab.tsx'
+      - 'package.json'
+      - '.github/workflows/ci-prescription-atomicity.yml'
   push:
     branches:
       - 'fix/prescription-atomicity'
