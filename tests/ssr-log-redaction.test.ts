@@ -101,7 +101,7 @@ test("buildReadinessResponse handles unconfigured, failing, and healthy probes w
   const unconfiguredBody = (await unconfigured.json()) as {
     status: string;
     checks: { supabase: string };
-   };
+   ;
   assert.equal(unconfiguredBody.status, "not_ready");
   assert.equal(unconfiguredBody.checks.supabase, "unconfigured");
 
@@ -149,7 +149,7 @@ test("buildAllowlistedTelemetryEnvelope drops extra PHI keys and redacts Arabic/
   assert.equal(envelope.sqlState, "23505");
   for (const sensitive of [
     "Jane Doe",
-    "أحمد محمد", 
+    "أحمد محمد",
     "912 345 678",
     fakeJwt,
     fakeSecret,
@@ -166,7 +166,7 @@ test("dispatchTelemetryFailOpen fails open on unconfigured, HTTP errors, rejecti
   const unconfigured = await dispatchTelemetryFailOpen(envelope, undefined);
   assert.deepEqual(unconfigured, { sent: false, reason: "unconfigured" });
 
-   const okRes = await dispatchTelemetryFailOpen(
+  const okRes = await dispatchTelemetryFailOpen(
     envelope,
     "https://example.test/telemetry",
     async () => ({ ok: true }),
