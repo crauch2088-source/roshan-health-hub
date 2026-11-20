@@ -123,7 +123,7 @@ test("literal Supabase table references exist in canonical public baseline", () 
   }
   // Phase 61 introduces this RLS-protected read model through a forward-only
   // migration; it is intentionally not part of the historical v112 baseline.
-  const forwardMigrationObjects = new Set(["prescription_item_correction_requests"], "financial_compensations", "pharmacy_dispense_cancellations", "pharmacy_returns", "pharmacy_return_quarantine");
+  const forwardMigrationObjects = new Set(["prescription_item_correction_requests", "financial_compensations", "pharmacy_dispense_cancellations", "pharmacy_returns", "pharmacy_return_quarantine"]);
   const missing = [...queried].filter(
     (name) => !objects.has(name) && !forwardMigrationObjects.has(name),
   );
