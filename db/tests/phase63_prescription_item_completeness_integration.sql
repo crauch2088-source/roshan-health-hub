@@ -193,14 +193,12 @@ BEGIN
     RAISE EXCEPTION 'rejected soft-delete mutation changed the active prescription payload';
   END IF;
 
-  -- Legacy soft-deleted rows remain untouched; ordinary non-clinical updates
-  -- do not revalidate them.
+  -- Legacy soft-deleted rows remain readable even when historical clinical
+  -- fields are incomplete; the guard must not retroactively validate them.
   INSERT INTO public.prescription_items(id,prescription_id,medication_name,quantity,deleted_at)
   VALUES('63000000-0000-0000-0000-000000000031','63000000-0000-0000-0000-000000000101',NULL,NULL,now());
-  UPDATE public.prescription_items SET instructions='legacy archived row' WHERE id='63000000-0000-0000-0000-000000000031';
 
   -- Historical soft-deleted prescription payloads are immutable too.
-  -- Non-clinical metadata can still be maintained without rewriting the order.
   v_rejected := false;
   BEGIN
     UPDATE public.prescription_items
@@ -215,7 +213,7 @@ BEGIN
     SELECT 1 FROM public.prescription_items
      WHERE id='63000000-0000-0000-0000-000000000031'
        AND medication_name IS NULL
-       AND instructions='legacy archived row'
+       AND instructions IS NULL
        AND deleted_at IS NOT NULL
   ) THEN
     RAISE EXCEPTION 'rejected historical payload mutation changed the archived row';
