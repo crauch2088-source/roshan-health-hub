@@ -1470,3 +1470,63 @@ BEGIN
 END;
 $phase61c_changed_choice_no_side_effects$;
 
+
+
+-- A Doctor deliberately receives the two broad permission bits in this fixture.
+-- The canonical pharmacist role boundary must still reject both public entry points
+-- before payload validation or idempotency writes.
+INSERT INTO public.role_permissions(role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+CROSS JOIN public.permissions p
+WHERE r.code = 'doctor'
+  AND p.code IN ('pharmacy.update', 'billing.create')
+ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002',false);
+DO $phase61c_doctor_dispense_denied$
+DECLARE
+  v_denied boolean := false;
+  v_request_id uuid := 'ffffffff-ffff-ffff-ffff-ffffffffffe3';
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update')
+     OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'Doctor fixture must demonstrate both broad permission bits';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
+    RAISE EXCEPTION 'Doctor unexpectedly satisfies canonical pharmacist role gate';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid, false, v_request_id
+    );
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Doctor reached atomic pharmacy dispense despite broad permission bits';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      NULL::uuid, false
+    );
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Doctor reached invoice-linked dispense despite broad permission bits';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM private.pharmacy_dispense_idempotency
+    WHERE request_id = v_request_id
+  ) THEN
+    RAISE EXCEPTION 'rejected Doctor request created an idempotency row';
+  END IF;
+END;
+$phase61c_doctor_dispense_denied$;
+RESET ROLE;
