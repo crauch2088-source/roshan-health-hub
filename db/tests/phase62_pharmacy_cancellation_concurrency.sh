@@ -156,7 +156,10 @@ BEGIN
   END IF;
 
   SELECT count(*) INTO v_b_cancels FROM public.pharmacy_dispense_cancellations WHERE prescription_id = '${RX_B}';
-  SELECT count(*) INTO v_b_comp FROM public.financial_compensations WHERE reference_id = '${RX_B}';
+  SELECT count(*) INTO v_b_comp
+    FROM public.financial_compensations fc
+    JOIN public.pharmacy_dispense_cancellations c ON c.compensation_id = fc.id
+   WHERE c.prescription_id = '${RX_B}';
   SELECT net_amount INTO v_b_inv_net FROM public.invoices WHERE id = '${INV_B}';
   IF v_b_cancels <> 1 OR v_b_comp <> 1 OR v_b_inv_net <> 100 THEN
     RAISE EXCEPTION 'FAIL (b): cancels=%, comp=%, inv_net=%', v_b_cancels, v_b_comp, v_b_inv_net;
