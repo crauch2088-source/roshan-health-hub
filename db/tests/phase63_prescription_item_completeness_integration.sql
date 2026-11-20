@@ -219,6 +219,29 @@ BEGIN
     RAISE EXCEPTION 'rejected historical payload mutation changed the archived row';
   END IF;
 
+  -- The catalogue link and parent prescription association are part of the archived clinical record.
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items
+       SET medicine_id='63000000-0000-0000-0000-000000000099'
+     WHERE id='63000000-0000-0000-0000-000000000032';
+  EXCEPTION WHEN check_violation THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'archived prescription medicine identity was mutable';
+  END IF;
+
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items
+       SET prescription_id='63000000-0000-0000-0000-000000000102'
+     WHERE id='63000000-0000-0000-0000-000000000032';
+  EXCEPTION WHEN check_violation THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'archived prescription parent association was mutable';
+  END IF;
+
   -- Restoring a deleted row must not be used to rewrite its historical clinical payload.
   INSERT INTO public.prescription_items(
     id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,
