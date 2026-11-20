@@ -78,10 +78,8 @@ export async function createLiveStateSnapshot({
     trigger: safeText(env.GITHUB_EVENT_NAME, 80),
     open_pull_requests: pullRequests.map((pr) => ({
       number: Number.isInteger(pr.number) ? pr.number : null,
-      title: safeText(pr.title),
       draft: Boolean(pr.draft),
       updated_at: safeText(pr.updated_at, 40),
-      head_ref: safeText(pr.head?.ref, 120),
       head_sha: safeText(pr.head?.sha, 40),
       base_ref: safeText(pr.base?.ref, 120),
       url: safeText(pr.html_url, 300),
