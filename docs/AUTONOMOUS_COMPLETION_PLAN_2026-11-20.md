@@ -201,18 +201,19 @@ The original Sections A–I above are preserved verbatim. Autonomous execution p
 - Added the synthetic pharmacist to `public.users` with the same branch in commit `a2aab968c3b892a9fa33f399ca876a9e5fa7653b`.
 - The next CI run (`44806100291`, job `136530396368`) passed the seed handover and reached the concurrency assertions. The observed `handover_already_recorded_use_return_workflow` was the expected losing side of the cancel-vs-handover race; the actual test defect was an assertion against nonexistent `handover_confirmed_at`.
 - Corrected the assertion to the migration's actual `prescriptions.handed_over_at` column in commit `4e54d1ad6113047ee2e8eb705b477850874820b2`.
-- Latest exact-head CI run: `44806352739` (pending at checkpoint). PR remains Draft and unmerged.
+- Latest exact-head CI: **PASS, 20/20 jobs** on PR head `23d40e101d463f6715d643dff56ce4cd179a0d5f`, run `44807109853` (CI #2298). The two-session Phase 62 concurrency job passed, including the cancel-vs-handover race, duplicate cancellation, compensation linkage, and quarantine no-restock assertion. PR remains Draft and unmerged.
 
 ### K.3 Phase 63 — inventory ledger concurrency (PR #294)
 
 - Two-session PostgreSQL 17 harness is present at `db/tests/phase63_inventory_ledger_concurrency.sh`; it exercises five races: competing deductions, duplicate idempotency key, quarantine vs adjustment, competing write-offs, and price updates.
 - CI run `44795772766`, job `136494788626`, demonstrated all five concurrency scenarios reached their assertions successfully; the final history-order assertion failed because `created_at` does not exist on `medicine_price_history`.
 - Schema inspection confirmed the timestamp column is `effective_at` (not `created_at` or `changed_at`). The assertion was corrected to `ORDER BY effective_at DESC, id DESC` in commit `38e88e247be749ca656895fdf85c2155b73aebfc`.
-- Latest exact-head CI run: `44806346393` (queued at checkpoint). PR remains Draft and unmerged.
+- Latest exact-head CI: **PASS, 20/20 jobs** on PR head `26f1cd97887ab939b6451a7b47936791a0fd4373`, run `44807031795` (CI #2297). The two-session Phase 63 inventory concurrency job passed all five race scenarios and the final ledger reconciliation. PR remains Draft and unmerged.
 
 ### K.4 Early review findings (not yet final dispositions)
 
 - PR metadata and changed-file inventories were refreshed for #210, #250, #269, #287, #291, #292, #293, #294, and #295. This is a partial triage snapshot, not completion of the 45-PR matrix.
+- Cross-phase review found a remaining design conflict even though each PR's isolated CI is green: Phase 62 records `return_quarantine` as a positive stock movement without increasing saleable `pharmacy_inventory.quantity_remaining`, while Phase 63 reconciliation currently sums every stock movement and compares it to saleable batch quantity. The combined Phase62+63 path needs a dedicated regression and an explicit saleable-vs-quarantine ledger rule before either migration merges.
 - PR #292 currently adds pediatric safety logic and tests but does not modify a UI caller. Main's `PrescriptionTab.tsx` already loads visit-linked weight and displays an advisory pediatric warning, but its save path does not enforce a missing/stale-weight gate. The new engine remains unwired.
 - Do not activate dose recommendations or invent a universal freshness/weight threshold: the required clinical protocol and approvals are still absent. A safe UI integration must remain manual-decision-only until the source, jurisdiction, population, and clinician approvals are established.
 - PR #210 touches 13 files, including the inventory UI and Phase 60 SQL/ACL work. Its migration and UI need full independent review; no merge recommendation is made yet.
