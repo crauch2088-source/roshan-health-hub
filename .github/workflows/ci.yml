@@ -739,12 +739,12 @@ jobs:
             -f db/tests/pharmacy_dispense_invoice_fixture.sql \
             -f db/roshan_phase62_pharmacy_cancellation_and_return.sql \
             -f db/tests/phase62_pharmacy_cancellation_and_return_integration.sql
-       - name: Execute phase62 pharmacy cancellation concurrency test
+      - name: Execute phase62 pharmacy cancellation concurrency test
         env:
-        PGHOST: localhost
-        PGPORT: 5432
-        PGUSER: postgres
-        PGPASSWORD: postgres
-        PGDATABASE: postgres
-       run: bash db/tests/phase62_pharmacy_cancellation_concurrency.sh
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: bash db/tests/phase62_pharmacy_cancellation_concurrency.sh
       
