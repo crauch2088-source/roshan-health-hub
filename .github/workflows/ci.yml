@@ -710,3 +710,32 @@ jobs:
         run: |
           psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
             -f db/tests/phase49_quarantine_remediation_assertions.sql
+    sql-pharmacy-cancellation-return:
+    name: Pharmacy cancellation, quarantine return, and compensation (PG17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Execute phase62 pharmacy cancellation and return tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f db/tests/pharmacy_dispense_invoice_fixture.sql \
+            -f db/roshan_phase62_pharmacy_cancellation_and_return.sql \
+            -f db/tests/phase62_pharmacy_cancellation_and_return_integration.sql
