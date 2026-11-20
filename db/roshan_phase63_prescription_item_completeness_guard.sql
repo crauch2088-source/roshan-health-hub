@@ -10,11 +10,11 @@ AS $function$
 DECLARE
   v_dose text;
 BEGIN
-  -- Preserve historical incomplete rows and allow soft deletion, but do not
-  -- permit clinical fields to be rewritten in the same UPDATE that archives
-  -- an active prescription item. The row must remain auditable as prescribed.
+  -- Preserve historical incomplete rows and allow soft deletion, but keep
+  -- the clinical payload immutable both during the active-to-deleted transition
+  -- and on every later update to an already archived prescription item.
   IF NEW.deleted_at IS NOT NULL THEN
-    IF TG_OP = 'UPDATE' AND OLD.deleted_at IS NULL THEN
+    IF TG_OP = 'UPDATE' THEN
       IF ROW(
         NEW.medication_name, NEW.dose, NEW.dosage, NEW.instructions,
         NEW.frequency, NEW.duration, NEW.quantity, NEW.dosage_form, NEW.route
@@ -22,7 +22,7 @@ BEGIN
         OLD.medication_name, OLD.dose, OLD.dosage, OLD.instructions,
         OLD.frequency, OLD.duration, OLD.quantity, OLD.dosage_form, OLD.route
       ) THEN
-        RAISE EXCEPTION 'prescription item clinical fields cannot change during soft deletion'
+        RAISE EXCEPTION 'prescription item clinical fields are immutable when deleted'
           USING ERRCODE = '23514';
       END IF;
     END IF;
