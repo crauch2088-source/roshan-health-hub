@@ -57,9 +57,9 @@ run_session() {
 
 # (a) Two concurrent adjust_inventory_batch_atomic calls racing -60 each on 100-unit batch
 set +e
-run_session "p63_a_1" "SELECT public.adjust_inventory_batch_atomic('${BATCH_A}', -60, 'Concurrent deduct A1', 'p63-conc-a-1');" /tmp/p63_a_1.log &
+run_session "p63_a_1" "SELECT public.adjust_inventory_batch_atomic('${BATCH_A}', -60, 'Concurrent deduct A1', '63c00000-0000-4000-8000-00000000a001'::uuid);" /tmp/p63_a_1.log &
 pid_a=$!
-run_session "p63_a_2" "SELECT public.adjust_inventory_batch_atomic('${BATCH_A}', -60, 'Concurrent deduct A2', 'p63-conc-a-2');" /tmp/p63_a_2.log &
+run_session "p63_a_2" "SELECT public.adjust_inventory_batch_atomic('${BATCH_A}', -60, 'Concurrent deduct A2', '63c00000-0000-4000-8000-00000000a002'::uuid);" /tmp/p63_a_2.log &
 pid_b=$!
 wait "$pid_a"; status_a=$?
 wait "$pid_b"; status_b=$?
@@ -79,9 +79,9 @@ rem_a=$(psql -Atc "SELECT quantity_remaining FROM public.pharmacy_inventory WHER
 
 # (b) Two concurrent adjust_inventory_batch_atomic calls with SAME p_idempotency_key (+15)
 set +e
-run_session "p63_b_1" "SELECT public.adjust_inventory_batch_atomic('${BATCH_B}', 15, 'Idempotent surplus B', 'p63-conc-b-same');" /tmp/p63_b_1.log &
+run_session "p63_b_1" "SELECT public.adjust_inventory_batch_atomic('${BATCH_B}', 15, 'Idempotent surplus B', '63c00000-0000-4000-8000-00000000b001'::uuid);" /tmp/p63_b_1.log &
 pid_a=$!
-run_session "p63_b_2" "SELECT public.adjust_inventory_batch_atomic('${BATCH_B}', 15, 'Idempotent surplus B', 'p63-conc-b-same');" /tmp/p63_b_2.log &
+run_session "p63_b_2" "SELECT public.adjust_inventory_batch_atomic('${BATCH_B}', 15, 'Idempotent surplus B', '63c00000-0000-4000-8000-00000000b001'::uuid);" /tmp/p63_b_2.log &
 pid_b=$!
 wait "$pid_a"; status_a=$?
 wait "$pid_b"; status_b=$?
@@ -97,9 +97,9 @@ mov_b=$(psql -Atc "SELECT COUNT(*) FROM public.stock_movements WHERE batch_id = 
 
 # (c) Concurrent quarantine_expired_batch_atomic vs adjust_inventory_batch_atomic on expired batch
 set +e
-run_session "p63_c_1" "SELECT public.quarantine_expired_batch_atomic('${BATCH_C}', 'Expired quarantine race', 'p63-conc-c-quar');" /tmp/p63_c_1.log &
+run_session "p63_c_1" "SELECT public.quarantine_expired_batch_atomic('${BATCH_C}', 'Expired quarantine race', '63c00000-0000-4000-8000-00000000c001'::uuid);" /tmp/p63_c_1.log &
 pid_a=$!
-run_session "p63_c_2" "SELECT public.adjust_inventory_batch_atomic('${BATCH_C}', -5, 'Concurrent adjust on expired', 'p63-conc-c-adj');" /tmp/p63_c_2.log &
+run_session "p63_c_2" "SELECT public.adjust_inventory_batch_atomic('${BATCH_C}', -5, 'Concurrent adjust on expired', '63c00000-0000-4000-8000-00000000c002'::uuid);" /tmp/p63_c_2.log &
 pid_b=$!
 wait "$pid_a"; status_a=$?
 wait "$pid_b"; status_b=$?
@@ -115,9 +115,9 @@ res_c=$(psql -Atc "SELECT quantity_remaining || '|' || is_quarantined FROM publi
 
 # (d) Two concurrent record_inventory_writeoff_atomic calls racing 30 each on 40-unit batch
 set +e
-run_session "p63_d_1" "SELECT public.record_inventory_writeoff_atomic('${BATCH_D}', 30, 'damaged', 'Concurrent writeoff 1', 'p63-conc-d-1');" /tmp/p63_d_1.log &
+run_session "p63_d_1" "SELECT public.record_inventory_writeoff_atomic('${BATCH_D}', 30, 'damaged', 'Concurrent writeoff 1', '63c00000-0000-4000-8000-00000000d001'::uuid);" /tmp/p63_d_1.log &
 pid_a=$!
-run_session "p63_d_2" "SELECT public.record_inventory_writeoff_atomic('${BATCH_D}', 30, 'damaged', 'Concurrent writeoff 2', 'p63-conc-d-2');" /tmp/p63_d_2.log &
+run_session "p63_d_2" "SELECT public.record_inventory_writeoff_atomic('${BATCH_D}', 30, 'damaged', 'Concurrent writeoff 2', '63c00000-0000-4000-8000-00000000d002'::uuid);" /tmp/p63_d_2.log &
 pid_b=$!
 wait "$pid_a"; status_a=$?
 wait "$pid_b"; status_b=$?
@@ -137,9 +137,9 @@ neg_cnt=$(psql -Atc "SELECT COUNT(*) FROM public.pharmacy_inventory WHERE medici
 
 # (e) Two concurrent update_medicine_selling_price_atomic calls with distinct idempotency keys
 set +e
-run_session "p63_e_1" "SELECT public.update_medicine_selling_price_atomic('${MED_ID}', '${BRANCH_1}', 12.50, 'Price update A', 'p63-conc-e-1');" /tmp/p63_e_1.log &
+run_session "p63_e_1" "SELECT public.update_medicine_selling_price_atomic('${MED_ID}', '${BRANCH_1}', 12.50, 'Price update A', '63c00000-0000-4000-8000-00000000e001'::uuid);" /tmp/p63_e_1.log &
 pid_a=$!
-run_session "p63_e_2" "SELECT public.update_medicine_selling_price_atomic('${MED_ID}', '${BRANCH_1}', 14.00, 'Price update B', 'p63-conc-e-2');" /tmp/p63_e_2.log &
+run_session "p63_e_2" "SELECT public.update_medicine_selling_price_atomic('${MED_ID}', '${BRANCH_1}', 14.00, 'Price update B', '63c00000-0000-4000-8000-00000000e002'::uuid);" /tmp/p63_e_2.log &
 pid_b=$!
 wait "$pid_a"; status_a=$?
 wait "$pid_b"; status_b=$?
