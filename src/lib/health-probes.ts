@@ -1,7 +1,7 @@
 export interface HealthProbeEnv {
-  supabaseUrl?: string;
-  supabaseAnonKey?: string;
-  commitSha?: string;
+  supabaseUrl?: string | undefined;
+  supabaseAnonKey?: string | undefined;
+  commitSha?: string | undefined;
 }
 
 export interface ReadinessCheckResult {
@@ -16,10 +16,10 @@ const DEFAULT_TIMEOUT_MS = 3000;
 function readProcessEnv(): HealthProbeEnv {
   const env = typeof process !== "undefined" && process.env ? process.env : {};
   return {
-    supabaseUrl: env.VITE_SUPABASE_URL ?? env.SUPABASE_URL,
+    supabaseUrl: env["VITE_SUPABASE_URL"] ?? env["SUPABASE_URL"],
     supabaseAnonKey:
-      env.VITE_SUPABASE_PUBLISHABLE_KEY ?? env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY,
-    commitSha: env.VERCEL_GIT_COMMIT_SHA ?? env.GITHUB_SHA ?? "unknown",
+     env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? env["VITE_SUPABASE_ANON_KEY"] ?? env["SUPABASE_ANON_KEY"],
+    commitSha: env["VERCEL_GIT_COMMIT_SHA"] ?? env["GITHUB_SHA"] ?? "unknown",
   };
 }
 
