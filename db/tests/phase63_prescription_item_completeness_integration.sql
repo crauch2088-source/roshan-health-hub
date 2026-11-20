@@ -219,6 +219,16 @@ BEGIN
     RAISE EXCEPTION 'rejected historical payload mutation changed the archived row';
   END IF;
 
+  INSERT INTO public.prescription_items(
+    id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,
+    dosage_form,route,instructions,deleted_at
+  ) VALUES (
+    '63000000-0000-0000-0000-000000000032',
+    '63000000-0000-0000-0000-000000000101',
+    'Archived complete medicine','500 mg','1 tablet','twice daily','5 days',10,
+    'tablet','oral','Take with food',now()
+  );
+
   -- The catalogue link and parent prescription association are part of the archived clinical record.
   v_rejected := false;
   BEGIN
@@ -243,15 +253,6 @@ BEGIN
   END IF;
 
   -- Restoring a deleted row must not be used to rewrite its historical clinical payload.
-  INSERT INTO public.prescription_items(
-    id,prescription_id,medication_name,dose,dosage,frequency,duration,quantity,
-    dosage_form,route,instructions,deleted_at
-  ) VALUES (
-    '63000000-0000-0000-0000-000000000032',
-    '63000000-0000-0000-0000-000000000101',
-    'Archived complete medicine','500 mg','1 tablet','twice daily','5 days',10,
-    'tablet','oral','Take with food',now()
-  );
   v_rejected := false;
   BEGIN
     UPDATE public.prescription_items
