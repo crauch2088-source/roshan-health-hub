@@ -86,6 +86,7 @@ test("snapshot fetches only open PR metadata and recent workflow-run metadata", 
   assert.equal(snapshot.open_pull_requests[0].number, 254);
   assert.equal(Object.hasOwn(snapshot.open_pull_requests[0], "title"), false);
   assert.equal(Object.hasOwn(snapshot.open_pull_requests[0], "head_ref"), false);
+  assert.equal(Object.hasOwn(snapshot.open_pull_requests[0], "base_ref"), false);
   assert.equal(snapshot.recent_workflow_runs[0].conclusion, "success");
   assert.equal(JSON.stringify(snapshot).includes("UNTRUSTED"), false);
   assert.equal(JSON.stringify(snapshot).includes("synthetic-token"), false);
