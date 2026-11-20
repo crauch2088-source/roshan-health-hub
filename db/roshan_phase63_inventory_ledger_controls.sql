@@ -130,6 +130,7 @@ BEGIN
   IF p_idempotency_key IS NULL THEN
     RAISE EXCEPTION 'idempotency_key_required' USING ERRCODE = '22023';
   END IF;
+PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' || p_idempotency_key::text, 0));
   IF p_delta IS NULL OR p_delta = 0 THEN
     RAISE EXCEPTION 'adjustment_delta_must_be_nonzero' USING ERRCODE = '22023';
   END IF;
@@ -217,6 +218,7 @@ BEGIN
   IF p_idempotency_key IS NULL THEN
     RAISE EXCEPTION 'idempotency_key_required' USING ERRCODE = '22023';
   END IF;
+PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' || p_idempotency_key::text, 0));
   IF p_reason IS NULL OR length(trim(p_reason)) = 0 THEN
     RAISE EXCEPTION 'quarantine_reason_required' USING ERRCODE = '22023';
   END IF;
@@ -306,6 +308,7 @@ BEGIN
   IF p_idempotency_key IS NULL THEN
     RAISE EXCEPTION 'idempotency_key_required' USING ERRCODE = '22023';
   END IF;
+PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' || p_idempotency_key::text, 0));
   IF p_quantity IS NULL OR p_quantity <= 0 THEN
     RAISE EXCEPTION 'writeoff_quantity_must_be_positive' USING ERRCODE = '22023';
   END IF;
@@ -415,6 +418,7 @@ BEGIN
   IF p_idempotency_key IS NULL THEN
     RAISE EXCEPTION 'idempotency_key_required' USING ERRCODE = '22023';
   END IF;
+PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' || p_idempotency_key::text, 0));
   IF p_new_selling_price IS NULL OR p_new_selling_price < 0 THEN
     RAISE EXCEPTION 'selling_price_must_be_non_negative' USING ERRCODE = '22023';
   END IF;
