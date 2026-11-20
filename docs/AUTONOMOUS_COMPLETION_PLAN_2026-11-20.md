@@ -304,3 +304,20 @@ The original Sections A–I above are preserved verbatim. Autonomous execution p
 5. Reconcile #280 against #181 without merging either until finance/security and migration gates are proven.
 6. Review report-only PRs individually for provenance/freshness; do not bulk-merge them.
 7. Resolve Vercel's automatic Production-target deployment behavior before any additional merge to main.
+
+### L.2 Migration and file-overlap matrix — critical six PRs
+
+| PR pair / dependency | Shared files or runtime contract | Required sequencing / disposition |
+|---|---|---|
+| #210 ↔ #250 | Shared db/MIGRATIONS_MANIFEST.md, docs/MASTER_PLAN.md, package.json; Phase 60 medicines ACL precedes Phase 61C | Resolve shared manifest/master-plan edits without overwriting newer state; replay Phase 60 before Phase 61C in the clean PG17 chain |
+| #210 ↔ #287 | Shared migration manifest and MASTER_PLAN.md | Phase 60 then Phase 61D; reconcile documentation edits before any merge |
+| #210 ↔ #293 / #294 | Shared .github/workflows/ci.yml only; runtime interaction through medicines ACL and price RPC | No direct source-file overlap; add Phase60+Phase63 combined ACL/RPC regression because Phase63 price update touches medicines after Phase60 column grants |
+| #250 ↔ #269 | Shared ci-phase61 workflow and phase61_prescription_correction_integration.sql | Fold #269's no-side-effect assertions into the #250 integration line or sequence them deliberately; do not merge two independently edited copies |
+| #250 ↔ #287 | Shared ci-phase61 workflow, migration manifest and MASTER_PLAN.md | Phase 61C before Phase 61D; resolve workflow/manifest conflicts in one forward-only sequence |
+| #269 ↔ #287 | Shared ci-phase61 workflow | Preserve both workflow path triggers; no direct migration overlap |
+| #293 ↔ #294 | Shared .github/workflows/ci.yml; shared stock_movements/pharmacy_inventory ledger contract | Phase 62 return/quarantine semantics must be tested with Phase 63 reconciliation; Phase 63 excludes return_quarantine from saleable stock, but a combined real-RPC PG17 test remains required |
+| #250 ↔ #293 / #294 | No shared changed file; runtime authorization dependency on Phase61C helper | Phase62/63 mutation RPCs must adopt the approved canonical role/permission policy before merge; Phase61C's dispense guard alone does not protect later mutation endpoints |
+| #210 ↔ #294 | No shared UI file; shared public.medicines table and ACL contract | Verify Phase63 SECURITY DEFINER selling-price RPC after Phase60 ACL revocation; direct authenticated UPDATE must remain denied |
+| #293 / #294 UI gap | Neither PR changes authenticated pharmacy/inventory route files | Keep both DB/API infrastructure-only until their UI callers, role gating, audit presentation and pharmacist UAT exist |
+
+**Observed file overlaps from GitHub changed-file inventory:** #210/#250 share 3 files; #210/#287 share 2; #210/#293 and #210/#294 share ci.yml; #250/#269 share the Phase 61 workflow and integration test; #250/#287 share workflow, manifest and MASTER_PLAN; #269/#287 share the Phase 61 workflow; #293/#294 share ci.yml. The other dependencies above are runtime/schema interactions, not same-file conflicts.
