@@ -181,4 +181,44 @@ The original Sections A–I above are preserved verbatim. Autonomous execution p
 5. **Strict Clinical Safety Boundaries:** Keep pediatric validation infrastructure strictly separate from clinically approved protocols; never invent doses, maximum limits, or treatment protocols; gate unapproved clinical behavior; explicitly distinguish `Implemented`, `Tested`, `Clinician-Approved`, and `Activated` states.
 6. **Migration Dependency & Schema Compatibility Gate:** Before every database-related merge, perform a formal migration dependency and schema compatibility review, test clean PostgreSQL 17 replay and upgrade paths, verify rollback feasibility, and treat QA and Production migration histories independently.
 7. **Maintainability, Performance & Rollback Audits:** Add dead-code, dependency, duplicate-logic, accessibility, performance, query-efficiency, error-recovery, and deployment-rollback audits; adopt external tools only after verifying compatibility, maintenance, security, licensing, and zero-cost/acceptable cost.
-**STOPPING POINT:** No implementation has been started. Ready for owner review and approval to begin autonomous execution.
+**EXECUTION STATUS:** Owner approved autonomous execution on 2026-11-20. See Section K for the live checkpoint. Production remains strictly read-only; no PR has been merged during this cycle.
+
+
+---
+
+## K. Autonomous Execution Checkpoint — 2026-11-20 (Cycle 1)
+
+### K.1 Governance and QA qualification
+
+- Section J was implemented in forward-only commit `ff802fe467eaebea4a83fb136cea1a9b0c0a8896`; Sections A–I were preserved.
+- QA deployment and isolation were qualified by the preceding Neon cycle: Preview URL `https://roshan-health-hub-git-qa-isolated-acceptance-20261023-roshan45.vercel.app`, QA Supabase `hopfohcnrtbiqjkgeukz`, Production Supabase `jewzonxplxhogqrnhosl`. Vercel SSO and four missing synthetic roles still block the full authenticated browser matrix.
+- Current `main` remains `79d81f08f6567f5145f7143e3bf5afdd6e93bf59`. No merge, Production write, Production migration, deployment promotion, or real-patient-data test occurred.
+
+### K.2 Phase 62 — pharmacy cancellation / return concurrency (PR #293)
+
+- Two-session PostgreSQL 17 harness is present at `db/tests/phase62_pharmacy_cancellation_concurrency.sh`.
+- The initial CI failure (`44796250163`, job `136496435501`) showed `branch_access_denied` during the synthetic seed handover. The fixture lacked the pharmacist actor row required by `private.app_has_branch_access`.
+- Added the synthetic pharmacist to `public.users` with the same branch in commit `a2aab968c3b892a9fa33f399ca876a9e5fa7653b`.
+- The next CI run (`44806100291`, job `136530396368`) passed the seed handover and reached the concurrency assertions. The observed `handover_already_recorded_use_return_workflow` was the expected losing side of the cancel-vs-handover race; the actual test defect was an assertion against nonexistent `handover_confirmed_at`.
+- Corrected the assertion to the migration's actual `prescriptions.handed_over_at` column in commit `4e54d1ad6113047ee2e8eb705b477850874820b2`.
+- Latest exact-head CI run: `44806352739` (pending at checkpoint). PR remains Draft and unmerged.
+
+### K.3 Phase 63 — inventory ledger concurrency (PR #294)
+
+- Two-session PostgreSQL 17 harness is present at `db/tests/phase63_inventory_ledger_concurrency.sh`; it exercises five races: competing deductions, duplicate idempotency key, quarantine vs adjustment, competing write-offs, and price updates.
+- CI run `44795772766`, job `136494788626`, demonstrated all five concurrency scenarios reached their assertions successfully; the final history-order assertion failed because `created_at` does not exist on `medicine_price_history`.
+- Schema inspection confirmed the timestamp column is `effective_at` (not `created_at` or `changed_at`). The assertion was corrected to `ORDER BY effective_at DESC, id DESC` in commit `38e88e247be749ca656895fdf85c2155b73aebfc`.
+- Latest exact-head CI run: `44806346393` (queued at checkpoint). PR remains Draft and unmerged.
+
+### K.4 Early review findings (not yet final dispositions)
+
+- PR metadata and changed-file inventories were refreshed for #210, #250, #269, #287, #291, #292, #293, #294, and #295. This is a partial triage snapshot, not completion of the 45-PR matrix.
+- PR #292 currently adds pediatric safety logic and tests but does not modify a UI caller. Main's `PrescriptionTab.tsx` already loads visit-linked weight and displays an advisory pediatric warning, but its save path does not enforce a missing/stale-weight gate. The new engine remains unwired.
+- Do not activate dose recommendations or invent a universal freshness/weight threshold: the required clinical protocol and approvals are still absent. A safe UI integration must remain manual-decision-only until the source, jurisdiction, population, and clinician approvals are established.
+- PR #210 touches 13 files, including the inventory UI and Phase 60 SQL/ACL work. Its migration and UI need full independent review; no merge recommendation is made yet.
+- PRs #250/#269/#287/#293/#294 overlap around the Phase 61/62/63 pharmacy, inventory, and migration contracts. Complete the dependency/overlap matrix before any database merge.
+
+### K.5 Score and next actions
+
+- The latest Neon-reported recalibrated scores remain Track A engineering `64.0%` and Track B operational readiness `27.5%`; they have not been recalculated from this partial cycle. These are not directly comparable with older scoring rubrics.
+- Next: verify exact-head CI for #293/#294; inspect and correct any remaining harness failures; then finish the migration overlap matrix and individual PR dispositions. Continue with #210 full review, #292 safe/manual UI integration decision, and #291 ICD-10 source/version governance. Backup/restore remains last.
