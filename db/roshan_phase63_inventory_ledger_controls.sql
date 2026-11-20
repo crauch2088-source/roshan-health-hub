@@ -124,7 +124,7 @@ DECLARE
   v_batch record;
   v_mov_id uuid;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'inventory_adjust_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_idempotency_key IS NULL THEN
@@ -212,7 +212,7 @@ DECLARE
   v_batch record;
   v_q_id uuid;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'inventory_quarantine_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_idempotency_key IS NULL THEN
@@ -302,7 +302,7 @@ DECLARE
   v_q record;
   v_wo_id uuid;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'inventory_writeoff_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_idempotency_key IS NULL THEN
@@ -409,7 +409,7 @@ DECLARE
   v_old_price numeric(12,2);
   v_hist_id uuid;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.update') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
     RAISE EXCEPTION 'price_update_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_branch_id IS NULL OR NOT private.app_has_branch_access(p_branch_id) THEN
@@ -473,7 +473,7 @@ DECLARE
   v_batch_sum numeric;
   v_ledger_net numeric;
 BEGIN
-  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.read') THEN
+  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.read') THEN
     RAISE EXCEPTION 'inventory_reconcile_permission_denied' USING ERRCODE = '42501';
   END IF;
   IF p_branch_id IS NULL OR NOT private.app_has_branch_access(p_branch_id) THEN
