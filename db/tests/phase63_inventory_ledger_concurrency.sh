@@ -111,7 +111,7 @@ if grep -qi "deadlock detected" /tmp/p63_c_1.log /tmp/p63_c_2.log; then
   echo "FAIL (c): deadlock detected"; cat /tmp/p63_c_1.log /tmp/p63_c_2.log; exit 1
 fi
 res_c=$(psql -Atc "SELECT quantity_remaining || '|' || is_quarantined FROM public.pharmacy_inventory WHERE id = '${BATCH_C}';")
-[ "$res_c" = "0|t" ] || { echo "FAIL (c): expected 0|t, got ${res_c}"; exit 1; }
+[ "$res_c" = "0|true" ] || { echo "FAIL (c): expected 0|true, got ${res_c}"; exit 1; }
 
 # (d) Two concurrent record_inventory_writeoff_atomic calls racing 30 each on 40-unit batch
 set +e
@@ -168,6 +168,6 @@ price_match=$(psql -Atc "
 reconcile_res=$(psql -Atc "SELECT is_balanced || '|' || batch_sum || '|' || ledger_net FROM public.reconcile_medicine_stock_ledger('${MED_ID}', '${BRANCH_1}');")
 echo "Reconcile result: ${reconcile_res}"
 is_bal="${reconcile_res%%|*}"
-[ "$is_bal" = "t" ] || { echo "FAIL: reconcile_medicine_stock_ledger is_balanced=${reconcile_res}"; exit 1; }
+[ "$is_bal" = "true" ] || { echo "FAIL: reconcile_medicine_stock_ledger is_balanced=${reconcile_res}"; exit 1; }
 
 echo "PASS: phase63_inventory_ledger_concurrency.sh"
