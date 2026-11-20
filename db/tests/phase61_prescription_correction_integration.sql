@@ -1520,13 +1520,17 @@ BEGIN
   IF NOT v_denied THEN
     RAISE EXCEPTION 'Doctor reached invoice-linked dispense despite broad permission bits';
   END IF;
-
+END;
+$phase61c_doctor_dispense_denied$;
+RESET ROLE;
+DO $phase61c_doctor_dispense_idempotency_absent$
+BEGIN
   IF EXISTS (
     SELECT 1 FROM private.pharmacy_dispense_idempotency
-    WHERE request_id = v_request_id
+    WHERE request_id = 'ffffffff-ffff-ffff-ffff-ffffffffffe3'::uuid
   ) THEN
     RAISE EXCEPTION 'rejected Doctor request created an idempotency row';
   END IF;
 END;
-$phase61c_doctor_dispense_denied$;
-RESET ROLE;
+$phase61c_doctor_dispense_idempotency_absent$;
+
