@@ -81,7 +81,7 @@ INSERT INTO public.stock_movements (medicine_id, batch_id, movement_type, quanti
 SELECT set_config('test.user_id', '${PHARM_ID}', true);
 SELECT set_config('test.perms', 'pharmacy.read,pharmacy.update', true);
 SELECT set_config('test.super_admin', 'false', true);
-PERFORM public.confirm_pharmacy_handover('${RX_C}');
+SELECT public.confirm_pharmacy_handover('${RX_C}');
 COMMIT;
 SQL
 
