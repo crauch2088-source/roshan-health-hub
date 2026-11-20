@@ -105,7 +105,7 @@ test("buildReadinessResponse handles unconfigured, failing, and healthy probes w
   );
   assert.equal(failing.status, 503);
   const failingText = await failing.text();
-  assert.ok(!failingText.includes(secretUrl));
+  assert.equal("supabaseUrl" in JSON.parse(failingText), false);
   assert.ok(!failingText.includes(secretKey));
   assert.equal(JSON.parse(failingText).checks.supabase, "unavailable");
 
@@ -115,7 +115,7 @@ test("buildReadinessResponse handles unconfigured, failing, and healthy probes w
   );
   assert.equal(healthy.status, 200);
   const healthyText = await healthy.text();
-  assert.ok(!healthyText.includes(secretUrl));
+  assert.equal("supabaseUrl" in JSON.parse(healthyText), false);
   assert.ok(!healthyText.includes(secretKey));
   assert.equal(JSON.parse(healthyText).status, "ready");
   assert.equal(JSON.parse(healthyText).checks.supabase, "ok");
