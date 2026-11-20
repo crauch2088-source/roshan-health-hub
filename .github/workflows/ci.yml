@@ -710,7 +710,7 @@ jobs:
         run: |
           psql -h localhost -U postgres -d roshan_quarantine -v ON_ERROR_STOP=1 \
             -f db/tests/phase49_quarantine_remediation_assertions.sql
-    sql-pharmacy-cancellation-return:
+  sql-pharmacy-cancellation-return:
     name: Pharmacy cancellation, quarantine return, and compensation (PG17)
     runs-on: ubuntu-latest
     timeout-minutes: 5
