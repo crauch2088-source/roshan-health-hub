@@ -3,7 +3,10 @@ import { test } from "node:test";
 import { describeError } from "../src/lib/error-capture.ts";
 import { redactSensitive, safeRequestTarget, sanitizeLogValue } from "../src/lib/redact.ts";
 import { buildLivenessResponse, buildReadinessResponse } from "../src/lib/health-probes.ts";
-import { buildAllowlistedTelemetryEnvelope, dispatchTelemetryFailOpen } from "../src/lib/telemetry.ts";
+import {
+  buildAllowlistedTelemetryEnvelope,
+  dispatchTelemetryFailOpen,
+} from "../src/lib/telemetry.ts";
 
 const b64 = (value: string) => Buffer.from(value).toString("base64url");
 const fakeJwt = [
@@ -95,7 +98,10 @@ test("buildReadinessResponse handles unconfigured, failing, and healthy probes w
 
   const unconfigured = await buildReadinessResponse({ commitSha: "abc1234" });
   assert.equal(unconfigured.status, 503);
-  const unconfiguredBody = (await unconfigured.json()) as { status: string; checks: { supabase: string } };
+  const unconfiguredBody = (await unconfigured.json()) as {
+    status: string;
+    checks: { supabase: string };
+   };
   assert.equal(unconfiguredBody.status, "not_ready");
   assert.equal(unconfiguredBody.checks.supabase, "unconfigured");
 
@@ -141,7 +147,15 @@ test("buildAllowlistedTelemetryEnvelope drops extra PHI keys and redacts Arabic/
   assert.equal(envelope.route, "POST /patients/[UUID]");
   assert.equal(envelope.rpcName, "create_visit");
   assert.equal(envelope.sqlState, "23505");
-  for (const sensitive of ["Jane Doe", "أحمد محمد", "912 345 678", fakeJwt, fakeSecret, "Should Be Dropped", "Sensitive PHI"]) {
+  for (const sensitive of [
+    "Jane Doe",
+    أحمد محمد", 
+    "912 345 678",
+    fakeJwt,
+    fakeSecret,
+    "Should Be Dropped",
+    "Sensitive PHI",
+  ]) {
     assert.ok(!serialized.includes(sensitive), "leaked " + sensitive);
   }
 });
@@ -152,15 +166,27 @@ test("dispatchTelemetryFailOpen fails open on unconfigured, HTTP errors, rejecti
   const unconfigured = await dispatchTelemetryFailOpen(envelope, undefined);
   assert.deepEqual(unconfigured, { sent: false, reason: "unconfigured" });
 
-  const okRes = await dispatchTelemetryFailOpen(envelope, "https://example.test/telemetry", async () => ({ ok: true }));
+   const okRes = await dispatchTelemetryFailOpen(
+    envelope,
+    "https://example.test/telemetry",
+    async () => ({ ok: true }),
+  );
   assert.deepEqual(okRes, { sent: true });
 
-  const httpErr = await dispatchTelemetryFailOpen(envelope, "https://example.test/telemetry", async () => ({ ok: false }));
+  const httpErr = await dispatchTelemetryFailOpen(
+    envelope,
+    "https://example.test/telemetry",
+    async () => ({ ok: false }),
+  );
   assert.deepEqual(httpErr, { sent: false, reason: "http_error" });
 
-  const rejected = await dispatchTelemetryFailOpen(envelope, "https://example.test/telemetry", async () => {
-    throw new Error("network down");
-  });
+  const rejected = await dispatchTelemetryFailOpen(
+    envelope,
+    "https://example.test/telemetry",
+    async () => {
+      throw new Error("network down");
+    },
+  );
   assert.deepEqual(rejected, { sent: false, reason: "network_or_timeout" });
 
   const timedOut = await dispatchTelemetryFailOpen(
