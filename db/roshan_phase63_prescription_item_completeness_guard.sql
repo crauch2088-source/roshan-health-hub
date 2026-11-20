@@ -14,10 +14,10 @@ BEGIN
   -- but keep clinical payload immutable whenever the old or new row is archived.
   IF TG_OP = 'UPDATE' AND (OLD.deleted_at IS NOT NULL OR NEW.deleted_at IS NOT NULL) THEN
     IF ROW(
-      NEW.medication_name, NEW.dose, NEW.dosage, NEW.instructions,
+      NEW.prescription_id, NEW.medicine_id, NEW.medication_name, NEW.dose, NEW.dosage,
       NEW.frequency, NEW.duration, NEW.quantity, NEW.dosage_form, NEW.route
     ) IS DISTINCT FROM ROW(
-      OLD.medication_name, OLD.dose, OLD.dosage, OLD.instructions,
+      OLD.prescription_id, OLD.medicine_id, OLD.medication_name, OLD.dose, OLD.dosage,
       OLD.frequency, OLD.duration, OLD.quantity, OLD.dosage_form, OLD.route
     ) THEN
       RAISE EXCEPTION 'prescription item clinical fields are immutable when archived or restored'
@@ -95,15 +95,15 @@ REVOKE ALL ON FUNCTION private.validate_prescription_item_completeness()
   FROM PUBLIC, anon, authenticated, service_role, authenticator;
 
 COMMENT ON FUNCTION private.validate_prescription_item_completeness() IS
-  'Phase 63: server-side completeness guard for new/edited prescription items. It does not infer dose, frequency, duration, form, route, or quantity; historical soft-deleted rows are preserved, and clinical fields and patient-facing instructions cannot change during soft deletion.';
+  'Phase 63: server-side completeness guard for new/edited prescription items. It does not infer dose, frequency, duration, form, route, or quantity; historical soft-deleted rows are preserved, and prescription/medicine associations plus clinical fields cannot change during archival or restoration.';
 
 DROP TRIGGER IF EXISTS trg_prescription_item_completeness_guard
   ON public.prescription_items;
 
 CREATE TRIGGER trg_prescription_item_completeness_guard
 BEFORE INSERT OR UPDATE OF
-  medication_name, dose, dosage, instructions, frequency, duration, quantity,
-  dosage_form, route, deleted_at
+  prescription_id, medicine_id, medication_name, dose, dosage, instructions,
+  frequency, duration, quantity, dosage_form, route, deleted_at
 ON public.prescription_items
 FOR EACH ROW
 EXECUTE FUNCTION private.validate_prescription_item_completeness();
