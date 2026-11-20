@@ -201,7 +201,8 @@ BEGIN
   IF p_idempotency_key IS NULL THEN
     RAISE EXCEPTION 'idempotency_key_required' USING ERRCODE = '22023';
   END IF;
-  IF p_reason IS NULL OR length(trim(p_reason)) = 0 THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase62:' || p_idempotency_key::text, 0));
+    IF p_reason IS NULL OR length(trim(p_reason)) = 0 THEN
     RAISE EXCEPTION 'cancellation_reason_required' USING ERRCODE = '22023';
   END IF;
 
@@ -364,7 +365,8 @@ BEGIN
   IF p_idempotency_key IS NULL THEN
     RAISE EXCEPTION 'idempotency_key_required' USING ERRCODE = '22023';
   END IF;
-  IF p_quantity IS NULL OR p_quantity <= 0 THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase62:' || p_idempotency_key::text, 0));
+IF p_quantity IS NULL OR p_quantity <= 0 THEN
     RAISE EXCEPTION 'return_quantity_must_be_positive' USING ERRCODE = '22023';
   END IF;
   IF p_condition NOT IN ('unopened_intact', 'opened', 'damaged', 'expired', 'contaminated', 'uncertain') THEN
