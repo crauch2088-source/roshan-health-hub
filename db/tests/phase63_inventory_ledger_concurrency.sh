@@ -152,10 +152,10 @@ hist_cnt=$(psql -Atc "SELECT COUNT(*) FROM public.medicine_price_history WHERE m
 [ "$hist_cnt" -eq 2 ] || { echo "FAIL (e): expected 2 price history rows, got ${hist_cnt}"; exit 1; }
 
 price_match=$(psql -Atc "
-  SELECT (m.selling_price = h.new_price)
+  SELECT (m.selling_price = h.new_selling_price)
   FROM public.medicines m
   CROSS JOIN LATERAL (
-    SELECT new_price FROM public.medicine_price_history
+    SELECT new_selling_price FROM public.medicine_price_history
     WHERE medicine_id = m.id AND branch_id = '${BRANCH_1}'
     ORDER BY created_at DESC, id DESC
     LIMIT 1
