@@ -211,8 +211,8 @@ export function evaluateMedicationDecisionSupport(
 
   const calculation = calculateDose({
     basis: input.basis,
-    weightKg: input.weightKg ?? undefined,
-    rounding: input.rounding,
+    weightKg: input.weightKg ?? null,
+    ...(input.rounding !== undefined ? { rounding: input.rounding } : {}),
   });
 
   if (calculation.status !== "calculated") {
