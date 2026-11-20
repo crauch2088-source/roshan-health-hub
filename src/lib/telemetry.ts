@@ -37,8 +37,7 @@ const MAX_MESSAGE_LENGTH = 500;
 const DEFAULT_DISPATCH_TIMEOUT_MS = 1500;
 
 const ARABIC_PHONE_OR_ID_RE = /(?:\+?249|00249|0)[19]\d[\s-]?\d{3}[\s-]?\d{4}/g;
-const NAMED_PERSON_FIELD_RE =
-  /\b(?:patient|name|full_name|المريض|الاسم)\s*[:=]\s*[^\n,;]+/giu;
+const NAMED_PERSON_FIELD_RE= /\b(?:patient|name|full_name|المريض|الاسم)\s*[:=]\s*[^\n,;]+/giu;
 
 export function redactClinicalText(value: string): string {
   const stage1 = redactSensitive(value);
