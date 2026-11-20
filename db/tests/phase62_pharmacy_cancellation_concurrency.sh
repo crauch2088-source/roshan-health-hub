@@ -150,7 +150,7 @@ DECLARE
   v_qty_rem numeric;
 BEGIN
   SELECT count(*) INTO v_a_cancels FROM public.pharmacy_dispense_cancellations WHERE prescription_id = '${RX_A}';
-  SELECT handover_confirmed_at INTO v_a_handover FROM public.prescriptions WHERE id = '${RX_A}';
+  SELECT handed_over_at INTO v_a_handover FROM public.prescriptions WHERE id = '${RX_A}';
   IF NOT ((v_a_cancels = 1 AND v_a_handover IS NULL) OR (v_a_cancels = 0 AND v_a_handover IS NOT NULL)) THEN
     RAISE EXCEPTION 'FAIL (a) split-brain: cancels=%, handover=%', v_a_cancels, v_a_handover;
   END IF;
