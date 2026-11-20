@@ -157,7 +157,11 @@
 
   body {
     background-color: var(--color-background);
-    background-image: radial-gradient(ellipse at 50% 0%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 52%);
+    background-image: radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in oklab, var(--primary) 5%, transparent),
+      transparent 52%
+    );
     color: var(--color-foreground);
     font-family: var(--font-sans);
     min-width: 320px;
@@ -245,10 +249,13 @@
   }
 }
 
-
 /* Roshan refresh: tactile controls, calm clinical surfaces and clear hierarchy. */
-.roshan-app-background { isolation: isolate; }
-.roshan-main { animation: roshan-enter 180ms ease-out both; }
+.roshan-app-background {
+  isolation: isolate;
+}
+.roshan-main {
+  animation: roshan-enter 180ms ease-out both;
+}
 .roshan-surface {
   border: 1px solid color-mix(in oklab, var(--border) 88%, var(--primary) 12%);
   border-radius: calc(var(--radius) + 0.25rem);
@@ -257,20 +264,30 @@
 }
 .roshan-patient-context {
   border-color: color-mix(in oklab, var(--primary) 20%, var(--border));
-  background: linear-gradient(120deg, color-mix(in oklab, var(--primary) 7%, var(--card)), var(--card) 68%);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--primary) 7%, var(--card)),
+    var(--card) 68%
+  );
   box-shadow: 0 12px 34px -28px color-mix(in oklab, var(--primary) 48%, transparent);
 }
 .roshan-tab {
   min-height: 2.75rem;
   border-radius: 0.75rem;
-  transition: color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
 }
 .roshan-tab[aria-selected="true"] {
   color: var(--primary);
   background: color-mix(in oklab, var(--primary) 10%, var(--card));
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent);
 }
-.roshan-tab:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.roshan-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
 .roshan-field-label {
   display: block;
   margin-bottom: 0.375rem;
@@ -280,12 +297,24 @@
   letter-spacing: 0.015em;
 }
 @keyframes roshan-enter {
-  from { opacity: 0.72; transform: translateY(3px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0.72;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-@media (prefers-reduced-motion: reduce) { .roshan-main { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .roshan-main {
+    animation: none;
+  }
+}
 @media (max-width: 639px) {
-  .roshan-main { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .roshan-main {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
 }
 
 /* Phase 53 — render only the selected certificate document during print. */
@@ -311,11 +340,11 @@
   body.print-scope-active * {
     visibility: hidden !important;
   }
-  body.print-scope-active .print-document-root,
-  body.print-scope-active .print-document-root * {
+  body.print-scope-active .print-document-root.print-target-active,
+  body.print-scope-active .print-document-root.print-target-active * {
     visibility: visible !important;
   }
-  body.print-scope-active .print-document-root {
+  body.print-scope-active .print-document-root.print-target-active {
     position: absolute !important;
     inset-block-start: 0 !important;
     inset-inline-start: 0 !important;
