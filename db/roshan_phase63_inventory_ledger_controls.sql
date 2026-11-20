@@ -485,10 +485,15 @@ BEGIN
     FROM public.pharmacy_inventory pi
    WHERE pi.medicine_id = p_medicine_id AND pi.branch_id = p_branch_id AND pi.deleted_at IS NULL;
 
+  -- Saleable batch quantity excludes post-handover returns held in quarantine.
+  -- Phase 62 records those physical returns as positive stock_movements, but they
+  -- must not inflate the saleable pharmacy_inventory.quantity_remaining balance.
   SELECT COALESCE(SUM(sm.quantity), 0)
     INTO v_ledger_net
     FROM public.stock_movements sm
-   WHERE sm.medicine_id = p_medicine_id AND sm.branch_id = p_branch_id;
+   WHERE sm.medicine_id = p_medicine_id
+     AND sm.branch_id = p_branch_id
+     AND sm.movement_type <> 'return_quarantine';
 
   RETURN QUERY SELECT v_batch_sum, v_ledger_net, (v_batch_sum = v_ledger_net);
 END;
