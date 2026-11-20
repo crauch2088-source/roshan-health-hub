@@ -318,3 +318,14 @@ The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do 
 Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction, or pharmacy dispensing authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
 
 The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.
+
+
+## Phase 61D candidate — correction workflow FK indexes (2026-11-17)
+
+The 2026-11-17 QA Performance Advisor returned seven unindexed foreign keys introduced by the Phase 61 correction workflow. A read-only catalog inspection mapped them to correction-request columns replacement_prescription_id, corrected_item_id, patient_id, requested_by, resolved_by and visit_id, plus correction-event actor_id. The current Phase 61 indexes already cover request_id, prescription_id, prescription_item_id and branch_id; those are intentionally not duplicated.
+
+- Candidate: db/roshan_phase61d_correction_workflow_fk_indexes.sql.
+- Disposable PostgreSQL 17 assertion: db/tests/phase61d_correction_workflow_fk_indexes_assertions.sql.
+- CI: .github/workflows/ci-phase61-prescription-correction.yml replays Phase 61, 61B and 61D and verifies every index is valid, ready, non-unique, non-partial and a single-column btree index.
+- Phase 61D is independent of the Phase 61C role-boundary candidate, but requires the Phase 61 correction tables. It is repository/CI-only and is not applied to hosted QA or Production.
+- Production's two separate unindexed FKs on private.pharmacy_dispense_idempotency_legacy_20261103 remain outside this scope pending table-use/dependency review. Do not remove or blanket-modify that legacy table.

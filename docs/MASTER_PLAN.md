@@ -3164,3 +3164,17 @@ Production remains NO-GO. Backup artifact and isolated restore evidence now exis
 Next highest-value repository task: reconcile Draft PR #229 with current main using a normal two-parent merge commit, resolve only the actual overlapping files, preserve Phase 57/57B fail-closed pharmacy behavior and Phase 61 permission/no-side-effect contracts, then run one exact-head CI/PG17 pass. Keep it Draft for independent SQL/security review and mobile pharmacist/prescriber acceptance. Do not merge the PR or apply Production changes.
 
 Progress remains at the last evidence-weighted canonical baseline: 62% Engineering RC / 15% Operational Acceptance. This read-only audit and documentation update do not earn implementation-completion credit. The prior 17–30 engineering-hour estimate is historical, not a new schedule.
+
+
+## Live release-gate checkpoint — 2026-11-17
+
+- Current main: 79d81f08f6567f5145f7143e3bf5afdd6e93bf59. The exact-main Actions evidence is limited to the returned Finance-only RPC write isolation success (#43767368557), dynamic push success and three successful Dependabot checks; no full general CI run was returned for this exact SHA.
+- Current live Supabase ledgers are QA 27 rows through 20261113232719 and Production 129 rows through 20261102232941. Only three version IDs are shared and all have different names; QA-only 24, Production-only 126. Production lacks Phases 55, 57, 57B, 58, 59, 61 and 61B.
+- QA's private Phase 57/57B dispensing implementation rejects NULL quantity, free-text items and external prescriptions. Production's public dispensing implementation still uses COALESCE(pi.quantity, 1), so Production remains quantity-unsafe. Production's Phase 55 helper ACL gap also remains.
+- The legacy_pharmacist role exists in both projects with pharmacy.edit, pharmacy.view and reports.view and zero active users. No permission grants are authorized.
+- Supabase health advisors report zero findings. Security/performance findings and the seven QA Phase 61 correction-workflow unindexed FKs are recorded in docs/RELEASE_GATE_RECHECK_2026-11-17.md. Phase 61D is a repository-only candidate; no hosted migration was applied.
+- Canonical Vercel alias is verified on READY deployment dpl_G9jScsLW3jDXFePVZLQgedwMMKRH at app SHA a9040601702972bdf144fc96b9658eebd5a6d31a. The seven commits since then are documentation/specification-only.
+- Backup runner latest manual run #43764265014 failed credential preflight because neither supported DB credential secret was present; backup job skipped, zero artifacts. The 2026-11-12 encrypted Drive artifact remains present, but the latest ciphertext's owner-side decryption/restoration is unverified. The earlier 2026-11-09 owner-decryption success does not validate the newer artifact.
+- PR #250 remains Draft at c43c0258eb80760191b1b523128ddcb2c7537344 with two owner-authored COMMENTED submissions and zero inline threads. No independent second-person SQL/security review exists; Phase 61C remains unapplied.
+- Readiness remains 62% Engineering Release Candidate / 15% Operational Acceptance. No increase is credited for this read-only audit or candidate-only performance work. Production remains NO-GO.
+- Full evidence and next actions: docs/RELEASE_GATE_RECHECK_2026-11-17.md. The narrow Phase 61D correction-FK index candidate is described in db/MIGRATIONS_MANIFEST.md and its PR report; do not apply to hosted projects without the normal independent review and release gates.
