@@ -81,7 +81,6 @@ export async function createLiveStateSnapshot({
       draft: Boolean(pr.draft),
       updated_at: safeText(pr.updated_at, 40),
       head_sha: safeText(pr.head?.sha, 40),
-      base_ref: safeText(pr.base?.ref, 120),
       url: safeText(pr.html_url, 300),
     })),
     recent_workflow_runs: workflowRunResponse.workflow_runs.slice(0, 20).map((run) => ({
