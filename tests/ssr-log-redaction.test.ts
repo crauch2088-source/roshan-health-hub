@@ -149,7 +149,7 @@ test("buildAllowlistedTelemetryEnvelope drops extra PHI keys and redacts Arabic/
   assert.equal(envelope.sqlState, "23505");
   for (const sensitive of [
     "Jane Doe",
-    أحمد محمد", 
+    "أحمد محمد", 
     "912 345 678",
     fakeJwt,
     fakeSecret,
