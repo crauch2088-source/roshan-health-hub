@@ -2,10 +2,7 @@ import { calculateDose } from "./dose-calculator.ts";
 import type { DoseBasis, DoseCalculationResult, DoseRounding } from "./types.ts";
 
 export type WeightValidationReason =
-  | "missing"
-  | "non_positive"
-  | "implausible"
-  | "stale"
+  "missing" | "non_positive" | "implausible" | "stale"
   | "invalid_timestamp";
 
 export interface WeightValidationResult {
