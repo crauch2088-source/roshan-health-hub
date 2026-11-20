@@ -33,6 +33,10 @@ IDEM_C="62c00000-0000-4000-8000-00000000c001"
 
 psql -v ON_ERROR_STOP=1 -q <<SQL
 BEGIN;
+INSERT INTO public.users (id, branch_id, active)
+VALUES ('${PHARM_ID}', '${BR_ID}', true)
+ON CONFLICT (id) DO UPDATE SET branch_id = EXCLUDED.branch_id, active = true;
+
 INSERT INTO public.patients (id, branch_id)
 VALUES ('${PAT_ID}', '${BR_ID}')
 ON CONFLICT (id) DO NOTHING;
