@@ -238,3 +238,67 @@ The original Sections A–I above are preserved verbatim. Autonomous execution p
 - PR #290 health probes are small and mostly read-only, but the PHI-safe telemetry claim is not yet established: regex redaction cannot safely scrub arbitrary free-text clinical errors, and the telemetry dispatcher has no production call site or trusted-endpoint allowlist. Review finding recorded on PR #290; hold the PHI-safe claim and do not wire free-text telemetry.
 - PR #256 remains Draft/HOLD until required-check/branch-protection behavior is verified. The path-routing tests do not prove that skipped workflows cannot leave required PR contexts pending.
 - The initial all-open-PR inventory now returns **46 open PRs** (not 45). Changed-file inventory was captured for all 46; a final per-PR disposition matrix is still outstanding. Doc-only report PRs are not yet approved for bulk merge; each report needs freshness/provenance review, and #257/#259/other shared-file docs require special caution.
+
+---
+
+## L. First-pass open-PR triage matrix — 2026-11-20
+
+**Live inventory:** GitHub search currently returns 46 open PRs. This is a first-pass disposition based on current PR metadata, changed-file inventory, and the targeted reviews recorded above; it is not a claim that all 46 code/content reviews are complete. **No further PR may be merged into main until the Vercel automatic Production-build issue recorded in K.1 is resolved or the owner explicitly authorizes that risk.**
+
+| PR | Scope / changed-file class | First-pass disposition | Evidence / blocking dependency |
+|---:|---|---|---|
+| #157 | npm major dependency group | HOLD | @types/node 26.x mismatches Node 22 target; verify Vite/Babel and icon compatibility |
+| #179 | Older saved-prescription printing | SUPERSEDED CANDIDATE | #258 is the reconciled successor; keep open until #258 accepted |
+| #181 | Saved invoice-payment receipt | SUPERSEDED CANDIDATE | #280 carries receipt patch plus idempotency; do not merge both |
+| #210 | Medicine identity / pack attestation, 13 files | HOLD | Phase 60 is partial; manufacturer, pack size, GTIN and duplicate identity semantics absent |
+| #250 | Phase 61C pharmacist dispense role boundary | HOLD | Validate Phase 61B dependency, all public entry points, explicit Doctor denial, concurrency and price-update boundary |
+| #254 | Repomix/live-state snapshot workflow | HOLD — SECURITY | workflow_run same-repository/push provenance gap; secret scan and metadata sanitization required |
+| #256 | CI path-filter tightening | HOLD — RELEASE | Narrow routing is useful; required-check/branch-protection behavior remains unverified |
+| #257 | Execution report plus MASTER_PLAN.md | HOLD — SHARED DOC | Shared master plan and historical evidence require freshness/reconciliation; avoid overwriting newer mainline state |
+| #258 | Saved prescription, print isolation, Phase 63 completeness guard | HOLD — REVIEW | Archived clinical payload immutability fix is in progress; exact-head CI run #2303 pending; authenticated/physical acceptance absent |
+| #259 | 2026-11-16 release-gate recheck | DOC REVIEW | Historical evidence only; reconcile against latest release plan and current Vercel/migration state |
+| #260 | Phase 55 insurance helper ACL regression | HOLD — FAILING | Reported 27/28; preserve the failing ACL dependency and repair the underlying privilege graph |
+| #262 | Window 02 Phase 61C independent review | DOC REVIEW | Report-only; reconcile against current #250 head and role-boundary findings |
+| #263 | Window 03 medicine catalogue report | DOC REVIEW | Report-only; reconcile against current #210 partial identity model |
+| #264 | Window 06 Repomix security review | DOC REVIEW | Report-only; update with confirmed #254 workflow_run trust-boundary finding |
+| #265 | Window 05 CI routing review | DOC REVIEW | Report-only; update with current #256 required-check hold |
+| #266 | Window 08 release reconciliation | DOC REVIEW | Report-only; update with canceled Vercel Production-target deployment evidence |
+| #267 | Window 04 financial receipt review | DOC REVIEW | Report-only; reconcile against successor #280 and current QA/Production migration provenance |
+| #268 | Window 07 dependency report | DOC REVIEW | Report-only; reconcile against Node 22 / @types/node 26 mismatch |
+| #269 | Phase 61 correction no-side-effect tests | HOLD — DEPENDENCY | Test-only hardening; coordinate with #250/#287 and verify full persisted-state assertions |
+| #270 | Window 07 dependency report, round 02 | DOC REVIEW | Report-only; preserve historical round and update current disposition |
+| #271 | Window 06 Repomix follow-up | DOC REVIEW | Report-only; update with confirmed untrusted workflow_run path |
+| #272 | Window 02 Phase 61C release-boundary follow-up | DOC REVIEW | Report-only; reconcile with current Phase 62/63 mutation role gaps |
+| #273 | Window 05 CI routing follow-up | DOC REVIEW | Report-only; required-check gate still open |
+| #274 | Window 04 financial receipt report, round 02 | DOC REVIEW | Report-only; reconcile with #280 successor and production currency gate |
+| #275 | Window 08 release reconciliation, round 02 | DOC REVIEW | Report-only; update main SHA and Vercel cancellation evidence |
+| #276 | Window 08 release delta, round 03 | DOC REVIEW | Report-only; reconcile with current backup/migration evidence |
+| #277 | Window 06 Repomix revalidation, round 03 | DOC REVIEW | Report-only; include security hold on #254 |
+| #278 | Window 07 dependency report, round 03 | DOC REVIEW | Report-only; include Node 22 typings correction |
+| #279 | Window 05 CI routing remediation, round 03 | DOC REVIEW | Report-only; no branch-protection proof yet |
+| #280 | Payment idempotency + receipt successor | HOLD — FINANCE | Successor to #181; review exact-head CI, route/session retry semantics, Phase 58/59 provenance, and finance/security gates |
+| #281 | Window 02 Phase 61C test evidence | DOC REVIEW | Report-only; reconcile with current #250, #293 and #294 authorization findings |
+| #282 | Window 05 CI routing final verification | DOC REVIEW | Report-only; required-check/branch-protection gate remains open |
+| #283 | Window 06 Repomix revalidation, round 04 | DOC REVIEW | Report-only; update with confirmed #254 trust-boundary finding |
+| #284 | Window 08 release reconciliation, round 04 | DOC REVIEW | Report-only; update with main f046e41 and canceled auto-deployment |
+| #285 | Window 02 Phase 61C live gate recheck | DOC REVIEW | Report-only; distinguish live read-only evidence from unmerged candidate migrations |
+| #286 | Window 07 dependency compatibility, round 04 | DOC REVIEW | Report-only; include current dependency mismatch and compatibility status |
+| #287 | Phase 61D correction-workflow FK indexes | HOLD — MIGRATION ORDER | Additive index candidate; replay only after Phase 61 correction schema/dependency order is proven |
+| #288 | Antigravity CLI guarded-agent documentation | DOC / TOOLING REVIEW | No application implementation; verify current owner workflow and security implications before adopting |
+| #289 | RHH-00 execution report / Issue #218 ACL analysis | DOC REVIEW | Report-only; preserve Issue #218 as an owner-gated read-only catalog dependency |
+| #290 | Health probes and telemetry | HOLD — PRIVACY | Readiness/liveness are useful; raw free-text telemetry is not proven PHI-safe and dispatcher has no production call site |
+| #291 | ICD-10 validation scaffolding | HOLD — CLINICAL STANDARD | Synthetic fixture only; authoritative release, Sudan adaptation, licensing, versioning and diagnosis UI absent |
+| #292 | Pediatric medication safety scaffolding | HOLD — CLINICAL STANDARD / UI | No UI caller; no approved protocol dataset or clinician-approved thresholds |
+| #293 | Phase 62 pharmacy cancellation/return concurrency | HOLD — AUTHORIZATION | Exact-head CI 20/20 passed; explicit mutation-role boundary and negative-role tests remain |
+| #294 | Phase 63 inventory ledger concurrency | HOLD — AUTHORIZATION | Exact-head CI 20/20 passed, including quarantined-return reconciliation regression; mutation-role boundary remains |
+| #295 | Autonomous completion plan | DOC REVIEW / ACTIVE CHECKPOINT | Current coordinator plan branch; keep Draft until matrix, implementation work and owner gates are reconciled |
+
+### L.1 Immediate triage sequence
+
+1. Finish exact-head verification for #258 and record its PostgreSQL 17 result; keep physical printing and authenticated clinical acceptance separate.
+2. Finish the migration/role matrix for #250/#269/#287/#293/#294. No database PR is merge-ready while the mutation-role contract is unresolved.
+3. Continue the full #210 review; keep #292 and #291 non-activating until their clinical/data-source gates are satisfied.
+4. Complete #254/#256/#157 security and compatibility reviews.
+5. Reconcile #280 against #181 without merging either until finance/security and migration gates are proven.
+6. Review report-only PRs individually for provenance/freshness; do not bulk-merge them.
+7. Resolve Vercel's automatic Production-target deployment behavior before any additional merge to main.
