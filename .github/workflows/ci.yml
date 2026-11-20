@@ -739,3 +739,11 @@ jobs:
             -f db/tests/pharmacy_dispense_invoice_fixture.sql \
             -f db/roshan_phase63_inventory_ledger_controls.sql \
             -f db/tests/phase63_inventory_ledger_controls_integration.sql
+      - name: Execute inventory ledger controls concurrency tests
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: bash db/tests/phase63_inventory_ledger_concurrency.sh
