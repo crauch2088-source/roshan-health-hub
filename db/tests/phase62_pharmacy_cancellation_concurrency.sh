@@ -172,9 +172,9 @@ BEGIN
   IF v_c_returns <> 1 OR v_c_quar <> 1 OR v_c_inv_net <> 100 THEN
     RAISE EXCEPTION 'FAIL (c): returns=%, quar=%, inv_net=%', v_c_returns, v_c_quar, v_c_inv_net;
   END IF;
-  -- Post-handover return is quarantined and must not increase saleable batch quantity.
-  IF v_qty_rem <> (100 + v_a_cancels * 2) THEN
-    RAISE EXCEPTION 'FAIL inventory restock mismatch: expected %, got %', (100 + v_a_cancels * 2), v_qty_rem;
+  -- RX_B's successful pre-handover cancellation restocks 2 units; RX_C's post-handover quarantine return does not.
+  IF v_qty_rem <> (102 + v_a_cancels * 2) THEN
+    RAISE EXCEPTION 'FAIL inventory restock mismatch: expected %, got %', (102 + v_a_cancels * 2), v_qty_rem;
   END IF;
 END
 \$\$;
