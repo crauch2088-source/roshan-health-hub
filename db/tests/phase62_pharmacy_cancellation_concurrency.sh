@@ -33,10 +33,6 @@ IDEM_C="62c00000-0000-4000-8000-00000000c001"
 
 psql -v ON_ERROR_STOP=1 -q <<SQL
 BEGIN;
-INSERT INTO public.branches (id, name, code, is_active)
-VALUES ('${BR_ID}', 'Phase62 Concurrency Branch', 'P62C', true)
-ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO public.patients (id, branch_id)
 VALUES ('${PAT_ID}', '${BR_ID}')
 ON CONFLICT (id) DO NOTHING;
