@@ -157,7 +157,7 @@ price_match=$(psql -Atc "
   CROSS JOIN LATERAL (
     SELECT new_selling_price FROM public.medicine_price_history
     WHERE medicine_id = m.id AND branch_id = '${BRANCH_1}'
-    ORDER BY created_at DESC, id DESC
+    ORDER BY changed_at DESC, id DESC
     LIMIT 1
   ) h
   WHERE m.id = '${MED_ID}';
