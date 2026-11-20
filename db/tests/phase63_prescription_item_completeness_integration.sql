@@ -199,6 +199,28 @@ BEGIN
   VALUES('63000000-0000-0000-0000-000000000031','63000000-0000-0000-0000-000000000101',NULL,NULL,now());
   UPDATE public.prescription_items SET instructions='legacy archived row' WHERE id='63000000-0000-0000-0000-000000000031';
 
+  -- Historical soft-deleted prescription payloads are immutable too.
+  -- Non-clinical metadata can still be maintained without rewriting the order.
+  v_rejected := false;
+  BEGIN
+    UPDATE public.prescription_items
+       SET medication_name='Mutated archived medicine'
+     WHERE id='63000000-0000-0000-0000-000000000031';
+  EXCEPTION WHEN check_violation THEN v_rejected := true;
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'historical soft-deleted clinical payload was mutable';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.prescription_items
+     WHERE id='63000000-0000-0000-0000-000000000031'
+       AND medication_name IS NULL
+       AND instructions='legacy archived row'
+       AND deleted_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'rejected historical payload mutation changed the archived row';
+  END IF;
+
   v_rejected := false;
   BEGIN
     UPDATE public.prescription_items SET route='' WHERE id='63000000-0000-0000-0000-000000000001';
