@@ -571,6 +571,34 @@ const dict: Record<string, { ar: string; en: string }> = {
   db_status: { ar: "حالة قاعدة البيانات", en: "Database status" },
   connected: { ar: "متصل", en: "Connected" },
   records: { ar: "سجلات", en: "records" },
+  lab_revenue: { ar: "إيرادات المختبر", en: "Lab revenue" },
+  stock_overview: { ar: "نظرة عامة على المخزون", en: "Stock overview" },
+  stock_value: { ar: "قيمة المخزون", en: "Stock value" },
+  diagnosis: { ar: "التشخيص", en: "Diagnosis" },
+  outstanding: { ar: "المستحق", en: "Outstanding" },
+  collected_revenue: { ar: "الإيرادات المحصلة", en: "Collected revenue" },
+  supplier_debt: { ar: "ديون الموردين", en: "Supplier debt" },
+  financial_summary: { ar: "ملخص مالي", en: "Financial summary" },
+  net_flow: { ar: "صافي التدفق", en: "Net flow" },
+  payment_count: { ar: "عدد الدفعات", en: "Payment count" },
+  cashbox_movements: { ar: "عدد حركات الخزنة", en: "Cashbox movements" },
+  duplicate_confirmed_title: { ar: "تم العثور على مريض مطابق مسجّل مسبقاً", en: "Matching patient already registered" },
+  duplicate_possible_title: { ar: "تنبيه: يوجد مريض مشابه (هاتف أو اسم مشترك)", en: "Possible duplicate patient (shared phone or name)" },
+  duplicate_override_label: { ar: "أؤكد أن هذا شخص مختلف فعلياً وأرغب بإنشاء ملف جديد", en: "I confirm this is a distinct person and want to create a new chart" },
+  open_existing_patient: { ar: "فتح الملف الحالي", en: "Open existing chart" },
+  role_admin: { ar: "مدير النظام", en: "System Admin" },
+  role_super_admin: { ar: "المدير العام", en: "Super Admin" },
+  role_doctor: { ar: "طبيب", en: "Doctor" },
+  role_gp: { ar: "طبيب عام", en: "General Practitioner" },
+  role_dentist: { ar: "طبيب أسنان", en: "Dentist" },
+  role_specialist: { ar: "طبيب أخصائي", en: "Specialist" },
+  role_lab_tech: { ar: "فني مختبر", en: "Lab Technician" },
+  role_lab_doctor: { ar: "طبيب مختبر", en: "Lab Doctor" },
+  role_lab_assistant: { ar: "مساعد مختبر", en: "Lab Assistant" },
+  role_pharmacist: { ar: "صيدلي", en: "Pharmacist" },
+  role_receptionist: { ar: "موظف استقبال", en: "Receptionist" },
+  role_staff: { ar: "موظف", en: "Staff" },
+
 };
 
 type Ctx = {
@@ -630,4 +658,17 @@ export function useLang(): Ctx {
   }
 
   return ctx;
+}
+
+export function localizeRoleLabel(
+  roleCode: string | null | undefined,
+  fallbackName: string | null | undefined,
+  lang: Lang,
+): string {
+  const code = String(roleCode ?? "").trim().toLowerCase().replace(/^legacy_/, "");
+  if (code) {
+    const key = `role_${code}`;
+    if (dict[key]) return dict[key][lang];
+  }
+  return fallbackName ?? "";
 }

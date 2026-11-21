@@ -50,6 +50,7 @@ import { useAuth } from "@/lib/auth";
 import { listenForQuickAction } from "@/lib/quick-actions";
 import { n, rel, s, type Row, useRows, useSave, useSettings } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { translateBackendError } from "@/lib/error-messages";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
@@ -247,7 +248,7 @@ function VisitsPageInner() {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(translateBackendError(error.message, lang));
       }
 
       // The visit's consultation charge is written through the same atomic visit-invoice RPC
@@ -295,7 +296,7 @@ function VisitsPageInner() {
         .eq("id", visitId);
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(translateBackendError(error.message, lang));
       }
 
       const { error: queueError } = await supabase
@@ -511,6 +512,7 @@ function VisitsPageInner() {
       </PageHeader>
 
       <ErrorBox error={visits.error} />
+      {create.error ? <ErrorBox error={create.error} /> : null}
       {canCreate ? <ErrorBox error={visitFormOptions.error} /> : null}
 
       <Card>

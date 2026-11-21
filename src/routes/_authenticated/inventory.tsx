@@ -44,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { n, rel, s, usePagedRows, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { translateBackendError } from "@/lib/error-messages";
 import { formatDate, money } from "@/lib/medical";
 import {
   DEFAULT_EXPIRY_THRESHOLD_DAYS,
@@ -80,7 +81,7 @@ function sanitizeSearch(term: string): string {
 }
 
 function ExpiryBadge({ status }: { status: ExpiryStatus }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE[status])}>
       {t(status)}
@@ -97,7 +98,7 @@ function InventoryPage() {
 }
 
 function InventoryPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { currency, settings } = useSettings();
   const [activeTab, setActiveTab] = useState("medicines");
   const [pendingReceiveMedicineId, setPendingReceiveMedicineId] = useState<string | null>(null);
@@ -147,7 +148,7 @@ function InventoryPageInner() {
 // =============================================================================
 
 function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string) => void }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const { currency } = useSettings();
   const [page, setPage] = useState(1);
@@ -206,7 +207,7 @@ function MedicinesTab({ onReceiveStock }: { onReceiveStock: (medicineId: string)
         expiry_date: null,
         batch_number: null,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(translateBackendError(error.message, lang));
       return null;
     },
     {
@@ -458,7 +459,7 @@ function BatchesTab({
   initialMedicineId: string | null;
   onInitialMedicineHandled: () => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ExpiryStatus>("all");
@@ -583,7 +584,7 @@ function BatchesTab({
         p_invoice_reference: form.invoice_reference.trim() || null,
         p_idempotency_key: idempotencyKey,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(translateBackendError(error.message, lang));
       return null;
     },
     {
@@ -833,7 +834,7 @@ function BatchesTab({
                 onChange={(e) => updateForm({ manufacture_date: e.target.value })}
               />
             </Field>
-            <Field label={t("expiry_date")}>
+            <Field label={`${t("expiry_date")} *`}>
               <Input
                 type="date"
                 dir="ltr"
@@ -975,7 +976,7 @@ function BatchesTab({
 // =============================================================================
 
 function SuppliersTab({ currency }: { currency: string }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { can } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
@@ -1011,7 +1012,7 @@ function SuppliersTab({ currency }: { currency: string }) {
         phone: form.phone || null,
         address: form.address || null,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(translateBackendError(error.message, lang));
       return null;
     },
     {
