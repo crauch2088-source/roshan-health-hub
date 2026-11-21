@@ -703,7 +703,7 @@ const [cancelRequestIds, setCancelRequestIds] = useState<Record<string, string>>
                       condition: "unopened_intact" as ReturnCondition,
                       reason: "",
                     };
-                    const matchingBatches = (inventoryBatches.data ?? []).filter(
+                    const matchingBatches = !rf.medicineId ? [] : (inventoryBatches.data ?? []).filter(
                       (b) => !rf.medicineId || s(b, "medicine_id") === rf.medicineId,
                     );
                     return (
@@ -741,7 +741,7 @@ const [cancelRequestIds, setCancelRequestIds] = useState<Record<string, string>>
                           </Select>
                           <Select
                             value={rf.batchId}
-                            disabled={!canDispense || isPhase62Pending}
+                            disabled={!canDispense || isPhase62Pending || !rf.medicineId}
                             onValueChange={(v) =>
                               setReturnForms((prev) => ({
                                 ...prev,
@@ -761,16 +761,16 @@ const [cancelRequestIds, setCancelRequestIds] = useState<Record<string, string>>
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select><input type="number" min={1} className="rounded-md border border-input bg-background px-2.5 py-1 text-xs" placeholder={lang === "ar" ? "\u0627\u0644\u0643\u0645\u064a\u0629" : "Qty"} value={rf.quantity} disabled={!canDispense || isPhase62Pending} onChange={(e) => setReturnForms((prev) => ({ ...prev, [s(p, "id")]: { ...rf, quantity: e.target.value } }))} /><Select value={rf.condition} disabled={!canDispense || isPhase62Pending} onValueChange={(v) => setReturnForms((prev) => ({ ...prev, [s(p, "id")]: { ...rf, condition: v as ReturnCondition } }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{RETURN_CONDITIONS.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent></Select><input type="text" className="rounded-md border border-input bg-background px-2.5 py-1 text-xs" placeholder={lang === "ar" ? "\u0633\u0628\u0628 \u0627\u0644\u0645\u0631\u062a\u062c\u0639" : "Return reason"} value={rf.reason} disabled={!canDispense || isPhase62Pending} onChange={(e) => setReturnForms((prev) => ({ ...prev, [s(p, "id")]: { ...rf, reason: e.target.value } }))} /></div><Button size="sm" variant="outline" disabled={!canDispense || isPhase62Pending || !rf.medicineId || !rf.batchId || !(Number(rf.quantity) > 0) || !rf.reason.trim()} onClick={() => postHandoverReturn.mutate({ prescriptionId: s(p, "id"), medicineId: rf.medicineId, batchId: rf.batchId, quantity: Number(rf.quantity), condition: rf.condition, reason: rf.reason.trim() })}>{lang === "ar" ? "\u062a\u0633\u062c\u064a\u0644 \u0645\u0631\u062a\u062c\u0639" : "Record Post-Handover Return"}</Button></div>); })())}</div>) : null}
+                          </Select><input type="number" min={1} className="rounded-md border border-input bg-background px-2.5 py-1 text-xs" placeholder={lang === "ar" ? "\u0627\u0644\u0643\u0645\u064a\u0629" : "Qty"} value={rf.quantity} disabled={!canDispense || isPhase62Pending} onChange={(e) => setReturnForms((prev) => ({ ...prev, [s(p, "id")]: { ...rf, quantity: e.target.value } }))} /><Select value={rf.condition} disabled={!canDispense || isPhase62Pending} onValueChange={(v) => setReturnForms((prev) => ({ ...prev, [s(p, "id")]: { ...rf, condition: v as ReturnCondition } }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{RETURN_CONDITIONS.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent></Select><input type="text" className="rounded-md border border-input bg-background px-2.5 py-1 text-xs" placeholder={lang === "ar" ? "\u0633\u0628\u0628 \u0627\u0644\u0645\u0631\u062a\u062c\u0639" : "Return reason"} value={rf.reason} disabled={!canDispense || isPhase62Pending} onChange={(e) => setReturnForms((prev) => ({ ...prev, [s(p, "id")]: { ...rf, reason: e.target.value } }))} /></div><Button size="sm" variant="outline" disabled={!canDispense || isPhase62Pending || !rf.medicineId || !rf.batchId || !(Number(rf.quantity) > 0) || !rf.reason.trim()} onClick={() => postHandoverReturn.mutate({ prescriptionId: s(p, "id"), medicineId: rf.medicineId, batchId: rf.batchId, quantity: Number(rf.quantity), condition: rf.condition, reason: rf.reason.trim() })}>{lang === "ar" ? "\u062a\u0633\u062c\u064a\u0644 \u0645\u0631\u062a\u062c\u0639" : "Record Post-Handover Return"}</Button></div>)); })())}</div>) : null}
                   
                 </div>
-              </DataPanel>
             );
           })}
         </div>
       )
       }{/*q*/}
-      <DataPanel title={lang === "ar" ? "قائمة الحجر الصحي للمرتجعات" : "Return Quarantine Queue"}>
+          </DataPanel>
+                    <DataPanel title={lang === "ar" ? "قائمة الحجر الصحي للمرتجعات" : "Return Quarantine Queue"}>
         {quarantineQueue.error ? (
           <ErrorBox error={quarantineQueue.error} />
         ) : quarantineQueue.isLoading ? (
