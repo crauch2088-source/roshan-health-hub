@@ -7,10 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { useRows, useSave, type Row, s } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import {
-  isSyntacticallyValidIcd10Format,
-  normalizeIcd10Code,
-} from "@/lib/icd10-validation";
+import { isSyntacticallyValidIcd10Format, normalizeIcd10Code } from "@/lib/icd10-validation";
 import { supabase } from "@/lib/supabase";
 import {
   QUICK_ASSESSMENT,
