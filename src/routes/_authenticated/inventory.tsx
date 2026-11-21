@@ -107,7 +107,7 @@ function InventoryPage() {
 }
 
 function InventoryPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { currency, settings } = useSettings();
   const [activeTab, setActiveTab] = useState("medicines");
   const [pendingReceiveMedicineId, setPendingReceiveMedicineId] = useState<string | null>(null);
@@ -1217,17 +1217,29 @@ function LedgerControlsTab({ currency }: { currency: string }) {
   const { can, user } = useAuth();
   const isPharmacistWriter = user?.role_code === "pharmacist" && can("pharmacy.update");
 
-  const medicines = useRows("medicines", {
-    select: "id,name,selling_price,stock_quantity",
-    order: { col: "name", asc: true },
+  const medicines = useRows(["medicines-ledger"], async () => {
+    const { data, error } = await supabase
+      .from("medicines")
+      .select("id,name,selling_price,stock_quantity")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Row[];
   });
-  const batches = useRows("pharmacy_batches", {
-    select: "id,medicine_id,branch_id,batch_number,expiry_date,quantity_remaining,status",
-    order: { col: "expiry_date", asc: true },
+  const batches = useRows(["pharmacy-batches-ledger"], async () => {
+    const { data, error } = await supabase
+      .from("pharmacy_batches")
+      .select("id,medicine_id,branch_id,batch_number,expiry_date,quantity_remaining,status")
+      .order("expiry_date", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Row[];
   });
-  const branches = useRows("branches", {
-    select: "id,name",
-    order: { col: "name", asc: true },
+  const branches = useRows(["branches-ledger"], async () => {
+    const { data, error } = await supabase
+      .from("branches")
+      .select("id,name")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Row[];
   });
 
   const [selectedMedicineId, setSelectedMedicineId] = useState("");
