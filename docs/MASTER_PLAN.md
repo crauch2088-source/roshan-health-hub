@@ -3164,3 +3164,10 @@ Production remains NO-GO. Backup artifact and isolated restore evidence now exis
 Next highest-value repository task: reconcile Draft PR #229 with current main using a normal two-parent merge commit, resolve only the actual overlapping files, preserve Phase 57/57B fail-closed pharmacy behavior and Phase 61 permission/no-side-effect contracts, then run one exact-head CI/PG17 pass. Keep it Draft for independent SQL/security review and mobile pharmacist/prescriber acceptance. Do not merge the PR or apply Production changes.
 
 Progress remains at the last evidence-weighted canonical baseline: 62% Engineering RC / 15% Operational Acceptance. This read-only audit and documentation update do not earn implementation-completion credit. The prior 17–30 engineering-hour estimate is historical, not a new schedule.
+
+## Phase 60 — catalogue identity and physical-pack attestation (2026-11-14)
+
+- PR #210 contains a candidate identity editor, dedicated identity/pack permissions, column-level UPDATE restrictions, and an append-only human pack-attestation record with an identity snapshot and SHA-256 fingerprint.
+- The attestation is not photographic, barcode, lot/expiry, manufacturer-label or independent physical verification; it is not branch-scoped and is not a dispensing hard-stop. Do not infer a route or formulation from `unit`, display name or an unverified catalogue field.
+- Historical exact-head validation at `230fb8ebcc8ac6c820f82dd8714b8050f0c30251` passed 28 checks on 2026-11-11. Later identity-completeness/unsaved-draft hardening commits have not yet been covered by a fresh exact-head CI run following current-main reconciliation.
+- No QA/Production migration, catalogue backfill, stock/price mutation or role change is authorized by this candidate. Keep Draft pending exact-head PG17 validation, independent SQL/security review, physical-pack workflow acceptance and migration-ledger reconciliation.

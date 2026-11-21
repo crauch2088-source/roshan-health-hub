@@ -318,3 +318,13 @@ The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do 
 Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction, or pharmacy dispensing authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
 
 The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.
+
+## Phase 60 candidate — medicine catalogue authority and physical-pack attestation (2026-11-14 mainline reconciliation)
+
+- Source: `db/roshan_phase60_medicine_catalogue_authority_and_pack_attestation.sql`.
+- PostgreSQL 17 assertions: `db/tests/phase60_medicine_catalogue_authority_integration.sql`; the dedicated CI job replays the disposable v112 baseline, seeds synthetic roles, and exercises permission boundaries and append-only evidence.
+- Identity edits use `pharmacy.catalogue_identity.update`; pack attestation uses pharmacist-only `pharmacy.pack.verify` and records actor/time/identity snapshot/SHA-256 plus audit evidence.
+- Direct medicine UPDATE is restricted to the five identity columns. The attestation record is RLS-forced, read-only to authenticated users, has direct writes revoked, and rejects UPDATE/DELETE/TRUNCATE.
+- This is a human attestation of a saved identity snapshot only: it is not image/barcode/lot/expiry verification, not branch-scoped, and not a dispensing hard-stop. It must not be used to infer route, concentration, or product identity from inventory labels.
+- The prior Phase 60 code head `230fb8ebcc8ac6c820f82dd8714b8050f0c30251` passed 28 checks on 2026-11-11. Subsequent identity-completeness and unsaved-draft hardening commits are newer and have not yet received a fresh exact-head CI run after this reconciliation.
+- Candidate only: not applied to QA or Production. Migration history is not reconciled; do not apply or hand-edit migration ledgers. Keep PR #210 Draft pending exact-head PostgreSQL 17 validation, independent SQL/security review, and pharmacist workflow acceptance.
