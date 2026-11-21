@@ -85,14 +85,20 @@ INSERT INTO public.phase55_test_insurance_claim_payments VALUES
   ('00000000-0000-0000-0000-000000009202');
 ALTER TABLE public.phase55_test_insurance_claim_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.phase55_test_insurance_claim_payments ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.app_has_claim_branch(_claim_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$ SELECT private.app_has_claim_branch(_claim_id) $function$;
+REVOKE ALL ON FUNCTION public.app_has_claim_branch(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.app_has_claim_branch(uuid) TO authenticated;
+
 CREATE POLICY phase55_claim_items_select ON public.phase55_test_insurance_claim_items
-  FOR SELECT TO authenticated USING ((SELECT private.app_has_claim_branch(claim_id)));
+  FOR SELECT TO authenticated USING ((SELECT public.app_has_claim_branch(claim_id)));
 CREATE POLICY phase55_claim_items_insert ON public.phase55_test_insurance_claim_items
-  FOR INSERT TO authenticated WITH CHECK ((SELECT private.app_has_claim_branch(claim_id)));
+  FOR INSERT TO authenticated WITH CHECK ((SELECT public.app_has_claim_branch(claim_id)));
 CREATE POLICY phase55_claim_payments_select ON public.phase55_test_insurance_claim_payments
-  FOR SELECT TO authenticated USING ((SELECT private.app_has_claim_branch(claim_id)));
+  FOR SELECT TO authenticated USING ((SELECT public.app_has_claim_branch(claim_id)));
 CREATE POLICY phase55_claim_payments_insert ON public.phase55_test_insurance_claim_payments
-  FOR INSERT TO authenticated WITH CHECK ((SELECT private.app_has_claim_branch(claim_id)));
+  FOR INSERT TO authenticated WITH CHECK ((SELECT public.app_has_claim_branch(claim_id)));
 GRANT USAGE ON SCHEMA private TO authenticated;
 GRANT SELECT, INSERT ON public.phase55_test_insurance_claim_items,
   public.phase55_test_insurance_claim_payments TO authenticated;
