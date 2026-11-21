@@ -51,6 +51,16 @@ import {
   expiryStatus,
   type ExpiryStatus,
 } from "@/lib/pharmacy";
+import {
+  WRITEOFF_TYPES,
+  adjustInventoryBatchAtomic,
+  quarantineExpiredBatchAtomic,
+  reconcileMedicineStockLedger,
+  recordInventoryWriteoffAtomic,
+  updateMedicineSellingPriceAtomic,
+  type ReconcileLedgerResult,
+  type WriteoffType,
+} from "@/lib/inventory-ledger";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -80,7 +90,7 @@ function sanitizeSearch(term: string): string {
 }
 
 function ExpiryBadge({ status }: { status: ExpiryStatus }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <Badge variant="outline" className={cn("font-medium", EXPIRY_TONE[status])}>
       {t(status)}
@@ -97,7 +107,7 @@ function InventoryPage() {
 }
 
 function InventoryPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { currency, settings } = useSettings();
   const [activeTab, setActiveTab] = useState("medicines");
   const [pendingReceiveMedicineId, setPendingReceiveMedicineId] = useState<string | null>(null);
@@ -118,6 +128,9 @@ function InventoryPageInner() {
           <TabsTrigger value="medicines">{t("medicines")}</TabsTrigger>
           <TabsTrigger value="batches">{t("batches")}</TabsTrigger>
           <TabsTrigger value="suppliers">{t("suppliers")}</TabsTrigger>
+          <TabsTrigger value="ledger">
+            {lang === "ar" ? "ضبط سجل المخزون" : "Ledger Controls"}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="medicines">
           <MedicinesTab onReceiveStock={openReceiveForMedicine} />
@@ -132,6 +145,9 @@ function InventoryPageInner() {
         </TabsContent>
         <TabsContent value="suppliers">
           <SuppliersTab currency={currency} />
+        </TabsContent>
+        <TabsContent value="ledger">
+          <LedgerControlsTab currency={currency} />
         </TabsContent>
       </Tabs>
     </div>
@@ -1189,6 +1205,453 @@ function SuppliersTab({ currency }: { currency: string }) {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// =============================================================================
+// Phase 63 — Ledger Controls tab (adjustments, quarantine, write-offs, price history, reconciliation)
+// =============================================================================
+function LedgerControlsTab({ currency }: { currency: string }) {
+  const { lang } = useLang();
+  const { can, user } = useAuth();
+  const isPharmacistWriter = user?.role_code === "pharmacist" && can("pharmacy.update");
+
+  const medicines = useRows(["medicines-ledger"], () =>
+    supabase
+      .from("medicines")
+      .select("id,name,selling_price,stock_quantity")
+      .order("name", { ascending: true }),
+  );
+  const batches = useRows(["pharmacy-inventory-ledger"], () =>
+    supabase
+      .from("pharmacy_inventory")
+      .select("id,medicine_id,branch_id,batch_number,expiry_date,quantity_remaining")
+      .order("expiry_date", { ascending: true }),
+  );
+  const branches = useRows(["branches-ledger"], () =>
+    supabase.from("branches").select("id,name").order("name", { ascending: true }),
+  );
+
+  const [selectedMedicineId, setSelectedMedicineId] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+
+  const [adjustDelta, setAdjustDelta] = useState("");
+  const [adjustReason, setAdjustReason] = useState("");
+  const [adjustKey, setAdjustKey] = useState(() => crypto.randomUUID());
+
+  const [quarantineReason, setQuarantineReason] = useState("");
+  const [quarantineKey, setQuarantineKey] = useState(() => crypto.randomUUID());
+
+  const [writeoffQty, setWriteoffQty] = useState("");
+  const [writeoffType, setWriteoffType] = useState<WriteoffType>("expired");
+  const [writeoffReason, setWriteoffReason] = useState("");
+  const [writeoffKey, setWriteoffKey] = useState(() => crypto.randomUUID());
+
+  const [newPrice, setNewPrice] = useState("");
+  const [priceReason, setPriceReason] = useState("");
+  const [priceKey, setPriceKey] = useState(() => crypto.randomUUID());
+
+  const [reconcileResult, setReconcileResult] = useState<ReconcileLedgerResult | null>(null);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+
+  const matchingBatches = useMemo(() => {
+    const all = (batches.data ?? []) as Row[];
+    if (!selectedMedicineId) return [];
+    return all.filter((b) => s(b, "medicine_id") === selectedMedicineId);
+  }, [batches.data, selectedMedicineId]);
+
+  const effectiveBranchId = useMemo(() => {
+    if (selectedBranchId) return selectedBranchId;
+    const chosenBatch = matchingBatches.find((b) => s(b, "id") === selectedBatchId);
+    if (chosenBatch && s(chosenBatch, "branch_id")) return s(chosenBatch, "branch_id");
+    const firstBranch = ((branches.data ?? []) as Row[])[0];
+    return firstBranch ? s(firstBranch, "id") : "";
+  }, [selectedBranchId, matchingBatches, selectedBatchId, branches.data]);
+
+  const adjustMutation = useSave(
+    async () =>
+      adjustInventoryBatchAtomic({
+        batchId: selectedBatchId,
+        delta: Number(adjustDelta),
+        reason: adjustReason,
+        idempotencyKey: adjustKey,
+      }),
+    {
+      invalidate: [["pharmacy-batches"], ["inventory"], ["medicines"]],
+      successMessage: lang === "ar" ? "تم تعديل الرصيد بنجاح" : "Stock adjusted",
+      onDone: () => {
+        setAdjustDelta("");
+        setAdjustReason("");
+        setAdjustKey(crypto.randomUUID());
+      },
+    },
+  );
+
+  const quarantineMutation = useSave(
+    async () =>
+      quarantineExpiredBatchAtomic({
+        batchId: selectedBatchId,
+        reason: quarantineReason,
+        idempotencyKey: quarantineKey,
+      }),
+    {
+      invalidate: [["pharmacy-batches"], ["inventory"], ["medicines"]],
+      successMessage: lang === "ar" ? "تم نقل التشغيلة للحجر" : "Batch quarantined",
+      onDone: () => {
+        setQuarantineReason("");
+        setQuarantineKey(crypto.randomUUID());
+      },
+    },
+  );
+
+  const writeoffMutation = useSave(
+    async () =>
+      recordInventoryWriteoffAtomic({
+        batchId: selectedBatchId,
+        quantity: Number(writeoffQty),
+        writeoffType,
+        reason: writeoffReason,
+        idempotencyKey: writeoffKey,
+      }),
+    {
+      invalidate: [["pharmacy-batches"], ["inventory"], ["medicines"]],
+      successMessage: lang === "ar" ? "تم تسجيل الإتلاف/الشطب" : "Write-off recorded",
+      onDone: () => {
+        setWriteoffQty("");
+        setWriteoffReason("");
+        setWriteoffKey(crypto.randomUUID());
+      },
+    },
+  );
+
+  const priceMutation = useSave(
+    async () =>
+      updateMedicineSellingPriceAtomic({
+        medicineId: selectedMedicineId,
+        branchId: effectiveBranchId,
+        newSellingPrice: Number(newPrice),
+        reason: priceReason,
+        idempotencyKey: priceKey,
+      }),
+    {
+      invalidate: [["medicines"], ["inventory"]],
+      successMessage: lang === "ar" ? "تم تحديث السعر وتسجيله" : "Selling price updated",
+      onDone: () => {
+        setNewPrice("");
+        setPriceReason("");
+        setPriceKey(crypto.randomUUID());
+      },
+    },
+  );
+
+  const handleReconcile = async () => {
+    setReconcileError(null);
+    setReconciling(true);
+    try {
+      const res = await reconcileMedicineStockLedger({
+        medicineId: selectedMedicineId,
+        branchId: effectiveBranchId,
+      });
+      setReconcileResult(res);
+    } catch (err) {
+      setReconcileError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setReconciling(false);
+    }
+  };
+
+  if (medicines.error || batches.error) {
+    return <ErrorBox error={medicines.error ?? batches.error} />;
+  }
+  if (medicines.isLoading || batches.isLoading) {
+    return <Loading />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {!isPharmacistWriter ? (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          {lang === "ar"
+            ? "عمليات التعديل والحجر والشطب وتحديث السعر مقتصرة على الصيدلي المصرح له (يتم التحقق في الخادم)."
+            : "Adjustments, quarantine, write-offs, and price updates require the Pharmacist role (enforced server-side)."}
+        </div>
+      ) : null}
+
+      <Card>
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-3">
+          <Field label={lang === "ar" ? "الدواء" : "Medicine"}>
+            <Select
+              value={selectedMedicineId}
+              onValueChange={(v) => {
+                setSelectedMedicineId(v);
+                setSelectedBatchId("");
+                setReconcileResult(null);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "اختر الدواء" : "Select medicine"} />
+              </SelectTrigger>
+              <SelectContent>
+                {((medicines.data ?? []) as Row[]).map((m) => (
+                  <SelectItem key={s(m, "id")} value={s(m, "id")}>
+                    {s(m, "name")} ({money(n(m, "selling_price"), currency)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field label={lang === "ar" ? "التشغيلة" : "Batch"}>
+            <Select
+              value={selectedBatchId}
+              disabled={!selectedMedicineId}
+              onValueChange={setSelectedBatchId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "اختر التشغيلة" : "Select batch"} />
+              </SelectTrigger>
+              <SelectContent>
+                {matchingBatches.map((b) => (
+                  <SelectItem key={s(b, "id")} value={s(b, "id")}>
+                    {`${s(b, "batch_number") || s(b, "id")} · ${n(b, "quantity_remaining")} (${s(b, "expiry_date") || "-"})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field label={lang === "ar" ? "الفرع" : "Branch"}>
+            <Select value={effectiveBranchId} onValueChange={setSelectedBranchId}>
+              <SelectTrigger>
+                <SelectValue placeholder={lang === "ar" ? "اختر الفرع" : "Select branch"} />
+              </SelectTrigger>
+              <SelectContent>
+                {((branches.data ?? []) as Row[]).map((br) => (
+                  <SelectItem key={s(br, "id")} value={s(br, "id")}>
+                    {s(br, "name")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h3 className="text-sm font-semibold">
+              {lang === "ar" ? "تعديل رصيد التشغيلة" : "Adjust Batch Stock"}
+            </h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input
+                type="number"
+                placeholder={lang === "ar" ? "الفرق (+ أو -)" : "Delta (+ or -)"}
+                value={adjustDelta}
+                disabled={!isPharmacistWriter || adjustMutation.isPending}
+                onChange={(e) => setAdjustDelta(e.target.value)}
+              />
+              <Input
+                placeholder={lang === "ar" ? "سبب التعديل" : "Adjustment reason"}
+                value={adjustReason}
+                disabled={!isPharmacistWriter || adjustMutation.isPending}
+                onChange={(e) => setAdjustReason(e.target.value)}
+              />
+            </div>
+            <Button
+              size="sm"
+              disabled={
+                !isPharmacistWriter ||
+                adjustMutation.isPending ||
+                !selectedBatchId ||
+                !adjustDelta ||
+                Number(adjustDelta) === 0 ||
+                !adjustReason.trim()
+              }
+              onClick={() => adjustMutation.mutate(undefined)}
+            >
+              {lang === "ar" ? "تسجيل التعديل" : "Record Adjustment"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h3 className="text-sm font-semibold">
+              {lang === "ar" ? "حجر تشغيلة منتهية الصلاحية" : "Quarantine Expired Batch"}
+            </h3>
+            <Input
+              placeholder={lang === "ar" ? "سبب الحجر" : "Quarantine reason"}
+              value={quarantineReason}
+              disabled={!isPharmacistWriter || quarantineMutation.isPending}
+              onChange={(e) => setQuarantineReason(e.target.value)}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={
+                !isPharmacistWriter ||
+                quarantineMutation.isPending ||
+                !selectedBatchId ||
+                !quarantineReason.trim()
+              }
+              onClick={() => quarantineMutation.mutate(undefined)}
+            >
+              {lang === "ar" ? "نقل للحجر الصحي" : "Quarantine Batch"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h3 className="text-sm font-semibold">
+              {lang === "ar" ? "تسجيل شطب / إتلاف" : "Record Write-Off"}
+            </h3>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Input
+                type="number"
+                min={1}
+                placeholder={lang === "ar" ? "الكمية" : "Quantity"}
+                value={writeoffQty}
+                disabled={!isPharmacistWriter || writeoffMutation.isPending}
+                onChange={(e) => setWriteoffQty(e.target.value)}
+              />
+              <Select
+                value={writeoffType}
+                disabled={!isPharmacistWriter || writeoffMutation.isPending}
+                onValueChange={(v) => setWriteoffType(v as WriteoffType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WRITEOFF_TYPES.map((wt) => (
+                    <SelectItem key={wt} value={wt}>
+                      {wt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder={lang === "ar" ? "السبب" : "Reason"}
+                value={writeoffReason}
+                disabled={!isPharmacistWriter || writeoffMutation.isPending}
+                onChange={(e) => setWriteoffReason(e.target.value)}
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={
+                !isPharmacistWriter ||
+                writeoffMutation.isPending ||
+                !selectedBatchId ||
+                !(Number(writeoffQty) > 0) ||
+                !writeoffReason.trim()
+              }
+              onClick={() => writeoffMutation.mutate(undefined)}
+            >
+              {lang === "ar" ? "تسجيل الشطب" : "Record Write-Off"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h3 className="text-sm font-semibold">
+              {lang === "ar" ? "تحديث سعر البيع (مع السجل)" : "Audited Selling Price Update"}
+            </h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder={lang === "ar" ? "السعر الجديد (SDG)" : "New selling price (SDG)"}
+                value={newPrice}
+                disabled={!isPharmacistWriter || priceMutation.isPending}
+                onChange={(e) => setNewPrice(e.target.value)}
+              />
+              <Input
+                placeholder={lang === "ar" ? "سبب تعديل السعر" : "Price change reason"}
+                value={priceReason}
+                disabled={!isPharmacistWriter || priceMutation.isPending}
+                onChange={(e) => setPriceReason(e.target.value)}
+              />
+            </div>
+            <Button
+              size="sm"
+              disabled={
+                !isPharmacistWriter ||
+                priceMutation.isPending ||
+                !selectedMedicineId ||
+                !effectiveBranchId ||
+                newPrice === "" ||
+                Number(newPrice) < 0 ||
+                !priceReason.trim()
+              }
+              onClick={() => priceMutation.mutate(undefined)}
+            >
+              {lang === "ar" ? "تحديث السعر" : "Update Selling Price"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <h3 className="text-sm font-semibold">
+              {lang === "ar" ? "مطابقة سجل المخزون" : "Stock Ledger Reconciliation"}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "مقارنة مجموع التشغيلات المتبقية مع صافي حركات السجل للفرع المحدد."
+                : "Compare remaining batch totals against net stock movements for the selected medicine and branch."}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!selectedMedicineId || !effectiveBranchId || reconciling}
+            onClick={handleReconcile}
+          >
+            {reconciling
+              ? lang === "ar"
+                ? "جارٍ المطابقة..."
+                : "Reconciling..."
+              : lang === "ar"
+                ? "مطابقة السجل"
+                : "Reconcile Ledger"}
+          </Button>
+          {reconcileError ? (
+            <div className="w-full text-xs text-destructive">{reconcileError}</div>
+          ) : null}
+          {reconcileResult ? (
+            <div className="flex w-full flex-wrap items-center gap-3 text-xs">
+              <span>
+                {lang === "ar" ? "مجموع التشغيلات:" : "Batch sum:"}{" "}
+                <strong>{reconcileResult.batch_sum}</strong>
+              </span>
+              <span>
+                {lang === "ar" ? "صافي السجل:" : "Ledger net:"}{" "}
+                <strong>{reconcileResult.ledger_net}</strong>
+              </span>
+              <Badge variant={reconcileResult.is_balanced ? "secondary" : "destructive"}>
+                {reconcileResult.is_balanced
+                  ? lang === "ar"
+                    ? "متطابق"
+                    : "Balanced"
+                  : lang === "ar"
+                    ? "يوجد فرق"
+                    : "Mismatch"}
+              </Badge>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
