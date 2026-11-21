@@ -1217,30 +1217,21 @@ function LedgerControlsTab({ currency }: { currency: string }) {
   const { can, user } = useAuth();
   const isPharmacistWriter = user?.role_code === "pharmacist" && can("pharmacy.update");
 
-  const medicines = useRows(["medicines-ledger"], async () => {
-    const { data, error } = await supabase
+  const medicines = useRows(["medicines-ledger"], () =>
+    supabase
       .from("medicines")
       .select("id,name,selling_price,stock_quantity")
-      .order("name", { ascending: true });
-    if (error) throw error;
-    return (data ?? []) as Row[];
-  });
-  const batches = useRows(["pharmacy-batches-ledger"], async () => {
-    const { data, error } = await supabase
-      .from("pharmacy_batches")
-      .select("id,medicine_id,branch_id,batch_number,expiry_date,quantity_remaining,status")
-      .order("expiry_date", { ascending: true });
-    if (error) throw error;
-    return (data ?? []) as Row[];
-  });
-  const branches = useRows(["branches-ledger"], async () => {
-    const { data, error } = await supabase
-      .from("branches")
-      .select("id,name")
-      .order("name", { ascending: true });
-    if (error) throw error;
-    return (data ?? []) as Row[];
-  });
+      .order("name", { ascending: true }),
+  );
+  const batches = useRows(["medicine-batches-ledger"], () =>
+    supabase
+      .from("medicine_batches")
+      .select("id,medicine_id,branch_id,batch_number,expiry_date,quantity_remaining")
+      .order("expiry_date", { ascending: true }),
+  );
+  const branches = useRows(["branches-ledger"], () =>
+    supabase.from("branches").select("id,name").order("name", { ascending: true }),
+  );
 
   const [selectedMedicineId, setSelectedMedicineId] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState("");
