@@ -129,7 +129,7 @@ test("literal Supabase table references exist in canonical public baseline", () 
     "pharmacy_dispense_cancellations",
     "pharmacy_returns",
     "pharmacy_return_quarantine",
-  ,);
+ ]);
   const missing = [...queried].filter(
     (name) => !objects.has(name) && !forwardMigrationObjects.has(name),
   );
