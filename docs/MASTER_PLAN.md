@@ -3194,3 +3194,11 @@ Progress remains at the last evidence-weighted canonical baseline: 62% Engineeri
 - **PR `#250` (`832a8d3`):** Non-destructively merged `main` (`3bc317b`); 12/12 workflows PASS (`Phase 49-50 PG17` `44874136348` PASS, `CI` `44874136237` `completed/success`). Exact 6-file SHA-256 Production migration chain documented.
 - **PR `#210` (`36d929d`):** Non-destructively merged `main` (`3bc317b`); stale-base blocker cleared (8/8 PASS; `CI` `44874164968` `completed/success`); remains Draft for remaining catalogue identity blockers.
 - **Progress:** **77.0% Engineering Completion (Track A)** / **29.0% Operational Readiness (Track B)**. Report: `docs/parallel-reports/FOCUSED_P0_AND_OPEN_PR_CLOSURE_REPORT_2026-11-21.md`.
+
+
+### 2026-11-21 Final Release Readiness & Remediation Addendum
+- **PRODUCTION P0 REMAINS OPEN — NO-GO.** Production Supabase (`jewzonxplxhogqrnhosl`) and Production Vercel remain untouched.
+- **PR `#250` (`832a8d3`):** **12/12 CI PASS** (`44874136237`, `44874136238`). Controlled-release dossier delivered at `docs/CONTROLLED_RELEASE_DOSSIER_2026-11-21.md`.
+- **PR `#210` (`84b328e`):** Synced to `main` (`3bc317b`) and extended with Phase 60B (`db/roshan_phase60b_medicine_pack_identity_and_duplicate_guard.sql` + contract test); remains Draft pending pharmacist pack acceptance.
+- **PR `#291` (`804302f`, 8/8 PASS), PR `#292` (`89763d2`, 8/8 PASS), PR `#294` (`88417c6`, 6/6 PASS), PR `#260` (`b963d7a`, PASS):** All exact-head green.
+- **Progress:** **79.5% Engineering Completion (Track A)** / **29.0% Operational Readiness (Track B)**. Report: `docs/parallel-reports/FINAL_RELEASE_READINESS_AND_REMEDIATION_REPORT_2026-11-21.md`.
