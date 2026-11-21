@@ -24,6 +24,7 @@ import { useLang } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { calcAge } from "@/lib/medical";
 import { DOSES, DOSAGE_FORMS, FREQUENCIES, ROUTES, DURATIONS } from "../constants";
+import { PediatricSafetyPanel } from "./PediatricSafetyPanel";
 
 export function PrescriptionTab({ visitId }: { visitId: string }) {
   const { lang } = useLang();
@@ -64,6 +65,7 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
   const isPediatric = patientAge != null && patientAge < 18;
   const pediatricWeightMissing =
     isPediatric && !vitalsQ.isLoading && !vitalsQ.error && patientWeight <= 0;
+  const [pediatricSafetyConfirmed, setPediatricSafetyConfirmed] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
   const cleanSearch = sanitizeTerm(debouncedSearch);
@@ -449,9 +451,20 @@ export function PrescriptionTab({ visitId }: { visitId: string }) {
             </table>
           </div>
         )}
+        {isPediatric ? (
+          <PediatricSafetyPanel
+            patientAgeYears={patientAge ?? 0}
+            weightKg={patientWeight > 0 ? patientWeight : null}
+            weightRecordedAt={s((vitalsQ.data ?? [])[0], "created_at") || null}
+            dosageForm={items[0]?.dosage_form ?? ""}
+            route={items[0]?.route ?? ""}
+            clinicianEnteredDose={items[0]?.dose ?? ""}
+            onConfirmationChange={setPediatricSafetyConfirmed}
+          />
+        ) : null}
         <div className="flex justify-end">
           <Button
-            disabled={save.isPending || !items.length}
+            disabled={save.isPending || !items.length || (isPediatric && !pediatricSafetyConfirmed)}
             onClick={() => save.mutate(undefined as never)}
           >
             {save.isPending
