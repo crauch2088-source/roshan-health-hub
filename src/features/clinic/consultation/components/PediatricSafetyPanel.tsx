@@ -115,7 +115,9 @@ export function PediatricSafetyPanel({
 
       <div className="grid gap-2 sm:grid-cols-2">
         <div>
-          <span className="font-medium">{lang === "ar" ? "الوزن المسجل:" : "Recorded Weight:"}</span>{" "}
+          <span className="font-medium">
+            {lang === "ar" ? "الوزن المسجل:" : "Recorded Weight:"}
+          </span>{" "}
           {weightCheck.valid ? (
             <span className="text-emerald-800">
               {weightKg} kg ({lang === "ar" ? "صالح" : "Valid"})
