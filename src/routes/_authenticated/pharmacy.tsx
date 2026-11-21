@@ -842,12 +842,13 @@ const [cancelRequestIds, setCancelRequestIds] = useState<Record<string, string>>
               ) : null}
                   
                 </div>
+              </DataPanel>
             );
           })}
         </div>
       )
-      }{/*q*/}
-          </DataPanel>
+      )}
+
                     <DataPanel title={lang === "ar" ? "قائمة الحجر الصحي للمرتجعات" : "Return Quarantine Queue"}>
         {quarantineQueue.error ? (
           <ErrorBox error={quarantineQueue.error} />
