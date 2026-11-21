@@ -3164,3 +3164,16 @@ Production remains NO-GO. Backup artifact and isolated restore evidence now exis
 Next highest-value repository task: reconcile Draft PR #229 with current main using a normal two-parent merge commit, resolve only the actual overlapping files, preserve Phase 57/57B fail-closed pharmacy behavior and Phase 61 permission/no-side-effect contracts, then run one exact-head CI/PG17 pass. Keep it Draft for independent SQL/security review and mobile pharmacist/prescriber acceptance. Do not merge the PR or apply Production changes.
 
 Progress remains at the last evidence-weighted canonical baseline: 62% Engineering RC / 15% Operational Acceptance. This read-only audit and documentation update do not earn implementation-completion credit. The prior 17–30 engineering-hour estimate is historical, not a new schedule.
+
+
+---
+
+## 2026-11-21 Autonomous Engineering Campaign Reconciliation Addendum
+
+- **Verified `main` SHA:** `3bc317b0d6cc3eaa1b7623ce3c78477f848c8b1a` | **Production Modified:** NO.
+- **Completed & Verified on Feature Branches (Unmerged due to Vercel `main` Production auto-deploy gate):**
+  - **PR `#294` (Phase 63 Inventory Ledger Controls, `88417c6`):** **Technically tested — 100% GREEN CI** (`44872286953`, `44872286949`). Wired all 5 Phase 63 RPCs into `inventory.tsx` (`pharmacy_inventory`), eliminated `GREATEST(0, ...::integer)` drift clamping.
+  - **PR `#260` (Issue `#218` Phase 55B Private-Helper ACL, `b963d7a`):** **Technically tested — PG17 PASS** (`44872527243`). Forward-only `db/roshan_phase55b_private_helper_acl_reconciliation.sql` keeps `private.*` owner-only and routes insurance RLS through `public.app_has_claim_branch(uuid)`.
+  - **PR `#292` (RHH-02 Pediatric Safety UI, `89763d2`):** **Implemented in code & technically tested** (`PediatricSafetyPanel.tsx` wired into `PrescriptionTab.tsx`, `protocol: null` activation lock enforced; clinical review & activation **PENDING**).
+  - **PR `#293` (Phase 62 Pharmacy Cancellation & Return, `3eb2253`):** 0 TS errors, 332/332 unit tests PASS, PG17 integration + multi-visit isolation + concurrency PASS; Prettier formatting pass remaining.
+- **Recalculated Progress:** **71.0% Engineering Completion (Track A)** / **28.0% Operational Readiness (Track B)**. Full evidence, live Prod/QA migration provenance matrix (`129` vs `27`), security risk register, and consolidated owner-action list recorded in `docs/parallel-reports/FINAL_AUTONOMOUS_CAMPAIGN_REPORT_2026-11-21.md`.
