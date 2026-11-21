@@ -278,7 +278,7 @@ BEGIN
     INTO v_inv
     FROM public.invoices i
    WHERE i.deleted_at IS NULL
-     AND ((v_rx.visit_id IS NOT NULL AND i.visit_id = v_rx.visit_id) OR i.patient_id = v_rx.patient_id)
+     AND i.patient_id = v_rx.patient_id AND ((v_rx.visit_id IS NOT NULL AND i.visit_id = v_rx.visit_id) OR (v_rx.visit_id IS NULL AND i.visit_id IS NULL)) AND i.branch_id = v_rx.branch_id
    ORDER BY i.created_at DESC
    LIMIT 1
      FOR UPDATE;
@@ -436,7 +436,7 @@ IF p_quantity IS NULL OR p_quantity <= 0 THEN
     INTO v_inv
     FROM public.invoices i
    WHERE i.deleted_at IS NULL
-     AND ((v_rx.visit_id IS NOT NULL AND i.visit_id = v_rx.visit_id) OR i.patient_id = v_rx.patient_id)
+     AND i.patient_id = v_rx.patient_id AND ((v_rx.visit_id IS NOT NULL AND i.visit_id = v_rx.visit_id) OR (v_rx.visit_id IS NULL AND i.visit_id IS NULL)) AND i.branch_id = v_rx.branch_id
    ORDER BY i.created_at DESC
    LIMIT 1
      FOR UPDATE;
