@@ -1223,9 +1223,9 @@ function LedgerControlsTab({ currency }: { currency: string }) {
       .select("id,name,selling_price,stock_quantity")
       .order("name", { ascending: true }),
   );
-  const batches = useRows(["medicine-batches-ledger"], () =>
+  const batches = useRows(["pharmacy-inventory-ledger"], () =>
     supabase
-      .from("medicine_batches")
+      .from("pharmacy_inventory")
       .select("id,medicine_id,branch_id,batch_number,expiry_date,quantity_remaining")
       .order("expiry_date", { ascending: true }),
   );
@@ -1655,4 +1655,3 @@ function LedgerControlsTab({ currency }: { currency: string }) {
     </div>
   );
 }
-

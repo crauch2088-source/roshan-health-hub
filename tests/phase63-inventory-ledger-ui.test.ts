@@ -21,10 +21,7 @@ test("Phase 63 reason validation rejects blank strings", () => {
 });
 
 test("inventory.tsx wires all five Phase 63 RPC wrappers", () => {
-  const src = fs.readFileSync(
-    path.resolve("src/routes/_authenticated/inventory.tsx"),
-    "utf8",
-  );
+  const src = fs.readFileSync(path.resolve("src/routes/_authenticated/inventory.tsx"), "utf8");
   for (const fn of [
     "adjustInventoryBatchAtomic",
     "quarantineExpiredBatchAtomic",

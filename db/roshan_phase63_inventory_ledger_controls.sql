@@ -172,8 +172,17 @@ PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' 
          updated_by = v_uid
    WHERE id = p_batch_id;
 
+  IF p_delta <> trunc(p_delta) THEN
+    RAISE EXCEPTION 'fractional_stock_quantity_not_supported' USING ERRCODE = '22023';
+  END IF;
+
   UPDATE public.medicines
-     SET stock_quantity = GREATEST(0, stock_quantity + p_delta::integer),
+     SET stock_quantity = (
+           SELECT COALESCE(SUM(pi.quantity_remaining), 0)::integer
+           FROM public.pharmacy_inventory pi
+           WHERE pi.medicine_id = v_batch.medicine_id
+             AND COALESCE(pi.is_quarantined, false) = false
+         ),
          updated_at = clock_timestamp(),
          updated_by = v_uid
    WHERE id = v_batch.medicine_id;
@@ -260,7 +269,12 @@ PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' 
    WHERE id = p_batch_id;
 
   UPDATE public.medicines
-     SET stock_quantity = GREATEST(0, stock_quantity - v_batch.quantity_remaining::integer),
+     SET stock_quantity = (
+           SELECT COALESCE(SUM(pi.quantity_remaining), 0)::integer
+           FROM public.pharmacy_inventory pi
+           WHERE pi.medicine_id = v_batch.medicine_id
+             AND COALESCE(pi.is_quarantined, false) = false
+         ),
          updated_at = clock_timestamp(),
          updated_by = v_uid
    WHERE id = v_batch.medicine_id;
@@ -365,8 +379,16 @@ PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('phase63:' 
            updated_at = clock_timestamp(),
            updated_by = v_uid
      WHERE id = p_batch_id;
+    IF p_quantity <> trunc(p_quantity) THEN
+      RAISE EXCEPTION 'fractional_stock_quantity_not_supported' USING ERRCODE = '22023';
+    END IF;
     UPDATE public.medicines
-       SET stock_quantity = GREATEST(0, stock_quantity - p_quantity::integer),
+       SET stock_quantity = (
+             SELECT COALESCE(SUM(pi.quantity_remaining), 0)::integer
+             FROM public.pharmacy_inventory pi
+             WHERE pi.medicine_id = v_batch.medicine_id
+               AND COALESCE(pi.is_quarantined, false) = false
+           ),
            updated_at = clock_timestamp(),
            updated_by = v_uid
      WHERE id = v_batch.medicine_id;
