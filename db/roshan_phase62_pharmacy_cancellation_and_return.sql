@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS public.pharmacy_dispense_cancellations (
   reason text NOT NULL CHECK (length(trim(reason)) > 0),
   restocked_total numeric NOT NULL DEFAULT 0 CHECK (restocked_total >= 0),
   compensation_id uuid REFERENCES public.financial_compensations(id) ON DELETE RESTRICT,
-  idempotency_key uuid NOT NULL UNIQUE
+  idempotency_key uuid NOT NULL UNIQUE,
+payload_fingerprint text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS public.pharmacy_returns (
@@ -44,7 +45,8 @@ CREATE TABLE IF NOT EXISTS public.pharmacy_returns (
   returned_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   branch_id uuid NOT NULL,
   compensation_id uuid REFERENCES public.financial_compensations(id) ON DELETE RESTRICT,
-  idempotency_key uuid NOT NULL UNIQUE
+  idempotency_key uuid NOT NULL UNIQUE,
+  payload_fingerprint text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS public.pharmacy_return_quarantine (
@@ -62,6 +64,19 @@ CREATE TABLE IF NOT EXISTS public.pharmacy_return_quarantine (
   created_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 
+
+CREATE TABLE IF NOT EXISTS public.pharmacy_dispense_cancellation_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cancellation_id uuid NOT NULL REFERENCES public.pharmacy_dispense_cancellations(id) ON DELETE RESTRICT,
+  prescription_id uuid NOT NULL REFERENCES public.prescriptions(id) ON DELETE RESTRICT,
+  prescription_item_id uuid NOT NULL REFERENCES public.prescription_items(id) ON DELETE RESTRICT,
+  medicine_id uuid NOT NULL REFERENCES public.medicines(id) ON DELETE RESTRICT,
+  original_is_dispensed boolean NOT NULL,
+  original_dispensed_quantity numeric NOT NULL,
+  branch_id uuid NOT NULL,
+  recorded_by uuid NOT NULL,
+  recorded_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
 CREATE OR REPLACE FUNCTION private.reject_phase62_append_only_mutation()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -88,6 +103,11 @@ CREATE TRIGGER trg_pharmacy_returns_immutable
   BEFORE UPDATE OR DELETE ON public.pharmacy_returns
   FOR EACH ROW EXECUTE FUNCTION private.reject_phase62_append_only_mutation();
 
+DROP TRIGGER IF EXISTS trg_pharmacy_cancellation_items_immutable ON public.pharmacy_dispense_cancellation_items;
+CREATE TRIGGER trg_pharmacy_cancellation_items_immutable
+  BEFORE UPDATE OR DELETE ON public.pharmacy_dispense_cancellation_items
+  FOR EACH ROW EXECUTE FUNCTION private.reject_phase62_append_only_mutation();
+
 ALTER TABLE public.financial_compensations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.financial_compensations FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.pharmacy_dispense_cancellations ENABLE ROW LEVEL SECURITY;
@@ -97,6 +117,8 @@ ALTER TABLE public.pharmacy_returns FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.pharmacy_return_quarantine ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pharmacy_return_quarantine FORCE ROW LEVEL SECURITY;
 
+ALTER TABLE public.pharmacy_dispense_cancellation_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pharmacy_dispense_cancellation_items FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS financial_compensations_select ON public.financial_compensations;
 CREATE POLICY financial_compensations_select ON public.financial_compensations
   FOR SELECT TO authenticated
@@ -117,6 +139,13 @@ CREATE POLICY pharmacy_return_quarantine_select ON public.pharmacy_return_quaran
   FOR SELECT TO authenticated
   USING (public.app_has_perm('pharmacy.read') AND private.app_has_branch_access(branch_id));
 
+DROP POLICY IF EXISTS pharmacy_cancellation_items_select ON public.pharmacy_dispense_cancellation_items;
+CREATE POLICY pharmacy_cancellation_items_select ON public.pharmacy_dispense_cancellation_items
+  FOR SELECT TO authenticated
+  USING (public.app_has_perm('pharmacy.read') AND private.app_has_branch_access(branch_id));
+
+REVOKE ALL ON TABLE public.pharmacy_dispense_cancellation_items FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.pharmacy_dispense_cancellation_items TO authenticated;
 REVOKE ALL ON TABLE public.financial_compensations, public.pharmacy_dispense_cancellations, public.pharmacy_returns, public.pharmacy_return_quarantine FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON TABLE public.financial_compensations, public.pharmacy_dispense_cancellations, public.pharmacy_returns, public.pharmacy_return_quarantine TO authenticated;
 CREATE OR REPLACE FUNCTION public.confirm_pharmacy_handover(p_prescription_id uuid)
@@ -186,6 +215,8 @@ DECLARE
   v_uid uuid := public.current_app_user_id();
   v_existing_id uuid;
   v_rx record;
+  v_existing record;
+  v_payload_fp text;
   v_inv record;
   v_mov record;
   v_cancel_id uuid := gen_random_uuid();
@@ -206,13 +237,7 @@ BEGIN
     RAISE EXCEPTION 'cancellation_reason_required' USING ERRCODE = '22023';
   END IF;
 
-  SELECT id INTO v_existing_id
-    FROM public.pharmacy_dispense_cancellations
-   WHERE idempotency_key = p_idempotency_key;
-  IF FOUND THEN
-    RETURN v_existing_id;
-  END IF;
-
+  v_payload_fp := pg_catalog.md5(p_prescription_id::text || '|' || trim(p_reason));
   SELECT p.id, p.visit_id, p.patient_id, p.status, p.handed_over_at,
          COALESCE(v.branch_id, pt.branch_id) AS branch_id
     INTO v_rx
@@ -227,6 +252,22 @@ BEGIN
   END IF;
   IF v_rx.branch_id IS NULL OR NOT private.app_has_branch_access(v_rx.branch_id) THEN
     RAISE EXCEPTION 'branch_access_denied' USING ERRCODE = '42501';
+  END IF;
+  SELECT id, cancelled_by, branch_id, payload_fingerprint
+    INTO v_existing
+    FROM public.pharmacy_dispense_cancellations
+   WHERE idempotency_key = p_idempotency_key;
+  IF FOUND THEN
+    IF v_existing.cancelled_by <> v_uid THEN
+      RAISE EXCEPTION 'idempotency_key_actor_mismatch' USING ERRCODE = '42501';
+    END IF;
+    IF v_existing.branch_id <> v_rx.branch_id THEN
+      RAISE EXCEPTION 'idempotency_key_branch_mismatch' USING ERRCODE = '42501';
+    END IF;
+    IF v_existing.payload_fingerprint <> v_payload_fp THEN
+      RAISE EXCEPTION 'idempotency_key_payload_mismatch' USING ERRCODE = '22023';
+    END IF;
+    RETURN v_existing.id;
   END IF;
   IF v_rx.handed_over_at IS NOT NULL THEN
     RAISE EXCEPTION 'handover_already_recorded_use_return_workflow' USING ERRCODE = '22023';
@@ -312,21 +353,30 @@ BEGIN
          updated_by = v_uid
    WHERE id = p_prescription_id;
 
+  INSERT INTO public.pharmacy_dispense_cancellations (
+    id, prescription_id, branch_id, cancelled_by, reason,
+    restocked_total, compensation_id, idempotency_key, payload_fingerprint
+  ) VALUES (
+    v_cancel_id, p_prescription_id, v_rx.branch_id, v_uid, trim(p_reason),
+    v_restocked, v_comp_id, p_idempotency_key, v_payload_fp
+  );
+
+  INSERT INTO public.pharmacy_dispense_cancellation_items (
+    cancellation_id, prescription_id, prescription_item_id, medicine_id,
+    original_is_dispensed, original_dispensed_quantity, branch_id, recorded_by
+  )
+  SELECT
+    v_cancel_id, pi.prescription_id, pi.id, pi.medicine_id,
+    COALESCE(pi.is_dispensed, false), COALESCE(pi.dispensed_quantity, 0), v_rx.branch_id, v_uid
+  FROM public.prescription_items pi
+  WHERE pi.prescription_id = p_prescription_id AND pi.deleted_at IS NULL;
+
   UPDATE public.prescription_items
      SET is_dispensed = false,
          dispensed_quantity = 0,
          updated_at = clock_timestamp(),
          updated_by = v_uid
    WHERE prescription_id = p_prescription_id AND deleted_at IS NULL;
-
-  INSERT INTO public.pharmacy_dispense_cancellations (
-    id, prescription_id, branch_id, cancelled_by, reason,
-    restocked_total, compensation_id, idempotency_key
-  ) VALUES (
-    v_cancel_id, p_prescription_id, v_rx.branch_id, v_uid, trim(p_reason),
-    v_restocked, v_comp_id, p_idempotency_key
-  );
-
   RETURN v_cancel_id;
 END;
 $$;
@@ -349,6 +399,8 @@ DECLARE
   v_uid uuid := public.current_app_user_id();
   v_existing_id uuid;
   v_rx record;
+  v_existing record;
+  v_payload_fp text;
   v_inv record;
   v_dispensed_qty numeric := 0;
   v_returned_qty numeric := 0;
@@ -376,12 +428,7 @@ IF p_quantity IS NULL OR p_quantity <= 0 THEN
     RAISE EXCEPTION 'return_reason_required' USING ERRCODE = '22023';
   END IF;
 
-  SELECT id INTO v_existing_id
-    FROM public.pharmacy_returns
-   WHERE idempotency_key = p_idempotency_key;
-  IF FOUND THEN
-    RETURN v_existing_id;
-  END IF;
+  v_payload_fp := pg_catalog.md5(p_prescription_id::text || '|' || p_medicine_id::text || '|' || p_batch_id::text || '|' || p_quantity::text || '|' || p_condition || '|' || trim(p_reason));
 
   SELECT p.id, p.visit_id, p.patient_id, p.status, p.handed_over_at,
          COALESCE(v.branch_id, pt.branch_id) AS branch_id
@@ -397,6 +444,22 @@ IF p_quantity IS NULL OR p_quantity <= 0 THEN
   END IF;
   IF v_rx.branch_id IS NULL OR NOT private.app_has_branch_access(v_rx.branch_id) THEN
     RAISE EXCEPTION 'branch_access_denied' USING ERRCODE = '42501';
+  END IF;
+  SELECT id, returned_by, branch_id, payload_fingerprint
+    INTO v_existing
+    FROM public.pharmacy_returns
+   WHERE idempotency_key = p_idempotency_key;
+  IF FOUND THEN
+    IF v_existing.returned_by <> v_uid THEN
+      RAISE EXCEPTION 'idempotency_key_actor_mismatch' USING ERRCODE = '42501';
+    END IF;
+    IF v_existing.branch_id <> v_rx.branch_id THEN
+      RAISE EXCEPTION 'idempotency_key_branch_mismatch' USING ERRCODE = '42501';
+    END IF;
+    IF v_existing.payload_fingerprint <> v_payload_fp THEN
+      RAISE EXCEPTION 'idempotency_key_payload_mismatch' USING ERRCODE = '22023';
+    END IF;
+    RETURN v_existing.id;
   END IF;
   IF v_rx.handed_over_at IS NULL THEN
     RAISE EXCEPTION 'return_requires_handover_use_cancellation' USING ERRCODE = '22023';
@@ -466,10 +529,10 @@ IF p_quantity IS NULL OR p_quantity <= 0 THEN
 
   INSERT INTO public.pharmacy_returns (
     id, prescription_id, medicine_id, batch_id, quantity,
-    condition, reason, returned_by, branch_id, compensation_id, idempotency_key
+    condition, reason, returned_by, branch_id, compensation_id, idempotency_key, payload_fingerprint
   ) VALUES (
     v_return_id, p_prescription_id, p_medicine_id, p_batch_id, p_quantity,
-    p_condition, trim(p_reason), v_uid, v_rx.branch_id, v_comp_id, p_idempotency_key
+    p_condition, trim(p_reason), v_uid, v_rx.branch_id, v_comp_id, p_idempotency_key, v_payload_fp
   );
 
   INSERT INTO public.pharmacy_return_quarantine (
