@@ -37,8 +37,9 @@ test("confirmPharmacyHandover invokes confirm_pharmacy_handover RPC with expecte
   const result = await confirmPharmacyHandover("rx-1", client);
 
   assert.deepEqual(result, expected);
-  assert.deepEqual(calls, [{ fn: "confirm_pharmacy_handover", params: { p_prescription_id: "rx-1" } }]);
-});
+  assert.deepEqual(calls, [
+    { fn: "confirm_pharmacy_handover", params: { p_prescription_id: "rx-1" } },
+})  ;
 
 test("cancelDispenseBeforeHandover invokes cancel_dispense_before_handover RPC and validates inputs", async () => {
   const expected = { cancelled: true, idempotency_key: VALID_UUID };
@@ -261,10 +262,15 @@ test("wrappers propagate 42501 unauthorized and cross-branch denial errors", asy
   );
 });
 
-test("pharmacy route contract uses lifecycle wrappers, role guards, idempotency keys, and no direct table writes", () => {
+test(
+    "pharmacy route contract uses lifecycle wrappers, role guards, idempotency keys, and no direct table writes", 
+  () => {
   const source = readFileSync(resolve(process.cwd(), "src/routes/_authenticated/pharmacy.tsx"), "utf8");
 
-  assert.ok(source.includes("@/lib/pharmacy-lifecycle"), "Expected pharmacy.tsx to import from @/lib/pharmacy-lifecycle");
+  assert.ok(
+    source.includes("@/lib/pharmacy-lifecycle"),
+    "Expected pharmacy.tsx to import from @/lib/pharmacy-lifecycle",
+    );
   for (const fnName of [
     "confirmPharmacyHandover",
     "cancelDispenseBeforeHandover",
@@ -275,8 +281,14 @@ test("pharmacy route contract uses lifecycle wrappers, role guards, idempotency 
   }
 
   assert.ok(source.includes("isPharmacist"), "Expected pharmacy.tsx to check isPharmacist");
-  assert.ok(source.includes('can("pharmacy.update")'), 'Expected pharmacy.tsx to check can("pharmacy.update")');
-  assert.ok(source.includes("idempotencyKey"), "Expected pharmacy.tsx to pass retry-safe idempotencyKey");
+  assert.ok(
+    source.includes('can("pharmacy.update")'), 
+    'Expected pharmacy.tsx to check can("pharmacy.update")',
+  );
+  assert.ok(
+    source.includes("idempotencyKey"), 
+    "Expected pharmacy.tsx to pass retry-safe idempotencyKey",
+  );
 
   for (const table of [
     "pharmacy_dispense_cancellations",
@@ -287,6 +299,10 @@ test("pharmacy route contract uses lifecycle wrappers, role guards, idempotency 
     const directWritePattern = new RegExp(
       `\\.from\\s*\\(\\s*["'\`]${table}["'\`]\\s*\\)\\s*\\.(?:insert|update|upsert|delete)\\s*\\(`,
     );
-    assert.equal(directWritePattern.test(source), false, `Expected no direct table writes to ${table}`);
+    assert.equal(
+      directWritePattern.test(source),
+      false, 
+      `Expected no direct table writes to ${table}`,
+    );
   }
 });
