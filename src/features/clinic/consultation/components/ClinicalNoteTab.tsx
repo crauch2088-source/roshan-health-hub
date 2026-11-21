@@ -7,6 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { useRows, useSave, type Row, s } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import {
+  isSyntacticallyValidIcd10Format,
+  normalizeIcd10Code,
+} from "@/lib/icd10-validation";
 import { supabase } from "@/lib/supabase";
 import {
   QUICK_ASSESSMENT,
@@ -153,10 +157,18 @@ export function ClinicalNoteTab({
     async () => {
       const name = (form["new_diagnosis"] || "").trim();
       if (!name) throw new Error(lang === "ar" ? "أدخل التشخيص" : "Enter a diagnosis");
+      const normalizedCode = normalizeIcd10Code(form["icd10"]);
+      if (normalizedCode && !isSyntacticallyValidIcd10Format(normalizedCode)) {
+        throw new Error(
+          lang === "ar"
+            ? "صيغة رمز WHO ICD-10 (2019) غير صالحة"
+            : "Invalid WHO ICD-10 (2019) code format",
+        );
+      }
       const { error } = await supabase.from("diagnoses").insert({
         visit_id: visitId,
         diagnosis_name: name,
-        icd10_code: form["icd10"] || null,
+        icd10_code: normalizedCode,
         diagnosis_type: "clinical",
         is_primary: ((diagnosesQ.data ?? []) as Row[]).length === 0,
         doctor_id: user?.id ?? null,
@@ -287,7 +299,7 @@ export function ClinicalNoteTab({
             />
             <Input
               dir="ltr"
-              placeholder="ICD-10"
+              placeholder="WHO ICD-10 (2019)"
               value={form["icd10"] ?? ""}
               onChange={(e) => set("icd10", e.target.value)}
             />
