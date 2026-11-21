@@ -3164,3 +3164,41 @@ Production remains NO-GO. Backup artifact and isolated restore evidence now exis
 Next highest-value repository task: reconcile Draft PR #229 with current main using a normal two-parent merge commit, resolve only the actual overlapping files, preserve Phase 57/57B fail-closed pharmacy behavior and Phase 61 permission/no-side-effect contracts, then run one exact-head CI/PG17 pass. Keep it Draft for independent SQL/security review and mobile pharmacist/prescriber acceptance. Do not merge the PR or apply Production changes.
 
 Progress remains at the last evidence-weighted canonical baseline: 62% Engineering RC / 15% Operational Acceptance. This read-only audit and documentation update do not earn implementation-completion credit. The prior 17–30 engineering-hour estimate is historical, not a new schedule.
+
+
+---
+
+## 2026-11-21 Autonomous Engineering Campaign Reconciliation Addendum
+
+- **Verified `main` SHA:** `3bc317b0d6cc3eaa1b7623ce3c78477f848c8b1a` | **Production Modified:** NO.
+- **Completed & Verified on Feature Branches (Unmerged due to Vercel `main` Production auto-deploy gate):**
+  - **PR `#294` (Phase 63 Inventory Ledger Controls, `88417c6`):** **Technically tested — 100% GREEN CI** (`44872286953`, `44872286949`). Wired all 5 Phase 63 RPCs into `inventory.tsx` (`pharmacy_inventory`), eliminated `GREATEST(0, ...::integer)` drift clamping.
+  - **PR `#260` (Issue `#218` Phase 55B Private-Helper ACL, `b963d7a`):** **Technically tested — PG17 PASS** (`44872527243`). Forward-only `db/roshan_phase55b_private_helper_acl_reconciliation.sql` keeps `private.*` owner-only and routes insurance RLS through `public.app_has_claim_branch(uuid)`.
+  - **PR `#292` (RHH-02 Pediatric Safety UI, `89763d2`):** **Implemented in code & technically tested** (`PediatricSafetyPanel.tsx` wired into `PrescriptionTab.tsx`, `protocol: null` activation lock enforced; clinical review & activation **PENDING**).
+  - **PR `#293` (Phase 62 Pharmacy Cancellation & Return, `3eb2253`):** 0 TS errors, 332/332 unit tests PASS, PG17 integration + multi-visit isolation + concurrency PASS; Prettier formatting pass remaining.
+- **Recalculated Progress:** **71.0% Engineering Completion (Track A)** / **28.0% Operational Readiness (Track B)**. Full evidence, live Prod/QA migration provenance matrix (`129` vs `27`), security risk register, and consolidated owner-action list recorded in `docs/parallel-reports/FINAL_AUTONOMOUS_CAMPAIGN_REPORT_2026-11-21.md`.
+
+
+### 2026-11-21 Closure Pass Addendum
+- **PR `#292` (`89763d2`):** **100% GREEN (8/8 CI PASS)** (`44872721682`, `44872721655`).
+- **PR `#260` (`b963d7a`):** **100% GREEN** (`44872527243`, `44872527195`).
+- **PR `#291` (`6c5cda7`):** Wired WHO ICD-10 2019 validation in `ClinicalNoteTab.tsx` + forward-only `db/roshan_phase65_who_icd10_diagnosis_versioning.sql` + contract test (`CI` `44873193303`: `completed/failure`).
+- **PR `#250` (`26dbc1b`):** Independent security audit completed; proven Production dependency on Phase 61B (`private.app_has_role_permission`).
+- **Live Governance Proofs:** `main` branch protection `protected: False` (`#253`); `roshan-health-hub-backup-runner` has only `SUPABASE_ACCESS_TOKEN` configured (neither DB secret present, `#199`).
+- **Recalculated Progress:** **74.5% Engineering Completion (Track A)** / **29.0% Operational Readiness (Track B)**. Full closure report: `docs/parallel-reports/FINAL_CLOSURE_CAMPAIGN_REPORT_2026-11-21.md`.
+
+
+### 2026-11-21 Focused P0 & Open PR Closure Addendum
+- **PRODUCTION P0 REMAINS OPEN — NO-GO.** Production Supabase (`jewzonxplxhogqrnhosl`) and Production Vercel remain untouched.
+- **PR `#291` (`804302f`):** **100% GREEN (8/8 PASS)** (`CI` `44874100001`, `UI` `44874099883`).
+- **PR `#250` (`832a8d3`):** Non-destructively merged `main` (`3bc317b`); 12/12 workflows PASS (`Phase 49-50 PG17` `44874136348` PASS, `CI` `44874136237` `completed/success`). Exact 6-file SHA-256 Production migration chain documented.
+- **PR `#210` (`36d929d`):** Non-destructively merged `main` (`3bc317b`); stale-base blocker cleared (8/8 PASS; `CI` `44874164968` `completed/success`); remains Draft for remaining catalogue identity blockers.
+- **Progress:** **77.0% Engineering Completion (Track A)** / **29.0% Operational Readiness (Track B)**. Report: `docs/parallel-reports/FOCUSED_P0_AND_OPEN_PR_CLOSURE_REPORT_2026-11-21.md`.
+
+
+### 2026-11-21 Final Release Readiness & Remediation Addendum
+- **PRODUCTION P0 REMAINS OPEN — NO-GO.** Production Supabase (`jewzonxplxhogqrnhosl`) and Production Vercel remain untouched.
+- **PR `#250` (`832a8d3`):** **12/12 CI PASS** (`44874136237`, `44874136238`). Controlled-release dossier delivered at `docs/CONTROLLED_RELEASE_DOSSIER_2026-11-21.md`.
+- **PR `#210` (`84b328e`):** Synced to `main` (`3bc317b`) and extended with Phase 60B (`db/roshan_phase60b_medicine_pack_identity_and_duplicate_guard.sql` + contract test); remains Draft pending pharmacist pack acceptance.
+- **PR `#291` (`804302f`, 8/8 PASS), PR `#292` (`89763d2`, 8/8 PASS), PR `#294` (`88417c6`, 6/6 PASS), PR `#260` (`b963d7a`, PASS):** All exact-head green.
+- **Progress:** **79.5% Engineering Completion (Track A)** / **29.0% Operational Readiness (Track B)**. Report: `docs/parallel-reports/FINAL_RELEASE_READINESS_AND_REMEDIATION_REPORT_2026-11-21.md`.
