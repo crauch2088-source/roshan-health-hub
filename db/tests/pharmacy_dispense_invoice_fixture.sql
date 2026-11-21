@@ -119,3 +119,16 @@ AS $function$
     );
 $function$;
 
+CREATE FUNCTION private.app_has_role_permission(p_roles text[], p_permission text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT public.app_has_perm(p_permission)
+    AND (
+      NULLIF(current_setting('test.role', true), '') IS NULL
+      OR current_setting('test.role', true) = ANY(p_roles)
+    );
+$function$;
