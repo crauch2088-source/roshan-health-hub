@@ -40,6 +40,7 @@ test("confirmPharmacyHandover invokes confirm_pharmacy_handover RPC with expecte
   assert.deepEqual(calls, [
     { fn: "confirm_pharmacy_handover", params: { p_prescription_id: "rx-1" } },
 ])  ;
+});
 
 test("cancelDispenseBeforeHandover invokes cancel_dispense_before_handover RPC and validates inputs", async () => {
   const expected = { cancelled: true, idempotency_key: VALID_UUID };
