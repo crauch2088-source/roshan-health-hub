@@ -847,7 +847,7 @@ const [cancelRequestIds, setCancelRequestIds] = useState<Record<string, string>>
           })}
         </div>
       )
-      )}
+      }
 
                     <DataPanel title={lang === "ar" ? "قائمة الحجر الصحي للمرتجعات" : "Return Quarantine Queue"}>
         {quarantineQueue.error ? (
