@@ -312,9 +312,19 @@ The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do 
 
 | Environment | Version | Migration name | Status |
 |---|---|---|---|
-| QA candidate | `20261114120000` | `roshan_phase61b_clinical_role_boundary` | Prepared in PR #249; not yet applied |
+| QA | `20261113232719` | `roshan_phase61b_clinical_role_boundary` | Applied and verified 2026-11-14; Production untouched |
 | Production | — | Not authorized | Untouched |
 
 Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction, or pharmacy dispensing authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
 
-The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.
+PR #249 was merged into main at `a9040601702972bdf144fc96b9658eebd5a6d31a`. A direct QA ledger read-back on 2026-11-14 confirms Phase 61B version `20261113232719`, 8,844 stored statement bytes, MD5 `9f5095e70fa9cc6ed7e7fe83f7766312`; Production remains untouched.
+
+
+## Phase 61C — active atomic pharmacy dispense role boundary (2026-11-14)
+
+| Environment | Version | Migration name | Status |
+|---|---|---|---|
+| QA candidate | Supabase-generated on apply | `roshan_phase61c_atomic_dispense_role_boundary` | Prepared in PR #250; not yet applied |
+| Production | — | Not authorized | Untouched |
+
+Phase 61C is a forward-only correction for the active idempotent `atomic_pharmacy_dispense` RPC. It moves the existing SECURITY DEFINER implementation into the private schema, revokes direct execution of the unchecked function, and exposes the same public signature through a wrapper that requires an explicit pharmacist role plus `pharmacy.update` and `billing.create`. The wrapper rejects Admin and Super Admin before payload validation or idempotency work. The existing Phase 61B invoice-linked dispense wrapper remains an additional inner guard. A preflight aborts before moving the RPC unless private.app_has_role_permission(text[],text) from Phase 61B exists; Phase 61B is a hard prerequisite and Production currently lacks it. The PostgreSQL 17 harness replays Phase 49 and Phase 50 prerequisites, applies Phase 61B first, reapplies Phase 61C to prove idempotence, and asserts the wrapper, private implementation and role helper remain SECURITY DEFINER with an empty search_path. Independent SQL/security review is still required before QA application. No Production change is authorized.

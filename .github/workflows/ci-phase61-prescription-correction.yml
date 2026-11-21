@@ -6,9 +6,17 @@ on:
       - ".github/workflows/ci-phase61-prescription-correction.yml"
       - "db/roshan_phase61_prescription_item_correction_workflow.sql"
       - "db/roshan_phase61b_clinical_role_boundary.sql"
+      - "db/roshan_phase61c_atomic_dispense_role_boundary.sql"
       - "db/tests/phase61_prescription_correction_fixture.sql"
       - "db/tests/phase61_prescription_correction_integration.sql"
+      - "db/tests/phase33_storage_realtime_fixture.sql"
+      - "db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql"
+      - "db/tests/phase33_storage_realtime_assertions.sql"
       - "db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql"
+      - "db/roshan_phase48_storage_entity_branch_binding.sql"
+      - "db/roshan_phase49_atomic_pharmacy_dispense.sql"
+      - "db/roshan_phase50_clinical_visit_bill_completion.sql"
+      - "db/tests/phase49_50_critical_path_assertions.sql"
       - "db/roshan_phase46_uat_schema_compatibility.sql"
       - "tests/phase61-prescription-correction-contract.test.mjs"
       - "tests/phase61-prescription-correction-ui.test.mjs"
@@ -44,26 +52,41 @@ jobs:
           persist-credentials: false
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Replay canonical baseline and clinical parent guards
+      - name: Replay canonical baseline, Phase 49-50 prerequisites and clinical parent guards
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/baseline/0000_roshan_pg17_baseline_v112.sql \
+            -f db/tests/phase33_storage_realtime_fixture.sql \
+            -f db/roshan_phase34_consolidated_storage_realtime_and_lab_verify.sql \
+            -f db/tests/phase33_storage_realtime_assertions.sql \
             -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
-            -f db/roshan_phase46_uat_schema_compatibility.sql
+            -f db/roshan_phase46_uat_schema_compatibility.sql \
+            -f db/roshan_phase48_storage_entity_branch_binding.sql \
+            -f db/roshan_phase49_atomic_pharmacy_dispense.sql \
+            -f db/roshan_phase50_clinical_visit_bill_completion.sql \
+            -f db/tests/phase49_50_critical_path_assertions.sql
       - name: Seed synthetic roles, branches, users and prescriptions
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_fixture.sql
-      - name: Apply Phase 61 and run PostgreSQL 17 behavior assertions
+      - name: Apply Phase 61, 61B and 61C before PostgreSQL 17 assertions
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f db/roshan_phase61_prescription_item_correction_workflow.sql \
             -f db/roshan_phase61b_clinical_role_boundary.sql \
-            -f db/tests/phase61_prescription_correction_integration.sql
+            -f db/roshan_phase61c_atomic_dispense_role_boundary.sql
+      - name: Reapply Phase 61C to verify forward-migration idempotence
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/roshan_phase61c_atomic_dispense_role_boundary.sql
+      - name: Run PostgreSQL 17 role, RLS, audit and no-side-effects assertions
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f db/tests/phase61_prescription_correction_integration.sql
       - name: Prove concurrent correction resolution is serialized
         env:
           PGPASSWORD: postgres

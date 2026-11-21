@@ -9,7 +9,8 @@ INSERT INTO public.roles (id, name, code) VALUES
  ('61000000-0000-0000-0000-000000000001', 'Admin', 'admin'),
  ('61000000-0000-0000-0000-000000000002', 'Pharmacist', 'pharmacist'),
  ('61000000-0000-0000-0000-000000000003', 'Doctor', 'doctor'),
- ('61000000-0000-0000-0000-000000000004', 'Super Admin', 'super_admin')
+ ('61000000-0000-0000-0000-000000000004', 'Super Admin', 'super_admin'),
+ ('61000000-0000-0000-0000-000000000005', 'Legacy Pharmacist', 'legacy_pharmacist')
 ON CONFLICT (code) DO NOTHING;
 
 -- Canonical production doctors already hold emr.create; seed that baseline permission
@@ -67,6 +68,21 @@ JOIN public.permissions AS p ON p.code IN ('pharmacy.update', 'billing.create')
 WHERE r.code IN ('admin', 'super_admin', 'pharmacist')
 ON CONFLICT DO NOTHING;
 
+-- Reproduce the live legacy_pharmacist matrix exactly. The synthetic active user below
+-- exists only in this disposable PostgreSQL fixture to prove future assignments fail closed.
+INSERT INTO public.permissions (code, name, module, action) VALUES
+  ('pharmacy.edit', 'Edit pharmacy', 'pharmacy', 'edit'),
+  ('pharmacy.view', 'View pharmacy', 'pharmacy', 'view'),
+  ('reports.view', 'View reports', 'reports', 'view')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles AS r
+JOIN public.permissions AS p ON p.code IN ('pharmacy.edit', 'pharmacy.view', 'reports.view')
+WHERE r.code = 'legacy_pharmacist'
+ON CONFLICT DO NOTHING;
+
 INSERT INTO public.branches (id, branch_code, branch_name, name, code, active, is_active) VALUES
  ('61100000-0000-0000-0000-000000000001', 'TST-A', 'Correction Test A', 'Correction Test A', 'TST-A', true, true),
  ('61100000-0000-0000-0000-000000000002', 'TST-B', 'Correction Test B', 'Correction Test B', 'TST-B', true, true)
@@ -79,7 +95,8 @@ INSERT INTO auth.users (id) VALUES
  ('61200000-0000-0000-0000-000000000004'),
  ('61200000-0000-0000-0000-000000000005'),
  ('61200000-0000-0000-0000-000000000006'),
- ('61200000-0000-0000-0000-000000000007')
+ ('61200000-0000-0000-0000-000000000007'),
+ ('61200000-0000-0000-0000-000000000008')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.users (id, auth_user_id, role_id, full_name, branch_id, active) VALUES
@@ -89,7 +106,8 @@ INSERT INTO public.users (id, auth_user_id, role_id, full_name, branch_id, activ
  ('61300000-0000-0000-0000-000000000004','61200000-0000-0000-0000-000000000004',(SELECT id FROM public.roles WHERE code='pharmacist'),'Correction Pharmacist B','61100000-0000-0000-0000-000000000002',true),
  ('61300000-0000-0000-0000-000000000005','61200000-0000-0000-0000-000000000005',(SELECT id FROM public.roles WHERE code='admin'),'Correction Admin A','61100000-0000-0000-0000-000000000001',true),
  ('61300000-0000-0000-0000-000000000006','61200000-0000-0000-0000-000000000006',(SELECT id FROM public.roles WHERE code='super_admin'),'Correction Super Admin','61100000-0000-0000-0000-000000000001',true),
- ('61300000-0000-0000-0000-000000000007','61200000-0000-0000-0000-000000000007',(SELECT id FROM public.roles WHERE code='doctor'),'Wrong Branch Doctor B','61100000-0000-0000-0000-000000000002',true)
+ ('61300000-0000-0000-0000-000000000007','61200000-0000-0000-0000-000000000007',(SELECT id FROM public.roles WHERE code='doctor'),'Wrong Branch Doctor B','61100000-0000-0000-0000-000000000002',true),
+ ('61300000-0000-0000-0000-000000000008','61200000-0000-0000-0000-000000000008',(SELECT id FROM public.roles WHERE code='legacy_pharmacist'),'Synthetic Legacy Pharmacist','61100000-0000-0000-0000-000000000001',true)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.patients (id, branch_id, full_name, gender, active) VALUES
@@ -167,3 +185,104 @@ WHERE id = '61800000-0000-0000-0000-000000000013';
 UPDATE public.prescriptions
 SET dispensed_at = clock_timestamp(), dispensed_by = '61300000-0000-0000-0000-000000000002'
 WHERE id = '61700000-0000-0000-0000-000000000004';
+
+-- Phase 61C positive-path fixture: a linked prescription and one valid FEFO batch.
+INSERT INTO public.pharmacy_inventory (
+  id, medicine_id, batch_number, expiry_date, quantity, quantity_received,
+  quantity_remaining, branch_id
+) VALUES (
+  '61900000-0000-0000-0000-000000000001',
+  '61600000-0000-0000-0000-000000000001',
+  'PHASE61C-VALID',
+  CURRENT_DATE + 90,
+  10,
+  10,
+  10,
+  '61100000-0000-0000-0000-000000000001'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prescriptions (
+  id, patient_id, visit_id, prescribed_by, doctor_id, prescription_type,
+  is_external, status, created_by, updated_by
+) VALUES (
+  '61700000-0000-0000-0000-000000000013',
+  '61400000-0000-0000-0000-000000000001',
+  '61500000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  'internal',
+  false,
+  'pending',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prescription_items (
+  id, prescription_id, medicine_id, medication_name, dose, dosage,
+  frequency, duration, quantity, instructions, dosage_form, route,
+  unit_price, created_by, updated_by, is_dispensed, dispensed_quantity
+) VALUES (
+  '61800000-0000-0000-0000-000000000015',
+  '61700000-0000-0000-0000-000000000013',
+  '61600000-0000-0000-0000-000000000001',
+  'Amoxicillin 500 mg',
+  '500 mg',
+  '500 mg',
+  'BID',
+  '1 day',
+  2,
+  'After food',
+  'capsule',
+  'oral',
+  12.50,
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  false,
+  0
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Phase 61C separate-invoice positive path: same visit, a second pending prescription.
+INSERT INTO public.prescriptions (
+  id, patient_id, visit_id, prescribed_by, doctor_id, prescription_type,
+  is_external, status, created_by, updated_by
+) VALUES (
+  '61700000-0000-0000-0000-000000000014',
+  '61400000-0000-0000-0000-000000000001',
+  '61500000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  'internal',
+  false,
+  'pending',
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.prescription_items (
+  id, prescription_id, medicine_id, medication_name, dose, dosage,
+  frequency, duration, quantity, instructions, dosage_form, route,
+  unit_price, created_by, updated_by, is_dispensed, dispensed_quantity
+) VALUES (
+  '61800000-0000-0000-0000-000000000016',
+  '61700000-0000-0000-0000-000000000014',
+  '61600000-0000-0000-0000-000000000001',
+  'Amoxicillin 500 mg',
+  '500 mg',
+  '500 mg',
+  'BID',
+  '1 day',
+  1,
+  'After food',
+  'capsule',
+  'oral',
+  12.50,
+  '61300000-0000-0000-0000-000000000002',
+  '61300000-0000-0000-0000-000000000002',
+  false,
+  0
+)
+ON CONFLICT (id) DO NOTHING;

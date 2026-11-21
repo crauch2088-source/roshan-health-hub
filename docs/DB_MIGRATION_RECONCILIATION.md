@@ -1,3 +1,23 @@
+# Database migration reconciliation — current status and historical evidence
+
+**Refreshed:** 2026-11-14. This document contains a chronological evidence log. Its older dated snapshots are not current state unless explicitly revalidated.
+
+## Current checkpoint
+
+- Production project: jewzonxplxhogqrnhosl; last recorded ledger: 129 entries, latest version 20261102232941.
+- QA project: hopfohcnrtbiqjkgeukz; last recorded ledger: 27 entries, latest version 20261113232719.
+- Re-read both live ledgers and the repository migration manifest immediately before assigning or applying any migration. Do not rely on older 93/109/112-entry snapshots below.
+- Phase 61B is recorded as QA-applied; Phase 61C is a tested source candidate only. Confirm the current live ledger and exact migration source before any application.
+- Preserve the migration ledger. Never edit it to manufacture parity, replay a migration blindly, or assume a successful isolated fixture proves full historical bootstrap.
+- The owner-authorized synthetic-data reset and schema-rebuild scope is recorded in .specify/memory/constitution.md. It does not authorize Production test transactions or bypass exact-target, recovery, security, and release gates.
+- The existing historical identity-link migration contains intentionally redacted environment-specific identity material. Keep those values private; do not restore them to source or prompts.
+
+## How to use this record
+
+Treat each dated section below as evidence for the date and scope stated. Later evidence supersedes earlier evidence only for the same environment/object. Text-normalized source parity is not semantic equivalence; a baseline replay is not proof of platform recovery; schema counts are not authorization proof. Record exact project ref, ledger version, candidate SHA, and verification method for every new reconciliation.
+
+---
+
 ## Clinical E2E and canonical PG17 baseline — PR #79, CI green
 
 - Work branch: `feat/clinical-e2e-and-pg17-baseline`, based on `main`; no production Supabase writes or migrations were performed.
@@ -824,3 +844,48 @@ The live definitions were read with `pg_get_functiondef` (read-only) to distingu
    - Production has no function with this signature. Any future application change that calls it would fail in Production until a reviewed Production migration exists. Its grants and source must be separately reconciled; it is not part of the current Phase 58/59 candidate.
 
 These differences are now explicit release blockers in addition to the migration-ledger collisions. Do not infer that QA is a complete Production mirror or promote a UI path solely because it works in QA.
+
+
+## Live migration ledger and catalog recheck — 2026-11-15
+
+Read-only verification against Production project jewzonxplxhogqrnhosl and QA project hopfohcnrtbiqjkgeukz. PostgreSQL versions: Production 17.6; QA 17.11.
+
+| Ledger measure | Production | QA |
+|---|---:|---:|
+| Migration rows | 129 | 27 |
+| Latest version | 20261102232941 | 20261113232719 |
+| IDs shared by both ledgers | 3 | 3 |
+| IDs unique to environment | 126 | 24 |
+
+The three shared version IDs are semantic collisions, not equivalent migrations:
+
+| Version | Production name | QA name | Production statement bytes / MD5 | QA statement bytes / MD5 |
+|---|---|---|---|---|
+| 20261102122437 | superseded_placeholder_phase49_atomic_pharmacy_dispense | roshan_phase51_public_setup_required_anon | 134 / 86c9fe3553b0537bce754baecb76bcd8 | 552 / 4b848d12b776028dd67cc0e6ffebc452 |
+| 20261102133658 | superseded_placeholder_phase50_clinical_visit_bill_completion | roshan_phase49_atomic_pharmacy_dispense | 134 / 86c9fe3553b0537bce754baecb76bcd8 | 19155 / 55f65a3816d431ff42a5272c9e338658 |
+| 20261102133734 | superseded_placeholder_phase51_public_setup_required_anon | roshan_phase50_clinical_visit_bill_completion | 134 / 86c9fe3553b0537bce754baecb76bcd8 | 4484 / cf5948d78786d6038fa93a74ecf22256 |
+
+Statement MD5 values above are computed consistently as md5(array_to_string(statements, newline)) from supabase_migrations.schema_migrations. They are live statement-array fingerprints, not Git blob hashes.
+
+### Current catalog counts
+
+| Catalog | Production public/private | QA public/private |
+|---|---:|---:|
+| Tables | 56 / 4 | 58 / 2 |
+| Columns | 842 / 24 | 873 / 13 |
+| Constraints | 215 / 7 | 242 / 3 |
+| Indexes | 249 / 5 | 255 / 3 |
+| Functions | 96 / 47 | 101 / 56 |
+| Triggers | 69 / 0 | 81 / 0 |
+| Policies | 210 / 0 | 212 / 0 |
+| RLS-enabled tables | 56 / 2 | 58 / 1 |
+| Forced-RLS tables | 44 / 0 | 46 / 0 |
+
+### Live behavior checks
+
+- QA Phase 57 private invoice-linked function rejects NULL prescription quantity before dispensing; it uses the stored quantity directly. Production still has three COALESCE(pi.quantity,1) fallbacks and no equivalent rejection.
+- QA Phase 57B private invoice-linked function rejects free-text medicine rows and external prescriptions. Production lacks those guards.
+- Phase 55 private helper ACLs remain owner-only in QA but PUBLIC-effective in Production: proacl is NULL and anon/authenticated/service_role/authenticator all have effective EXECUTE.
+- Both projects' legacy_pharmacist role contains only pharmacy.edit, pharmacy.view and reports.view, with zero active users. Each project has one active canonical pharmacist. No permissions were changed.
+
+No migration, SQL write, DDL/DML, ACL/RLS/Auth/Storage change or ledger edit was performed to collect this snapshot. Preserve the divergent histories and design a separately reviewed forward-only reconciliation.

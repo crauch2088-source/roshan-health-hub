@@ -61,8 +61,23 @@ The owner explicitly grants the engineering agent standing authority, effective 
 6. Batch related work into one atomic Git change and avoid redundant CI/deploy runs. Respect all free-tier quotas; never purchase, upgrade, bypass a quota, or create a paid resource.
 7. Verify the actual production result after the change using read-only checks and safe health/smoke checks that do not create or alter live clinical/financial records. Report the exact commit, migration/deployment identifiers, checks run, and any residual risk.
 
+### Synthetic-data classification (2026-11-14)
+
+The owner confirmed that **all rows currently present in both Roshan Supabase environments (QA and Production) are synthetic/test data**. No real patient records have been trialed or entered, and the current records carry no real clinical, financial, inventory, or other business obligations. This is a durable project fact; do not ask the owner to repeat the data classification in later sessions.
+
+**This classification is not, by itself, authorization to delete, truncate, reset, replace, reseed, or otherwise destructively alter those rows or rebuild production schema.** Any destructive data operation still requires a specific, scoped owner decision and the applicable recovery safeguards. Routine production engineering changes remain governed by Section X and its exact-candidate, security, backup/recovery, and verification gates.
+
+Boundaries:
+1. Do not create new synthetic patient, clinical, pharmacy, laboratory, inventory, or financial transactions in Production as a testing strategy. Use disposable PostgreSQL or QA for test execution.
+2. Preserve Supabase project identity, credentials/secrets, Auth access and owner/admin recovery path, environment bindings, deployment configuration, integrations, and essential platform settings.
+3. Before any destructive operation, inventory the exact target rows/objects and dependencies, capture a recoverable backup or equivalent export where available, define the recovery/forward-repair path, and verify the target scope. If real or legally/operationally binding data is discovered or the scope is uncertain, stop and ask.
+4. Prefer narrow, repeatable, documented operations. Preserve migration history; never edit the migration ledger to manufacture parity. Capture read-only before/after evidence and verify application health, permissions, RLS, branch isolation, and critical schema invariants.
+5. This classification does not waive clinical-policy approval, independent security review where required, exact-head validation, zero-cost constraints, or the real staff/clinical acceptance gate.
+
+**Record:** Owner confirmation of synthetic/test data classification in conversation on 2026-11-14. No destructive reset authorization is inferred from that statement.
+
 ### Actions still requiring a fresh, specific owner decision
-- Deleting, truncating, anonymizing, bulk-editing, or otherwise irreversibly altering patient, clinical, staff, inventory, audit, or financial records; deleting user accounts or revoking access in a way that could lock out the clinic.
+- Deleting, truncating, anonymizing, bulk-editing, or otherwise irreversibly altering patient, clinical, staff, inventory, audit, or financial records, including records currently classified as synthetic/test data, without a specific scoped owner decision and recovery plan; deleting user accounts or revoking access in a way that could lock out the clinic also remains owner-gated.
 - Changing clinical protocols, diagnosis logic, medication choices/doses/frequencies, decision-support recommendations, or other medical policy. The agent may implement only a clinician-approved specification; it must not invent or clinically approve such policy.
 - Accepting a known unresolved critical/high security risk, disabling or weakening RLS/authentication/audit controls, exposing secrets, or relaxing branch isolation.
 - Any action whose target, scope, data impact, cost, or recovery path cannot be established with high confidence.
@@ -75,4 +90,4 @@ This delegation does not authorize paid services, quota bypasses, unsafe shortcu
 
 **Authorization record:** Explicit owner approval in conversation on 2026-11-12. This section supersedes older blanket statements that every Production engineering change requires a separate per-change conversational approval, but does not waive any technical, clinical, privacy, security, financial, recovery, or release gate.
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-12
+**Version**: 1.3.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-14
