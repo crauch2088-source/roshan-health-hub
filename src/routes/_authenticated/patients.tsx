@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight, Phone, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   DataPanel,
@@ -46,6 +46,8 @@ import { useAuth } from "@/lib/auth";
 import { listenForQuickAction } from "@/lib/quick-actions";
 import { rpc, s, usePagedRows, useSave, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
+import { translateBackendError } from "@/lib/error-messages";
+import { classifyPatientDuplicates, type DuplicateMatch } from "@/lib/patient-duplicate";
 import { calcAge, formatDate } from "@/lib/medical";
 import { searchPatientsPaged, useDebounced } from "@/lib/search";
 import { supabase } from "@/lib/supabase";
@@ -71,6 +73,7 @@ function emptyForm() {
     gender: "",
     date_of_birth: "",
     national_id: "",
+    address: "",
   };
 }
 
@@ -92,6 +95,10 @@ function PatientsPageInner() {
   const debouncedSearch = useDebounced(search, 300);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm());
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
+  const [duplicateLevel, setDuplicateLevel] = useState<"none" | "possible" | "confirmed">("none");
+  const [overrideDuplicate, setOverrideDuplicate] = useState(false);
+  const submitGuardRef = useRef(false);
 
   useEffect(
     () =>
@@ -118,22 +125,64 @@ function PatientsPageInner() {
 
       // Allocate the MRN and insert the patient in one database transaction.
       // Separate next_mrn() + INSERT calls can race and leave one registration failing.
-      const newPatientId = await rpc<string>("create_patient_atomic", {
-        _full_name: form.full_name.trim(),
-        _gender: form.gender,
-        _date_of_birth: form.date_of_birth || null,
-        _phone: form.phone.trim() || null,
-        _national_id: form.national_id.trim() || null,
-      });
-      return { patientId: newPatientId, openVisit };
+      if (submitGuardRef.current) return { patientId: "", openVisit: false, skipped: true };
+      submitGuardRef.current = true;
+      try {
+        if (!overrideDuplicate) {
+          const candidates = (list.rows ?? []).map((r) => ({
+            id: s(r, "id"),
+            mrn: s(r, "mrn"),
+            full_name: s(r, "full_name"),
+            phone: s(r, "phone"),
+            national_id: s(r, "national_id"),
+            date_of_birth: s(r, "date_of_birth"),
+          }));
+          const check = classifyPatientDuplicates(
+            {
+              full_name: form.full_name,
+              phone: form.phone,
+              national_id: form.national_id,
+              date_of_birth: form.date_of_birth,
+            },
+            candidates,
+          );
+          if (check.level !== "none") {
+            setDuplicateLevel(check.level);
+            setDuplicateMatches(check.matches);
+            throw new Error(
+              check.level === "confirmed"
+                ? t("duplicate_confirmed_title")
+                : t("duplicate_possible_title"),
+            );
+          }
+        }
+        const newPatientId = await rpc<string>("create_patient_atomic", {
+          _full_name: form.full_name.trim(),
+          _gender: form.gender,
+          _date_of_birth: form.date_of_birth || null,
+          _phone: form.phone.trim() || null,
+          _national_id: form.national_id.trim() || null,
+          _address: form.address.trim() || null,
+        });
+        return { patientId: newPatientId, openVisit, skipped: false };
+      } catch (err) {
+        if (err instanceof Error) throw new Error(translateBackendError(err.message, lang));
+        throw err;
+      } finally {
+        submitGuardRef.current = false;
+      }
     },
     {
       invalidate: [["patients"]],
       successMessage: t("saved"),
       onDone: (result) => {
-        const outcome = result as { patientId: string; openVisit: boolean };
+        const outcome = result as { patientId: string; openVisit: boolean; skipped?: boolean };
+        if (outcome.skipped || !outcome.patientId) return;
         setOpen(false);
         setForm(emptyForm());
+        setDuplicateMatches([]);
+        setDuplicateLevel("none");
+        setOverrideDuplicate(false);
         if (outcome.openVisit) {
           void navigate({ to: "/visits", search: { patient: outcome.patientId } });
         }
@@ -206,6 +255,46 @@ function PatientsPageInner() {
                     onChange={(e) => setForm({ ...form, national_id: e.target.value })}
                   />
                 </Field>
+                <Field label={t("address")} className="sm:col-span-2">
+                  <Input
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </Field>
+                {duplicateMatches.length > 0 ? (
+                  <div className="sm:col-span-2 rounded-lg border border-amber-500/50 bg-amber-50/70 p-3 text-xs dark:bg-amber-950/30">
+                    <p className="font-semibold text-amber-900 dark:text-amber-200">
+                      {duplicateLevel === "confirmed"
+                        ? t("duplicate_confirmed_title")
+                        : t("duplicate_possible_title")}
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {duplicateMatches.slice(0, 5).map((m) => (
+                        <li key={m.candidate.id} className="flex items-center justify-between gap-2">
+                          <span>
+                            {m.candidate.full_name} ({m.candidate.mrn || "—"} · {m.candidate.phone || "—"})
+                          </span>
+                          <Link
+                            to="/patients/$patientId"
+                            params={{ patientId: m.candidate.id }}
+                            className="font-medium text-primary underline"
+                            onClick={() => setOpen(false)}
+                          >
+                            {t("open_existing_patient")}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <label className="mt-2 flex items-center gap-2 text-xs font-medium">
+                      <input
+                        type="checkbox"
+                        checked={overrideDuplicate}
+                        onChange={(e) => setOverrideDuplicate(e.target.checked)}
+                      />
+                      <span>{t("duplicate_override_label")}</span>
+                    </label>
+                  </div>
+                ) : null}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>

@@ -37,7 +37,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { n, rel, s, useAllRows, useCount, useRows, useSettings, type Row } from "@/lib/db";
 import { PENDING_LAB_STATUSES, sumAmounts } from "@/lib/dashboard-metrics";
-import { useLang } from "@/lib/i18n";
+import { localizeRoleLabel, useLang } from "@/lib/i18n";
 import { formatDate, money, todayISO } from "@/lib/medical";
 import { DEFAULT_EXPIRY_THRESHOLD_DAYS, EXPIRY_TONE, expiryStatus } from "@/lib/pharmacy";
 import { supabase } from "@/lib/supabase";
@@ -315,7 +315,7 @@ function DashboardPageInner() {
       <PageHeader
         eyebrow={t("app_name")}
         title={t("dashboard")}
-        subtitle={`${user?.full_name ?? ""} · ${user?.role_name ?? ""} · ${formatDate(today)}`}
+        subtitle={`${user?.full_name ?? ""} · ${localizeRoleLabel(user?.role_code, user?.role_name, lang)} · ${formatDate(today)}`}
       />
       <ErrorBox error={anyError} />
       {!payments.isLoading &&

@@ -42,7 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { n, rpc, s, useRows, useSave, useSettings, type Row } from "@/lib/db";
 import { useLang } from "@/lib/i18n";
-import { EXPENSE_CATEGORIES, formatDate, money, todayISO } from "@/lib/medical";
+import { EXPENSE_CATEGORIES, formatDate, money, monthDateRange, todayISO } from "@/lib/medical";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
@@ -93,8 +93,8 @@ function ExpensesPageInner() {
     supabase
       .from("expenses")
       .select("*")
-      .gte("expense_date", `${month}-01`)
-      .lte("expense_date", `${month}-31`)
+      .gte("expense_date", monthDateRange(month).start)
+      .lt("expense_date", monthDateRange(month).nextMonthStart)
       .is("deleted_at", null)
       .order("expense_date", { ascending: false }),
   );
