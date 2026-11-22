@@ -190,7 +190,11 @@ test("P2 i18n catalog contains all previously missing keys and accounting.tsx ha
   assert.match(i18n, /export function localizeRoleLabel/);
 
   const accounting = read("src/routes/_authenticated/accounting.tsx");
-  assert.doesNotMatch(accounting, /[؀-ۿ]/, "accounting.tsx should not contain hardcoded Arabic labels");
+  assert.doesNotMatch(
+    accounting,
+    /[\u0600-\u06FF]/,
+    "accounting.tsx should not contain hardcoded Arabic labels",
+  );
 
   const shell = read("src/components/app-shell.tsx");
   const dash = read("src/routes/_authenticated/dashboard.tsx");
