@@ -12,8 +12,7 @@ import {
   verifySha256Digest,
 } from "../scripts/backup-dr-guard.mjs";
 
-const VALID_AGE_RECIPIENT =
-  "age1czhalwdx8a5swtru7mlqtglw6g3qdm26d2rfcjdy5ck95a36vccs25m0ur";
+const VALID_AGE_RECIPIENT = "age1czhalwdx8a5swtru7mlqtglw6g3qdm26d2rfcjdy5ck95a36vccs25m0ur";
 
 test("classifyBackupPreflight reproduces run #43764265014 missing DB credential failure", () => {
   const res = classifyBackupPreflight({
@@ -86,10 +85,7 @@ test("checkPg17Compatibility enforces PostgreSQL 17 on both client and server", 
     checkPg17Compatibility("pg_dump (PostgreSQL) 17.6", "17.6 (Debian 17.6-1)").ok,
     true,
   );
-  assert.equal(
-    checkPg17Compatibility("pg_dump (PostgreSQL) 16.4", "17.6").ok,
-    false,
-  );
+  assert.equal(checkPg17Compatibility("pg_dump (PostgreSQL) 16.4", "17.6").ok, false);
 });
 
 test("stageEncryptedArtifactAtomic preserves last-known-good artifact on encryption failure", () => {
