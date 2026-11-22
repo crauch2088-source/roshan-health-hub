@@ -559,3 +559,18 @@ No scheduled backup or reminder has been enabled. The runner remains manual-only
 4. Independent reviewer acceptance of the complete runbook and recovery evidence.
 
 The database-specific restore and parity sub-gates are PASS. The overall Production Backup Recovery & Disaster Recovery gate remains OPEN pending the above owner/operational acceptance and full control-plane recovery rehearsal. No Production/QA writes, settings changes, deployments, key rotations, or project creation were performed in this session.
+
+
+## 16. Vercel recovery inventory — read-only inventory captured
+
+The Vercel project `roshan-health-hub` was inspected without decrypting environment variable values or changing settings.
+
+- Project ID: `prj_DXhmP7InMjEeoZaIBnw3UhEGaUxk`
+- Team ID: `team_GxMH4eyATlCfJMG8SJXzDcAg`
+- Framework reported: `tanstack-start-lovable`
+- Verified production domain returned: `roshan-health-hub.vercel.app`
+- Project domains also include `roshan-health-hub-roshan45.vercel.app` and `roshan-health-hub-git-main-roshan45.vercel.app`.
+- Environment-variable inventory was listed with decryption disabled. Production entries include Supabase URL and publishable/anon key variables, JWT/service-role/secret-key variables, and Postgres connection variables. Names observed include `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_JWT_SECRET`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `POSTGRES_URL`, `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_USER`, `POSTGRES_HOST`, `POSTGRES_PASSWORD`, and `POSTGRES_DATABASE`.
+- No environment variable values were retrieved, displayed, copied, or changed. This inventory records names only; it is not a secret backup or a verified restoration of those values.
+
+This improves the control-plane inventory but does not satisfy the full re-provisioning rehearsal. The owner must retain actual secret values only in the authorized password manager/secret stores and confirm they can be re-entered after project replacement. A successful recovery test must verify the replacement Vercel environment variables and deployment without exposing their values in logs or this repository.
