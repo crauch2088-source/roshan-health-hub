@@ -283,3 +283,60 @@ The following work remains, in priority order:
 **Operational decision: PARTIAL PASS — DATABASE RESTORE VERIFIED; FULL DR GATE REMAINS OPEN.**
 
 Production and QA were not changed. PR #296 remains open/draft and unmerged. No Production deployment or database migration was performed.
+
+
+## 11. Backup Runner source and Actions review — 2026-11-23 continuation
+
+The private runner's current `main` source was inspected read-only. The workflow files and key scripts were fetched directly from GitHub:
+
+- `.github/workflows/manual-encrypted-production-backup.yml` blob `015b49666dde54fd77756dae05c646104c325ad0`.
+- `.github/workflows/ci.yml` blob `543cc99ebfed0b990b2ce42a3e10a706e13b5277`.
+- `scripts/backup-and-restore.sh` blob `9db082ac305819b7c5d096a6a3f9d56776454e2c`.
+- `scripts/validate_backup_credentials.sh` blob `09c2aaf2fc96fd2d2d378f4a126ab5ff984612ba`.
+- `tests/test_validate_backup_credentials.sh` blob `f2619149197de9b669c78bed2122ffbeb01857ba`.
+- Runner README blob `aa88b27f06014928d1f81fd721673e61c26d1e1b`.
+
+### Workflow design findings
+
+1. The Production backup workflow is triggered only by `workflow_dispatch`. It has no `schedule`, `push`, or `pull_request` trigger. The workflow requires an explicit boolean `confirm_production_backup=true` before the Production backup job runs.
+2. Workflow permissions are restricted to `contents: read`; concurrency prevents overlapping Production backup runs.
+3. The workflow validates credentials before the backup job. It requires `SUPABASE_ACCESS_TOKEN`, exactly one of `SUPABASE_DB_ACCESS_TOKEN` or `SUPABASE_DB_PASSWORD`, and `AGE_RECIPIENT`.
+4. The backup job uploads only the encrypted artifact and configures `retention-days: 1`. There is no Google Drive upload step in the workflow. The README explicitly assigns transfer to the canonical private Drive folder as a manual owner step.
+5. The README states that the encrypted artifact is temporary staging, the Drive copy is the retained copy, and the workflow must abort if Storage objects or Vault secrets are non-empty.
+6. CI validates shell syntax, ShellCheck, credential validator regression tests, Python helper tests, and required Supabase CLI flags. The CI workflow does not need Production credentials and does not itself create a Production backup.
+7. The backup shell script checks PostgreSQL version, Storage object count and Vault secret count before dumping. It creates a custom-format dump, runs a local PostgreSQL 17 restore rehearsal, compares critical table counts, packages a manifest, encrypts with age, and generates checksums. Plaintext working directories and local restore project are removed by the EXIT cleanup trap; secure forensic erasure is not claimed.
+8. The workflow currently uses the mutable Docker image tag `postgres:17.6` for remote dump/restore client operations. This is a reproducibility hardening candidate: pin the image by a verified digest after compatibility testing. It is not the cause of the observed credential preflight failure.
+
+### Latest failed workflow — exact cause confirmed from job log
+
+- Run: [#43764265014](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/43764265014)
+- Event: `workflow_dispatch`
+- Created: `2026-11-15T21:32:41Z`
+- Runner head SHA: `f171732b61fe0460c61a36aa63b861065f9ea9d1`
+- `validate` job: failed at step **Preflight Production backup credentials**.
+- `backup` job: skipped.
+- The safe log output showed the CLI token was present and the age recipient variable was present, while both supported database credential inputs were empty.
+- The validator emitted: `Configure exactly one of SUPABASE_DB_ACCESS_TOKEN or SUPABASE_DB_PASSWORD.`
+- No database dump, encryption, or artifact upload step ran in this workflow attempt. No evidence indicates a Production connection was opened by this failed attempt.
+
+The run history inspected in this continuation showed #43764265014 as the latest listed manual backup run, after the successful backup run #43183851731 on 2026-11-12. The successful run remains the latest known successful Production backup in the reviewed history.
+
+### Decision: do not add a schedule yet
+
+A scheduled workflow is intentionally **not** added in this round. With only one-day GitHub artifact retention and no automated durable off-site transfer step, a scheduled run could succeed while its only artifact expires before an owner transfers it. This would not satisfy the backup-retention objective and could create false confidence.
+
+Before enabling a schedule, the owner must approve and implement a reliable, least-privilege off-site delivery path (or a clearly owned, monitored manual transfer process with a frequency that meets the approved RPO), prove retention, and test retrieval. No Drive credential, OAuth scope, service account, or upload integration is currently assumed to exist.
+
+### Owner action required — credential recovery
+
+The next backup cannot run until one of the documented database credential paths is configured privately in the backup runner repository:
+
+- Preferred when the Supabase organization exposes the feature: a short-lived temporary database access token in secret `SUPABASE_DB_ACCESS_TOKEN`, with the required temporary access rule and SSL enforcement; revoke it and remove the temporary rule after the backup.
+- Fallback where the feature is unavailable: the existing Production DB password in secret `SUPABASE_DB_PASSWORD`; do not reset it solely for this workflow; remove the secret after the one-time backup.
+- `SUPABASE_ACCESS_TOKEN` and `AGE_RECIPIENT` were present in the failed run and must not be replaced or disclosed unless a fresh private settings check shows they are missing/invalid.
+
+The owner must add the credential value directly in GitHub Settings → Secrets and variables → Actions for the **private backup-runner repository**. No credential values are to be shared in this conversation. Do not dispatch a Production backup until the owner explicitly approves the run.
+
+### Review outcome
+
+**PASS WITH FINDINGS — source review complete; operational backup remains BLOCKED on the missing database credential.** No runner source files were changed in this continuation. No workflow was dispatched or rerun. No Production or QA connection was opened. The next safe action is owner-side configuration of one database credential path, followed by a fresh credential preflight/backup only with explicit owner confirmation.
