@@ -236,7 +236,8 @@ test("Stage B1 lab-catalog.tsx writes only live public.lab_tests columns (no nor
 
 test("Security hardening SQL pins 17 exact-signature SECURITY DEFINER functions and excludes create_staff_user", () => {
   const secSql = read("db/roshan_qa_secdef_search_path_hardening_20261122.sql");
-  const alters = secSql.match(/ALTER FUNCTION public\.[a-z0-9_]+\([^)]*\) SET search_path = '';/g) ?? [];
+  const alters =
+    secSql.match(/ALTER FUNCTION public\.[a-z0-9_]+\([^)]*\) SET search_path = '';/g) ?? [];
   assert.equal(alters.length, 17);
   assert.doesNotMatch(secSql, /ALTER FUNCTION public\.create_staff_user/i);
   assert.doesNotMatch(secSql, /EXECUTE\s+format/i);
