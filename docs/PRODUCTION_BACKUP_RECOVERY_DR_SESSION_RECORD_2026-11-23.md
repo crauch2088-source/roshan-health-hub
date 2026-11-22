@@ -319,7 +319,7 @@ The private runner's current `main` source was inspected read-only. The workflow
 - The validator emitted: `Configure exactly one of SUPABASE_DB_ACCESS_TOKEN or SUPABASE_DB_PASSWORD.`
 - No database dump, encryption, or artifact upload step ran in this workflow attempt. No evidence indicates a Production connection was opened by this failed attempt.
 
-The run history inspected in this continuation showed #43764265014 as the latest listed manual backup run, after the successful backup run #43183851731 on 2026-11-12. The successful run remains the latest known successful Production backup in the reviewed history.
+The run history inspected at the time of this source review showed #43764265014 as the latest listed manual backup run, after successful run #43183851731 on 2026-11-12. This was the state before the subsequent owner-authorized run documented in Section 12 below.
 
 ### Decision: do not add a schedule yet
 
@@ -329,14 +329,63 @@ Before enabling a schedule, the owner must approve and implement a reliable, lea
 
 ### Owner action required — credential recovery
 
-The next backup cannot run until one of the documented database credential paths is configured privately in the backup runner repository:
+The next backup at the time of this source review could not run until one of the documented database credential paths was configured privately in the backup runner repository. The owner subsequently configured the existing Production DB password privately and authorized a new run; see Section 12. The credential value was never shared in this conversation. The documented options were:
 
 - Preferred when the Supabase organization exposes the feature: a short-lived temporary database access token in secret `SUPABASE_DB_ACCESS_TOKEN`, with the required temporary access rule and SSL enforcement; revoke it and remove the temporary rule after the backup.
 - Fallback where the feature is unavailable: the existing Production DB password in secret `SUPABASE_DB_PASSWORD`; do not reset it solely for this workflow; remove the secret after the one-time backup.
 - `SUPABASE_ACCESS_TOKEN` and `AGE_RECIPIENT` were present in the failed run and must not be replaced or disclosed unless a fresh private settings check shows they are missing/invalid.
 
-The owner must add the credential value directly in GitHub Settings → Secrets and variables → Actions for the **private backup-runner repository**. No credential values are to be shared in this conversation. Do not dispatch a Production backup until the owner explicitly approves the run.
+The owner added the credential directly in GitHub Settings → Secrets and variables → Actions for the **private backup-runner repository**. No credential value was shared in this conversation. A new Production backup was dispatched only after the owner's explicit approval, as recorded in Section 12.
 
 ### Review outcome
 
-**PASS WITH FINDINGS — source review complete; operational backup remains BLOCKED on the missing database credential.** No runner source files were changed in this continuation. No workflow was dispatched or rerun. No Production or QA connection was opened. The next safe action is owner-side configuration of one database credential path, followed by a fresh credential preflight/backup only with explicit owner confirmation.
+**PASS WITH FINDINGS — source review complete.** At the end of that source-review stage, the operational backup was blocked by the missing database credential. That blocker was subsequently cleared by the owner, and the authorized Production backup completed successfully as documented below. No runner source files were changed.
+
+
+## 12. Owner-authorized Production backup run #30 — SUCCESS
+
+After the owner privately configured the existing Production DB password secret and explicitly approved execution, the manual encrypted Production backup workflow was dispatched.
+
+- Workflow run: [#45080086071](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/45080086071)
+- Runner repository head SHA: `f171732b61fe0460c61a36aa63b861065f9ea9d1`
+- Run conclusion: `success`
+- Started: `2026-11-22T22:52:04Z`
+- Completed: `2026-11-22T22:55:37Z`
+- The actual backup-and-restore step ran from `22:52:48Z` to approximately `22:55:33Z`; the database dump, local PostgreSQL 17 restore rehearsal, encryption, and artifact upload all completed in under three minutes once the required image was available.
+- Credential preflight and runner validation jobs both passed.
+- The backup script queried Production PostgreSQL version, Storage object count, and Vault secret count. It proceeded through dump and restore; therefore the script's explicit abort conditions for non-zero Storage objects or Vault secrets were not triggered.
+- The full database dump was restored into a fresh isolated local Supabase/PostgreSQL 17 target using `pg_restore --exit-on-error --single-transaction`.
+- The runner compared its critical source counts with restored counts; the script reached its success marker, so the comparison passed.
+- The manifest was generated, the bundle was encrypted with age, and checksum files were generated.
+- The workflow uploaded ciphertext only; the artifact upload step completed successfully.
+- Safe workflow summary recorded: database dump and local restore rehearsal passed; artifact encrypted only; retention one day; Production writes none.
+- No Production or QA database writes, migrations, or application deployments were performed by this workflow.
+- No runner source files were changed to obtain this success.
+
+### Artifact identity and independent transfer verification
+
+- Artifact name: `roshan-production-backup-45080086071`
+- Artifact ID: `14776383466`
+- Artifact URL: [download from GitHub Actions](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/45080086071/artifacts/14776383466)
+- Artifact ZIP size: `304943` bytes
+- GitHub artifact ZIP SHA-256: `ef99f0875ee0aed41e24bc738803839cd9d4c326f5a3b5ac7375b0014379a480`
+- Downloaded artifact was independently fetched and verified in the working environment. Its SHA-256 exactly matched GitHub's digest.
+- ZIP integrity test passed with no compressed-data errors.
+- ZIP contains exactly two entries: `SHA256SUMS` and `roshan-production-20261122T225248Z.tar.gz.age`.
+- Encrypted member size: `304433` bytes.
+- The checksum manifest's expected encrypted-member SHA-256 and the independently computed SHA-256 both equal `5b80dff16006fd9b384177e00e4c28c980865494b5353fbe7f9b4a003b3b3477`.
+- Artifact retention is configured for one day; GitHub reported expiry at `2026-11-23T22:55:33Z`. This artifact is temporary staging and must not be treated as the durable retained backup.
+
+### What this run proves — and what it does not
+
+**Proved by Run #30:** a new Production database backup could be created using the repaired private credential configuration; the runner's isolated PostgreSQL 17 restore rehearsal passed; source/restored critical row counts matched; age encryption and checksum generation passed; GitHub accepted and stored the ciphertext-only artifact; the downloaded ZIP and inner encrypted member checksums were independently verified.
+
+**Not yet proved by this run:** owner-side age decryption and a separate independent PostgreSQL restore of this *new* artifact; durable off-site Drive storage/read-back; long-term retention; automated schedule; approved RPO/RTO; recovery of Supabase control-plane settings or Storage object bytes. The new artifact has not been uploaded to the canonical private Drive folder as part of this session.
+
+### Updated operational outcome
+
+The missing database credential blocker is cleared for this one authorized run. The backup runner remains manual-only, and its GitHub artifact retention remains one day. Do not add a schedule until durable off-site transfer and retention are automated or a monitored owner-operated process has been explicitly accepted against the approved RPO.
+
+**Updated decision: Production backup + runner restore rehearsal PASS; downloaded ciphertext integrity PASS; full DR gate remains OPEN pending durable off-site retention, owner-side decryption and independent restore of this new backup, control-plane recovery inventory, approved RPO/RTO, and repeatable recovery acceptance.**
+
+PR #296 remains open/draft and unmerged. PR #297 remains a documentation-only draft. Production and QA were not modified.
