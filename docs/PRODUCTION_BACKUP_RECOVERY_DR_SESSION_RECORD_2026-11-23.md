@@ -389,3 +389,47 @@ The missing database credential blocker is cleared for this one authorized run. 
 **Updated decision: Production backup + runner restore rehearsal PASS; downloaded ciphertext integrity PASS; full DR gate remains OPEN pending durable off-site retention, owner-side decryption and independent restore of this new backup, control-plane recovery inventory, approved RPO/RTO, and repeatable recovery acceptance.**
 
 PR #296 remains open/draft and unmerged. PR #297 remains a documentation-only draft. Production and QA were not modified.
+
+
+## 13. Composio-mediated private Google Drive transfer and read-back — PASS
+
+The owner explicitly requested use of the connected Composio integration to place the new encrypted artifact in the established private Google Drive backup archive.
+
+### Destination resolution
+
+- Connected Google Drive account was confirmed ACTIVE for the owner's private account.
+- Existing canonical archive folder found: `Roshan Health Hub - Encrypted Backups`.
+- The archive already contained dated folders, including `2026-11-12`, which held the prior successful artifact `roshan-production-backup-43183851731.zip`. This confirmed the existing folder structure and destination.
+- A new dated child folder `2026-11-22` was created under that canonical archive.
+- Folder URL: https://drive.google.com/drive/folders/16sQvIVQdU1R-RhbzxrTuPVoyGuVqSX9E
+
+### Uploaded object
+
+- File: `roshan-production-backup-45080086071.zip`
+- Google Drive file ID: `1N-YpbrJ8gJs8-Z9oMSEBJgod4UD_IuML`
+- Size: `304943` bytes
+- MIME type: `application/zip`
+- Parent folder: `2026-11-22` under the canonical private encrypted-backups archive.
+- Drive metadata reports `shared=false`, `trashed=false`, and the expected parent folder ID.
+- Drive metadata MD5: `7745142df88f2aeaa806a89d336a5b54`
+- File URL: https://drive.google.com/file/d/1N-YpbrJ8gJs8-Z9oMSEBJgod4UD_IuML/view
+
+### Read-back verification
+
+The uploaded file was downloaded again from Google Drive through the connected Composio integration and independently checked in the remote verification environment:
+
+- Downloaded byte count: `304943` — exact match.
+- Downloaded SHA-256: `ef99f0875ee0aed41e24bc738803839cd9d4c326f5a3b5ac7375b0014379a480` — exact match with the original GitHub Actions artifact digest.
+- Downloaded MD5: `7745142df88f2aeaa806a89d336a5b54` — exact match with Drive metadata.
+- ZIP integrity test: passed (`testzip()` returned no corrupt member).
+- ZIP members: `SHA256SUMS` and `roshan-production-20261122T225248Z.tar.gz.age` only.
+
+This proves the encrypted backup has been transferred to the established private Drive archive and can be retrieved byte-for-byte. The Drive file remains private; no sharing permissions were added.
+
+### Updated DR gate status
+
+**PASS:** current-run encrypted artifact creation; runner-local PostgreSQL 17 restore rehearsal; GitHub artifact integrity; private off-site Drive upload; Drive metadata/privacy verification; complete Drive read-back with byte-for-byte SHA-256 and MD5 equality.
+
+**Still OPEN:** owner-side decryption and independent PostgreSQL 17 restore of the new November 22 artifact; documented and approved backup cadence/retention; RPO/RTO targets and measurement; Supabase control-plane and secret re-provisioning inventory; Storage object-byte strategy before any object is stored; repeatable drill and independent reviewer acceptance.
+
+The Drive transfer closes the off-site-copy and retrieval proof gap for this artifact, but it does not by itself close the full Production Backup Recovery & DR gate.
