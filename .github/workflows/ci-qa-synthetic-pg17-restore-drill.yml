@@ -1,0 +1,66 @@
+name: QA synthetic PG17 backup & restore drill
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/qa-synthetic-pg17-restore-drill.sh"
+      - "scripts/backup-dr-guard.mjs"
+      - "tests/backup-recovery-dr.test.ts"
+      - ".github/workflows/ci-qa-synthetic-pg17-restore-drill.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-synthetic-pg17-restore-drill-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-pg17-restore-drill:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: qa_drill_isolated_password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL 17 client, age, and shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg lsb-release age shellcheck
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Lint and run DR unit tests
+        run: |
+          bash -n scripts/qa-synthetic-pg17-restore-drill.sh
+          shellcheck -S warning scripts/qa-synthetic-pg17-restore-drill.sh
+          node --test --experimental-strip-types tests/backup-recovery-dr.test.ts
+
+      - name: Execute isolated synthetic QA PostgreSQL 17 backup & restore drill
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: qa_drill_isolated_password
+        run: bash scripts/qa-synthetic-pg17-restore-drill.sh
