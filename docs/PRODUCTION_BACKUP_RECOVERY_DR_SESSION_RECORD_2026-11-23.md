@@ -486,3 +486,20 @@ The raw function count of 3405 came from pg_proc without a namespace filter and 
 **STILL OPEN:** approved backup cadence and retention policy; formally approved RPO/RTO targets and measured recovery objectives; complete Supabase control-plane and secret re-provisioning inventory and rehearsal; Storage object-byte backup/recovery strategy before any object is stored; repeatable scheduled/owner-operated drill evidence and independent reviewer acceptance.
 
 The independent database recovery proof gap for this artifact is now closed. The overall Production Backup Recovery & Disaster Recovery gate remains OPEN until the remaining operational and control-plane criteria are accepted. PR #296 remains open/draft and unmerged; PR #297 remains documentation-only and draft.
+
+
+### Corrected application-schema structural counts
+
+A second catalog query was run with explicit namespace joins and filters, excluding system schemas and counting only application/extension schema objects. This corrects the earlier broad pg_proc count, which included system and extension routines.
+
+- Non-system schemas: 10
+- Ordinary tables (relkind = r): 99
+- Indexes (relkind = i): 394
+- Constraints: 359
+- Non-internal triggers: 78
+- RLS policies: 226
+- Functions/procedures: 246
+
+The corrected counts for constraints (359), triggers (78), RLS policies (226), and functions/procedures (246) match the prior recorded structural baseline. The index count is 394 versus the previously recorded 395 and remains an explicit one-index discrepancy pending source-side comparison. The table count of 99 uses ordinary tables only and is not directly comparable to the earlier pg_tables count of 100, which may include partitioned/other table categories.
+
+No catalog objects were modified during this inspection.
