@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavPreferencesProvider } from "@/hooks/use-nav-preferences";
 import { useAuth } from "@/lib/auth";
-import { useLang } from "@/lib/i18n";
+import { localizeRoleLabel, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { getNavIcon } from "@/lib/nav-icons";
 import { armQuickAction, getAvailableQuickActions } from "@/lib/quick-actions";
@@ -191,7 +191,7 @@ function Shell({ children }: { children: ReactNode }) {
                     {user?.full_name ?? "—"}
                   </p>
                   <p className="truncate text-xs text-sidebar-foreground/60">
-                    {user?.role_name ?? ""}
+                    {localizeRoleLabel(user?.role_code, user?.role_name, lang)}
                   </p>
                 </div>
               </div>

@@ -94,15 +94,12 @@ function LabCatalogPageInner() {
   const create = useSave(
     async () => {
       const { error } = await supabase.from("lab_tests").insert({
-        name: form.name,
-        name_ar: form.name_ar || null,
-        category: form.category || null,
-        unit: form.unit || null,
+        name: form.name.trim(),
+        name_ar: form.name_ar.trim() || null,
+        category: form.category.trim() || null,
         price: Number(form.price) || 0,
-        normal_min: form.normal_min === "" ? null : Number(form.normal_min),
-        normal_max: form.normal_max === "" ? null : Number(form.normal_max),
-        reference_range: form.reference_range || null,
         active: true,
+        is_active: true,
       });
       if (error) throw new Error(error.message);
       return null;
@@ -131,14 +128,10 @@ function LabCatalogPageInner() {
       const { error } = await supabase
         .from("lab_tests")
         .update({
-          name: form.name,
-          name_ar: form.name_ar || null,
-          category: form.category || null,
-          unit: form.unit || null,
+          name: form.name.trim(),
+          name_ar: form.name_ar.trim() || null,
+          category: form.category.trim() || null,
           price: Number(form.price) || 0,
-          normal_min: form.normal_min === "" ? null : Number(form.normal_min),
-          normal_max: form.normal_max === "" ? null : Number(form.normal_max),
-          reference_range: form.reference_range || null,
         })
         .eq("id", id);
       if (error) throw new Error(error.message);

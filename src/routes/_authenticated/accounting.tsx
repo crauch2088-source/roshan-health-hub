@@ -129,6 +129,7 @@ function AccountingPageInner() {
 }
 
 function Overview({ currency }: { currency: string }) {
+  const { t } = useLang();
   const payments = useRows<Row[]>(["finance-overview-payments"], () =>
     supabase
       .from("payments")
@@ -171,20 +172,28 @@ function Overview({ currency }: { currency: string }) {
     <>
       <ErrorBox error={payments.error ?? expenses.error ?? bills.error ?? cash.error} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="الإيرادات المحصلة" value={money(collected, currency)} tone="success" />
-        <StatCard label="المصروفات" value={money(spent, currency)} tone="destructive" />
-        <StatCard label="رصيد الخزنة" value={money(cashBalance, currency)} tone="primary" />
-        <StatCard label="ديون الموردين" value={money(supplierDebt, currency)} tone="warning" />
+        <StatCard
+          label={t("collected_revenue")}
+          value={money(collected, currency)}
+          tone="success"
+        />
+        <StatCard label={t("expenses")} value={money(spent, currency)} tone="destructive" />
+        <StatCard
+          label={t("cashbox_balance")}
+          value={money(cashBalance, currency)}
+          tone="primary"
+        />
+        <StatCard label={t("supplier_debt")} value={money(supplierDebt, currency)} tone="warning" />
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>ملخص مالي</CardTitle>
+          <CardTitle>{t("financial_summary")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Summary label="صافي التدفق" value={money(collected - spent, currency)} />
-            <Summary label="عدد الدفعات" value={String(payments.data?.length ?? 0)} />
-            <Summary label="عدد حركات الخزنة" value={String(cash.data?.length ?? 0)} />
+            <Summary label={t("net_flow")} value={money(collected - spent, currency)} />
+            <Summary label={t("payment_count")} value={String(payments.data?.length ?? 0)} />
+            <Summary label={t("cashbox_movements")} value={String(cash.data?.length ?? 0)} />
           </div>
         </CardContent>
       </Card>

@@ -114,3 +114,22 @@ export function flagResult(
   if (min != null || max != null) return "normal";
   return null;
 }
+
+/**
+ * Calendar-safe half-open month date range: [start, nextMonthStart).
+ * Avoids invalid dates such as YYYY-02-31 or YYYY-11-31 in PostgreSQL date filters.
+ */
+export function monthDateRange(month: string): { start: string; nextMonthStart: string } {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month.trim());
+  if (!match) {
+    throw new Error(`Invalid month format: ${month}`);
+  }
+  const year = Number(match[1]);
+  const mon = Number(match[2]);
+  const nextYear = mon === 12 ? year + 1 : year;
+  const nextMon = mon === 12 ? 1 : mon + 1;
+  return {
+    start: `${String(year).padStart(4, "0")}-${String(mon).padStart(2, "0")}-01`,
+    nextMonthStart: `${String(nextYear).padStart(4, "0")}-${String(nextMon).padStart(2, "0")}-01`,
+  };
+}
