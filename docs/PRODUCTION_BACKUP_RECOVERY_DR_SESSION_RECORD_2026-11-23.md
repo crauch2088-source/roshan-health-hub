@@ -503,3 +503,59 @@ A second catalog query was run with explicit namespace joins and filters, exclud
 The corrected counts for constraints (359), triggers (78), RLS policies (226), and functions/procedures (246) match the prior recorded structural baseline. The index count is 394 versus the previously recorded 395 and remains an explicit one-index discrepancy pending source-side comparison. The table count of 99 uses ordinary tables only and is not directly comparable to the earlier pg_tables count of 100, which may include partitioned/other table categories.
 
 No catalog objects were modified during this inspection.
+
+
+## 15. Live Production-to-independent-restore structural parity and control-plane inventory — PASS / PARTIAL
+
+A read-only SQL query was executed against the live Production project and the same namespace-filtered catalog query was compared with the independent restored database. The two sides match exactly:
+
+| Metric | Live Production | Independent restore |
+|---|---:|---:|
+| Non-system schemas | 10 | 10 |
+| Ordinary tables | 99 | 99 |
+| Indexes | 394 | 394 |
+| Constraints | 359 | 359 |
+| Non-internal triggers | 78 | 78 |
+| RLS policies | 226 | 226 |
+| Functions/procedures | 246 | 246 |
+| Invalid indexes | 0 | 0 |
+| Unvalidated constraints | 1 | 1 |
+
+The single unvalidated constraint on both sides is realtime.messages_payload_exclusive on realtime.messages, defined as CHECK (((payload IS NULL) OR (binary_payload IS NULL))) NOT VALID. It was not modified. This direct live-source comparison resolves the earlier apparent 394-versus-395 index discrepancy: it was caused by inconsistent counting scopes, not a missing restored index.
+
+A separate read-only Production query confirmed:
+- Three Storage buckets exist and all are private: roshan-clinical-attachments, roshan-lab-reports, and roshan-medical-certificates.
+- storage.objects contains zero objects.
+- vault.secrets contains zero rows.
+- There are zero invalid indexes.
+
+The connected Supabase project metadata identifies Production as ACTIVE_HEALTHY, PostgreSQL 17.6.1.155, region eu-west-1, on the Free plan. The project API URL is https://jewzonxplxhogqrnhosl.supabase.co. The publishable-key inventory returned one disabled legacy anon key record and one enabled key record named roshan_vercel_production; actual key material is intentionally not copied into this report. The Edge Functions inventory returned no deployed functions.
+
+### Recovery scope and Free-plan implications
+
+Supabase's current official backup documentation states that automatic daily database backups are provided for Pro, Team, and Enterprise projects, and recommends regular CLI exports plus off-site backups for Free projects. This Production project is on the Free plan; therefore the current manual-only runner is not backed by a Supabase automatic daily-backup entitlement. The one-day GitHub Actions artifact is staging only; the private Drive copy is the durable off-site copy verified for this drill.
+
+Official reference: https://supabase.com/docs/guides/platform/backups
+
+Supabase's restore-to-new-project documentation also states that Storage objects/settings, Edge Functions, Auth settings/API keys, Realtime settings, and certain platform/database settings require manual reconfiguration. Official reference: https://supabase.com/docs/guides/platform/clone-project
+
+### Operational policy proposal — awaiting owner acceptance
+
+The technical evidence now supports the database backup and independent restore path, but an operational RPO/RTO and retention policy must be explicitly accepted by the project owner. The following is a proposed low-cost policy, not yet an approved service commitment:
+
+- Backup cadence: owner-operated encrypted Production backup at least once every 24 hours, plus before any Production migration or release; verify successful workflow, Drive upload, and Drive read-back each time.
+- RPO target: no more than 24 hours, conditional on a successful daily backup and verified off-site copy.
+- RTO target: no more than 4 hours to restore the database and complete the documented platform reconfiguration. This target is NOT yet measured end-to-end; the completed drill measured successful database recovery but did not time a full project/service restoration.
+- Retention: retain at least 30 daily encrypted copies in the canonical private Drive archive; do not rely on the one-day GitHub Actions artifact as retention.
+- Drill cadence: perform and record an independent restore rehearsal at least quarterly and after material changes to the backup format or Supabase platform configuration.
+
+No scheduled backup or reminder has been enabled. The runner remains manual-only because its GitHub artifact upload is not automatically transferred to Drive. Do not add a cron trigger that merely creates a one-day GitHub artifact without durable off-site transfer.
+
+### Remaining blockers to formal gate closure
+
+1. Owner acceptance of the proposed cadence, RPO, RTO, retention, and quarterly drill policy (or a replacement policy).
+2. An end-to-end timed recovery rehearsal including manual Supabase project recreation/reconfiguration, Auth settings, API key replacement, Realtime settings, database extensions/settings, and any required deployment/secret updates. Current connectors expose project metadata and publishable-key inventory but do not provide a safe complete export/replay of all private project settings and secrets.
+3. Storage object recovery remains a future precondition: all three buckets are currently private and empty, and the backup runner fails closed if storage.objects becomes non-empty. Before the first real file is uploaded, implement and test an independent S3-compatible object export/restore process; until then, do not treat database metadata as file backup.
+4. Independent reviewer acceptance of the complete runbook and recovery evidence.
+
+The database-specific restore and parity sub-gates are PASS. The overall Production Backup Recovery & Disaster Recovery gate remains OPEN pending the above owner/operational acceptance and full control-plane recovery rehearsal. No Production/QA writes, settings changes, deployments, key rotations, or project creation were performed in this session.
