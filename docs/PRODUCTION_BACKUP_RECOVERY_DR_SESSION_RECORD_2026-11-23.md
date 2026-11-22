@@ -433,3 +433,56 @@ This proves the encrypted backup has been transferred to the established private
 **Still OPEN:** owner-side decryption and independent PostgreSQL 17 restore of the new November 22 artifact; documented and approved backup cadence/retention; RPO/RTO targets and measurement; Supabase control-plane and secret re-provisioning inventory; Storage object-byte strategy before any object is stored; repeatable drill and independent reviewer acceptance.
 
 The Drive transfer closes the off-site-copy and retrieval proof gap for this artifact, but it does not by itself close the full Production Backup Recovery & DR gate.
+
+
+## 14. Owner-side decryption and independent PostgreSQL 17 restore — PASS
+
+The owner completed the recovery drill in an isolated Google Cloud Shell environment. The decrypted archive was handled locally in the ephemeral session; the age identity/private key and decrypted bundle were not uploaded or shared.
+
+### Decryption and archive validation
+
+- Owner-side age decryption completed successfully (DECRYPTION=PASS).
+- The decrypted tar archive contained the expected database dump, filtered role SQL, archive listing, source/restored count snapshots, manifest, and restore notes.
+- pg_restore --list successfully parsed the custom-format dump; the archive reports PostgreSQL 17.6.
+- The independent restore target was the isolated container roshan-dr-pg17, using the pinned PostgreSQL image digest already recorded for this drill. The target database was roshan_dr_20261122_independent.
+- The first restore attempt using the non-superuser postgres role rolled back under --single-transaction when it encountered the privilege restriction on the Realtime function's SET log_min_messages setting. The target was verified empty after rollback.
+- Restore was rerun as the existing supabase_admin superuser with --exit-on-error --single-transaction --no-owner --no-privileges. It completed successfully. No role grants or server settings were changed.
+
+### Independent restored data verification
+
+| Object | Restored count |
+|---|---:|
+| auth.users | 6 |
+| public.patients | 3 |
+| public.visits | 9 |
+| public.invoices | 0 |
+| public.payments | 0 |
+| public.cashbox_transactions | 0 |
+| storage.buckets | 3 |
+| storage.objects | 0 |
+
+All eight values exactly match the backup manifest's Production source-count snapshot. The independent restore command emitted INDEPENDENT_RESTORE=PASS.
+
+### Structural inspection
+
+The restored database reported 10 non-system schemas: auth, extensions, graphql, graphql_public, private, public, realtime, storage, supabase_migrations, and vault.
+
+The inspection returned 100 non-system tables, 520 indexes, 471 constraints, 78 non-internal triggers, 226 RLS policies, zero invalid indexes, and one unvalidated constraint. The unvalidated constraint is realtime.messages_payload_exclusive on realtime.messages, defined as CHECK ((payload IS NULL) OR (binary_payload IS NULL)) NOT VALID. This is the known Realtime constraint previously observed in the earlier restore baseline; it is recorded, not silently validated or modified.
+
+The raw function count of 3405 came from pg_proc without a namespace filter and therefore includes PostgreSQL/system and extension routines. It is not an application-only function count and must not be compared with earlier application-level counts. The broad index and constraint catalog counts are drill observations, not asserted parity metrics against a separately queried live source.
+
+### Recovery boundary and safety
+
+- This was an independent restore of the new November 22 encrypted artifact, separate from the runner's own restore rehearsal.
+- Production and QA were not modified. No migration, deployment, or Production write was performed.
+- The isolated recovery database/container was not connected to Production.
+- Storage object bytes were not part of the bundle; the source snapshot contained zero Storage objects. This drill proves Storage metadata restoration only, not object-byte recovery or Storage API upload/download/delete behavior.
+- Supabase project control-plane settings, API/JWT keys, Edge Function secrets, custom domains, provider configuration, and Vault root/encryption material remain outside this database restore proof.
+
+### Updated DR gate status
+
+**PASS:** current-run encrypted Production database backup; runner-local PostgreSQL 17 restore rehearsal; ciphertext checksum/integrity; private off-site Drive copy and byte-for-byte read-back; owner-side age decryption; independent PostgreSQL 17 restore of the November 22 artifact; exact match of all eight critical data counts; structural inspection with zero invalid indexes and the known NOT VALID Realtime constraint explicitly identified.
+
+**STILL OPEN:** approved backup cadence and retention policy; formally approved RPO/RTO targets and measured recovery objectives; complete Supabase control-plane and secret re-provisioning inventory and rehearsal; Storage object-byte backup/recovery strategy before any object is stored; repeatable scheduled/owner-operated drill evidence and independent reviewer acceptance.
+
+The independent database recovery proof gap for this artifact is now closed. The overall Production Backup Recovery & Disaster Recovery gate remains OPEN until the remaining operational and control-plane criteria are accepted. PR #296 remains open/draft and unmerged; PR #297 remains documentation-only and draft.
