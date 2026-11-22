@@ -3186,3 +3186,13 @@ Progress remains at the last evidence-weighted canonical baseline: 62% Engineeri
 - **Owner-Gated Items Remaining:** (1) 1-click Pharmacy **Dispense** on QA for prescription `7239fedf-b480-4970-bc65-f0a0cde15ce1` (`QA Test Paracetamol 500mg`, Qty `2`, `300 SDG`, stock `10 → 8`), (2) Android mobile RTL/LTR check (`320–430px`), (3) offline owner decryption of `roshan-production-backup-43183851731.zip` (note backup-runner manual run `#43764265014` on 2026-11-15 failed), and (4) Production release-gate sign-off.
 - **Progress:** **71.3% Engineering RC / 28.0% Operational Acceptance** — Production remains **NO-GO**.
 - **Full Closure Report:** [`docs/parallel-reports/NEON_OWNER_GATED_QA_CLOSURE_REPORT_2026-11-22.md`](parallel-reports/NEON_OWNER_GATED_QA_CLOSURE_REPORT_2026-11-22.md).
+## Execution checkpoint — 2026-11-22 (Pharmacy Gate Closed): QA Atomic Dispense Verified End-to-End (PR #296)
+
+- **Branch / PR:** `fix/qa-operational-blockers-20261121` — Draft [PR #296](https://github.com/crauch2088-source/roshan-health-hub/pull/296) (OPEN / Draft / Unmerged; `main` untouched at `3bc317b0`; Production strictly read-only).
+- **QA Pharmacy Dispense Gate (`CLOSED / PASS`):** Executed via authorized QA Pharmacy UI (`https://roshan-health-ay58tt7s5-roshan45.vercel.app/pharmacy`, `roshan.qa.pharmacy@example.com`) and independently verified via read-only SQL on QA Supabase (`hopfohcnrtbiqjkgeukz`, atomic timestamp `2026-11-22 15:35:53.392779+00`):
+  - Prescription `7239fedf-b480-4970-bc65-f0a0cde15ce1` (`RMC000001`, `ROS-MAIN`) transitioned `pending → dispensed` (`dispensed_by = 03fc0191-c253-469a-85db-b7cf8bd6c8fe`).
+  - Stock decreased `10 → 8` (`QA-BATCH-001` remaining `8.00`) with exactly 1 dispense movement (`9d180652-8e71-4747-8b34-117ed1b2154e`, `-2.00`); zero double deduction.
+  - Visit-consolidated invoice `INV-202611-00001` (`53a21820-80f8-4437-8796-43f4bcd56b7e`) updated `500.00 → 800.00 SDG` via 1 pharmacy line item (`c4f4f3b5-4fa7-4f93-86a6-a336faa38a1d`, `300.00 SDG`); zero duplicate invoices.
+  - 7 atomic `audit_logs` rows verified across `prescriptions`, `prescription_items`, `pharmacy_inventory`, `stock_movements`, `medicines`, `invoice_items`, and `invoices`.
+- **Updated Progress:** **71.3% Engineering RC / 33.0% Operational Acceptance** — Production remains **NO-GO** pending Android mobile (`320–430px`), offline backup decryption/PG17 restore (`#43764265014` failure), and staff/clinical sign-off.
+- **Evidence:** [`docs/parallel-reports/NEON_OWNER_GATED_QA_CLOSURE_REPORT_2026-11-22.md`](parallel-reports/NEON_OWNER_GATED_QA_CLOSURE_REPORT_2026-11-22.md) (§8).
