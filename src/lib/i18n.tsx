@@ -577,7 +577,6 @@ const dict: Record<string, { ar: string; en: string }> = {
   diagnosis: { ar: "التشخيص", en: "Diagnosis" },
   outstanding: { ar: "المستحق", en: "Outstanding" },
   collected_revenue: { ar: "الإيرادات المحصلة", en: "Collected revenue" },
-  supplier_debt: { ar: "ديون الموردين", en: "Supplier debt" },
   financial_summary: { ar: "ملخص مالي", en: "Financial summary" },
   net_flow: { ar: "صافي التدفق", en: "Net flow" },
   payment_count: { ar: "عدد الدفعات", en: "Payment count" },

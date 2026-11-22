@@ -159,3 +159,35 @@ test("P2 i18n catalog contains all previously missing keys and accounting.tsx ha
   assert.match(shell, /localizeRoleLabel\(/);
   assert.match(dash, /localizeRoleLabel\(/);
 });
+
+test("Stage A1 i18n.tsx dictionary contains zero duplicate keys (prevents TS1117)", () => {
+  const i18n = read("src/lib/i18n.tsx");
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+  for (const line of i18n.split(/\r?\n/)) {
+    const m = /^\s+([a-zA-Z0-9_]+):\s*\{/.exec(line);
+    if (m) {
+      if (seen.has(m[1])) duplicates.push(m[1]);
+      seen.add(m[1]);
+    }
+  }
+  assert.deepEqual(duplicates, [], `Duplicate i18n keys found: ${duplicates.join(", ")}`);
+});
+
+test("Stage A1 accounting.tsx Overview declares useLang() for localized labels (prevents TS2304)", () => {
+  const acc = read("src/routes/_authenticated/accounting.tsx");
+  const start = acc.indexOf("function Overview(");
+  assert.ok(start >= 0, "Overview component must exist");
+  const snippet = acc.slice(start, start + 200);
+  assert.match(snippet, /const\s*\{\s*t\s*\}\s*=\s*useLang\(\)/);
+});
+
+test("Stage B1 lab-catalog.tsx writes only live public.lab_tests columns (no normal_min/normal_max/unit/reference_range)", () => {
+  const lc = read("src/routes/_authenticated/lab-catalog.tsx");
+  const insMatch = /\.from\("lab_tests"\)\.insert\(\{([\s\S]*?)\}\)/.exec(lc);
+  assert.ok(insMatch, "lab_tests insert block must exist");
+  assert.doesNotMatch(insMatch[1], /\b(normal_min|normal_max|reference_range|unit)\b/);
+  const updMatch = /\.from\("lab_tests"\)\s*\.update\(\{([\s\S]*?)\}\)/.exec(lc);
+  assert.ok(updMatch, "lab_tests update block must exist");
+  assert.doesNotMatch(updMatch[1], /\b(normal_min|normal_max|reference_range|unit)\b/);
+});

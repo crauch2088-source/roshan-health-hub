@@ -129,6 +129,7 @@ function AccountingPageInner() {
 }
 
 function Overview({ currency }: { currency: string }) {
+  const { t } = useLang();
   const payments = useRows<Row[]>(["finance-overview-payments"], () =>
     supabase
       .from("payments")
