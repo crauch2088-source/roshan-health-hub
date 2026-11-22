@@ -103,4 +103,17 @@ $function$;
 REVOKE ALL ON FUNCTION public.create_patient_atomic(text, text, date, text, text, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_patient_atomic(text, text, date, text, text, text) TO authenticated;
 
+-- 3. Stage C1 fix: allow prescribers (prescriptions.create) to SELECT active catalogue
+--    medicines so GP prescriptions link medicine_id for Phase 57/57B atomic dispensing.
+--    Write policies (INSERT/UPDATE/DELETE) remain strictly pharmacy.* only.
+DROP POLICY IF EXISTS medicines_select ON public.medicines;
+CREATE POLICY medicines_select
+  ON public.medicines
+  FOR SELECT
+  TO authenticated
+  USING (
+    (SELECT public.app_has_perm('pharmacy.read'::text))
+    OR (SELECT public.app_has_perm('prescriptions.create'::text))
+  );
+
 COMMIT;

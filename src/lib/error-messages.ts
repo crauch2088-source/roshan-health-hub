@@ -61,7 +61,9 @@ const ERROR_CATALOG: Array<{ match: RegExp; ar: string; en: string }> = [
 export function translateBackendError(rawMessage: string | null | undefined, lang: Lang): string {
   const text = String(rawMessage ?? "").trim();
   if (!text) {
-    return lang === "ar" ? "حدث خطأ غير متوقع. حاول مرة أخرى." : "An unexpected error occurred. Please try again.";
+    return lang === "ar"
+      ? "حدث خطأ غير متوقع. حاول مرة أخرى."
+      : "An unexpected error occurred. Please try again.";
   }
   for (const entry of ERROR_CATALOG) {
     if (entry.match.test(text)) {

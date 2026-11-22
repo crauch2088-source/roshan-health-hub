@@ -172,9 +172,17 @@ function Overview({ currency }: { currency: string }) {
     <>
       <ErrorBox error={payments.error ?? expenses.error ?? bills.error ?? cash.error} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("collected_revenue")} value={money(collected, currency)} tone="success" />
+        <StatCard
+          label={t("collected_revenue")}
+          value={money(collected, currency)}
+          tone="success"
+        />
         <StatCard label={t("expenses")} value={money(spent, currency)} tone="destructive" />
-        <StatCard label={t("cashbox_balance")} value={money(cashBalance, currency)} tone="primary" />
+        <StatCard
+          label={t("cashbox_balance")}
+          value={money(cashBalance, currency)}
+          tone="primary"
+        />
         <StatCard label={t("supplier_debt")} value={money(supplierDebt, currency)} tone="warning" />
       </div>
       <Card>

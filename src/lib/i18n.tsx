@@ -581,9 +581,18 @@ const dict: Record<string, { ar: string; en: string }> = {
   net_flow: { ar: "صافي التدفق", en: "Net flow" },
   payment_count: { ar: "عدد الدفعات", en: "Payment count" },
   cashbox_movements: { ar: "عدد حركات الخزنة", en: "Cashbox movements" },
-  duplicate_confirmed_title: { ar: "تم العثور على مريض مطابق مسجّل مسبقاً", en: "Matching patient already registered" },
-  duplicate_possible_title: { ar: "تنبيه: يوجد مريض مشابه (هاتف أو اسم مشترك)", en: "Possible duplicate patient (shared phone or name)" },
-  duplicate_override_label: { ar: "أؤكد أن هذا شخص مختلف فعلياً وأرغب بإنشاء ملف جديد", en: "I confirm this is a distinct person and want to create a new chart" },
+  duplicate_confirmed_title: {
+    ar: "تم العثور على مريض مطابق مسجّل مسبقاً",
+    en: "Matching patient already registered",
+  },
+  duplicate_possible_title: {
+    ar: "تنبيه: يوجد مريض مشابه (هاتف أو اسم مشترك)",
+    en: "Possible duplicate patient (shared phone or name)",
+  },
+  duplicate_override_label: {
+    ar: "أؤكد أن هذا شخص مختلف فعلياً وأرغب بإنشاء ملف جديد",
+    en: "I confirm this is a distinct person and want to create a new chart",
+  },
   open_existing_patient: { ar: "فتح الملف الحالي", en: "Open existing chart" },
   role_admin: { ar: "مدير النظام", en: "System Admin" },
   role_super_admin: { ar: "المدير العام", en: "Super Admin" },
@@ -597,7 +606,7 @@ const dict: Record<string, { ar: string; en: string }> = {
   role_pharmacist: { ar: "صيدلي", en: "Pharmacist" },
   role_receptionist: { ar: "موظف استقبال", en: "Receptionist" },
   role_staff: { ar: "موظف", en: "Staff" },
-
+  save_results: { ar: "حفظ النتائج", en: "Save results" },
 };
 
 type Ctx = {
@@ -664,7 +673,10 @@ export function localizeRoleLabel(
   fallbackName: string | null | undefined,
   lang: Lang,
 ): string {
-  const code = String(roleCode ?? "").trim().toLowerCase().replace(/^legacy_/, "");
+  const code = String(roleCode ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^legacy_/, "");
   if (code) {
     const key = `role_${code}`;
     if (dict[key]) return dict[key][lang];

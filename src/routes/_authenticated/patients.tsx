@@ -270,9 +270,13 @@ function PatientsPageInner() {
                     </p>
                     <ul className="mt-1.5 space-y-1">
                       {duplicateMatches.slice(0, 5).map((m) => (
-                        <li key={m.candidate.id} className="flex items-center justify-between gap-2">
+                        <li
+                          key={m.candidate.id}
+                          className="flex items-center justify-between gap-2"
+                        >
                           <span>
-                            {m.candidate.full_name} ({m.candidate.mrn || "—"} · {m.candidate.phone || "—"})
+                            {m.candidate.full_name} ({m.candidate.mrn || "—"} ·{" "}
+                            {m.candidate.phone || "—"})
                           </span>
                           <Link
                             to="/patients/$patientId"

@@ -18,7 +18,12 @@ test("P0 SQL migration restores branches_select RLS for authorized branch member
   assert.match(sql, /public\.app_has_perm\('admin\.full'::text\)/i);
   assert.match(sql, /private\.app_has_branch_access\(id\)/i);
   assert.doesNotMatch(sql, /DISABLE ROW LEVEL SECURITY/i);
-  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_patient_atomic[\s\S]*_address text DEFAULT NULL/i);
+  assert.match(
+    sql,
+    /CREATE OR REPLACE FUNCTION public\.create_patient_atomic[\s\S]*_address text DEFAULT NULL/i,
+  );
+  assert.match(sql, /CREATE POLICY medicines_select/i);
+  assert.match(sql, /prescriptions\.create/i);
 });
 
 test("P0 visits UI translates backend errors and renders inline ErrorBox for visit creation failures", () => {
@@ -29,15 +34,42 @@ test("P0 visits UI translates backend errors and renders inline ErrorBox for vis
 
 // --- P1: /expenses month-end date range ---
 test("P1 monthDateRange handles all 12 months, leap/non-leap February, 30-day months, and Dec->Jan rollover", () => {
-  assert.deepEqual(monthDateRange("2026-01"), { start: "2026-01-01", nextMonthStart: "2026-02-01" });
-  assert.deepEqual(monthDateRange("2026-02"), { start: "2026-02-01", nextMonthStart: "2026-03-01" });
-  assert.deepEqual(monthDateRange("2024-02"), { start: "2024-02-01", nextMonthStart: "2024-03-01" });
-  assert.deepEqual(monthDateRange("2028-02"), { start: "2028-02-01", nextMonthStart: "2028-03-01" });
-  assert.deepEqual(monthDateRange("2026-04"), { start: "2026-04-01", nextMonthStart: "2026-05-01" });
-  assert.deepEqual(monthDateRange("2026-06"), { start: "2026-06-01", nextMonthStart: "2026-07-01" });
-  assert.deepEqual(monthDateRange("2026-09"), { start: "2026-09-01", nextMonthStart: "2026-10-01" });
-  assert.deepEqual(monthDateRange("2026-11"), { start: "2026-11-01", nextMonthStart: "2026-12-01" });
-  assert.deepEqual(monthDateRange("2026-12"), { start: "2026-12-01", nextMonthStart: "2027-01-01" });
+  assert.deepEqual(monthDateRange("2026-01"), {
+    start: "2026-01-01",
+    nextMonthStart: "2026-02-01",
+  });
+  assert.deepEqual(monthDateRange("2026-02"), {
+    start: "2026-02-01",
+    nextMonthStart: "2026-03-01",
+  });
+  assert.deepEqual(monthDateRange("2024-02"), {
+    start: "2024-02-01",
+    nextMonthStart: "2024-03-01",
+  });
+  assert.deepEqual(monthDateRange("2028-02"), {
+    start: "2028-02-01",
+    nextMonthStart: "2028-03-01",
+  });
+  assert.deepEqual(monthDateRange("2026-04"), {
+    start: "2026-04-01",
+    nextMonthStart: "2026-05-01",
+  });
+  assert.deepEqual(monthDateRange("2026-06"), {
+    start: "2026-06-01",
+    nextMonthStart: "2026-07-01",
+  });
+  assert.deepEqual(monthDateRange("2026-09"), {
+    start: "2026-09-01",
+    nextMonthStart: "2026-10-01",
+  });
+  assert.deepEqual(monthDateRange("2026-11"), {
+    start: "2026-11-01",
+    nextMonthStart: "2026-12-01",
+  });
+  assert.deepEqual(monthDateRange("2026-12"), {
+    start: "2026-12-01",
+    nextMonthStart: "2027-01-01",
+  });
   assert.throws(() => monthDateRange("2026-13"));
 });
 
@@ -58,7 +90,13 @@ test("P1 phone and name normalization handles Sudan formats, Arabic-Indic digits
 
 test("P1 classifyPatientDuplicates distinguishes confirmed duplicates from shared family phones and namesakes", () => {
   const existing = [
-    { id: "p1", mrn: "RMC000001", full_name: "مريض تجريبي QA-20261121", phone: "0912345678", national_id: "NID-1" },
+    {
+      id: "p1",
+      mrn: "RMC000001",
+      full_name: "مريض تجريبي QA-20261121",
+      phone: "0912345678",
+      national_id: "NID-1",
+    },
   ];
 
   // Exact duplicate (name + normalized phone)
@@ -121,7 +159,7 @@ test("P2 translateBackendError maps raw backend codes to localized Arabic and En
 
 test("P2 inventory.tsx marks expiry_date as required and translates RPC errors", () => {
   const inv = read("src/routes/_authenticated/inventory.tsx");
-  assert.match(inv, /label=\{\`\$\{t\("expiry_date"\)\} \*\`\}/);
+  assert.match(inv, /label=\{`\$\{t\("expiry_date"\)\} \*`\}/);
   assert.match(inv, /translateBackendError\(error\.message,\s*lang\)/);
 });
 

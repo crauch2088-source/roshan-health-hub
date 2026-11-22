@@ -48,7 +48,10 @@ export function normalizePatientName(value: string | null | undefined): string {
 }
 
 export function normalizeNationalId(value: string | null | undefined): string {
-  return String(value ?? "").trim().replace(/\s+/g, "").toLowerCase();
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, "")
+    .toLowerCase();
 }
 
 export function classifyPatientDuplicates(
