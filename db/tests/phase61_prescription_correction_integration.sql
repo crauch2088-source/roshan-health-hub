@@ -77,14 +77,116 @@ BEGIN
 END;
 $phase61_catalog$;
 
+-- Seed pre-existing synthetic rows so the regression catches UPDATEs as well as INSERTs.
+-- These sentinels are isolated to this disposable PostgreSQL 17 fixture.
+INSERT INTO public.pharmacy_inventory (
+  id, medicine_id, batch_no, batch_number, expiry_date, manufacture_date,
+  quantity, quantity_received, quantity_remaining, purchase_price, selling_price,
+  branch_id, created_by, updated_by
+) VALUES (
+  '61900000-0000-0000-0000-000000000001',
+  '61600000-0000-0000-0000-000000000001',
+  'PHASE61-SENTINEL', 'PHASE61-SENTINEL', '2030-01-01', '2025-01-01',
+  100, 100, 100, 8.00, 12.50,
+  '61100000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.stock_movements (
+  id, medicine_id, batch_id, movement_type, quantity, reference_id,
+  reference_table, branch_id, created_by
+) VALUES (
+  '61900000-0000-0000-0000-000000000002',
+  '61600000-0000-0000-0000-000000000001',
+  '61900000-0000-0000-0000-000000000001',
+  'purchase', 100, '61900000-0000-0000-0000-000000000001',
+  'phase61_fixture', '61100000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.invoices (
+  id, invoice_number, patient_id, visit_id, total_amount, discount_amount,
+  paid_amount, payment_status, status, subtotal, net_amount, branch_id, created_by
+) VALUES (
+  '61900000-0000-0000-0000-000000000003',
+  'PHASE61-SENTINEL-INVOICE',
+  '61400000-0000-0000-0000-000000000001',
+  '61500000-0000-0000-0000-000000000001',
+  1.00, 0, 1.00, 'paid', 'open', 1.00, 1.00,
+  '61100000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.invoice_items (
+  id, invoice_id, item_type, item_name, quantity, unit_price, total_price, created_by
+) VALUES (
+  '61900000-0000-0000-0000-000000000004',
+  '61900000-0000-0000-0000-000000000003',
+  'test', 'Phase 61 immutable invoice sentinel', 1, 1.00, 1.00,
+  '61300000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.payments (
+  id, invoice_id, payment_method, amount, created_by, received_by, branch_id,
+  idempotency_key, method
+) VALUES (
+  '61900000-0000-0000-0000-000000000005',
+  '61900000-0000-0000-0000-000000000003',
+  'cash', 1.00,
+  '61300000-0000-0000-0000-000000000001',
+  '61300000-0000-0000-0000-000000000001',
+  '61100000-0000-0000-0000-000000000001',
+  'phase61-sentinel-payment', 'cash'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.cashbox_transactions (
+  id, branch_id, transaction_type, amount, payment_method, category,
+  description, created_by
+) VALUES (
+  '61900000-0000-0000-0000-000000000006',
+  '61100000-0000-0000-0000-000000000001',
+  'adjustment', 1.00, 'cash', 'phase61-fixture',
+  'Phase 61 immutable cashbox sentinel',
+  '61300000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Compare complete persisted row values, not just row counts. Full-row JSON snapshots
+-- detect inserts, deletes and updates to existing stock/financial records.
 CREATE TEMP TABLE phase61_side_effect_baseline AS
 SELECT
-  (SELECT count(*) FROM public.pharmacy_inventory) AS inventory_count,
-  (SELECT count(*) FROM public.stock_movements) AS stock_movement_count,
-  (SELECT count(*) FROM public.invoices) AS invoice_count,
-  (SELECT count(*) FROM public.invoice_items) AS invoice_item_count,
-  (SELECT count(*) FROM public.payments) AS payment_count,
-  (SELECT count(*) FROM public.cashbox_transactions) AS cashbox_count;
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.medicines AS t), '[]'::jsonb) AS medicines,
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.pharmacy_inventory AS t), '[]'::jsonb) AS pharmacy_inventory,
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.stock_movements AS t), '[]'::jsonb) AS stock_movements,
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.invoices AS t), '[]'::jsonb) AS invoices,
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.invoice_items AS t), '[]'::jsonb) AS invoice_items,
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.payments AS t), '[]'::jsonb) AS payments,
+  COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.cashbox_transactions AS t), '[]'::jsonb) AS cashbox_transactions;
+
+CREATE FUNCTION pg_temp.phase61_assert_no_side_effects()
+RETURNS void
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_before record;
+  v_after record;
+BEGIN
+  SELECT * INTO STRICT v_before FROM pg_temp.phase61_side_effect_baseline;
+  SELECT
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.medicines AS t), '[]'::jsonb),
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.pharmacy_inventory AS t), '[]'::jsonb),
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.stock_movements AS t), '[]'::jsonb),
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.invoices AS t), '[]'::jsonb),
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.invoice_items AS t), '[]'::jsonb),
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.payments AS t), '[]'::jsonb),
+    COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.cashbox_transactions AS t), '[]'::jsonb)
+  INTO v_after;
+  IF v_after IS DISTINCT FROM v_before THEN
+    RAISE EXCEPTION 'correction workflow changed inventory, stock movement or financial tables'
+      USING DETAIL = format('before=%s; after=%s', to_jsonb(v_before), to_jsonb(v_after));
+  END IF;
+END;
+$function$;
 
 -- Pharmacist A creates a request; retry returns the same pending request without a second event.
 SET ROLE authenticated;
@@ -115,6 +217,75 @@ BEGIN
   IF v_count <> 1 THEN RAISE EXCEPTION 'pharmacist with pharmacy.create can still author a prescription'; END IF;
 END;
 $phase61_request$;
+RESET ROLE;
+
+-- Replay and retain the independent Phase 57/57B dispensing gates.
+-- Phase 57: a linked catalogue item with NULL quantity must still block the entire dispense.
+UPDATE public.prescription_items
+SET quantity = NULL
+WHERE id = '61800000-0000-0000-0000-000000000012';
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61_phase57_quantity_guard$
+DECLARE
+  v_message text;
+  v_denied boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      '61700000-0000-0000-0000-000000000001', false
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    v_denied := v_message = 'prescription quantity is required';
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Phase 57 NULL-quantity fail-closed guard was bypassed by correction workflow';
+  END IF;
+END;
+$phase61_phase57_quantity_guard$;
+RESET ROLE;
+UPDATE public.prescription_items
+SET quantity = 10
+WHERE id = '61800000-0000-0000-0000-000000000012';
+
+-- Phase 57B: external prescriptions and any remaining active free-text item stay ineligible.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61_phase57b_external_and_free_text_guards$
+DECLARE
+  v_message text;
+  v_external_denied boolean := false;
+  v_free_text_denied boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      '61700000-0000-0000-0000-000000000002', false
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    v_external_denied := v_message = 'external_prescription_not_eligible_for_internal_dispense';
+  END;
+  IF NOT v_external_denied THEN
+    RAISE EXCEPTION 'Phase 57B external-prescription blocker was bypassed';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      '61700000-0000-0000-0000-000000000001', false
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    v_free_text_denied := position('free-text item' IN v_message) > 0;
+  END;
+  IF NOT v_free_text_denied THEN
+    RAISE EXCEPTION 'Phase 57B active free-text item blocker was bypassed after partial correction';
+  END IF;
+END;
+$phase61_phase57b_external_and_free_text_guards$;
+RESET ROLE;
+
+SELECT pg_temp.phase61_assert_no_side_effects();
 
 -- An unrelated same-branch doctor has the role-level permission but not this visit's authority.
 RESET ROLE;
@@ -311,6 +482,8 @@ BEGIN
 END;
 $phase61_replace_history$;
 
+SELECT pg_temp.phase61_assert_no_side_effects();
+
 -- Rejection changes request/event state only; original clinical item remains unchanged and pending.
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
@@ -351,6 +524,8 @@ BEGIN
   END IF;
 END;
 $phase61_reject_state$;
+
+SELECT pg_temp.phase61_assert_no_side_effects();
 
 -- Cancel-and-reissue is atomic, retains the old order, and does not bill or dispense.
 SET ROLE authenticated;
@@ -413,6 +588,8 @@ BEGIN
   END IF;
 END;
 $phase61_reissue_state$;
+
+SELECT pg_temp.phase61_assert_no_side_effects();
 
 -- Pharmacy inventory authority is not clinical prescription-authoring authority.
 SET ROLE authenticated;
@@ -706,24 +883,8 @@ END;
 $phase61_super_admin_no_clinical$;
 RESET ROLE;
 
--- Final: correction operations must not create stock, invoice, payment or cashbox side effects.
-DO $phase61_no_side_effects$
-DECLARE v_before record; v_after record;
-BEGIN
-  SELECT * INTO v_before FROM phase61_side_effect_baseline;
-  SELECT
-    (SELECT count(*) FROM public.pharmacy_inventory),
-    (SELECT count(*) FROM public.stock_movements),
-    (SELECT count(*) FROM public.invoices),
-    (SELECT count(*) FROM public.invoice_items),
-    (SELECT count(*) FROM public.payments),
-    (SELECT count(*) FROM public.cashbox_transactions)
-  INTO v_after;
-  IF v_after IS DISTINCT FROM v_before THEN
-    RAISE EXCEPTION 'correction workflow changed inventory, stock movement or financial tables';
-  END IF;
-END;
-$phase61_no_side_effects$;
+-- Final checkpoint also runs after the temporary unpriced-medicine price is restored.
+SELECT pg_temp.phase61_assert_no_side_effects();
 
 
 -- Dispensing is a pharmacist-only write operation even when Admin/Super Admin hold broad permissions.
