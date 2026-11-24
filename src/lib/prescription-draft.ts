@@ -1,3 +1,5 @@
+import { parseDispenseQuantity } from "./pharmacy-quantity.ts";
+
 export type PrescriptionDraft = {
   medicine_id: string;
   name: string;
@@ -17,7 +19,7 @@ export function createEmptyPrescriptionDraft(): PrescriptionDraft {
     dose: "",
     frequency: "",
     duration: "",
-    quantity: "1",
+    quantity: "",
     instructions: "",
     dosage_form: "",
     route: "",
@@ -49,15 +51,13 @@ export function createPrescriptionDraftForMedicine(medicine: {
     "sachet",
   ]);
   const dosageForm = supportedForms.has(rawForm) ? rawForm : "";
-  const oralForms = new Set(["tablet", "capsule", "syrup", "suspension"]);
-  const route = oralForms.has(dosageForm) ? "oral" : "";
 
   return {
     ...createEmptyPrescriptionDraft(),
     medicine_id: medicine.id,
     name: medicine.name?.trim() || medicine.generic_name?.trim() || "",
     dosage_form: dosageForm,
-    route,
+    route: "",
   };
 }
 
@@ -83,6 +83,7 @@ export function buildMedicineSearchFilter(term: string): string | null {
     "generic_name.ilike." + pattern,
     "brand_name.ilike." + pattern,
     "strength.ilike." + pattern,
+    "dosage_form.ilike." + pattern,
   ].join(",");
 }
 
@@ -92,6 +93,8 @@ export type PrescriptionValidationError =
   | "missing-dose"
   | "missing-frequency"
   | "missing-duration"
+  | "missing-dosage-form"
+  | "missing-route"
   | "invalid-quantity";
 
 /** Validates completeness only; deliberately does not recommend a dose or regimen. */
@@ -104,8 +107,9 @@ export function validatePrescriptionDrafts(
     if (!item.dose.trim()) return "missing-dose";
     if (!item.frequency.trim()) return "missing-frequency";
     if (!item.duration.trim()) return "missing-duration";
-    const quantity = Number(item.quantity);
-    if (!Number.isInteger(quantity) || quantity < 1) return "invalid-quantity";
+    if (!item.dosage_form.trim()) return "missing-dosage-form";
+    if (!item.route.trim()) return "missing-route";
+    if (parseDispenseQuantity(item.quantity) == null) return "invalid-quantity";
   }
   return null;
 }
