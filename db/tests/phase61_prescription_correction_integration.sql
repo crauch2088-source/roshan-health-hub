@@ -807,3 +807,730 @@ BEGIN
 END;
 $phase61b_pharmacist_can_reach_dispense$;
 RESET ROLE;
+
+
+-- The idempotent atomic RPC must reject non-pharmacists before payload validation or idempotency work.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000005',false);
+DO $phase61c_admin_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'admin fixture must retain broad pharmacy and billing permission bits';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff1'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Admin reached atomic pharmacy dispense without pharmacist role';
+  END IF;
+END;
+$phase61c_admin_atomic_dispense_denied$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000006',false);
+DO $phase61c_super_admin_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'Super Admin fixture must demonstrate global permission bypass';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff2'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Super Admin reached atomic pharmacy dispense without pharmacist role';
+  END IF;
+END;
+$phase61c_super_admin_atomic_dispense_denied$;
+RESET ROLE;
+
+
+-- The live legacy_pharmacist role has only pharmacy.edit/view and reports.view.
+-- A synthetic active fixture actor proves that a future assignment still cannot dispense.
+-- Verify the exact legacy permission matrix as the database owner; application RLS
+-- intentionally prevents direct role_permissions catalog reads by authenticated users.
+DO $phase61c_legacy_fixture_permission_matrix$
+DECLARE
+  v_permissions text[];
+BEGIN
+  SELECT array_agg(p.code ORDER BY p.code)
+    INTO v_permissions
+  FROM public.role_permissions rp
+  JOIN public.roles r ON r.id = rp.role_id
+  JOIN public.permissions p ON p.id = rp.permission_id
+  WHERE r.code = 'legacy_pharmacist';
+
+  IF v_permissions IS DISTINCT FROM ARRAY['pharmacy.edit','pharmacy.view','reports.view']::text[] THEN
+    RAISE EXCEPTION 'legacy pharmacist fixture must preserve only the live compatibility permissions: %', v_permissions;
+  END IF;
+END;
+$phase61c_legacy_fixture_permission_matrix$;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000008',false);
+DO $phase61c_legacy_pharmacist_atomic_dispense_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.edit')
+     OR NOT public.app_has_perm('pharmacy.view')
+     OR NOT public.app_has_perm('reports.view') THEN
+    RAISE EXCEPTION 'legacy pharmacist compatibility permissions are not visible to the synthetic fixture actor';
+  END IF;
+  IF public.app_has_perm('pharmacy.update') OR public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'legacy pharmacist unexpectedly received atomic dispensing permissions';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
+    RAISE EXCEPTION 'legacy pharmacist was treated as the canonical pharmacist role';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff7'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist reached atomic dispense despite the fail-closed canonical role boundary';
+  END IF;
+
+  -- Phase 61B retains a legacy role alias on the nested invoice-linked RPC, but the
+  -- live legacy permission matrix must still deny that path without pharmacy.update
+  -- and billing.create. The alias decision remains an independent-review item.
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      'ffffffff-ffff-ffff-ffff-fffffffffff8',false
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist reached invoice-linked dispensing with only the live compatibility permissions';
+  END IF;
+END;
+$phase61c_legacy_pharmacist_atomic_dispense_denied$;
+RESET ROLE;
+
+-- A legacy pharmacist must not regain the direct dispense path even if broad
+-- permission bits are accidentally reintroduced. The canonical role is decisive.
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+CROSS JOIN public.permissions p
+WHERE r.code = 'legacy_pharmacist'
+  AND p.code IN ('pharmacy.update', 'billing.create')
+ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000008',false);
+DO $phase61c_legacy_pharmacist_broad_permissions_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update')
+     OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'legacy pharmacist fixture must demonstrate both broad permission bits';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
+    RAISE EXCEPTION 'legacy pharmacist unexpectedly satisfies the canonical pharmacist role check';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(NULL::uuid,false);
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff9'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'legacy pharmacist bypassed canonical role boundary through atomic dispense RPC';
+  END IF;
+END;
+$phase61c_legacy_pharmacist_broad_permissions_denied$;
+RESET ROLE;
+
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'legacy_pharmacist'
+  AND p.code IN ('pharmacy.update', 'billing.create');
+
+-- A pharmacist role is not sufficient if either required permission bit is missing.
+-- These temporary permission removals run only in the disposable PostgreSQL 17 fixture.
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'pharmacist'
+  AND p.code = 'billing.create';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_missing_billing_permission_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update') OR public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'fixture must isolate the missing billing.create permission';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff5'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist reached atomic dispense without billing.create';
+  END IF;
+END;
+$phase61c_pharmacist_missing_billing_permission_denied$;
+RESET ROLE;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+JOIN public.permissions p ON p.code = 'billing.create'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
+DELETE FROM public.role_permissions rp
+USING public.roles r, public.permissions p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'pharmacist'
+  AND p.code = 'pharmacy.update';
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_missing_pharmacy_permission_denied$
+DECLARE v_denied boolean := false;
+BEGIN
+  IF public.app_has_perm('pharmacy.update') OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'fixture must isolate the missing pharmacy.update permission';
+  END IF;
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff6'
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'pharmacist reached atomic dispense without pharmacy.update';
+  END IF;
+END;
+$phase61c_pharmacist_missing_pharmacy_permission_denied$;
+RESET ROLE;
+
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+JOIN public.permissions p ON p.code = 'pharmacy.update'
+WHERE r.code = 'pharmacist'
+ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_reaches_atomic_validation$
+DECLARE v_invalid boolean := false;
+BEGIN
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid,false,'ffffffff-ffff-ffff-ffff-fffffffffff3'
+    );
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_invalid := true;
+  END;
+  IF NOT v_invalid THEN
+    RAISE EXCEPTION 'Pharmacist did not pass role gate to atomic dispense input validation';
+  END IF;
+END;
+$phase61c_pharmacist_reaches_atomic_validation$;
+RESET ROLE;
+
+DO $phase61c_atomic_dispense_acl$
+BEGIN
+  IF has_function_privilege('anon','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'unchecked atomic pharmacy dispense RPC is directly executable by an API role';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('anon','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticator','public.atomic_pharmacy_dispense(uuid,boolean,uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'public atomic pharmacy dispense wrapper grants are incorrect';
+  END IF;
+  IF NOT has_function_privilege('authenticated','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('anon','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('service_role','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('authenticator','public.fn_dispense_prescription_with_invoice(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('anon','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('authenticated','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('service_role','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE')
+     OR has_function_privilege('authenticator','private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)','EXECUTE') THEN
+    RAISE EXCEPTION 'invoice-linked dispense wrapper or unchecked implementation grants are incorrect';
+  END IF;
+END;
+$phase61c_atomic_dispense_acl$;
+
+-- SECURITY DEFINER boundaries must retain an empty search_path after the move/wrap.
+DO $phase61c_security_definer_hardening$
+DECLARE
+  v_wrapper record;
+  v_wrapper_source text;
+  v_unchecked record;
+  v_helper record;
+  v_nested_wrapper record;
+  v_nested_wrapper_source text;
+BEGIN
+  SELECT p.prosecdef, p.proconfig
+    INTO v_wrapper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.atomic_pharmacy_dispense(uuid,boolean,uuid)');
+  IF v_wrapper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_wrapper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'public atomic pharmacy dispense wrapper must be SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosrc INTO v_wrapper_source
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.atomic_pharmacy_dispense(uuid,boolean,uuid)');
+  IF v_wrapper_source IS NULL
+     OR position('legacy_pharmacist' IN v_wrapper_source) > 0
+     OR position('ARRAY[''pharmacist'']' IN v_wrapper_source) = 0 THEN
+    RAISE EXCEPTION 'atomic dispense wrapper must allow only the canonical pharmacist role; legacy roles must fail closed';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_unchecked
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('private.atomic_pharmacy_dispense_unchecked(uuid,boolean,uuid)');
+  IF v_unchecked.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_unchecked.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'private unchecked atomic pharmacy dispense must preserve SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_nested_wrapper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.fn_dispense_prescription_with_invoice(uuid,boolean)');
+  IF v_nested_wrapper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_nested_wrapper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'public invoice-linked dispense wrapper must be SECURITY DEFINER with empty search_path';
+  END IF;
+
+  SELECT p.prosrc INTO v_nested_wrapper_source
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('public.fn_dispense_prescription_with_invoice(uuid,boolean)');
+  IF v_nested_wrapper_source IS NULL
+     OR position('legacy_pharmacist' IN v_nested_wrapper_source) > 0
+     OR position('ARRAY[''pharmacist'']' IN v_nested_wrapper_source) = 0 THEN
+    RAISE EXCEPTION 'invoice-linked dispense wrapper must allow only the canonical pharmacist role';
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig
+    INTO v_helper
+    FROM pg_proc p
+   WHERE p.oid = to_regprocedure('private.app_has_role_permission(text[],text)');
+  IF v_helper.prosecdef IS DISTINCT FROM true
+     OR NOT (COALESCE(v_helper.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'Phase 61B role helper must be SECURITY DEFINER with empty search_path';
+  END IF;
+END;
+$phase61c_security_definer_hardening$;
+
+-- Rejected Admin/Super Admin calls must stop before the idempotency ledger is touched.
+DO $phase61c_rejected_admin_no_idempotency$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM private.pharmacy_dispense_idempotency
+    WHERE request_id IN (
+      'ffffffff-ffff-ffff-ffff-fffffffffff1'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff5'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff6'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff7'::uuid,
+      'ffffffff-ffff-ffff-ffff-fffffffffff9'::uuid
+    )
+  ) THEN
+    RAISE EXCEPTION 'a rejected non-pharmacist created an idempotency row';
+  END IF;
+END;
+$phase61c_rejected_admin_no_idempotency$;
+
+-- A canonical pharmacist must complete the active atomic wrapper, not merely reach validation.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_pharmacist_atomic_dispense_success$
+DECLARE
+  v_first jsonb;
+  v_retry jsonb;
+BEGIN
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_first
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000013',
+      false,
+      'ffffffff-ffff-ffff-ffff-fffffffffff4'
+    ) AS r;
+
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_retry
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000013',
+      false,
+      'ffffffff-ffff-ffff-ffff-fffffffffff4'
+    ) AS r;
+
+  IF v_first IS NULL OR pg_catalog.jsonb_array_length(v_first) <> 1 THEN
+    RAISE EXCEPTION 'canonical pharmacist could not complete one-item atomic dispense';
+  END IF;
+  IF v_first IS DISTINCT FROM v_retry THEN
+    RAISE EXCEPTION 'idempotent retry changed the successful atomic dispense result';
+  END IF;
+  IF COALESCE((v_first->0->>'quantity_dispensed')::numeric, -1) <> 2 THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned unexpected quantity: %',
+      v_first->0->>'quantity_dispensed';
+  END IF;
+  IF v_first->0->>'batch_number' IS DISTINCT FROM 'PHASE61C-VALID' THEN
+    RAISE EXCEPTION 'atomic dispense wrapper returned unexpected batch: %',
+      v_first->0->>'batch_number';
+  END IF;
+END;
+$phase61c_pharmacist_atomic_dispense_success$;
+RESET ROLE;
+
+DO $phase61c_pharmacist_atomic_dispense_effects$
+BEGIN
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 8 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not decrement the selected batch exactly once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000013'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not create exactly one stock movement';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+      WHERE item_type='pharmacy'
+        AND item_id='61600000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not create exactly one pharmacy invoice line';
+  END IF;
+  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
+      WHERE request_id='ffffffff-ffff-ffff-ffff-fffffffffff4'
+        AND result_payload IS NOT NULL) <> 1 THEN
+    RAISE EXCEPTION 'successful atomic dispense did not persist one idempotency result';
+  END IF;
+END;
+$phase61c_pharmacist_atomic_dispense_effects$;
+
+
+-- A finalized primary invoice requires the explicit separate-invoice path.
+DO $phase61c_finalize_primary_invoice$
+DECLARE
+  v_invoice_id uuid;
+BEGIN
+  SELECT id INTO v_invoice_id
+  FROM public.invoices
+  WHERE visit_id='61500000-0000-0000-0000-000000000001'
+    AND is_primary IS TRUE
+    AND deleted_at IS NULL;
+
+  IF v_invoice_id IS NULL THEN
+    RAISE EXCEPTION 'primary invoice from the first successful dispense was not found';
+  END IF;
+
+  UPDATE public.invoices
+  SET status='paid',
+      payment_status='paid',
+      paid_amount=net_amount
+  WHERE id=v_invoice_id;
+END;
+$phase61c_finalize_primary_invoice$;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_primary_finalized_requires_separate_choice$
+DECLARE
+  v_message text;
+BEGIN
+  BEGIN
+    PERFORM 1
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      false,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe1'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+  END;
+
+  IF v_message IS DISTINCT FROM 'invoice is finalized; choose a separate invoice' THEN
+    RAISE EXCEPTION 'finalized primary invoice did not require explicit separate invoice choice: %',
+      COALESCE(v_message,'no error');
+  END IF;
+END;
+$phase61c_primary_finalized_requires_separate_choice$;
+RESET ROLE;
+
+DO $phase61c_failed_primary_choice_has_no_side_effects$
+BEGIN
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 8 THEN
+    RAISE EXCEPTION 'rejected non-separate invoice choice changed stock';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.stock_movements
+    WHERE reference_id='61700000-0000-0000-0000-000000000014'
+      AND reference_table='prescriptions'
+      AND movement_type='dispense'
+  ) THEN
+    RAISE EXCEPTION 'rejected non-separate invoice choice created a stock movement';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM private.pharmacy_dispense_idempotency
+    WHERE request_id='ffffffff-ffff-ffff-ffff-ffffffffffe1'
+  ) THEN
+    RAISE EXCEPTION 'failed invoice append attempt persisted an idempotency row';
+  END IF;
+END;
+$phase61c_failed_primary_choice_has_no_side_effects$;
+
+-- Explicit separate_invoice=true creates a secondary invoice; same-choice replay
+-- is idempotent. Authenticated role tests the RPC only; owner-level assertions below
+-- inspect invoice rows because pharmacist RLS does not grant billing.read.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_separate_invoice_true_path$
+DECLARE
+  v_first jsonb;
+  v_retry jsonb;
+BEGIN
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_first
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      true,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe2'
+    ) AS r;
+
+  SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.item_id,r.batch_id)
+    INTO v_retry
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      true,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe2'
+    ) AS r;
+
+  IF v_first IS NULL OR pg_catalog.jsonb_array_length(v_first) <> 1 THEN
+    RAISE EXCEPTION 'explicit separate-invoice path did not complete one-item dispense';
+  END IF;
+  IF v_first IS DISTINCT FROM v_retry THEN
+    RAISE EXCEPTION 'same-choice separate-invoice retry changed the result';
+  END IF;
+  IF COALESCE((v_first->0->>'quantity_dispensed')::numeric,-1) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path returned an unexpected dispensed quantity';
+  END IF;
+END;
+$phase61c_separate_invoice_true_path$;
+RESET ROLE;
+
+-- Inspect persisted invoice/stock effects with the fixture owner, outside pharmacist RLS.
+DO $phase61c_separate_invoice_true_path_effects$
+DECLARE
+  v_invoice_id uuid;
+BEGIN
+  SELECT i.id INTO v_invoice_id
+  FROM public.invoices AS i
+  JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+  WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+    AND i.is_primary IS FALSE
+    AND i.deleted_at IS NULL
+    AND ii.item_type='pharmacy'
+    AND ii.item_id='61600000-0000-0000-0000-000000000001'
+    AND ii.deleted_at IS NULL
+  ORDER BY i.created_at DESC, i.id DESC
+  LIMIT 1;
+
+  IF v_invoice_id IS NULL OR (
+    SELECT count(DISTINCT i.id)
+    FROM public.invoices AS i
+    JOIN public.invoice_items AS ii ON ii.invoice_id = i.id
+    WHERE i.visit_id='61500000-0000-0000-0000-000000000001'
+      AND i.is_primary IS FALSE
+      AND i.deleted_at IS NULL
+      AND ii.item_type='pharmacy'
+      AND ii.item_id='61600000-0000-0000-0000-000000000001'
+      AND ii.deleted_at IS NULL
+  ) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not create exactly one secondary invoice for the dispensed medicine';
+  END IF;
+  IF (SELECT count(*) FROM public.invoices
+      WHERE visit_id='61500000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 2
+     OR (SELECT count(*) FROM public.invoices
+         WHERE visit_id='61500000-0000-0000-0000-000000000001'
+           AND is_primary IS TRUE AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not preserve one primary and create one secondary invoice';
+  END IF;
+  IF (SELECT count(*) FROM public.invoice_items
+      WHERE invoice_id=v_invoice_id
+        AND item_type='pharmacy'
+        AND item_id='61600000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 1 THEN
+    RAISE EXCEPTION 'secondary invoice is missing its pharmacy line';
+  END IF;
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 7 THEN
+    RAISE EXCEPTION 'separate-invoice replay altered stock more than once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000014'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice path did not create exactly one stock movement';
+  END IF;
+  IF (SELECT count(*) FROM private.pharmacy_dispense_idempotency
+      WHERE request_id='ffffffff-ffff-ffff-ffff-ffffffffffe2'
+        AND request_payload->>'separate_invoice'='true'
+        AND result_payload IS NOT NULL) <> 1 THEN
+    RAISE EXCEPTION 'separate-invoice idempotency result was not persisted exactly once';
+  END IF;
+END;
+$phase61c_separate_invoice_true_path_effects$;
+
+-- Reusing the request id with a changed invoice choice must be rejected without writes.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000001',false);
+DO $phase61c_changed_invoice_choice_replay$
+DECLARE
+  v_conflict_message text;
+BEGIN
+  BEGIN
+    PERFORM 1
+    FROM public.atomic_pharmacy_dispense(
+      '61700000-0000-0000-0000-000000000014',
+      false,
+      'ffffffff-ffff-ffff-ffff-ffffffffffe2'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_conflict_message = MESSAGE_TEXT;
+  END;
+  IF v_conflict_message IS DISTINCT FROM 'pharmacy_dispense_idempotency_conflict' THEN
+    RAISE EXCEPTION 'idempotent replay with a changed separate-invoice choice was not rejected: %',
+      COALESCE(v_conflict_message,'no error');
+  END IF;
+END;
+$phase61c_changed_invoice_choice_replay$;
+RESET ROLE;
+
+DO $phase61c_changed_choice_no_side_effects$
+BEGIN
+  IF (SELECT quantity_remaining FROM public.pharmacy_inventory
+      WHERE id='61900000-0000-0000-0000-000000000001') <> 7 THEN
+    RAISE EXCEPTION 'changed-choice replay altered stock more than once';
+  END IF;
+  IF (SELECT count(*) FROM public.stock_movements
+      WHERE reference_id='61700000-0000-0000-0000-000000000014'
+        AND reference_table='prescriptions'
+        AND movement_type='dispense') <> 1 THEN
+    RAISE EXCEPTION 'changed-choice replay created an extra stock movement';
+  END IF;
+  IF (SELECT count(*) FROM public.invoices
+      WHERE visit_id='61500000-0000-0000-0000-000000000001'
+        AND deleted_at IS NULL) <> 2 THEN
+    RAISE EXCEPTION 'changed-choice replay created an extra invoice';
+  END IF;
+END;
+$phase61c_changed_choice_no_side_effects$;
+
+
+
+-- A Doctor deliberately receives the two broad permission bits in this fixture.
+-- The canonical pharmacist role boundary must still reject both public entry points
+-- before payload validation or idempotency writes.
+INSERT INTO public.role_permissions(role_id, permission_id)
+SELECT r.id, p.id
+FROM public.roles r
+CROSS JOIN public.permissions p
+WHERE r.code = 'doctor'
+  AND p.code IN ('pharmacy.update', 'billing.create')
+ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','61200000-0000-0000-0000-000000000002',false);
+DO $phase61c_doctor_dispense_denied$
+DECLARE
+  v_denied boolean := false;
+  v_request_id uuid := 'ffffffff-ffff-ffff-ffff-ffffffffffe3';
+BEGIN
+  IF NOT public.app_has_perm('pharmacy.update')
+     OR NOT public.app_has_perm('billing.create') THEN
+    RAISE EXCEPTION 'Doctor fixture must demonstrate both broad permission bits';
+  END IF;
+  IF private.app_has_role_permission(ARRAY['pharmacist'], 'pharmacy.update') THEN
+    RAISE EXCEPTION 'Doctor unexpectedly satisfies canonical pharmacist role gate';
+  END IF;
+
+  BEGIN
+    PERFORM * FROM public.atomic_pharmacy_dispense(
+      NULL::uuid, false, v_request_id
+    );
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Doctor reached atomic pharmacy dispense despite broad permission bits';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    PERFORM * FROM public.fn_dispense_prescription_with_invoice(
+      NULL::uuid, false
+    );
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'Doctor reached invoice-linked dispense despite broad permission bits';
+  END IF;
+END;
+$phase61c_doctor_dispense_denied$;
+RESET ROLE;
+DO $phase61c_doctor_dispense_idempotency_absent$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM private.pharmacy_dispense_idempotency
+    WHERE request_id = 'ffffffff-ffff-ffff-ffff-ffffffffffe3'::uuid
+  ) THEN
+    RAISE EXCEPTION 'rejected Doctor request created an idempotency row';
+  END IF;
+END;
+$phase61c_doctor_dispense_idempotency_absent$;
+
