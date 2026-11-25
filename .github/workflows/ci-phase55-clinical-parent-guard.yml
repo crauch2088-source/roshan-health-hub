@@ -6,10 +6,12 @@ on:
     paths:
       - 'db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql'
       - 'db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql'
+      - 'db/roshan_phase55b_private_helper_acl_reconciliation.sql'
       - 'db/tests/phase36_behavioral_fixture.sql'
       - 'db/tests/phase36_behavioral_assertions.sql'
       - 'db/tests/phase55_legacy_state.sql'
       - 'db/tests/phase55_clinical_parent_guard_assertions.sql'
+      - 'tests/phase55b-insurance-rls-contract.test.mjs'
       - '.github/workflows/ci-phase55-clinical-parent-guard.yml'
 
 permissions:
@@ -40,5 +42,9 @@ jobs:
             -f db/roshan_phase36_audit_coverage_and_visit_lifecycle_guards.sql \
             -f db/tests/phase55_legacy_state.sql \
             -f db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql \
+            -f db/roshan_phase55b_private_helper_acl_reconciliation.sql \
             -f db/tests/phase36_behavioral_assertions.sql \
             -f db/tests/phase55_clinical_parent_guard_assertions.sql
+
+      - name: Run Phase 55B migration and policy source-contract tests
+        run: node --test tests/phase55b-insurance-rls-contract.test.mjs

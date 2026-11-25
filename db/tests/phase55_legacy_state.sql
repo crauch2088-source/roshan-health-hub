@@ -62,3 +62,51 @@ BEGIN
   RETURN NEW;
 END
 $function$;
+
+
+-- Synthetic insurance tables mirror the live policy names and permission gates.
+CREATE OR REPLACE FUNCTION public.app_has_perm(_permission text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+  SELECT COALESCE(
+    pg_catalog.string_to_array(COALESCE(current_setting('test.permissions', true), ''), ',')
+      @> ARRAY[_permission],
+    false
+  )
+$function$;
+GRANT EXECUTE ON FUNCTION public.app_has_perm(text) TO authenticated;
+
+CREATE TABLE public.insurance_claim_items (
+  id uuid PRIMARY KEY,
+  claim_id uuid NOT NULL
+);
+CREATE TABLE public.insurance_claim_payments (
+  id uuid PRIMARY KEY,
+  claim_id uuid NOT NULL
+);
+ALTER TABLE public.insurance_claim_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.insurance_claim_payments ENABLE ROW LEVEL SECURITY;
+INSERT INTO public.insurance_claim_items(id,claim_id)
+VALUES ('00000000-0000-0000-0000-000000009201','00000000-0000-0000-0000-000000009201');
+INSERT INTO public.insurance_claim_payments(id,claim_id)
+VALUES ('00000000-0000-0000-0000-000000009202','00000000-0000-0000-0000-000000009202');
+
+CREATE POLICY insurance_claim_items_sel ON public.insurance_claim_items
+  FOR SELECT TO authenticated
+  USING (app_has_perm('insurance.read') AND (SELECT private.app_has_claim_branch(claim_id)));
+CREATE POLICY insurance_claim_items_ins ON public.insurance_claim_items
+  FOR INSERT TO authenticated
+  WITH CHECK (app_has_perm('insurance.create') AND (SELECT private.app_has_claim_branch(claim_id)));
+CREATE POLICY insurance_claim_payments_sel ON public.insurance_claim_payments
+  FOR SELECT TO authenticated
+  USING (app_has_perm('insurance.read') AND (SELECT private.app_has_claim_branch(claim_id)));
+CREATE POLICY insurance_claim_payments_ins ON public.insurance_claim_payments
+  FOR INSERT TO authenticated
+  WITH CHECK (app_has_perm('insurance.create') AND (SELECT private.app_has_claim_branch(claim_id)));
+
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT SELECT, INSERT ON public.insurance_claim_items, public.insurance_claim_payments TO authenticated;
