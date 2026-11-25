@@ -8,7 +8,7 @@
 - `main`: `3bc317b0d6cc3eaa1b7623ce3c78477f848c8b1a` (unchanged by this review/cleanup).
 - Open pull requests after cleanup: **19**. Open issues: **4** (#199, #217, #218, #253).
 - 28 superseded PRs were closed without merging; no branches were deleted.
-- PR #299 is Draft/open at `cc3260e6018212ea9688ea9fc5e95c8dd4e7e0cf`, base `3bc317b0`. Latest exact-head workflow run `45703453595` was in progress at the last check; previous docs-only run `45702924048` passed. Vercel deployment is intentionally skipped for docs-only changes.
+- PR #299 remains Draft/open. Its exact head and latest CI state are live in GitHub; the initial documentation-only workflow passed, and the final cleanup commit has its own exact-head check. No Vercel deployment is expected for docs-only changes.
 - Mainline push CI run `44872060499` and finance write-isolation run `44872060315` completed successfully. Do not infer skipped conditional acceptance jobs passed.
 - Branch protection: Issue #253's latest direct evidence (2026-11-15) says protection was disabled. Current branch-protection API read returned 403; current protection state is **NOT VERIFIED**.
 
