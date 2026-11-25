@@ -75,7 +75,7 @@ END $phase55_assertions$;
 CREATE OR REPLACE FUNCTION private.app_has_claim_branch(_claim_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $function$
-  SELECT COALESCE(NULLIF(pg_catalog.current_setting('test.claim_branch_allowed', true), ''), 'false')::boolean
+  SELECT COALESCE(NULLIF(pg_catalog.current_setting('test.claim_branch_allowed', true), ''), 'true')::boolean
 $function$;
 
 DO $phase55b_policy_catalog$

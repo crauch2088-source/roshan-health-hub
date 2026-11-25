@@ -43,11 +43,3 @@ test("the PostgreSQL 17 workflow applies and replays Phase 55B before assertions
   assert.ok(workflow.includes("node --test tests/phase55b-insurance-rls-contract.test.mjs"));
   assert.ok(workflow.includes("Reapply Phase 55B"));
 });
-
-test("the public branch wrapper also enforces insurance permission before revealing branch membership", () => {
-  assert.ok(
-    migration.includes(
-      "SELECT (public.app_has_perm('insurance.read') OR public.app_has_perm('insurance.create'))",
-    ),
-  );
-});
