@@ -1,7 +1,5 @@
-# Roadmap
+# Roadmap moved
 
-- [ ] Complete final UI/UX freeze across shell, navigation, patients, patient workspace, dashboard, shared tables/forms/dialogs, command palette, mobile, RTL, and accessibility.
-- [ ] Replace the disabled hardcoded legacy key with `VITE_SUPABASE_PUBLISHABLE_KEY`; add `.env.example` variable name only.
-- [ ] Audit navigation, patient search reuse, i18n keys, responsive overflow, and modified imports.
-- [ ] Run typecheck, production build, lint, browser checks, and inspect current preview diagnostics.
-- [ ] Report exact files, validation, Git/Vercel linkage evidence, and platform-managed commit limitations.
+The old UI-freeze checklist is preserved at `docs/archive/legacy-roadmap-2026-11-25.md`.
+
+The current project roadmap is [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md). Current evidence is [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).

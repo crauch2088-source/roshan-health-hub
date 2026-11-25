@@ -498,3 +498,58 @@ For this roadmap:
 - Production/QA data, migrations, grants, policies, secrets, Vercel settings and deployments: **not changed**.
 - PRs merged or issues closed: **none**.
 - Next action after owner review: revise this document against the owner's comments, then execute Phase 0/Phase 1 on isolated feature branches under the existing AGENTS.md rules. Do not apply Production changes without a separate explicit authorization.
+
+---
+
+# Second review and repository cleanup — 2026-11-25
+
+## Fresh repository and deployment reconciliation
+
+- Current main: `3bc317b0d6cc3eaa1b7623ce3c78477f848c8b1a`; 47 open PRs and four open issues (#199, #217, #218, #253).
+- The previous root README was 63,288 bytes / 432 lines and was dominated by dated 2026-10 status entries. The previous docs/MASTER_PLAN was 562,393 bytes / 3,167 lines / 362 headings and mixed execution policy, an older plan and append-only logs.
+- The Vercel production alias still points to READY deployment source `a9040601702972bdf144fc96b9658eebd5a6d31a`. GitHub compare shows current main is 15 commits ahead, zero behind, and every intervening changed path is docs/specs only. There is no evidence of application-code drift in that interval; do not force a deployment for documentation changes.
+- Mainline push CI run `44872060499` and finance write-isolation run `44872060315` completed successfully. PR #299's initial documentation-only run `45420778569` completed successfully.
+- Main branch protection remains unverified: Issue #253's latest recorded direct evidence (2026-11-15) said protection was disabled; the current API integration request returned 403, so this review does not claim the setting is still disabled or enabled.
+
+## Fresh Supabase catalog and function-body checks
+
+- Production: 56/56 public tables have RLS; 44/56 have FORCE RLS; 129 migration rows, latest `20261102232941`.
+- QA: 58/58 public tables have RLS; 46/58 have FORCE RLS; 30 migration rows, latest `20261122152027`.
+- Across public and private schemas, 94 Production and 107 QA functions are SECURITY DEFINER. All currently have fixed empty search_path configuration. 54 Production and 58 QA functions are executable by authenticated; three Production and one QA functions are executable by anon. These are catalog counts, not vulnerability counts.
+- Confirmed in function bodies: Production and QA `atomic_pharmacy_dispense` enforce permission bits but do not independently enforce the canonical pharmacist role. Production `fn_dispense_prescription_with_invoice` also checks only the broad permission bits; QA's wrapper has a role check for pharmacist/legacy_pharmacist. This is a concrete cross-environment authorization gap, not merely a Security Advisor warning.
+- Confirmed ACL divergence: Production `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` have NULL ACLs (PUBLIC default); QA has owner-only ACLs. Track under Issue #218 / PR #260 and reconcile callers before applying a forward-only fix.
+- `public.setup_required()` is intentionally callable by anon and currently returns a boolean via the private helper. Keep this endpoint minimal and test that it reveals no additional state.
+- Supabase Advisor also reports pg_trgm in public, private tables with RLS/no policies, and leaked-password protection warnings. Do not apply blanket fixes: inspect schema exposure, function-by-function grants, extension dependencies and plan availability.
+
+## QA, backup and release state
+
+- PR #296 remains unmerged and QA-only. QA migration history contains the 2026-11-21 operational-blocker migration and the 2026-11-22 SECURITY DEFINER search_path hardening migration. Production migration history remains unchanged.
+- PR #250 is still open/Draft at `832a8d38fba10409a44cd9eac7a4e34760aceaac`. Twelve configured workflows on that exact head succeeded, but its only submitted reviews are owner-authored COMMENTED notes; independent second-person review and authenticated QA pharmacist acceptance remain absent. It has not been applied to QA or Production.
+- PR #297 provides strong evidence for encrypted database backup, independent PostgreSQL 17 restore, checksum validation, off-site copy/read-back and structural parity. Overall DR remains OPEN for accepted cadence/RPO/RTO/retention, timed control-plane recovery, Storage object-byte recovery before first real attachment, Vault/secrets recovery and independent acceptance.
+
+## Corrections to stale records
+
+- PR #295 is not a reliable consolidated status source. It is based on older main `79d81f08`; its narrative includes claims that PRs #250 and #210 were merged, while live GitHub still shows both open. Do not merge that plan wholesale. Preserve its clinical guideline policy as a separate document and reconcile the remaining unique findings.
+- Older status documents reported differing completion percentages. They used different denominators and are not comparable; no unified percentage is certified by this review.
+- The prior Vercel SHA comparison was an apparent source-version difference, not proven application drift. The 15-commit compare confirms documentation/spec-only changes.
+
+## Research-driven architecture decisions
+
+- Retain the modular monolith; do not replace the stack or introduce microservices.
+- Use WHO SMART/DAK structure for versioned clinical content and local validation; do not activate protocols without clinician approval.
+- Keep FHIR as a semantic mapping/interoperability boundary, not a wholesale database rewrite.
+- Use OWASP ASVS 5.0 as a risk-based security verification catalogue, not a certification claim.
+- Treat database, Storage, Vault and control-plane recovery as distinct DR scopes.
+
+## Cleanup performed in this documentation PR
+
+- Replaced the history-heavy root README with a concise project landing page; preserved the old README under docs/archive.
+- Replaced the append-only master plan with one concise strategic roadmap; preserved the full original file under docs/archive/MASTER_PLAN_HISTORY.md.
+- Added a single documentation index, dated project-state snapshot, task registry and verification matrix.
+- Moved early Phase 8–18 root reports into docs/archive/root-reports and left compatibility pointers at their former paths.
+- Archived the obsolete root roadmap, old execution ledger and 2026-10-18 deep-research report; added pointers to the current authoritative documents.
+- Added architecture decisions and the preserved clinical guideline policy source.
+
+## Scope and safety
+
+All work in this re-review and cleanup is repository documentation and Git metadata only. No application source, SQL migration, Supabase data/ACL/RLS, Vercel configuration, deployment, production record, QA record or secret was changed. No PR was merged and no issue was closed.
