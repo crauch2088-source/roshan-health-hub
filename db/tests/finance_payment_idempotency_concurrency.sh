@@ -80,11 +80,41 @@ if [[ -z "$a_id" || "$a_id" != "$b_id" ]]; then
   exit 1
 fi
 
-count="$(psql -h localhost -U postgres -d postgres -X -qAt -c \
-  "SELECT count(*) FROM public.payments WHERE idempotency_key='concurrent-key'")"
-if [[ "$count" != "1" ]]; then
-  echo "Expected one payment row for concurrent-key, found $count"
+replay_out="$(psql -h localhost -U postgres -d postgres -X -qAt -v ON_ERROR_STOP=1 \
+  -c "SET test.user_id='10000000-0000-0000-0000-000000000001';
+      SET test.permissions='accounting.create';
+      SET test.super_admin='false';
+      SET ROLE authenticated;
+      SELECT public.post_invoice_payment(
+        '40000000-0000-0000-0000-000000000001', 5, 'cash', 'race', 'concurrent-key'
+      );")"
+replay_id="$(grep -Eo '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' <<<"$replay_out" | tail -n 1)"
+if [[ "$replay_id" != "$a_id" ]]; then
+  echo "A post-commit retry must return the original payment ID: original=$a_id retry=$replay_id"
   exit 1
 fi
 
-echo "PASS: concurrent identical invoice-payment requests returned the same ID ($a_id) and created one row."
+set +e
+psql -h localhost -U postgres -d postgres -X -qAt -v ON_ERROR_STOP=1 \
+  -c "SET test.user_id='10000000-0000-0000-0000-000000000001';
+      SET test.permissions='accounting.create';
+      SET test.super_admin='false';
+      SET ROLE authenticated;
+      SELECT public.post_invoice_payment(
+        '40000000-0000-0000-0000-000000000001', 6, 'cash', 'race', 'concurrent-key'
+      );" >/dev/null 2>&1
+mismatch_status=$?
+set -e
+if [[ "$mismatch_status" -eq 0 ]]; then
+  echo "Reusing the same idempotency key with a different amount must be rejected"
+  exit 1
+fi
+
+count="$(psql -h localhost -U postgres -d postgres -X -qAt -c \
+  "SELECT count(*) FROM public.payments WHERE idempotency_key='concurrent-key'")"
+if [[ "$count" != "1" ]]; then
+  echo "Expected exactly one payment row after retry and mismatch checks, found $count"
+  exit 1
+fi
+
+echo "PASS: concurrent requests and a simulated post-commit retry returned the same ID ($a_id); changed payload was rejected; one payment row exists."

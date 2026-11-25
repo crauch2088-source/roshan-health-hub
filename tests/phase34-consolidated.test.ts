@@ -161,7 +161,7 @@ test("Phase 36 lab and certificate screens preserve private Storage upload and p
 
 test("certificate Storage uploader derives branch from its same-patient visit and patient", () => {
   const certificates = read("../src/routes/_authenticated/certificates.tsx");
-  assert.ok(certificates.includes("patients(full_name,mrn,phone,branch_id)"));
+  assert.ok(certificates.includes("patients(full_name,mrn,phone,branch_id,deleted_at)"));
   assert.ok(
     certificates.includes("visits!medical_certificates_visit_id_fkey(branch_id,patient_id)"),
   );
