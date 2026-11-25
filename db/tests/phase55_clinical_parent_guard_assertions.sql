@@ -197,6 +197,7 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN v_denied := true;
   END;
   IF NOT v_denied THEN RAISE EXCEPTION 'insurance items INSERT bypassed branch check'; END IF;
+  PERFORM set_config('test.claim_branch_allowed','true',true);
 END
 $phase55b_authenticated_rls$;
 RESET ROLE;
