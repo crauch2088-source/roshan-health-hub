@@ -90,9 +90,9 @@ BEGIN
        (tablename='insurance_claim_payments' AND policyname IN ('insurance_claim_payments_sel','insurance_claim_payments_ins'))
      )
      AND (
-       (cmd='SELECT' AND qual LIKE '%insurance.read%' AND qual LIKE '%public.app_has_claim_branch%')
+       (cmd='SELECT' AND qual LIKE '%insurance.read%' AND qual LIKE '%app_has_claim_branch%')
        OR
-       (cmd='INSERT' AND with_check LIKE '%insurance.create%' AND with_check LIKE '%public.app_has_claim_branch%')
+       (cmd='INSERT' AND with_check LIKE '%insurance.create%' AND with_check LIKE '%app_has_claim_branch%')
      );
   IF v_count <> 4 THEN
     RAISE EXCEPTION 'Phase55B must replace the four live insurance policies and preserve permission checks; found %',v_count;
@@ -136,6 +136,14 @@ SELECT set_config('test.claim_branch_allowed','true',true);
 DO $phase55b_authenticated_rls$
 DECLARE v_count bigint; v_denied boolean;
 BEGIN
+  PERFORM set_config('test.permissions','',true);
+  IF public.app_has_claim_branch('00000000-0000-0000-0000-000000009201') IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'public branch wrapper disclosed branch membership without insurance permission';
+  END IF;
+  PERFORM set_config('test.permissions','insurance.read',true);
+  IF public.app_has_claim_branch('00000000-0000-0000-0000-000000009201') IS DISTINCT FROM true THEN
+    RAISE EXCEPTION 'public branch wrapper denied an authorized in-branch reader';
+  END IF;
   SELECT count(*) INTO v_count FROM public.insurance_claim_items;
   IF v_count <> 1 THEN RAISE EXCEPTION 'insurance items SELECT must pass with insurance.read and branch access'; END IF;
   SELECT count(*) INTO v_count FROM public.insurance_claim_payments;
