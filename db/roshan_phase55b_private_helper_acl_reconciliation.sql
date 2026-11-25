@@ -16,7 +16,8 @@ STABLE
 SECURITY DEFINER
 SET search_path TO ''
 AS $function$
-  SELECT private.app_has_claim_branch(_claim_id)
+  SELECT (public.app_has_perm('insurance.read') OR public.app_has_perm('insurance.create'))
+     AND private.app_has_claim_branch(_claim_id)
 $function$;
 
 REVOKE ALL ON FUNCTION public.app_has_claim_branch(uuid)
