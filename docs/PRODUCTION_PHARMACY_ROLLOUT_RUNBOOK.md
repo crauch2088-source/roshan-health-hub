@@ -1,6 +1,5 @@
 # Production pharmacy and clinical-correction migration runbook
 
-<text>
 
 **Status:** preparation only. Production has not been changed. This document is not authorization to execute the rollout.
 
