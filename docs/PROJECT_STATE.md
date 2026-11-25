@@ -130,3 +130,36 @@ Production latest migration: `roshan_synthetic_patient_cleanup_and_stock_ledger_
 - No clinical/staff acceptance or physical-printer acceptance was performed.
 - Branch protection is not verified due API permission denial.
 - SECURITY DEFINER counts are catalog inventory only.
+
+
+## Live execution addendum — 2026-11-25/26
+
+This addendum supersedes the earlier snapshot sections above where live repository or hosted-environment state has changed.
+
+### Repository and deployment
+- Current `main`: `50c24eabc840c4171f12617a139b57b1ba3375b0`; PR #250 is merged.
+- PR #299 documentation cleanup is merged; PR #260 is closed as superseded by corrected PR #300.
+- PR #300 current head: `6b5fadf479c2e75090a27ba99228e13e8e5fb8b6`. Its seven exact-head workflows passed: general CI, Phase 55 PostgreSQL 17, insurance UI validation, insurance claim integrity, privileged-role guard, prescription atomicity, and PR CodeQL.
+- Latest Vercel Production deployment is READY from `50c24ea`. This deployment includes the frontend pharmacist-only dispense visibility guard; it does not substitute for the missing Production database migration.
+
+### Current Supabase ledger
+| Environment | Migration rows | Latest version | Latest migration |
+|---|---:|---|---|
+| QA | 32 | `20261125225912` | `roshan_phase55b_private_helper_acl_reconciliation` |
+| Production | 129 | `20261102232941` | `roshan_synthetic_patient_cleanup_and_stock_ledger_reversal` |
+
+QA contains Phase 57, 57B, 61, 61B, 61C and the new Phase 55B. Production still has none of Phase 55, 57, 57B, 61, 61B, 61C or 55B. These ledgers are materially different and must not be reconciled by copying ledger rows or blindly replaying migrations.
+
+### QA Phase 55B read-back
+- QA migration `20261125225912` applied the exact Phase 55B SQL from PR #300; this was a DDL/policy/ACL change only.
+- `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()` are owner-only; anon, authenticated, service_role and authenticator have no direct EXECUTE.
+- `public.app_has_claim_branch(uuid)` is SECURITY DEFINER with an empty fixed search_path and an authenticated-only EXECUTE grant. It checks insurance.read or insurance.create before the branch helper.
+- The four live policies retain their actual names: `insurance_claim_items_sel`, `insurance_claim_items_ins`, `insurance_claim_payments_sel`, and `insurance_claim_payments_ins`. Their original insurance permission gates and branch checks remain present.
+- PostgreSQL 17 tests cover positive/negative SELECT and INSERT, permission denials, branch denials, ACLs, trigger continuity and migration idempotence.
+
+### Remaining Production/release gates
+- Production still runs the old dispensing RPC definitions and has not received Phase 57 → 57B → current Phase 61 → 61B → 61C. Do not apply Phase 61C alone.
+- PR #250's application code is merged and deployed, but no independent second-person SQL/security review or authenticated pharmacist acceptance is recorded. The UI guard is not a backend security boundary.
+- PR #300's corrected Phase 55B is applied to QA but remains open pending independent SQL/security review before merge/Production rollout.
+- No Production DDL/DML, ACL, migration-ledger, configuration or data changes were made in this execution round.
+- No real patient data or Production synthetic transactions were used.

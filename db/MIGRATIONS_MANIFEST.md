@@ -341,3 +341,14 @@ Owner authorization for implementation, merge and environment work was given on 
 - Production has none of those Phase 57/57B/61/61B rows. Phase 61C is not applied in either hosted environment.
 - The Phase 57 source matches the QA stored payload exactly (10,954 bytes, MD5 `921970d4d86b32dccd430a0ea0ef8745`). Phase 57B's stored function-DDL payload matches the tracked migration after excluding the header comments and transaction wrapper (11,525 bytes, MD5 `bfd2df24224752a1488f2f05494f4211`). Phase 61B source matches its QA-applied payload (8,844 bytes, MD5 `9f5095e70fa9cc6ed7e7fe83f7766312`).
 - No Production DDL/DML or migration-ledger change was performed in this review.
+
+
+## Phase 55B — private-helper ACL and insurance RLS reconciliation (2026-11-25)
+
+- Source: `db/roshan_phase55b_private_helper_acl_reconciliation.sql`; corrected implementation in PR #300.
+- QA applied version: `20261125225912 / roshan_phase55b_private_helper_acl_reconciliation`.
+- The forward migration revokes application-role EXECUTE on `private.app_has_claim_branch(uuid)` and `private.sync_user_role_text()`, then installs an authenticated-only SECURITY DEFINER branch wrapper with an empty fixed search_path.
+- It rebinds the actual live policies `insurance_claim_items_sel`, `insurance_claim_items_ins`, `insurance_claim_payments_sel`, and `insurance_claim_payments_ins`; the `insurance.read` and `insurance.create` predicates are preserved. The wrapper also checks at least one of those permissions before returning branch membership.
+- Exact-head PostgreSQL 17 validation proves authenticated positive/negative SELECT and INSERT behavior, branch denials, direct-helper ACL denial, trigger continuity and migration idempotence. General CI, lint, typecheck, build, focused insurance UI and related integration workflows pass on PR #300 head `6b5fadf479c2e75090a27ba99228e13e8e5fb8b6`.
+- Production: **not applied**. Production still has NULL ACLs for the two private helpers and its original insurance policies. Apply only after independent SQL/security review and the wider Production migration/backup gates.
+- No migration-ledger rows were manually inserted or edited.
