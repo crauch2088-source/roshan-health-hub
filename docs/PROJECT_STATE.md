@@ -130,3 +130,9 @@ Production latest migration: `roshan_synthetic_patient_cleanup_and_stock_ledger_
 - No clinical/staff acceptance or physical-printer acceptance was performed.
 - Branch protection is not verified due API permission denial.
 - SECURITY DEFINER counts are catalog inventory only.
+
+## Migration provenance correction — 2026-11-25
+
+- Restored `db/roshan_phase61_prescription_item_correction_workflow.sql` to the exact normalized SQL recorded in QA migration version `20261111223309`. The previous main source had drifted by adding a duplicate `private.app_has_role_permission` helper and moving Phase 61B role-boundary logic into Phase 61.
+- Added `db/qa-applied-migration-source-parity.json` and a `test:guard` regression test covering QA-applied Phases 57, 57B, 61, 61B and 61C.
+- Production remains without Phases 57, 57B, 61, 61B and 61C; this source correction does not apply any database migration.

@@ -52,7 +52,9 @@ test("Phase 61 RPCs enforce lock order, snapshot validation and explicit actions
   assert.match(migration, /reject/);
   assert.match(migration, /create_prescription_atomic/);
   assert.match(migration, /app_can_resolve_prescription_item_correction/);
-  assert.match(migration, /app_has_role_permission/);
+  assert.match(migration, /public\.app_has_perm\('pharmacy\.correction\.request'\)/);
+  assert.match(migration, /public\.app_has_perm\('prescriptions\.correction\.resolve'\)/);
+  assert.doesNotMatch(migration, /private\.app_has_role_permission/);
   assert.match(migration, /catalog_medicine_price_invalid/);
   const resolver = migration.slice(
     migration.indexOf("CREATE OR REPLACE FUNCTION public.resolve_prescription_item_correction"),
@@ -103,7 +105,7 @@ test("Phase 61 denies unassigned and wrong-branch doctors", () => {
 
 test("Phase 61 keeps clinical prescription authoring out of pharmacy.create", () => {
   assert.match(migration, /p_is_external IS NULL/);
-  assert.match(migration, /private\.app_has_role_permission/);
+  assert.match(migration, /public\.app_has_perm\('prescriptions\.create'\)/);
   assert.doesNotMatch(
     migration,
     /public\.app_has_perm\('pharmacy\.create'\) OR public\.app_has_perm\('emr\.create'\)/,

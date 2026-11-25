@@ -341,3 +341,10 @@ Owner authorization for implementation, merge and environment work was given on 
 - Production has none of those Phase 57/57B/61/61B rows. Phase 61C is not applied in either hosted environment.
 - The Phase 57 source matches the QA stored payload exactly (10,954 bytes, MD5 `921970d4d86b32dccd430a0ea0ef8745`). Phase 57B's stored function-DDL payload matches the tracked migration after excluding the header comments and transaction wrapper (11,525 bytes, MD5 `bfd2df24224752a1488f2f05494f4211`). Phase 61B source matches its QA-applied payload (8,844 bytes, MD5 `9f5095e70fa9cc6ed7e7fe83f7766312`).
 - No Production DDL/DML or migration-ledger change was performed in this review.
+
+
+## QA-applied pharmacy source parity — 2026-11-25
+
+The file `db/qa-applied-migration-source-parity.json` records normalized SHA-256 hashes read from the QA `supabase_migrations.schema_migrations.statements` ledger for Phases 57, 57B, 61, 61B and 61C. The accompanying test checks repository source against those exact QA-applied hashes. This is a QA source-provenance check, not proof that Production has those migrations.
+
+Phase 61 source was restored to the SQL actually applied in QA. The extra `private.app_has_role_permission` definition and role-based correction policy edits had been introduced into the Phase 61 source after QA application; that helper and role boundary belong to the subsequent Phase 61B migration. Phase 61B remains the single owner of that role-boundary implementation.
