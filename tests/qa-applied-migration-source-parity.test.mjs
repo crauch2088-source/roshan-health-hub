@@ -19,7 +19,7 @@ function normalize(sql) {
 
 test("QA-applied pharmacy migration sources match the recorded SQL hashes", () => {
   assert.equal(manifest.environment, "QA");
-  assert.equal(manifest.entries.length, 5);
+  assert.equal(manifest.entries.length, 6);
 
   for (const entry of manifest.entries) {
     const source = readFileSync(new URL(`../${entry.source_path}`, import.meta.url), "utf8");

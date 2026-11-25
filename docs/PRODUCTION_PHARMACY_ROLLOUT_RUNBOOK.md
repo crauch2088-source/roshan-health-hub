@@ -64,7 +64,7 @@ On failure, preserve logs and migration evidence. Do not continue to the next mi
 
 ## Current environment state
 
-- QA: Phase 55, 57, 57B, 61, 61B and 61C applied; Phase 55B applied as `20261125225912`. Source parity is checked for Phases 57, 57B, 61, 61B and 61C.
+- QA: Phase 55, 57, 57B, 61, 61B and 61C applied; Phase 55B applied as `20261125225912`. Source parity is checked for Phases 55, 57, 57B, 61, 61B and 61C.
 - Production: none of the seven migrations above applied; no Production DDL/DML was performed in this review round.
 - PR #300: corrected Phase 55B; exact-head CI and PostgreSQL 17 tests passed; independent review pending.
 - PR #301: restores Phase 61 source to QA-applied SQL and adds source-hash regression coverage; exact-head CI and Phase 61 PostgreSQL 17 workflow passed; independent review pending.

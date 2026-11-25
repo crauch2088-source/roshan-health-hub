@@ -7,6 +7,14 @@
   "note": "These hashes verify repository source against the QA-applied migration SQL only. They do not assert Production application.",
   "entries": [
     {
+      "version": "20261103155227",
+      "name": "roshan_phase55_clinical_parent_guard_acl_reconciliation",
+      "source_path": "db/roshan_phase55_clinical_parent_guard_acl_reconciliation.sql",
+      "normalized_sha256": "8fe4ab7d82dae0e601e227f7cec7c5f07cc4568afd28ab7990e9e172b10b2dc9",
+      "qa_applied": true,
+      "production_applied": false
+    },
+    {
       "version": "20261104065852",
       "name": "roshan_phase57_pharmacy_quantity_required_guard",
       "source_path": "db/roshan_phase57_pharmacy_quantity_required_guard.sql",
