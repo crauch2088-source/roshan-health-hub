@@ -34,35 +34,6 @@ WHERE r.code = 'doctor'
 ON CONFLICT DO NOTHING;
 
 
-CREATE OR REPLACE FUNCTION private.app_has_role_permission(
-  _allowed_role_codes text[],
-  _permission_code text
-)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO ''
-AS $function$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.users AS u
-    JOIN public.roles AS r ON r.id = u.role_id
-    JOIN public.role_permissions AS rp ON rp.role_id = r.id
-    JOIN public.permissions AS p ON p.id = rp.permission_id
-    WHERE u.id = private.current_app_user_id()
-      AND COALESCE(u.active, true) IS TRUE
-      AND u.deleted_at IS NULL
-      AND r.code = ANY(COALESCE(_allowed_role_codes, ARRAY[]::text[]))
-      AND p.code = _permission_code
-  )
-$function$;
-
-REVOKE ALL ON FUNCTION private.app_has_role_permission(text[], text)
-  FROM PUBLIC, anon, service_role;
-GRANT EXECUTE ON FUNCTION private.app_has_role_permission(text[], text)
-  TO authenticated;
-
 CREATE TABLE IF NOT EXISTS public.prescription_item_correction_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   prescription_id uuid NOT NULL REFERENCES public.prescriptions(id) ON DELETE RESTRICT,
@@ -182,11 +153,11 @@ FOR SELECT TO authenticated
 USING (
   (SELECT public.is_super_admin())
   OR (
-    (SELECT private.app_has_role_permission(ARRAY['pharmacist','legacy_pharmacist'], 'pharmacy.correction.request'))
+    (SELECT public.app_has_perm('pharmacy.correction.request'))
     AND (SELECT private.app_has_prescription_branch_access(prescription_id))
   )
   OR (
-    (SELECT private.app_has_role_permission(ARRAY['doctor','legacy_gp','legacy_specialist','legacy_dentist'], 'prescriptions.correction.resolve'))
+    (SELECT public.app_has_perm('prescriptions.correction.resolve'))
     AND (SELECT private.app_can_resolve_prescription_item_correction(prescription_id))
   )
 );
@@ -310,7 +281,7 @@ DECLARE
   v_responsible_exists boolean;
   v_request_id uuid;
 BEGIN
-  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['pharmacist','legacy_pharmacist'], 'pharmacy.correction.request') THEN
+  IF v_uid IS NULL OR NOT public.app_has_perm('pharmacy.correction.request') THEN
     RAISE EXCEPTION 'prescription_correction_request_permission_denied'
       USING ERRCODE = '42501';
   END IF;
@@ -403,7 +374,8 @@ BEGIN
     AND COALESCE(u.active, true) IS TRUE
     AND u.deleted_at IS NULL;
 
-  IF v_user_branch IS DISTINCT FROM v_parent.visit_branch_id THEN
+  IF NOT public.is_super_admin()
+     AND v_user_branch IS DISTINCT FROM v_parent.visit_branch_id THEN
     RAISE EXCEPTION 'cross_branch_prescription_correction_request_denied'
       USING ERRCODE = '42501';
   END IF;
@@ -512,7 +484,7 @@ DECLARE
   v_status text;
   v_item_count integer := 0;
 BEGIN
-  IF v_uid IS NULL OR NOT private.app_has_role_permission(ARRAY['doctor','legacy_gp','legacy_specialist','legacy_dentist'], 'prescriptions.correction.resolve') THEN
+  IF v_uid IS NULL OR NOT public.app_has_perm('prescriptions.correction.resolve') THEN
     RAISE EXCEPTION 'prescription_correction_resolve_permission_denied'
       USING ERRCODE = '42501';
   END IF;
@@ -634,14 +606,16 @@ BEGIN
     AND COALESCE(u.active, true) IS TRUE
     AND u.deleted_at IS NULL;
 
-  IF v_user_branch IS DISTINCT FROM v_parent.visit_branch_id
-     OR (
+  IF NOT public.is_super_admin() THEN
+    IF v_user_branch IS DISTINCT FROM v_parent.visit_branch_id
+       OR (
        v_uid IS DISTINCT FROM v_parent.prescribed_by
        AND v_uid IS DISTINCT FROM v_parent.doctor_id
        AND v_uid IS DISTINCT FROM v_parent.visit_doctor_id
      ) THEN
-    RAISE EXCEPTION 'prescription_correction_responsible_doctor_or_branch_required'
-      USING ERRCODE = '42501';
+      RAISE EXCEPTION 'prescription_correction_responsible_doctor_or_branch_required'
+        USING ERRCODE = '42501';
+    END IF;
   END IF;
 
   IF p_action = 'reject' THEN
@@ -795,7 +769,7 @@ BEGIN
         USING ERRCODE = '22023';
     END IF;
 
-    IF NOT private.app_has_role_permission(ARRAY['doctor','legacy_gp','legacy_specialist','legacy_dentist'], 'prescriptions.create') THEN
+    IF NOT (public.is_super_admin() OR public.app_has_perm('prescriptions.create')) THEN
       RAISE EXCEPTION 'prescription_create_permission_required_for_reissue'
         USING ERRCODE = '42501';
     END IF;
@@ -972,7 +946,7 @@ BEGIN
     RAISE EXCEPTION 'prescription type must be explicit' USING ERRCODE = '22023';
   END IF;
 
-  IF NOT private.app_has_role_permission(ARRAY['doctor','legacy_gp','legacy_specialist','legacy_dentist'], 'prescriptions.create') THEN
+  IF NOT (public.is_super_admin() OR public.app_has_perm('prescriptions.create')) THEN
     RAISE EXCEPTION 'not authorised to create prescriptions' USING ERRCODE = '42501';
   END IF;
 
@@ -994,7 +968,8 @@ BEGIN
   SELECT u.branch_id INTO v_branch
     FROM public.users u
    WHERE u.id = v_uid AND u.deleted_at IS NULL;
-  IF v_branch IS NULL OR v_visit_branch IS DISTINCT FROM v_branch THEN
+  IF NOT public.is_super_admin()
+     AND (v_branch IS NULL OR v_visit_branch IS DISTINCT FROM v_branch) THEN
     RAISE EXCEPTION 'cross-branch prescription access denied' USING ERRCODE = '42501';
   END IF;
 

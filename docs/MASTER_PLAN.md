@@ -104,3 +104,7 @@ Clinical content must be governed as versioned, source-backed decision support. 
 ## 6. Time and progress accounting
 
 The previously suggested 8–12 day compression is **not approved as a delivery commitment**. It was a planning hypothesis before the second audit exposed additional cross-environment and repository-cleanup work. Re-estimate only after PR deduplication, dependency reconciliation, independent reviews and owner-controlled acceptance tasks are separated. Do not publish a single completion percentage until engineering, clinical, operational and DR gates share one evidence-backed denominator.
+
+## Migration provenance gate — 2026-11-25
+
+Phase 61's repository source is now aligned with the SQL recorded as applied in QA. The role-specific helper and wrapper boundary remain in Phase 61B, where they were introduced in the applied sequence. A QA source-hash manifest and guard test now detect future drift for Phases 57, 57B, 61, 61B and 61C. This does not change Production or authorize a partial rollout; Production still requires the complete ordered chain and independent review.

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "environment": "QA",
+  "evidence_as_of": "2026-11-25",
+  "evidence_source": "supabase_migrations.schema_migrations.statements",
+  "normalization": "Remove SQL comments, collapse all whitespace, lowercase, strip leading BEGIN/START TRANSACTION and trailing COMMIT/END, then SHA-256 UTF-8.",
+  "note": "These hashes verify repository source against the QA-applied migration SQL only. They do not assert Production application.",
+  "entries": [
+    {
+      "version": "20261104065852",
+      "name": "roshan_phase57_pharmacy_quantity_required_guard",
+      "source_path": "db/roshan_phase57_pharmacy_quantity_required_guard.sql",
+      "normalized_sha256": "ecb5916be446569c48543f5c7c390d19079676ac26bf893e8da3b386a5c7158e",
+      "qa_applied": true,
+      "production_applied": false
+    },
+    {
+      "version": "20261111215510",
+      "name": "roshan_phase57b_free_text_external_prescription_guard",
+      "source_path": "db/roshan_phase57b_free_text_external_prescription_guard.sql",
+      "normalized_sha256": "726879880e6fc7c6b7d0d0fe7f71bd596f1e79bec73608055fd345aabc524d31",
+      "qa_applied": true,
+      "production_applied": false
+    },
+    {
+      "version": "20261111223309",
+      "name": "roshan_phase61_prescription_item_correction_workflow",
+      "source_path": "db/roshan_phase61_prescription_item_correction_workflow.sql",
+      "normalized_sha256": "1f5a854eb32f3bd313e5fba57e653b36f12d4ef2fb753be6aef499e05f08eecc",
+      "qa_applied": true,
+      "production_applied": false
+    },
+    {
+      "version": "20261113232719",
+      "name": "roshan_phase61b_clinical_role_boundary",
+      "source_path": "db/roshan_phase61b_clinical_role_boundary.sql",
+      "normalized_sha256": "d750bcce203aa5f1e6c9b39876d915b993efb403c2dc62f7aef4fb49b8c5bf43",
+      "qa_applied": true,
+      "production_applied": false
+    },
+    {
+      "version": "20261125220954",
+      "name": "roshan_phase61c_atomic_dispense_role_boundary",
+      "source_path": "db/roshan_phase61c_atomic_dispense_role_boundary.sql",
+      "normalized_sha256": "29aec2bbf7867c8fb0f64091eee960f2caa932d857a0c34a3bcc1a42b8bc5956",
+      "qa_applied": true,
+      "production_applied": false
+    }
+  ]
+}
