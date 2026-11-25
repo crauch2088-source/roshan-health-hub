@@ -567,3 +567,10 @@ All work in this re-review and cleanup is repository documentation and Git metad
 - PR #293 exact head `4531489fbf86d9a92b6e36543abb7562cee30934` has 6/8 workflow runs successful and two failed. The PG17 test failure is a test-payload error: it reuses an idempotency key with different reason text during a purported successful replay. Preserve the function's payload mismatch guard; fix the replay fixture to use identical payload and keep a separate negative mismatch assertion. The lint run reports 241 Prettier errors and 97 warnings; the insurance UI validation failure is in the same lint/typecheck/build step.
 - PR #294 exact head has 6/6 successful workflows; PR #292 and #291 each have 8/8; PR #290 and #287 each have 6/6. These are exact-head automation results only, not independent review or human acceptance.
 - The 28-PR cleanup left 19 open PRs and four open Issues. Main remains unchanged.
+## Phase 61B/61C dependency reconciliation — 2026-11-25
+
+- PR #249 was merged to main on 2026-11-13 23:26:43 UTC and contains `db/roshan_phase61b_clinical_role_boundary.sql`.
+- Read-only QA catalog and migration checks confirm QA has `20261113232719 / roshan_phase61b_clinical_role_boundary`, `private.app_has_role_permission(text[],text)` and `private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)`.
+- Production has no Phase61B migration row and neither helper/function exists.
+- Main `db/MIGRATIONS_MANIFEST.md` still lists candidate version `20261114120000` and says “Prepared in PR #249; not yet applied”. The shared migration name but different version is a provenance discrepancy, not proof of equivalence.
+- PR #250 changes Phase 61C only and expects the Phase61B helper/unchecked function. Production rollout must therefore reconcile the exact SQL source/checksum and actual QA ledger version, then apply Phase61B in order before Phase61C. No migration or ledger change was made.

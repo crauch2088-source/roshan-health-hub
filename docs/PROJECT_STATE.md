@@ -107,6 +107,14 @@ Production latest migration: `roshan_synthetic_patient_cleanup_and_stock_ledger_
 7. `pg_trgm` is installed in public in both environments; move only after dependency review.
 8. Advisor reports private tables with RLS/no policies and leaked-password protection warnings. Inspect schema exposure and plan availability rather than applying blanket changes.
 
+## Phase 61B migration provenance — newly confirmed
+
+- Source file `db/roshan_phase61b_clinical_role_boundary.sql` is in main and was merged through PR #249 on 2026-11-13 23:26:43 UTC.
+- QA has migration row `20261113232719 / roshan_phase61b_clinical_role_boundary`; QA also has `private.app_has_role_permission(text[],text)` and `private.fn_dispense_prescription_with_invoice_unchecked(uuid,boolean)`.
+- Production has no Phase61B migration row and neither helper/function exists there.
+- The main manifest lists Phase61B candidate version `20261114120000` and says it was prepared in PR #249 but not applied. This conflicts with the QA ledger version `20261113232719` and must be reconciled by exact SQL hash/source provenance; do not edit the ledger or infer equivalence from the shared name.
+- PR #250 contains Phase61C only and requires Phase61B helpers. It cannot be applied to Production before the Phase61B provenance and ordered rollout are resolved.
+
 ## QA, backup and release state
 
 - PR #296 remains unmerged and QA-only. QA ledger contains the 2026-11-21 operational-blocker migration and 2026-11-22 search_path hardening migration; Production remains unchanged.

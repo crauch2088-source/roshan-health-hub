@@ -29,7 +29,7 @@ Clinical content must be governed as versioned, source-backed decision support. 
 ### P1 — Migration and release governance
 
 - Production and QA migration ledgers are materially different in count and baseline. Production is at 129 rows; QA is at 30. This is not a simple missing-migration count.
-- Reconcile the complete ordered source chain, baseline provenance, already-applied hosted changes and dependencies. Never replay blindly, edit migration ledger rows or assume QA can be copied to Production.
+- Reconcile the complete ordered source chain, baseline provenance, already-applied hosted changes and dependencies. Phase 61B is present in QA as version `20261113232719` but the manifest lists `20261114120000` as not applied; Production has no Phase61B row or helper. Resolve this exact source/version mismatch before Phase61C. Never replay blindly, edit migration ledger rows or assume QA can be copied to Production.
 - Main branch protection is not currently verified. Issue #253's latest direct evidence (2026-11-15) says protection was disabled; the current API integration returns 403, so recheck with an authorized read path before treating the issue as closed.
 
 ### P1 — Recovery and human acceptance

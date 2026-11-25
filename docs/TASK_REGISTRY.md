@@ -15,11 +15,13 @@ GitHub Issues and PRs are the canonical backlog. This is a routing/index layer, 
 
 | Canonical item | Purpose | Required evidence |
 |---|---|---|
-| [PR #250](https://github.com/crauch2088-source/roshan-health-hub/pull/250) | Canonical pharmacist role boundary for atomic dispense | Independent SQL/security review; same-prescription/different-key and final-stock races; negative no-side-effect tests; authenticated QA pharmacist acceptance |
+| [PR #250](https://github.com/crauch2088-source/roshan-health-hub/pull/250) | Canonical pharmacist role boundary for atomic dispense | Phase 61B prerequisite is in main via merged PR #249 and applied in QA, but Production lacks it; QA ledger version `20261113232719` conflicts with manifest candidate `20261114120000`. Reconcile exact SQL/source hash and ledger provenance before the Phase 61C migration. Then independent SQL/security review; same-prescription/different-key and final-stock races; negative no-side-effect tests; authenticated QA pharmacist acceptance |
 | [Issue #218](https://github.com/crauch2088-source/roshan-health-hub/issues/218) / [PR #260](https://github.com/crauch2088-source/roshan-health-hub/pull/260) | Production/QA private helper ACL divergence | Caller inventory, owner-only ACL regression, migration dependency and read-back plan |
 | [Issue #253](https://github.com/crauch2088-source/roshan-health-hub/issues/253) | Protect main and require verified CI | Recheck current protection with authorized API access; choose actual required check names; require independent review for high-risk changes |
 
 ## P1 — release prerequisites and core workflows
+
+**Migration dependency warning:** Phase 61B source is merged in main (PR #249) and its helper/unchecked invoice function exist in QA, but Production has neither the migration row nor those helper functions. QA records version `20261113232719`, while `db/MIGRATIONS_MANIFEST.md` lists `20261114120000` and says “not yet applied”. This version/provenance discrepancy must be reconciled against the exact SQL before any Production migration. PR #250 is Phase 61C and depends on Phase 61B.
 
 | Item | Domain | Dependency / disposition |
 |---|---|---|
