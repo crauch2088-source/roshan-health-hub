@@ -77,9 +77,10 @@ function PharmacyPageInner() {
   // medicines and stock_movements already keys off pharmacy.create/update,
   // so the UI now checks the same codes instead of two dangling ones.
   const { can, user } = useAuth();
-  const isPharmacist = ["pharmacist", "legacy_pharmacist"].includes(user?.role_code ?? "");
-  const canDispense = can("pharmacy.update") && isPharmacist;
-  const canRequestCorrection = can("pharmacy.correction.request") && isPharmacist;
+  const isCanonicalPharmacist = user?.role_code === "pharmacist";
+  const isCorrectionRequester = ["pharmacist", "legacy_pharmacist"].includes(user?.role_code ?? "");
+  const canDispense = can("pharmacy.update") && isCanonicalPharmacist;
+  const canRequestCorrection = can("pharmacy.correction.request") && isCorrectionRequester;
   const { currency } = useSettings();
   const [status, setStatus] = useState("pending");
   const [search, setSearch] = useState("");

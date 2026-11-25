@@ -10,8 +10,11 @@ test("pharmacist can request correction only for a specific unlinked prescriptio
   assert.match(pharmacy, /pharmacy\.correction\.request/);
   assert.match(pharmacy, /canRequestCorrection/);
   assert.match(pharmacy, /canDispense/);
-  assert.match(pharmacy, /isPharmacist/);
-  assert.match(pharmacy, /user\?\.role_code/);
+  assert.match(pharmacy, /isCanonicalPharmacist/);
+  assert.match(pharmacy, /user\?\.role_code === "pharmacist"/);
+  assert.match(pharmacy, /const canDispense = can\("pharmacy\.update"\) && isCanonicalPharmacist/);
+  assert.match(pharmacy, /isCorrectionRequester/);
+  assert.match(pharmacy, /\["pharmacist", "legacy_pharmacist"\]/);
   assert.match(pharmacy, /PharmacyCorrectionRequest/);
   assert.match(correctionUi, /request_prescription_item_correction/);
   assert.match(correctionUi, /prescription_item_id/);

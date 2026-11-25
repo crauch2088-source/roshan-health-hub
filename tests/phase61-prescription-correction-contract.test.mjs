@@ -7,6 +7,10 @@ const migration = readFileSync(
   "utf8",
 );
 const roleBoundaryMigration = readFileSync("db/roshan_phase61b_clinical_role_boundary.sql", "utf8");
+const atomicDispenseRoleBoundaryMigration = readFileSync(
+  "db/roshan_phase61c_atomic_dispense_role_boundary.sql",
+  "utf8",
+);
 const integration = readFileSync(
   "db/tests/phase61_prescription_correction_integration.sql",
   "utf8",
@@ -14,6 +18,10 @@ const integration = readFileSync(
 const fixture = readFileSync("db/tests/phase61_prescription_correction_fixture.sql", "utf8");
 const workflow = readFileSync(".github/workflows/ci-phase61-prescription-correction.yml", "utf8");
 const concurrency = readFileSync("db/tests/phase61_prescription_correction_concurrency.sh", "utf8");
+const pharmacyConcurrency = readFileSync(
+  "db/tests/phase61c_pharmacy_dispense_concurrency.sh",
+  "utf8",
+);
 
 test("Phase 61 exposes only dedicated correction and clinical-prescription permissions", () => {
   assert.match(migration, /pharmacy\.correction\.request/);
@@ -146,6 +154,26 @@ test("Phase 61 integration proves the migration itself grants prescription autho
   );
 });
 
+test("Phase 61C closes the direct invoice-linked dispense alias bypass", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /CREATE OR REPLACE FUNCTION public\.fn_dispense_prescription_with_invoice/,
+  );
+  assert.match(atomicDispenseRoleBoundaryMigration, /ARRAY\['pharmacist'\]/);
+  assert.doesNotMatch(
+    atomicDispenseRoleBoundaryMigration,
+    /ARRAY\['pharmacist','legacy_pharmacist'\]/,
+  );
+  assert.ok(
+    integration.includes(
+      "legacy pharmacist bypassed canonical role boundary through direct invoice-linked dispense RPC",
+    ),
+  );
+  assert.ok(
+    integration.includes("legacy pharmacist fixture must demonstrate both broad permission bits"),
+  );
+});
+
 test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin", () => {
   assert.match(
     roleBoundaryMigration,
@@ -166,4 +194,77 @@ test("Phase 61B wraps unchecked RPCs and denies clinical writes to Super Admin",
     roleBoundaryMigration,
     /REVOKE ALL ON FUNCTION private\.create_prescription_atomic_unchecked/,
   );
+});
+
+test("Phase 61C gates the active atomic pharmacy dispense RPC by pharmacist role", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /ALTER FUNCTION public\.atomic_pharmacy_dispense/,
+  );
+  assert.match(atomicDispenseRoleBoundaryMigration, /atomic_pharmacy_dispense_unchecked/);
+  assert.match(atomicDispenseRoleBoundaryMigration, /pharmacy_dispense_permission_denied/);
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /GRANT EXECUTE ON FUNCTION public\.atomic_pharmacy_dispense/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /REVOKE ALL ON FUNCTION private\.atomic_pharmacy_dispense_unchecked/,
+  );
+});
+
+test("Phase 61C denies authenticator execution and leaves no idempotency row after rejected roles", () => {
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /FROM PUBLIC, anon, authenticated, service_role, authenticator/,
+  );
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /FROM PUBLIC, anon, service_role, authenticator/,
+  );
+  assert.ok(integration.includes("has_function_privilege('authenticator'"));
+  assert.ok(integration.includes("phase61c_rejected_admin_no_idempotency"));
+  assert.ok(integration.includes("Super Admin fixture must demonstrate global permission bypass"));
+  assert.match(
+    atomicDispenseRoleBoundaryMigration,
+    /Phase 61B role permission helper is missing; apply Phase 61B before Phase 61C/,
+  );
+  assert.ok(integration.includes("phase61c_security_definer_hardening"));
+  assert.ok(workflow.includes("Reapply Phase 61C to verify forward-migration idempotence"));
+});
+
+test("Phase 61C requires both pharmacy and billing permissions for a pharmacist", () => {
+  assert.ok(integration.includes("phase61c_pharmacist_missing_billing_permission_denied"));
+  assert.ok(integration.includes("phase61c_pharmacist_missing_pharmacy_permission_denied"));
+  assert.ok(integration.includes("pharmacist reached atomic dispense without billing.create"));
+  assert.ok(integration.includes("pharmacist reached atomic dispense without pharmacy.update"));
+});
+
+test("Phase 61C covers both invoice choices and rejects changed-choice idempotency replay", () => {
+  assert.ok(fixture.includes("'61700000-0000-0000-0000-000000000014'"));
+  assert.ok(integration.includes("phase61c_primary_finalized_requires_separate_choice"));
+  assert.ok(integration.includes("phase61c_separate_invoice_true_path"));
+  assert.ok(integration.includes("pharmacy_dispense_idempotency_conflict"));
+  assert.ok(
+    integration.includes("same-choice separate-invoice retry changed the result") &&
+      integration.includes("phase61c_changed_invoice_choice_replay"),
+  );
+});
+
+test("Phase 61C preserves successful pharmacist dispense and idempotent replay", () => {
+  assert.ok(fixture.includes("PHASE61C-VALID"));
+  assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_success"));
+  assert.ok(integration.includes("phase61c_pharmacist_atomic_dispense_effects"));
+  assert.ok(integration.includes("idempotent retry changed the successful atomic dispense result"));
+});
+
+test("Phase 61C proves two-session same-prescription and final-stock dispense races serialize", () => {
+  assert.ok(workflow.includes("phase61c_pharmacy_dispense_concurrency.sh"));
+  assert.ok(pharmacyConcurrency.includes("wait_event_type='Lock'"));
+  assert.ok(pharmacyConcurrency.includes("prescription_not_pending"));
+  assert.ok(
+    pharmacyConcurrency.includes("medicine aggregate stock is insufficient or inconsistent"),
+  );
+  assert.ok(pharmacyConcurrency.includes("private.pharmacy_dispense_idempotency"));
+  assert.ok(pharmacyConcurrency.includes("stock_movements"));
 });

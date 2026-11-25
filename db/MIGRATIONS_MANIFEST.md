@@ -301,8 +301,8 @@ Source evidence:
 - Phase 57B source is on main at Git blob 57516e08de8e314f687c21f2f292199d3adff178; the 11,525-byte QA stored payload matches the extracted function-DDL payload (MD5 bfd2df24224752a1488f2f05494f4211), excluding migration comments and transaction wrapper.
 - Phase 58 source is on main at blob e4f47d0df22ec095207f8ea27ad7395aa26779f2; QA stores 8,347 bytes, MD5 df5eb42bac7f8a1addc443d6d825a9a1.
 - Phase 59 source is on main at blob 49dbd1a686e17cbdc8341cb27675301f9cfbc5b3; QA stores 4,365 bytes, MD5 3e356de0f959e9674e87198eb18b04a6.
-- Phase 61 source blob 1abbb3b0238ffee44d851ff90d065165f925a605 exists only on Draft PR #229 branch feat/prescription-correction-ui-20261110 (head 9c54ee0655acfafdbb1f3509f4de7ed10be6a420), not on main. QA stores 38,534 bytes, MD5 6d4d05a084d14d7d354385b32e8e745e. The six deployed function bodies were previously verified against the branch source; a full migration-statement hash comparison was not independently established in this read-back.
-- Production has no Phase 55/57/57B/58/59/61 ledger row. Production's Phase 57 dispensing function still has three NULL-to-one fallbacks; QA has zero and enforces quantity, free-text and external-prescription rejection.
+- Historical QA-applied Phase 61 source: blob `1abbb3b0238ffee44d851ff90d065165f925a605`, version `20261111223309`, 38,534 stored bytes, MD5 `6d4d05a084d14d7d354385b32e8e745e`. Current mainline source: blob `a9bfec947bfb7f3355fbd60807d9e34131071261`, 39,625 bytes. The mainline delta adds `private.app_has_role_permission` and replaces broad `app_has_perm()`/Super Admin bypasses with explicit pharmacist/doctor role allowlists for correction request, resolution and prescription creation. This is intentional forward hardening; it is not byte-identical to the older QA-applied payload. The combined PG17 workflow must validate the current mainline source before QA/Production rollout.
+- Production has no Phase 55/57/57B/58/59/61/61B/61C ledger row. Its active invoice-linked dispense function still contains the NULL-to-one quantity fallback and lacks Phase 57B free-text/external-prescription rejection. Production also lacks the Phase 61/61B helper and correction workflow tables. Phase 61C must not be applied alone.
 
 The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do not edit it retroactively; use the dated 2026-11-13 QA delta and this addendum for current row counts. The 94-row APPLIED_MIGRATION_INVENTORY remains historical and is not the live ledger.
 
@@ -312,9 +312,32 @@ The 2026-11-10 consolidated source map remains a historical 129/22 snapshot. Do 
 
 | Environment | Version | Migration name | Status |
 |---|---|---|---|
-| QA candidate | `20261114120000` | `roshan_phase61b_clinical_role_boundary` | Prepared in PR #249; not yet applied |
-| Production | — | Not authorized | Untouched |
+| QA | `20261113232719` | `roshan_phase61b_clinical_role_boundary` | Applied; 8,844 stored bytes, MD5 `9f5095e70fa9cc6ed7e7fe83f7766312` |
+| Production | — | `roshan_phase61b_clinical_role_boundary` | Not applied; owner authorized rollout work 2026-11-25, subject to release gates |
 
-Phase 61B is a forward-only correction for the already QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require an explicit pharmacist or clinical-prescriber role permission. This prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction, or pharmacy dispensing authority. Administrative read access remains separate. Apply only after the PostgreSQL 17 upgrade-path tests pass and the PR is reviewed. No Production change is authorized.
+Phase 61B is a forward-only correction for the QA-applied Phase 61 workflow. It moves the original SECURITY DEFINER RPC implementations into the private schema, revokes direct execution of those unchecked functions, and exposes same-signature public wrappers that require explicit pharmacist or clinical-prescriber role permission. It prevents the global `app_has_perm()` Super Admin bypass from becoming clinical prescribing, pharmacist correction or pharmacy dispensing authority. QA source hash is confirmed exact. Production lacks Phase 61 and 61B. The owner authorized implementation/merge/QA/Production work on 2026-11-25; no Production DDL has yet been executed. Production rollout remains gated by the combined upgrade-path tests, fresh backup/restore evidence and authenticated role acceptance.
 
-The earlier 2026-11-13 note that Phase 61 source existed only on Draft PR #229 is historical. PR #249 now carries the mainline reconciliation and the Phase 61B forward correction as candidate changes; neither is considered deployed until merged and verified.
+The older Phase 61 source note above is retained as historical provenance. Phase 61B is already applied in QA; it is not applied in Production. The current mainline Phase 61 source is a stricter forward revision and requires the combined PG17 upgrade path before any hosted application.
+
+
+## Phase 61C — canonical pharmacist-only dispensing boundary (2026-11-25)
+
+| Environment | Version | Migration name | Status |
+|---|---|---|---|
+| QA | — | `roshan_phase61c_atomic_dispense_role_boundary` | Candidate in PR #250; not applied |
+| Production | — | `roshan_phase61c_atomic_dispense_role_boundary` | Not applied |
+
+Phase 61C wraps both `public.atomic_pharmacy_dispense(uuid,boolean,uuid)` and the direct `public.fn_dispense_prescription_with_invoice(uuid,boolean)` alias. Both require the canonical `pharmacist` role plus `pharmacy.update` and `billing.create`; Admin, Super Admin, Doctor and `legacy_pharmacist` are denied before idempotency or payload work. The unchecked implementations move to `private` and lose API-role EXECUTE grants. The UI now exposes dispense only to canonical `pharmacist`; legacy compatibility remains separate for correction requests.
+
+**Required application order for Production:** Phase 57 → Phase 57B → current hardened Phase 61 → Phase 61B → Phase 61C. Phase 57/57B are necessary because the current Production invoice-linked function still has the NULL-to-one quantity fallback and permits free-text/external prescription lines; Phase 61B moves that function into `private`, and Phase 61C wraps both entry points. The PR #250 PG17 workflow replays this complete chain and runs two-session same-prescription/different-request-key and final-stock races.
+
+Owner authorization for implementation, merge and environment work was given on 2026-11-25. This is not evidence that any hosted migration has run. QA application remains gated by successful exact-head CI and review of the final migration. Production remains gated by a fresh backup/restore point, exact migration provenance, authenticated role tests and operational acceptance.
+
+## 2026-11-25 live ledger recheck
+
+- Production: 129 migration rows; latest `20261102232941`.
+- QA: 30 migration rows; latest `20261122152027`.
+- QA Phase 57: `20261104065852`; Phase 57B: `20261111215510`; Phase 61: `20261111223309`; Phase 61B: `20261113232719`.
+- Production has none of those Phase 57/57B/61/61B rows. Phase 61C is not applied in either hosted environment.
+- The Phase 57 source matches the QA stored payload exactly (10,954 bytes, MD5 `921970d4d86b32dccd430a0ea0ef8745`). Phase 57B's stored function-DDL payload matches the tracked migration after excluding the header comments and transaction wrapper (11,525 bytes, MD5 `bfd2df24224752a1488f2f05494f4211`). Phase 61B source matches its QA-applied payload (8,844 bytes, MD5 `9f5095e70fa9cc6ed7e7fe83f7766312`).
+- No Production DDL/DML or migration-ledger change was performed in this review.
