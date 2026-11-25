@@ -104,3 +104,9 @@ Clinical content must be governed as versioned, source-backed decision support. 
 ## 6. Time and progress accounting
 
 The previously suggested 8–12 day compression is **not approved as a delivery commitment**. It was a planning hypothesis before the second audit exposed additional cross-environment and repository-cleanup work. Re-estimate only after PR deduplication, dependency reconciliation, independent reviews and owner-controlled acceptance tasks are separated. Do not publish a single completion percentage until engineering, clinical, operational and DR gates share one evidence-backed denominator.
+
+## Execution update — 2026-11-25/26
+
+- **Pharmacy authorization:** PR #250 is merged to main at `50c24eabc840c4171f12617a139b57b1ba3375b0` and Vercel Production has a READY deployment from that SHA. QA has Phase 61C applied as `20261125220954`. Production has not received Phase 57 → 57B → current Phase 61 → 61B → 61C. The frontend role guard is not a substitute for the backend migration. Independent second-person SQL/security review and authenticated pharmacist acceptance remain open.
+- **Private helper ACL:** the original PR #260 candidate was closed after review found incorrect policy identifiers and missing permission predicates. Corrected PR #300 passed exact-head CI and Phase 55 PostgreSQL 17 tests, then was applied to QA as `20261125225912`. The corrected migration preserves the four live insurance RLS policy names and their `insurance.read` / `insurance.create` gates. Production remains unchanged pending independent review and release gates.
+- **No Production database writes** were made in this execution round. The QA change was limited to function ACLs and RLS policy definitions; no business rows were changed.
