@@ -2,14 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const migration = readFileSync(
-  "db/roshan_phase55b_private_helper_acl_reconciliation.sql",
-  "utf8",
-);
-const workflow = readFileSync(
-  ".github/workflows/ci-phase55-clinical-parent-guard.yml",
-  "utf8",
-);
+const migration = readFileSync("db/roshan_phase55b_private_helper_acl_reconciliation.sql", "utf8");
+const workflow = readFileSync(".github/workflows/ci-phase55-clinical-parent-guard.yml", "utf8");
 
 test("Phase 55B replaces the exact live insurance policy identifiers", () => {
   for (const policy of [
