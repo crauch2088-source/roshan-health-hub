@@ -7,10 +7,10 @@
 - Repository: `crauch2088-source/roshan-health-hub`.
 - `main`: `3bc317b0d6cc3eaa1b7623ce3c78477f848c8b1a` (unchanged by this review/cleanup).
 - Open pull requests after cleanup: **19**. Open issues: **4** (#199, #217, #218, #253).
-- 28 superseded PRs were closed without merging; no branches were deleted. See TASK_REGISTRY.md for the closure groups and retained successors.
-- PR #299 remains Draft/open at `77f6ad468415f178e252dbd60e05168467a419c3`, base `3bc317b0`. Exact-head workflow run `45702924048` completed successfully. Its Vercel deployment was intentionally ignored/cancelled because the change is documentation-only.
+- 28 superseded PRs were closed without merging; no branches were deleted.
+- PR #299 is Draft/open at `cc3260e6018212ea9688ea9fc5e95c8dd4e7e0cf`, base `3bc317b0`. Latest exact-head workflow run `45703453595` was in progress at the last check; previous docs-only run `45702924048` passed. Vercel deployment is intentionally skipped for docs-only changes.
 - Mainline push CI run `44872060499` and finance write-isolation run `44872060315` completed successfully. Do not infer skipped conditional acceptance jobs passed.
-- Branch protection: Issue #253's latest direct evidence (2026-11-15) says protection was disabled. The current branch-protection API read returned 403; current protection state is **NOT VERIFIED**.
+- Branch protection: Issue #253's latest direct evidence (2026-11-15) says protection was disabled. Current branch-protection API read returned 403; current protection state is **NOT VERIFIED**.
 
 ## Open PR inventory — 19
 
@@ -32,7 +32,38 @@
 | #256 / #254 | CI path routing / Repomix context snapshots | Old base `fe8d770f` |
 | #250 / #210 | Pharmacist role boundary / medicine identity | Current main |
 
-All old-base implementation PRs must be reconciled with current main before merge. AGENTS.md requires a normal merge from main into the existing feature branch; do not rebase or force-push published branches. Current main's 15-commit delta from the Production deployment SHA is docs/spec-only, but branch ancestry still needs explicit refresh.
+All old-base implementation PRs must be reconciled with current main before merge. Repository policy requires a normal merge from main into the existing feature branch; do not rebase or force-push published branches. Current main's 15-commit delta from the Production deployment SHA is docs/spec-only, but branch ancestry still needs explicit refresh.
+
+## Exact-head workflow snapshot
+
+| PR | Exact-head workflow runs | Result |
+|---|---:|---|
+| #250 | 12 | 12 success; no independent review or authenticated pharmacist acceptance |
+| #210 | 8 | 8 success; physical pack and identity acceptance open |
+| #258 | 9 | 9 success; manifest provenance still stale |
+| #280 | 9 | 9 success |
+| #294 | 6 | 6 success |
+| #293 | 8 | 6 success / 2 failed |
+| #292 | 8 | 8 success |
+| #291 | 8 | 8 success |
+| #290 | 6 | 6 success |
+| #287 | 6 | 6 success |
+| #260 | 6 | 6 success |
+| #254 | 8 | 8 success |
+| #256 | 8 | 8 success |
+| #269 | 6 | 6 success |
+| #296 | 9 | 9 success |
+| #297 | 1 | 1 success |
+| #263 | 1 | 1 success |
+| #288 | 1 | 1 success |
+| #299 | 1 | In progress at last check; previous docs-only run passed |
+
+These are workflow-run counts on the named PR heads, not human acceptance. Some workflows contain intentionally skipped jobs; skipped jobs are not passes.
+
+### PR #293 failure diagnosis
+
+- Phase 62 PostgreSQL 17 integration failed with `idempotency_key_payload_mismatch`: the test reuses the same idempotency key with a different reason string during the purported successful replay. The first call uses `Patient declined before pickup`; the replay uses `Retry same key`. A later return replay uses `Unopened box returned` then `Dup`. The function's mismatch rejection is correct; fix the test to replay the identical payload and retain a separate mismatch-negative assertion.
+- CI also failed at the Phase 62 PG17 job and lint. The lint log reports 241 Prettier errors and 97 warnings; the Insurance claim UI validation workflow fails in its typecheck/lint/build step due the same lint errors. Format only the touched files and rerun.
 
 ## Deployment/source parity
 
@@ -42,11 +73,11 @@ All old-base implementation PRs must be reconciled with current main before merg
 
 ## Repository hygiene completed in this branch
 
-- Root README reduced from 63,288 bytes / 432 lines to a 3,119-byte project landing page; the full previous README is preserved in docs/archive.
-- MASTER_PLAN reduced from 562,393 bytes / 3,167 lines / 362 headings to one concise 9,397-byte strategic roadmap; the exact original blob is preserved in docs/archive/MASTER_PLAN_HISTORY.md.
+- Root README reduced from 63,288 bytes / 432 lines to 3,119 bytes; the full previous README is preserved in docs/archive.
+- MASTER_PLAN reduced from 562,393 bytes / 3,167 lines / 362 headings to a 9,397-byte strategic roadmap; the exact original blob is preserved in docs/archive/MASTER_PLAN_HISTORY.md.
 - Added documentation index, dated project state, task registry, verification matrix and architecture decision record.
 - Archived the root roadmap, old execution ledger, 2026-10-18 deep-research report and 12 Phase 8–18 root reports. Original root paths remain compatibility pointers.
-- Preserved the clinical guideline/ICD-10 policy document from the stale #295 branch without importing that branch's conflicting status claims.
+- Preserved the clinical guideline/ICD-10 policy document from the stale #295 branch without importing its conflicting status claims.
 
 ## Supabase environments — read-only catalog
 

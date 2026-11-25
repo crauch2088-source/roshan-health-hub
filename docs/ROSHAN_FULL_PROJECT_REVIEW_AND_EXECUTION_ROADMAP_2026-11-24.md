@@ -561,3 +561,9 @@ All work in this re-review and cleanup is repository documentation and Git metad
 - Closed earlier and duplicate parallel-review rounds (#262, #264–#268, #270–#279, #281–#286) after incorporating their material findings into TASK_REGISTRY and this review. Their PR diffs remain accessible.
 - Kept 19 open PRs: implementation candidates, the DR evidence, current review, optional Antigravity setup, and the detailed catalogue review #263.
 - No PR was merged; no branch was deleted; main and all hosted environments remained unchanged.
+## Exact-head implementation review — 2026-11-25
+
+- PR #258 exact head `62919527ace0f7b4e9d8ec8f38c322a0895ffd46` has 9/9 workflow runs successful. The current Phase 63 SQL trigger and PG17 integration test include persisted `instructions` in the active-to-soft-deleted immutable payload comparison. This resolves the earlier Window 08 Round 04 finding. However `db/MIGRATIONS_MANIFEST.md` still labels the candidate as PR #255; update this stale provenance before merge.
+- PR #293 exact head `4531489fbf86d9a92b6e36543abb7562cee30934` has 6/8 workflow runs successful and two failed. The PG17 test failure is a test-payload error: it reuses an idempotency key with different reason text during a purported successful replay. Preserve the function's payload mismatch guard; fix the replay fixture to use identical payload and keep a separate negative mismatch assertion. The lint run reports 241 Prettier errors and 97 warnings; the insurance UI validation failure is in the same lint/typecheck/build step.
+- PR #294 exact head has 6/6 successful workflows; PR #292 and #291 each have 8/8; PR #290 and #287 each have 6/6. These are exact-head automation results only, not independent review or human acceptance.
+- The 28-PR cleanup left 19 open PRs and four open Issues. Main remains unchanged.
