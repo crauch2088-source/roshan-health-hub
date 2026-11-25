@@ -3,9 +3,12 @@ name: Privileged role guard integration
 on:
   pull_request:
     paths:
-      - 'db/**'
-      - 'tests/**'
-      - '.github/workflows/ci-test/privileged-role-guard-integration.yml'
+      - 'db/roshan_security_privileged_role_guard.sql'
+      - 'db/tests/privileged_role_guard_fixture.sql'
+      - 'db/tests/privileged_role_guard_integration.sql'
+      - 'tests/privileged-role-guard-sql.test.ts'
+      - 'package.json'
+      - '.github/workflows/ci-privileged-role-guard.yml'
   push:
     branches:
       - 'test/privileged-role-guard-integration'
