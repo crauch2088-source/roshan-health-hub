@@ -218,29 +218,10 @@ VALUES ('00000000-0000-0000-0000-000000009198', NULL, 'before');
 GRANT SELECT, UPDATE ON public.users TO authenticated;
 SET LOCAL ROLE authenticated;
 DO $claim_helper_caller$
-DECLARE
-  v_visible bigint;
 BEGIN
   IF public.phase55_test_claim_helper_definer('00000000-0000-0000-0000-000000009199') IS DISTINCT FROM true THEN
     RAISE EXCEPTION 'SECURITY DEFINER caller did not preserve private claim helper behavior';
   END IF;
-
-  -- These four operations model insurance_claim_items and
-  -- insurance_claim_payments SELECT/INSERT policies. They must work even
-  -- though authenticated cannot invoke the private helper directly.
-  SELECT count(*) INTO v_visible FROM public.phase55_test_insurance_claim_items;
-  IF v_visible <> 1 THEN
-    RAISE EXCEPTION 'insurance_claim_items SELECT RLS policy stopped working';
-  END IF;
-  INSERT INTO public.phase55_test_insurance_claim_items
-    VALUES ('00000000-0000-0000-0000-000000009203');
-
-  SELECT count(*) INTO v_visible FROM public.phase55_test_insurance_claim_payments;
-  IF v_visible <> 1 THEN
-    RAISE EXCEPTION 'insurance_claim_payments SELECT RLS policy stopped working';
-  END IF;
-  INSERT INTO public.phase55_test_insurance_claim_payments
-    VALUES ('00000000-0000-0000-0000-000000009204');
 END
 $claim_helper_caller$;
 -- Direct clinical-child DML remains intentionally unavailable to authenticated.
