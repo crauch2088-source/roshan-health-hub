@@ -85,16 +85,17 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $function$
 BEGIN
-  IF TG_TABLE_NAME = 'prescriptions'
-     AND OLD.id = '61700000-0000-0000-0000-000000000017'
-     AND OLD.status = 'pending'
-     AND NEW.status = 'dispensed' THEN
-    PERFORM pg_sleep(1.5);
-  END IF;
-  IF TG_TABLE_NAME = 'medicines'
-     AND OLD.id = '61600000-0000-0000-0000-000000000002'
-     AND NEW.stock_quantity < OLD.stock_quantity THEN
-    PERFORM pg_sleep(1.5);
+  IF TG_TABLE_NAME = 'prescriptions' THEN
+    IF OLD.id = '61700000-0000-0000-0000-000000000017'
+       AND OLD.status = 'pending'
+       AND NEW.status = 'dispensed' THEN
+      PERFORM pg_sleep(1.5);
+    END IF;
+  ELSIF TG_TABLE_NAME = 'medicines' THEN
+    IF OLD.id = '61600000-0000-0000-0000-000000000002'
+       AND NEW.stock_quantity < OLD.stock_quantity THEN
+      PERFORM pg_sleep(1.5);
+    END IF;
   END IF;
   RETURN NEW;
 END;

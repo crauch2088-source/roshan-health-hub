@@ -18,7 +18,10 @@ const integration = readFileSync(
 const fixture = readFileSync("db/tests/phase61_prescription_correction_fixture.sql", "utf8");
 const workflow = readFileSync(".github/workflows/ci-phase61-prescription-correction.yml", "utf8");
 const concurrency = readFileSync("db/tests/phase61_prescription_correction_concurrency.sh", "utf8");
-const pharmacyConcurrency = readFileSync("db/tests/phase61c_pharmacy_dispense_concurrency.sh", "utf8");
+const pharmacyConcurrency = readFileSync(
+  "db/tests/phase61c_pharmacy_dispense_concurrency.sh",
+  "utf8",
+);
 
 test("Phase 61 exposes only dedicated correction and clinical-prescription permissions", () => {
   assert.match(migration, /pharmacy\.correction\.request/);
@@ -255,12 +258,13 @@ test("Phase 61C preserves successful pharmacist dispense and idempotent replay",
   assert.ok(integration.includes("idempotent retry changed the successful atomic dispense result"));
 });
 
-
 test("Phase 61C proves two-session same-prescription and final-stock dispense races serialize", () => {
   assert.ok(workflow.includes("phase61c_pharmacy_dispense_concurrency.sh"));
   assert.ok(pharmacyConcurrency.includes("wait_event_type='Lock'"));
   assert.ok(pharmacyConcurrency.includes("prescription_not_pending"));
-  assert.ok(pharmacyConcurrency.includes("medicine aggregate stock is insufficient or inconsistent"));
+  assert.ok(
+    pharmacyConcurrency.includes("medicine aggregate stock is insufficient or inconsistent"),
+  );
   assert.ok(pharmacyConcurrency.includes("private.pharmacy_dispense_idempotency"));
   assert.ok(pharmacyConcurrency.includes("stock_movements"));
 });
