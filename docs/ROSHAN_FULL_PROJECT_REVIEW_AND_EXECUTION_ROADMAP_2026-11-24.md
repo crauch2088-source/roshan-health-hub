@@ -553,3 +553,11 @@ For this roadmap:
 ## Scope and safety
 
 All work in this re-review and cleanup is repository documentation and Git metadata only. No application source, SQL migration, Supabase data/ACL/RLS, Vercel configuration, deployment, production record, QA record or secret was changed. No PR was merged and no issue was closed.
+## PR backlog cleanup — 2026-11-25
+
+- Closed 28 superseded pull requests without merging or deleting their branches.
+- Closed #179 as superseded by the newer mainline-based prescription-printing candidate #258; closed #181 as superseded by the receipt/idempotency successor #280.
+- Closed stale snapshot/report PRs #257, #259 and #289; closed #295 after preserving its clinical guideline policy document separately.
+- Closed earlier and duplicate parallel-review rounds (#262, #264–#268, #270–#279, #281–#286) after incorporating their material findings into TASK_REGISTRY and this review. Their PR diffs remain accessible.
+- Kept 19 open PRs: implementation candidates, the DR evidence, current review, optional Antigravity setup, and the detailed catalogue review #263.
+- No PR was merged; no branch was deleted; main and all hosted environments remained unchanged.
