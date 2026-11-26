@@ -649,3 +649,10 @@ The owner confirmed that the private age identity is available in their custody.
 A pause request was issued for the disposable recovery project `bjicfxdrobubftwywpsz` to minimize QA downtime while the owner prepares a local restore device. Supabase acknowledged the pause request, but the latest status reads still showed `PAUSING`, not `INACTIVE`. QA therefore remains paused until the recovery project is confirmed inactive and the free project slot is available; QA must then be resumed and checked as `ACTIVE_HEALTHY`.
 
 The owner has not yet confirmed that the identity is stored in Termux's private home or that PostgreSQL client tools are installed there. Hosted restore remains NOT RUN. Never request the identity contents or move it to GitHub, Drive, ChatGPT, or a remote runner.
+
+
+## 21. QA service restored after recovery-project suspension — 2026-11-26
+
+The pause request for disposable recovery project `bjicfxdrobubftwywpsz` completed: project status `INACTIVE`. QA project `hopfohcnrtbiqjkgeukz` was then restored successfully and status verified `ACTIVE_HEALTHY`, PostgreSQL 17.11.0.003. Production was independently rechecked as `ACTIVE_HEALTHY`, PostgreSQL 17.6.1.155. The organization is back to two active operational projects; the disposable recovery project is paused and has not been deleted.
+
+The owner confirmed the age private identity is available in their custody. Hosted restore remains NOT RUN. Next step is to verify local Termux access to the identity and PostgreSQL 17 client availability before another controlled project-slot swap. No credentials or key material were exposed.
