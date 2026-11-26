@@ -605,3 +605,25 @@ The previously verified off-site copy was from 2026-11-22 23:00:14 UTC. The inte
 3. Storage and Vault are currently held behind verified zero-object/zero-secret preconditions. The backup runner fails closed if either count becomes non-zero. Before the first Storage object or Vault secret is introduced, implement and test the corresponding separate recovery path.
 
 The database backup, local PostgreSQL 17 restore, Drive off-site copy, and byte-for-byte read-back sub-gates are PASS for the 2026-11-26 snapshot. The overall DR gate remains OPEN pending the control-plane rehearsal and independent reviewer acceptance.
+
+
+## 18. Disposable Supabase recovery project provisioning — 2026-11-26 (PARTIAL PASS)
+
+After the organization Free-plan limit prevented a third active project, the owner selected the temporary QA-pause route. Supabase confirmed QA project `hopfohcnrtbiqjkgeukz` as `INACTIVE`. Production project `jewzonxplxhogqrnhosl` remained `ACTIVE_HEALTHY` on PostgreSQL 17.6.1.155.
+
+A disposable project was then created successfully:
+- Name: `roshan-dr-recovery-2026-11`
+- Project ref: `bjicfxdrobubftwywpsz`
+- Region: `eu-west-1`
+- Status: `ACTIVE_HEALTHY`
+- PostgreSQL: 17.12.0.000
+- Organization quote: USD 0/month.
+- Read-only verification: zero migration records and zero application tables in `public`.
+
+This proves that project provisioning can be performed within the current Free organization after temporarily pausing QA. It does **not** prove database restoration or full service recovery. The recovery target remains empty.
+
+The age private identity was intentionally not moved from the owner's offline custody into GitHub, Drive, ChatGPT, or any other service. The existing runner performs its own local restore rehearsal only and has no hosted-target restore mode. A safe owner-local decrypt/restore procedure and the recovery project's database password are prerequisites for the next step. The target's PostgreSQL minor version (17.12) differs from Production's (17.6), so hosted restore compatibility must be demonstrated rather than assumed.
+
+No Production writes, migrations, deployments, key rotations, or settings changes occurred. QA remains paused pending completion of the recovery rehearsal. Once restore verification and timing are complete, the intended cleanup is to pause the disposable recovery project and resume QA; deletion is not currently authorized or required.
+
+**Updated result:** Supabase project provisioning = PASS; hosted database restore = NOT RUN; end-to-end control-plane recovery = OPEN; RTO measurement = NOT STARTED; overall DR gate = OPEN.
