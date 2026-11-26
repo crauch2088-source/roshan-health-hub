@@ -207,3 +207,10 @@ The disposable recovery project is not needed to remain active while the owner p
 Do not claim QA is restored or the recovery project is paused until their respective status reads confirm it. Once recovery is confirmed inactive, resume QA and verify `ACTIVE_HEALTHY`. Later, when the owner is ready to perform the hosted restore locally, pause QA, resume the disposable recovery project, and proceed only after both state transitions are confirmed.
 
 The hosted restore remains NOT RUN. The owner has confirmed possession/availability of the private identity, but its location and readiness on Termux have not yet been verified. The identity remains owner-held and must never be pasted into chat or uploaded to a remote runner.
+
+
+## 14. Restore project-slot cleanup completed — 2026-11-26
+
+The disposable recovery project `bjicfxdrobubftwywpsz` is now confirmed `INACTIVE`. The QA project `hopfohcnrtbiqjkgeukz` was then restored and is confirmed `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.003). Production remains `ACTIVE_HEALTHY` (PostgreSQL 17.6.1.155). Thus the temporary QA outage has ended and the organization is back to its two active operational projects; the disposable recovery project is paused, not deleted.
+
+The owner has confirmed possession/availability of the age private identity. The hosted restore has not yet been attempted. Before the next rehearsal, confirm the identity is accessible in Termux's private home on the owner's Android device and install/verify compatible PostgreSQL 17 client tools. Then pause QA, resume the recovery project, verify both transitions, and execute only the documented, compatibility-reviewed restore path. No secrets or identity material are to be sent to ChatGPT or uploaded to any remote service.
