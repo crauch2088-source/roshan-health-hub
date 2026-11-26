@@ -196,3 +196,14 @@ Therefore:
 This compatibility review is a newly identified blocker, not a failed restore attempt. No restore command has been run against the disposable project. The overall DR gate remains OPEN.
 
 Official procedure: https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
+
+
+## 13. Owner-side age identity availability and temporary project suspension — 2026-11-26
+
+The owner confirmed that the private age identity is available in their custody. No identity text, file, screenshot, passphrase, or key material was requested or received in ChatGPT.
+
+The disposable recovery project is not needed to remain active while the owner prepares the local device-side restore. To avoid leaving the QA environment paused longer than necessary, a pause request was issued for recovery project `bjicfxdrobubftwywpsz`. Supabase acknowledged the request, but subsequent status reads still reported `PAUSING`; it has **not** yet been confirmed `INACTIVE`. QA remains `INACTIVE` pending recovery-project suspension confirmation and the free project-slot check.
+
+Do not claim QA is restored or the recovery project is paused until their respective status reads confirm it. Once recovery is confirmed inactive, resume QA and verify `ACTIVE_HEALTHY`. Later, when the owner is ready to perform the hosted restore locally, pause QA, resume the disposable recovery project, and proceed only after both state transitions are confirmed.
+
+The hosted restore remains NOT RUN. The owner has confirmed possession/availability of the private identity, but its location and readiness on Termux have not yet been verified. The identity remains owner-held and must never be pasted into chat or uploaded to a remote runner.
