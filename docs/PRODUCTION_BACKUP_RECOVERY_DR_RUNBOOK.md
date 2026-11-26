@@ -1,6 +1,6 @@
 # Roshan Health Hub — Production Backup Recovery & Disaster Recovery Runbook
 
-**Status:** Technical database recovery evidence PASS; overall operational DR gate OPEN pending owner policy acceptance and full control-plane recovery rehearsal.
+**Status:** Owner-approved low-cost policy recorded; database recovery evidence PASS; overall operational DR gate OPEN pending timed control-plane recovery rehearsal, Storage/Vault boundary controls, and independent review.
 
 **Production project:** `jewzonxplxhogqrnhosl`  
 **Region / engine:** `eu-west-1` / PostgreSQL 17.6.1.155  
@@ -106,20 +106,21 @@ Current `storage.objects` count is zero and `vault.secrets` count is zero. The d
 
 If Vault secrets are introduced, stop and establish a separately protected Vault encryption-root-key recovery procedure before relying on database dumps.
 
-## 8. Proposed operational objectives — NOT YET APPROVED
+## 8. Owner-approved low-cost operational policy — APPROVED 2026-11-26
 
 The Supabase organization is on the Free plan. Supabase's current documentation says daily managed database backups are available on Pro, Team, and Enterprise plans, and recommends regular CLI exports plus off-site backups for Free projects: https://supabase.com/docs/guides/platform/backups
 
-Proposed low-cost owner-operated policy, pending explicit owner acceptance:
+Owner-approved minimum-cost policy. It preserves the 24-hour recovery-point objective without purchasing a Supabase plan upgrade, paid backup service, VM, or always-on recovery infrastructure:
 
-- Cadence: one successful encrypted Production backup and verified private Drive read-back at least every 24 hours, plus before every Production migration/release.
-- RPO: no more than 24 hours, conditional on the cadence actually being met and the off-site copy verified.
-- RTO: target no more than 4 hours from incident declaration to restored database plus essential platform reconfiguration. This is a proposed target, not yet measured end-to-end.
-- Retention: at least 30 daily encrypted copies in the canonical private Drive archive. The one-day GitHub artifact does not count toward retention.
-- Drill: independent restore rehearsal at least quarterly and after material backup/platform changes.
-- Monitoring/ownership: named owner checks each cycle; failed or missing backups trigger immediate remediation and the gate returns to OPEN.
+- Cadence: one successful encrypted Production backup with verified private Drive read-back every 24 hours, and immediately before every Production migration/release. A run counts only after Drive read-back and SHA-256 verification.
+- RPO: maximum 24 hours, conditional on the cadence actually being met and the off-site copy verified. If a cycle is missed, record the actual exposure; do not claim the RPO was met.
+- RTO: target no more than 4 hours from incident declaration to restored database plus essential platform reconfiguration. This is an owner-approved target, not yet measured end-to-end; record actual elapsed time during the next full drill.
+- Retention: keep the latest 7 daily verified backups, plus 1 verified backup per week for the preceding 4 weeks (maximum 11 retained copies). The weekly copies are selected from existing daily runs; they do not require extra backup runs. Delete older copies only after verifying that the newer retention set is complete and readable. The one-day GitHub artifact does not count toward retention.
+- Drill: independent restore rehearsal at least quarterly and after material backup/platform changes. Reuse a disposable isolated target; do not provision paid always-on infrastructure.
+- Monitoring/ownership: the owner checks each cycle. A failed or missing backup triggers immediate remediation, and the DR gate returns to OPEN until a verified off-site backup exists.
+- Cost boundary: remain on the current Supabase Free plan and existing private Drive storage while within its available quota. Do not add a paid plan, cloud VM, managed backup product, or new always-on service without separate explicit approval. If Drive quota or another free-tier limit is reached, stop retention pruning only after preserving the newest verified backup; obtain owner approval before any paid expansion.
 
-No schedule or reminder is currently enabled. The runner remains manual-only until a durable Drive transfer workflow is automated or a monitored owner-operated process is formally accepted.
+No schedule or reminder is currently enabled. The runner remains manual-only until a durable Drive transfer workflow is automated. Until then, the owner-operated daily checklist is the accepted process; a one-day Actions artifact alone never satisfies the policy.
 
 ## 9. Gate decision
 
@@ -128,10 +129,10 @@ No schedule or reminder is currently enabled. The runner remains manual-only unt
 **Off-site private copy and byte-for-byte retrieval: PASS.**  
 **Overall Production Backup Recovery & Disaster Recovery gate: OPEN.**
 
-Formal closure requires:
-1. Owner acceptance of the cadence, RPO, RTO, retention and drill policy (or an explicitly documented alternative).
-2. A timed end-to-end recovery rehearsal including the control-plane re-provisioning checklist.
-3. A tested Storage object-byte recovery mechanism before the first real object is stored; until then, enforce the zero-object precondition.
+Formal closure still requires:
+1. A timed end-to-end recovery rehearsal including the control-plane re-provisioning checklist, with actual RTO recorded.
+2. A tested Storage object-byte recovery mechanism before the first real object is stored; until then, enforce the zero-object precondition and keep the buckets empty.
+3. A separately protected Vault encryption-root-key recovery procedure before introducing any Vault secrets; until then, keep Vault secret count at zero.
 4. Independent reviewer acceptance of this runbook and evidence.
 
 No Production/QA writes, migrations, deployments, key rotations, or Supabase project settings changes are authorized by this runbook.
