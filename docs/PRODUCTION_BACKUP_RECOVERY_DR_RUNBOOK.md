@@ -157,3 +157,24 @@ A fresh owner-approved manual backup cycle completed successfully on 2026-11-26.
 The prior verified Drive copy was created at `2026-11-22T23:00:14Z`; the new copy was verified at `2026-11-26T05:55:49Z`. The gap was approximately **78 hours 55 minutes**, so the owner-approved 24-hour RPO was breached during that interval. The new copy establishes a current recovery point; it does not retroactively erase the missed cadence. Resume daily owner checks immediately.
 
 This run performed no Production writes, migrations, deployments, key rotations, or project-setting changes. The runbook remains manual-only; no schedule or reminder was enabled.
+
+
+## 11. Disposable Supabase recovery project provisioning — 2026-11-26 (PARTIAL PASS)
+
+The owner selected the second recovery path after the organization reached its two-active-project Free-plan limit. QA was paused temporarily to free the active-project slot; no deletion or plan upgrade was performed.
+
+- QA project `hopfohcnrtbiqjkgeukz`: confirmed `INACTIVE` after the pause operation.
+- Production project `jewzonxplxhogqrnhosl`: independently rechecked `ACTIVE_HEALTHY`, PostgreSQL 17.6.1.155; no Production action was taken.
+- Disposable recovery project `roshan-dr-recovery-2026-11`: created successfully in `eu-west-1`, project ref `bjicfxdrobubftwywpsz`; status `ACTIVE_HEALTHY`, PostgreSQL 17.12.0.000.
+- Supabase organization cost quote for this project: USD 0/month. No paid plan or paid infrastructure was selected.
+- Read-only target inspection: migration history is empty and the public schema contains no application tables. The project is provisioned but has not been restored or populated.
+
+**Scope of this result:** Supabase control-plane project provisioning and temporary slot management are demonstrated. This is not an end-to-end database restore, application recovery, or measured RTO.
+
+**Restore safety blocker:** the age private identity remains owner-held offline by design and was not placed in GitHub, Drive, ChatGPT, or the runner. The current runner performs a local PostgreSQL 17 rehearsal; it does not provide a secure hosted-target restore operation. Do not attempt to decrypt or restore by moving the private identity into repository secrets or by uploading plaintext dumps. The recovery project database password must also be set/managed through the owner's secure Supabase Dashboard/password-manager workflow before any remote restore.
+
+**Compatibility note:** the disposable target is PostgreSQL 17.12 while the Production snapshot is PostgreSQL 17.6. The major version matches, but the restore procedure must be validated against this hosted target; local-superuser restore success does not establish hosted Supabase restore success.
+
+**Next controlled steps:** establish an owner-local decryption and hosted-target restore path using the private identity locally; restore only into `bjicfxdrobubftwywpsz`; verify critical counts and structural parity; record elapsed time; then pause the disposable recovery project and resume QA. Do not delete the recovery project or alter Production as part of this rehearsal without a separate decision.
+
+The overall DR gate remains **OPEN**. Independent reviewer acceptance and the Storage/Vault recovery preconditions also remain outstanding.
