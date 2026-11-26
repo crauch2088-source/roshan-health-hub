@@ -136,3 +136,24 @@ Formal closure still requires:
 4. Independent reviewer acceptance of this runbook and evidence.
 
 No Production/QA writes, migrations, deployments, key rotations, or Supabase project settings changes are authorized by this runbook.
+
+
+## 10. Verified Production backup — 2026-11-26
+
+A fresh owner-approved manual backup cycle completed successfully on 2026-11-26.
+
+- Runner repository: `crauch2088-source/roshan-health-hub-backup-runner`
+- Workflow run: [#31 — encrypted Production backup](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/45764308295)
+- Run ID: `45764308295`; completed successfully at `2026-11-26T05:55:14Z`.
+- Validation/preflight job: PASS.
+- Production database dump and isolated local PostgreSQL 17 restore rehearsal: PASS.
+- Encrypted artifact upload: PASS; only ciphertext was uploaded.
+- Artifact: `roshan-production-backup-45764308295.zip`, 308,191 bytes.
+- GitHub artifact SHA-256: `04e4e6c5b9865c4c20fc104abc04641b216ea1c86ee88bc75b2d32e81aded49b`.
+- Off-site copy: [private Drive archive — 2026-11-26](https://drive.google.com/drive/folders/1evGsWSmhysqH1lAs0909xxRpQ0ogr_Q7).
+- Drive file ID: `1Njr31badfS8RCwbF8QLKXVUDxZV1-Nll`; 308,191 bytes; private, owner-only.
+- Drive read-back SHA-256: `04e4e6c5b9865c4c20fc104abc04641b216ea1c86ee88bc75b2d32e81aded49b`; MD5 `022113d28c7fe9840b950ec4e73b261b`. Both hashes and byte length match the original artifact exactly.
+
+The prior verified Drive copy was created at `2026-11-22T23:00:14Z`; the new copy was verified at `2026-11-26T05:55:49Z`. The gap was approximately **78 hours 55 minutes**, so the owner-approved 24-hour RPO was breached during that interval. The new copy establishes a current recovery point; it does not retroactively erase the missed cadence. Resume daily owner checks immediately.
+
+This run performed no Production writes, migrations, deployments, key rotations, or project-setting changes. The runbook remains manual-only; no schedule or reminder was enabled.

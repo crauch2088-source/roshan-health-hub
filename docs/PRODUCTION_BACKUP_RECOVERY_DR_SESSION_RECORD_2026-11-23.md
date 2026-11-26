@@ -574,3 +574,34 @@ The Vercel project `roshan-health-hub` was inspected without decrypting environm
 - No environment variable values were retrieved, displayed, copied, or changed. This inventory records names only; it is not a secret backup or a verified restoration of those values.
 
 This improves the control-plane inventory but does not satisfy the full re-provisioning rehearsal. The owner must retain actual secret values only in the authorized password manager/secret stores and confirm they can be re-entered after project replacement. A successful recovery test must verify the replacement Vercel environment variables and deployment without exposing their values in logs or this repository.
+
+
+## 17. Owner policy approval and 2026-11-26 backup evidence — superseding addendum
+
+This addendum supersedes the earlier “awaiting owner acceptance” policy proposal and the 30-daily-copy retention proposal in Section 15. On 2026-11-26, the owner approved the minimum-cost policy:
+- encrypted Production backup with verified private Drive read-back every 24 hours and before Production migrations/releases;
+- RPO maximum 24 hours, conditional on the cadence actually being met;
+- RTO target 4 hours, explicitly not yet measured end-to-end;
+- retention of the latest 7 daily copies plus 1 weekly copy for each of the preceding 4 weeks (maximum 11, with weekly copies selected from daily runs);
+- quarterly independent restore drill and after material backup/platform changes;
+- remain on Supabase Free and existing private Drive storage; no paid backup service, VM, plan upgrade, or always-on infrastructure without separate approval.
+
+### 2026-11-26 successful backup run
+
+- GitHub Actions run [#31](https://github.com/crauch2088-source/roshan-health-hub-backup-runner/actions/runs/45764308295), Run ID `45764308295`, completed successfully at `2026-11-26T05:55:14Z`.
+- Preflight validation passed; Production database dump and isolated PostgreSQL 17 local restore passed; encrypted artifact upload passed.
+- Ciphertext-only artifact: `roshan-production-backup-45764308295.zip`, 308,191 bytes.
+- SHA-256: `04e4e6c5b9865c4c20fc104abc04641b216ea1c86ee88bc75b2d32e81aded49b`.
+- Uploaded to the canonical private Drive archive under dated folder [2026-11-26](https://drive.google.com/drive/folders/1evGsWSmhysqH1lAs0909xxRpQ0ogr_Q7).
+- Drive read-back was downloaded and compared byte-for-byte by SHA-256 and MD5; both checksums and the 308,191-byte length matched the original artifact exactly.
+- No Production or QA writes, migrations, deployments, key rotations, project settings changes, or project creation occurred.
+
+The previously verified off-site copy was from 2026-11-22 23:00:14 UTC. The interval until the 2026-11-26 05:55:49 UTC verified copy was approximately 78h55m; therefore the 24-hour RPO target was missed during this interval. Record this as a cadence breach, not as a successful 24-hour RPO. The latest verified backup now provides a fresh recovery point.
+
+### Current remaining blockers
+
+1. A timed end-to-end control-plane recovery rehearsal is still outstanding. The two existing Supabase projects are Production and QA; QA must not be overwritten for a recovery test. No disposable recovery project was created, and the 4-hour RTO remains unmeasured.
+2. Independent reviewer acceptance of the runbook and evidence is still outstanding.
+3. Storage and Vault are currently held behind verified zero-object/zero-secret preconditions. The backup runner fails closed if either count becomes non-zero. Before the first Storage object or Vault secret is introduced, implement and test the corresponding separate recovery path.
+
+The database backup, local PostgreSQL 17 restore, Drive off-site copy, and byte-for-byte read-back sub-gates are PASS for the 2026-11-26 snapshot. The overall DR gate remains OPEN pending the control-plane rehearsal and independent reviewer acceptance.
