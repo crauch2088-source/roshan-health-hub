@@ -178,3 +178,21 @@ The owner selected the second recovery path after the organization reached its t
 **Next controlled steps:** establish an owner-local decryption and hosted-target restore path using the private identity locally; restore only into `bjicfxdrobubftwywpsz`; verify critical counts and structural parity; record elapsed time; then pause the disposable recovery project and resume QA. Do not delete the recovery project or alter Production as part of this rehearsal without a separate decision.
 
 The overall DR gate remains **OPEN**. Independent reviewer acceptance and the Storage/Vault recovery preconditions also remain outstanding.
+
+
+## 12. Hosted Supabase restore-method compatibility review — 2026-11-26
+
+The current backup runner's archive is a raw PostgreSQL custom-format `pg_dump` of all schemas, plus a filtered role SQL file. Its successful restore proof uses an isolated local Supabase PostgreSQL 17 bootstrap superuser. That is not the same execution context as a hosted Supabase project, where the database role does not have unrestricted superuser privileges.
+
+The current official [Supabase CLI backup/restore guide](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore) documents a hosted-project restore using separate CLI-generated `roles.sql`, `schema.sql`, and `data.sql` files, followed by `psql` with a single transaction and `ON_ERROR_STOP`. It also documents special handling for migration history, modified `auth`/`storage` schemas, custom login-role passwords, and certain Supabase-managed role grants.
+
+Therefore:
+- Do **not** point `pg_restore` at the hosted recovery project using the current raw `full.dump` without a tested compatibility procedure.
+- Do **not** assume the runner's local-superuser restore proves hosted restore compatibility.
+- Before the hosted rehearsal, build and test a conversion/recovery package that preserves the required Auth data and Storage metadata while respecting Supabase-managed schemas, roles, and privileges. Keep the age identity owner-local throughout decryption.
+- Use the disposable project only as the target. Confirm its database password in the owner's password manager and use the official session-pooler connection guidance. Never put its password or connection URI in this repository or chat.
+- Treat any partial hosted restore as a failed rehearsal; do not proceed to application validation until restore errors are reconciled and critical counts plus structural checks pass.
+
+This compatibility review is a newly identified blocker, not a failed restore attempt. No restore command has been run against the disposable project. The overall DR gate remains OPEN.
+
+Official procedure: https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
