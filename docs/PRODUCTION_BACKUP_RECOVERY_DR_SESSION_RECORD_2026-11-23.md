@@ -640,3 +640,12 @@ Reference: https://supabase.com/docs/guides/platform/migrating-within-supabase/b
 No hosted restore was attempted. It would be unsafe to treat the successful local-superuser restore as proof that raw `pg_restore` will work on the managed target. A tested conversion/recovery package must be prepared first, preserving required Auth data and Storage metadata while respecting managed schemas/roles. The owner-held age identity must remain local, and the target password must be handled only through the owner's secure password-manager workflow.
 
 **Status:** target project provisioned; hosted restore method under compatibility review; no target data written; DR gate remains OPEN.
+
+
+## 20. Owner-side key availability and project cleanup state — 2026-11-26
+
+The owner confirmed that the private age identity is available in their custody. No secret key material was received or requested in chat.
+
+A pause request was issued for the disposable recovery project `bjicfxdrobubftwywpsz` to minimize QA downtime while the owner prepares a local restore device. Supabase acknowledged the pause request, but the latest status reads still showed `PAUSING`, not `INACTIVE`. QA therefore remains paused until the recovery project is confirmed inactive and the free project slot is available; QA must then be resumed and checked as `ACTIVE_HEALTHY`.
+
+The owner has not yet confirmed that the identity is stored in Termux's private home or that PostgreSQL client tools are installed there. Hosted restore remains NOT RUN. Never request the identity contents or move it to GitHub, Drive, ChatGPT, or a remote runner.
