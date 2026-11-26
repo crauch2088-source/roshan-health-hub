@@ -627,3 +627,16 @@ The age private identity was intentionally not moved from the owner's offline cu
 No Production writes, migrations, deployments, key rotations, or settings changes occurred. QA remains paused pending completion of the recovery rehearsal. Once restore verification and timing are complete, the intended cleanup is to pause the disposable recovery project and resume QA; deletion is not currently authorized or required.
 
 **Updated result:** Supabase project provisioning = PASS; hosted database restore = NOT RUN; end-to-end control-plane recovery = OPEN; RTO measurement = NOT STARTED; overall DR gate = OPEN.
+
+
+## 19. Hosted Supabase restore compatibility review — 2026-11-26
+
+A review of the current official Supabase CLI restore procedure identified an additional compatibility requirement before using the disposable hosted project.
+
+The backup runner's current `full.dump` is a raw custom-format PostgreSQL dump of all schemas. The runner restores it locally using a Supabase bootstrap superuser. The official hosted Supabase migration procedure instead documents separate CLI-generated `roles.sql`, `schema.sql`, and `data.sql` files, then restores through `psql` with a single transaction and `ON_ERROR_STOP`. It documents special handling for migration history, modified `auth`/`storage` schemas, custom login-role passwords, and Supabase-managed role grants.
+
+Reference: https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
+
+No hosted restore was attempted. It would be unsafe to treat the successful local-superuser restore as proof that raw `pg_restore` will work on the managed target. A tested conversion/recovery package must be prepared first, preserving required Auth data and Storage metadata while respecting managed schemas/roles. The owner-held age identity must remain local, and the target password must be handled only through the owner's secure password-manager workflow.
+
+**Status:** target project provisioned; hosted restore method under compatibility review; no target data written; DR gate remains OPEN.
